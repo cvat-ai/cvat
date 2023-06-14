@@ -5,6 +5,8 @@ weight: 9
 
 # [ImageNet](http://www.image-net.org)
 
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/imagenet_dataset)
+
 ## ImageNet export
 
 Downloaded file: a zip archive of the following structure:

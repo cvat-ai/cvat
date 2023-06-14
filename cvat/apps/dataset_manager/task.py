@@ -8,6 +8,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from enum import Enum
 from tempfile import TemporaryDirectory
+from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
 from django.db.models.query import Prefetch
@@ -18,10 +19,10 @@ from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
 
-from .annotation import AnnotationIR, AnnotationManager
-from .bindings import JobData, TaskData
-from .formats.registry import make_exporter, make_importer
-from .util import bulk_create
+from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
+from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
+from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
+from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create
 
 
 class dotdict(OrderedDict):
@@ -73,18 +74,48 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
     return list(merged_rows.values())
 
 class JobAnnotation:
-    def __init__(self, pk, is_prefetched=False):
-        if is_prefetched:
-            self.db_job = models.Job.objects.select_related('segment__task') \
-                .select_for_update().get(id=pk)
-        else:
-            self.db_job = models.Job.objects.prefetch_related(
-                'segment',
-                'segment__task',
-                Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+    @classmethod
+    def add_prefetch_info(cls, queryset):
+        assert issubclass(queryset.model, models.Job)
+
+        label_qs = add_prefetch_fields(models.Label.objects.all(), [
+            'skeleton',
+            'parent',
+            'attributespec_set',
+        ])
+        label_qs = JobData.add_prefetch_info(label_qs)
+
+        return queryset.select_related(
+            'segment',
+            'segment__task',
+        ).prefetch_related(
+            'segment__task__owner',
+            'segment__task__assignee',
+            'segment__task__project__owner',
+            'segment__task__project__assignee',
+
+            Prefetch('segment__task__data',
+                queryset=models.Data.objects.select_related('video').prefetch_related(
                     Prefetch('images', queryset=models.Image.objects.order_by('frame'))
-                ))
-            ).get(pk=pk)
+            )),
+
+            Prefetch('segment__task__label_set', queryset=label_qs),
+            Prefetch('segment__task__project__label_set', queryset=label_qs),
+        )
+
+    def __init__(self, pk, *, is_prefetched=False, queryset=None):
+        if queryset is None:
+            queryset = self.add_prefetch_info(models.Job.objects).all()
+
+        if is_prefetched:
+            self.db_job: models.Job = queryset.select_related(
+                'segment__task'
+            ).select_for_update().get(id=pk)
+        else:
+            try:
+                self.db_job: models.Job = next(job for job in queryset if job.pk == int(pk))
+            except StopIteration as ex:
+                raise models.Job.DoesNotExist from ex
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
@@ -660,7 +691,9 @@ class TaskAnnotation:
         ).get(id=pk)
 
         # Postgres doesn't guarantee an order by default without explicit order_by
-        self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk).order_by('id')
+        self.db_jobs = models.Job.objects.select_related("segment").filter(
+            segment__task_id=pk, type=models.JobType.ANNOTATION.value,
+        ).order_by('id')
         self.ir_data = AnnotationIR(self.db_task.dimension)
 
     def reset(self):
@@ -711,6 +744,9 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
+            if db_job.type != models.JobType.ANNOTATION:
+                continue
+
             annotation = JobAnnotation(db_job.id, is_prefetched=True)
             annotation.init_from_db()
             if annotation.ir_data.version > self.ir_data.version:
@@ -853,19 +889,25 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
         task.export(f, exporter, host=server_url, save_images=save_images)
 
 @transaction.atomic
-def import_task_annotations(task_id, src_file, format_name, conv_mask_to_poly):
+def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
     task = TaskAnnotation(task_id)
     task.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        try:
+            task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
+            raise CvatImportError(str(ex))
 
 @transaction.atomic
-def import_job_annotations(job_id, src_file, format_name, conv_mask_to_poly):
+def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
     job = JobAnnotation(job_id)
     job.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        try:
+            job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
+            raise CvatImportError(str(ex))

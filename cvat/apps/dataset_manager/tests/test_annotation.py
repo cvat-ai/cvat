@@ -11,13 +11,21 @@ class TrackManagerTest(TestCase):
     def _check_interpolation(self, track):
         interpolated = TrackManager.get_interpolated_shapes(track, 0, 7, '2d')
 
-        self.assertEqual(len(interpolated), 6)
-        self.assertTrue(interpolated[0]["keyframe"])
-        self.assertFalse(interpolated[1]["keyframe"])
-        self.assertTrue(interpolated[2]["keyframe"])
-        self.assertTrue(interpolated[3]["keyframe"])
-        self.assertFalse(interpolated[4]["keyframe"])
-        self.assertFalse(interpolated[5]["keyframe"])
+        self.assertEqual(
+            [
+                {"frame": 0, "keyframe": True, "outside": False},
+                {"frame": 1, "keyframe": False, "outside": False},
+                {"frame": 2, "keyframe": True, "outside": True},
+                # frame = 3 should be skipped as it is outside and interpolated
+                {"frame": 4, "keyframe": True, "outside": False},
+                {"frame": 5, "keyframe": False, "outside": False},
+                {"frame": 6, "keyframe": False, "outside": False},
+            ],
+            [
+                {k: v for k, v in shape.items() if k in ["frame", "keyframe", "outside"]}
+                for shape in interpolated
+            ]
+        )
 
     def test_point_interpolation(self):
         track = {

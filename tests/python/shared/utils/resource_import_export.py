@@ -9,7 +9,7 @@ import pytest
 
 T = TypeVar("T")
 
-from shared.utils.config import get_method, post_method
+from shared.utils.config import get_method, post_method, put_method
 
 FILENAME_TEMPLATE = "cvat/{}/{}.zip"
 EXPORT_FORMAT = "CVAT for images 1.1"
@@ -117,9 +117,16 @@ class _CloudStorageResourceTest(ABC):
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
 
+        # Only the first POST request contains rq_id in response.
+        # Exclude cases with 403 expected status.
+        rq_id = None
+        if status == HTTPStatus.ACCEPTED:
+            rq_id = response.json().get("rq_id")
+            assert rq_id, "The rq_id was not found in the response"
+
         while status != _expect_status:
             assert status == HTTPStatus.ACCEPTED
-            response = post_method(user, url, data=None, **kwargs)
+            response = put_method(user, url, data=None, rq_id=rq_id, **kwargs)
             status = response.status_code
 
         if _check_uploaded:
@@ -154,9 +161,16 @@ class _CloudStorageResourceTest(ABC):
         response = post_method(user, url, data=None, **kwargs)
         status = response.status_code
 
+        # Only the first POST request contains rq_id in response.
+        # Exclude cases with 403 expected status.
+        rq_id = None
+        if status == HTTPStatus.ACCEPTED:
+            rq_id = response.json().get("rq_id")
+            assert rq_id, "The rq_id was not found in the response"
+
         while status != _expect_status:
             assert status == HTTPStatus.ACCEPTED
-            response = get_method(user, url, action="import_status")
+            response = get_method(user, url, action="import_status", rq_id=rq_id)
             status = response.status_code
 
     def _import_resource(self, cloud_storage: Dict[str, Any], resource_type: str, *args, **kwargs):

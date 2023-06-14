@@ -347,19 +347,14 @@ You can find many examples of API client usage in REST API tests [here](https://
 
 ### Organizations
 
-To call an operation in the context of an organization, use one of these method arguments:
+To create resource in the context of an organization, use one of these method arguments:
 
 - `org` - The unique organization slug
 - `org_id`- The organization id
 
 ```python
 ...
-(updated_annotations, response) = api_client.tasks_api.partial_update_annotations(
-    id=task_id,
-    org_id=org_id,
-    action='update',
-    patched_labeled_data_request=data
-)
+(task, response) = api_client.tasks_api.create(task_spec, org_id=org_id)
 ```
 
 ### Paginated responses

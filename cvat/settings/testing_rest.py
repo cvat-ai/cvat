@@ -10,3 +10,10 @@ from cvat.settings.production import *
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
+
+# Avoid quality updates during test runs.
+# Note that DB initialization triggers server signals,
+# so quality report updates are scheduled for applicable jobs.
+QUALITY_CHECK_JOB_DELAY = 10000
+
+IMPORT_CACHE_CLEAN_DELAY = timedelta(seconds=30)

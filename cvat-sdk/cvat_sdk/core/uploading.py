@@ -1,9 +1,10 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
@@ -89,6 +90,7 @@ class _MyTusUploader(_TusUploader):
         headers["upload-length"] = str(self.file_size)
         headers["upload-metadata"] = ",".join(self.encode_metadata())
         resp = self._api_client.rest_client.POST(self.client.url, headers=headers)
+        self.real_filename = resp.headers.get("Upload-Filename")
         url = resp.headers.get("location")
         if url is None:
             msg = "Attempt to retrieve create file url with status {}".format(resp.status_code)
@@ -179,9 +181,10 @@ class Uploader:
         assert meta["filename"]
 
         self._tus_start_upload(url, query_params=query_params)
-        self._upload_file_data_with_tus(
+        real_filename = self._upload_file_data_with_tus(
             url=url, filename=filename, meta=meta, pbar=pbar, logger=logger
         )
+        query_params["filename"] = real_filename
         return self._tus_finish_upload(url, query_params=query_params, fields=fields)
 
     def _wait_for_completion(
@@ -216,7 +219,9 @@ class Uploader:
 
         return _MyTusUploader(client=client, api_client=api_client, **kwargs)
 
-    def _upload_file_data_with_tus(self, url, filename, *, meta=None, pbar=None, logger=None):
+    def _upload_file_data_with_tus(
+        self, url, filename, *, meta=None, pbar=None, logger=None
+    ) -> str:
         file_size = filename.stat().st_size
         if pbar is None:
             pbar = NullProgressReporter()
@@ -233,6 +238,7 @@ class Uploader:
                 log_func=logger,
             )
             tus_uploader.upload()
+            return tus_uploader.real_filename
 
     def _tus_start_upload(self, url, *, query_params=None):
         response = self._client.api_client.rest_client.POST(
@@ -273,9 +279,13 @@ class AnnotationUploader(Uploader):
     ):
         url = self._client.api_map.make_endpoint_url(endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": filename.name}
-        self.upload_file(
+        response = self.upload_file(
             url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
         )
+
+        rq_id = json.loads(response.data).get("rq_id")
+        assert rq_id, "The rq_id was not found in the response"
+        params["rq_id"] = rq_id
 
         self._wait_for_completion(
             url,
@@ -283,7 +293,7 @@ class AnnotationUploader(Uploader):
             positive_statuses=[202],
             status_check_period=status_check_period,
             query_params=params,
-            method="POST",
+            method="PUT",
         )
 
 
@@ -301,12 +311,17 @@ class DatasetUploader(Uploader):
     ):
         url = self._client.api_map.make_endpoint_url(upload_endpoint.path, kwsub=url_params)
         params = {"format": format_name, "filename": filename.name}
-        self.upload_file(
+        response = self.upload_file(
             url, filename, pbar=pbar, query_params=params, meta={"filename": params["filename"]}
         )
+        rq_id = json.loads(response.data).get("rq_id")
+        assert rq_id, "The rq_id was not found in the response"
 
         url = self._client.api_map.make_endpoint_url(retrieve_endpoint.path, kwsub=url_params)
-        params = {"action": "import_status"}
+        params = {
+            "action": "import_status",
+            "rq_id": rq_id,
+        }
         self._wait_for_completion(
             url,
             success_status=201,
@@ -335,6 +350,10 @@ class DataUploader(Uploader):
         if pbar is not None:
             pbar.start(total_size, desc="Uploading data")
 
+        if str(kwargs.get("sorting_method")).lower() == "predefined":
+            # Request file ordering, because we reorder files to send more efficiently
+            kwargs.setdefault("upload_file_order", [p.name for p in resources])
+
         self._tus_start_upload(url)
 
         for group, group_size in bulk_file_groups:
@@ -359,7 +378,6 @@ class DataUploader(Uploader):
                 pbar.advance(group_size)
 
         for filename in separate_files:
-            # TODO: check if basename produces invalid paths here, can lead to overwriting
             self._upload_file_data_with_tus(
                 url,
                 filename,

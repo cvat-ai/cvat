@@ -5,6 +5,8 @@ weight: 3
 
 # [MOT sequence](https://arxiv.org/pdf/1906.04567.pdf)
 
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/mot_dataset)
+
 ## MOT export
 
 Downloaded file: a zip archive of the following structure:

@@ -19,6 +19,7 @@ import django_rq
 import numpy as np
 import requests
 import rq
+from cvat.apps.lambda_manager.signals import interactive_function_call_signal
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from drf_spectacular.types import OpenApiTypes
@@ -27,14 +28,15 @@ from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    inline_serializer)
 from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
+from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.engine.schema import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 
 class LambdaType(Enum):
@@ -194,7 +196,15 @@ class LambdaFunction:
 
         return response
 
-    def invoke(self, db_task: Task, data: Dict[str, Any], *, db_job: Optional[Job] = None):
+    def invoke(
+        self,
+        db_task: Task,
+        data: Dict[str, Any],
+        *,
+        db_job: Optional[Job] = None,
+        is_interactive: Optional[bool] = False,
+        request: Optional[Request] = None
+    ):
         try:
             if db_job is not None and db_job.get_task_id() != db_task.id:
                 raise ValidationError("Job task id does not match task id",
@@ -250,14 +260,24 @@ class LambdaFunction:
                             supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
 
             # Check job frame boundaries
-            for key, desc in (
-                ('frame', 'frame'),
-                ('frame0', 'start frame'),
-                ('frame1', 'end frame'),
-            ):
-                if key in data and db_job and not db_job.segment.contains_frame(data[key]):
-                    raise ValidationError(f"The {desc} is outside the job range",
-                        code=status.HTTP_400_BAD_REQUEST)
+            if db_job:
+                task_data = db_task.data
+                data_start_frame = task_data.start_frame
+                step = task_data.get_frame_step()
+
+                for key, desc in (
+                    ('frame', 'frame'),
+                    ('frame0', 'start frame'),
+                    ('frame1', 'end frame'),
+                ):
+                    if key not in data:
+                        continue
+
+                    abs_frame_id = data_start_frame + data[key] * step
+                    if not db_job.segment.contains_frame(abs_frame_id):
+                        raise ValidationError(f"The {desc} is outside the job range",
+                            code=status.HTTP_400_BAD_REQUEST)
+
 
             if self.kind == LambdaType.DETECTOR:
                 payload.update({
@@ -299,7 +319,11 @@ class LambdaFunction:
                 .format(self.id, str(err)),
                 code=status.HTTP_400_BAD_REQUEST)
 
+        if is_interactive and request:
+            interactive_function_call_signal.send(sender=self, request=request)
+
         response = self.gateway.invoke(self, payload)
+
         response_filtered = []
         def check_attr_value(value, func_attr, db_attr):
             if db_attr is None:
@@ -788,7 +812,7 @@ class FunctionViewSet(viewsets.ViewSet):
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
 
-        return lambda_func.invoke(db_task, request.data, db_job=job)
+        return lambda_func.invoke(db_task, request.data, db_job=job, is_interactive=True, request=request)
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(

@@ -14,12 +14,18 @@ cvat:
         - mountPath: /home/django/share
           name: cvat-backend-data
           subPath: share
+    utils:
+      additionalEnv:
+        - name: DJANGO_SETTINGS_MODULE
+          value: cvat.settings.testing_rest
     # Images are already present in the node
     imagePullPolicy: Never
   frontend:
     imagePullPolicy: Never
 
 traefik:
-  service:
-    externalIPs:
-      - 192.168.49.2
+  logs:
+    general:
+      level: DEBUG
+    access:
+      enabled: true

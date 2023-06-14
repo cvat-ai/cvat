@@ -1,13 +1,16 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import re
 import textwrap
-from drf_spectacular.openapi import AutoSchema
+
+from drf_spectacular.authentication import SessionScheme, TokenScheme
 from drf_spectacular.extensions import OpenApiAuthenticationExtension
-from drf_spectacular.authentication import TokenScheme, SessionScheme
+from drf_spectacular.openapi import AutoSchema
+
+from rest_framework import serializers
 
 
 class SignatureAuthenticationScheme(OpenApiAuthenticationExtension):
@@ -79,6 +82,9 @@ class CookieAuthenticationScheme(SessionScheme):
 
 class CustomAutoSchema(AutoSchema):
     def get_operation_id(self):
+        # Change style of operation ids to [viewset _ action _ object]
+        # This form is simpler to handle during SDK generation
+
         tokenized_path = self._tokenize_path()
         # replace dashes as they can be problematic later in code generation
         tokenized_path = [t.replace('-', '_') for t in tokenized_path]
@@ -95,3 +101,16 @@ class CustomAutoSchema(AutoSchema):
             tokenized_path.append('formatted')
 
         return '_'.join([tokenized_path[0]] + [action] + tokenized_path[1:])
+
+    def _get_request_for_media_type(self, serializer, *args, **kwargs):
+        # Enables support for required=False serializers in request body specification
+        # in drf-spectacular. Doesn't block other extensions on the target serializer.
+        # This is supported by OpenAPI and by SDK generator, but not by drf-spectacular
+
+        schema, required = super()._get_request_for_media_type(serializer, *args, **kwargs)
+
+        if isinstance(serializer, serializers.Serializer):
+            if not serializer.required:
+                required = False
+
+        return schema, required

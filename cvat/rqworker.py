@@ -1,7 +1,9 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
+
+import os
 
 from rq import Worker
 
@@ -34,6 +36,14 @@ class SimpleWorker(Worker):
 
     def execute_job(self, *args, **kwargs):
         """Execute job in same thread/process, do not fork()"""
+
+        # Resolves problems with
+        # django.db.utils.OperationalError: server closed the connection unexpectedly
+        # errors during debugging
+        # https://stackoverflow.com/questions/8242837/django-multiprocessing-and-database-connections/10684672#10684672
+        from django import db
+        db.connections.close_all()
+
         return self.perform_job(*args, **kwargs)
 
 
@@ -54,3 +64,15 @@ if debug.is_debugging_enabled():
             return super().execute_job(*args, **kwargs)
 
     DefaultWorker = RemoteDebugWorker
+
+
+if os.environ.get("COVERAGE_PROCESS_START"):
+    import coverage
+
+    def coverage_exit():
+        cov = coverage.Coverage.current()
+        cov.stop()
+        cov.save()
+        os._exit(0)
+
+    os._exit = coverage_exit

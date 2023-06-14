@@ -101,12 +101,12 @@ class FrameProvider:
 
             self._loaders[self.Quality.COMPRESSED] = self.BuffChunkLoader(
                 reader_class[db_data.compressed_chunk_type],
-                cache.get_buf_chunk_with_mime,
+                cache.get_task_chunk_data_with_mime,
                 self.Quality.COMPRESSED,
                 self._db_data)
             self._loaders[self.Quality.ORIGINAL] = self.BuffChunkLoader(
                 reader_class[db_data.original_chunk_type],
-                cache.get_buf_chunk_with_mime,
+                cache.get_task_chunk_data_with_mime,
                 self.Quality.ORIGINAL,
                 self._db_data)
         else:

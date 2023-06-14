@@ -18,6 +18,9 @@ class TestGetResources:
     def test_check_objects_integrity(self, path: Path):
         with open(path) as f:
             endpoint = path.stem
+            if endpoint in ["quality_settings", "quality_reports", "quality_conflicts"]:
+                endpoint = "/".join(endpoint.split("_"))
+
             if endpoint == "annotations":
                 objects = json.load(f)
                 for jid, annotations in objects["job"].items():

@@ -31,6 +31,14 @@ function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): Track
     };
 }
 
+function computeNewSource(currentSource: Source): Source {
+    if ([Source.AUTO, Source.SEMI_AUTO].includes(currentSource)) {
+        return Source.SEMI_AUTO;
+    }
+
+    return Source.MANUAL;
+}
+
 export interface BasicInjection {
     labels: Record<number, Label>;
     groups: { max: number };
@@ -596,7 +604,7 @@ export class Shape extends Drawn {
         const undoRotation = this.rotation;
         const redoRotation = rotation;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
             HistoryActions.CHANGED_ROTATION,
@@ -622,7 +630,7 @@ export class Shape extends Drawn {
         const undoPoints = this.points;
         const redoPoints = points;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
             HistoryActions.CHANGED_POINTS,
@@ -648,7 +656,7 @@ export class Shape extends Drawn {
         const undoOccluded = this.occluded;
         const redoOccluded = occluded;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
             HistoryActions.CHANGED_OCCLUDED,
@@ -674,7 +682,7 @@ export class Shape extends Drawn {
         const undoOutside = this.outside;
         const redoOutside = outside;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
             HistoryActions.CHANGED_OCCLUDED,
@@ -700,7 +708,7 @@ export class Shape extends Drawn {
         const undoZOrder = this.zOrder;
         const redoZOrder = zOrder;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
             HistoryActions.CHANGED_ZORDER,
@@ -1179,7 +1187,7 @@ export class Track extends Drawn {
     protected saveRotation(rotation: number, frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], rotation } : copyShape(this.get(frame), { rotation });
@@ -1199,7 +1207,7 @@ export class Track extends Drawn {
     protected savePoints(points: number[], frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], points } : copyShape(this.get(frame), { points });
@@ -1219,7 +1227,7 @@ export class Track extends Drawn {
     protected saveOutside(frame: number, outside: boolean): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], outside } :
@@ -1240,7 +1248,7 @@ export class Track extends Drawn {
     protected saveOccluded(occluded: boolean, frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], occluded } :
@@ -1261,7 +1269,7 @@ export class Track extends Drawn {
     protected saveZOrder(zOrder: number, frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], zOrder } :
@@ -1287,7 +1295,7 @@ export class Track extends Drawn {
         }
 
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = keyframe ? copyShape(this.get(frame)) : undefined;
 
@@ -2027,7 +2035,7 @@ export class SkeletonShape extends Shape {
     protected saveRotation(rotation, frame): void {
         const undoSkeletonPoints = this.elements.map((element) => element.points);
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         const bbox = computeWrappingBox(undoSkeletonPoints.flat());
         const [cx, cy] = [bbox.x + bbox.width / 2, bbox.y + bbox.height / 2];
@@ -2075,7 +2083,7 @@ export class SkeletonShape extends Shape {
         const updateElements = (affectedElements, action, property: 'points' | 'occluded' | 'hidden' | 'lock') => {
             const undoSkeletonProperties = this.elements.map((element) => element[property]);
             const undoSource = this.source;
-            const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+            const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
             try {
                 this.history.freeze(true);
@@ -2246,7 +2254,7 @@ export class MaskShape extends Shape {
         const points = mask2Rle(maskPoints);
 
         const redoPoints = points;
-        const redoSource = Source.MANUAL;
+        const redoSource = computeNewSource(this.source);
 
         const undo = (): void => {
             this.points = undoPoints;
@@ -2807,7 +2815,7 @@ export class SkeletonTrack extends Track {
     protected saveRotation(rotation: number, frame: number): void {
         const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         const elementsData = this.elements.map((element) => element.get(frame));
         const skeletonPoints = elementsData.map((data) => data.points);
@@ -2952,7 +2960,7 @@ export class SkeletonTrack extends Track {
             const undoSkeletonProperties = this.elements.map((element) => element[property] || null);
             const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
             const undoSource = this.source;
-            const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+            const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
             const errors = [];
             try {
