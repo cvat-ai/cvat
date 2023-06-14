@@ -104,7 +104,8 @@ function JobItem(props: Props): JSX.Element {
         (style as any).pointerEvents = 'none';
         (style as any).opacity = 0.5;
     }
-
+    const frameCountPercent = ((job.frameCount / (task.size || 1)) * 100).toFixed(0);
+    const frameCountPercentRepresentation = frameCountPercent === '0' ? '<1' : frameCountPercent;
     return (
         <Col span={24}>
             <Card className='cvat-job-item' style={{ ...style }} data-row-id={job.id}>
@@ -229,8 +230,7 @@ function JobItem(props: Props): JSX.Element {
                                         <BorderOutlined />
                                         <Text>Frame count: </Text>
                                         <Text type='secondary' className='cvat-job-item-frames'>
-                                            {`${job.frameCount}
-                                             (${((job.frameCount / (task.size || 1)) * 100).toFixed(0)}%)`}
+                                            {`${job.frameCount} (${frameCountPercentRepresentation}%)`}
                                         </Text>
                                     </Col>
                                 </Row>
