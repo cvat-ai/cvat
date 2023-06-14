@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("engine", "0069_add_job_type_created_date"),
+        ("engine", "0070_add_job_type_created_date"),
     ]
 
     operations = [

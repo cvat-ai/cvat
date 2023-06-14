@@ -7,6 +7,7 @@ weight: 17
 
 - [Format specification for KITTI detection](https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_object.zip)
 - [Format specification for KITTI segmentation](https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_semantics.zip)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/kitti_dataset)
 
 - supported annotations:
 

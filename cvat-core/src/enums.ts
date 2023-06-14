@@ -84,6 +84,7 @@ export enum ShapeType {
 
 export enum Source {
     MANUAL = 'manual',
+    SEMI_AUTO = 'semi-auto',
     AUTO = 'auto',
 }
 

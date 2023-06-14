@@ -840,6 +840,7 @@ class ShapeType(str, Enum):
 
 class SourceType(str, Enum):
     AUTO = 'auto'
+    SEMI_AUTO = 'semi-auto'
     MANUAL = 'manual'
 
     @classmethod
