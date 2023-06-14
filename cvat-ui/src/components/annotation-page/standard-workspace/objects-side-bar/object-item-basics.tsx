@@ -124,44 +124,46 @@ function ItemTopComponent(props: Props): JSX.Element {
                     />
                 </CVATTooltip>
             </Col>
-            <Col span={2}>
-                <Dropdown
-                    visible={menuVisible}
-                    onVisibleChange={changeMenuVisible}
-                    placement='bottomLeft'
-                    overlay={ItemMenu({
-                        jobInstance,
-                        readonly,
-                        serverID,
-                        locked,
-                        shapeType,
-                        objectType,
-                        color,
-                        colorBy,
-                        colorPickerVisible,
-                        changeColorShortcut,
-                        copyShortcut,
-                        pasteShortcut,
-                        propagateShortcut,
-                        toBackgroundShortcut,
-                        toForegroundShortcut,
-                        removeShortcut,
-                        changeColor,
-                        copy,
-                        remove,
-                        propagate,
-                        createURL,
-                        switchOrientation,
-                        toBackground,
-                        toForeground,
-                        resetCuboidPerspective,
-                        changeColorPickerVisible,
-                        edit,
-                    })}
-                >
-                    <MoreOutlined />
-                </Dropdown>
-            </Col>
+            { !isGroundTruth && (
+                <Col span={2}>
+                    <Dropdown
+                        visible={menuVisible}
+                        onVisibleChange={changeMenuVisible}
+                        placement='bottomLeft'
+                        overlay={ItemMenu({
+                            jobInstance,
+                            readonly,
+                            serverID,
+                            locked,
+                            shapeType,
+                            objectType,
+                            color,
+                            colorBy,
+                            colorPickerVisible,
+                            changeColorShortcut,
+                            copyShortcut,
+                            pasteShortcut,
+                            propagateShortcut,
+                            toBackgroundShortcut,
+                            toForegroundShortcut,
+                            removeShortcut,
+                            changeColor,
+                            copy,
+                            remove,
+                            propagate,
+                            createURL,
+                            switchOrientation,
+                            toBackground,
+                            toForeground,
+                            resetCuboidPerspective,
+                            changeColorPickerVisible,
+                            edit,
+                        })}
+                    >
+                        <MoreOutlined />
+                    </Dropdown>
+                </Col>
+            )}
         </Row>
     );
 }

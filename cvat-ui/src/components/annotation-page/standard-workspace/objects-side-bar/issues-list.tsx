@@ -15,7 +15,7 @@ import Text from 'antd/lib/typography/Text';
 import { activateObject, changeFrameAsync, highlightConflict } from 'actions/annotation-actions';
 import { reviewActions } from 'actions/review-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState, Workspace } from 'reducers';
+import { ActiveControl, CombinedState, Workspace } from 'reducers';
 import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import { ConflictSeverity, QualityConflict } from 'cvat-core-wrapper';
@@ -34,6 +34,9 @@ export default function LabelsListComponent(): JSX.Element {
     const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
     const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
     const workspace = useSelector((state: CombinedState) => state.annotation.workspace);
+    const ready = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+    const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
+
     let frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     if (showGroundTruth) {
         const conflictFrames = conflicts
@@ -179,10 +182,14 @@ export default function LabelsListComponent(): JSX.Element {
                                   ${frameConflict.id === highlightedConflict?.id ? 'cvat-objects-sidebar-item-active' : ''}  `
                             }
                             onMouseEnter={() => {
-                                dispatch(highlightConflict(frameConflict));
+                                if (ready && activeControl === ActiveControl.CURSOR) {
+                                    dispatch(highlightConflict(frameConflict));
+                                }
                             }}
                             onMouseLeave={() => {
-                                dispatch(highlightConflict(null));
+                                if (ready && activeControl === ActiveControl.CURSOR) {
+                                    dispatch(highlightConflict(null));
+                                }
                             }}
                         >
                             <Row>

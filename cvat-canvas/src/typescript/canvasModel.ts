@@ -605,10 +605,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public highlight(clientIDs: number[] | null, severity: HighlightSeverity | null): void {
-        if (this.data.mode !== Mode.IDLE && clientIDs !== null) {
-            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
-        }
-
         if (Array.isArray(clientIDs)) {
             this.data.highlightedElements = {
                 elementsIDs: clientIDs,

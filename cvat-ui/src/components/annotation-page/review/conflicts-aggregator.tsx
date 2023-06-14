@@ -6,7 +6,7 @@ import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { CombinedState } from 'reducers';
+import { ActiveControl, CombinedState } from 'reducers';
 import { Canvas } from 'cvat-canvas/src/typescript/canvas';
 
 import { AnnotationConflict, ObjectState, QualityConflict } from 'cvat-core-wrapper';
@@ -22,19 +22,24 @@ export default function ConflictAggregatorComponent(): JSX.Element | null {
     const showConflicts = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
     const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
 
-    const onEnter = useCallback((conflict: QualityConflict) => {
-        dispatch(highlightConflict(conflict));
-    }, []);
-    const onLeave = useCallback(() => {
-        dispatch(highlightConflict(null));
-    }, []);
-
     const highlightedObjectsIDs = highlightedConflict?.annotationConflicts?.map((c: AnnotationConflict) => c.clientID);
 
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
     const ready = useSelector((state: CombinedState) => state.annotation.canvas.ready);
+    const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
+
+    const onEnter = useCallback((conflict: QualityConflict) => {
+        if (ready && activeControl === ActiveControl.CURSOR) {
+            dispatch(highlightConflict(conflict));
+        }
+    }, [ready, activeControl]);
+    const onLeave = useCallback(() => {
+        if (ready && activeControl === ActiveControl.CURSOR) {
+            dispatch(highlightConflict(null));
+        }
+    }, [ready, activeControl]);
 
     const conflictLabels: JSX.Element[] = [];
     useEffect(() => {
