@@ -62,12 +62,13 @@ function JobListComponent(props: Props): JSX.Element {
                 currentObj2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
             }
 
-            if (field1 && field2) {
+            if (field1 !== null && field2 !== null) {
                 if (typeof field1 === 'string' && typeof field2 === 'string') return field1.localeCompare(field2);
-                if (typeof field1 === 'number' && typeof field2 === 'number') return field2 - field1;
+                if (typeof field1 === 'number' && typeof field2 === 'number' &&
+                Number.isFinite(field1) && Number.isFinite(field2)) return field1 - field2;
             }
 
-            if (field1 === null) {
+            if (field1 === null || !Number.isFinite(field1)) {
                 return 1;
             }
 
@@ -165,7 +166,7 @@ function JobListComponent(props: Props): JSX.Element {
             dataIndex: 'conflicts',
             key: 'conflicts',
             className: 'cvat-job-item-conflicts',
-            sorter: sorter('errors.summary.conflictCount'),
+            sorter: sorter('conflicts.summary.conflictCount'),
             render: (report: QualityReport): JSX.Element => {
                 const conflictCount = report?.summary?.conflictCount;
                 return (
@@ -192,7 +193,7 @@ function JobListComponent(props: Props): JSX.Element {
             key: 'quality',
             align: 'center' as const,
             className: 'cvat-job-item-quality',
-            sorter: sorter('errors.summary.accuracy'),
+            sorter: sorter('quality.summary.accuracy'),
             render: (report?: QualityReport): JSX.Element => {
                 const meanAccuracy = report?.summary?.accuracy;
                 const accuracyRepresentation = toRepresentation(meanAccuracy);
@@ -240,7 +241,6 @@ function JobListComponent(props: Props): JSX.Element {
             download: job,
             stage: job,
             assignee: job,
-            errors: report,
             quality: report,
             conflicts: report,
             frame_intersection: report,
