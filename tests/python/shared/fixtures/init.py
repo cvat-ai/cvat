@@ -447,7 +447,8 @@ def session_finish(session):
 
     if platform == "local":
         if os.environ.get("COVERAGE_PROCESS_START"):
-            collect_code_coverage_from_containers()
+            for container in Container.covered():
+                collect_code_coverage_from_container(container)
 
         docker_restore_db()
         docker_exec(Container.DB, "dropdb test_db")
@@ -457,24 +458,23 @@ def session_finish(session):
         docker_exec(Container.SERVER, "python manage.py migrate")
 
 
-def collect_code_coverage_from_containers():
-    for container in Container.covered():
-        process_command = "python3"
+def collect_code_coverage_from_container(container):
+    process_command = "python3"
 
-        # find process with code coverage
-        pid, _ = docker_exec(container, f"pidof {process_command} -o 1")
+    # find process with code coverage
+    pid, _ = docker_exec(container, f"pidof {process_command} -o 1")
 
-        # stop process with code coverage
-        docker_exec(container, f"kill -15 {pid}")
-        sleep(3)
+    # stop process with code coverage
+    docker_exec(container, f"kill -15 {pid}")
+    sleep(3)
 
-        # get code coverage report
-        docker_exec(container, "coverage combine", capture_output=False)
-        docker_exec(container, "coverage xml", capture_output=False)
-        docker_cp(
-            f"{PREFIX}_{container}_1:home/django/coverage.xml",
-            f"coverage_{container}.xml",
-        )
+    # get code coverage report
+    docker_exec(container, "coverage combine", capture_output=False)
+    docker_exec(container, "coverage html", capture_output=False)
+    docker_cp(
+        f"{PREFIX}_{container}_1:home/django/htmlcov",
+        f"coverage_{container}",
+    )
 
 
 @pytest.fixture(scope="function")

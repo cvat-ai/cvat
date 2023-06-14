@@ -1,6 +1,10 @@
 comment:
   layout: "header, diff, components"
 
+  # Codecov should wait to receive 16 uploaded reports before sending a PR comment
+  # We have 16 parallel CI jobs
+  after_n_builds: 16
+
 component_management:
   individual_components:
     - component_id: cvat-ui
@@ -23,5 +27,7 @@ codecov:
   require_ci_to_pass: yes
   notify:
     wait_for_ci: yes
+
+    # Codecov should wait to receive 16 uploaded reports before sending statuses
     after_n_builds: 16
 
