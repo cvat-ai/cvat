@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import User from './user';
 import { SerializedGuide } from './server-response-types';
 import { ArgumentError, DataError } from './exceptions';
 import PluginRegistry from './plugins';

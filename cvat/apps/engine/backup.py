@@ -96,6 +96,27 @@ class _BackupBase():
             sublabel['attributes'] = [self._prepare_attribute_meta(a) for a in sublabel['attributes']]
         return label
 
+    def _get_annotation_guide(self):
+        raise NotImplementedError()
+
+    def _write_annotation_guide(self, zip_object, target_dir=None):
+        annotation_guide = self._get_annotation_guide()
+        if annotation_guide is not None:
+            md = annotation_guide.markdown
+            assets = annotation_guide.assets.all()
+
+            pattern = re.compile('\!\[image\]\(\/api\/assets\/([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})\)')
+            results = re.findall(pattern, md)
+            for asset_id in results:
+                db_asset = annotation_guide.assets.get(pk=asset_id)
+                md = md.replace(f'/api/assets/{asset_id}', f'assets/{db_asset.filename}')
+
+            zip_object.writestr('annotation_guide.md', data=md)
+            for asset in assets:
+                file = os.path.join(settings.ASSETS_ROOT, str(asset.pk), asset.filename)
+                with open(file, 'rb') as asset_file:
+                    zip_object.writestr(os.path.join('assets', asset.filename), asset_file.read())
+
     def _prepare_attribute_meta(self, attribute):
         allowed_fields = {
             'name',
@@ -261,13 +282,18 @@ class _ExporterBase():
 class TaskExporter(_ExporterBase, _TaskBackupBase):
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.task[pk])
-        self._db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
+        self._db_task = models.Task.objects.prefetch_related('data__images', 'annotation_guide__assets').select_related('data__video', 'annotation_guide').get(pk=pk)
         self._db_data = self._db_task.data
         self._version = version
 
         db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
             'attributespec_set')
         self._label_mapping = _get_label_mapping(db_labels)
+
+    def _get_annotation_guide(self):
+        if hasattr(self._db_task, 'annotation_guide'):
+            return self._db_task.annotation_guide
+        return None
 
     def _write_data(self, zip_object, target_dir=None):
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME) if target_dir else self.DATA_DIRNAME
@@ -403,6 +429,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         self._write_task(zip_obj, target_dir)
         self._write_manifest(zip_obj, target_dir)
         self._write_annotations(zip_obj, target_dir)
+        self._write_annotation_guide(zip_obj, target_dir)
 
     def export_to(self, file, target_dir=None):
         if self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM and \
@@ -689,11 +716,16 @@ class _ProjectBackupBase(_BackupBase):
 class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.project[pk])
-        self._db_project = models.Project.objects.prefetch_related('tasks').get(pk=pk)
+        self._db_project = models.Project.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
         self._version = version
 
         db_labels = self._db_project.label_set.all().prefetch_related('attributespec_set')
         self._label_mapping = _get_label_mapping(db_labels)
+
+    def _get_annotation_guide(self):
+        if hasattr(self._db_project, 'annotation_guide'):
+            return self._db_project.annotation_guide
+        return None
 
     def _write_tasks(self, zip_object):
         for idx, db_task in enumerate(self._db_project.tasks.all().order_by('id')):
@@ -721,8 +753,9 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 
     def export_to(self, filename):
         with ZipFile(filename, 'w') as output_file:
-            self._write_tasks(output_file)
+            self._write_annotation_guide(output_file)
             self._write_manifest(output_file)
+            self._write_tasks(output_file)
 
 class ProjectImporter(_ImporterBase, _ProjectBackupBase):
     TASKNAME_RE = r'task_(\d+)/'
