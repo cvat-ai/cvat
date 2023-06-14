@@ -6,21 +6,23 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import jsonLogic from 'json-logic-js';
 import _ from 'lodash';
+import copy from 'copy-to-clipboard';
+import { Indexable, JobsQuery } from 'reducers';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
-
+import Text from 'antd/lib/typography/Text';
+import Pagination from 'antd/lib/pagination';
+import Empty from 'antd/lib/empty';
+import Button from 'antd/lib/button';
+import { CopyOutlined, PlusOutlined } from '@ant-design/icons';
 import {
     Task, Job,
 } from 'cvat-core-wrapper';
-import { Indexable, JobsQuery } from 'reducers';
 import JobItem from 'components/job-item/job-item';
-import Pagination from 'antd/lib/pagination';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
-import Button from 'antd/lib/button';
-import { PlusOutlined } from '@ant-design/icons';
-import Empty from 'antd/lib/empty';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -98,44 +100,83 @@ function JobListComponent(props: Props): JSX.Element {
     return (
         <>
             <div className='cvat-jobs-list-filters-wrapper'>
-                <SortingComponent
-                    visible={visibility.sorting}
-                    onVisibleChange={(visible: boolean) => (
-                        setVisibility({ ...defaultVisibility, sorting: visible })
-                    )}
-                    defaultFields={query.sort?.split(',') || ['-ID']}
-                    sortingFields={['ID', 'Assignee', 'State', 'Stage']}
-                    onApplySorting={(sort: string | null) => {
-                        setQuery({
-                            ...query,
-                            sort,
-                        });
-                    }}
-                />
-                <FilteringComponent
-                    value={query.filter}
-                    predefinedVisible={visibility.predefined}
-                    builderVisible={visibility.builder}
-                    recentVisible={visibility.recent}
-                    onPredefinedVisibleChange={(visible: boolean) => (
-                        setVisibility({ ...defaultVisibility, predefined: visible })
-                    )}
-                    onBuilderVisibleChange={(visible: boolean) => (
-                        setVisibility({ ...defaultVisibility, builder: visible })
-                    )}
-                    onRecentVisibleChange={(visible: boolean) => (
-                        setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
-                    )}
-                    onApplyFilter={(filter: string | null) => {
-                        setQuery({
-                            ...query,
-                            filter,
-                        });
-                    }}
-                />
-                <div className='cvat-job-add-wrapper'>
-                    <Button onClick={onCreateJob} type='primary' className='cvat-create-job' icon={<PlusOutlined />} />
-                </div>
+                <Row>
+                    <Col>
+                        <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
+                    </Col>
+                    <CVATTooltip trigger='click' title='Copied to clipboard!'>
+                        <Button
+                            className='cvat-copy-job-details-button'
+                            type='link'
+                            onClick={(): void => {
+                                let serialized = '';
+                                const [latestJob] = [...taskInstance.jobs].reverse();
+                                for (const job of taskInstance.jobs) {
+                                    const baseURL = window.location.origin;
+                                    serialized += `Job #${job.id}`.padEnd(`${latestJob.id}`.length + 6, ' ');
+                                    serialized += `: ${baseURL}/tasks/${taskInstance.id}/jobs/${job.id}`.padEnd(
+                                        `${latestJob.id}`.length + baseURL.length + 8,
+                                        ' ',
+                                    );
+                                    serialized += `: [${job.startFrame}-${job.stopFrame}]`.padEnd(
+                                        `${latestJob.startFrame}${latestJob.stopFrame}`.length + 5,
+                                        ' ',
+                                    );
+
+                                    if (job.assignee) {
+                                        serialized += `\t assigned to "${job.assignee.username}"`;
+                                    }
+
+                                    serialized += '\n';
+                                }
+                                copy(serialized);
+                            }}
+                        >
+                            <CopyOutlined />
+                            Copy
+                        </Button>
+                    </CVATTooltip>
+                </Row>
+                <Row>
+                    <SortingComponent
+                        visible={visibility.sorting}
+                        onVisibleChange={(visible: boolean) => (
+                            setVisibility({ ...defaultVisibility, sorting: visible })
+                        )}
+                        defaultFields={query.sort?.split(',') || ['-ID']}
+                        sortingFields={['ID', 'Assignee', 'State', 'Stage']}
+                        onApplySorting={(sort: string | null) => {
+                            setQuery({
+                                ...query,
+                                sort,
+                            });
+                        }}
+                    />
+                    <FilteringComponent
+                        value={query.filter}
+                        predefinedVisible={visibility.predefined}
+                        builderVisible={visibility.builder}
+                        recentVisible={visibility.recent}
+                        onPredefinedVisibleChange={(visible: boolean) => (
+                            setVisibility({ ...defaultVisibility, predefined: visible })
+                        )}
+                        onBuilderVisibleChange={(visible: boolean) => (
+                            setVisibility({ ...defaultVisibility, builder: visible })
+                        )}
+                        onRecentVisibleChange={(visible: boolean) => (
+                            setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
+                        )}
+                        onApplyFilter={(filter: string | null) => {
+                            setQuery({
+                                ...query,
+                                filter,
+                            });
+                        }}
+                    />
+                    <div className='cvat-job-add-wrapper'>
+                        <Button onClick={onCreateJob} type='primary' className='cvat-create-job' icon={<PlusOutlined />} />
+                    </div>
+                </Row>
             </div>
 
             {

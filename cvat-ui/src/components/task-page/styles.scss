@@ -172,7 +172,7 @@
 
 .cvat-jobs-list-filters-wrapper {
     display: flex;
-    justify-content: end;
+    justify-content: space-between;
     margin-top: $grid-unit-size * 2;
 
     button:not(:last-child) {

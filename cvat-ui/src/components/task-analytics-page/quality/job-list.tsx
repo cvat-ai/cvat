@@ -6,12 +6,11 @@
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
-import { CopyOutlined, DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
-import copy from 'copy-to-clipboard';
 
 import {
     Task, Job, JobType, QualityReport, getCore,
@@ -255,38 +254,6 @@ function JobListComponent(props: Props): JSX.Element {
             <Row justify='space-between' align='middle'>
                 <Col>
                     <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
-                    <CVATTooltip trigger='click' title='Copied to clipboard!'>
-                        <Button
-                            className='cvat-copy-job-details-button'
-                            type='link'
-                            onClick={(): void => {
-                                let serialized = '';
-                                const [latestJob] = [...taskInstance.jobs].reverse();
-                                for (const job of taskInstance.jobs) {
-                                    const baseURL = window.location.origin;
-                                    serialized += `Job #${job.id}`.padEnd(`${latestJob.id}`.length + 6, ' ');
-                                    serialized += `: ${baseURL}/tasks/${taskInstance.id}/jobs/${job.id}`.padEnd(
-                                        `${latestJob.id}`.length + baseURL.length + 8,
-                                        ' ',
-                                    );
-                                    serialized += `: [${job.startFrame}-${job.stopFrame}]`.padEnd(
-                                        `${latestJob.startFrame}${latestJob.stopFrame}`.length + 5,
-                                        ' ',
-                                    );
-
-                                    if (job.assignee) {
-                                        serialized += `\t assigned to "${job.assignee.username}"`;
-                                    }
-
-                                    serialized += '\n';
-                                }
-                                copy(serialized);
-                            }}
-                        >
-                            <CopyOutlined />
-                            Copy
-                        </Button>
-                    </CVATTooltip>
                 </Col>
             </Row>
             <Table
