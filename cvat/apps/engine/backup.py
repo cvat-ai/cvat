@@ -104,18 +104,12 @@ class _BackupBase():
         if annotation_guide is not None:
             md = annotation_guide.markdown
             assets = annotation_guide.assets.all()
-
-            pattern = re.compile('\!\[image\]\(\/api\/assets\/([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})\)')
-            results = re.findall(pattern, md)
-            for asset_id in results:
-                db_asset = annotation_guide.assets.get(pk=asset_id)
-                md = md.replace(f'/api/assets/{asset_id}', f'assets/{db_asset.filename}')
-
-            zip_object.writestr('annotation_guide.md', data=md)
-            for asset in assets:
-                file = os.path.join(settings.ASSETS_ROOT, str(asset.pk), asset.filename)
+            for db_asset in assets:
+                md = md.replace(f'/api/assets/{str(db_asset.pk)}', f'assets/{db_asset.filename}')
+                file = os.path.join(settings.ASSETS_ROOT, str(db_asset.pk), db_asset.filename)
                 with open(file, 'rb') as asset_file:
-                    zip_object.writestr(os.path.join('assets', asset.filename), asset_file.read())
+                    zip_object.writestr(os.path.join(target_dir or '', 'assets', db_asset.filename), asset_file.read())
+            zip_object.writestr('annotation_guide.md', data=md)
 
     def _prepare_attribute_meta(self, attribute):
         allowed_fields = {
