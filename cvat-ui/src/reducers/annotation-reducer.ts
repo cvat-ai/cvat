@@ -153,6 +153,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 minZ,
                 maxZ,
                 groundTruthJobId,
+                groundTruthJobFramesMeta,
             } = action.payload;
 
             const isReview = job.stage === JobStage.REVIEW;
@@ -185,6 +186,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                             return acc;
                         }, {}),
                     groundTruthJobId,
+                    groundTruthJobFramesMeta,
                 },
                 annotations: {
                     ...state.annotations,

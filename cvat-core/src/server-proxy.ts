@@ -1486,9 +1486,10 @@ async function getData(tid, jid, chunk) {
     return response;
 }
 
-export interface FramesMetaData {
+export interface RawFramesMetaData {
     chunk_size: number;
     deleted_frames: number[];
+    included_frames: number[];
     frame_filter: string;
     frames: {
         width: number;
@@ -1502,7 +1503,7 @@ export interface FramesMetaData {
     stop_frame: number;
 }
 
-async function getMeta(session, jid): Promise<FramesMetaData> {
+async function getMeta(session, jid): Promise<RawFramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;

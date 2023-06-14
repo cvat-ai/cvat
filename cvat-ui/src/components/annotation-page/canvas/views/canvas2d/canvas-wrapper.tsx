@@ -18,7 +18,7 @@ import { LogType } from 'cvat-logger';
 import { Canvas, HighlightSeverity } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, QualityConflict, getCore,
+    AnnotationConflict, FramesMetaData, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -111,6 +111,7 @@ interface StateToProps {
     conflicts: QualityConflict[];
     showGroundTruth: boolean;
     highlightedConflict: QualityConflict | null;
+    groundTruthJobFramesMeta: FramesMetaData | null;
 }
 
 interface DispatchToProps {
@@ -149,7 +150,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             canvas: { activeControl, instance: canvasInstance, ready: canvasIsReady },
             drawing: { activeLabelID, activeObjectType },
-            job: { instance: jobInstance },
+            job: { instance: jobInstance, groundTruthJobFramesMeta },
             player: {
                 frame: { data: frameData, number: frame },
                 frameAngles,
@@ -250,6 +251,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         conflicts,
         showGroundTruth,
         highlightedConflict,
+        groundTruthJobFramesMeta,
     };
 }
 
@@ -895,13 +897,31 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private updateCanvas(): void {
         const {
             curZLayer, annotations, frameData, canvasInstance, statesSources,
+            workspace, groundTruthJobFramesMeta, frame,
         } = this.props;
         if (frameData !== null && canvasInstance) {
-            const filteredAnnotations = annotations.filter((e) => e.objectType !== ObjectType.TAG);
-            const shownAnnotations = filteredAnnotations.filter((e) => !e.jobID || statesSources.includes(e.jobID));
+            const filteredAnnotations = annotations.filter((state) => {
+                if (state.objectType === ObjectType.TAG) {
+                    return false;
+                }
+
+                if (state.jobID && !statesSources.includes(state.jobID)) {
+                    return false;
+                }
+
+                // GT tracks are shown only on GT frames
+                if (workspace === Workspace.REVIEW_WORKSPACE && groundTruthJobFramesMeta) {
+                    if (state.objectType === ObjectType.TRACK && state.isGroundTruth) {
+                        return groundTruthJobFramesMeta.includedFrames.includes(frame);
+                    }
+                }
+
+                return true;
+            });
+
             canvasInstance.setup(
                 frameData,
-                frameData.deleted ? [] : shownAnnotations,
+                frameData.deleted ? [] : filteredAnnotations,
                 curZLayer,
             );
         }

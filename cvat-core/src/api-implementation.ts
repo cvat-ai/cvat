@@ -29,6 +29,7 @@ import Webhook from './webhook';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
+import { FramesMetaData } from './frames';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -385,6 +386,11 @@ export default function implementAPI(cvat) {
     cvat.analytics.quality.settings.get.implementation = async (taskID: number) => {
         const settings = await serverProxy.analytics.quality.settings.get(taskID);
         return new QualitySettings({ ...settings });
+    };
+
+    cvat.frames.getMeta.implementation = async (type, id) => {
+        const result = await serverProxy.frames.getMeta(type, id);
+        return new FramesMetaData({ ...result });
     };
 
     return cvat;

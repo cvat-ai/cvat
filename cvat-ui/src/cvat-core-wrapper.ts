@@ -17,6 +17,7 @@ import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings from 'cvat-core/src/quality-settings';
+import { FramesMetaData } from 'cvat-core/src/frames';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
     JobStage, JobState,
@@ -72,6 +73,7 @@ export {
     QualitySettings,
     AnnotationConflict,
     ConflictSeverity,
+    FramesMetaData,
 };
 
 export type {

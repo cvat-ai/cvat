@@ -930,6 +930,12 @@ export function getJobAsync(
             }
 
             const groundTruthJobId = gtJob ? gtJob.id : null;
+
+            let groundTruthJobFramesMeta = null;
+            if (groundTruthJobId) {
+                groundTruthJobFramesMeta = await cvat.frames.getMeta('job', groundTruthJobId);
+            }
+
             let conflicts: QualityConflict[] = [];
             if (groundTruthJobId) {
                 const [report] = await cvat.analytics.quality.reports({ jobId: job.id, target: 'job' });
@@ -972,6 +978,7 @@ export function getJobAsync(
                     openTime,
                     job,
                     groundTruthJobId,
+                    groundTruthJobFramesMeta,
                     issues,
                     states,
                     conflicts,

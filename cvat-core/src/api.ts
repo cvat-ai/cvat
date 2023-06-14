@@ -153,6 +153,12 @@ function build() {
                 return result;
             },
         },
+        frames: {
+            async getMeta(type, id) {
+                const result = await PluginRegistry.apiWrapper(cvat.frames.getMeta, type, id);
+                return result;
+            },
+        },
         users: {
             async get(filter = {}) {
                 const result = await PluginRegistry.apiWrapper(cvat.users.get, filter);
@@ -320,6 +326,7 @@ function build() {
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
     cvat.analytics = Object.freeze(cvat.analytics);
+    cvat.frames = Object.freeze(cvat.frames);
 
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;
