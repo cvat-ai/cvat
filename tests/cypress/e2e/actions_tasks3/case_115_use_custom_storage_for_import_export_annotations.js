@@ -126,6 +126,21 @@ context('Import and export annotations: specify source and target storage in mod
             };
             cy.exportJob(exportParams);
             cy.waitForFileUploadToCloudStorage();
+        });
+
+        it('Export job annotations to custom minio bucket with folder path', () => {
+            const exportParams = {
+                type: 'annotations',
+                format,
+                archiveCustomName: 'some/folder/job_annotations',
+                targetStorage: {
+                    location: 'Cloud storage',
+                    cloudStorageId: createdCloudStorageId,
+                },
+                useDefaultLocation: false,
+            };
+            cy.exportJob(exportParams);
+            cy.waitForFileUploadToCloudStorage();
 
             // remove annotations
             cy.removeAnnotations();
