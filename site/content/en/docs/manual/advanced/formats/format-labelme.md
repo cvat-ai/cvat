@@ -5,6 +5,8 @@ weight: 2
 
 # [LabelMe](http://labelme.csail.mit.edu/Release3.0)
 
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/labelme_dataset)
+
 ## LabelMe export
 
 Downloaded file: a zip archive of the following structure:

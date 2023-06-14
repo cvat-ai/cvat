@@ -141,6 +141,7 @@ INSTALLED_APPS = [
     'cvat.apps.webhooks',
     'cvat.apps.health',
     'cvat.apps.events',
+    'cvat.apps.quality_control',
 ]
 
 SITE_ID = 1
@@ -293,6 +294,7 @@ class CVAT_QUEUES(Enum):
     AUTO_ANNOTATION = 'annotation'
     WEBHOOKS = 'webhooks'
     NOTIFICATIONS = 'notifications'
+    QUALITY_REPORTS = 'quality_reports'
     CLEANING = 'cleaning'
 
 RQ_QUEUES = {
@@ -325,6 +327,12 @@ RQ_QUEUES = {
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h'
+    },
+    CVAT_QUEUES.QUALITY_REPORTS.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h',
     },
     CVAT_QUEUES.CLEANING.value: {
         'HOST': 'localhost',
@@ -514,9 +522,6 @@ if os.getenv('DJANGO_LOG_SERVER_HOST'):
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled
 DATA_UPLOAD_MAX_NUMBER_FILES = None
-LOCAL_LOAD_MAX_FILES_COUNT = 500
-LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
-CLOUD_STORAGE_MAX_FILES_COUNT = LOCAL_LOAD_MAX_FILES_COUNT
 
 RESTRICTIONS = {
     # allow access to analytics component to users with business role
@@ -624,6 +629,8 @@ SPECTACULAR_SETTINGS = {
         'StorageMethod': 'cvat.apps.engine.models.StorageMethodChoice',
         'JobStatus': 'cvat.apps.engine.models.StatusChoice',
         'JobStage': 'cvat.apps.engine.models.StageChoice',
+        'JobType': 'cvat.apps.engine.models.JobType',
+        'QualityReportTarget': 'cvat.apps.quality_control.models.QualityReportTarget',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
         'WebhookType': 'cvat.apps.webhooks.models.WebhookTypeChoice',

@@ -7,16 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- TBD
+- \[API\] Support for Ground Truth job creation and removal (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] Task quality estimation endpoints (<https://github.com/opencv/cvat/pull/6204>)
 
 ### Changed
-- Replaced Apache mod_wsgi with Uvicorn ASGI server for backend use(<https://github.com/opencv/cvat/pull/6195>)
+- TDB
+
+### Changed
+- TDB
 
 ### Deprecated
-- TBD
+- TDB
 
 ### Removed
 - TDB
+
+### Fixed
+- Running serverless models for EXIF-rotated images (<https://github.com/opencv/cvat/pull/6275/>)
+
+### Security
+- TDB
+
+## \[2.4.6] - 2023-06-09
+### Added
+- \[Server API\] An option to supply custom file ordering for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
+- New option ``semi-auto`` is available as annotations source (<https://github.com/opencv/cvat/pull/6263>)
+
+### Changed
+- Allowed to use dataset manifest for the `predefined` sorting method for task data (<https://github.com/opencv/cvat/pull/5083>)
+
+### Changed
+- Replaced Apache mod_wsgi with Uvicorn ASGI server for backend use(<https://github.com/opencv/cvat/pull/6195>)
 
 ### Fixed
 - Incorrect location of temporary file during job annotation import.(<https://github.com/opencv/cvat/pull/5909>)
@@ -25,9 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deletion of uploaded files, including annotations and backups,
   after they have been uploaded to the server using the TUS protocol  but before an RQ job has been initiated. (<https://github.com/opencv/cvat/pull/5909>)
 - Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
-
-### Security
-- TDB
+- \[API\] The `predefined` sorting method for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
+- Allowed slashes in export filenames. (<https://github.com/opencv/cvat/pull/6265>)
+- Dataset export error with `outside` property of tracks (<https://github.com/opencv/cvat/issues/5971>)
+- Broken logging in the TransT serverless function
+  (<https://github.com/opencv/cvat/pull/6290>)
 
 ## \[2.4.5] - 2023-06-02
 ### Added

@@ -24,6 +24,8 @@ cvat:
     imagePullPolicy: Never
 
 traefik:
-  service:
-    externalIPs:
-      - 192.168.49.2
+  logs:
+    general:
+      level: DEBUG
+    access:
+      enabled: true

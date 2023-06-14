@@ -5,6 +5,8 @@ weight: 8
 
 # [TFRecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)
 
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/tf_detection_api_dataset)
+
 TFRecord is a very flexible format, but we try to correspond the
 format that used in
 [TF object detection](https://github.com/tensorflow/models/tree/master/research/object_detection)
