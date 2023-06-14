@@ -937,14 +937,9 @@ export function getJobAsync(
             }
 
             // navigate to correct first frame according to setup
-            let frameNumber;
-            if (initialFrame === null && !showDeletedFrames) {
-                frameNumber = (await job.frames.search(
-                    { notDeleted: true }, job.startFrame, job.stopFrame,
-                )) || job.startFrame;
-            } else {
-                frameNumber = Math.max(Math.min(job.stopFrame, initialFrame || 0), job.startFrame);
-            }
+            const frameNumber = (await job.frames.search(
+                { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
+            )) || job.startFrame;
 
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
