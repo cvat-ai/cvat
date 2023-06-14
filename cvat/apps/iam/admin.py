@@ -24,6 +24,20 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
+    actions = ["user_activate", "user_deactivate"]
+
+    @admin.action(
+        permissions=["change"], description=_("Mark selected users as active")
+    )
+    def user_activate(self, request, queryset):
+        queryset.update(is_active=True)
+
+    @admin.action(
+        permissions=["change"], description=_("Mark selected users as not active")
+    )
+    def user_deactivate(self, request, queryset):
+        queryset.update(is_active=False)
+
 
 class CustomGroupAdmin(GroupAdmin):
     fieldsets = ((None, {'fields': ('name',)}),)
