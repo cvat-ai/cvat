@@ -254,7 +254,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                         <Text type='secondary'>{`Task #${taskInstance.id} Created by ${owner} on ${created}`}</Text>
                     )}
                 </Col>
-                <Col span={10}>
+                <Col>
                     <Text type='secondary'>Assigned to</Text>
                     {assigneeSelect}
                 </Col>
