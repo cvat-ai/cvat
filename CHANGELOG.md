@@ -50,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[API\] The `predefined` sorting method for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
 - Allowed slashes in export filenames. (<https://github.com/opencv/cvat/pull/6265>)
 - Dataset export error with `outside` property of tracks (<https://github.com/opencv/cvat/issues/5971>)
+- Broken logging in the TransT serverless function
+  (<https://github.com/opencv/cvat/pull/6290>)
 
 ## \[2.4.5] - 2023-06-02
 ### Added
