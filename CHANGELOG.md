@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Running serverless models for EXIF-rotated images (<https://github.com/opencv/cvat/pull/6275/>)
+- Uploading files when using https configuration (<https://github.com/opencv/cvat/pull/6308>)
 
 ### Security
 - TDB
