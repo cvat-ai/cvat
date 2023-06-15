@@ -340,16 +340,16 @@ g.cvat_canvas_shape_occluded {
 
 .cvat-canvas-highlight-enabled {
     svg {
-        rect,
-        ellipse,
-        polygon,
-        polyline,
-        line {
+        rect:not(.cvat_canvas_issue_region),
+        ellipse:not(.cvat_canvas_issue_region),
+        polygon:not(.cvat_canvas_issue_region),
+        polyline:not(.cvat_canvas_issue_region),
+        line:not(.cvat_canvas_issue_region) {
             fill: gray;
             stroke: gray;
         }
 
-        circle {
+        circle:not(.cvat_canvas_issue_region) {
             fill: gray;
         }
     }
