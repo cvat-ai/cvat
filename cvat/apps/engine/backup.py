@@ -78,19 +78,23 @@ def _write_annotation_guide(zip_object, annotation_guide, guide_filename, assets
         zip_object.writestr(guide_filename, data=md)
 
 def _read_annotation_guide(zip_object, guide_filename, assets_dirname):
-    annotation_guide = io.BytesIO(zip_object.read(guide_filename))
-    assets = filter(lambda x: x.startswith(f'{assets_dirname}/'), zip_object.namelist())
-    assets = list(map(lambda x: (x, zip_object.read(x)), assets))
+    files = zip_object.namelist()
+    if guide_filename in files:
+        annotation_guide = io.BytesIO(zip_object.read(guide_filename))
+        assets = filter(lambda x: x.startswith(f'{assets_dirname}/'), files)
+        assets = list(map(lambda x: (x, zip_object.read(x)), assets))
 
-    if len(assets) > settings.ASSET_MAX_COUNT_PER_GUIDE:
-        raise ValidationError(f'Maximum number of assets per guide reached')
-    for asset in assets:
-        if len(asset[1]) / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
-            raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
-        if mimetypes.guess_type(asset[0])[0] not in settings.ASSET_SUPPORTED_TYPES:
-            raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
+        if len(assets) > settings.ASSET_MAX_COUNT_PER_GUIDE:
+            raise ValidationError(f'Maximum number of assets per guide reached')
+        for asset in assets:
+            if len(asset[1]) / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
+                raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
+            if mimetypes.guess_type(asset[0])[0] not in settings.ASSET_SUPPORTED_TYPES:
+                raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
 
-    return annotation_guide.getvalue(), assets
+        return annotation_guide.getvalue(), assets
+
+    return None, []
 
 def _import_annotation_guide(guide_data, assets):
     guide_serializer = AnnotationGuideWriteSerializer(data=guide_data)
