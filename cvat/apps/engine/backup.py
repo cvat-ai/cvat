@@ -62,6 +62,20 @@ def _get_label_mapping(db_labels):
 
     return label_mapping
 
+def _write_annotation_guide(zip_object, annotation_guide, assets_dirname, guide_filename, target_dir=None):
+    if annotation_guide is not None:
+        md = annotation_guide.markdown
+        assets = annotation_guide.assets.all()
+        assets_dirname = os.path.join(target_dir or '', assets_dirname)
+        guide_filename = os.path.join(target_dir or '', guide_filename)
+
+        for db_asset in assets:
+            md = md.replace(f'/api/assets/{str(db_asset.pk)}', os.path.join(assets_dirname, db_asset.filename))
+            file = os.path.join(settings.ASSETS_ROOT, str(db_asset.pk), db_asset.filename)
+            with open(file, 'rb') as asset_file:
+                zip_object.writestr(os.path.join(assets_dirname, db_asset.filename), asset_file.read())
+        zip_object.writestr(guide_filename, data=md)
+
 class _BackupBase():
     def __init__(self, *args, logger=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -99,18 +113,6 @@ class _BackupBase():
     def _get_annotation_guide(self):
         raise NotImplementedError()
 
-    def _write_annotation_guide(self, zip_object, target_dir=None):
-        annotation_guide = self._get_annotation_guide()
-        if annotation_guide is not None:
-            md = annotation_guide.markdown
-            assets = annotation_guide.assets.all()
-            for db_asset in assets:
-                md = md.replace(f'/api/assets/{str(db_asset.pk)}', f'assets/{db_asset.filename}')
-                file = os.path.join(settings.ASSETS_ROOT, str(db_asset.pk), db_asset.filename)
-                with open(file, 'rb') as asset_file:
-                    zip_object.writestr(os.path.join(target_dir or '', 'assets', db_asset.filename), asset_file.read())
-            zip_object.writestr('annotation_guide.md', data=md)
-
     def _prepare_attribute_meta(self, attribute):
         allowed_fields = {
             'name',
@@ -124,6 +126,8 @@ class _BackupBase():
 class _TaskBackupBase(_BackupBase):
     MANIFEST_FILENAME = 'task.json'
     ANNOTATIONS_FILENAME = 'annotations.json'
+    ANNOTATION_GUIDE_FILENAME = 'annotation_guide.md'
+    ASSETS_DIRNAME = 'assets'
     DATA_DIRNAME = 'data'
     TASK_DIRNAME = 'task'
 
@@ -284,10 +288,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             'attributespec_set')
         self._label_mapping = _get_label_mapping(db_labels)
 
-    def _get_annotation_guide(self):
-        if hasattr(self._db_task, 'annotation_guide'):
-            return self._db_task.annotation_guide
-        return None
+    def _write_annotation_guide(self, zip_object, target_dir=None):
+        annotation_guide = self._db_task.annotation_guide if hasattr(self._db_task, 'annotation_guide') else None
+        _write_annotation_guide(zip_object, annotation_guide, self.ASSETS_DIRNAME, self.ANNOTATION_GUIDE_FILENAME, target_dir = target_dir)
 
     def _write_data(self, zip_object, target_dir=None):
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME) if target_dir else self.DATA_DIRNAME
@@ -511,8 +514,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     def _read_meta(self):
         def read(zip_object):
-            manifest_filename = os.path.join(self._subdir, self.MANIFEST_FILENAME) if self._subdir else self.MANIFEST_FILENAME
-            annotations_filename = os.path.join(self._subdir, self.ANNOTATIONS_FILENAME) if self._subdir else self.ANNOTATIONS_FILENAME
+            manifest_filename = os.path.join(self._subdir or '', self.MANIFEST_FILENAME)
+            annotations_filename = os.path.join(self._subdir or '', self.ANNOTATIONS_FILENAME)
             manifest = JSONParser().parse(io.BytesIO(zip_object.read(manifest_filename)))
             annotations = JSONParser().parse(io.BytesIO(zip_object.read(annotations_filename)))
             return manifest, annotations
@@ -695,6 +698,8 @@ def _import_task(filename, user, org_id):
 class _ProjectBackupBase(_BackupBase):
     MANIFEST_FILENAME = 'project.json'
     TASKNAME_TEMPLATE = 'task_{}'
+    ANNOTATION_GUIDE_FILENAME = 'annotation_guide.md'
+    ASSETS_DIRNAME = 'assets'
 
     def _prepare_project_meta(self, project):
         allowed_fields = {
@@ -716,10 +721,9 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
         db_labels = self._db_project.label_set.all().prefetch_related('attributespec_set')
         self._label_mapping = _get_label_mapping(db_labels)
 
-    def _get_annotation_guide(self):
-        if hasattr(self._db_project, 'annotation_guide'):
-            return self._db_project.annotation_guide
-        return None
+    def _write_annotation_guide(self, zip_object, target_dir=None):
+        annotation_guide = self._db_project.annotation_guide if hasattr(self._db_project, 'annotation_guide') else None
+        _write_annotation_guide(zip_object, annotation_guide, self.ASSETS_DIRNAME, self.ANNOTATION_GUIDE_FILENAME, target_dir = target_dir)
 
     def _write_tasks(self, zip_object):
         for idx, db_task in enumerate(self._db_project.tasks.all().order_by('id')):
