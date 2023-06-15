@@ -430,6 +430,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             notification.error({
                 description: <ReactMarkdown>{error.message}</ReactMarkdown>,
                 message: 'Interaction error occurred',
+                duration: null,
             });
         }
     };
@@ -523,6 +524,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             notification.error({
                 description: <ReactMarkdown>{error.message}</ReactMarkdown>,
                 message: 'Tracking error occurred',
+                duration: null,
             });
         }
     };
@@ -774,6 +776,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         notification.error({
                             message: 'Tracker initialization error',
                             description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                            duration: null,
                         });
                     } finally {
                         if (hideMessage) hideMessage();
@@ -827,6 +830,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         notification.error({
                             message: 'Tracking error',
                             description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                            duration: null,
                         });
                     } finally {
                         if (hideMessage) hideMessage();
@@ -894,6 +898,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 notification.error({
                     message: 'Could not initialize OpenCV',
                     description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                    duration: null,
                 });
             } finally {
                 hide();
@@ -1288,6 +1293,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         notification.error({
                             description: <ReactMarkdown>{error.message}</ReactMarkdown>,
                             message: 'Detection error occurred',
+                            duration: null,
                         });
                     } finally {
                         this.setState({ fetching: false });
