@@ -27,6 +27,7 @@ import {
     CombinedState, StatesOrdering, ObjectType, ColorBy,
 } from 'reducers';
 import { ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { filterAnnotations } from 'utils/filter-annotations';
 
 interface OwnProps {
     readonly: boolean;
@@ -76,11 +77,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 zLayer: { min: minZLayer, max: maxZLayer },
                 statesSources,
             },
-            job: { instance: jobInstance },
+            job: { instance: jobInstance, groundTruthJobFramesMeta },
             player: {
                 frame: { number: frameNumber },
             },
             colors,
+            workspace,
         },
         settings: {
             shapes: { colorBy, showGroundTruth },
@@ -90,7 +92,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     let statesHidden = true;
     let statesLocked = true;
-    const filteredStates = objectStates.filter((e) => !e.jobID || statesSources.includes(e.jobID));
+    const filteredStates = filterAnnotations(objectStates, {
+        statesSources,
+        frame: frameNumber,
+        groundTruthJobFramesMeta,
+        workspace,
+    });
     filteredStates.forEach((objectState: ObjectState) => {
         const { lock } = objectState;
         if (!lock) {

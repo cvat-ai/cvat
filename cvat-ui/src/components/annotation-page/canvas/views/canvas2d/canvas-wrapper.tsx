@@ -56,6 +56,7 @@ import {
 } from 'actions/settings-actions';
 import { reviewActions } from 'actions/review-actions';
 
+import { filterAnnotations } from 'utils/filter-annotations';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
 
@@ -900,23 +901,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             workspace, groundTruthJobFramesMeta, frame,
         } = this.props;
         if (frameData !== null && canvasInstance) {
-            const filteredAnnotations = annotations.filter((state) => {
-                if (state.objectType === ObjectType.TAG) {
-                    return false;
-                }
-
-                if (state.jobID && !statesSources.includes(state.jobID)) {
-                    return false;
-                }
-
-                // GT tracks are shown only on GT frames
-                if (workspace === Workspace.REVIEW_WORKSPACE && groundTruthJobFramesMeta) {
-                    if (state.objectType === ObjectType.TRACK && state.isGroundTruth) {
-                        return groundTruthJobFramesMeta.includedFrames.includes(frame);
-                    }
-                }
-
-                return true;
+            const filteredAnnotations = filterAnnotations(annotations, {
+                statesSources,
+                frame,
+                groundTruthJobFramesMeta,
+                workspace,
+                filterTags: true,
             });
 
             canvasInstance.setup(
