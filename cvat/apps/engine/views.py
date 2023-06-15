@@ -2794,10 +2794,16 @@ class AnnotationGuidesViewset(
     def perform_create(self, serializer):
         serializer.save()
         AnnotationGuidesViewset._update_assets(serializer.instance)
+        (serializer.instance.project or serializer.instance.task).save()
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
         AnnotationGuidesViewset._update_assets(serializer.instance)
+        (serializer.instance.project or serializer.instance.task).save()
+
+    def perform_destroy(self, instance):
+        (instance.project or instance.task).save()
+        instance.delete()
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.meta["formatted_exception"] = "".join(
