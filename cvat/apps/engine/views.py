@@ -2699,8 +2699,8 @@ class AssetsViewset(
             raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
 
         guide_id = request.data.get('guide_id')
-        db_guide = AnnotationGuide.objects.get(pk=guide_id)
-        if db_guide.assets.count() > settings.ASSET_MAX_COUNT_PER_GUIDE:
+        db_guide = AnnotationGuide.objects.prefetch_related('assets').get(pk=guide_id)
+        if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
             raise ValidationError(f'Maximum number of assets per guide reached')
 
         serializer = self.get_serializer(data={

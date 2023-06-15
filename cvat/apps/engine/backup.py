@@ -11,6 +11,7 @@ import shutil
 import tempfile
 from typing import Any, Dict, Iterable
 import uuid
+import mimetypes
 from zipfile import ZipFile
 from datetime import datetime
 from tempfile import NamedTemporaryFile
@@ -32,7 +33,7 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
-    JobWriteSerializer, LabelSerializer,
+    JobWriteSerializer, LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
 from cvat.apps.engine.utils import (
@@ -62,7 +63,7 @@ def _get_label_mapping(db_labels):
 
     return label_mapping
 
-def _write_annotation_guide(zip_object, annotation_guide, assets_dirname, guide_filename, target_dir=None):
+def _write_annotation_guide(zip_object, annotation_guide, guide_filename, assets_dirname, target_dir=None):
     if annotation_guide is not None:
         md = annotation_guide.markdown
         assets = annotation_guide.assets.all()
@@ -76,7 +77,49 @@ def _write_annotation_guide(zip_object, annotation_guide, assets_dirname, guide_
                 zip_object.writestr(os.path.join(assets_dirname, db_asset.filename), asset_file.read())
         zip_object.writestr(guide_filename, data=md)
 
+def _read_annotation_guide(zip_object, guide_filename, assets_dirname):
+    annotation_guide = io.BytesIO(zip_object.read(guide_filename))
+    assets = filter(lambda x: x.startswith(f'{assets_dirname}/'), zip_object.namelist())
+    assets = list(map(lambda x: (x, zip_object.read(x)), assets))
+
+    if len(assets) > settings.ASSET_MAX_COUNT_PER_GUIDE:
+        raise ValidationError(f'Maximum number of assets per guide reached')
+    for asset in assets:
+        if len(asset[1]) / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
+            raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
+        if mimetypes.guess_type(asset[0])[0] not in settings.ASSET_SUPPORTED_TYPES:
+            raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
+
+    return annotation_guide.getvalue(), assets
+
+def _import_annotation_guide(guide_data, assets):
+    guide_serializer = AnnotationGuideWriteSerializer(data=guide_data)
+    markdown = guide_data['markdown']
+    if guide_serializer.is_valid(raise_exception=True):
+        guide_serializer.save()
+
+    for asset in assets:
+        name, data = asset
+        basename = os.path.basename(name)
+        asset_serializer = AssetWriteSerializer(data={
+            'filename': basename,
+            'guide_id': guide_serializer.instance.id,
+        })
+        if asset_serializer.is_valid(raise_exception=True):
+            asset_serializer.save()
+            markdown = markdown.replace(f'{name}', f'/api/assets/{asset_serializer.instance.pk}')
+            path = os.path.join(settings.ASSETS_ROOT, str(asset_serializer.instance.uuid))
+            os.makedirs(path)
+            with open(os.path.join(path, basename), 'wb') as destination:
+                destination.write(data)
+
+    guide_serializer.instance.markdown = markdown
+    guide_serializer.instance.save()
+
 class _BackupBase():
+    ANNOTATION_GUIDE_FILENAME = 'annotation_guide.md'
+    ASSETS_DIRNAME = 'assets'
+
     def __init__(self, *args, logger=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._logger = logger
@@ -110,9 +153,6 @@ class _BackupBase():
             sublabel['attributes'] = [self._prepare_attribute_meta(a) for a in sublabel['attributes']]
         return label
 
-    def _get_annotation_guide(self):
-        raise NotImplementedError()
-
     def _prepare_attribute_meta(self, attribute):
         allowed_fields = {
             'name',
@@ -126,8 +166,6 @@ class _BackupBase():
 class _TaskBackupBase(_BackupBase):
     MANIFEST_FILENAME = 'task.json'
     ANNOTATIONS_FILENAME = 'annotations.json'
-    ANNOTATION_GUIDE_FILENAME = 'annotation_guide.md'
-    ASSETS_DIRNAME = 'assets'
     DATA_DIRNAME = 'data'
     TASK_DIRNAME = 'task'
 
@@ -290,7 +328,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
     def _write_annotation_guide(self, zip_object, target_dir=None):
         annotation_guide = self._db_task.annotation_guide if hasattr(self._db_task, 'annotation_guide') else None
-        _write_annotation_guide(zip_object, annotation_guide, self.ASSETS_DIRNAME, self.ANNOTATION_GUIDE_FILENAME, target_dir = target_dir)
+        _write_annotation_guide(zip_object, annotation_guide, self.ANNOTATION_GUIDE_FILENAME, self.ASSETS_DIRNAME, target_dir = target_dir)
 
     def _write_data(self, zip_object, target_dir=None):
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME) if target_dir else self.DATA_DIRNAME
@@ -506,11 +544,16 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._subdir = subdir
         self._user_id = user_id
         self._org_id = org_id
-        self._manifest, self._annotations = self._read_meta()
+        self._manifest, self._annotations, self._annotation_guide, self._assets = self._read_meta()
         self._version = self._read_version(self._manifest)
         self._labels_mapping = label_mapping
         self._db_task = None
         self._project_id=project_id
+
+    def _read_annotation_guide(self, zip_object):
+        annotation_guide_filename = os.path.join(self._subdir or '', self.ANNOTATION_GUIDE_FILENAME)
+        assets_dirname = os.path.join(self._subdir or '', self.ASSETS_DIRNAME)
+        return _read_annotation_guide(zip_object, annotation_guide_filename, assets_dirname)
 
     def _read_meta(self):
         def read(zip_object):
@@ -518,7 +561,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             annotations_filename = os.path.join(self._subdir or '', self.ANNOTATIONS_FILENAME)
             manifest = JSONParser().parse(io.BytesIO(zip_object.read(manifest_filename)))
             annotations = JSONParser().parse(io.BytesIO(zip_object.read(annotations_filename)))
-            return manifest, annotations
+            annotation_guide, assets = self._read_annotation_guide(zip_object)
+            return manifest, annotations, annotation_guide, assets
 
         if isinstance(self._file, str):
             with ZipFile(self._file, 'r') as input_file:
@@ -683,9 +727,15 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         for db_job, annotations in zip(db_jobs, self._annotations):
             self._create_annotations(db_job, annotations)
 
+    def _import_annotation_guide(self):
+        if self._annotation_guide:
+            markdown = self._annotation_guide.decode()
+            _import_annotation_guide({ 'markdown': markdown, 'task_id': self._db_task.id }, self._assets)
+
     def import_task(self):
         self._import_task()
         self._import_annotations()
+        self._import_annotation_guide()
         return self._db_task
 
 @transaction.atomic
@@ -698,8 +748,6 @@ def _import_task(filename, user, org_id):
 class _ProjectBackupBase(_BackupBase):
     MANIFEST_FILENAME = 'project.json'
     TASKNAME_TEMPLATE = 'task_{}'
-    ANNOTATION_GUIDE_FILENAME = 'annotation_guide.md'
-    ASSETS_DIRNAME = 'assets'
 
     def _prepare_project_meta(self, project):
         allowed_fields = {
@@ -723,7 +771,7 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 
     def _write_annotation_guide(self, zip_object, target_dir=None):
         annotation_guide = self._db_project.annotation_guide if hasattr(self._db_project, 'annotation_guide') else None
-        _write_annotation_guide(zip_object, annotation_guide, self.ASSETS_DIRNAME, self.ANNOTATION_GUIDE_FILENAME, target_dir = target_dir)
+        _write_annotation_guide(zip_object, annotation_guide, self.ANNOTATION_GUIDE_FILENAME, self.ASSETS_DIRNAME, target_dir = target_dir)
 
     def _write_tasks(self, zip_object):
         for idx, db_task in enumerate(self._db_project.tasks.all().order_by('id')):
@@ -763,16 +811,20 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         self._filename = filename
         self._user_id = user_id
         self._org_id = org_id
-        self._manifest = self._read_meta()
+        self._manifest, self._annotation_guide, self._assets = self._read_meta()
         self._version = self._read_version(self._manifest)
         self._db_project = None
         self._labels_mapping = {}
 
+    def _read_annotation_guide(self, zip_object):
+        return _read_annotation_guide(zip_object, self.ANNOTATION_GUIDE_FILENAME, self.ASSETS_DIRNAME)
+
     def _read_meta(self):
         with ZipFile(self._filename, 'r') as input_file:
             manifest = JSONParser().parse(io.BytesIO(input_file.read(self.MANIFEST_FILENAME)))
+            annotation_guide, assets = self._read_annotation_guide(input_file)
 
-        return manifest
+        return manifest, annotation_guide, assets
 
     def _import_project(self):
         labels = self._manifest.pop('labels')
@@ -808,8 +860,14 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
                     subdir=task_dir,
                     label_mapping=self._labels_mapping).import_task()
 
+    def _import_annotation_guide(self):
+        if self._annotation_guide:
+            markdown = self._annotation_guide.decode()
+            _import_annotation_guide({ 'markdown': markdown, 'project_id': self._db_project.id }, self._assets)
+
     def import_project(self):
         self._import_project()
+        self._import_annotation_guide()
         self._import_tasks()
 
         return self._db_project
