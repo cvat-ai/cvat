@@ -7,3 +7,4 @@ rope==0.17.0
 django-extensions==3.0.8
 snakeviz==2.1.0
 django-silk==5.0.3
+black==23.3.0

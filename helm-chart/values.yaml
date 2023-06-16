@@ -63,6 +63,16 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+      qualityreports:
+        replicas: 1
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
     utils:
       replicas: 1
       labels: {}
@@ -75,7 +85,7 @@ cvat:
       additionalVolumeMounts: []
     replicas: 1
     image: cvat/server
-    tag: v2.4.6
+    tag: v2.4.7
     imagePullPolicy: Always
     permissionFix:
       enabled: true
@@ -95,7 +105,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.4.6
+    tag: v2.4.7
     imagePullPolicy: Always
     labels: {}
     #  test: test
@@ -372,9 +382,6 @@ ingress:
   #   secretName: ingress-tls-cvat
 
 traefik:
-  logs:
-    general:
-      level: INFO
   service:
     externalIPs:
       # - "192.168.49.2"

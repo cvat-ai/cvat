@@ -171,11 +171,7 @@ def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFile
 
         db_job = models.Job(segment=db_segment)
         db_job.save()
-
-        job_path = db_job.get_dirname()
-        if os.path.isdir(job_path):
-            shutil.rmtree(job_path)
-        os.makedirs(job_path)
+        db_job.make_dirs()
 
     db_task.data.save()
     db_task.save()
@@ -584,12 +580,7 @@ def _create_thread(
                     )
                 if cloud_storage_manifest_prefix:
                     additional_files = [os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files]
-                if len(data['server_files']) + len(additional_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
-                    raise ValidationError(
-                        'The maximum number of the cloud storage attached files '
-                        f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
             else:
-                number_of_files = len(data['server_files'])
                 while len(dirs):
                     directory = dirs.pop()
                     for f in cloud_storage_instance.list_files(prefix=directory, _use_flat_listing=True):
@@ -597,11 +588,7 @@ def _create_thread(
                             additional_files.append(f['name'])
                         else:
                             dirs.append(f['name'])
-                    # we check the limit of files on each iteration to reduce the number of possible requests to the bucket
-                    if (len(additional_files) + len(dirs) + number_of_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
-                        raise ValidationError(
-                            'The maximum number of the cloud storage attached files '
-                            f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+
             data['server_files'].extend(additional_files)
             del additional_files
 
@@ -641,10 +628,6 @@ def _create_thread(
                 if not data['filename_pattern'] == '*':
                     additional_files = fnmatch.filter(additional_files, data['filename_pattern'])
 
-            if (len(additional_files)) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
-                raise ValidationError(
-                    'The maximum number of the cloud storage attached files '
-                    f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
             data['server_files'].extend(additional_files)
 
         if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
@@ -901,7 +884,7 @@ def _create_thread(
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         kwargs["dimension"] = validate_dimension.dimension
     compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality, **kwargs)
-    original_chunk_writer = original_chunk_writer_class(original_quality)
+    original_chunk_writer = original_chunk_writer_class(original_quality, **kwargs)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:

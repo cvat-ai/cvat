@@ -3,7 +3,7 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"view"|"list"|"update:state"|"update:stage"|"update:assignee""delete"|
+#     "scope": <"create"|"view"|"list"|"update:state"|"update:stage"|"update:assignee""delete"|
 #         "view:annotations"|"update:annotations"|"delete:annotations"|"view:data"|
 #         "export:annotations" | "export:dataset" |> or null,
 #     "auth": {
@@ -140,20 +140,44 @@ filter = [] { # Django Q object to filter list of entries
 }
 
 allow {
-    { utils.VIEW, utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS }[input.scope]
+    { utils.CREATE, utils.DELETE }[input.scope]
+    utils.has_perm(utils.USER)
+    utils.is_sandbox
+    is_task_staff
+}
+
+allow {
+    { utils.CREATE, utils.DELETE }[input.scope]
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.SUPERVISOR)
+    utils.has_perm(utils.USER)
+    is_task_staff
+}
+
+allow {
+    { utils.VIEW,
+      utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS,
+      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS
+    }[input.scope]
     utils.is_sandbox
     is_job_staff
 }
 
 allow {
-    { utils.VIEW, utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS }[input.scope]
+    { utils.CREATE, utils.DELETE, utils.VIEW,
+      utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS,
+      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS
+    }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
 allow {
-    { utils.VIEW, utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS }[input.scope]
+    { utils.VIEW,
+      utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS,
+      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS
+    }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
     is_job_staff
