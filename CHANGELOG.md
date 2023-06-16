@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- \[API\] Support for Ground Truth job creation and removal (<https://github.com/opencv/cvat/pull/6204>)
-- \[API\] Task quality estimation endpoints (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] API Now supports the creation and removal of Ground Truth jobs. (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] We've introduced task quality estimation endpoints. (<https://github.com/opencv/cvat/pull/6204>)
 - \[API\] An option to run autoannotation on a job (<https://github.com/opencv/cvat/pull/6276>)
 
 ### Changed
@@ -24,8 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- Running serverless models for EXIF-rotated images (<https://github.com/opencv/cvat/pull/6275/>)
-- Uploading files when using https configuration (<https://github.com/opencv/cvat/pull/6308>)
+- Issues with running serverless models for EXIF-rotated images. (<https://github.com/opencv/cvat/pull/6275/>)
+- File uploading issues when using https configuration. (<https://github.com/opencv/cvat/pull/6308>)
 
 ### Security
 - TDB
