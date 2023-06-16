@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- \[API\] Support for Ground Truth job creation and removal (<https://github.com/opencv/cvat/pull/6204>)
-- \[API\] Task quality estimation endpoints (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] API Now supports the creation and removal of Ground Truth jobs. (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] We've introduced task quality estimation endpoints. (<https://github.com/opencv/cvat/pull/6204>)
 
 ### Changed
 - TDB
@@ -23,7 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- Running serverless models for EXIF-rotated images (<https://github.com/opencv/cvat/pull/6275/>)
+- Issues with running serverless models for EXIF-rotated images. (<https://github.com/opencv/cvat/pull/6275/>)
+- File uploading issues when using https configuration. (<https://github.com/opencv/cvat/pull/6308>)
 
 ### Security
 - TDB
@@ -32,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - \[Server API\] An option to supply custom file ordering for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
 - New option ``semi-auto`` is available as annotations source (<https://github.com/opencv/cvat/pull/6263>)
+- \[CLI\] An option to select the organization
+  (<https://github.com/opencv/cvat/pull/6317>)
 
 ### Changed
 - Allowed to use dataset manifest for the `predefined` sorting method for task data (<https://github.com/opencv/cvat/pull/5083>)
@@ -49,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[API\] The `predefined` sorting method for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
 - Allowed slashes in export filenames. (<https://github.com/opencv/cvat/pull/6265>)
 - Dataset export error with `outside` property of tracks (<https://github.com/opencv/cvat/issues/5971>)
+- Broken logging in the TransT serverless function
+  (<https://github.com/opencv/cvat/pull/6290>)
 
 ## \[2.4.5] - 2023-06-02
 ### Added

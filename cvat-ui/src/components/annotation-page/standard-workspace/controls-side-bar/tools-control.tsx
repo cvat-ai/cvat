@@ -49,6 +49,7 @@ import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { switchToolsBlockerState } from 'actions/settings-actions';
+import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 
@@ -425,10 +426,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
 
             setTimeout(() => this.runInteractionRequest(interactionId));
-        } catch (err: any) {
+        } catch (error: any) {
             notification.error({
-                description: err.toString(),
+                description: <ReactMarkdown>{error.message}</ReactMarkdown>,
                 message: 'Interaction error occurred',
+                duration: null,
             });
         }
     };
@@ -518,10 +520,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
             // update annotations on a canvas
             fetchAnnotations();
-        } catch (err: any) {
+        } catch (error: any) {
             notification.error({
-                description: err.toString(),
+                description: <ReactMarkdown>{error.message}</ReactMarkdown>,
                 message: 'Tracking error occurred',
+                duration: null,
             });
         }
     };
@@ -772,7 +775,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     } catch (error: any) {
                         notification.error({
                             message: 'Tracker initialization error',
-                            description: error.toString(),
+                            description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                            duration: null,
                         });
                     } finally {
                         if (hideMessage) hideMessage();
@@ -825,7 +829,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     } catch (error: any) {
                         notification.error({
                             message: 'Tracking error',
-                            description: error.toString(),
+                            description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                            duration: null,
                         });
                     } finally {
                         if (hideMessage) hideMessage();
@@ -892,7 +897,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             } catch (error: any) {
                 notification.error({
                     message: 'Could not initialize OpenCV',
-                    description: error.toString(),
+                    description: <ReactMarkdown>{error.message}</ReactMarkdown>,
+                    duration: null,
                 });
             } finally {
                 hide();
@@ -1285,8 +1291,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         onSwitchToolsBlockerState({ buttonVisible: false });
                     } catch (error: any) {
                         notification.error({
-                            description: error.toString(),
+                            description: <ReactMarkdown>{error.message}</ReactMarkdown>,
                             message: 'Detection error occurred',
+                            duration: null,
                         });
                     } finally {
                         this.setState({ fetching: false });
