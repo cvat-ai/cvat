@@ -5,8 +5,10 @@
 @import '../../base.scss';
 
 .cvat-md-guide-control-wrapper {
+    margin-top: $grid-unit-size;
+
     button {
-        margin-left: $grid-unit-size;
+        margin-top: $grid-unit-size;
     }
 }
 

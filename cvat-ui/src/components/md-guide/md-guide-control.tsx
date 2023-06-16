@@ -23,13 +23,13 @@ function MdGuideControl(props: Props): JSX.Element {
         <Row justify='start' className='cvat-md-guide-control-wrapper'>
             <Col span={24}>
                 <Text strong className='cvat-text-color'>Task description</Text>
+                <br />
                 <Button
-                    size='small'
                     onClick={() => {
                         history.push(`/${instanceType}s/${id}/guide`);
                     }}
                 >
-                    Setup
+                    Edit
                 </Button>
             </Col>
         </Row>

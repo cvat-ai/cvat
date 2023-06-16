@@ -451,7 +451,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         {this.renderDescription()}
-                        <MdGuideControl instanceType='task' id={taskInstance.id} />
+                        { taskInstance.projectId === null && <MdGuideControl instanceType='task' id={taskInstance.id} /> }
                         <Row justify='space-between' align='middle'>
                             <Col span={12}>
                                 <BugTrackerEditor

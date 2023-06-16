@@ -52,13 +52,12 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                     <Text strong className='cvat-text-color'>
                         Issue Tracker
                     </Text>
-                    <br />
                     <Text editable={{ onChange: onChangeValue }} className='cvat-issue-tracker-value'>
                         {bugTracker}
                     </Text>
+                    <br />
                     <Button
                         type='ghost'
-                        size='small'
                         onClick={(): void => {
                             window.open(bugTracker, '_blank');
                         }}
@@ -77,16 +76,14 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                 <Text strong className='cvat-text-color'>
                     Issue Tracker
                 </Text>
-                <br />
                 <Text
+                    className='cvat-issue-tracker-value'
                     editable={{
                         editing: bugTrackerEditing,
                         onStart,
                         onChange: onChangeValue,
                     }}
-                >
-                    {bugTrackerEditing ? '' : 'Not specified'}
-                </Text>
+                />
             </Col>
         </Row>
     );
