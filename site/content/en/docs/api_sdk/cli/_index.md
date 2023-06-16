@@ -37,23 +37,29 @@ We support Python versions 3.7 - 3.9.
 You can get help with `cvat-cli --help`.
 
 ```
-usage: cvat-cli [-h] [--auth USER:[PASS]]
-  [--server-host SERVER_HOST] [--server-port SERVER_PORT] [--debug]
-  {create,delete,ls,frames,dump,upload,export,import} ...
+usage: cvat-cli [-h] [--version] [--insecure] [--auth USER:[PASS]] [--server-host SERVER_HOST]
+                [--server-port SERVER_PORT] [--organization SLUG] [--debug]
+                {create,delete,ls,frames,dump,upload,export,import} ...
 
 Perform common operations related to CVAT tasks.
 
 positional arguments:
   {create,delete,ls,frames,dump,upload,export,import}
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --auth USER:[PASS]    defaults to the current user and supports the PASS
-                        environment variable or password prompt.
+  --version             show program's version number and exit
+  --insecure            Allows to disable SSL certificate check
+  --auth USER:[PASS]    defaults to the current user and supports the PASS environment variable or password
+                        prompt (default user: ...).
   --server-host SERVER_HOST
                         host (default: localhost)
   --server-port SERVER_PORT
-                        port (default: 8080)
+                        port (default: 80 for http and 443 for https connections)
+  --organization SLUG, --org SLUG
+                        short name (slug) of the organization to use when listing or creating resources; set
+                        to blank string to use the personal workspace (default: list all accessible objects,
+                        create in personal workspace)
   --debug               show debug output
 ```
 
@@ -109,6 +115,11 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
   ```bash
   cvat-cli --server-host example.com --auth user-1 create "task 1" \
   --labels labels.json local image1.jpg
+  ```
+- Create a task named "task 1" on the default server, with labels from "labels.json"
+  and local image "file1.jpg", as the current user, in organization "myorg":
+  ```bash
+  cvat-cli --org myorg create "task 1" --labels labels.json local file1.jpg
   ```
 - Create a task named "task 1", labels from the project with id 1 and with a remote video file,
   the task will be created as user "user-1":
@@ -171,6 +182,10 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
 - List all tasks:
   ```bash
   cvat-cli ls
+  ```
+- List all tasks in organization "myorg":
+  ```bash
+  cvat-cli --org myorg ls
   ```
 - Save list of all tasks into file "list_of_tasks.json":
   ```bash
