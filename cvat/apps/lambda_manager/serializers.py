@@ -31,20 +31,20 @@ class FunctionCallRequestSerializer(serializers.Serializer):
     max_distance = serializers.IntegerField(required=False)
 
 class FunctionCallParamsSerializer(serializers.Serializer):
-    id = serializers.CharField(help_text="The name of the function")
+    id = serializers.CharField(allow_null=True, help_text="The name of the function")
 
-    task = serializers.IntegerField(help_text="The id of the task")
+    task = serializers.IntegerField(allow_null=True, help_text="The id of the task")
     job = serializers.IntegerField(required=False, help_text="The id of the job")
 
-    threshold = serializers.FloatField(required=False)
+    threshold = serializers.FloatField(allow_null=True)
 
 class FunctionCallSerializer(serializers.Serializer):
     id = serializers.CharField(help_text="Request id")
 
     function = FunctionCallParamsSerializer()
-    status = serializers.CharField()
-    progress = serializers.IntegerField(default=0)
-    enqueued = serializers.DateTimeField()
-    started = serializers.DateTimeField()
-    ended = serializers.DateTimeField()
-    exc_info = serializers.CharField()
+    status = serializers.CharField(allow_null=True)
+    progress = serializers.IntegerField(default=0, allow_null=True)
+    enqueued = serializers.DateTimeField(allow_null=True)
+    started = serializers.DateTimeField(allow_null=True)
+    ended = serializers.DateTimeField(allow_null=True)
+    exc_info = serializers.CharField(required=False, allow_null=True)

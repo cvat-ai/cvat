@@ -6570,24 +6570,29 @@ components:
           $ref: '#/components/schemas/FunctionCallParams'
         status:
           type: string
+          nullable: true
         progress:
           type: integer
+          nullable: true
           default: 0
         enqueued:
           type: string
           format: date-time
+          nullable: true
         started:
           type: string
           format: date-time
+          nullable: true
         ended:
           type: string
           format: date-time
+          nullable: true
         exc_info:
           type: string
+          nullable: true
       required:
       - ended
       - enqueued
-      - exc_info
       - function
       - id
       - started
@@ -6597,9 +6602,11 @@ components:
       properties:
         id:
           type: string
+          nullable: true
           description: The name of the function
         task:
           type: integer
+          nullable: true
           description: The id of the task
         job:
           type: integer
@@ -6607,9 +6614,11 @@ components:
         threshold:
           type: number
           format: double
+          nullable: true
       required:
       - id
       - task
+      - threshold
     FunctionCallRequest:
       type: object
       properties:

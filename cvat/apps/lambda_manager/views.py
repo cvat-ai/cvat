@@ -480,7 +480,10 @@ class LambdaJob:
             "function": {
                 "id": lambda_func.id if lambda_func else None,
                 "threshold": self.job.kwargs.get("threshold"),
-                "task": self.job.kwargs.get("task")
+                "task": self.job.kwargs.get("task"),
+                **({
+                    "job": self.job.kwargs["job"],
+                } if self.job.kwargs.get("job") else {})
             },
             "status": self.job.get_status(),
             "progress": self.job.meta.get('progress', 0),
