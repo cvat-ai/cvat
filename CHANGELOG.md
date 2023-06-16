@@ -5,29 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.5.0] - Unreleased
+## \[2.4.7] - 2023-06-16
 ### Added
 - \[API\] API Now supports the creation and removal of Ground Truth jobs. (<https://github.com/opencv/cvat/pull/6204>)
 - \[API\] We've introduced task quality estimation endpoints. (<https://github.com/opencv/cvat/pull/6204>)
 
-### Changed
-- TDB
-
-### Changed
-- TDB
-
-### Deprecated
-- TDB
-
-### Removed
-- TDB
-
 ### Fixed
 - Issues with running serverless models for EXIF-rotated images. (<https://github.com/opencv/cvat/pull/6275/>)
 - File uploading issues when using https configuration. (<https://github.com/opencv/cvat/pull/6308>)
-
-### Security
-- TDB
 
 ## \[2.4.6] - 2023-06-09
 ### Added
