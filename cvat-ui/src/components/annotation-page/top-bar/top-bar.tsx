@@ -138,6 +138,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
 
     playerItems.push([(
         <PlayerButtons
+            key='player_buttons'
             playing={playing}
             playPauseShortcut={playPauseShortcut}
             deleteFrameShortcut={deleteFrameShortcut}
@@ -161,6 +162,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
 
     playerItems.push([(
         <PlayerNavigation
+            key='player_navigation'
             startFrame={startFrame}
             stopFrame={stopFrame}
             playing={playing}
