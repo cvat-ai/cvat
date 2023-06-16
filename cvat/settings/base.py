@@ -142,6 +142,7 @@ INSTALLED_APPS = [
     'cvat.apps.health',
     'cvat.apps.events',
     'cvat.apps.quality_control',
+    'cvat.apps.analytics_report',
 ]
 
 SITE_ID = 1
