@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.5.0] - Unreleased
 ### Added
-- \[API\] Support for Ground Truth job creation and removal (<https://github.com/opencv/cvat/pull/6204>)
-- \[API\] Task quality estimation endpoints (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] API Now supports the creation and removal of Ground Truth jobs. (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] We've introduced task quality estimation endpoints. (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] An option to run autoannotation on a job (<https://github.com/opencv/cvat/pull/6276>)
 
 ### Changed
 - TDB
@@ -23,10 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- Running serverless models for EXIF-rotated images (<https://github.com/opencv/cvat/pull/6275/>)
+- Issues with running serverless models for EXIF-rotated images. (<https://github.com/opencv/cvat/pull/6275/>)
+- File uploading issues when using https configuration. (<https://github.com/opencv/cvat/pull/6308>)
 - The problem with manifest file in tasks restored from backup (<https://github.com/opencv/cvat/issues/5971>)
 - The problem with task mode in a task restored from backup (<https://github.com/opencv/cvat/issues/5668>)
-- Uploading files when using https configuration (<https://github.com/opencv/cvat/pull/6308>)
 
 ### Security
 - TDB
@@ -35,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - \[Server API\] An option to supply custom file ordering for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
 - New option ``semi-auto`` is available as annotations source (<https://github.com/opencv/cvat/pull/6263>)
+- \[CLI\] An option to select the organization
+  (<https://github.com/opencv/cvat/pull/6317>)
 
 ### Changed
 - Allowed to use dataset manifest for the `predefined` sorting method for task data (<https://github.com/opencv/cvat/pull/5083>)
