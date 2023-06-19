@@ -105,17 +105,14 @@ class JobAnnotation:
 
     def __init__(self, pk, *, is_prefetched=False, queryset=None):
         if queryset is None:
-            queryset = self.add_prefetch_info(models.Job.objects).all()
+            queryset = self.add_prefetch_info(models.Job.objects)
 
         if is_prefetched:
             self.db_job: models.Job = queryset.select_related(
                 'segment__task'
             ).select_for_update().get(id=pk)
         else:
-            try:
-                self.db_job: models.Job = next(job for job in queryset if job.pk == int(pk))
-            except StopIteration as ex:
-                raise models.Job.DoesNotExist from ex
+            self.db_job: models.Job = queryset.get(id=pk)
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame

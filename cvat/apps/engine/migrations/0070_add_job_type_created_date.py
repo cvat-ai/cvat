@@ -11,7 +11,7 @@ def add_created_date_to_existing_jobs(apps, schema_editor):
         task = job.segment.task
         job.created_date = task.created_date
 
-    Job.objects.bulk_update(jobs, fields=['created_date'])
+    Job.objects.bulk_update(jobs, fields=['created_date'], batch_size=200)
 
 
 class Migration(migrations.Migration):
