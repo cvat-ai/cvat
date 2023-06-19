@@ -10,7 +10,6 @@ import os.path as osp
 from types import SimpleNamespace
 from typing import Optional
 import pytz
-import uuid
 import traceback
 import textwrap
 from copy import copy
@@ -87,7 +86,7 @@ from . import models, task
 from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
-    TaskPermission, UserPermission, AnnotationGuidePermission)
+    TaskPermission, UserPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.events.handlers import handle_annotations_patch
