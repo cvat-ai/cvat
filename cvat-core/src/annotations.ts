@@ -30,25 +30,31 @@ function getCache(sessionType) {
 }
 
 function processGroundTruthAnnotations(rawAnnotations, groundTruthAnnotations) {
-    groundTruthAnnotations.shapes.forEach((annotation) => { annotation.is_gt = true; });
-    groundTruthAnnotations.tracks.forEach((annotation) => { annotation.is_gt = true; });
-    groundTruthAnnotations.tags.forEach((annotation) => { annotation.is_gt = true; });
+    const annotations = [].concat(
+        groundTruthAnnotations.shapes,
+        groundTruthAnnotations.tracks,
+        groundTruthAnnotations.tags,
+    );
+    annotations.forEach((annotation) => { annotation.is_gt = true; });
     const result = {
-        shapes: [...rawAnnotations.shapes, ...groundTruthAnnotations.shapes],
-        tracks: [...rawAnnotations.tracks, ...groundTruthAnnotations.tracks],
-        tags: [...rawAnnotations.tags, ...groundTruthAnnotations.tags],
+        shapes: rawAnnotations.shapes.slice(0).concat(groundTruthAnnotations.shapes.slice(0)),
+        tracks: rawAnnotations.tracks.slice(0).concat(groundTruthAnnotations.tracks.slice(0)),
+        tags: rawAnnotations.tags.slice(0).concat(groundTruthAnnotations.tags.slice(0)),
     };
     return result;
 }
 
 function addJobId(rawAnnotations, jobID) {
-    rawAnnotations.shapes.forEach((annotation) => { annotation.job_id = jobID; });
-    rawAnnotations.tracks.forEach((annotation) => { annotation.job_id = jobID; });
-    rawAnnotations.tags.forEach((annotation) => { annotation.job_id = jobID; });
+    const annotations = [].concat(
+        rawAnnotations.shapes,
+        rawAnnotations.tracks,
+        rawAnnotations.tags,
+    );
+    annotations.forEach((annotation) => { annotation.job_id = jobID; });
     const result = {
-        shapes: [...rawAnnotations.shapes],
-        tracks: [...rawAnnotations.tracks],
-        tags: [...rawAnnotations.tags],
+        shapes: rawAnnotations.shapes.slice(0),
+        tracks: rawAnnotations.tracks.slice(0),
+        tags: rawAnnotations.tags.slice(0),
     };
     return result;
 }
