@@ -13,8 +13,8 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
-import { RawQualityReportData } from 'quality-report';
-import { RawQualitySettingsData } from 'quality-settings';
+import { SerializedQualityReportData } from 'quality-report';
+import { SerializedQualitySettingsData } from 'quality-settings';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
@@ -22,7 +22,7 @@ import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { FunctionsResponseBody } from './server-response-types';
-import { RawQualityConflictData } from './quality-conflict';
+import { SerializedQualityConflictData } from './quality-conflict';
 
 type Params = {
     org: number | string,
@@ -2200,7 +2200,7 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
-async function getQualityReports(filter): Promise<RawQualityReportData[]> {
+async function getQualityReports(filter): Promise<SerializedQualityReportData[]> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -2218,7 +2218,7 @@ async function getQualityReports(filter): Promise<RawQualityReportData[]> {
     }
 }
 
-async function getQualityConflicts(filter): Promise<RawQualityConflictData[]> {
+async function getQualityConflicts(filter): Promise<SerializedQualityConflictData[]> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -2234,7 +2234,7 @@ async function getQualityConflicts(filter): Promise<RawQualityConflictData[]> {
     }
 }
 
-async function getQualitySettings(taskID: number): Promise<RawQualitySettingsData> {
+async function getQualitySettings(taskID: number): Promise<SerializedQualitySettingsData> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -2254,8 +2254,8 @@ async function getQualitySettings(taskID: number): Promise<RawQualitySettingsDat
 
 async function updateQualitySettings(
     settingsID: number,
-    settingsData: RawQualitySettingsData,
-): Promise<RawQualitySettingsData> {
+    settingsData: SerializedQualitySettingsData,
+): Promise<SerializedQualitySettingsData> {
     const params = enableOrganization();
     const { backendAPI } = config;
 

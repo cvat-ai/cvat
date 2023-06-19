@@ -13,17 +13,17 @@ export enum ConflictSeverity {
     WARNING = 'warning',
 }
 
-export interface RawQualityConflictData {
+export interface SerializedQualityConflictData {
     id?: number;
     frame?: number;
     type?: string;
-    annotation_ids?: RawAnnotationConflictData[];
+    annotation_ids?: SerializedAnnotationConflictData[];
     data?: string;
     severity?: string;
     description?: string;
 }
 
-export interface RawAnnotationConflictData {
+export interface SerializedAnnotationConflictData {
     job_id?: number;
     obj_id?: number;
     client_id?: number;
@@ -43,8 +43,8 @@ export class AnnotationConflict {
     public readonly severity: ConflictSeverity;
     public readonly description: string;
 
-    constructor(initialData: RawAnnotationConflictData) {
-        const data: RawAnnotationConflictData = {
+    constructor(initialData: SerializedAnnotationConflictData) {
+        const data: SerializedAnnotationConflictData = {
             job_id: undefined,
             obj_id: undefined,
             client_id: undefined,
@@ -106,8 +106,8 @@ export default class QualityConflict {
     public readonly severity: ConflictSeverity;
     public description: string;
 
-    constructor(initialData: RawQualityConflictData) {
-        const data: RawQualityConflictData = {
+    constructor(initialData: SerializedQualityConflictData) {
+        const data: SerializedQualityConflictData = {
             id: undefined,
             frame: undefined,
             type: undefined,
@@ -123,7 +123,7 @@ export default class QualityConflict {
         }
 
         data.annotation_ids = data.annotation_ids
-            .map((rawData: RawAnnotationConflictData) => new AnnotationConflict({
+            .map((rawData: SerializedAnnotationConflictData) => new AnnotationConflict({
                 ...rawData,
                 conflict_type: data.type,
                 severity: data.severity,

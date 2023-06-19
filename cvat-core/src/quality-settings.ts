@@ -5,7 +5,7 @@
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 
-export interface RawQualitySettingsData {
+export interface SerializedQualitySettingsData {
     id?: number;
     task?: number;
     iou_threshold?: number;
@@ -38,8 +38,8 @@ export default class QualitySettings {
     public panopticComparison: boolean;
     public compareAttributes: boolean;
 
-    constructor(initialData: RawQualitySettingsData) {
-        const data: RawQualitySettingsData = {
+    constructor(initialData: SerializedQualitySettingsData) {
+        const data: SerializedQualitySettingsData = {
             id: undefined,
             task: undefined,
             iou_threshold: undefined,
@@ -147,8 +147,8 @@ export default class QualitySettings {
         );
     }
 
-    public toJSON(): RawQualitySettingsData {
-        const result: RawQualitySettingsData = {
+    public toJSON(): SerializedQualitySettingsData {
+        const result: SerializedQualitySettingsData = {
             iou_threshold: this.iouThreshold,
             oks_sigma: this.oksSigma,
             line_thickness: this.lineThickness,

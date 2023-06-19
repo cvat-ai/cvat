@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-export interface RawQualityReportData {
+export interface SerializedQualityReportData {
     id?: number;
     parent_id?: number;
     task_id?: number;
@@ -66,8 +66,8 @@ export default class QualityReport {
     public readonly gtLastUpdated: string;
     public readonly summary: QualitySummary;
 
-    constructor(initialData: RawQualityReportData) {
-        const data: RawQualityReportData = {
+    constructor(initialData: SerializedQualityReportData) {
+        const data: SerializedQualityReportData = {
             id: undefined,
             parent_id: undefined,
             task_id: undefined,
