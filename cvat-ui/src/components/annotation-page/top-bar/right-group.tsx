@@ -14,12 +14,10 @@ import Modal from 'antd/lib/modal';
 import {
     FilterIcon, FullscreenIcon, GuideIcon, InfoIcon,
 } from 'icons';
-import { DimensionType, getCore } from 'cvat-core-wrapper';
+import { DimensionType } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
 
 import MDEditor from '@uiw/react-md-editor';
-
-const core = getCore();
 
 interface Props {
     workspace: Workspace;

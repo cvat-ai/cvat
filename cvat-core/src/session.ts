@@ -15,7 +15,7 @@ import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
-import { SerializedJob, SerializedTask } from 'server-response-types';
+import { SerializedJob, SerializedTask } from './server-response-types';
 import AnnotationGuide from './guide';
 
 function buildDuplicatedAPI(prototype) {

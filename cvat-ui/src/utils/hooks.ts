@@ -61,10 +61,10 @@ export function usePlugins(
     return ref.current;
 }
 
-export default function useGoBack(): () => void {
+export function useGoBack(): () => void {
     const history = useHistory();
     const goBack = useCallback(() => {
-        if (history.location !== 'default') {
+        if (history.action !== 'POP') {
             history.goBack();
         } else {
             history.push('/');
@@ -72,7 +72,7 @@ export default function useGoBack(): () => void {
     }, []);
 
     return goBack;
-};
+}
 
 export interface ICardHeightHOC {
     numberOfRows: number;

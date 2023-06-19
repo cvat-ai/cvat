@@ -26,8 +26,7 @@ import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
-import AnnotationGuide from './guide';
-import { SerializedAsset } from 'server-response-types';
+import { SerializedAsset } from './server-response-types';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
