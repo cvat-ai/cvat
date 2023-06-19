@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Issues with running serverless models for EXIF-rotated images. (<https://github.com/opencv/cvat/pull/6275/>)
 - File uploading issues when using https configuration. (<https://github.com/opencv/cvat/pull/6308>)
+- The problem with manifest file in tasks restored from backup (<https://github.com/opencv/cvat/issues/5971>)
+- The problem with task mode in a task restored from backup (<https://github.com/opencv/cvat/issues/5668>)
 
 ### Security
 - TDB
@@ -55,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dataset export error with `outside` property of tracks (<https://github.com/opencv/cvat/issues/5971>)
 - Broken logging in the TransT serverless function
   (<https://github.com/opencv/cvat/pull/6290>)
+
+### Security
+- TDB
 
 ## \[2.4.5] - 2023-06-02
 ### Added

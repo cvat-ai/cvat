@@ -313,6 +313,7 @@ def _validate_manifest(
     db_cloud_storage: Optional[Any],
     data_storage_method: str,
     data_sorting_method: str,
+    isBackupRestore: bool,
 ) -> Optional[str]:
     if manifests:
         if len(manifests) != 1:
@@ -331,15 +332,21 @@ def _validate_manifest(
         if is_manifest(full_manifest_path):
             if not (
                 data_sorting_method == models.SortingMethod.PREDEFINED or
-                data_storage_method == models.StorageMethodChoice.CACHE and settings.USE_CACHE
+                (settings.USE_CACHE and data_storage_method == models.StorageMethodChoice.CACHE) or
+                isBackupRestore
             ):
+                cache_disabled_message = ""
                 if data_storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
-                    slogger.glob.warning("This server doesn't allow to use cache for data. "
-                        "Please turn 'use cache' off and try to recreate the task")
+                    cache_disabled_message = (
+                        "This server doesn't allow to use cache for data. "
+                        "Please turn 'use cache' off and try to recreate the task"
+                    )
+                    slogger.glob.warning(cache_disabled_message)
 
                 raise ValidationError(
                     "A manifest file can only be used with the 'use cache' option "
-                    "or when the 'sorting_method' == 'predefined'"
+                    "or when 'sorting_method' is 'predefined'" + \
+                    (". " + cache_disabled_message if cache_disabled_message else "")
                 )
             return manifest_file
 
@@ -547,6 +554,7 @@ def _create_thread(
         db_cloud_storage=db_data.cloud_storage if is_data_in_cloud else None,
         data_storage_method=db_data.storage_method,
         data_sorting_method=data['sorting_method'],
+        isBackupRestore=isBackupRestore,
     )
 
     manifest = None
