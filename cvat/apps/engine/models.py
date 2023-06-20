@@ -1142,12 +1142,24 @@ class AnnotationGuide(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
 
+    @property
+    def target(self):
+        return self.project or self.task
+
+    @property
+    def organization_id(self):
+        return self.target.organization_id
+
 class Asset(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     filename = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
     guide = models.ForeignKey(AnnotationGuide, on_delete=models.CASCADE, related_name="assets")
+
+    @property
+    def organization_id(self):
+        return self.guide.organization_id
 
     def get_asset_dir(self):
         return os.path.join(settings.ASSETS_ROOT, str(self.uuid))

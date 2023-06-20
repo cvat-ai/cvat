@@ -23,55 +23,27 @@ import data.organizations
 #     "resource": {
 #         "id": <num>,
 #         "organization": { "id": <num> or null },
-#         "task": {
-#             "owner": { "id": <num> or null },
-#             "assignee": { "id": <num> or null },
-#         },
-#         "project": {
+#         "target": {
 #             "owner": { "id": <num> or null },
 #             "assignee": { "id": <num> or null },
 #         },
 #     }
 # }
 
-is_task_owner {
-    input.resource.owner.id == input.auth.user.id
+is_target_owner {
+    input.resource.target.owner.id == input.auth.user.id
 }
 
-is_task_assignee {
-    input.resource.assignee.id == input.auth.user.id
-}
-
-is_project_owner {
-    input.resource.project.owner.id == input.auth.user.id
-}
-
-is_project_assignee {
-    input.resource.project.assignee.id == input.auth.user.id
-}
-
-is_project_staff {
-    is_project_owner
-}
-
-is_project_staff {
-    is_project_assignee
-}
-
-is_task_staff {
-    is_task_owner
-}
-
-is_task_staff {
-    is_task_assignee
+is_target_assignee {
+    input.resource.target.assignee.id == input.auth.user.id
 }
 
 is_target_staff {
-    is_project_staff
+    is_target_owner
 }
 
 is_target_staff {
-    is_task_staff
+    is_target_assignee
 }
 
 default allow = false

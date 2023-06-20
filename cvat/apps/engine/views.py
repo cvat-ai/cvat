@@ -2650,7 +2650,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             msg = str(ex)
             return HttpResponseBadRequest(msg)
 
-class AssetsViewset(
+class AssetsViewSet(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
     mixins.CreateModelMixin, mixins.DestroyModelMixin
 ):
@@ -2706,9 +2706,7 @@ class AssetsViewset(
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
-        serializer.save(
-            owner=self.request.user,
-        )
+        serializer.save(owner=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -2720,7 +2718,7 @@ class AssetsViewset(
             os.remove(full_path)
         instance.delete()
 
-class AnnotationGuidesViewset(
+class AnnotationGuidesViewSet(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
     mixins.CreateModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
 ):
@@ -2729,10 +2727,6 @@ class AnnotationGuidesViewset(
     ).prefetch_related('assets').all()
     search_fields = ()
     ordering = "-id"
-
-    # NOTE: This filter works incorrectly for this view
-    # it requires task__organization OR project__organization check.
-    # Anyway we do not need any filtering in this class since it does not have 'list' method
     iam_organization_field = None
 
     @staticmethod
@@ -2765,10 +2759,6 @@ class AnnotationGuidesViewset(
             db_job = Job.objects.select_related('segment', 'segment__task', 'segment__task__project').get(id=job_id)
             super().check_object_permissions(request, db_job)
             return
-
-        setattr(obj, 'organization_id', getattr(
-            (obj.project if obj.project else obj.task).organization
-        , 'id', None))
         super().check_object_permissions(request, obj)
 
     def get_serializer_class(self):
@@ -2779,12 +2769,12 @@ class AnnotationGuidesViewset(
 
     def perform_create(self, serializer):
         serializer.save()
-        AnnotationGuidesViewset._update_assets(serializer.instance)
+        AnnotationGuidesViewSet._update_assets(serializer.instance)
         (serializer.instance.project or serializer.instance.task).save()
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        AnnotationGuidesViewset._update_assets(serializer.instance)
+        AnnotationGuidesViewSet._update_assets(serializer.instance)
         (serializer.instance.project or serializer.instance.task).save()
 
     def perform_destroy(self, instance):

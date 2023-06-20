@@ -55,8 +55,6 @@ def get_organization(request, obj):
     # Try to get organization from an object otherwise, return the organization that is specified in query parameters
     if obj is not None and isinstance(obj, Organization):
         return obj
-    if obj is not None and isinstance(obj, AnnotationGuide):
-        return (obj.project if obj.project else obj.task).organization
 
     if obj:
         try:
@@ -1699,61 +1697,36 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
     def get_resource(self):
         data = {}
         if self.obj:
-            db_project = getattr(self.obj, 'project', {})
-            db_task = getattr(self.obj, 'task', {})
-            db_organization = getattr(db_project, 'organization', None) or getattr(db_task, 'organization', None) or {}
+            db_target = getattr(self.obj, 'project', getattr(self.obj, 'task', {}))
+            db_organization = getattr(db_target, 'organization', None) or {}
             data.update({
                 'id': self.obj.id,
-                'project': {
-                    'owner': { 'id': getattr(getattr(db_project, 'owner', {}), 'id', None) },
-                    'assignee': { 'id': getattr(getattr(db_project, 'assignee', {}), 'id', None) }
-                },
-                'task': {
-                    'owner': { 'id': getattr(getattr(db_task, 'owner', {}), 'id', None) },
-                    'assignee': { 'id': getattr(getattr(db_task, 'assignee', {}), 'id', None) }
+                'target': {
+                    'owner': { 'id': getattr(getattr(db_target, 'owner', {}), 'id', None) },
+                    'assignee': { 'id': getattr(getattr(db_target, 'assignee', {}), 'id', None) }
                 },
                 'organization': { 'id': getattr(db_organization, 'id', None) }
             })
         elif self.scope == __class__.Scopes.CREATE:
-            data.update({
-                'project': {
-                    'owner': { 'id': None },
-                    'assignee': { 'id': None }
-                },
-                'task': {
-                    'owner': { 'id': None },
-                    'assignee': { 'id': None }
-                },
-                'organization': { 'id': None }
-            })
-
+            db_target = None
             if self.project_id is not None:
                 try:
-                    db_project = Project.objects.get(id=self.project_id)
-                    db_organization = getattr(db_project, 'organization', {})
-                    data.update({
-                        'project': {
-                            'owner': { 'id': db_project.owner.id },
-                            'assignee': { 'id': getattr(db_project.assignee, 'id', None) }
-                        },
-                        'organization': { 'id': getattr(db_organization, 'id', None) }
-                    })
+                    db_target = Project.objects.get(id=self.project_id)
                 except Project.DoesNotExist as ex:
                     raise ValidationError(str(ex))
             elif self.task_id is not None:
                 try:
-                    db_task = Task.objects.get(id=self.task_id)
-                    db_organization = getattr(db_task, 'organization', {})
-                    data.update({
-                        'task': {
-                            'owner': { 'id': db_task.owner.id },
-                            'assignee': { 'id': getattr(db_task.assignee, 'id', None) }
-                        },
-                        'organization': { 'id': getattr(db_organization, 'id', None) }
-                    })
+                    db_target = Task.objects.get(id=self.task_id)
                 except Task.DoesNotExist as ex:
                     raise ValidationError(str(ex))
-
+            db_organization = getattr(db_target, 'organization', {})
+            data.update({
+                'target': {
+                    'owner': { 'id': db_target.owner.id },
+                    'assignee': { 'id': getattr(db_target.assignee, 'id', None) }
+                },
+                'organization': { 'id': getattr(db_organization, 'id', None) }
+            })
         return data
 
 class GuideAssetPermission(OpenPolicyAgentPermission):
