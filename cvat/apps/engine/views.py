@@ -2650,6 +2650,25 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             msg = str(ex)
             return HttpResponseBadRequest(msg)
 
+@extend_schema(tags=['assets'])
+@extend_schema_view(
+    create=extend_schema(
+        summary='Method saves new asset on the server and attaches it to a corresponding guide',
+        request=AssetWriteSerializer,
+        responses={
+            '201': AssetReadSerializer,
+        }),
+    retrieve=extend_schema(
+        summary='Method returns an asset file',
+        responses={
+            '200': OpenApiResponse(description='Asset file')
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a specific asset from the server',
+        responses={
+            '204': OpenApiResponse(description='The asset has been deleted'),
+        }),
+)
 class AssetsViewSet(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
     mixins.CreateModelMixin, mixins.DestroyModelMixin
@@ -2715,6 +2734,32 @@ class AssetsViewSet(
             os.remove(full_path)
         instance.delete()
 
+
+@extend_schema(tags=['guides'])
+@extend_schema_view(
+    create=extend_schema(
+        summary='Method creates a new annotation guide binded to a project or to a task',
+        request=AnnotationGuideWriteSerializer,
+        responses={
+            '201': AnnotationGuideReadSerializer,
+        }),
+    retrieve=extend_schema(
+        summary='Method returns details of a specific annotation guide',
+        responses={
+            '200': AnnotationGuideReadSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a specific annotation guide and all attached assets',
+        responses={
+            '204': OpenApiResponse(description='The annotation guide has been deleted'),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in an annotation guide',
+        request=AnnotationGuideWriteSerializer(partial=True),
+        responses={
+            '200': AnnotationGuideReadSerializer, # check TaskWriteSerializer.to_representation
+        })
+)
 class AnnotationGuidesViewSet(
     viewsets.GenericViewSet, mixins.RetrieveModelMixin,
     mixins.CreateModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin

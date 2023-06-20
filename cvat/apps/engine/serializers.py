@@ -1991,12 +1991,11 @@ class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     uuid = serializers.CharField(required=False)
     filename = serializers.CharField(required=True, max_length=1024)
     guide_id = serializers.IntegerField(required=True)
-    owner = BasicUserSerializer(required=False)
 
     class Meta:
         model = models.Asset
-        fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id', )
-        write_once_fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id', )
+        fields = ('uuid', 'filename', 'created_date', 'guide_id', )
+        write_once_fields = ('uuid', 'filename', 'created_date', 'guide_id', )
 
 class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
     class Meta:
