@@ -63,6 +63,7 @@ services:
       # NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9094'
+      COVERAGE_PROCESS_START:
     ports:
       - '9094:9094'
 
