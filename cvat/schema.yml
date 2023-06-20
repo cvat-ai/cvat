@@ -8928,7 +8928,9 @@ components:
           type: string
           readOnly: true
         owner:
-          $ref: '#/components/schemas/BasicUser'
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          nullable: true
         assignee:
           allOf:
           - $ref: '#/components/schemas/BasicUser'

@@ -1030,7 +1030,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     size = serializers.ReadOnlyField(source='data.size', required=False)
     image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
     data = serializers.ReadOnlyField(source='data.id', required=False)
-    owner = BasicUserSerializer(required=False)
+    owner = BasicUserSerializer(required=False, allow_null=True)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
