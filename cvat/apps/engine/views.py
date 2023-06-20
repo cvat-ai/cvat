@@ -5,7 +5,6 @@
 
 import io
 import os
-import re
 import os.path as osp
 from types import SimpleNamespace
 from typing import Optional
