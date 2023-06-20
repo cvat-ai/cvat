@@ -202,6 +202,21 @@ class TestGetTasks:
 
         assert server_task.jobs.completed == 1
 
+    def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, tasks):
+        # test for API schema regressions
+        source_task = next(
+            t for t in tasks if t.get("owner") and t["owner"]["username"] != admin_user
+        ).copy()
+
+        with make_api_client(admin_user) as api_client:
+            api_client.users_api.destroy(source_task["owner"]["id"])
+
+            (_, response) = api_client.tasks_api.retrieve(source_task["id"])
+            fetched_task = json.loads(response.data)
+
+        source_task["owner"] = None
+        assert DeepDiff(source_task, fetched_task, ignore_order=True) == {}
+
 
 class TestListTasksFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
