@@ -1030,7 +1030,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
     size = serializers.ReadOnlyField(source='data.size', required=False)
     image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
     data = serializers.ReadOnlyField(source='data.id', required=False)
-    owner = BasicUserSerializer(required=False)
+    owner = BasicUserSerializer(required=False, allow_null=True)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
@@ -1245,7 +1245,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return attrs
 
 class ProjectReadSerializer(serializers.ModelSerializer):
-    owner = BasicUserSerializer(required=False, read_only=True)
+    owner = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
@@ -1633,7 +1633,7 @@ class ManifestSerializer(serializers.ModelSerializer):
         return instance.filename if instance else instance
 
 class CloudStorageReadSerializer(serializers.ModelSerializer):
-    owner = BasicUserSerializer(required=False)
+    owner = BasicUserSerializer(required=False, allow_null=True)
     manifests = ManifestSerializer(many=True, default=[])
     class Meta:
         model = models.CloudStorage
