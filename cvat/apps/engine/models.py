@@ -361,7 +361,44 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+class TaskQuerySet(models.QuerySet):
+    def with_label_summary(self):
+        return self.prefetch_related(
+            'label_set',
+            'label_set__parent',
+            'project__label_set',
+            'project__label_set__parent',
+        ).annotate(
+            task_labels_count=models.Count('label',
+                filter=models.Q(label__parent__isnull=True),
+                distinct=True
+            ),
+            proj_labels_count=models.Count('project__label',
+                filter=models.Q(project__label__parent__isnull=True),
+                distinct=True
+            )
+        )
+
+    def with_job_summary(self):
+        return self.prefetch_related(
+            'segment_set__job_set',
+        ).annotate(
+            completed_jobs_count=models.Count(
+                'segment__job',
+                filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
+                       models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value),
+                distinct=True,
+            ),
+            validation_jobs_count=models.Count(
+                'segment__job',
+                filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value),
+                distinct=True,
+            )
+        )
+
 class Task(models.Model):
+    objects = TaskQuerySet.as_manager()
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
         null=True, blank=True, related_name="tasks",
         related_query_name="task")
@@ -415,6 +452,20 @@ class Task(models.Model):
 
     def get_tmp_dirname(self):
         return os.path.join(self.get_dirname(), "tmp")
+
+    @cached_property
+    def completed_jobs_count(self) -> Optional[int]:
+        # Requires this field to be defined externally,
+        # e.g. by calling Task.objects.with_job_summary,
+        # to avoid unexpected DB queries on access.
+        return None
+
+    @cached_property
+    def validation_jobs_count(self) -> Optional[int]:
+        # Requires this field to be defined externally,
+        # e.g. by calling Task.objects.with_job_summary,
+        # to avoid unexpected DB queries on access.
+        return None
 
     @cached_property
     def gt_job(self) -> Optional[Job]:
