@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - The problem with manifest file in tasks restored from backup (<https://github.com/opencv/cvat/issues/5971>)
 - The problem with task mode in a task restored from backup (<https://github.com/opencv/cvat/issues/5668>)
+- \[API\] Performance of several API endpoints (<https://github.com/opencv/cvat/pull/6340>)
 
 ### Security
 - TDB
