@@ -2662,9 +2662,6 @@ class AssetsViewSet(
     ordering = "uuid"
 
     def check_object_permissions(self, request, obj):
-        setattr(obj.guide, 'organization_id', getattr(
-            (obj.guide.project if obj.guide.project else obj.guide.task).organization
-        , 'id', None))
         super().check_object_permissions(request, obj.guide)
 
     def get_serializer_class(self):
@@ -2729,26 +2726,6 @@ class AnnotationGuidesViewSet(
     ordering = "-id"
     iam_organization_field = None
 
-    @staticmethod
-    def _update_assets(guide):
-        new_assets = []
-        current_assets = list(guide.assets.all())
-        markdown = guide.markdown
-
-        # pylint: disable=anomalous-backslash-in-string
-        pattern = re.compile('\!\[image\]\(\/api\/assets\/([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})\)')
-        results = re.findall(pattern, markdown)
-
-        for asset_id in results:
-            new_asset = models.Asset.objects.get(pk=asset_id)
-            if new_asset.guide_id != guide.id:
-                raise ValidationError('Asset is already related to another guide')
-            new_assets.append(new_asset)
-
-        for current_asset in current_assets:
-            if current_asset not in new_assets:
-                current_asset.delete()
-
     def check_object_permissions(self, request, obj):
         job_id = self.request.GET.get('job_id', None)
         if self.action == 'retrieve' and job_id is not None:
@@ -2768,14 +2745,12 @@ class AnnotationGuidesViewSet(
             return AnnotationGuideWriteSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
-        AnnotationGuidesViewSet._update_assets(serializer.instance)
-        (serializer.instance.project or serializer.instance.task).save()
+        super().perform_create(serializer)
+        serializer.instance.target.save()
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        AnnotationGuidesViewSet._update_assets(serializer.instance)
-        (serializer.instance.project or serializer.instance.task).save()
+        serializer.instance.target.save()
 
     def perform_destroy(self, instance):
         (instance.project or instance.task).save()
