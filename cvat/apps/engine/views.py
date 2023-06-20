@@ -2653,7 +2653,17 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 @extend_schema_view(
     create=extend_schema(
         summary='Method saves new asset on the server and attaches it to a corresponding guide',
-        request=AssetWriteSerializer,
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'file': {
+                        'type': 'string',
+                        'format': 'binary'
+                    }
+                }
+            }
+        },
         responses={
             '201': AssetReadSerializer,
         }),

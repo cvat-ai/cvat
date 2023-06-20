@@ -21,13 +21,13 @@ paths:
       - assets
       requestBody:
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AssetWriteRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AssetWriteRequest'
-        required: true
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -5971,21 +5971,6 @@ components:
           readOnly: true
       required:
       - filename
-    AssetWriteRequest:
-      type: object
-      properties:
-        uuid:
-          type: string
-          minLength: 1
-        filename:
-          type: string
-          minLength: 1
-          maxLength: 1024
-        guide_id:
-          type: integer
-      required:
-      - filename
-      - guide_id
     Attribute:
       type: object
       properties:
