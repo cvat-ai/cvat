@@ -151,7 +151,7 @@ class TestGetInvitations:
             invitations
             for invitations in invitations
             if invitations.get("owner") and invitations["owner"]["username"] != admin_user
-        )
+        ).copy()
 
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_inv["owner"]["id"])

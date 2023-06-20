@@ -206,7 +206,7 @@ class TestGetTasks:
         # test for API schema regressions
         source_task = next(
             t for t in tasks if t.get("owner") and t["owner"]["username"] != admin_user
-        )
+        ).copy()
 
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_task["owner"]["id"])

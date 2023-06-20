@@ -91,7 +91,7 @@ class TestGetOrganizations:
             org
             for org in organizations
             if org.get("owner") and org["owner"]["username"] != admin_user
-        )
+        ).copy()
 
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_org["owner"]["id"])

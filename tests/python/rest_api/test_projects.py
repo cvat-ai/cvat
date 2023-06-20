@@ -144,7 +144,7 @@ class TestGetProjects:
         # test for API schema regressions
         source_project = next(
             p for p in projects if p.get("owner") and p["owner"]["username"] != admin_user
-        )
+        ).copy()
 
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_project["owner"]["id"])

@@ -117,7 +117,7 @@ class TestGetCloudStorage:
         # test for API schema regressions
         source_storage = next(
             s for s in cloud_storages if s.get("owner") and s["owner"]["username"] != admin_user
-        )
+        ).copy()
 
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_storage["owner"]["id"])
