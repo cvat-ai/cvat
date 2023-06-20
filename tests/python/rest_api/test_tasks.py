@@ -204,7 +204,9 @@ class TestGetTasks:
 
     def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, tasks):
         # test for API schema regressions
-        source_task = next(t for t in tasks if t["owner"]["username"] != admin_user)
+        source_task = next(
+            t for t in tasks if t.get("owner") and t["owner"]["username"] != admin_user
+        )
 
         with make_api_client(admin_user) as api_client:
             api_client.users_api.destroy(source_task["owner"]["id"])

@@ -113,6 +113,21 @@ class TestGetCloudStorage:
         else:
             self._test_cannot_see(username, storage_id)
 
+    def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, cloud_storages):
+        # test for API schema regressions
+        source_storage = next(
+            s for s in cloud_storages if s.get("owner") and s["owner"]["username"] != admin_user
+        )
+
+        with make_api_client(admin_user) as api_client:
+            api_client.users_api.destroy(source_storage["owner"]["id"])
+
+            (_, response) = api_client.cloudstorages_api.retrieve(source_storage["id"])
+            fetched_storage = json.loads(response.data)
+
+        source_storage["owner"] = None
+        assert DeepDiff(source_storage, fetched_storage, ignore_order=True) == {}
+
 
 class TestCloudStoragesListFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
