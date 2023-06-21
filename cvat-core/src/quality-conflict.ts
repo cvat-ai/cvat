@@ -34,129 +34,114 @@ export interface SerializedAnnotationConflictData {
 }
 
 export class AnnotationConflict {
-    public readonly jobID: number;
-    public readonly serverID: number;
-    public clientID: number;
-    public readonly type: string;
-    public readonly shapeType: string | null;
-    public readonly conflictType: QualityConflictType;
-    public readonly severity: ConflictSeverity;
-    public readonly description: string;
+    #jobID: number;
+    #serverID: number;
+    #clientID: number;
+    #type: string;
+    #shapeType: string | null;
+    #conflictType: QualityConflictType;
+    #severity: ConflictSeverity;
+    #description: string;
 
     constructor(initialData: SerializedAnnotationConflictData) {
-        const data: SerializedAnnotationConflictData = {
-            job_id: undefined,
-            obj_id: undefined,
-            client_id: undefined,
-            type: undefined,
-            shape_type: undefined,
-            conflict_type: undefined,
-            severity: undefined,
-        };
+        this.#jobID = initialData.job_id;
+        this.#serverID = initialData.obj_id;
+        this.#clientID = initialData.client_id;
+        this.#type = initialData.type;
+        this.#shapeType = initialData.shape_type;
+        this.#conflictType = initialData.conflict_type as QualityConflictType;
+        this.#severity = initialData.severity as ConflictSeverity;
 
-        for (const property in data) {
-            if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
-                data[property] = initialData[property];
-            }
-        }
+        const desc = this.#conflictType.split('_').join(' ');
+        this.#description = desc.charAt(0).toUpperCase() + desc.slice(1);
+    }
 
-        Object.defineProperties(
-            this,
-            Object.freeze({
-                jobID: {
-                    get: () => data.job_id,
-                },
-                serverID: {
-                    get: () => data.obj_id,
-                },
-                clientID: {
-                    get: () => data.client_id,
-                    set: (newID: number) => {
-                        data.client_id = newID;
-                    },
-                },
-                type: {
-                    get: () => data.type,
-                },
-                shapeType: {
-                    get: () => data.shape_type,
-                },
-                conflictType: {
-                    get: () => data.conflict_type,
-                },
-                severity: {
-                    get: () => data.severity,
-                },
-                description: {
-                    get: () => {
-                        const desc = this.conflictType.split('_').join(' ');
-                        return desc.charAt(0).toUpperCase() + desc.slice(1);
-                    },
-                },
-            }),
-        );
+    get jobID(): number {
+        return this.#jobID;
+    }
+
+    get serverID(): number {
+        return this.#serverID;
+    }
+
+    get clientID(): number {
+        return this.#clientID;
+    }
+
+    set clientID(newID: number) {
+        this.#clientID = newID;
+    }
+
+    get type(): string {
+        return this.#type;
+    }
+
+    get shapeType(): string | null {
+        return this.#shapeType;
+    }
+
+    get conflictType(): QualityConflictType {
+        return this.#conflictType;
+    }
+
+    get severity(): ConflictSeverity {
+        return this.#severity;
+    }
+
+    get description(): string {
+        return this.#description;
     }
 }
 
 export default class QualityConflict {
-    public readonly id: number;
-    public readonly frame: number;
-    public readonly type: QualityConflictType;
-    public readonly annotationConflicts: AnnotationConflict[];
-    public readonly severity: ConflictSeverity;
-    public description: string;
+    #id: number;
+    #frame: number;
+    #type: QualityConflictType;
+    #annotationConflicts: AnnotationConflict[];
+    #severity: ConflictSeverity;
+    #description: string;
 
     constructor(initialData: SerializedQualityConflictData) {
-        const data: SerializedQualityConflictData = {
-            id: undefined,
-            frame: undefined,
-            type: undefined,
-            annotation_ids: [],
-            severity: undefined,
-            description: undefined,
-        };
-
-        for (const property in data) {
-            if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
-                data[property] = initialData[property];
-            }
-        }
-
-        data.annotation_ids = data.annotation_ids
+        this.#id = initialData.id;
+        this.#frame = initialData.frame;
+        this.#type = initialData.type as QualityConflictType;
+        this.#severity = initialData.severity as ConflictSeverity;
+        this.#annotationConflicts = initialData.annotation_ids
             .map((rawData: SerializedAnnotationConflictData) => new AnnotationConflict({
                 ...rawData,
-                conflict_type: data.type,
-                severity: data.severity,
+                conflict_type: initialData.type,
+                severity: initialData.severity,
             }));
 
-        const desc = data.type.split('_').join(' ');
-        data.description = desc.charAt(0).toUpperCase() + desc.slice(1);
+        const desc = initialData.type.split('_').join(' ');
+        this.#description = desc.charAt(0).toUpperCase() + desc.slice(1);
+    }
 
-        Object.defineProperties(
-            this,
-            Object.freeze({
-                id: {
-                    get: () => data.id,
-                },
-                frame: {
-                    get: () => data.frame,
-                },
-                type: {
-                    get: () => data.type,
-                },
-                annotationConflicts: {
-                    get: () => data.annotation_ids,
-                },
-                severity: {
-                    get: () => data.severity,
-                },
-                description: {
-                    get: () => data.description,
-                    set: (newDescription) => {
-                        data.description = newDescription;
-                    },
-                },
-            }),
-        );
+    get id(): number {
+        return this.#id;
+    }
+
+    get frame(): number {
+        return this.#frame;
+    }
+
+    get type(): QualityConflictType {
+        return this.#type;
+    }
+
+    get annotationConflicts(): AnnotationConflict[] {
+        return this.#annotationConflicts;
+    }
+
+    get severity(): ConflictSeverity {
+        return this.#severity;
+    }
+
+    get description(): string {
+        return this.#description;
+    }
+
+    set description(newDescription: string) {
+        this.#description = newDescription;
     }
 }

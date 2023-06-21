@@ -57,84 +57,77 @@ export interface QualitySummary {
 }
 
 export default class QualityReport {
-    public readonly id: number;
-    public readonly parentId: number;
-    public readonly taskId: number;
-    public readonly jobId: number;
-    public readonly target: string;
-    public readonly createdDate: string;
-    public readonly gtLastUpdated: string;
-    public readonly summary: QualitySummary;
+    #id: number;
+    #parentId: number;
+    #taskId: number;
+    #jobId: number;
+    #target: string;
+    #createdDate: string;
+    #gtLastUpdated: string;
+    #summary: Partial<SerializedQualityReportData['summary']>;
 
     constructor(initialData: SerializedQualityReportData) {
-        const data: SerializedQualityReportData = {
-            id: undefined,
-            parent_id: undefined,
-            task_id: undefined,
-            job_id: undefined,
-            target: '',
-            gt_last_updated: undefined,
-            summary: undefined,
-            created_date: undefined,
+        this.#id = initialData.id;
+        this.#parentId = initialData.parent_id;
+        this.#taskId = initialData.task_id;
+        this.#jobId = initialData.job_id;
+        this.#target = initialData.target;
+        this.#gtLastUpdated = initialData.gt_last_updated;
+        this.#summary = initialData.summary;
+    }
+
+    get id(): number {
+        return this.#id;
+    }
+
+    get parentId(): number {
+        return this.#parentId;
+    }
+
+    get taskId(): number {
+        return this.#taskId;
+    }
+
+    get jobId(): number {
+        return this.#jobId;
+    }
+
+    get target(): string {
+        return this.#target;
+    }
+
+    get gtLastUpdated(): string {
+        return this.#gtLastUpdated;
+    }
+
+    get createdDate(): string {
+        return this.#createdDate;
+    }
+
+    get summary(): QualitySummary {
+        return {
+            frameCount: this.#summary.frame_count,
+            frameSharePercent: this.#summary.frame_share * 100,
+            conflictCount: this.#summary.conflict_count,
+            validCount: this.#summary.valid_count,
+            dsCount: this.#summary.ds_count,
+            gtCount: this.#summary.gt_count,
+            accuracy: (this.#summary.valid_count /
+                (this.#summary.ds_count + this.#summary.gt_count - this.#summary.valid_count)) * 100,
+            precision: (this.#summary.valid_count / this.#summary.gt_count) * 100,
+            recall: (this.#summary.valid_count / this.#summary.ds_count) * 100,
+            conflictsByType: {
+                extraAnnotations: this.#summary.conflicts_by_type?.extra_annotation,
+                missingAnnotations: this.#summary.conflicts_by_type?.missing_annotation,
+                mismatchingLabel: this.#summary.conflicts_by_type?.mismatching_label,
+                lowOverlap: this.#summary.conflicts_by_type?.low_overlap,
+                mismatchingDirection: this.#summary.conflicts_by_type?.mismatching_direction,
+                mismatchingAttributes: this.#summary.conflicts_by_type?.mismatching_attributes,
+                mismatchingGroups: this.#summary.conflicts_by_type?.mismatching_groups,
+                coveredAnnotation: this.#summary.conflicts_by_type?.covered_annotation,
+            },
+            errorCount: this.#summary.error_count,
+            warningCount: this.#summary.warning_count,
         };
-
-        for (const property in data) {
-            if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
-                data[property] = initialData[property];
-            }
-        }
-
-        Object.defineProperties(
-            this,
-            Object.freeze({
-                id: {
-                    get: () => data.id,
-                },
-                parentId: {
-                    get: () => data.parent_id,
-                },
-                taskId: {
-                    get: () => data.task_id,
-                },
-                jobId: {
-                    get: () => data.job_id,
-                },
-                target: {
-                    get: () => data.target,
-                },
-                gtLastUpdated: {
-                    get: () => data.gt_last_updated,
-                },
-                summary: {
-                    get: () => ({
-                        frameCount: data.summary.frame_count,
-                        frameSharePercent: data.summary.frame_share * 100,
-                        conflictCount: data.summary.conflict_count,
-                        validCount: data.summary.valid_count,
-                        dsCount: data.summary.ds_count,
-                        gtCount: data.summary.gt_count,
-                        accuracy: (data.summary.valid_count /
-                            (data.summary.ds_count + data.summary.gt_count - data.summary.valid_count)) * 100,
-                        precision: (data.summary.valid_count / data.summary.gt_count) * 100,
-                        recall: (data.summary.valid_count / data.summary.ds_count) * 100,
-                        conflictsByType: {
-                            extraAnnotations: data.summary.conflicts_by_type?.extra_annotation,
-                            missingAnnotations: data.summary.conflicts_by_type?.missing_annotation,
-                            mismatchingLabel: data.summary.conflicts_by_type?.mismatching_label,
-                            lowOverlap: data.summary.conflicts_by_type?.low_overlap,
-                            mismatchingDirection: data.summary.conflicts_by_type?.mismatching_direction,
-                            mismatchingAttributes: data.summary.conflicts_by_type?.mismatching_attributes,
-                            mismatchingGroups: data.summary.conflicts_by_type?.mismatching_groups,
-                            coveredAnnotation: data.summary.conflicts_by_type?.covered_annotation,
-                        },
-                        errorCount: data.summary.error_count,
-                        warningCount: data.summary.warning_count,
-                    }),
-                },
-                createdDate: {
-                    get: () => data.created_date,
-                },
-            }),
-        );
     }
 }
