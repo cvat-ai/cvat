@@ -43,14 +43,14 @@ To create an organization, do the following:
 
 <!--lint disable maximum-line-length-->
 
-| Field            | Description                                                        |
-| ---------------- | ------------------------------------------------------------------ |
-| **Short name**   | A name of the organization that will be displayed in the CVAT menu |
-| **Full Name**    | Optional. Full name of the organization.                           |
-| **Description**  | Optional. Description of organization                              |
-| **Email**        | Optional. Your email                                               |
-| **Phone number** | Optional. Your phone number                                        |
-| **Location**     | Optional. Organization address.                                    |
+| Field            | Description                                                         |
+| ---------------- | ------------------------------------------------------------------- |
+| **Short name**   | A name of the organization that will be displayed in the CVAT menu. |
+| **Full Name**    | Optional. Full name of the organization.                            |
+| **Description**  | Optional. Description of organization.                              |
+| **Email**        | Optional. Your email.                                               |
+| **Phone number** | Optional. Your phone number.                                        |
+| **Location**     | Optional. Organization address.                                     |
 
 <!--lint enable maximum-line-length-->
 
