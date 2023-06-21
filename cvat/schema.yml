@@ -1134,6 +1134,12 @@ paths:
           type: integer
         description: A unique integer value identifying this annotation guide.
         required: true
+      - in: query
+        name: job_id
+        schema:
+          type: string
+        description: Job identificator for which guide is required
+        required: true
       tags:
       - guides
       security:

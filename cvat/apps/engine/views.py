@@ -2754,6 +2754,10 @@ class AssetsViewSet(
         }),
     retrieve=extend_schema(
         summary='Method returns details of a specific annotation guide',
+        parameters=[
+            OpenApiParameter('job_id', description='Job identificator for which guide is required',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=True),
+        ],
         responses={
             '200': AnnotationGuideReadSerializer,
         }),
