@@ -90,9 +90,11 @@ export default function (state: ReviewState = defaultState, action: any): Review
 
             const mergedFrameConflicts = [];
             if (state.conflicts.length) {
-                const serverIDMap: Record<number, number> = {};
+                const serverIDMap: Record<string, number> = {};
                 states.forEach((_state: ObjectState) => {
-                    if (_state.serverID && _state.clientID) serverIDMap[_state.serverID] = _state.clientID;
+                    if (_state.serverID && _state.clientID) {
+                        serverIDMap[`${_state.serverID}${_state.objectType || ''}`] = _state.clientID;
+                    }
                 });
 
                 const conflictMap: Record<number, QualityConflict[]> = {};
@@ -100,8 +102,9 @@ export default function (state: ReviewState = defaultState, action: any): Review
                     .filter((conflict: QualityConflict): boolean => conflict.frame === frame);
                 frameConflicts.forEach((qualityConflict: QualityConflict) => {
                     qualityConflict.annotationConflicts.forEach((annotationConflict: AnnotationConflict) => {
-                        if (serverIDMap[annotationConflict.serverID]) {
-                            annotationConflict.clientID = serverIDMap[annotationConflict.serverID];
+                        const key = `${annotationConflict.serverID}${annotationConflict.type || ''}`;
+                        if (serverIDMap[key]) {
+                            annotationConflict.clientID = serverIDMap[key];
                         }
                     });
                     const firstObjID = qualityConflict.annotationConflicts[0].clientID;
