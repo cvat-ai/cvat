@@ -473,7 +473,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 Math.min(jobInstance.stopFrame, value),
                 jobInstance.stopFrame,
             );
-            console.log(frameNumber, value, newFrame);
             if (newFrame !== null) {
                 this.changeFrame(newFrame);
             }

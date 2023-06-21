@@ -4,7 +4,7 @@
 
 import './styles.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
 import { useHistory, useParams } from 'react-router';
@@ -37,7 +37,7 @@ function TaskAnalyticsPage(): JSX.Element {
                     }
                 }).catch((error: Error) => {
                     notification.error({
-                        message: 'Could not receive the requested project from the server',
+                        message: 'Could not receive the requested task from the server',
                         description: error.toString(),
                     });
                 }).finally(() => {
@@ -52,7 +52,7 @@ function TaskAnalyticsPage(): JSX.Element {
         }
     };
 
-    const onJobUpdate = (job: Job): void => {
+    const onJobUpdate = useCallback((job: Job): void => {
         setFetchingTask(true);
         job.save().then(() => {
             receieveTask();
@@ -64,7 +64,7 @@ function TaskAnalyticsPage(): JSX.Element {
         }).finally(() => {
             setFetchingTask(false);
         });
-    };
+    }, [notification]);
 
     useEffect((): void => {
         receieveTask();

@@ -15,9 +15,7 @@ import Pagination from 'antd/lib/pagination';
 import Empty from 'antd/lib/empty';
 import Button from 'antd/lib/button';
 import { CopyOutlined, PlusOutlined } from '@ant-design/icons';
-import {
-    Task, Job,
-} from 'cvat-core-wrapper';
+import { Task, Job } from 'cvat-core-wrapper';
 import JobItem from 'components/job-item/job-item';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {

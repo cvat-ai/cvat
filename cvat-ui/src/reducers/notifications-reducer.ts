@@ -1541,7 +1541,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         fetching: {
                             message: 'Could not fetch a list of jobs',
                             reason: action.payload.error.toString(),
-                            className: 'cvat-notification-notice-update-get-jobs-failed',
+                            className: 'cvat-notification-notice-get-jobs-failed',
                         },
                     },
                 },

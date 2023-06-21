@@ -1,4 +1,3 @@
-// Copyright (C) 2020-2022 Intel Corporation
 // Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
@@ -47,7 +46,7 @@ function JobListComponent(props: Props): JSX.Element {
             if (report) jobsReportsMap[job.id] = report;
         }
         setJobsReports(jobsReportsMap);
-    }, [renderedJobs, jobReportsFromState]);
+    }, [renderedJobs, jobReportsFromState, jobs]);
 
     function sorter(path: string) {
         return (obj1: any, obj2: any): number => {
