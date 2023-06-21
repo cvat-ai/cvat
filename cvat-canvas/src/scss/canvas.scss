@@ -153,38 +153,38 @@ polyline.cvat_canvas_shape_splitting {
 }
 
 .cvat_canvas_conflicted {
-    stroke: #ff4800 !important;
-    fill: #ff4800 !important;
+    stroke: #ff4800;
+    fill: #ff4800;
 
     rect,
     ellipse,
     polygon,
     polyline,
     line {
-        fill: #ff4800 !important;
-        stroke: #ff4800 !important;
+        fill: #ff4800;
+        stroke: #ff4800;
     }
 
     circle {
-        fill: #ff4800 !important;
+        fill: #ff4800;
     }
 }
 
 .cvat_canvas_warned {
-    stroke: #ff7301 !important;
-    fill: #ff7301 !important;
+    stroke: #ff7301;
+    fill: #ff7301;
 
     rect,
     ellipse,
     polygon,
     polyline,
     line {
-        fill: #ff7301 !important;
-        stroke: #ff7301 !important;
+        fill: #ff7301;
+        stroke: #ff7301;
     }
 
     circle {
-        fill: #ff7301 !important;
+        fill: #ff7301;
     }
 }
 
@@ -340,16 +340,16 @@ g.cvat_canvas_shape_occluded {
 
 .cvat-canvas-highlight-enabled {
     svg {
-        rect:not(.cvat_canvas_issue_region),
-        ellipse:not(.cvat_canvas_issue_region),
-        polygon:not(.cvat_canvas_issue_region),
-        polyline:not(.cvat_canvas_issue_region),
-        line:not(.cvat_canvas_issue_region) {
+        rect:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        ellipse:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        polygon:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        polyline:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        line:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
             fill: gray;
             stroke: gray;
         }
 
-        circle:not(.cvat_canvas_issue_region) {
+        circle:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
             fill: gray;
         }
     }
