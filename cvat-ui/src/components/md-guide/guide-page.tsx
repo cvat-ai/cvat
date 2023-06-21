@@ -36,18 +36,19 @@ function GuidePage(): JSX.Element {
             markdown: value,
         }),
     );
-    const [fetching, setFetching] = useState(false);
+    const [fetching, setFetching] = useState(true);
 
     useEffect(() => {
-        setFetching(true);
         const promise = instanceType === 'project' ? core.projects.get({ id }) : core.tasks.get({ id });
         promise.then(([instance]: [Task | Project]) => (
             instance.guide()
-        )).then((guideInstance: AnnotationGuide | null) => {
-            if (guideInstance) {
-                return (async () => guideInstance)();
+        )).then(async (guideInstance: AnnotationGuide | null) => {
+            if (!guideInstance) {
+                const createdGuide = await guide.save();
+                return createdGuide;
             }
-            return guide.save();
+
+            return guideInstance;
         }).then((guideInstance: AnnotationGuide) => {
             if (isMounted()) {
                 setValue(guideInstance.markdown);

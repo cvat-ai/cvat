@@ -11,7 +11,7 @@ import Slider from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
-import modal from 'antd/lib/modal';
+import Modal from 'antd/lib/modal';
 
 import { RestoreIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -65,7 +65,7 @@ function PlayerNavigation(props: Props): JSX.Element {
     const showDeleteFrameDialog = useCallback(() => {
         if (!playing) {
             switchNavigationBlocked(true);
-            modal.confirm({
+            Modal.confirm({
                 title: `Do you want to delete frame #${frameNumber}?`,
                 content: 'The frame will not be visible in navigation and exported datasets, but it still can be restored with all the annotations.',
                 className: 'cvat-modal-delete-frame',

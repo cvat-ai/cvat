@@ -10,6 +10,7 @@ import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
+import notification from 'antd/lib/notification';
 
 import {
     FilterIcon, FullscreenIcon, GuideIcon, InfoIcon,
@@ -62,25 +63,30 @@ function RightGroup(props: Props): JSX.Element {
                     className='cvat-annotation-header-guide-button cvat-annotation-header-button'
                     onClick={async (): Promise<void> => {
                         const PADDING = Math.min(window.screen.availHeight, window.screen.availWidth) * 0.4;
-                        const guide = await jobInstance.guide();
-                        Modal.info({
-                            icon: null,
-                            width: window.screen.availWidth - PADDING,
-                            content: (
-                                <>
-                                    <MDEditor
-                                        visibleDragbar={false}
-                                        data-color-mode='light'
-                                        height={window.screen.availHeight - PADDING}
-                                        preview='preview'
-                                        hideToolbar
-                                        value={guide.markdown}
-                                    />
-                                </>
-                            ),
-                        });
-
-                        // todo: handle loading, handle errors
+                        try {
+                            const guide = await jobInstance.guide();
+                            Modal.info({
+                                icon: null,
+                                width: window.screen.availWidth - PADDING,
+                                content: (
+                                    <>
+                                        <MDEditor
+                                            visibleDragbar={false}
+                                            data-color-mode='light'
+                                            height={window.screen.availHeight - PADDING}
+                                            preview='preview'
+                                            hideToolbar
+                                            value={guide.markdown}
+                                        />
+                                    </>
+                                ),
+                            });
+                        } catch (error: any) {
+                            notification.error({
+                                message: 'Could not receive annotation guide',
+                                description: error.toString(),
+                            });
+                        }
                     }}
                 >
                     <Icon component={GuideIcon} />

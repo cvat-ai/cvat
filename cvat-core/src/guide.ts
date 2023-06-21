@@ -8,55 +8,51 @@ import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 
 class AnnotationGuide {
-    public readonly id?: number;
-    public readonly taskId: number;
-    public readonly projectId: number;
-    public readonly createdDate?: string;
-    public readonly updatedDate?: string;
-    public markdown: string;
+    #id: AnnotationGuide['id'];
+    #taskId: AnnotationGuide['taskId'];
+    #projectId: AnnotationGuide['projectId'];
+    #createdDate?: AnnotationGuide['createdDate'];
+    #updatedDate?: AnnotationGuide['updatedDate'];
+    #markdown: AnnotationGuide['markdown'];
 
     constructor(initialData: Partial<SerializedGuide>) {
-        const data = {
-            id: undefined,
-            task_id: null,
-            project_id: null,
-            created_date: undefined,
-            updated_date: undefined,
-            markdown: '',
-        };
+        this.#id = initialData.id;
+        this.#taskId = initialData.task_id || null;
+        this.#projectId = initialData.project_id || null;
+        this.#createdDate = initialData.created_date;
+        this.#updatedDate = initialData.updated_date;
+        this.#markdown = initialData.markdown || '';
+    }
 
-        for (const property in data) {
-            if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
-                data[property] = initialData[property];
-            }
+    public get id(): number | undefined {
+        return this.#id;
+    }
+
+    public get taskId(): number | null {
+        return this.#taskId;
+    }
+
+    public get projectId(): number | null {
+        return this.#projectId;
+    }
+
+    public get createdDate(): string | undefined {
+        return this.#createdDate;
+    }
+
+    public get updatedDate(): string | undefined {
+        return this.#updatedDate;
+    }
+
+    public get markdown(): string {
+        return this.#markdown;
+    }
+
+    public set markdown(value: string) {
+        if (typeof value !== 'string') {
+            throw new ArgumentError(`Markdown value must be a string, ${typeof value} received`);
         }
-
-        Object.defineProperties(this, Object.freeze({
-            id: {
-                get: () => data.id,
-            },
-            taskId: {
-                get: () => data.task_id,
-            },
-            projectId: {
-                get: () => data.project_id,
-            },
-            createdDate: {
-                get: () => data.created_date,
-            },
-            updatedData: {
-                get: () => data.updated_date,
-            },
-            markdown: {
-                get: () => data.markdown,
-                set: (value: string) => {
-                    if (typeof value !== 'string') {
-                        throw new ArgumentError(`Markdown value must be a string, ${typeof value} received`);
-                    }
-                    data.markdown = value;
-                },
-            },
-        }));
+        this.#markdown = value;
     }
 
     async save(): Promise<AnnotationGuide> {
@@ -76,7 +72,7 @@ Object.defineProperties(AnnotationGuide.prototype.save, {
             }
 
             if (this.projectId === null && this.taskId === null) {
-                throw new DataError('One of projectId or taskId must be presented for a guide');
+                throw new DataError('One of projectId or taskId must be specified for a guide');
             }
 
             if (this.projectId !== null && this.taskId !== null) {
