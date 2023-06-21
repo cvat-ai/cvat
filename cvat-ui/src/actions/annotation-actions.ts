@@ -1602,18 +1602,16 @@ export function deleteFrameAsync(frame: number): ThunkAction {
                 },
             });
 
-            if (!showDeletedFrames) {
-                let notDeletedFrame = await jobInstance.frames.search(
-                    { notDeleted: true }, frame, jobInstance.stopFrame,
+            let notDeletedFrame = await jobInstance.frames.search(
+                { notDeleted: !showDeletedFrames }, frame, jobInstance.stopFrame,
+            );
+            if (notDeletedFrame === null && jobInstance.startFrame !== frame) {
+                notDeletedFrame = await jobInstance.frames.search(
+                    { notDeleted: !showDeletedFrames }, frame, jobInstance.startFrame,
                 );
-                if (notDeletedFrame === null && jobInstance.startFrame !== frame) {
-                    notDeletedFrame = await jobInstance.frames.search(
-                        { notDeleted: true }, frame, jobInstance.startFrame,
-                    );
-                }
-                if (notDeletedFrame !== null) {
-                    dispatch(changeFrameAsync(notDeletedFrame));
-                }
+            }
+            if (notDeletedFrame !== null) {
+                dispatch(changeFrameAsync(notDeletedFrame));
             }
         } catch (error) {
             dispatch({

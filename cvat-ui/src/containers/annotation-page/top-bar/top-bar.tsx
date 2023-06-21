@@ -305,8 +305,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             frameNumber, jobInstance, playing, onSwitchPlay, showDeletedFrames,
         } = this.props;
 
-        const newFrame = showDeletedFrames ? jobInstance.startFrame :
-            await jobInstance.frames.search({ notDeleted: true }, jobInstance.startFrame, frameNumber);
+        const newFrame =
+            await jobInstance.frames.search({ notDeleted: !showDeletedFrames }, jobInstance.startFrame, frameNumber);
         if (newFrame !== frameNumber && newFrame !== null) {
             if (playing) {
                 onSwitchPlay(false);
@@ -347,6 +347,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             frameFrom,
             jobInstance.startFrame,
         );
+
         if (newFrame !== frameNumber && newFrame !== null) {
             if (playing) {
                 onSwitchPlay(false);
@@ -414,8 +415,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             frameNumber, jobInstance, playing, onSwitchPlay, showDeletedFrames,
         } = this.props;
 
-        const newFrame = showDeletedFrames ? jobInstance.stopFrame :
-            await jobInstance.frames.search({ notDeleted: true }, jobInstance.stopFrame, frameNumber);
+        const newFrame =
+            await jobInstance.frames.search({ notDeleted: !showDeletedFrames }, jobInstance.stopFrame, frameNumber);
         if (newFrame !== frameNumber && frameNumber !== null) {
             if (playing) {
                 onSwitchPlay(false);

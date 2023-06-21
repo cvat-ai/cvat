@@ -824,7 +824,8 @@ export async function findFrame(jobID, frameFrom, frameTo, filters) {
     let lastUndeletedFrame = null;
     const check = (frame): boolean => {
         if (meta.included_frames) {
-            return (meta.included_frames.includes(frame)) && !(frame in meta.deleted_frames);
+            return (meta.included_frames.includes(frame)) &&
+            (!filters.notDeleted || !(frame in meta.deleted_frames));
         }
         if (filters.notDeleted) {
             return !(frame in meta.deleted_frames);
