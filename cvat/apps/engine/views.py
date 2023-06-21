@@ -2768,12 +2768,11 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
         elif rq_job.is_failed or \
                 rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
             exc_info = process_failed_job(rq_job)
-            # RQ adds a prefix with exception class name
-            import_error_prefix = '{}.{}'.format(
-                CvatImportError.__module__, CvatImportError.__name__)
-            if import_error_prefix in exc_info:
-                return Response(data="The annotations that were uploaded are not correct",
-                    status=status.HTTP_400_BAD_REQUEST)
+
+            import_error_prefix = f'{CvatImportError.__module__}.{CvatImportError.__name__}:'
+            if exc_info.startswith("Traceback") and import_error_prefix in exc_info:
+                exc_message = exc_info.split(import_error_prefix)[-1].strip()
+                return Response(data=exc_message, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response(data=exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
