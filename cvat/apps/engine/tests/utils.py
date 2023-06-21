@@ -4,7 +4,7 @@
 
 from contextlib import contextmanager
 from io import BytesIO
-from typing import Callable, Iterator, TypeVar
+from typing import Any, Callable, Dict, Iterator, Sequence, TypeVar
 import itertools
 import logging
 import os
@@ -124,3 +124,9 @@ def get_paginated_collection(
             break
 
     return values
+
+
+def filter_dict(
+    d: Dict[str, Any], *, keep: Sequence[str] = None, drop: Sequence[str] = None
+) -> Dict[str, Any]:
+    return {k: v for k, v in d.items() if (not keep or k in keep) and (not drop or k not in drop)}

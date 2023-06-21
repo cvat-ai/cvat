@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 from copy import deepcopy
 from http import HTTPStatus
 
@@ -10,7 +11,13 @@ import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
-from shared.utils.config import delete_method, get_method, options_method, patch_method
+from shared.utils.config import (
+    delete_method,
+    get_method,
+    make_api_client,
+    options_method,
+    patch_method,
+)
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -77,6 +84,23 @@ class TestGetOrganizations:
             assert DeepDiff(organizations[self._ORG], response.json()) == {}
         else:
             assert response.status_code == HTTPStatus.NOT_FOUND
+
+    def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, organizations):
+        # test for API schema regressions
+        source_org = next(
+            org
+            for org in organizations
+            if org.get("owner") and org["owner"]["username"] != admin_user
+        ).copy()
+
+        with make_api_client(admin_user) as api_client:
+            api_client.users_api.destroy(source_org["owner"]["id"])
+
+            (_, response) = api_client.organizations_api.retrieve(source_org["id"])
+            fetched_org = json.loads(response.data)
+
+        source_org["owner"] = None
+        assert DeepDiff(source_org, fetched_org, ignore_order=True) == {}
 
 
 class TestOrganizationsListFilters(CollectionSimpleFilterTestBase):

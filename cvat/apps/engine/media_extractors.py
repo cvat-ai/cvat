@@ -31,7 +31,6 @@ from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
 
 ORIENTATION_EXIF_TAG = 274
 
-
 class ORIENTATION(IntEnum):
     NORMAL_HORIZONTAL=1
     MIRROR_HORIZONTAL=2
@@ -41,7 +40,6 @@ class ORIENTATION(IntEnum):
     NORMAL_90_ROTATED=6
     MIRROR_HORIZONTAL_90_ROTATED=7
     NORMAL_270_ROTATED=8
-
 
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
@@ -648,22 +646,37 @@ class IChunkWriter(ABC):
         pass
 
 class ZipChunkWriter(IChunkWriter):
+    IMAGE_EXT = 'jpeg'
+    POINT_CLOUD_EXT = 'pcd'
+
+    def _write_pcd_file(self, image):
+        image_buf = open(image, "rb") if isinstance(image, str) else image
+        try:
+            properties = ValidateDimension.get_pcd_properties(image_buf)
+            w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
+            image_buf.seek(0, 0)
+            return io.BytesIO(image_buf.read()), self.POINT_CLOUD_EXT, w, h
+        finally:
+            if isinstance(image, str):
+                image_buf.close()
+
     def save_as_chunk(self, images, chunk_path):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
-                arcname = '{:06d}{}'.format(idx, os.path.splitext(path)[1])
-                if isinstance(image, io.BytesIO):
-                    zip_chunk.writestr(arcname, image.getvalue())
+                ext = os.path.splitext(path)[1]
+                output = io.BytesIO()
+                if self._dimension == DimensionType.DIM_2D:
+                    pil_image = rotate_within_exif(Image.open(image))
+                    pil_image.save(output, format=pil_image.format if pil_image.format else ext or self.IMAGE_EXT, quality=100, subsampling=0)
                 else:
-                    zip_chunk.write(filename=image, arcname=arcname)
+                    output, ext = self._write_pcd_file(image)[0:2]
+                arcname = '{:06d}.{}'.format(idx, ext)
+                zip_chunk.writestr(arcname, output.getvalue())
         # return empty list because ZipChunkWriter write files as is
         # and does not decode it to know img size.
         return []
 
-class ZipCompressedChunkWriter(IChunkWriter):
-    IMAGE_EXT = 'jpeg'
-    POINT_CLOUD_EXT = 'pcd'
-
+class ZipCompressedChunkWriter(ZipChunkWriter):
     def save_as_chunk(
         self, images, chunk_path, *, compress_frames: bool = True, zip_compress_level: int = 0
     ):
@@ -680,12 +693,7 @@ class ZipCompressedChunkWriter(IChunkWriter):
 
                     extension = self.IMAGE_EXT
                 else:
-                    image_buf = open(image, "rb") if isinstance(image, str) else image
-                    properties = ValidateDimension.get_pcd_properties(image_buf)
-                    w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
-                    extension = self.POINT_CLOUD_EXT
-                    image_buf.seek(0, 0)
-                    image_buf = io.BytesIO(image_buf.read())
+                    image_buf, extension, w, h = self._write_pcd_file(image)
                 image_sizes.append((w, h))
                 arcname = '{:06d}.{}'.format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())

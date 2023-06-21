@@ -313,6 +313,7 @@ def _validate_manifest(
     db_cloud_storage: Optional[Any],
     data_storage_method: str,
     data_sorting_method: str,
+    isBackupRestore: bool,
 ) -> Optional[str]:
     if manifests:
         if len(manifests) != 1:
@@ -331,15 +332,21 @@ def _validate_manifest(
         if is_manifest(full_manifest_path):
             if not (
                 data_sorting_method == models.SortingMethod.PREDEFINED or
-                data_storage_method == models.StorageMethodChoice.CACHE and settings.USE_CACHE
+                (settings.USE_CACHE and data_storage_method == models.StorageMethodChoice.CACHE) or
+                isBackupRestore
             ):
+                cache_disabled_message = ""
                 if data_storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
-                    slogger.glob.warning("This server doesn't allow to use cache for data. "
-                        "Please turn 'use cache' off and try to recreate the task")
+                    cache_disabled_message = (
+                        "This server doesn't allow to use cache for data. "
+                        "Please turn 'use cache' off and try to recreate the task"
+                    )
+                    slogger.glob.warning(cache_disabled_message)
 
                 raise ValidationError(
                     "A manifest file can only be used with the 'use cache' option "
-                    "or when the 'sorting_method' == 'predefined'"
+                    "or when 'sorting_method' is 'predefined'" + \
+                    (". " + cache_disabled_message if cache_disabled_message else "")
                 )
             return manifest_file
 
@@ -547,6 +554,7 @@ def _create_thread(
         db_cloud_storage=db_data.cloud_storage if is_data_in_cloud else None,
         data_storage_method=db_data.storage_method,
         data_sorting_method=data['sorting_method'],
+        isBackupRestore=isBackupRestore,
     )
 
     manifest = None
@@ -580,12 +588,7 @@ def _create_thread(
                     )
                 if cloud_storage_manifest_prefix:
                     additional_files = [os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files]
-                if len(data['server_files']) + len(additional_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
-                    raise ValidationError(
-                        'The maximum number of the cloud storage attached files '
-                        f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
             else:
-                number_of_files = len(data['server_files'])
                 while len(dirs):
                     directory = dirs.pop()
                     for f in cloud_storage_instance.list_files(prefix=directory, _use_flat_listing=True):
@@ -593,11 +596,7 @@ def _create_thread(
                             additional_files.append(f['name'])
                         else:
                             dirs.append(f['name'])
-                    # we check the limit of files on each iteration to reduce the number of possible requests to the bucket
-                    if (len(additional_files) + len(dirs) + number_of_files) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
-                        raise ValidationError(
-                            'The maximum number of the cloud storage attached files '
-                            f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
+
             data['server_files'].extend(additional_files)
             del additional_files
 
@@ -637,10 +636,6 @@ def _create_thread(
                 if not data['filename_pattern'] == '*':
                     additional_files = fnmatch.filter(additional_files, data['filename_pattern'])
 
-            if (len(additional_files)) > settings.CLOUD_STORAGE_MAX_FILES_COUNT:
-                raise ValidationError(
-                    'The maximum number of the cloud storage attached files '
-                    f'is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
             data['server_files'].extend(additional_files)
 
         if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
@@ -897,7 +892,7 @@ def _create_thread(
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         kwargs["dimension"] = validate_dimension.dimension
     compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality, **kwargs)
-    original_chunk_writer = original_chunk_writer_class(original_quality)
+    original_chunk_writer = original_chunk_writer_class(original_quality, **kwargs)
 
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
