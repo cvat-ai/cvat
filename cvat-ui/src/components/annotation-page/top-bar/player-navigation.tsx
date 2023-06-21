@@ -23,6 +23,7 @@ interface Props {
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;
+    deleteFrameAvailable: boolean;
     deleteFrameShortcut: string;
     focusFrameInputShortcut: string;
     inputFrameRef: React.RefObject<Input>;
@@ -51,6 +52,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         onDeleteFrame,
         onRestoreFrame,
         switchNavigationBlocked,
+        deleteFrameAvailable,
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
@@ -80,6 +82,15 @@ function PlayerNavigation(props: Props): JSX.Element {
             });
         }
     }, [playing, frameNumber]);
+    const deleteFrameIcon = !frameDeleted ? (
+        <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>
+            <DeleteOutlined className='cvat-player-delete-frame' onClick={showDeleteFrameDialog} />
+        </CVATTooltip>
+    ) : (
+        <CVATTooltip title='Restore the frame'>
+            <Icon className='cvat-player-restore-frame' onClick={onRestoreFrame} component={RestoreIcon} />
+        </CVATTooltip>
+    );
 
     return (
         <>
@@ -105,15 +116,9 @@ function PlayerNavigation(props: Props): JSX.Element {
                         <CVATTooltip title='Create frame URL'>
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
-                        { (!frameDeleted) ? (
-                            <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>
-                                <DeleteOutlined className='cvat-player-delete-frame' onClick={showDeleteFrameDialog} />
-                            </CVATTooltip>
-                        ) : (
-                            <CVATTooltip title='Restore the frame'>
-                                <Icon className='cvat-player-restore-frame' onClick={onRestoreFrame} component={RestoreIcon} />
-                            </CVATTooltip>
-                        )}
+                        {
+                            deleteFrameAvailable && deleteFrameIcon
+                        }
                     </Col>
                 </Row>
             </Col>

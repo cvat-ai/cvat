@@ -41,6 +41,7 @@ interface Props {
     focusFrameInputShortcut: string;
     activeControl: ActiveControl;
     toolsBlockerState: ToolsBlockerState;
+    deleteFrameAvailable: boolean;
     changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
     showFilters(): void;
@@ -117,6 +118,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onFinishDraw,
         onSwitchToolsBlockerState,
         onDeleteFrame,
+        deleteFrameAvailable,
         onRestoreFrame,
         switchNavigationBlocked,
         jobInstance,
@@ -146,7 +148,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                     <PlayerButtons
                         playing={playing}
                         playPauseShortcut={playPauseShortcut}
-                        deleteFrameShortcut={deleteFrameShortcut}
                         nextFrameShortcut={nextFrameShortcut}
                         previousFrameShortcut={previousFrameShortcut}
                         forwardShortcut={forwardShortcut}
@@ -179,6 +180,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                         onDeleteFrame={onDeleteFrame}
                         onRestoreFrame={onRestoreFrame}
                         switchNavigationBlocked={switchNavigationBlocked}
+                        deleteFrameAvailable={deleteFrameAvailable}
                     />
                 </Row>
             </Col>
