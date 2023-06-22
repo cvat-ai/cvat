@@ -24,9 +24,9 @@ import {
 } from 'actions/settings-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
-    CombinedState, StatesOrdering, ObjectType, ColorBy,
+    CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace,
 } from 'reducers';
-import { ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { FramesMetaData, ObjectState, ShapeType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 
 interface OwnProps {
@@ -51,6 +51,9 @@ interface StateToProps {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
+    statesSources: number[];
+    groundTruthJobFramesMeta: FramesMetaData | null;
+    workspace: Workspace;
 }
 
 interface DispatchToProps {
@@ -92,13 +95,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     let statesHidden = true;
     let statesLocked = true;
-    const filteredStates = filterAnnotations(objectStates, {
-        statesSources,
-        frame: frameNumber,
-        groundTruthJobFramesMeta,
-        workspace,
-    });
-    filteredStates.forEach((objectState: ObjectState) => {
+
+    objectStates.forEach((objectState: ObjectState) => {
         const { lock } = objectState;
         if (!lock) {
             if (objectState.objectType !== ObjectType.TAG) {
@@ -119,7 +117,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         statesLocked,
         statesCollapsedAll: collapsedAll,
         collapsedStates: collapsed,
-        objectStates: filteredStates,
+        objectStates,
         frameNumber,
         jobInstance,
         annotationsFilters,
@@ -132,6 +130,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         showGroundTruth,
+        statesSources,
+        groundTruthJobFramesMeta,
+        workspace,
     };
 }
 
@@ -184,6 +185,7 @@ type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     statesOrdering: StatesOrdering;
     objectStates: ObjectState[];
+    filteredStates: ObjectState[];
     sortedStatesID: number[];
 }
 
@@ -201,27 +203,50 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.state = {
             statesOrdering: StatesOrdering.ID_ASCENT,
             objectStates: [],
+            filteredStates: [],
             sortedStatesID: [],
         };
     }
 
-    static getDerivedStateFromProps(props: Props, state: State): State | null {
-        if (props.objectStates === state.objectStates) {
-            return null;
-        }
+    public componentDidMount(): void {
+        this.updateObjects();
+    }
 
-        return {
-            ...state,
-            objectStates: props.objectStates,
-            sortedStatesID: sortAndMap(props.objectStates, state.statesOrdering),
-        };
+    public componentDidUpdate(prevProps: Props): void {
+        const {
+            statesSources, objectStates,
+        } = this.props;
+        const { objectStates: stateObjects } = this.state;
+        if (objectStates !== stateObjects ||
+            statesSources !== prevProps.statesSources
+        ) {
+            this.updateObjects();
+        }
+    }
+
+    private updateObjects = (): void => {
+        const {
+            statesSources, objectStates, frameNumber, groundTruthJobFramesMeta, workspace,
+        } = this.props;
+        const { statesOrdering } = this.state;
+        const filteredStates = filterAnnotations(objectStates, {
+            statesSources,
+            frame: frameNumber,
+            groundTruthJobFramesMeta,
+            workspace,
+        });
+        this.setState({
+            objectStates,
+            filteredStates,
+            sortedStatesID: sortAndMap(filteredStates, statesOrdering),
+        });
     }
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
-        const { objectStates } = this.props;
+        const { filteredStates } = this.state;
         this.setState({
             statesOrdering,
-            sortedStatesID: sortAndMap(objectStates, statesOrdering),
+            sortedStatesID: sortAndMap(filteredStates, statesOrdering),
         });
     };
 
@@ -256,33 +281,36 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private lockAllStates(locked: boolean): void {
-        const { objectStates, updateAnnotations, readonly } = this.props;
+        const { updateAnnotations, readonly } = this.props;
+        const { filteredStates } = this.state;
 
         if (!readonly) {
-            for (const objectState of objectStates) {
+            for (const objectState of filteredStates) {
                 objectState.lock = locked;
             }
 
-            updateAnnotations(objectStates);
+            updateAnnotations(filteredStates);
         }
     }
 
     private hideAllStates(hidden: boolean): void {
-        const { objectStates, updateAnnotations, readonly } = this.props;
+        const { updateAnnotations, readonly } = this.props;
+        const { filteredStates } = this.state;
 
         if (!readonly) {
-            for (const objectState of objectStates) {
+            for (const objectState of filteredStates) {
                 objectState.hidden = hidden;
             }
 
-            updateAnnotations(objectStates);
+            updateAnnotations(filteredStates);
         }
     }
 
     private collapseAllStates(collapsed: boolean): void {
-        const { objectStates, collapseStates } = this.props;
+        const { collapseStates } = this.props;
+        const { filteredStates } = this.state;
 
-        collapseStates(objectStates, collapsed);
+        collapseStates(filteredStates, collapsed);
     }
 
     public render(): JSX.Element {
@@ -307,7 +335,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             switchPropagateVisibility,
             changeFrame,
         } = this.props;
-        const { objectStates, sortedStatesID, statesOrdering } = this.state;
+        const {
+            objectStates, sortedStatesID, statesOrdering, filteredStates,
+        } = this.state;
 
         const subKeyMap = {
             SWITCH_ALL_LOCK: keyMap.SWITCH_ALL_LOCK,
@@ -508,7 +538,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
-                    objectStates={objectStates}
+                    objectStates={filteredStates}
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}

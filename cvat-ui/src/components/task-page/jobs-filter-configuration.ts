@@ -47,29 +47,8 @@ export const config: Partial<Config> = {
         },
         assignee: {
             label: 'Assignee',
-            type: 'text', // todo: change to select
+            type: 'text',
             valueSources: ['value'],
-            fieldSettings: {
-                // useAsyncSearch: true,
-                // forceAsyncSearch: true,
-                // async fetch does not work for now in this library for AntdConfig
-                // but that issue was solved, see https://github.com/ukrbublik/react-awesome-query-builder/issues/616
-                // waiting for a new release, alternative is to use material design, but it is not the best option too
-                // asyncFetch: async (search: string | null) => {
-                //     const users = await core.users.get({
-                //         limit: 10,
-                //         is_active: true,
-                //         ...(search ? { search } : {}),
-                //     });
-
-                //     return {
-                //         values: users.map((user: any) => ({
-                //             value: user.username, title: user.username,
-                //         })),
-                //         hasMore: false,
-                //     };
-                // },
-            },
         },
         updatedDate: {
             label: 'Last updated',
