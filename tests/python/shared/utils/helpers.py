@@ -24,7 +24,7 @@ def generate_image_file(filename="image.png", size=(50, 50), color=(0, 0, 0)):
 def generate_image_files(
     count, prefixes=None, *, filenames: Optional[List[str]] = None
 ) -> List[BytesIO]:
-    assert not prefixes and filenames, "prefixes cannot be used together with filenames"
+    assert not (prefixes and filenames), "prefixes cannot be used together with filenames"
     assert not prefixes or len(prefixes) == count
     assert not filenames or len(filenames) == count
 
