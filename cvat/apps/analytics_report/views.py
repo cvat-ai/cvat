@@ -22,7 +22,7 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
 
     def list(self, request):
         moc_data =  {
-        "last_updated": "2023-06-06T00:00:00Z",
+        "created_date": "2023-06-06T00:00:00Z",
         "type": "job",
         "id": 123,
         "statistics": {
@@ -30,7 +30,7 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
             "title": "Some Title",
             "description": "Detailed description",
             "granularity": "day",
-            "dafault_view": "histogram",
+            "default_view": "histogram",
             "dataseries": {
                 "created" : [
                     {
@@ -92,7 +92,7 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
             "title": "Some Title",
             "description": "Detailed description",
             "granularity": "day",
-            "dafault_view": "histogram",
+            "default_view": "histogram",
             "dataseries": {
                 "object_count": [
                 {
@@ -119,7 +119,7 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
             "annotation_time": {
             "title": "Some Title",
             "description": "Detailed description",
-            "dafault_view": "numeric",
+            "default_view": "numeric",
             "dataseries": {
                 "total_annotating_time": [
                 {
