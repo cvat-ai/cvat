@@ -24,7 +24,10 @@ See:
 
 The account's default state is activated when no **Organization** is selected.
 
-It means that a personal account is used.
+If you do not select an **Organization**, the system links all new resources directly
+to your personal account, that inhibits resource sharing with others.
+
+When **Personal workspace** is selected, it will be marked with a tick in the menu.
 
 ![](/images/personal_account.jpg)
 
@@ -55,7 +58,7 @@ To create an organization, do the following:
 <!--lint enable maximum-line-length-->
 
 The created organization will be available
-at you **nickname** > **Organization**
+at you **Username** > **Organization**
 
 ### Switching between organizations
 
@@ -70,14 +73,31 @@ Follow these steps:
 
 ![](/images/image233_1.jpg)
 
+Note, that if you've created more than 10 organizations,
+a **Switch organization** line will appear in the drop-down menu.
+
+![](/images/switch_org.png)
+
+Click on it to see the **Select organization** dialog, and select organization
+from drop-down list.
+
+![](/images/select_org.png)
+
 ## Organization page
 
 **Organization page** is a place, where you can edit the **Organization** information
-and invite users to **Organization**.
+and manage **Organization** members.
 
 ![](/images/orgpage.jpg)
 
-To go to the O**rganization page**, do the following:
+> **Note** that in order to access the organization page, you must first activate
+> the organization (see [Switching between organizations](#switching-between-organizations)).
+> Without activation, the organization page will remain inaccessible.
+> <br>An organization is considered activated when it's ticked in the drop-down menu
+> and its name is visible in the top-right corner under the username.
+
+
+To go to the **Organization page**, do the following:
 
 1. On the top menu, click your **Username** > **Organization**.
 2. In the drop-down menu, select **Organization**.
@@ -104,7 +124,7 @@ The **Invite Members** form has the following fields:
 
 | Field               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Email**           | Specifies the email address of the user who is being added to the **Organization**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **Email**           | Specifies the email address of the user who is being added to the **Organization**.  <br><br>**Note**, that the user you're inviting must already have a CVAT account (on the same instance) registered to the email address you're sending the invitation to.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Role drop-down list | Defines the role of the user which sets the level of access within the **Organization**: <br><li>**Worker**: Has access only to the tasks, projects, and jobs assigned to them. <li>**Supervisor**: Can create and assign jobs, tasks, and projects to the **Organization** members. <li>**Maintainer**: Has the same capabilities as the **Supervisor**, but with additional visibility over all tasks and projects created by other members, complete access to **Cloud Storages**, and the ability to modify members and their roles. <li>**Owner**: role assigned to the creator of the organization by default. Has maximum capabilities and cannot be changed or assigned to the other user. |
 | **Invite more**     | Button to add another user to the **Organization**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
@@ -116,6 +136,9 @@ Members of **Organization** will appear on the **Organization page**.
 
 The member of the organization can leave the organization
 by going to **Organization page** > **Leave organization**.
+
+The organization owner can remove members, by
+clicking on the **Bin** icon.
 
 ### Delete organization
 
