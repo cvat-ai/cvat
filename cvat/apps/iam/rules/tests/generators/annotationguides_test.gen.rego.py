@@ -43,6 +43,7 @@ CONTEXTS = ["sandbox", "organization"]
 OWNERSHIPS = [
     "target:owner",
     "target:assignee",
+    "job:assignee",
     "none",
 ]
 GROUPS = ["admin", "business", "user", "worker"]
@@ -58,6 +59,7 @@ def RESOURCES(scope):
             "target": {
                 "owner": {"id": random.randrange(700, 800)},
                 "assignee": {"id": random.randrange(800, 900)},
+                "is_job_staff": False,
             },
         }
     ]
@@ -122,6 +124,9 @@ def get_data(scope, context, ownership, privilege, membership, resource, same_or
 
         if same_org:
             data["resource"]["organization"]["id"] = org_id
+
+    if ownership == "job:assignee":
+        data["resource"]["target"]["is_job_staff"] = True
 
     if ownership == "target:owner":
         data["resource"]["target"]["owner"]["id"] = user_id
