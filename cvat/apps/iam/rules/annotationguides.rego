@@ -26,6 +26,7 @@ import data.organizations
 #         "target": {
 #             "owner": { "id": <num> or null },
 #             "assignee": { "id": <num> or null },
+#             "is_job_staff": <boolean>,
 #         },
 #     }
 # }
@@ -50,6 +51,13 @@ default allow = false
 
 allow {
     utils.is_admin
+}
+
+allow {
+    input.scope == utils.VIEW
+    utils.is_sandbox
+    utils.has_perm(utils.WORKER)
+    input.resource.target.is_job_staff
 }
 
 allow {
@@ -86,4 +94,11 @@ allow {
     input.auth.organization.id == input.resource.organization.id
     organizations.is_member
     is_target_staff
+}
+
+allow {
+    input.scope == utils.VIEW
+    input.auth.organization.id == input.resource.organization.id
+    organizations.is_member
+    input.resource.target.is_job_staff
 }

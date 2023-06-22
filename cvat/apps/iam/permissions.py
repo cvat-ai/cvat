@@ -1698,12 +1698,13 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
         data = {}
         if self.obj:
             db_target = getattr(self.obj, 'target', {})
-            db_organization = getattr(db_target, 'organization', None) or {}
+            db_organization = getattr(db_target, 'organization', {})
             data.update({
                 'id': self.obj.id,
                 'target': {
                     'owner': { 'id': getattr(getattr(db_target, 'owner', {}), 'id', None) },
-                    'assignee': { 'id': getattr(getattr(db_target, 'assignee', {}), 'id', None) }
+                    'assignee': { 'id': getattr(getattr(db_target, 'assignee', {}), 'id', None) },
+                    'is_job_staff': db_target.is_job_assignee(self.user_id),
                 },
                 'organization': { 'id': getattr(db_organization, 'id', None) }
             })

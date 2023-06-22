@@ -351,6 +351,9 @@ class Project(models.Model):
     def get_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "project.log")
 
+    def is_job_assignee(self, user_id):
+        return self.tasks.prefetch_related('segment_set', 'segment_set__job_set').filter(segment__job__assignee=user_id).count() > 0
+
     @cache_deleted
     def delete(self, using=None, keep_parents=False):
         super().delete(using, keep_parents)
@@ -453,6 +456,9 @@ class Task(models.Model):
 
     def get_tmp_dirname(self):
         return os.path.join(self.get_dirname(), "tmp")
+
+    def is_job_assignee(self, user_id):
+        return self.segment_set.prefetch_related('job_set').filter(job__assignee=user_id).count() > 0
 
     @cached_property
     def completed_jobs_count(self) -> Optional[int]:
