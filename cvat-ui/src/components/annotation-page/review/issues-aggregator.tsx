@@ -51,18 +51,18 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
 
     const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
 
-    const readyToRender = canvasInstance instanceof Canvas && canvasIsReady;
+    const canvasReady = canvasInstance instanceof Canvas && canvasIsReady;
 
     const onEnter = useCallback((conflict: QualityConflict) => {
-        if (readyToRender && activeControl === ActiveControl.CURSOR) {
+        if (canvasReady && activeControl === ActiveControl.CURSOR) {
             dispatch(highlightConflict(conflict));
         }
-    }, [readyToRender, activeControl]);
+    }, [canvasReady, activeControl]);
     const onLeave = useCallback(() => {
-        if (readyToRender && activeControl === ActiveControl.CURSOR) {
+        if (canvasReady && activeControl === ActiveControl.CURSOR) {
             dispatch(highlightConflict(null));
         }
-    }, [readyToRender, activeControl]);
+    }, [canvasReady, activeControl]);
 
     const [conflictMapping, setConflictMapping] = useState<ConflictMappingElement[]>([]);
 
@@ -71,7 +71,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const conflictLabels: JSX.Element[] = [];
 
     useEffect(() => {
-        if (readyToRender) {
+        if (canvasReady) {
             const { geometry: updatedGeometry } = canvasInstance;
             setGeometry(updatedGeometry);
 
@@ -91,10 +91,10 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         }
 
         return () => {};
-    }, [readyToRender]);
+    }, [canvasReady]);
 
     useEffect(() => {
-        if (readyToRender) {
+        if (canvasReady) {
             type IssueRegionSet = Record<number, { hidden: boolean; points: number[] }>;
             const regions = !issuesHidden ? frameIssues
                 .filter((_issue: any) => !issuesResolvedHidden || !_issue.resolved)
@@ -124,10 +124,10 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                 }
             }
         }
-    }, [newIssuePosition, frameIssues, issuesResolvedHidden, issuesHidden, readyToRender, showConflicts]);
+    }, [newIssuePosition, frameIssues, issuesResolvedHidden, issuesHidden, canvasReady, showConflicts]);
 
     useEffect(() => {
-        if (readyToRender && showConflicts) {
+        if (canvasReady && showConflicts) {
             const newconflictMapping = qualityConflicts.map((conflict: QualityConflict) => {
                 const c = conflict.annotationConflicts[0];
                 const state = objectStates.find((s: ObjectState) => s.jobID === c.jobID && s.serverID === c.serverID);
@@ -150,9 +150,9 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         } else {
             setConflictMapping([]);
         }
-    }, [geometry, objectStates, showConflicts, readyToRender]);
+    }, [geometry, objectStates, showConflicts, canvasReady]);
 
-    if (!readyToRender || !geometry) {
+    if (!canvasReady || !geometry) {
         return null;
     }
 
