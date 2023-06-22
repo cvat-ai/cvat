@@ -703,7 +703,7 @@ export default class Collection {
                 continue;
             }
 
-            if (object.jobID && object.jobID !== filter?.jobID) {
+            if ((object.jobID && filter?.jobID) && object.jobID !== filter.jobID) {
                 continue;
             }
 

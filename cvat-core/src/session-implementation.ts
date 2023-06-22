@@ -640,14 +640,12 @@ export function implementTask(Task) {
             (frameFrom < _job.startFrame && frameTo > _job.stopFrame)
         ));
 
-        if (filters.notDeleted) {
-            for (const job of jobs) {
-                const result = await findFrame(
-                    job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame), 1,
-                );
+        for (const job of jobs) {
+            const result = await findFrame(
+                job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame), filters,
+            );
 
-                if (result !== null) return result;
-            }
+            if (result !== null) return result;
         }
 
         return null;
