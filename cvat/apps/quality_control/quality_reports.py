@@ -21,6 +21,7 @@ from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Count
 from django.utils import timezone
 from scipy.optimize import linear_sum_assignment
 
@@ -38,6 +39,7 @@ from cvat.apps.engine.models import (
     DimensionType,
     Job,
     JobType,
+    Project,
     ShapeType,
     StageChoice,
     StatusChoice,
@@ -2073,7 +2075,7 @@ class DatasetComparator:
         )
 
 
-class QualityReportUpdateManager:
+class TaskQualityReportUpdateManager:
     _QUEUE_JOB_PREFIX = "update-quality-metrics-task-"
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
     _JOB_RESULT_TTL = 120
@@ -2102,10 +2104,12 @@ class QualityReportUpdateManager:
 
     @classmethod
     def _get_last_report_time(cls, task: Task) -> Optional[timezone.datetime]:
-        report = models.QualityReport.objects.filter(task=task).order_by("-created_date").first()
-        if report:
-            return report.created_date
-        return None
+        try:
+            report = models.QualityReport.objects.filter(task=task).latest("created_date")
+        except models.QualityReport.DoesNotExist:
+            return None
+
+        return report.created_date
 
     def _find_next_job_id(
         self, existing_job_ids: Sequence[str], task: Task, *, now: timezone.datetime
@@ -2482,6 +2486,323 @@ class QualityReportUpdateManager:
     def _get_task_quality_params(self, task: Task) -> Optional[ComparisonParameters]:
         quality_params, _ = models.QualitySettings.objects.get_or_create(task=task)
         return ComparisonParameters.from_dict(quality_params.to_dict())
+
+
+class ProjectQualityReportUpdateManager:
+    _QUEUE_JOB_PREFIX = "update-quality-metrics-project-"
+    _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
+    _JOB_RESULT_TTL = 120
+    _DEFAULT_DB_BATCH_SIZE = 1000
+
+    @classmethod
+    def _get_quality_check_job_delay(cls) -> timedelta:
+        return timedelta(seconds=settings.PROJECT_QUALITY_CHECK_JOB_DELAY)
+
+    def _get_scheduler(self):
+        return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
+
+    def _get_queue(self):
+        return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
+
+    def _make_queue_job_prefix(self, project: Project) -> str:
+        return f"{self._QUEUE_JOB_PREFIX}{project.id}-"
+
+    def _make_custom_quality_check_job_id(self) -> str:
+        return uuid4().hex
+
+    def _make_initial_queue_job_id(self, project: Project) -> str:
+        return f"{self._make_queue_job_prefix(project)}initial"
+
+    def _make_regular_queue_job_id(self, project: Project, start_time: timezone.datetime) -> str:
+        return f"{self._make_queue_job_prefix(project)}{start_time.timestamp()}"
+
+    @classmethod
+    def _get_last_report_time(cls, project: Project) -> Optional[timezone.datetime]:
+        try:
+            report = models.QualityReport.objects.filter(project=project).latest("created_date")
+        except models.QualityReport.DoesNotExist:
+            return None
+
+        return report.created_date
+
+    def _find_next_job_id(
+        self, existing_job_ids: Sequence[str], project: Project, *, now: timezone.datetime
+    ) -> str:
+        job_id_prefix = self._make_queue_job_prefix(project)
+
+        def _get_timestamp(job_id: str) -> timezone.datetime:
+            job_timestamp = job_id.split(job_id_prefix, maxsplit=1)[-1]
+            if job_timestamp == "initial":
+                return timezone.datetime.min.replace(tzinfo=timezone.utc)
+            else:
+                return timezone.datetime.fromtimestamp(float(job_timestamp), tz=timezone.utc)
+
+        max_job_id = max(
+            (j for j in existing_job_ids if j.startswith(job_id_prefix)),
+            key=_get_timestamp,
+            default=None,
+        )
+        max_timestamp = _get_timestamp(max_job_id) if max_job_id else None
+
+        last_update_time = self._get_last_report_time(project)
+        if last_update_time is None:
+            # Report has never been computed, is queued, or is being computed
+            queue_job_id = self._make_initial_queue_job_id(project)
+        elif max_timestamp is not None and now < max_timestamp:
+            # Reuse the existing next job
+            queue_job_id = max_job_id
+        else:
+            # Add an updating job in the queue in the next time frame
+            delay = self._get_quality_check_job_delay()
+            intervals = max(1, 1 + (now - last_update_time) // delay)
+            next_update_time = last_update_time + delay * intervals
+            queue_job_id = self._make_regular_queue_job_id(project, next_update_time)
+
+        return queue_job_id
+
+    class QualityReportsNotAvailable(Exception):
+        pass
+
+    def _check_quality_reporting_available(self, project: Project):
+        if not project.quality_settings:
+            raise self.QualityReportsNotAvailable(
+                "Quality settings are not configured for this project yet"
+            )
+
+    def _should_update(self, project: Project) -> bool:
+        try:
+            self._check_quality_reporting_available(project)
+            return True
+        except self.QualityReportsNotAvailable:
+            return False
+
+    def schedule_quality_autoupdate_job(self, project: Project):
+        """
+        This function schedules a quality report autoupdate job
+        """
+
+        # The algorithm is lock-free. It should keep the following properties:
+        # - job names are stable between potential writers
+        # - if multiple simultaneous writes can happen, the objects written must be the same
+        # - once a job is created, it can only be updated by the scheduler and the handling worker
+
+        now = timezone.now()
+        delay = self._get_quality_check_job_delay()
+        next_job_time = now.utcnow() + delay
+
+        scheduler = self._get_scheduler()
+        existing_job_ids = set(j.id for j in scheduler.get_jobs(until=next_job_time))
+
+        queue_job_id = self._find_next_job_id(existing_job_ids, project, now=now)
+        if queue_job_id not in existing_job_ids:
+            scheduler.enqueue_at(
+                next_job_time,
+                self._check_project_quality,
+                task_id=project.id,
+                job_id=queue_job_id,
+            )
+
+    def schedule_quality_check_job(self, project: Project, *, user_id: int) -> str:
+        """
+        Schedules a quality report computation job, supposed for updates by a request.
+        """
+
+        rq_id = self._make_custom_quality_check_job_id()
+
+        queue = self._get_queue()
+        queue.enqueue(
+            self._check_project_quality,
+            task_id=project.id,
+            job_id=rq_id,
+            meta={"user_id": user_id, "job_type": self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE},
+            result_ttl=self._JOB_RESULT_TTL,
+            failure_ttl=self._JOB_RESULT_TTL,
+        )
+
+        return rq_id
+
+    def get_quality_check_job(self, rq_id: str):
+        queue = self._get_queue()
+        rq_job = queue.fetch_job(rq_id)
+
+        if rq_job and not self.is_custom_quality_check_job(rq_job):
+            rq_job = None
+
+        return rq_job
+
+    def is_custom_quality_check_job(self, rq_job) -> bool:
+        return rq_job.meta.get("job_type") == self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE
+
+    def _get_current_job(self):
+        from rq import get_current_job
+
+        return get_current_job()
+
+    @classmethod
+    @silk_profile()
+    def _check_project_quality(cls, *, project_id: int) -> int:
+        return cls()._compute_reports(project_id=project_id)
+
+    def _compute_reports(self, project_id: int) -> int:
+        with transaction.atomic():
+            # Preload all the data for the computations
+            # It must be done in a single transaction and before all the remaining computations
+            # because the it can be changed after the beginning,
+            # which will lead to inconsistent results
+
+            # The project could have been deleted during scheduling
+            try:
+                project = Project.objects.prefetch_related("tasks").get(id=project_id)
+            except Project.DoesNotExist:
+                return
+
+            tasks_with_reports = project.tasks.annotate(Count("quality_reports")).filter(
+                quality_reports__count__gt=0
+            )
+            task_quality_reports: Dict[int, models.QualityReport] = {}
+            task_comparison_reports: Dict[int, ComparisonReport] = {}
+            for task in tasks_with_reports:
+                last_quality_report = models.QualityReport.objects.latest("created_date")
+                task_quality_reports[task.id] = last_quality_report
+                task_comparison_reports[task.id] = ComparisonReport.from_json(
+                    last_quality_report.get_json_report()
+                )
+
+        project_comparison_report = self._compute_project_report(task, task_comparison_reports)
+
+        with transaction.atomic():
+            # The task could have been deleted during processing
+            try:
+                Task.objects.get(id=project_id)
+            except Task.DoesNotExist:
+                return
+
+            last_report_time = self._get_last_report_time(task)
+            if not self.is_custom_quality_check_job(self._get_current_job()) and (
+                last_report_time
+                and timezone.now() < last_report_time + self._get_quality_check_job_delay()
+            ):
+                # Discard this report as it has probably been computed in parallel
+                # with another one
+                return
+
+            project_report = self._save_reports(
+                project_report=dict(
+                    project=project,
+                    target_last_updated=project.updated_date,
+                    data=project_comparison_report.to_json(),
+                    conflicts=[],  # the project doesn't have own conflicts
+                ),
+                task_reports=list(task_quality_reports.values()),
+            )
+
+        return project_report.id
+
+    def _compute_project_report(
+        self, project: Project, task_reports: Dict[int, ComparisonReport]
+    ) -> ComparisonReport:
+        # The task dataset can be different from any jobs' dataset because of frame overlaps
+        # between jobs, from which annotations are merged to get the task annotations.
+        # Thus, a separate report could be computed for the task. Instead, here we only
+        # compute the combined summary of the job reports.
+        project_intersection_frames = set()
+        project_conflicts: List[AnnotationConflict] = []
+        project_annotations_summary = None
+        project_ann_components_summary = None
+        project_mean_shape_ious = []
+        project_frame_results = {}
+        project_frame_results_counts = {}
+        for r in task_reports.values():
+            project_intersection_frames.update(r.comparison_summary.frames)
+            project_conflicts.extend(r.conflicts)
+
+            if project_annotations_summary:
+                project_annotations_summary.accumulate(r.comparison_summary.annotations)
+            else:
+                project_annotations_summary = deepcopy(r.comparison_summary.annotations)
+
+            if project_ann_components_summary:
+                project_ann_components_summary.accumulate(
+                    r.comparison_summary.annotation_components
+                )
+            else:
+                project_ann_components_summary = deepcopy(
+                    r.comparison_summary.annotation_components
+                )
+            project_mean_shape_ious.append(project_ann_components_summary.shape.mean_iou)
+
+            for frame_id, job_frame_result in r.frame_results.items():
+                project_frame_result = cast(
+                    Optional[ComparisonReportFrameSummary], project_frame_results.get(frame_id)
+                )
+                frame_results_count = project_frame_results_counts.get(frame_id, 0)
+
+                if project_frame_result is None:
+                    project_frame_result = deepcopy(job_frame_result)
+                else:
+                    project_frame_result.conflicts += job_frame_result.conflicts
+
+                    project_frame_result.annotations.accumulate(job_frame_result.annotations)
+                    project_frame_result.annotation_components.accumulate(
+                        job_frame_result.annotation_components
+                    )
+
+                    project_frame_result.annotation_components.shape.mean_iou = (
+                        project_frame_result.annotation_components.shape.mean_iou
+                        * frame_results_count
+                        + job_frame_result.annotation_components.shape.mean_iou
+                    ) / (frame_results_count + 1)
+
+                project_frame_results_counts[frame_id] = 1 + frame_results_count
+                project_frame_results[frame_id] = project_frame_result
+
+        project_ann_components_summary.shape.mean_iou = np.mean(project_mean_shape_ious)
+
+        project_report_data = ComparisonReport(
+            parameters=next(iter(task_reports.values())).parameters,
+            comparison_summary=ComparisonReportComparisonSummary(
+                frame_share=len(project_intersection_frames) / (project.data.size or 1),
+                frames=sorted(project_intersection_frames),
+                conflict_count=len(project_conflicts),
+                warning_count=len(
+                    [
+                        c
+                        for c in project_conflicts
+                        if c.severity == AnnotationConflictSeverity.WARNING
+                    ]
+                ),
+                error_count=len(
+                    [c for c in project_conflicts if c.severity == AnnotationConflictSeverity.ERROR]
+                ),
+                conflicts_by_type=Counter(c.type for c in project_conflicts),
+                annotations=project_annotations_summary,
+                annotation_components=project_ann_components_summary,
+            ),
+            frame_results=project_frame_results,
+        )
+
+        return project_report_data
+
+    def _save_reports(
+        self, *, project_report: Dict, task_reports: List[models.QualityReport]
+    ) -> models.QualityReport:
+        # TODO: add validation (e.g. ann id count for different types of conflicts)
+
+        db_project_report = models.QualityReport(
+            project=project_report["project"],
+            target_last_updated=project_report["target_last_updated"],
+            data=project_report["data"],
+        )
+        db_project_report.save()
+
+        db_task_reports = []
+        for task_report in task_reports:
+            task_report.parent = db_project_report
+        models.QualityReport.objects.bulk_update(
+            db_task_reports, fields=["parent"], batch_size=self._DEFAULT_DB_BATCH_SIZE
+        )
+
+        return db_project_report
 
 
 def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str) -> str:

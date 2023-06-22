@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, ShapeType, Task
+from cvat.apps.engine.models import Job, Project, ShapeType, Task
 
 
 class AnnotationConflictType(str, Enum):
@@ -60,6 +60,7 @@ class MismatchingAnnotationKind(str, Enum):
 class QualityReportTarget(str, Enum):
     JOB = "job"
     TASK = "task"
+    PROJECT = "project"
 
     def __str__(self) -> str:
         return self.value
@@ -76,6 +77,9 @@ class QualityReport(models.Model):
     task = models.ForeignKey(
         Task, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
     )
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
+    )
 
     parent = models.ForeignKey(
         "self", on_delete=models.CASCADE, related_name="children", null=True, blank=True
@@ -84,7 +88,7 @@ class QualityReport(models.Model):
 
     created_date = models.DateTimeField(auto_now_add=True)
     target_last_updated = models.DateTimeField()
-    gt_last_updated = models.DateTimeField()
+    gt_last_updated = models.DateTimeField(null=True)
 
     data = models.JSONField()
 
@@ -96,6 +100,8 @@ class QualityReport(models.Model):
             return QualityReportTarget.JOB
         elif self.task:
             return QualityReportTarget.TASK
+        elif self.project:
+            return QualityReportTarget.PROJECT
         else:
             assert False
 
@@ -179,7 +185,12 @@ class AnnotationId(models.Model):
 
 
 class QualitySettings(models.Model):
-    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="quality_settings")
+    task = models.OneToOneField(
+        Task, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
+    )
+    project = models.OneToOneField(
+        Project, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
+    )
 
     iou_threshold = models.FloatField()
     oks_sigma = models.FloatField()

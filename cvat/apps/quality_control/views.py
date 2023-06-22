@@ -19,7 +19,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
-from cvat.apps.engine.models import Task
+from cvat.apps.engine.models import Project, Task
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.engine.utils import get_server_url
 from cvat.apps.iam.permissions import (
@@ -139,6 +139,11 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                 "task_id", type=OpenApiTypes.INT, description="A simple equality filter for task id"
             ),
             OpenApiParameter(
+                "project_id",
+                type=OpenApiTypes.INT,
+                description="A simple equality filter for project id",
+            ),
+            OpenApiParameter(
                 "target", type=OpenApiTypes.STR, description="A simple equality filter for target"
             ),
         ],
@@ -160,14 +165,22 @@ class QualityReportViewSet(
         "job__segment__task__organization",
         "task",
         "task__organization",
+        "project",
+        "project__organization",
     ).all()
 
-    iam_organization_field = ["job__segment__task__organization", "task__organization"]
+    iam_organization_field = [
+        "job__segment__task__organization",
+        "task__organization",
+        "project__organization",
+    ]
 
     search_fields = []
     filter_fields = list(search_fields) + [
         "id",
         "job_id",
+        "task_id",
+        "project_id",
         "created_date",
         "gt_last_updated",
         "target_last_updated",
@@ -199,6 +212,20 @@ class QualityReportViewSet(
                 queryset = queryset.filter(
                     Q(job__segment__task__id=task_id) | Q(task__id=task_id)
                 ).distinct()
+            elif project_id := self.request.query_params.get("project_id", None):
+                # NOTE: This filter is too complex to be implemented by other means
+                try:
+                    project = Project.objects.get(id=project_id)
+                except Project.DoesNotExist as ex:
+                    raise NotFound(f"Project {project_id} does not exist") from ex
+
+                self.check_object_permissions(self.request, project)
+
+                queryset = queryset.filter(
+                    Q(job__segment__task__project__id=project_id)
+                    | Q(task__project__id=project_id)
+                    | Q(project__id=project_id)
+                ).distinct()
             else:
                 perm = QualityReportPermission.create_scope_list(self.request)
                 queryset = perm.filter(queryset)
@@ -208,6 +235,8 @@ class QualityReportViewSet(
                     queryset = queryset.filter(job__isnull=False)
                 elif target == QualityReportTarget.TASK:
                     queryset = queryset.filter(task__isnull=False)
+                elif target == QualityReportTarget.PROJECT:
+                    queryset = queryset.filter(project__isnull=False)
                 else:
                     raise ValidationError(
                         "Unexpected 'target' filter value '{}'. Valid values are: {}".format(
@@ -264,20 +293,30 @@ class QualityReportViewSet(
             input_serializer = QualityReportCreateSerializer(data=request.data)
             input_serializer.is_valid(raise_exception=True)
 
-            task_id = input_serializer.validated_data["task_id"]
+            if task_id := input_serializer.validated_data.get("task_id"):
+                try:
+                    task = Task.objects.get(pk=task_id)
+                except Task.DoesNotExist as ex:
+                    raise NotFound(f"Task {task_id} does not exist") from ex
+
+                manager = qc.TaskQualityReportUpdateManager()
+                job_params = {"task": task}
+            elif project_id := input_serializer.validated_data.get("project_id"):
+                try:
+                    project = Project.objects.get(pk=project_id)
+                except Project.DoesNotExist as ex:
+                    raise NotFound(f"Project {project_id} does not exist") from ex
+
+                manager = qc.ProjectQualityReportUpdateManager()
+                job_params = {"project": project}
+            else:
+                assert False
 
             try:
-                task = Task.objects.get(pk=task_id)
-            except Task.DoesNotExist as ex:
-                raise NotFound(f"Task {task_id} does not exist") from ex
-
-            try:
-                rq_id = qc.QualityReportUpdateManager().schedule_quality_check_job(
-                    task, user_id=request.user.id
-                )
+                rq_id = manager.schedule_quality_check_job(**job_params, user_id=request.user.id)
                 serializer = RqIdSerializer({"rq_id": rq_id})
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            except qc.QualityReportUpdateManager.QualityReportsNotAvailable as ex:
+            except qc.TaskQualityReportUpdateManager.QualityReportsNotAvailable as ex:
                 raise ValidationError(str(ex))
 
         else:
@@ -285,7 +324,7 @@ class QualityReportViewSet(
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
 
-            report_manager = qc.QualityReportUpdateManager()
+            report_manager = qc.TaskQualityReportUpdateManager()
             rq_job = report_manager.get_quality_check_job(rq_id)
             if (
                 not rq_job
@@ -352,6 +391,14 @@ class QualityReportViewSet(
             "200": QualitySettingsSerializer,
         },
     ),
+    create=extend_schema(
+        summary="Method creates quality settings",
+        description="Can only be called for a project, task settings are initialized automatically",
+        request=QualitySettingsSerializer,
+        responses={
+            "200": QualitySettingsSerializer,
+        },
+    ),
     partial_update=extend_schema(
         summary="Methods does a partial update of chosen fields in the quality settings instance",
         parameters=[
@@ -372,15 +419,18 @@ class QualitySettingsViewSet(
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
     PartialUpdateModelMixin,
 ):
-    queryset = QualitySettings.objects.select_related("task", "task__organization").all()
+    queryset = QualitySettings.objects.select_related(
+        "task", "task__organization", "project", "project_organization"
+    ).all()
 
     iam_organization_field = "task__organization"
 
     search_fields = []
-    filter_fields = ["id", "task_id"]
-    simple_filters = ["task_id"]
+    filter_fields = ["id", "task_id", "project_id"]
+    simple_filters = ["task_id", "project_id"]
     ordering_fields = ["id"]
     ordering = "id"
 

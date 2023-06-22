@@ -3563,7 +3563,8 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''id'', ''job_id'',
-          ''created_date'', ''gt_last_updated'', ''target_last_updated'', ''parent_id'']'
+          ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'', ''target_last_updated'',
+          ''parent_id'']'
         schema:
           type: string
       - name: job_id
@@ -3598,12 +3599,17 @@ paths:
         description: A simple equality filter for the parent_id field
         schema:
           type: integer
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: A simple equality filter for project id
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''job_id'', ''created_date'', ''gt_last_updated'', ''target_last_updated'',
-          ''parent_id'']'
+          [''id'', ''job_id'', ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'',
+          ''target_last_updated'', ''parent_id'']'
         schema:
           type: string
       - in: query
@@ -3741,7 +3747,8 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''id'', ''task_id'']'
+        description: 'A filter term. Available filter_fields: [''id'', ''task_id'',
+          ''project_id'']'
         schema:
           type: string
       - name: org
@@ -3764,6 +3771,11 @@ paths:
         required: false
         in: query
         description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: project_id
+        in: query
+        description: A simple equality filter for the project_id field
         schema:
           type: integer
       - name: sort
@@ -3792,6 +3804,31 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/PaginatedQualitySettingsList'
+          description: ''
+    post:
+      operationId: quality_create_settings
+      description: Can only be called for a project, task settings are initialized
+        automatically
+      summary: Method creates quality settings
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualitySettingsRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualitySettings'
           description: ''
   /api/quality/settings/{id}:
     get:
@@ -8342,6 +8379,10 @@ components:
           type: integer
           nullable: true
           readOnly: true
+        project_id:
+          type: integer
+          nullable: true
+          readOnly: true
         parent_id:
           type: integer
           nullable: true
@@ -8362,6 +8403,7 @@ components:
           type: string
           format: date-time
           readOnly: true
+          nullable: true
       required:
       - summary
       - target
@@ -8371,8 +8413,9 @@ components:
         task_id:
           type: integer
           writeOnly: true
-      required:
-      - task_id
+        project_id:
+          type: integer
+          writeOnly: true
     QualityReportSummary:
       type: object
       properties:
@@ -8411,10 +8454,12 @@ components:
       enum:
       - job
       - task
+      - project
       type: string
       description: |-
         * `job` - JOB
         * `task` - TASK
+        * `project` - PROJECT
     QualitySettings:
       type: object
       properties:
@@ -8423,7 +8468,76 @@ components:
           readOnly: true
         task_id:
           type: integer
+          nullable: true
           readOnly: true
+        project_id:
+          type: integer
+        iou_threshold:
+          type: number
+          format: double
+          description: Used for distinction between matched / unmatched shapes
+        oks_sigma:
+          type: number
+          format: double
+          description: |
+            Like IoU threshold, but for points.
+            The percent of the bbox area, used as the radius of the circle around the GT point,
+            where the checked point is expected to be.
+            Read more: https://cocodataset.org/#keypoints-eval
+        line_thickness:
+          type: number
+          format: double
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        low_overlap_threshold:
+          type: number
+          format: double
+          description: |
+            Used for distinction between strong / weak (low_overlap) matches
+        compare_line_orientation:
+          type: boolean
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'compare_line_orientation' parameter is true
+        compare_groups:
+          type: boolean
+          description: Enables or disables annotation group checks
+        group_match_threshold:
+          type: number
+          format: double
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'compare_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        compare_attributes:
+          type: boolean
+          description: Enables or disables annotation attribute comparison
+    QualitySettingsRequest:
+      type: object
+      properties:
+        project_id:
+          type: integer
         iou_threshold:
           type: number
           format: double

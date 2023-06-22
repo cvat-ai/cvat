@@ -1791,6 +1791,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
     obj: Optional[QualitySettings]
 
     class Scopes(StrEnum):
+        CREATE = 'create'
         LIST = 'list'
         VIEW = 'view'
         UPDATE = 'update'

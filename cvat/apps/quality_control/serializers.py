@@ -5,7 +5,9 @@
 import textwrap
 
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
+from cvat.apps.engine.serializers import WriteOnceMixin
 from cvat.apps.quality_control import models
 
 
@@ -50,6 +52,7 @@ class QualityReportSerializer(serializers.ModelSerializer):
             "id",
             "job_id",
             "task_id",
+            "project_id",
             "parent_id",
             "target",
             "summary",
@@ -61,15 +64,25 @@ class QualityReportSerializer(serializers.ModelSerializer):
 
 
 class QualityReportCreateSerializer(serializers.Serializer):
-    task_id = serializers.IntegerField(write_only=True)
+    task_id = serializers.IntegerField(write_only=True, required=False)
+    project_id = serializers.IntegerField(write_only=True, required=False)
+
+    def validate(self, attrs):
+        if not attrs.get("task_id") ^ attrs.get("project_id"):
+            raise ValidationError("One of 'task_id' or 'project_id' must be specified")
+
+        return attrs
 
 
-class QualitySettingsSerializer(serializers.ModelSerializer):
+class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    project_id = serializers.IntegerField(required=False)
+
     class Meta:
         model = models.QualitySettings
         fields = (
             "id",
             "task_id",
+            "project_id",
             "iou_threshold",
             "oks_sigma",
             "line_thickness",
@@ -87,6 +100,7 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "id",
             "task_id",
         )
+        write_once_fields = ("project_id",)
 
         extra_kwargs = {k: {"required": False} for k in fields}
 
