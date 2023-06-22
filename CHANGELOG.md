@@ -7,16 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased]
 ### Added
-- New option ``semi-auto`` is available as annotations source (<https://github.com/opencv/cvat/pull/6263>)
-- \[API\] Support for Ground Truth job creation and removal (<https://github.com/opencv/cvat/pull/6204>)
-- \[API\] Task quality estimation endpoints (<https://github.com/opencv/cvat/pull/6204>)
 - Ground Truth jobs and quality analytics for tasks (<https://github.com/opencv/cvat/pull/6039>)
-
-### Changed
-- \[API\] API Now supports the creation and removal of Ground Truth jobs. (<https://github.com/opencv/cvat/pull/6204>)
-- \[API\] We've introduced task quality estimation endpoints. (<https://github.com/opencv/cvat/pull/6204>)
-- \[API\] An option to run autoannotation on a job (<https://github.com/opencv/cvat/pull/6276>)
-
 
 ### Changed
 - TDB
