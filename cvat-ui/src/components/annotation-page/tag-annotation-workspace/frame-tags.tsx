@@ -11,12 +11,14 @@ import { ThunkDispatch } from 'redux-thunk';
 import {
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
-import { CombinedState, ObjectType } from 'reducers';
+import { CombinedState, ObjectType, Workspace } from 'reducers';
 import { ObjectState } from 'cvat-core-wrapper';
+import { filterAnnotations } from 'utils/filter-annotations';
 
 interface StateToProps {
     states: ObjectState[];
     statesSources: number[];
+    workspace: Workspace;
 }
 
 interface DispatchToProps {
@@ -27,12 +29,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             annotations: { states, statesSources },
+            workspace,
         },
     } = state;
 
     return {
         states,
         statesSources,
+        workspace,
     };
 }
 
@@ -48,6 +52,7 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
     const {
         states,
         statesSources,
+        workspace,
         removeObject,
     } = props;
 
@@ -59,12 +64,11 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
 
     useEffect(() => {
         setFrameTags(
-            states.filter(
-                (objectState: ObjectState): boolean => (
-                    objectState.objectType === ObjectType.TAG &&
-                    (!objectState.jobID || statesSources.includes(objectState.jobID))
-                ),
-            ),
+            filterAnnotations(states, {
+                statesSources,
+                workspace,
+                include: [ObjectType.TAG],
+            }),
         );
     }, [states, statesSources]);
 

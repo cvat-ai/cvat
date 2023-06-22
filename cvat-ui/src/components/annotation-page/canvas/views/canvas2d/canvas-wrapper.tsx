@@ -906,7 +906,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 frame,
                 groundTruthJobFramesMeta,
                 workspace,
-                filterTags: true,
+                exclude: [ObjectType.TAG],
             });
 
             canvasInstance.setup(

@@ -9,16 +9,26 @@ export interface FilterAnnotationsParams {
     workspace: Workspace;
     statesSources: number[];
     groundTruthJobFramesMeta?: FramesMetaData | null;
-    filterTags?: boolean;
-    frame: number;
+    exclude?: ObjectType[];
+    include?: ObjectType[];
+    frame?: number;
 }
 
 export function filterAnnotations(annotations: ObjectState[], params: FilterAnnotationsParams): ObjectState[] {
     const {
-        workspace, statesSources, groundTruthJobFramesMeta, filterTags, frame,
+        workspace, statesSources, groundTruthJobFramesMeta, exclude, include, frame,
     } = params;
+
+    if (Array.isArray(exclude) && Array.isArray(include)) {
+        throw Error('Can not filter annotations with exclude and include filters simultaneously');
+    }
+
     const filteredAnnotations = annotations.filter((state) => {
-        if (filterTags && state.objectType === ObjectType.TAG) {
+        if (Array.isArray(exclude) && exclude.includes(state.objectType)) {
+            return false;
+        }
+
+        if (Array.isArray(include) && !include.includes(state.objectType)) {
             return false;
         }
 
@@ -27,7 +37,7 @@ export function filterAnnotations(annotations: ObjectState[], params: FilterAnno
         }
 
         // GT tracks are shown only on GT frames
-        if (workspace === Workspace.REVIEW_WORKSPACE && groundTruthJobFramesMeta) {
+        if (workspace === Workspace.REVIEW_WORKSPACE && groundTruthJobFramesMeta && frame) {
             if (state.objectType === ObjectType.TRACK && state.isGroundTruth) {
                 return groundTruthJobFramesMeta.includedFrames.includes(frame);
             }
