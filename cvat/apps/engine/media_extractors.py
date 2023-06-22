@@ -663,7 +663,7 @@ class ZipChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
-                ext = os.path.splitext(path)[1]
+                ext = os.path.splitext(path)[1].replace('.', '')
                 output = io.BytesIO()
                 if self._dimension == DimensionType.DIM_2D:
                     pil_image = rotate_within_exif(Image.open(image))

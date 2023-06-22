@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The problem with task mode in a task restored from backup (<https://github.com/opencv/cvat/issues/5668>)
 - \[API\] Performance of several API endpoints (<https://github.com/opencv/cvat/pull/6340>)
 - \[API\] Invalid schema for the owner field in several endpoints (<https://github.com/opencv/cvat/pull/6343>)
+- Getting original chunks for items in specific cases (<https://github.com/opencv/cvat/pull/6355>)
 
 ### Security
 - TDB
