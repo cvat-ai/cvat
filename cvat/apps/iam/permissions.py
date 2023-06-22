@@ -1697,7 +1697,7 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
     def get_resource(self):
         data = {}
         if self.obj:
-            db_target = getattr(self.obj, 'project', getattr(self.obj, 'task', {}))
+            db_target = getattr(self.obj, 'target', {})
             db_organization = getattr(db_target, 'organization', None) or {}
             data.update({
                 'id': self.obj.id,
