@@ -5,16 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.5.0] - Unreleased
+## \[Unreleased]
 ### Added
 - Now CVAT supports project/task markdown description with additional assets
 (png, jpeg, gif, webp images and pdf files) (<https://github.com/opencv/cvat/pull/6191>)
-- \[API\] API Now supports the creation and removal of Ground Truth jobs. (<https://github.com/opencv/cvat/pull/6204>)
-- \[API\] We've introduced task quality estimation endpoints. (<https://github.com/opencv/cvat/pull/6204>)
-- \[API\] An option to run autoannotation on a job (<https://github.com/opencv/cvat/pull/6276>)
-
-### Changed
-- TDB
 
 ### Changed
 - TDB
@@ -26,18 +20,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- Issues with running serverless models for EXIF-rotated images. (<https://github.com/opencv/cvat/pull/6275/>)
-- File uploading issues when using https configuration. (<https://github.com/opencv/cvat/pull/6308>)
+- The problem with manifest file in tasks restored from backup (<https://github.com/opencv/cvat/issues/5971>)
+- The problem with task mode in a task restored from backup (<https://github.com/opencv/cvat/issues/5668>)
+- \[API\] Performance of several API endpoints (<https://github.com/opencv/cvat/pull/6340>)
+- \[API\] Invalid schema for the owner field in several endpoints (<https://github.com/opencv/cvat/pull/6343>)
 
 ### Security
 - TDB
+
+## \[2.4.7] - 2023-06-16
+### Added
+- \[API\] API Now supports the creation and removal of Ground Truth jobs. (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] We've introduced task quality estimation endpoints. (<https://github.com/opencv/cvat/pull/6204>)
+- \[CLI\] An option to select the organization. (<https://github.com/opencv/cvat/pull/6317>)
+
+### Fixed
+- Issues with running serverless models for EXIF-rotated images. (<https://github.com/opencv/cvat/pull/6275/>)
+- File uploading issues when using https configuration. (<https://github.com/opencv/cvat/pull/6308>)
+- Dataset export error with `outside` property of tracks. (<https://github.com/opencv/cvat/issues/5971>)
+- Broken logging in the TransT serverless function. (<https://github.com/opencv/cvat/pull/6290>)
 
 ## \[2.4.6] - 2023-06-09
 ### Added
 - \[Server API\] An option to supply custom file ordering for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
 - New option ``semi-auto`` is available as annotations source (<https://github.com/opencv/cvat/pull/6263>)
-- \[CLI\] An option to select the organization
-  (<https://github.com/opencv/cvat/pull/6317>)
 
 ### Changed
 - Allowed to use dataset manifest for the `predefined` sorting method for task data (<https://github.com/opencv/cvat/pull/5083>)
@@ -54,9 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
 - \[API\] The `predefined` sorting method for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
 - Allowed slashes in export filenames. (<https://github.com/opencv/cvat/pull/6265>)
-- Dataset export error with `outside` property of tracks (<https://github.com/opencv/cvat/issues/5971>)
-- Broken logging in the TransT serverless function
-  (<https://github.com/opencv/cvat/pull/6290>)
 
 ## \[2.4.5] - 2023-06-02
 ### Added

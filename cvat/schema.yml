@@ -6155,7 +6155,9 @@ components:
           type: integer
           readOnly: true
         owner:
-          $ref: '#/components/schemas/BasicUser'
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          nullable: true
         manifests:
           type: array
           items:
@@ -6924,7 +6926,9 @@ components:
           format: date-time
           readOnly: true
         owner:
-          $ref: '#/components/schemas/BasicUser'
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          nullable: true
         role:
           $ref: '#/components/schemas/RoleEnum'
         user:
@@ -7653,7 +7657,9 @@ components:
           additionalProperties: {}
           readOnly: true
         owner:
-          $ref: '#/components/schemas/BasicUser'
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          nullable: true
       required:
       - owner
     OrganizationWriteRequest:
@@ -8470,6 +8476,7 @@ components:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
           readOnly: true
+          nullable: true
         assignee:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -9184,7 +9191,9 @@ components:
           type: string
           readOnly: true
         owner:
-          $ref: '#/components/schemas/BasicUser'
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          nullable: true
         assignee:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
@@ -9548,6 +9557,7 @@ components:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
           readOnly: true
+          nullable: true
         project_id:
           type: integer
           nullable: true

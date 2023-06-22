@@ -22,7 +22,7 @@ from cvat.apps.profiler import silk_profile
 from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
 from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
-from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create
+from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
 
 
 class dotdict(OrderedDict):
@@ -105,17 +105,14 @@ class JobAnnotation:
 
     def __init__(self, pk, *, is_prefetched=False, queryset=None):
         if queryset is None:
-            queryset = self.add_prefetch_info(models.Job.objects).all()
+            queryset = self.add_prefetch_info(models.Job.objects)
 
         if is_prefetched:
             self.db_job: models.Job = queryset.select_related(
                 'segment__task'
             ).select_for_update().get(id=pk)
         else:
-            try:
-                self.db_job: models.Job = next(job for job in queryset if job.pk == int(pk))
-            except StopIteration as ex:
-                raise models.Job.DoesNotExist from ex
+            self.db_job: models.Job = get_cached(queryset, pk=int(pk))
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
