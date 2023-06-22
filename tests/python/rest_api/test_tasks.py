@@ -2132,10 +2132,14 @@ class TestImportWithComplexFilenames:
         return Client(BASE_URL, config=Config(status_check_period=0.01))
 
     @pytest.fixture(autouse=True, scope="class")
-    @classmethod
+    @staticmethod
     def setup_class(
-        cls, restore_db_per_class, tmp_path_factory: pytest.TempPathFactory, admin_user: str
+        request, restore_db_per_class, tmp_path_factory: pytest.TempPathFactory, admin_user: str
     ):
+        # classmethod way may not work in some versions
+        # https://github.com/opencv/cvat/actions/runs/5336023573/jobs/9670573955?pr=6350
+        cls = request.cls
+
         cls.tmp_dir = tmp_path_factory.mktemp(cls.__class__.__name__)
         cls.client = cls._make_client()
         cls.user = admin_user
