@@ -15,10 +15,11 @@ import { Col, Row } from 'antd/lib/grid';
 
 import StatesOrderingSelector from 'components/annotation-page/standard-workspace/objects-side-bar/states-ordering-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { StatesOrdering } from 'reducers';
+import { StatesOrdering, Workspace } from 'reducers';
 import { ShowGroundTruthIcon } from 'icons';
 
 interface Props {
+    workspace: Workspace;
     readonly: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
@@ -102,7 +103,9 @@ function CollapseAllSwitcher(props: Props): JSX.Element {
 }
 
 function ObjectListHeader(props: Props): JSX.Element {
-    const { readonly, statesOrdering, changeStatesOrdering } = props;
+    const {
+        workspace, readonly, statesOrdering, changeStatesOrdering,
+    } = props;
 
     return (
         <div className='cvat-objects-sidebar-states-header'>
@@ -114,7 +117,7 @@ function ObjectListHeader(props: Props): JSX.Element {
                     </>
                 )}
                 <Row>
-                    {readonly && (
+                    { workspace === Workspace.REVIEW_WORKSPACE && (
                         <GTSwitcher {...props} />
                     )}
                     <CollapseAllSwitcher {...props} />

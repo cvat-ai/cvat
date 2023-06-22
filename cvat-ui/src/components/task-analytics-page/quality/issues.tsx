@@ -6,8 +6,9 @@ import '../styles.scss';
 
 import React, { useEffect, useState } from 'react';
 import Text from 'antd/lib/typography/Text';
-import { Task } from 'cvat-core-wrapper';
 import notification from 'antd/lib/notification';
+import { Task } from 'cvat-core-wrapper';
+import { useIsMounted } from 'utils/hooks';
 import AnalyticsCard from './analytics-card';
 import { percent, clampValue } from './common';
 
@@ -20,19 +21,25 @@ function Issues(props: Props): JSX.Element {
 
     const [issuesCount, setIssuesCount] = useState<number>(0);
     const [resolvedIssues, setResolvedIssues] = useState<number>(0);
+    const isMounted = useIsMounted();
+
     useEffect(() => {
         task
             .issues()
             .then((issues: any[]) => {
-                setIssuesCount(issues.length);
-                setResolvedIssues(issues.reduce((acc, issue) => (issue.resolved ? acc + 1 : acc), 0));
+                if (isMounted()) {
+                    setIssuesCount(issues.length);
+                    setResolvedIssues(issues.reduce((acc, issue) => (issue.resolved ? acc + 1 : acc), 0));
+                }
             })
             .catch((_error: any) => {
-                notification.error({
-                    description: _error.toString(),
-                    message: "Couldn't fetch issues",
-                    className: 'cvat-notification-notice-get-issues-error',
-                });
+                if (isMounted()) {
+                    notification.error({
+                        description: _error.toString(),
+                        message: "Couldn't fetch issues",
+                        className: 'cvat-notification-notice-get-issues-error',
+                    });
+                }
             });
     }, []);
 

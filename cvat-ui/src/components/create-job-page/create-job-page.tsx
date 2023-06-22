@@ -5,12 +5,13 @@
 import './styles.scss';
 
 import React, { useEffect, useState } from 'react';
-import { Row, Col } from 'antd/lib/grid';
 import { useParams } from 'react-router';
+import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Spin from 'antd/lib/spin';
+import notification from 'antd/lib/notification';
 import { Task } from 'reducers';
-import { notification } from 'antd';
+import { useIsMounted } from 'utils/hooks';
 import { getCore } from 'cvat-core-wrapper';
 import JobForm from './job-form';
 
@@ -19,22 +20,27 @@ const core = getCore();
 function CreateJobPage(): JSX.Element {
     const [fetchingTask, setFetchingTask] = useState(true);
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
+    const isMounted = useIsMounted();
 
     const id = +useParams<{ id: string }>().id;
     useEffect((): void => {
         if (Number.isInteger(id)) {
             core.tasks.get({ id })
                 .then(([task]: Task[]) => {
-                    if (task) {
+                    if (isMounted() && task) {
                         setTaskInstance(task);
                     }
                 }).catch((error: Error) => {
-                    notification.error({
-                        message: 'Could not fetch requested task from the server',
-                        description: error.toString(),
-                    });
+                    if (isMounted()) {
+                        notification.error({
+                            message: 'Could not fetch requested task from the server',
+                            description: error.toString(),
+                        });
+                    }
                 }).finally(() => {
-                    setFetchingTask(false);
+                    if (isMounted()) {
+                        setFetchingTask(false);
+                    }
                 });
         } else {
             notification.error({

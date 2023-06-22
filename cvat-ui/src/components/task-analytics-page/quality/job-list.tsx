@@ -46,7 +46,7 @@ function JobListComponent(props: Props): JSX.Element {
             if (report) jobsReportsMap[job.id] = report;
         }
         setJobsReports(jobsReportsMap);
-    }, [renderedJobs, jobReportsFromState, jobs]);
+    }, [taskInstance, jobReportsFromState]);
 
     function sorter(path: string) {
         return (obj1: any, obj2: any): number => {

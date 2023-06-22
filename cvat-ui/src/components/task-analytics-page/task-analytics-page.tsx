@@ -5,17 +5,18 @@
 import './styles.scss';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { useHistory, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
-import { useHistory, useParams } from 'react-router';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import Spin from 'antd/lib/spin';
 import Button from 'antd/lib/button';
-import { Task } from 'reducers';
-import { notification } from 'antd';
-import { Job, getCore } from 'cvat-core-wrapper';
+import notification from 'antd/lib/notification';
 import { LeftOutlined } from '@ant-design/icons/lib/icons';
+import { useIsMounted } from 'utils/hooks';
+import { Task } from 'reducers';
+import { Job, getCore } from 'cvat-core-wrapper';
 import TaskQualityComponent from './quality/task-quality-component';
 
 const core = getCore();
@@ -23,6 +24,7 @@ const core = getCore();
 function TaskAnalyticsPage(): JSX.Element {
     const [fetchingTask, setFetchingTask] = useState(true);
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
+    const isMounted = useIsMounted();
 
     const history = useHistory();
 
@@ -32,16 +34,20 @@ function TaskAnalyticsPage(): JSX.Element {
         if (Number.isInteger(id)) {
             core.tasks.get({ id })
                 .then(([task]: Task[]) => {
-                    if (task) {
+                    if (isMounted() && task) {
                         setTaskInstance(task);
                     }
                 }).catch((error: Error) => {
-                    notification.error({
-                        message: 'Could not receive the requested task from the server',
-                        description: error.toString(),
-                    });
+                    if (isMounted()) {
+                        notification.error({
+                            message: 'Could not receive the requested task from the server',
+                            description: error.toString(),
+                        });
+                    }
                 }).finally(() => {
-                    setFetchingTask(false);
+                    if (isMounted()) {
+                        setFetchingTask(false);
+                    }
                 });
         } else {
             notification.error({
@@ -55,14 +61,20 @@ function TaskAnalyticsPage(): JSX.Element {
     const onJobUpdate = useCallback((job: Job): void => {
         setFetchingTask(true);
         job.save().then(() => {
-            receieveTask();
+            if (isMounted()) {
+                receieveTask();
+            }
         }).catch((error: Error) => {
-            notification.error({
-                message: 'Could not update the job',
-                description: error.toString(),
-            });
+            if (isMounted()) {
+                notification.error({
+                    message: 'Could not update the job',
+                    description: error.toString(),
+                });
+            }
         }).finally(() => {
-            setFetchingTask(false);
+            if (isMounted()) {
+                setFetchingTask(false);
+            }
         });
     }, [notification]);
 

@@ -5,6 +5,7 @@ import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Menu from 'antd/lib/menu';
+import Modal from 'antd/lib/modal';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 import { exportActions } from 'actions/export-actions';
@@ -13,7 +14,6 @@ import {
     Job, JobStage, JobType, getCore,
 } from 'cvat-core-wrapper';
 import { deleteJobAsync } from 'actions/jobs-actions';
-import Modal from 'antd/lib/modal';
 import { importActions } from 'actions/import-actions';
 import { updateJobAsync } from 'actions/tasks-actions';
 
@@ -26,7 +26,6 @@ interface Props {
 
 function JobActionsMenu(props: Props): JSX.Element {
     const { job, onJobUpdate } = props;
-    const { id } = job;
     const history = useHistory();
     const dispatch = useDispatch();
 
@@ -44,7 +43,7 @@ function JobActionsMenu(props: Props): JSX.Element {
             },
             okText: 'Delete',
         });
-    }, [id]);
+    }, [job]);
 
     return (
         <Menu onClick={(action: MenuInfo) => {

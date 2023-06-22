@@ -5,26 +5,27 @@
 import './styles.scss';
 
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
+import { CombinedState } from 'reducers';
+import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
+import Tag from 'antd/lib/tag';
 import Select from 'antd/lib/select';
+import Dropdown from 'antd/lib/dropdown';
 import Icon from '@ant-design/icons';
-import {
-    Job, JobStage, JobType, Task, User,
-} from 'cvat-core-wrapper';
 import {
     BorderOutlined,
     LoadingOutlined, MoreOutlined, ProjectOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons/lib/icons';
-import { Link } from 'react-router-dom';
-import moment from 'moment';
-import UserSelector from 'components/task-page/user-selector';
-import Dropdown from 'antd/lib/dropdown';
-import Tag from 'antd/lib/tag';
 import { DurationIcon, FramesIcon } from 'icons';
-import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
+import {
+    Job, JobStage, JobType, Task, User,
+} from 'cvat-core-wrapper';
+import { useIsMounted } from 'utils/hooks';
+import UserSelector from 'components/task-page/user-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import JobActionsMenu from './job-actions-menu';
 
@@ -37,20 +38,26 @@ interface Props {
 function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Element {
     const [summary, setSummary] = useState<Record<string, any> | null>(null);
     const [error, setError] = useState<any>(null);
+    const isMounted = useIsMounted();
+
     useEffect(() => {
         setError(null);
         jobInstance
             .issues(jobInstance.id)
             .then((issues: any[]) => {
-                setSummary({
-                    issues_unsolved: issues.filter((issue) => !issue.resolved).length,
-                    issues_resolved: issues.filter((issue) => issue.resolved).length,
-                });
+                if (isMounted()) {
+                    setSummary({
+                        issues_unsolved: issues.filter((issue) => !issue.resolved).length,
+                        issues_resolved: issues.filter((issue) => issue.resolved).length,
+                    });
+                }
             })
             .catch((_error: any) => {
-                // eslint-disable-next-line
-                console.log(_error);
-                setError(_error);
+                if (isMounted()) {
+                    // eslint-disable-next-line
+                    console.log(_error);
+                    setError(_error);
+                }
             });
     }, []);
 
@@ -185,7 +192,6 @@ function JobItem(props: Props): JSX.Element {
                                                 {JobStage.ACCEPTANCE}
                                             </Select.Option>
                                         </Select>
-
                                     </Col>
                                 </Row>
                             </Col>

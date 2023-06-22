@@ -7,12 +7,13 @@ import React from 'react';
 
 import Text from 'antd/lib/typography/Text';
 
-import { StatesOrdering } from 'reducers';
+import { StatesOrdering, Workspace } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { ObjectState } from 'cvat-core-wrapper';
 import ObjectListHeader from './objects-list-header';
 
 interface Props {
+    workspace: Workspace;
     readonly: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
@@ -36,6 +37,7 @@ interface Props {
 function ObjectListComponent(props: Props): JSX.Element {
     const {
         readonly,
+        workspace,
         statesHidden,
         statesLocked,
         statesCollapsedAll,
@@ -60,6 +62,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         <>
             <ObjectListHeader
                 readonly={readonly}
+                workspace={workspace}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
                 statesCollapsed={statesCollapsedAll}

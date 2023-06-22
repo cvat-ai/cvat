@@ -334,6 +334,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             copyShape,
             switchPropagateVisibility,
             changeFrame,
+            workspace,
         } = this.props;
         const {
             objectStates, sortedStatesID, statesOrdering, filteredStates,
@@ -535,6 +536,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesLocked={statesLocked}
                     statesCollapsedAll={statesCollapsedAll}
                     readonly={readonly || false}
+                    workspace={workspace}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
