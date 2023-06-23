@@ -2,6 +2,14 @@
 
 from django.db import migrations, models
 
+def forwards_func(apps, schema_editor):
+    Issue = apps.get_model("engine", "Issue")
+
+    issues = Issue.objects.all()
+    for issue in issues:
+        issue.updated_date = issue.created_date
+
+    Issue.objects.bulk_update(issues, fields=['updated_date'], batch_size=500)
 
 class Migration(migrations.Migration):
     dependencies = [
@@ -13,5 +21,8 @@ class Migration(migrations.Migration):
             model_name="issue",
             name="updated_date",
             field=models.DateTimeField(auto_now=True, null=True),
+        ),
+        migrations.RunPython(
+            code=forwards_func,
         ),
     ]
