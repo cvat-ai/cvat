@@ -2267,7 +2267,9 @@ class TestImportWithComplexFilenames:
         if expect_success:
             task.import_annotations(self.format_name, dataset_file)
 
-            assert len(task.get_annotations().shapes) == len(self.flat_filenames)
+            assert set(s.frame for s in task.get_annotations().shapes) == set(
+                range(len(self.flat_filenames))
+            )
         else:
             with pytest.raises(exceptions.ApiException) as capture:
                 task.import_annotations(self.format_name, dataset_file)
