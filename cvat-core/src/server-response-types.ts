@@ -121,11 +121,12 @@ export interface SerializedJob {
     stage: JobStage;
     state: JobState;
     type: JobType;
-    frame_сount: number;
+    frame_count: number;
     start_frame: number;
     stop_frame: number;
     task_id: number;
     updated_date: string;
+    created_date: string;
     url: string;
 }
 

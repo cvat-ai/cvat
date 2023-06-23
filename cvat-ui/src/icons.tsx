@@ -134,4 +134,3 @@ export const FrameCountIcon = React.memo((): JSX.Element => <SVGFrameCountIcon /
 export const FramesIcon = React.memo((): JSX.Element => <SVGFramesIcon />);
 export const ConflictIcon = React.memo((): JSX.Element => <SVGConflictIcon />);
 export const ShowGroundTruthIcon = React.memo((): JSX.Element => <SVGShowGroundTruthIcon />);
-

@@ -773,7 +773,6 @@ export class Task extends Session {
                     issues: job.issues,
                     updated_date: job.updated_date,
                     created_date: job.created_date,
-                  
                     // following fields also returned when doing API request /jobs/<id>
                     // here we know them from task and append to constructor
                     task_id: data.id,
