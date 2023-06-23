@@ -40,7 +40,7 @@
 .cvat-conflict-label {
     position: absolute;
     min-width: 2 * $grid-unit-size;
-    z-index: 10000;
+    z-index: 99;
     transition: none;
     pointer-events: auto;
     overflow: hidden;

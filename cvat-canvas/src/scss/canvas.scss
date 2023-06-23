@@ -340,17 +340,32 @@ g.cvat_canvas_shape_occluded {
 
 .cvat-canvas-highlight-enabled {
     svg {
-        rect:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
-        ellipse:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
-        polygon:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
-        polyline:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
-        line:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
+        >rect:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >ellipse:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >polygon:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >polyline:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >line:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
             fill: gray;
             stroke: gray;
         }
 
-        circle:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
+        >circle:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
             fill: gray;
+        }
+
+        >g:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
+            rect,
+            ellipse,
+            polygon,
+            polyline,
+            line {
+                fill: gray;
+                stroke: gray;
+            }
+
+            circle {
+                fill: gray;
+            }
         }
     }
 }
