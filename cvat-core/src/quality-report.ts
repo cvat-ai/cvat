@@ -73,6 +73,7 @@ export default class QualityReport {
         this.#jobId = initialData.job_id;
         this.#target = initialData.target;
         this.#gtLastUpdated = initialData.gt_last_updated;
+        this.#createdDate = initialData.created_date;
         this.#summary = initialData.summary;
     }
 
