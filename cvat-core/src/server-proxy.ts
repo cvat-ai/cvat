@@ -2228,7 +2228,6 @@ async function updateGuide(id: number, data: Partial<SerializedGuide>): Promise<
     try {
         const response = await Axios.patch(`${backendAPI}/guides/${id}`, data);
         return response.data;
-
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2279,6 +2278,7 @@ async function updateQualitySettings(
         const response = await Axios.patch(`${backendAPI}/quality/settings/${settingsID}`, settingsData, {
             params,
         });
+
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
@@ -2300,7 +2300,6 @@ async function getQualityConflicts(filter): Promise<SerializedQualityConflictDat
         throw generateError(errorData);
     }
 }
-
 
 async function getQualityReports(filter): Promise<SerializedQualityReportData[]> {
     const { backendAPI } = config;
@@ -2473,7 +2472,7 @@ export default Object.freeze({
     assets: Object.freeze({
         create: createAsset,
     }),
-  
+
     analytics: Object.freeze({
         quality: Object.freeze({
             reports: getQualityReports,
@@ -2481,6 +2480,7 @@ export default Object.freeze({
             settings: Object.freeze({
                 get: getQualitySettings,
                 update: updateQualitySettings,
+            }),
         }),
     }),
 });
