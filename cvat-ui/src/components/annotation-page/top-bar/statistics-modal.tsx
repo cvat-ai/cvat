@@ -142,9 +142,7 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
 
     const makeShapesTracksTitle = (title: string): JSX.Element => (
         <CVATTooltip title='Shapes / Tracks'>
-            <Text strong style={{ marginRight: 5 }}>
-                {title}
-            </Text>
+            <Text strong>{title}</Text>
             <QuestionCircleOutlined className='cvat-info-circle-icon' />
         </CVATTooltip>
     );

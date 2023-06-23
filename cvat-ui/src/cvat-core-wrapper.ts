@@ -27,6 +27,7 @@ import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization from 'cvat-core/src/organization';
+import AnnotationGuide from 'cvat-core/src/guide';
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 
@@ -50,6 +51,7 @@ export {
     Job,
     Task,
     Project,
+    AnnotationGuide,
     Attribute,
     ShapeType,
     LabelType,

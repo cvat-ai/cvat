@@ -1,11 +1,11 @@
 {
   "name": "cvat-ui",
-  "version": "1.52.0",
+  "version": "1.53.0",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
     "build": "webpack --config ./webpack.config.js",
-    "start": "webpack serve --env API_URL=http://localhost:8080 --config ./webpack.config.js --mode=development",
+    "start": "webpack serve --env API_URL=http://localhost:7000 --config ./webpack.config.js --mode=development",
     "type-check": "tsc --noEmit",
     "type-check:watch": "yarn run type-check --watch",
     "lint": "eslint './src/**/*.{ts,tsx}'",
@@ -35,6 +35,7 @@
     "@types/react-share": "^3.0.3",
     "@types/redux-logger": "^3.0.9",
     "@types/resize-observer-browser": "^0.1.6",
+    "@uiw/react-md-editor": "^3.22.0",
     "antd": "~4.18.9",
     "copy-to-clipboard": "^3.3.1",
     "cvat-canvas": "link:./../cvat-canvas",

@@ -11,7 +11,7 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
-    SerializedRegister, JobsFilter, SerializedJob,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
 } from 'server-response-types';
 import { SerializedQualityReportData } from 'quality-report';
 import { SerializedQualitySettingsData } from 'quality-settings';
@@ -2200,33 +2200,53 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
-async function getQualityReports(filter): Promise<SerializedQualityReportData[]> {
+async function getGuide(id: number): Promise<SerializedGuide> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/quality/reports`, {
-            params: {
-                ...filter,
-            },
-        });
-
-        return response.data.results;
+        const response = await Axios.get(`${backendAPI}/guides/${id}`);
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
 }
 
-async function getQualityConflicts(filter): Promise<SerializedQualityConflictData[]> {
-    const params = enableOrganization();
+async function createGuide(data: Partial<SerializedGuide>): Promise<SerializedGuide> {
     const { backendAPI } = config;
 
     try {
-        const response = await fetchAll(`${backendAPI}/quality/conflicts`, {
-            ...params,
-            ...filter,
-        });
+        const response = await Axios.post(`${backendAPI}/guides`, data);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
 
-        return response.results;
+async function updateGuide(id: number, data: Partial<SerializedGuide>): Promise<SerializedGuide> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/guides/${id}`, data);
+        return response.data;
+
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createAsset(file: File, guideId: number): Promise<SerializedAsset> {
+    const { backendAPI } = config;
+    const form = new FormData();
+    form.append('file', file);
+    form.append('guide_id', guideId);
+
+    try {
+        const response = await Axios.post(`${backendAPI}/assets`, form, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2260,6 +2280,39 @@ async function updateQualitySettings(
             params,
         });
         return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getQualityConflicts(filter): Promise<SerializedQualityConflictData[]> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await fetchAll(`${backendAPI}/quality/conflicts`, {
+            ...params,
+            ...filter,
+        });
+
+        return response.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+
+async function getQualityReports(filter): Promise<SerializedQualityReportData[]> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/quality/reports`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        return response.data.results;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2411,6 +2464,16 @@ export default Object.freeze({
         events: receiveWebhookEvents,
     }),
 
+    guides: Object.freeze({
+        get: getGuide,
+        create: createGuide,
+        update: updateGuide,
+    }),
+
+    assets: Object.freeze({
+        create: createAsset,
+    }),
+  
     analytics: Object.freeze({
         quality: Object.freeze({
             reports: getQualityReports,
@@ -2418,7 +2481,6 @@ export default Object.freeze({
             settings: Object.freeze({
                 get: getQualitySettings,
                 update: updateQualitySettings,
-            }),
         }),
     }),
 });

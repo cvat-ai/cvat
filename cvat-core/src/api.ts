@@ -3,11 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-/**
- * External API which should be used by for development
- * @module API
- */
-
 import PluginRegistry from './plugins';
 import loggerStorage from './logger-storage';
 import { EventLogger } from './log';
@@ -25,6 +20,7 @@ import { FrameData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
+import AnnotationGuide from './guide';
 
 import * as enums from './enums';
 
@@ -144,6 +140,12 @@ function build() {
         tasks: {
             async get(filter = {}) {
                 const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter);
+                return result;
+            },
+        },
+        assets: {
+            async create(file: File, guideId: number) {
+                const result = await PluginRegistry.apiWrapper(cvat.assets.create, file, guideId);
                 return result;
             },
         },
@@ -311,6 +313,7 @@ function build() {
             CloudStorage,
             Organization,
             Webhook,
+            AnnotationGuide,
         },
     };
 

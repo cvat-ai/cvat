@@ -61,6 +61,7 @@ export interface SerializedProject {
     dimension: DimensionType;
     name: string;
     organization: number | null;
+    guide_id: number | null;
     owner: SerializedUser;
     source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
     target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
@@ -94,6 +95,7 @@ export interface SerializedTask {
     overlap: number | null;
     owner: SerializedUser;
     project_id: number | null;
+    guide_id: number | null;
     segment_size: number;
     size: number;
     source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
@@ -115,12 +117,13 @@ export interface SerializedJob {
     labels: { count: number; url: string };
     mode: TaskMode;
     project_id: number | null;
+    guide_id: number | null;
     stage: JobStage;
     state: JobState;
     type: JobType;
-    startFrame: number;
-    stopFrame: number;
-    frameCount: number;
+    frame_сount: number;
+    start_frame: number;
+    stop_frame: number;
     task_id: number;
     updated_date: string;
     url: string;
@@ -175,4 +178,22 @@ export interface SerializedRegister {
     first_name: string;
     last_name: string;
     username: string;
+}
+
+export interface SerializedGuide {
+    id?: number;
+    task_id: number | null;
+    project_id: number | null;
+    owner: SerializedUser;
+    created_date: string;
+    updated_date: string;
+    markdown: string;
+}
+
+export interface SerializedAsset {
+    uuid?: string;
+    guide?: number;
+    filename: string;
+    created_date: string;
+    owner: SerializedUser;
 }
