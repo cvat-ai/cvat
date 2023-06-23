@@ -2780,9 +2780,6 @@ class AnnotationGuidesViewSet(
     ordering = "-id"
     iam_organization_field = None
 
-    def check_object_permissions(self, request, obj):
-        super().check_object_permissions(request, obj)
-
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return AnnotationGuideReadSerializer
