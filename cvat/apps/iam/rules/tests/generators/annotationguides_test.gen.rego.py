@@ -130,9 +130,11 @@ def get_data(scope, context, ownership, privilege, membership, resource, same_or
 
     if ownership == "target:owner":
         data["resource"]["target"]["owner"]["id"] = user_id
+        data["resource"]["target"]["is_job_staff"] = True
 
     if ownership == "target:assignee":
         data["resource"]["target"]["assignee"]["id"] = user_id
+        data["resource"]["target"]["is_job_staff"] = True
 
     return data
 

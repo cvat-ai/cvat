@@ -1704,7 +1704,7 @@ class AnnotationGuidePermission(OpenPolicyAgentPermission):
                 'target': {
                     'owner': { 'id': getattr(getattr(db_target, 'owner', {}), 'id', None) },
                     'assignee': { 'id': getattr(getattr(db_target, 'assignee', {}), 'id', None) },
-                    'is_job_staff': db_target.is_job_assignee(self.user_id),
+                    'is_job_staff': db_target.is_job_staff(self.user_id),
                 },
                 'organization': { 'id': getattr(db_organization, 'id', None) }
             })

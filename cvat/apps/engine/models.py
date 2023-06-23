@@ -19,6 +19,7 @@ from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
 from django.db.models.fields import FloatField
+from django.db.models import Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
@@ -351,8 +352,19 @@ class Project(models.Model):
     def get_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "project.log")
 
-    def is_job_assignee(self, user_id):
-        return self.tasks.prefetch_related('segment_set', 'segment_set__job_set').filter(segment__job__assignee=user_id).count() > 0
+
+
+    def is_job_staff(self, user_id):
+        from django.db import connection
+        if self.owner == user_id:
+            return True
+
+        if self.assignee == user_id:
+            return True
+
+        return self.tasks.prefetch_related('segment_set', 'segment_set__job_set').filter(
+            Q(owner=user_id) | Q(assignee=user_id) | Q(segment__job__assignee=user_id)
+        ).count() > 0
 
     @cache_deleted
     def delete(self, using=None, keep_parents=False):
@@ -457,7 +469,11 @@ class Task(models.Model):
     def get_tmp_dirname(self):
         return os.path.join(self.get_dirname(), "tmp")
 
-    def is_job_assignee(self, user_id):
+    def is_job_staff(self, user_id):
+        if self.owner == user_id:
+            return True
+        if self.assignee == user_id:
+            return True
         return self.segment_set.prefetch_related('job_set').filter(job__assignee=user_id).count() > 0
 
     @cached_property
