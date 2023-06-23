@@ -2153,6 +2153,14 @@ class TaskQualityReportUpdateManager:
         if task.dimension != DimensionType.DIM_2D:
             raise self.QualityReportsNotAvailable("Quality reports are only supported in 2d tasks")
 
+        if task.project:
+            try:
+                task.project.quality_settings
+            except models.QualitySettings.DoesNotExist as ex:
+                raise self.QualityReportsNotAvailable(
+                    "Quality settings are not configured in the project"
+                ) from ex
+
         gt_job = task.gt_job
         if gt_job is None or not (
             gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StatusChoice.COMPLETED
@@ -2245,6 +2253,11 @@ class TaskQualityReportUpdateManager:
             except Task.DoesNotExist:
                 return
 
+            quality_params = self._get_task_quality_params(task)
+            if not quality_params:
+                # Task quality params are not configured
+                return
+
             # Try to use a shared queryset to minimize DB requests
             job_queryset = Job.objects.select_related("segment")
             job_queryset = job_queryset.filter(segment__task_id=task_id)
@@ -2283,8 +2296,6 @@ class TaskQualityReportUpdateManager:
                 )
                 for job in jobs
             }
-
-            quality_params = self._get_task_quality_params(task)
 
         job_comparison_reports: Dict[int, ComparisonReport] = {}
         for job in jobs:
@@ -2484,8 +2495,18 @@ class TaskQualityReportUpdateManager:
         return db_task_report
 
     def _get_task_quality_params(self, task: Task) -> Optional[ComparisonParameters]:
-        quality_params, _ = models.QualitySettings.objects.get_or_create(task=task)
-        return ComparisonParameters.from_dict(quality_params.to_dict())
+        if task.project:
+            try:
+                quality_params = task.project.quality_settings
+            except models.QualitySettings.DoesNotExist:
+                quality_params = None
+        else:
+            quality_params, _ = models.QualitySettings.objects.get_or_create(task=task)
+
+        if quality_params:
+            return ComparisonParameters.from_dict(quality_params.to_dict())
+
+        return None
 
 
 class ProjectQualityReportUpdateManager:
@@ -2564,10 +2585,12 @@ class ProjectQualityReportUpdateManager:
         pass
 
     def _check_quality_reporting_available(self, project: Project):
-        if not project.quality_settings:
+        try:
+            project.quality_settings
+        except models.QualitySettings.DoesNotExist as ex:
             raise self.QualityReportsNotAvailable(
                 "Quality settings are not configured for this project yet"
-            )
+            ) from ex
 
     def _should_update(self, project: Project) -> bool:
         try:
@@ -2586,6 +2609,9 @@ class ProjectQualityReportUpdateManager:
         # - if multiple simultaneous writes can happen, the objects written must be the same
         # - once a job is created, it can only be updated by the scheduler and the handling worker
 
+        if not self._should_update(project):
+            return
+
         now = timezone.now()
         delay = self._get_quality_check_job_delay()
         next_job_time = now.utcnow() + delay
@@ -2598,7 +2624,7 @@ class ProjectQualityReportUpdateManager:
             scheduler.enqueue_at(
                 next_job_time,
                 self._check_project_quality,
-                task_id=project.id,
+                project_id=project.id,
                 job_id=queue_job_id,
             )
 
@@ -2607,12 +2633,14 @@ class ProjectQualityReportUpdateManager:
         Schedules a quality report computation job, supposed for updates by a request.
         """
 
+        self._check_quality_reporting_available(project)
+
         rq_id = self._make_custom_quality_check_job_id()
 
         queue = self._get_queue()
         queue.enqueue(
             self._check_project_quality,
-            task_id=project.id,
+            project_id=project.id,
             job_id=rq_id,
             meta={"user_id": user_id, "job_type": self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE},
             result_ttl=self._JOB_RESULT_TTL,
@@ -2652,7 +2680,9 @@ class ProjectQualityReportUpdateManager:
 
             # The project could have been deleted during scheduling
             try:
-                project = Project.objects.prefetch_related("tasks").get(id=project_id)
+                project = Project.objects.prefetch_related("tasks", "tasks__data").get(
+                    id=project_id
+                )
             except Project.DoesNotExist:
                 return
 
@@ -2668,16 +2698,18 @@ class ProjectQualityReportUpdateManager:
                     last_quality_report.get_json_report()
                 )
 
-        project_comparison_report = self._compute_project_report(task, task_comparison_reports)
+        project_comparison_report = self._compute_project_report(
+            project, project.tasks.all(), task_comparison_reports
+        )
 
         with transaction.atomic():
             # The task could have been deleted during processing
             try:
-                Task.objects.get(id=project_id)
-            except Task.DoesNotExist:
+                Project.objects.get(id=project_id)
+            except Project.DoesNotExist:
                 return
 
-            last_report_time = self._get_last_report_time(task)
+            last_report_time = self._get_last_report_time(project)
             if not self.is_custom_quality_check_job(self._get_current_job()) and (
                 last_report_time
                 and timezone.now() < last_report_time + self._get_quality_check_job_delay()
@@ -2699,7 +2731,7 @@ class ProjectQualityReportUpdateManager:
         return project_report.id
 
     def _compute_project_report(
-        self, project: Project, task_reports: Dict[int, ComparisonReport]
+        self, project: Project, tasks: List[Task], task_reports: Dict[int, ComparisonReport]
     ) -> ComparisonReport:
         # The task dataset can be different from any jobs' dataset because of frame overlaps
         # between jobs, from which annotations are merged to get the task annotations.
@@ -2758,10 +2790,11 @@ class ProjectQualityReportUpdateManager:
 
         project_ann_components_summary.shape.mean_iou = np.mean(project_mean_shape_ious)
 
+        total_frames = sum(t.data.size for t in tasks)
         project_report_data = ComparisonReport(
             parameters=next(iter(task_reports.values())).parameters,
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share=len(project_intersection_frames) / (project.data.size or 1),
+                frame_share=len(project_intersection_frames) / (total_frames or 1),
                 frames=sorted(project_intersection_frames),
                 conflict_count=len(project_conflicts),
                 warning_count=len(

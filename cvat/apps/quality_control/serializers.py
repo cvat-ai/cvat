@@ -68,7 +68,7 @@ class QualityReportCreateSerializer(serializers.Serializer):
     project_id = serializers.IntegerField(write_only=True, required=False)
 
     def validate(self, attrs):
-        if not attrs.get("task_id") ^ attrs.get("project_id"):
+        if not (attrs.get("task_id") is not None) ^ (attrs.get("project_id") is not None):
             raise ValidationError("One of 'task_id' or 'project_id' must be specified")
 
         return attrs
@@ -152,6 +152,15 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         for k, v in attrs.items():
             if k.endswith("_threshold") or k in ["oks_sigma", "line_thickness"]:
                 if not 0 <= v <= 1:
-                    raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
+                    raise ValidationError(f"{k} must be in the range [0; 1]")
 
         return super().validate(attrs)
+
+    def create(self, validated_data):
+        if not validated_data.get("project_id"):
+            raise ValidationError("Project id must be specified")
+
+        try:
+            return super().create(validated_data)
+        except models.QualitySettings.SettingsAlreadyExistError as ex:
+            raise ValidationError(ex.message)

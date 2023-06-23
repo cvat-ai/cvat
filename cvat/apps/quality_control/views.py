@@ -423,7 +423,7 @@ class QualitySettingsViewSet(
     PartialUpdateModelMixin,
 ):
     queryset = QualitySettings.objects.select_related(
-        "task", "task__organization", "project", "project_organization"
+        "task", "task__organization", "project", "project__organization"
     ).all()
 
     iam_organization_field = "task__organization"

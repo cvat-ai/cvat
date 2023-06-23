@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
 from cvat.apps.engine.models import Annotation, Job, Project, Task
@@ -50,52 +50,52 @@ def _update_task_quality_metrics(instance, created, **kwargs):
 @receiver(
     pre_save, sender=Task, dispatch_uid=__name__ + ".save_task-update_project_quality_metrics"
 )
-def _update_project_quality_metrics_on_task_move_from_project(
-    instance, created, *, update_fields, **kwargs
-):
+def _update_project_quality_metrics_on_task_move_from_project(instance, **kwargs):
     # If a task was moved to another project, the old project quality must be updated
     # to reflect the new task configuration
-    if created:
+    try:
+        original_task = Task.objects.get(pk=instance.pk)
+    except Task.DoesNotExist:
+        # The task could have been removed already, nothing to do here
         return
 
-    if "project" in update_fields and instance:
-        try:
-            original_task = Task.objects.get(pk=instance.pk)
-        except Task.DoesNotExist:
-            # The task could have been removed already, nothing to do here
-            return
+    original_project = original_task.project
+    if not original_project:
+        # There was no project before the update, nothing to update
+        return
+    elif instance.project and original_project.pk == instance.project.pk:
+        # The project has been changed to the same value, nothing to update
+        return
 
-        original_project = original_task.project
-        if not original_project:
-            # There was no project before the update, nothing to update
-            return
-        elif instance.project and original_project.pk == instance.project.pk:
-            # The project has been changed to the same value, nothing to update
-            return
-
-        qc.ProjectQualityReportUpdateManager().schedule_quality_autoupdate_job(original_project)
+    qc.ProjectQualityReportUpdateManager().schedule_quality_autoupdate_job(original_project)
 
 
-@receiver(
-    post_save,
-    sender=Project,
-    dispatch_uid=__name__ + ".save_project-update_project_quality_metrics",
-)
 @receiver(
     post_save,
     sender=QualityReport,
     dispatch_uid=__name__ + ".save_task_quality_report-update_project_quality_metrics",
 )
-def _update_project_quality_metrics(instance, created, **kwargs):
+def _task_report_save__update_project_quality_metrics(instance, created, **kwargs):
     project = None
 
-    if isinstance(instance, Project):
-        project = instance
-    elif isinstance(instance, QualityReport):
+    if isinstance(instance, QualityReport):
         if created and instance.target == QualityReportTarget.TASK and instance.task.project:
             project = instance.task.project
     else:
         assert False
+
+    if project:
+        qc.ProjectQualityReportUpdateManager().schedule_quality_autoupdate_job(project)
+
+
+@receiver(
+    post_delete, sender=Task, dispatch_uid=__name__ + ".delete_task-update_project_quality_metrics"
+)
+def _task_delete__update_project_quality_metrics(instance, **kwargs):
+    try:
+        project = instance.project
+    except Project.DoesNotExist:
+        return
 
     if project:
         qc.ProjectQualityReportUpdateManager().schedule_quality_autoupdate_job(project)
@@ -116,5 +116,9 @@ def _initialize_quality_settings(instance, created, **kwargs):
             task = instance.segment.task
         else:
             assert False
+
+        if task.project:
+            # The project is responsible for the settings
+            return
 
         QualitySettings.objects.get_or_create(task=task)

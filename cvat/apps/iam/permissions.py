@@ -19,7 +19,7 @@ from rest_framework.permissions import BasePermission
 
 from cvat.apps.engine.models import CloudStorage, Label, Project, Task, Job, Issue
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.quality_control.models import AnnotationConflict, QualityReport, QualitySettings
+from cvat.apps.quality_control.models import AnnotationConflict, QualityReport, QualityReportTarget, QualitySettings
 from cvat.apps.webhooks.models import WebhookTypeChoice
 from cvat.utils.http import make_requests_session
 
@@ -779,12 +779,17 @@ class ProjectPermission(OpenPolicyAgentPermission):
         return scopes
 
     @classmethod
-    def create_scope_view(cls, iam_context, project_id):
-        try:
-            obj = Project.objects.get(id=project_id)
-        except Project.DoesNotExist as ex:
-            raise ValidationError(str(ex))
-        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
+    def create_scope_view(cls, iam_context, project: Union[int, Project], request=None):
+        if isinstance(project, int):
+            try:
+                project = Project.objects.get(id=project)
+            except Project.DoesNotExist as ex:
+                raise ValidationError(str(ex))
+
+        if not iam_context and request:
+            iam_context = get_iam_context(request, project)
+
+        return cls(**iam_context, obj=project, scope=__class__.Scopes.VIEW)
 
     @classmethod
     def create_scope_create(cls, request, org_id):
@@ -1694,10 +1699,17 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                     permissions.append(cls.create_scope_view(request, obj, iam_context=iam_context))
                 elif scope == Scopes.LIST and isinstance(obj, Task):
                     permissions.append(TaskPermission.create_scope_view(request, task=obj))
+                elif scope == Scopes.LIST and isinstance(obj, Project):
+                    permissions.append(
+                        ProjectPermission.create_scope_view(None, project=obj, request=request)
+                    )
                 elif scope == Scopes.CREATE:
-                    task_id = request.data.get('task_id')
-                    if task_id is not None:
+                    if task_id := request.data.get('task_id'):
                         permissions.append(TaskPermission.create_scope_view(request, task_id))
+                    elif project_id := request.data.get('project_id'):
+                        permissions.append(
+                            ProjectPermission.create_scope_view(None, project_id, request=request)
+                        )
 
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
                 else:
@@ -1726,11 +1738,21 @@ class QualityReportPermission(OpenPolicyAgentPermission):
         data = None
 
         if self.obj:
-            task = self.obj.get_task()
-            if task.project:
-                organization = task.project.organization
+            if self.obj.target in [QualityReportTarget.JOB, QualityReportTarget.TASK]:
+                task = self.obj.get_task()
+                project = task.project
+            elif self.obj.target == QualityReportTarget.PROJECT:
+                task = None
+                project = self.obj.project
             else:
+                assert False
+
+            if project:
+                organization = project.organization
+            elif task:
                 organization = task.organization
+            else:
+                assert False
 
             data = {
                 "id": self.obj.id,
@@ -1742,9 +1764,9 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                     "assignee": { "id": getattr(task.assignee, 'id', None) }
                 } if task else None,
                 "project": {
-                    "owner": { "id": getattr(task.project.owner, 'id', None) },
-                    "assignee": { "id": getattr(task.project.assignee, 'id', None) }
-                } if task.project else None,
+                    "owner": { "id": getattr(project.owner, 'id', None) },
+                    "assignee": { "id": getattr(project.assignee, 'id', None) }
+                } if project else None,
             }
         elif self.scope == self.Scopes.VIEW_STATUS:
             data = { "owner": self.job_owner_id }
@@ -1806,17 +1828,45 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                 if scope in [Scopes.VIEW, Scopes.UPDATE]:
                     obj = cast(QualitySettings, obj)
 
-                    if scope == Scopes.VIEW:
-                        task_scope = TaskPermission.Scopes.VIEW
-                    elif scope == Scopes.UPDATE:
-                        task_scope = TaskPermission.Scopes.UPDATE_DESC
+                    if obj.task:
+                        if scope == Scopes.VIEW:
+                            task_scope = TaskPermission.Scopes.VIEW
+                        elif scope == Scopes.UPDATE:
+                            task_scope = TaskPermission.Scopes.UPDATE_DESC
+                        else:
+                            assert False
+
+                        parent_perm = TaskPermission.create_base_perm(
+                            request, view,
+                            iam_context=iam_context, scope=task_scope, obj=obj.task
+                        )
+                    elif obj.project:
+                        if scope == Scopes.VIEW:
+                            project_scope = ProjectPermission.Scopes.VIEW
+                        elif scope == Scopes.UPDATE:
+                            project_scope = ProjectPermission.Scopes.UPDATE_DESC
+                        else:
+                            assert False
+
+                        parent_perm = ProjectPermission.create_base_perm(
+                            request, view,
+                            iam_context=iam_context, scope=project_scope, obj=obj.project
+                        )
                     else:
                         assert False
 
-                    # Access rights are the same as in the owning task
+                    # Access rights are the same as in the owning object
                     # This component doesn't define its own rules in this case
-                    permissions.append(TaskPermission.create_base_perm(
-                        request, view, iam_context=iam_context, scope=task_scope, obj=obj.task
+                    permissions.append(parent_perm)
+                elif scope == Scopes.CREATE and (project_id := request.data.get('project_id')):
+                    try:
+                        project = Project.objects.get(pk=project_id)
+                    except Project.DoesNotExist as ex:
+                        raise ValidationError(str(ex))
+
+                    permissions.append(ProjectPermission.create_base_perm(
+                        request, view, iam_context=iam_context,
+                        scope=ProjectPermission.Scopes.UPDATE_DESC, obj=project
                     ))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
@@ -1831,6 +1881,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
     def get_scopes(request, view, obj):
         Scopes = __class__.Scopes
         return [{
+            'create': Scopes.CREATE,
             'list': Scopes.LIST,
             'retrieve': Scopes.VIEW,
             'partial_update': Scopes.UPDATE,

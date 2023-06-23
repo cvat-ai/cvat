@@ -10,6 +10,7 @@ from typing import Any, Sequence
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.utils import IntegrityError
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, Project, ShapeType, Task
@@ -116,10 +117,12 @@ class QualityReport(models.Model):
         return report.comparison_summary
 
     def get_task(self) -> Task:
-        if self.task is not None:
+        if self.task:
             return self.task
-        else:
+        elif self.job:
             return self.job.segment.task
+        else:
+            return None
 
     def get_json_report(self) -> str:
         return self.data
@@ -132,6 +135,8 @@ class QualityReport(models.Model):
     def organization_id(self):
         if task := self.get_task():
             return getattr(task.organization, "id", None)
+        elif project := self.project:
+            return getattr(project.organization, "id", None)
         return None
 
 
@@ -185,6 +190,9 @@ class AnnotationId(models.Model):
 
 
 class QualitySettings(models.Model):
+    class SettingsAlreadyExistError(ValidationError):
+        pass
+
     task = models.OneToOneField(
         Task, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
     )
@@ -233,4 +241,21 @@ class QualitySettings(models.Model):
 
     @property
     def organization_id(self):
-        return getattr(self.task.organization, "id", None)
+        if self.task:
+            return getattr(self.task.organization, "id", None)
+        elif self.project:
+            return getattr(self.project.organization, "id", None)
+        return None
+
+    def save(self, *args, **kwargs) -> None:
+        try:
+            return super().save(*args, **kwargs)
+        except IntegrityError as ex:
+            message = str(ex)
+            if (
+                "duplicate key value violates unique constraint" in message
+                and "project_id" in message
+            ):
+                raise self.SettingsAlreadyExistError(
+                    f"Quality parameters for the project id {self.project_id} already exist"
+                )

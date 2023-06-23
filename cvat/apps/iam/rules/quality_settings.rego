@@ -68,6 +68,7 @@ filter = [] { # Django Q object to filter list of entries
     qobject := [
         {"task__organization": org.id},
         {"task__project__organization": org.id}, "|",
+        {"project__organization": org.id}, "|",
     ]
 } else = qobject {
     utils.is_sandbox
@@ -77,6 +78,8 @@ filter = [] { # Django Q object to filter list of entries
         {"task__assignee_id": user.id}, "|",
         {"task__project__owner_id": user.id}, "|",
         {"task__project__assignee_id": user.id}, "|",
+        {"project__owner_id": user.id}, "|",
+        {"project__assignee_id": user.id}, "|",
     ]
 } else = qobject {
     utils.is_organization
@@ -86,6 +89,7 @@ filter = [] { # Django Q object to filter list of entries
     qobject := [
         {"task__organization": org.id},
         {"task__project__organization": org.id}, "|",
+        {"project__organization": org.id}, "|",
     ]
 } else = qobject {
     organizations.has_perm(organizations.WORKER)
@@ -94,11 +98,14 @@ filter = [] { # Django Q object to filter list of entries
     qobject := [
         {"task__organization": org.id}, "|",
         {"task__project__organization": org.id}, "|",
+        {"project__organization": org.id}, "|",
 
         {"task__owner_id": user.id},
         {"task__assignee_id": user.id}, "|",
         {"task__project__owner_id": user.id}, "|",
         {"task__project__assignee_id": user.id}, "|",
+        {"project__owner_id": user.id}, "|",
+        {"project__assignee_id": user.id}, "|",
 
         "&"
     ]
