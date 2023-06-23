@@ -352,10 +352,7 @@ class Project(models.Model):
     def get_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "project.log")
 
-
-
     def is_job_staff(self, user_id):
-        from django.db import connection
         if self.owner == user_id:
             return True
 
