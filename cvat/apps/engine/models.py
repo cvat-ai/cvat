@@ -994,7 +994,7 @@ class Issue(models.Model):
     assignee = models.ForeignKey(User, null=True, blank=True, related_name='+',
         on_delete=models.SET_NULL)
     created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(null=True, blank=True)
+    updated_date = models.DateTimeField(null=True, blank=True, auto_now=True)
     resolved = models.BooleanField(default=False)
 
     def get_project_id(self):
