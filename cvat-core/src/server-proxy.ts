@@ -2167,11 +2167,11 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
-async function getGuide(id: number, params = {}): Promise<SerializedGuide> {
+async function getGuide(id: number): Promise<SerializedGuide> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/guides/${id}`, { params });
+        const response = await Axios.get(`${backendAPI}/guides/${id}`);
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);

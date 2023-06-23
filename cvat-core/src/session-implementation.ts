@@ -377,7 +377,7 @@ export function implementJob(Job) {
             return null;
         }
 
-        const result = await serverProxy.guides.get(this.guideId, { job_id: this.id });
+        const result = await serverProxy.guides.get(this.guideId);
         return new AnnotationGuide(result);
     };
 
