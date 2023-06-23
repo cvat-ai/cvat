@@ -12,6 +12,80 @@ info:
     name: MIT License
     url: https://en.wikipedia.org/wiki/MIT_License
 paths:
+  /api/assets:
+    post:
+      operationId: assets_create
+      summary: Method saves new asset on the server and attaches it to a corresponding
+        guide
+      tags:
+      - assets
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AssetRead'
+          description: ''
+  /api/assets/{uuid}:
+    get:
+      operationId: assets_retrieve
+      summary: Method returns an asset file
+      parameters:
+      - in: path
+        name: uuid
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this asset.
+        required: true
+      tags:
+      - assets
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: Asset file
+    delete:
+      operationId: assets_destroy
+      summary: Method deletes a specific asset from the server
+      parameters:
+      - in: path
+        name: uuid
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this asset.
+        required: true
+      tags:
+      - assets
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The asset has been deleted
   /api/auth/login:
     post:
       operationId: auth_create_login
@@ -1025,6 +1099,107 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientEvents'
           description: ''
+  /api/guides:
+    post:
+      operationId: guides_create
+      summary: Method creates a new annotation guide binded to a project or to a task
+      tags:
+      - guides
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnotationGuideWriteRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AnnotationGuideRead'
+          description: ''
+  /api/guides/{id}:
+    get:
+      operationId: guides_retrieve
+      summary: Method returns details of a specific annotation guide
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this annotation guide.
+        required: true
+      tags:
+      - guides
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AnnotationGuideRead'
+          description: ''
+    patch:
+      operationId: guides_partial_update
+      summary: Methods does a partial update of chosen fields in an annotation guide
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this annotation guide.
+        required: true
+      tags:
+      - guides
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAnnotationGuideWriteRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AnnotationGuideRead'
+          description: ''
+    delete:
+      operationId: guides_destroy
+      summary: Method deletes a specific annotation guide and all attached assets
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this annotation guide.
+        required: true
+      tags:
+      - guides
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The annotation guide has been deleted
   /api/invitations:
     get:
       operationId: invitations_list
@@ -5705,6 +5880,42 @@ components:
           format: binary
       required:
       - annotation_file
+    AnnotationGuideRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        task_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        project_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+        markdown:
+          type: string
+          readOnly: true
+    AnnotationGuideWriteRequest:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          nullable: true
+        project_id:
+          type: integer
+          nullable: true
+        markdown:
+          type: string
     AnnotationId:
       type: object
       properties:
@@ -5739,6 +5950,27 @@ components:
       - $ref: '#/components/schemas/LabeledData'
       - type: string
         format: binary
+    AssetRead:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          readOnly: true
+        filename:
+          type: string
+          maxLength: 1024
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        owner:
+          $ref: '#/components/schemas/BasicUser'
+        guide_id:
+          type: integer
+          readOnly: true
+      required:
+      - filename
     Attribute:
       type: object
       properties:
@@ -6820,6 +7052,10 @@ components:
           - $ref: '#/components/schemas/BasicUser'
           readOnly: true
           nullable: true
+        guide_id:
+          type: integer
+          readOnly: true
+          nullable: true
         dimension:
           type: string
           readOnly: true
@@ -7810,6 +8046,17 @@ components:
           minLength: 1
       required:
       - email
+    PatchedAnnotationGuideWriteRequest:
+      type: object
+      properties:
+        task_id:
+          type: integer
+          nullable: true
+        project_id:
+          type: integer
+          nullable: true
+        markdown:
+          type: string
     PatchedCloudStorageWriteRequest:
       type: object
       properties:
@@ -8228,6 +8475,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/BasicUser'
           readOnly: true
+          nullable: true
+        guide_id:
+          type: integer
           nullable: true
         bug_tracker:
           type: string
@@ -8974,6 +9224,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
           readOnly: true
+        guide_id:
+          type: integer
+          nullable: true
         data_original_chunk_type:
           allOf:
           - $ref: '#/components/schemas/ChunkType'
