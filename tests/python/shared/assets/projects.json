@@ -6,6 +6,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2023-03-10T11:58:04.216000Z",
       "dimension": null,
       "id": 13,
@@ -44,6 +45,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2023-03-10T11:57:14.944000Z",
       "dimension": "2d",
       "id": 12,
@@ -82,6 +84,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2023-03-01T15:36:11.840000Z",
       "dimension": "2d",
       "id": 11,
@@ -126,6 +129,7 @@
         "username": "worker3"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2023-02-10T11:42:43.192000Z",
       "dimension": null,
       "id": 10,
@@ -164,6 +168,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-12-01T12:52:42.454000Z",
       "dimension": "2d",
       "id": 8,
@@ -208,6 +213,7 @@
         "username": "worker4"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-09-28T12:26:25.296000Z",
       "dimension": null,
       "id": 7,
@@ -252,6 +258,7 @@
         "username": "business4"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-09-28T12:15:50.768000Z",
       "dimension": null,
       "id": 6,
@@ -290,6 +297,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-09-22T14:21:53.791000Z",
       "dimension": "2d",
       "id": 5,
@@ -328,6 +336,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-06-08T08:32:45.521000Z",
       "dimension": "2d",
       "id": 4,
@@ -364,6 +373,7 @@
         "username": "user5"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-03-28T13:05:24.659000Z",
       "dimension": null,
       "id": 3,
@@ -400,6 +410,7 @@
         "username": "user2"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2021-12-14T19:52:37.278000Z",
       "dimension": "2d",
       "id": 2,
@@ -446,6 +457,7 @@
         "username": "user6"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2021-12-14T19:46:37.969000Z",
       "dimension": "2d",
       "id": 1,

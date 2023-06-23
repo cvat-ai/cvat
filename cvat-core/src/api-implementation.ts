@@ -25,6 +25,8 @@ import Project from './project';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
+import { ArgumentError } from './exceptions';
+import { SerializedAsset } from './server-response-types';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -130,6 +132,15 @@ export default function implementAPI(cvat) {
 
     cvat.server.installedApps.implementation = async () => {
         const result = await serverProxy.server.installedApps();
+        return result;
+    };
+
+    cvat.assets.create.implementation = async (file: File, guideId: number): Promise<SerializedAsset> => {
+        if (!(file instanceof File)) {
+            throw new ArgumentError('Assets expect a file');
+        }
+
+        const result = await serverProxy.assets.create(file, guideId);
         return result;
     };
 

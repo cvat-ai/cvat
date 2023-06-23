@@ -432,6 +432,9 @@ os.makedirs(TASKS_ROOT, exist_ok=True)
 PROJECTS_ROOT = os.path.join(DATA_ROOT, 'projects')
 os.makedirs(PROJECTS_ROOT, exist_ok=True)
 
+ASSETS_ROOT = os.path.join(DATA_ROOT, 'assets')
+os.makedirs(ASSETS_ROOT, exist_ok=True)
+
 SHARE_ROOT = os.path.join(BASE_DIR, 'share')
 os.makedirs(SHARE_ROOT, exist_ok=True)
 
@@ -683,3 +686,7 @@ BUCKET_CONTENT_MAX_PAGE_SIZE =  500
 IMPORT_CACHE_FAILED_TTL = timedelta(days=90)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
 IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=2)
+
+ASSET_MAX_SIZE_MB = 2
+ASSET_SUPPORTED_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', )
+ASSET_MAX_COUNT_PER_GUIDE = 10

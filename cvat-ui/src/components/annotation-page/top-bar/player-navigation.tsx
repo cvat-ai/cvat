@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,11 +11,11 @@ import Slider from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
+import Modal from 'antd/lib/modal';
 
 import { RestoreIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
-import modal from 'antd/lib/modal';
 
 interface Props {
     startFrame: number;
@@ -64,7 +65,7 @@ function PlayerNavigation(props: Props): JSX.Element {
     const showDeleteFrameDialog = useCallback(() => {
         if (!playing) {
             switchNavigationBlocked(true);
-            modal.confirm({
+            Modal.confirm({
                 title: `Do you want to delete frame #${frameNumber}?`,
                 content: 'The frame will not be visible in navigation and exported datasets, but it still can be restored with all the annotations.',
                 className: 'cvat-modal-delete-frame',

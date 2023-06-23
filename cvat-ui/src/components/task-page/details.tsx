@@ -23,9 +23,10 @@ import Space from 'antd/lib/space';
 import { getCore, Task } from 'cvat-core-wrapper';
 import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
+import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
-import { CombinedState, ActiveInference, PluginComponent } from 'reducers';
+import { CombinedState, ActiveInference } from 'reducers';
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
@@ -40,7 +41,6 @@ interface StateToProps {
     activeInference: ActiveInference | null;
     installedGit: boolean;
     projectSubsets: string[];
-    taskNamePlugins: PluginComponent[];
     dumpers: any[];
     user: any;
 }
@@ -59,7 +59,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & Ow
         user: state.auth.user,
         installedGit: list.GIT_INTEGRATION,
         activeInference: state.models.inferences[own.task.id] || null,
-        taskNamePlugins: state.plugins.components.taskItem.name,
         projectSubsets: taskProject ?
             ([
                 ...new Set(taskProject.subsets),
@@ -207,7 +206,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
     private renderTaskName(): JSX.Element {
         const { name } = this.state;
-        const { task: taskInstance, taskNamePlugins, onUpdateTask } = this.props;
+        const { task: taskInstance, onUpdateTask } = this.props;
 
         return (
             <Title level={4}>
@@ -226,8 +225,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                 >
                     {name}
                 </Text>
-                { taskNamePlugins
-                    .map(({ component: Component }, index) => <Component key={index} />) }
             </Title>
         );
     }
@@ -454,6 +451,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         {this.renderDescription()}
+                        { taskInstance.projectId === null && <MdGuideControl instanceType='task' id={taskInstance.id} /> }
                         <Row justify='space-between' align='middle'>
                             <Col span={12}>
                                 <BugTrackerEditor

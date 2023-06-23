@@ -34,6 +34,7 @@ import {
     freezeHistory, clearActions, getActions,
     clearCache, getHistory,
 } from './annotations';
+import AnnotationGuide from './guide';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame) {
@@ -369,6 +370,15 @@ export function implementJob(Job) {
         clearFrames(this.id);
         clearCache(this);
         return this;
+    };
+
+    Job.prototype.guide.implementation = async function guide() {
+        if (this.guideId === null) {
+            return null;
+        }
+
+        const result = await serverProxy.guides.get(this.guideId);
+        return new AnnotationGuide(result);
     };
 
     return Job;
@@ -808,6 +818,15 @@ export function implementTask(Task) {
             wait,
         );
         return result;
+    };
+
+    Task.prototype.guide.implementation = async function guide() {
+        if (this.guideId === null) {
+            return null;
+        }
+
+        const result = await serverProxy.guides.get(this.guideId);
+        return new AnnotationGuide(result);
     };
 
     return Task;

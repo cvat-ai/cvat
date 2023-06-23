@@ -15,6 +15,8 @@ import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
+import { SerializedJob, SerializedTask } from './server-response-types';
+import AnnotationGuide from './guide';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -312,6 +314,7 @@ export class Job extends Session {
     public readonly startFrame: number;
     public readonly stopFrame: number;
     public readonly projectId: number | null;
+    public readonly guideId: number | null;
     public readonly taskId: number;
     public readonly dimension: DimensionType;
     public readonly dataCompressedChunkType: ChunkType;
@@ -361,7 +364,7 @@ export class Job extends Session {
         log: CallableFunction;
     };
 
-    constructor(initialData) {
+    constructor(initialData: SerializedJob) {
         super();
         const data = {
             id: undefined,
@@ -370,7 +373,8 @@ export class Job extends Session {
             state: undefined,
             start_frame: undefined,
             stop_frame: undefined,
-            project_id: null,
+            project_id: undefined,
+            guide_id: null,
             task_id: undefined,
             labels: [],
             dimension: undefined,
@@ -476,6 +480,9 @@ export class Job extends Session {
                 projectId: {
                     get: () => data.project_id,
                 },
+                guideId: {
+                    get: () => data.guide_id,
+                },
                 taskId: {
                     get: () => data.task_id,
                 },
@@ -559,6 +566,11 @@ export class Job extends Session {
         return result;
     }
 
+    async guide(): Promise<AnnotationGuide | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.guide);
+        return result;
+    }
+
     async openIssue(issue, message) {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
         return result;
@@ -577,6 +589,7 @@ export class Task extends Session {
     public bugTracker: string;
     public subset: string;
     public labels: Label[];
+    public readonly guideId: number | null;
     public readonly id: number;
     public readonly status: TaskStatus;
     public readonly size: number;
@@ -648,13 +661,14 @@ export class Task extends Session {
         log: CallableFunction;
     };
 
-    constructor(initialData) {
+    constructor(initialData: SerializedTask) {
         super();
 
         const data = {
             id: undefined,
             name: undefined,
             project_id: null,
+            guide_id: undefined,
             status: undefined,
             size: undefined,
             mode: undefined,
@@ -729,6 +743,9 @@ export class Task extends Session {
                     stage: job.stage,
                     start_frame: job.start_frame,
                     stop_frame: job.stop_frame,
+                    guide_id: job.guide_id,
+                    issues: job.issues,
+                    updated_date: job.updated_date,
 
                     // following fields also returned when doing API request /jobs/<id>
                     // here we know them from task and append to constructor
@@ -772,6 +789,9 @@ export class Task extends Session {
                         updateTrigger.update('projectId');
                         data.project_id = projectId;
                     },
+                },
+                guideId: {
+                    get: () => data.guide_id,
                 },
                 status: {
                     get: () => data.status,
@@ -1083,6 +1103,11 @@ export class Task extends Session {
 
     static async restore(storage: Storage, file: File | string) {
         const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file);
+        return result;
+    }
+
+    async guide(): Promise<AnnotationGuide | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.guide);
         return result;
     }
 }
