@@ -2201,13 +2201,11 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
 }
 
 async function getQualityReports(filter): Promise<SerializedQualityReportData[]> {
-    const params = enableOrganization();
     const { backendAPI } = config;
 
     try {
         const response = await Axios.get(`${backendAPI}/quality/reports`, {
             params: {
-                ...params,
                 ...filter,
             },
         });
@@ -2235,18 +2233,16 @@ async function getQualityConflicts(filter): Promise<SerializedQualityConflictDat
 }
 
 async function getQualitySettings(taskID: number): Promise<SerializedQualitySettingsData> {
-    const params = enableOrganization();
     const { backendAPI } = config;
 
     try {
         const response = await Axios.get(`${backendAPI}/quality/settings`, {
             params: {
-                ...params,
                 task_id: taskID,
             },
         });
-        const settings = response.data.results[0];
-        return settings;
+
+        return response.data.results[0];
     } catch (errorData) {
         throw generateError(errorData);
     }

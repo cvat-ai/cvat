@@ -9,7 +9,6 @@ import { Row, Col } from 'antd/lib/grid';
 import Form from 'antd/lib/form';
 import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
-import notification from 'antd/lib/notification';
 import InputNumber from 'antd/lib/input-number';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
@@ -75,21 +74,10 @@ function JobForm(props: Props): JSX.Element {
         }
     }, [task]);
 
-    const onSubmitAndOpen = async (): Promise<void> => {
+    const onSubmit = async (): Promise<void> => {
         const createdJob = await submit();
         if (createdJob) {
             history.push(`/tasks/${task.id}/jobs/${createdJob.id}`);
-        }
-    };
-
-    const onSubmit = async (): Promise<void> => {
-        const res = await submit();
-        if (res) {
-            form.resetFields();
-            notification.info({
-                message: 'Job has been successfully created',
-                className: 'cvat-notification-create-job-success',
-            });
         }
     };
 
@@ -222,16 +210,6 @@ function JobForm(props: Props): JSX.Element {
             </Col>
             <Col span={24} className='cvat-create-job-actions'>
                 <Row justify='end'>
-                    <Col>
-                        <Button
-                            className='cvat-submit-and-open-job-button'
-                            type='primary'
-                            onClick={onSubmitAndOpen}
-                            loading={fetching}
-                        >
-                            Submit & Open
-                        </Button>
-                    </Col>
                     <Col>
                         <Button
                             className='cvat-submit-job-button'

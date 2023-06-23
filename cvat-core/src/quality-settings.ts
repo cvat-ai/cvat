@@ -39,23 +39,6 @@ export default class QualitySettings {
     #compareAttributes: boolean;
 
     constructor(initialData: SerializedQualitySettingsData) {
-        const data: SerializedQualitySettingsData = {
-            id: undefined,
-            task: undefined,
-            iou_threshold: undefined,
-            oks_sigma: undefined,
-            line_thickness: undefined,
-            low_overlap_threshold: undefined,
-            compare_line_orientation: undefined,
-            line_orientation_threshold: undefined,
-            compare_groups: undefined,
-            group_match_threshold: undefined,
-            check_covered_annotations: undefined,
-            object_visibility_threshold: undefined,
-            panoptic_comparison: undefined,
-            compare_attributes: undefined,
-        };
-
         this.#id = initialData.id;
         this.#task = initialData.task;
         this.#iouThreshold = initialData.iou_threshold;
@@ -70,22 +53,6 @@ export default class QualitySettings {
         this.#objectVisibilityThreshold = initialData.object_visibility_threshold;
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#compareAttributes = initialData.compare_attributes;
-
-        for (const property in data) {
-            if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
-                data[property] = initialData[property];
-            }
-        }
-
-        Object.defineProperties(
-            this,
-            Object.freeze({
-                id: {
-                    get: () => data.id,
-                },
-
-            }),
-        );
     }
 
     get id(): number {
