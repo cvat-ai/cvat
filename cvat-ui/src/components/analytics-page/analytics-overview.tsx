@@ -38,6 +38,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                         value={entry.dataseries[Object.keys(entry.dataseries)[0]][0].value as number}
                         size={12}
                         bottomElement={<Text>{entry.description}</Text>}
+                        key={name}
                     />
                 );
             }
