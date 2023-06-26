@@ -226,7 +226,8 @@ context('New organization pipeline.', () => {
             cy.assignJobToUser(0, thirdUserName);
             cy.renameTask(taskName, newTaskName);
             cy.url().then((url) => {
-                taskID = Number(url.split('/').slice(-1)[0]);
+                const [link] = url.split('?');
+                taskID = Number(link.split('/').slice(-1)[0]);
             });
             cy.getJobNum(0).then(($jobID) => {
                 jobID = $jobID;

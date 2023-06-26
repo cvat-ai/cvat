@@ -4,9 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { getCore } from 'cvat-core-wrapper';
-import { JobsQuery, Job } from 'reducers';
+import { getCore, Job } from 'cvat-core-wrapper';
+import { JobsQuery } from 'reducers';
 import { filterNull } from 'utils/filter-null';
+import { JobData } from 'components/create-job-page/job-form';
 
 const cvat = getCore();
 
@@ -17,6 +18,10 @@ export enum JobsActionTypes {
     GET_JOB_PREVIEW = 'GET_JOB_PREVIEW',
     GET_JOB_PREVIEW_SUCCESS = 'GET_JOB_PREVIEW_SUCCESS',
     GET_JOB_PREVIEW_FAILED = 'GET_JOB_PREVIEW_FAILED',
+    CREATE_JOB_FAILED = 'CREATE_JOB_FAILED',
+    DELETE_JOB = 'DELETE_JOB',
+    DELETE_JOB_SUCCESS = 'DELETE_JOB_SUCCESS',
+    DELETE_JOB_FAILED = 'DELETE_JOB_FAILED',
 }
 
 interface JobsList extends Array<any> {
@@ -37,6 +42,18 @@ const jobsActions = {
     ),
     getJobPreviewFailed: (jobID: number, error: any) => (
         createAction(JobsActionTypes.GET_JOB_PREVIEW_FAILED, { jobID, error })
+    ),
+    createJobFailed: (error: any) => (
+        createAction(JobsActionTypes.CREATE_JOB_FAILED, { error })
+    ),
+    deleteJob: (jobID: number) => (
+        createAction(JobsActionTypes.DELETE_JOB, { jobID })
+    ),
+    deleteJobSuccess: (jobID: number) => (
+        createAction(JobsActionTypes.DELETE_JOB_SUCCESS, { jobID })
+    ),
+    deleteJobFailed: (jobID: number, error: any) => (
+        createAction(JobsActionTypes.DELETE_JOB_FAILED, { jobID, error })
     ),
 };
 
@@ -63,4 +80,27 @@ export const getJobPreviewAsync = (job: Job): ThunkAction => async (dispatch) =>
     } catch (error) {
         dispatch(jobsActions.getJobPreviewFailed(job.id, error));
     }
+};
+
+export const createJobAsync = (data: JobData): ThunkAction => async (dispatch) => {
+    const jobInstance = new cvat.classes.Job(data);
+    try {
+        const savedJob = await jobInstance.save(data);
+        return savedJob;
+    } catch (error) {
+        dispatch(jobsActions.createJobFailed(error));
+        throw error;
+    }
+};
+
+export const deleteJobAsync = (job: Job): ThunkAction => async (dispatch) => {
+    dispatch(jobsActions.deleteJob(job.id));
+    try {
+        await job.delete();
+    } catch (error) {
+        dispatch(jobsActions.deleteJobFailed(job.id, error));
+        return;
+    }
+
+    dispatch(jobsActions.deleteJobSuccess(job.id));
 };
