@@ -12,7 +12,7 @@ export interface SerializedAnalyticsEntry {
     description?: string;
     granularity?: string;
     default_view?: string;
-    dataseries?: Record<string, SerializedAnalyticsEntry[]>;
+    dataseries?: Record<string, SerializedDataEntry[]>;
 }
 
 export interface SerializedAnalyticsReport {
@@ -38,7 +38,7 @@ export class AnalyticsEntry {
     #description: string;
     #granularity: string;
     #defaultView: AnalyticsEntryViewType;
-    #dataseries: Record<string, SerializedAnalyticsEntry[]>;
+    #dataseries: Record<string, SerializedDataEntry[]>;
 
     constructor(initialData: SerializedAnalyticsEntry) {
         this.#title = initialData.title;
@@ -65,7 +65,7 @@ export class AnalyticsEntry {
         return this.#defaultView;
     }
 
-    get dataseries(): Record<string, SerializedAnalyticsEntry[]> {
+    get dataseries(): Record<string, SerializedDataEntry[]> {
         return this.#dataseries;
     }
 }
