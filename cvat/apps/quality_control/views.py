@@ -190,7 +190,7 @@ class QualityReportViewSet(
         set(filter_fields) - {"id", "created_date", "gt_last_updated", "target_last_updated"}
     )
     ordering_fields = list(filter_fields)
-    ordering = "id"
+    ordering = "-id"
 
     def get_serializer_class(self):
         # a separate method is required for drf-spectacular to work
@@ -316,7 +316,10 @@ class QualityReportViewSet(
                 rq_id = manager.schedule_quality_check_job(**job_params, user_id=request.user.id)
                 serializer = RqIdSerializer({"rq_id": rq_id})
                 return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-            except qc.TaskQualityReportUpdateManager.QualityReportsNotAvailable as ex:
+            except (
+                qc.TaskQualityReportUpdateManager.QualityReportsNotAvailable,
+                qc.ProjectQualityReportUpdateManager.QualityReportsNotAvailable,
+            ) as ex:
                 raise ValidationError(str(ex))
 
         else:

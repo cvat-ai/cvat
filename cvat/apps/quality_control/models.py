@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -116,7 +116,7 @@ class QualityReport(models.Model):
         report = self._parse_report()
         return report.comparison_summary
 
-    def get_task(self) -> Task:
+    def get_task(self) -> Optional[Task]:
         if self.task:
             return self.task
         elif self.job:

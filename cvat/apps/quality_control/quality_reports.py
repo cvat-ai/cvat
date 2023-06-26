@@ -253,17 +253,17 @@ class ComparisonReportAnnotationsSummary(_Serializable):
     total_count: int
     ds_count: int
     gt_count: int
-    confusion_matrix: ConfusionMatrix
+    confusion_matrix: Optional[ConfusionMatrix]
 
-    @property
+    @cached_property
     def accuracy(self) -> float:
         return self.valid_count / (self.total_count or 1)
 
-    @property
+    @cached_property
     def precision(self) -> float:
         return self.valid_count / (self.ds_count or 1)
 
-    @property
+    @cached_property
     def recall(self) -> float:
         return self.valid_count / (self.gt_count or 1)
 
@@ -279,9 +279,17 @@ class ComparisonReportAnnotationsSummary(_Serializable):
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(
-            include_properties=include_properties or ["accuracy", "precision", "recall"]
-        )
+        return super()._fields_dict(include_properties=include_properties or self._CACHED_FIELDS)
+
+    _CACHED_FIELDS = ["accuracy", "precision", "recall"]
+
+    def __init__(self, *args, **kwargs):
+        # these fields are optional, but can be computed on access
+        for field_name in self._CACHED_FIELDS:
+            if field_name in kwargs:
+                setattr(self, field_name, kwargs.pop(field_name))
+
+        self.__attrs_init__(*args, **kwargs)
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -292,7 +300,18 @@ class ComparisonReportAnnotationsSummary(_Serializable):
             total_count=d["total_count"],
             ds_count=d["ds_count"],
             gt_count=d["gt_count"],
-            confusion_matrix=ConfusionMatrix.from_dict(d["confusion_matrix"]),
+            confusion_matrix=(
+                ConfusionMatrix.from_dict(d["confusion_matrix"])
+                if d.get("confusion_matrix")
+                else None
+            ),
+            **dict(accuracy=d["accuracy"])
+            if "accuracy" in d
+            else {} ** dict(precision=d["precision"])
+            if "precision" in d
+            else {} ** dict(recall=d["recall"])
+            if "recall" in d
+            else {},
         )
 
 
@@ -306,7 +325,7 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
     gt_count: int
     mean_iou: float
 
-    @property
+    @cached_property
     def accuracy(self) -> float:
         return self.valid_count / (self.total_count or 1)
 
@@ -324,6 +343,16 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or ["accuracy"])
 
+    _CACHED_FIELDS = ["accuracy", "precision", "recall"]
+
+    def __init__(self, *args, **kwargs):
+        # these fields are optional, but can be computed on access
+        for field_name in self._CACHED_FIELDS:
+            if field_name in kwargs:
+                setattr(self, field_name, kwargs.pop(field_name))
+
+        self.__attrs_init__(*args, **kwargs)
+
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
@@ -334,6 +363,7 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
             ds_count=d["ds_count"],
             gt_count=d["gt_count"],
             mean_iou=d["mean_iou"],
+            **dict(accuracy=d["accuracy"]) if "accuracy" in d else {},
         )
 
 
@@ -343,7 +373,7 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
     invalid_count: int
     total_count: int
 
-    @property
+    @cached_property
     def accuracy(self) -> float:
         return self.valid_count / (self.total_count or 1)
 
@@ -354,12 +384,23 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or ["accuracy"])
 
+    _CACHED_FIELDS = ["accuracy", "precision", "recall"]
+
+    def __init__(self, *args, **kwargs):
+        # these fields are optional, but can be computed on access
+        for field_name in self._CACHED_FIELDS:
+            if field_name in kwargs:
+                setattr(self, field_name, kwargs.pop(field_name))
+
+        self.__attrs_init__(*args, **kwargs)
+
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
             valid_count=d["valid_count"],
             invalid_count=d["invalid_count"],
             total_count=d["total_count"],
+            **dict(accuracy=d["accuracy"]) if "accuracy" in d else {},
         )
 
 
@@ -395,7 +436,7 @@ class ComparisonReportComparisonSummary(_Serializable):
     conflicts_by_type: Dict[AnnotationConflictType, int]
 
     annotations: ComparisonReportAnnotationsSummary
-    annotation_components: ComparisonReportAnnotationComponentsSummary
+    annotation_components: Optional[ComparisonReportAnnotationComponentsSummary]
 
     @property
     def frame_count(self) -> int:
@@ -431,8 +472,10 @@ class ComparisonReportComparisonSummary(_Serializable):
                 AnnotationConflictType(k): v for k, v in d.get("conflicts_by_type", {}).items()
             },
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
-            annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
-                d["annotation_components"]
+            annotation_components=(
+                ComparisonReportAnnotationComponentsSummary.from_dict(d["annotation_components"])
+                if d.get("annotation_components")
+                else None
             ),
         )
 
@@ -1991,6 +2034,8 @@ class DatasetComparator:
                 annotation_components.accumulate(frame_result.annotation_components)
             mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
+        mean_ious = mean_ious or [0]
+
         confusion_matrix_labels = {
             i: label.name
             for i, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label])
@@ -2689,10 +2734,13 @@ class ProjectQualityReportUpdateManager:
             tasks_with_reports = project.tasks.annotate(Count("quality_reports")).filter(
                 quality_reports__count__gt=0
             )
+
             task_quality_reports: Dict[int, models.QualityReport] = {}
             task_comparison_reports: Dict[int, ComparisonReport] = {}
             for task in tasks_with_reports:
-                last_quality_report = models.QualityReport.objects.latest("created_date")
+                last_quality_report = models.QualityReport.objects.filter(task=task).latest(
+                    "created_date"
+                )
                 task_quality_reports[task.id] = last_quality_report
                 task_comparison_reports[task.id] = ComparisonReport.from_json(
                     last_quality_report.get_json_report()
@@ -2733,15 +2781,13 @@ class ProjectQualityReportUpdateManager:
     def _compute_project_report(
         self, project: Project, tasks: List[Task], task_reports: Dict[int, ComparisonReport]
     ) -> ComparisonReport:
-        # The task dataset can be different from any jobs' dataset because of frame overlaps
-        # between jobs, from which annotations are merged to get the task annotations.
-        # Thus, a separate report could be computed for the task. Instead, here we only
-        # compute the combined summary of the job reports.
+        # It's possible that there are no children reports available,
+        # but we still need to return a meaningful report
+
         project_intersection_frames = set()
         project_conflicts: List[AnnotationConflict] = []
         project_annotations_summary = None
         project_ann_components_summary = None
-        project_mean_shape_ious = []
         project_frame_results = {}
         project_frame_results_counts = {}
         for r in task_reports.values():
@@ -2761,7 +2807,6 @@ class ProjectQualityReportUpdateManager:
                 project_ann_components_summary = deepcopy(
                     r.comparison_summary.annotation_components
                 )
-            project_mean_shape_ious.append(project_ann_components_summary.shape.mean_iou)
 
             for frame_id, job_frame_result in r.frame_results.items():
                 project_frame_result = cast(
@@ -2788,11 +2833,46 @@ class ProjectQualityReportUpdateManager:
                 project_frame_results_counts[frame_id] = 1 + frame_results_count
                 project_frame_results[frame_id] = project_frame_result
 
-        project_ann_components_summary.shape.mean_iou = np.mean(project_mean_shape_ious)
+        if task_reports:
+            # Compute the combined weighted summary of the task reports.
+            # The resulting percents are weighted wrt the
+            # project frame shares in corresponding tasks
+            project_qa_total_frames = sum(t.data.size for t in tasks if t.id in task_reports)
+            task_weights = {
+                task.id: task.data.size / (project_qa_total_frames or 1)
+                for task in tasks
+                if task.id in task_reports
+            }
+            project_annotations_summary.accuracy = sum(
+                r.comparison_summary.annotations.accuracy * task_weights[tid]
+                for tid, r in task_reports.items()
+            )
+            project_ann_components_summary.shape.mean_iou = sum(
+                r.comparison_summary.annotation_components.shape.mean_iou * task_weights[tid]
+                for tid, r in task_reports.items()
+            )
+            project_ann_components_summary.shape.accuracy = sum(
+                r.comparison_summary.annotation_components.shape.accuracy * task_weights[tid]
+                for tid, r in task_reports.items()
+            )
+            project_ann_components_summary.label.accuracy = sum(
+                r.comparison_summary.annotation_components.label.accuracy * task_weights[tid]
+                for tid, r in task_reports.items()
+            )
+        else:
+            project_annotations_summary = ComparisonReportAnnotationsSummary(
+                valid_count=0,
+                missing_count=0,
+                extra_count=0,
+                total_count=0,
+                ds_count=0,
+                gt_count=0,
+                confusion_matrix=None,
+            )
 
         total_frames = sum(t.data.size for t in tasks)
         project_report_data = ComparisonReport(
-            parameters=next(iter(task_reports.values())).parameters,
+            parameters=ComparisonParameters.from_dict(project.quality_settings.to_dict()),
             comparison_summary=ComparisonReportComparisonSummary(
                 frame_share=len(project_intersection_frames) / (total_frames or 1),
                 frames=sorted(project_intersection_frames),
@@ -2845,10 +2925,12 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     # - covert some fractions to percents
     # - add common report info
 
-    task_id = db_report.get_task().id
+    task = db_report.get_task()
+    task_id = task.id if task is not None else None
     serialized_data = dict(
         job_id=db_report.job.id if db_report.job is not None else None,
         task_id=task_id,
+        project_id=db_report.project.id if db_report.project is not None else None,
         parent_id=db_report.parent.id if db_report.parent is not None else None,
         created_date=str(db_report.created_date),
         target_last_updated=str(db_report.target_last_updated),

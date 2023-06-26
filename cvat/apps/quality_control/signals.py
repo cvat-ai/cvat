@@ -5,7 +5,7 @@
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
-from cvat.apps.engine.models import Annotation, Job, Project, Task
+from cvat.apps.engine.models import Annotation, Job, Project, Segment, Task
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.models import QualityReport, QualityReportTarget, QualitySettings
 
@@ -50,7 +50,7 @@ def _update_task_quality_metrics(instance, created, **kwargs):
 @receiver(
     pre_save, sender=Task, dispatch_uid=__name__ + ".save_task-update_project_quality_metrics"
 )
-def _update_project_quality_metrics_on_task_move_from_project(instance, **kwargs):
+def _on_update_project_quality_metrics_on_task_move_from_project(instance, **kwargs):
     # If a task was moved to another project, the old project quality must be updated
     # to reflect the new task configuration
     try:
@@ -67,6 +67,10 @@ def _update_project_quality_metrics_on_task_move_from_project(instance, **kwargs
         # The project has been changed to the same value, nothing to update
         return
 
+    # Old reports may conflict with newer ones -
+    # labels / attributes and settings can be different
+    QualityReport.objects.filter(task_id=instance.id).delete()
+
     qc.ProjectQualityReportUpdateManager().schedule_quality_autoupdate_job(original_project)
 
 
@@ -75,7 +79,7 @@ def _update_project_quality_metrics_on_task_move_from_project(instance, **kwargs
     sender=QualityReport,
     dispatch_uid=__name__ + ".save_task_quality_report-update_project_quality_metrics",
 )
-def _task_report_save__update_project_quality_metrics(instance, created, **kwargs):
+def _on_task_report_save__update_project_quality_metrics(instance, created, **kwargs):
     project = None
 
     if isinstance(instance, QualityReport):
@@ -89,12 +93,20 @@ def _task_report_save__update_project_quality_metrics(instance, created, **kwarg
 
 
 @receiver(
+    post_delete, sender=Job, dispatch_uid=__name__ + ".delete_job-update_project_quality_metrics"
+)
+@receiver(
     post_delete, sender=Task, dispatch_uid=__name__ + ".delete_task-update_project_quality_metrics"
 )
-def _task_delete__update_project_quality_metrics(instance, **kwargs):
+def _on_task_or_job_delete__update_project_quality_metrics(instance, **kwargs):
     try:
-        project = instance.project
-    except Project.DoesNotExist:
+        if isinstance(instance, Job):
+            project = instance.segment.task.project
+        elif isinstance(instance, Task):
+            project = instance.project
+        else:
+            assert False
+    except (Segment.DoesNotExist, Task.DoesNotExist, Project.DoesNotExist):
         return
 
     if project:
