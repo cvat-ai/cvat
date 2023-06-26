@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ArgumentError } from './exceptions';
-import { HistoryActions } from './enums';
+import { HistoryActions, JobType } from './enums';
 import { Storage } from './storage';
 import loggerStorage from './logger-storage';
 import serverProxy from './server-proxy';
@@ -14,7 +14,7 @@ import {
     restoreFrame,
     getRanges,
     clear as clearFrames,
-    findNotDeletedFrame,
+    findFrame,
     getContextImage,
     patchMeta,
     getDeletedFrames,
@@ -62,7 +62,7 @@ async function restoreFrameWrapper(jobID, frame) {
 }
 
 export function implementJob(Job) {
-    Job.prototype.save.implementation = async function () {
+    Job.prototype.save.implementation = async function (additionalData: any) {
         if (this.id) {
             const jobData = this._updateTrigger.getUpdated(this);
             if (jobData.assignee) {
@@ -74,11 +74,27 @@ export function implementJob(Job) {
             return new Job(data);
         }
 
-        throw new ArgumentError('Could not save job without id');
+        const jobSpec = {
+            ...(this.assignee ? { assignee: this.assignee.id } : {}),
+            ...(this.stage ? { stage: this.stage } : {}),
+            ...(this.state ? { stage: this.state } : {}),
+            type: this.type,
+            task_id: this.taskId,
+        };
+        const job = await serverProxy.jobs.create({ ...jobSpec, ...additionalData });
+        return new Job(job);
+    };
+
+    Job.prototype.delete.implementation = async function () {
+        if (this.type !== JobType.GROUND_TRUTH) {
+            throw new Error('Only ground truth job can be deleted');
+        }
+        const result = await serverProxy.jobs.delete(this.id);
+        return result;
     };
 
     Job.prototype.issues.implementation = async function () {
-        const result = await serverProxy.issues.get(this.id);
+        const result = await serverProxy.issues.get({ job_id: this.id });
         return result.map((issue) => new Issue(issue));
     };
 
@@ -181,14 +197,12 @@ export function implementJob(Job) {
         if (frameTo < this.startFrame || frameTo > this.stopFrame) {
             throw new ArgumentError('The stop frame is out of the job');
         }
-        if (filters.notDeleted) {
-            return findNotDeletedFrame(this.id, frameFrom, frameTo, filters.offset || 1);
-        }
-        return null;
+
+        return findFrame(this.id, frameFrom, frameTo, filters);
     };
 
     // TODO: Check filter for annotations
-    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
+    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters, groundTruthJobId) {
         if (!Array.isArray(filters)) {
             throw new ArgumentError('Filters must be an array');
         }
@@ -201,7 +215,7 @@ export function implementJob(Job) {
             throw new ArgumentError(`Frame ${frame} does not exist in the job`);
         }
 
-        const annotationsData = await getAnnotations(this, frame, allTracks, filters);
+        const annotationsData = await getAnnotations(this, frame, allTracks, filters, groundTruthJobId);
         const deletedFrames = await getDeletedFrames('job', this.id);
         if (frame in deletedFrames) {
             return [];
@@ -510,6 +524,11 @@ export function implementTask(Task) {
         return result;
     };
 
+    Task.prototype.issues.implementation = async function () {
+        const result = await serverProxy.issues.get({ task_id: this.id });
+        return result.map((issue) => new Issue(issue));
+    };
+
     Task.prototype.backup.implementation = async function (
         targetStorage: Storage,
         useDefaultSettings: boolean,
@@ -631,14 +650,12 @@ export function implementTask(Task) {
             (frameFrom < _job.startFrame && frameTo > _job.stopFrame)
         ));
 
-        if (filters.notDeleted) {
-            for (const job of jobs) {
-                const result = await findNotDeletedFrame(
-                    job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame), 1,
-                );
+        for (const job of jobs) {
+            const result = await findFrame(
+                job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame), filters,
+            );
 
-                if (result !== null) return result;
-            }
+            if (result !== null) return result;
         }
 
         return null;

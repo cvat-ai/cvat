@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import { LeftOutlined, MoreOutlined } from '@ant-design/icons';
@@ -20,6 +20,10 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     const { taskInstance } = props;
 
     const history = useHistory();
+
+    const onViewAnalytics = useCallback(() => {
+        history.push(`/tasks/${taskInstance.id}/analytics`);
+    }, [history]);
 
     return (
         <Row className='cvat-task-top-bar' justify='space-between' align='middle'>
@@ -47,7 +51,13 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                 )}
             </Col>
             <Col>
-                <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
+                <Dropdown overlay={(
+                    <ActionsMenuContainer
+                        taskInstance={taskInstance}
+                        onViewAnalytics={onViewAnalytics}
+                    />
+                )}
+                >
                     <Button size='middle' className='cvat-task-page-actions-button'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <MoreOutlined className='cvat-menu-icon' />

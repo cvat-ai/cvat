@@ -14,8 +14,13 @@ import {
 import { SerializedAttribute, SerializedLabel } from 'cvat-core/src/server-response-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
+import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
+import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
+import QualitySettings from 'cvat-core/src/quality-settings';
+import { FramesMetaData } from 'cvat-core/src/frames';
 import {
-    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType,
+    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
+    JobStage, JobState,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -62,6 +67,15 @@ export {
     ModelReturnType,
     DimensionType,
     Dumper,
+    JobType,
+    JobStage,
+    JobState,
+    QualityReport,
+    QualityConflict,
+    QualitySettings,
+    AnnotationConflict,
+    ConflictSeverity,
+    FramesMetaData,
 };
 
 export type {
@@ -70,4 +84,5 @@ export type {
     StorageData,
     ModelProvider,
     APIWrapperEnterOptions,
+    QualitySummary,
 };
