@@ -7,12 +7,22 @@ import './styles.scss';
 import React from 'react';
 import moment from 'moment';
 import Text from 'antd/lib/typography/Text';
+import Select from 'antd/lib/select';
 import { AnalyticsReport, AnalyticsEntryViewType } from 'cvat-core-wrapper';
-import HistogramView from './histogram-view';
-import AnalyticsCard from './analytics-card';
+import { Col, Row } from 'antd/lib/grid';
+import HistogramView from './views/histogram-view';
+import AnalyticsCard from './views/analytics-card';
+
+export enum DateIntervals {
+    LAST_WEEK = 'Last 7 days',
+    LAST_MONTH = 'Last 30 days',
+    LAST_QUARTER = 'Last 90 days',
+    LAST_YEAR = 'Last 365 days',
+}
 
 interface Props {
     report: AnalyticsReport | null;
+    onTimePeriodChange: (val: DateIntervals) => void;
 }
 
 const colors = [
@@ -24,7 +34,7 @@ const colors = [
 ];
 
 function AnalyticsOverview(props: Props): JSX.Element | null {
-    const { report } = props;
+    const { report, onTimePeriodChange } = props;
 
     // TODO make it more expressive
     if (!report) return null;
@@ -89,6 +99,33 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
 
     return (
         <div className='cvat-analytics-overview'>
+            <Row justify='end'>
+                <Col>
+                    <Select
+                        placeholder='Select time period'
+                        defaultValue={DateIntervals.LAST_WEEK}
+                        onChange={onTimePeriodChange}
+                        options={[
+                            {
+                                value: DateIntervals.LAST_WEEK,
+                                label: DateIntervals.LAST_WEEK,
+                            },
+                            {
+                                value: DateIntervals.LAST_MONTH,
+                                label: DateIntervals.LAST_MONTH,
+                            },
+                            {
+                                value: DateIntervals.LAST_QUARTER,
+                                label: DateIntervals.LAST_QUARTER,
+                            },
+                            {
+                                value: DateIntervals.LAST_YEAR,
+                                label: DateIntervals.LAST_YEAR,
+                            },
+                        ]}
+                    />
+                </Col>
+            </Row>
             {views}
         </div>
     );

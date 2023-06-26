@@ -404,23 +404,26 @@ export default function implementAPI(cvat) {
         const result = await serverProxy.frames.getMeta(type, id);
         return new FramesMetaData({ ...result });
     };
-  
+
     cvat.analytics.common.reports.implementation = async (filter) => {
         let updatedParams: Record<string, string> = {};
 
         if ('taskID' in filter) {
             updatedParams = {
                 task_id: filter.reportId,
+                ...filter,
             };
         }
         if ('jobID' in filter) {
             updatedParams = {
                 job_id: filter.reportId,
+                ...filter,
             };
         }
         if ('projectID' in filter) {
             updatedParams = {
                 project_id: filter.reportId,
+                ...filter,
             };
         }
 

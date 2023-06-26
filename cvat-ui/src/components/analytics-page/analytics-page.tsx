@@ -15,10 +15,32 @@ import { LeftOutlined } from '@ant-design/icons/lib/icons';
 import { useIsMounted } from 'utils/hooks';
 import { Project, Task } from 'reducers';
 import { AnalyticsReport, Job, getCore } from 'cvat-core-wrapper';
-import AnalyticsOverview from './analytics-overview';
+import moment from 'moment';
+import AnalyticsOverview, { DateIntervals } from './analytics-overview';
 import TaskQualityComponent from './quality/task-quality-component';
 
 const core = getCore();
+
+function handleTimePeriod(interval: DateIntervals): [string, string] {
+    const now = moment.utc();
+    switch (interval) {
+        case DateIntervals.LAST_WEEK: {
+            return [now.format(), now.subtract(7, 'd').format()];
+        }
+        case DateIntervals.LAST_MONTH: {
+            return [now.format(), now.subtract(30, 'd').format()];
+        }
+        case DateIntervals.LAST_QUARTER: {
+            return [now.format(), now.subtract(90, 'd').format()];
+        }
+        case DateIntervals.LAST_YEAR: {
+            return [now.format(), now.subtract(365, 'd').format()];
+        }
+        default: {
+            throw Error(`Date interval is not supported: ${interval}`);
+        }
+    }
+}
 
 function AnalyticsPage(): JSX.Element {
     const location = useLocation();
@@ -103,20 +125,35 @@ function AnalyticsPage(): JSX.Element {
         }
     };
 
-    const receieveReport = (): void => {
+    const receieveReport = (timeInterval: DateIntervals): void => {
         if (Number.isInteger(instanceID) && Number.isInteger(reportRequestID)) {
             let reportRequest = null;
+            console.log(timeInterval);
+            const [endDate, startDate] = handleTimePeriod(timeInterval);
+
             switch (instanceType) {
                 case 'project': {
-                    reportRequest = core.analytics.common.reports({ projectID: reportRequestID });
+                    reportRequest = core.analytics.common.reports({
+                        projectID: reportRequestID,
+                        endDate,
+                        startDate,
+                    });
                     break;
                 }
                 case 'task': {
-                    reportRequest = core.analytics.common.reports({ taskID: reportRequestID });
+                    reportRequest = core.analytics.common.reports({
+                        taskID: reportRequestID,
+                        endDate,
+                        startDate,
+                    });
                     break;
                 }
                 case 'job': {
-                    reportRequest = core.analytics.common.reports({ jobID: reportRequestID });
+                    reportRequest = core.analytics.common.reports({
+                        jobID: reportRequestID,
+                        endDate,
+                        startDate,
+                    });
                     break;
                 }
                 default: {
@@ -142,7 +179,7 @@ function AnalyticsPage(): JSX.Element {
 
     useEffect((): void => {
         receieveInstance();
-        receieveReport();
+        receieveReport(DateIntervals.LAST_WEEK);
     }, []);
 
     const onJobUpdate = useCallback((job: Job): void => {
@@ -164,6 +201,10 @@ function AnalyticsPage(): JSX.Element {
             }
         });
     }, [notification]);
+
+    const onAnalyticsTimePeriodChange = useCallback((val: DateIntervals): void => {
+        receieveReport(val);
+    }, []);
 
     let backNavigation: JSX.Element | null = null;
     let title: JSX.Element | null = null;
@@ -209,7 +250,10 @@ function AnalyticsPage(): JSX.Element {
                             )}
                             key='Overview'
                         >
-                            <AnalyticsOverview report={analyticsReportInstance} />
+                            <AnalyticsOverview
+                                report={analyticsReportInstance}
+                                onTimePeriodChange={onAnalyticsTimePeriodChange}
+                            />
                         </Tabs.TabPane>
                     </Tabs>
                 );
@@ -254,7 +298,10 @@ function AnalyticsPage(): JSX.Element {
                             )}
                             key='overview'
                         >
-                            <AnalyticsOverview report={analyticsReportInstance} />
+                            <AnalyticsOverview
+                                report={analyticsReportInstance}
+                                onTimePeriodChange={onAnalyticsTimePeriodChange}
+                            />
                         </Tabs.TabPane>
                         <Tabs.TabPane
                             tab={(
@@ -311,7 +358,10 @@ function AnalyticsPage(): JSX.Element {
                             )}
                             key='overview'
                         >
-                            <AnalyticsOverview report={analyticsReportInstance} />
+                            <AnalyticsOverview
+                                report={analyticsReportInstance}
+                                onTimePeriodChange={onAnalyticsTimePeriodChange}
+                            />
                         </Tabs.TabPane>
                     </Tabs>
                 );
