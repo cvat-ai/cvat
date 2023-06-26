@@ -54,9 +54,8 @@ from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     ClientFile, Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice,
-    CloudProviderChoice, Location
-)
-from cvat.apps.engine.models import CloudStorage as CloudStorageModel
+    CloudProviderChoice, Location, CloudStorage as CloudStorageModel,
+    Asset, AnnotationGuide)
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
@@ -65,6 +64,8 @@ from cvat.apps.engine.serializers import (
     ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
     UserSerializer, PluginsSerializer, IssueReadSerializer,
+    AnnotationGuideReadSerializer, AnnotationGuideWriteSerializer,
+    AssetReadSerializer, AssetWriteSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer, RqIdSerializer, CloudStorageContentSerializer)
@@ -238,7 +239,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
     queryset = models.Project.objects.select_related(
-        'assignee', 'owner', 'target_storage', 'source_storage'
+        'assignee', 'owner', 'target_storage', 'source_storage', 'annotation_guide',
     ).prefetch_related(
         'tasks', 'label_set__sublabels__attributespec_set',
         'label_set__attributespec_set'
@@ -768,7 +769,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = Task.objects.select_related(
         'data', 'assignee', 'owner',
-        'target_storage', 'source_storage',
+        'target_storage', 'source_storage', 'annotation_guide',
     ).prefetch_related(
         'segment_set__job_set',
         'segment_set__job_set__assignee',
@@ -1547,7 +1548,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
     UploadMixin, AnnotationMixin
 ):
     queryset = Job.objects.select_related('assignee', 'segment__task__data',
-        'segment__task__project'
+        'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
     ).annotate(
         Count('issues', distinct=True),
         task_labels_count=Count('segment__task__label',
@@ -2648,6 +2649,154 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             msg = str(ex)
             return HttpResponseBadRequest(msg)
 
+@extend_schema(tags=['assets'])
+@extend_schema_view(
+    create=extend_schema(
+        summary='Method saves new asset on the server and attaches it to a corresponding guide',
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'file': {
+                        'type': 'string',
+                        'format': 'binary'
+                    }
+                }
+            }
+        },
+        responses={
+            '201': AssetReadSerializer,
+        }),
+    retrieve=extend_schema(
+        summary='Method returns an asset file',
+        responses={
+            '200': OpenApiResponse(description='Asset file')
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a specific asset from the server',
+        responses={
+            '204': OpenApiResponse(description='The asset has been deleted'),
+        }),
+)
+class AssetsViewSet(
+    viewsets.GenericViewSet, mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin, mixins.DestroyModelMixin
+):
+    queryset = Asset.objects.select_related(
+        'owner', 'guide', 'guide__project', 'guide__task', 'guide__project__organization', 'guide__task__organization',
+    ).all()
+    parser_classes=_UPLOAD_PARSER_CLASSES
+    search_fields = ()
+    ordering = "uuid"
+
+    def check_object_permissions(self, request, obj):
+        super().check_object_permissions(request, obj.guide)
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return AssetReadSerializer
+        else:
+            return AssetWriteSerializer
+
+    def create(self, request, *args, **kwargs):
+        file = request.data.get('file', None)
+        if not file:
+            raise ValidationError('Asset file was not provided')
+
+        if file.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
+            raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
+
+        if file.content_type not in settings.ASSET_SUPPORTED_TYPES:
+            raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
+
+        guide_id = request.data.get('guide_id')
+        db_guide = AnnotationGuide.objects.prefetch_related('assets').get(pk=guide_id)
+        if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
+            raise ValidationError(f'Maximum number of assets per guide reached')
+
+        serializer = self.get_serializer(data={
+            'filename': file.name,
+            'guide_id': guide_id,
+        })
+
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        path = os.path.join(settings.ASSETS_ROOT, str(serializer.instance.uuid))
+        os.makedirs(path)
+        with open(os.path.join(path, file.name), 'wb+') as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
+
+    def perform_destroy(self, instance):
+        full_path = os.path.join(instance.get_asset_dir(), instance.filename)
+        if os.path.exists(full_path):
+            os.remove(full_path)
+        instance.delete()
+
+
+@extend_schema(tags=['guides'])
+@extend_schema_view(
+    create=extend_schema(
+        summary='Method creates a new annotation guide binded to a project or to a task',
+        request=AnnotationGuideWriteSerializer,
+        responses={
+            '201': AnnotationGuideReadSerializer,
+        }),
+    retrieve=extend_schema(
+        summary='Method returns details of a specific annotation guide',
+        responses={
+            '200': AnnotationGuideReadSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a specific annotation guide and all attached assets',
+        responses={
+            '204': OpenApiResponse(description='The annotation guide has been deleted'),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in an annotation guide',
+        request=AnnotationGuideWriteSerializer(partial=True),
+        responses={
+            '200': AnnotationGuideReadSerializer, # check TaskWriteSerializer.to_representation
+        })
+)
+class AnnotationGuidesViewSet(
+    viewsets.GenericViewSet, mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
+):
+    queryset = AnnotationGuide.objects.order_by('-id').select_related(
+        'project', 'project__owner', 'project__organization', 'task', 'task__owner', 'task__organization'
+    ).prefetch_related('assets').all()
+    search_fields = ()
+    ordering = "-id"
+    iam_organization_field = None
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return AnnotationGuideReadSerializer
+        else:
+            return AnnotationGuideWriteSerializer
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        serializer.instance.target.save()
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        serializer.instance.target.save()
+
+    def perform_destroy(self, instance):
+        (instance.project or instance.task).save()
+        instance.delete()
 
 def rq_exception_handler(rq_job, exc_type, exc_value, tb):
     rq_job.meta["formatted_exception"] = "".join(

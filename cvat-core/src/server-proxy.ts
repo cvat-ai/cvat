@@ -11,7 +11,7 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
-    SerializedRegister, JobsFilter, SerializedJob,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
 } from 'server-response-types';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
@@ -2167,6 +2167,57 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
+async function getGuide(id: number): Promise<SerializedGuide> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/guides/${id}`);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createGuide(data: Partial<SerializedGuide>): Promise<SerializedGuide> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/guides`, data);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateGuide(id: number, data: Partial<SerializedGuide>): Promise<SerializedGuide> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/guides/${id}`, data);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createAsset(file: File, guideId: number): Promise<SerializedAsset> {
+    const { backendAPI } = config;
+    const form = new FormData();
+    form.append('file', file);
+    form.append('guide_id', guideId);
+
+    try {
+        const response = await Axios.post(`${backendAPI}/assets`, form, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2309,5 +2360,15 @@ export default Object.freeze({
         delete: deleteWebhook,
         ping: pingWebhook,
         events: receiveWebhookEvents,
+    }),
+
+    guides: Object.freeze({
+        get: getGuide,
+        create: createGuide,
+        update: updateGuide,
+    }),
+
+    assets: Object.freeze({
+        create: createAsset,
     }),
 });

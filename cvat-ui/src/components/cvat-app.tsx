@@ -56,6 +56,8 @@ import WebhooksPage from 'components/webhooks-page/webhooks-page';
 import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
 import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-page';
 
+import GuidePage from 'components/md-guide/guide-page';
+
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { getCore } from 'cvat-core-wrapper';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -458,9 +460,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/projects/create' component={CreateProjectPageComponent} />
                                             <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                             <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
+                                            <Route exact path='/projects/:id/guide' component={GuidePage} />
                                             <Route exact path='/tasks' component={TasksPageContainer} />
                                             <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                             <Route exact path='/tasks/:id' component={TaskPageComponent} />
+                                            <Route exact path='/tasks/:id/guide' component={GuidePage} />
                                             <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                             <Route exact path='/jobs' component={JobsPageComponent} />
                                             <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />

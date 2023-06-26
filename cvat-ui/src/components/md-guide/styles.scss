@@ -1,0 +1,38 @@
+// Copyright (C) 2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-md-guide-control-wrapper {
+    margin-top: $grid-unit-size;
+
+    button {
+        margin-top: $grid-unit-size;
+    }
+}
+
+.cvat-guide-page {
+    height: 100%;
+
+    > div {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+
+        .cvat-guide-page-top {
+            margin-top: $grid-unit-size * 2;
+            margin-bottom: $grid-unit-size * 2;
+        }
+
+        .cvat-guide-page-editor-wrapper {
+            flex: 1;
+        }
+
+        .cvat-guide-page-bottom {
+            margin-top: $grid-unit-size * 2;
+            margin-bottom: $grid-unit-size * 2;
+            justify-content: flex-end;
+        }
+    }
+}
