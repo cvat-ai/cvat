@@ -28,7 +28,7 @@ export enum AnalyticsReportType {
     PROJECT = 'project',
 }
 
-export enum AnalyticsEntryView {
+export enum AnalyticsEntryViewType {
     HISTOGRAM = 'histogram',
     NUMERIC = 'numeric',
 }
@@ -37,15 +37,36 @@ export class AnalyticsEntry {
     #title: string;
     #description: string;
     #granularity: string;
-    #defaultView: AnalyticsEntryView;
+    #defaultView: AnalyticsEntryViewType;
     #dataseries: Record<string, SerializedAnalyticsEntry[]>;
 
     constructor(initialData: SerializedAnalyticsEntry) {
         this.#title = initialData.title;
         this.#description = initialData.description;
         this.#granularity = initialData.granularity;
-        this.#defaultView = initialData.default_view as AnalyticsEntryView;
+        this.#defaultView = initialData.default_view as AnalyticsEntryViewType;
         this.#dataseries = initialData.dataseries;
+    }
+
+    get title(): string {
+        return this.#title;
+    }
+
+    get description(): string {
+        return this.#description;
+    }
+
+    // Probably need to create enum for this
+    get granularity(): string {
+        return this.#granularity;
+    }
+
+    get defaultView(): AnalyticsEntryViewType {
+        return this.#defaultView;
+    }
+
+    get dataseries(): Record<string, SerializedAnalyticsEntry[]> {
+        return this.#dataseries;
     }
 }
 

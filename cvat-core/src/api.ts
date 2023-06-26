@@ -283,6 +283,7 @@ function build() {
                 async reports(filter = {}) {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.common.reports, filter);
                     return result;
+                },
             },
             quality: {
                 async reports(filter: any) {

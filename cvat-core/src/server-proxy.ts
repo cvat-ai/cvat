@@ -13,9 +13,9 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
 } from 'server-response-types';
-import { SerializedAnalyticsReport } from './analytics-report';
 import { SerializedQualityReportData } from 'quality-report';
 import { SerializedQualitySettingsData } from 'quality-settings';
+import { SerializedAnalyticsReport } from './analytics-report';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
@@ -2318,6 +2318,22 @@ async function getQualityReports(filter): Promise<SerializedQualityReportData[]>
     }
 }
 
+async function getAnalyticsReports(filter): Promise<SerializedAnalyticsReport> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/analytics/report`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2463,13 +2479,13 @@ export default Object.freeze({
         ping: pingWebhook,
         events: receiveWebhookEvents,
     }),
-  
+
     guides: Object.freeze({
         get: getGuide,
         create: createGuide,
         update: updateGuide,
     }),
-  
+
     assets: Object.freeze({
         create: createAsset,
     }),
