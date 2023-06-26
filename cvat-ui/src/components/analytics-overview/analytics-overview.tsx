@@ -5,13 +5,23 @@
 import './styles.scss';
 
 import React from 'react';
-import { AnalyticsReport, AnalyticsEntryViewType } from 'cvat-core-wrapper';
 import moment from 'moment';
+import Text from 'antd/lib/typography/Text';
+import { AnalyticsReport, AnalyticsEntryViewType } from 'cvat-core-wrapper';
 import HistogramView from './histogram-view';
+import AnalyticsCard from './analytics-card';
 
 interface Props {
     report: AnalyticsReport | null;
 }
+
+const colors = [
+    'rgba(255, 99, 132, 0.5)',
+    'rgba(53, 162, 235, 0.5)',
+    'rgba(170, 83, 85, 0.5)',
+    'rgba(44, 70, 94, 0.5)',
+    'rgba(28, 66, 98, 0.5)',
+];
 
 function AnalyticsOverview(props: Props): JSX.Element | null {
     const { report } = props;
@@ -22,7 +32,14 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
     const views = Object.entries(report.statistics).map(([name, entry]) => {
         switch (entry.defaultView) {
             case AnalyticsEntryViewType.NUMERIC: {
-                return <div key={name}>numeric</div>;
+                return (
+                    <AnalyticsCard
+                        title={entry.title}
+                        value={entry.dataseries[Object.keys(entry.dataseries)[0]][0].value as number}
+                        size={12}
+                        bottomElement={<Text>{entry.description}</Text>}
+                    />
+                );
             }
             case AnalyticsEntryViewType.HISTOGRAM: {
                 const firstDataset = Object.keys(entry.dataseries)[0];
@@ -30,26 +47,28 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     moment.utc(dataEntry.datetime).local().format('YYYY-MM-DD HH:mm:ss')
                 ));
 
+                let colorIndex = -1;
                 const datasets = Object.entries(entry.dataseries).map(([key, series]) => {
                     let label = key.split('_').join(' ');
                     label = label.charAt(0).toUpperCase() + label.slice(1);
 
-                    const data = series.map((s) => {
-                        if (Number.isFinite(s.value)) {
-                            return s.value;
+                    const data: number[] = series.map((s) => {
+                        if (Number.isInteger(s.value)) {
+                            return s.value as number;
                         }
 
                         if (typeof s.value === 'object') {
-                            return Object.keys(s.value).reduce((acc, key) => acc + s.value[key], 0);
+                            return Object.keys(s.value).reduce((acc, _key) => acc + s.value[_key], 0);
                         }
+
+                        return 0;
                     });
 
+                    colorIndex += 1;
                     return {
                         label,
                         data,
-                        // Just random now
-                        // eslint-disable-next-line no-bitwise
-                        backgroundColor: `#${(Math.random() * 0xFFFFFF << 0).toString(16)}`,
+                        backgroundColor: colors[colorIndex],
                     };
                 });
                 return (
