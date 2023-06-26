@@ -161,7 +161,7 @@ jobs:
           ./cvat-sdk/gen/generate.sh
 
           pip3 install -r ./tests/python/requirements.txt
-          pip3 install -e ./cvat-sdk
+          pip3 install -e './cvat-sdk[pytorch]'
           pip3 install -e ./cvat-cli
 
           pytest tests/python/ --cov --cov-report xml
