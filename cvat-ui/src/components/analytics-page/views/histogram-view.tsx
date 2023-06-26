@@ -33,10 +33,13 @@ interface Props {
     labels: string[];
     datasets: HistogramDataset[];
     title: string;
+    size?: number;
 }
 
 function HistogramView(props: Props): JSX.Element | null {
-    const { datasets, labels, title } = props;
+    const {
+        datasets, labels, title, size,
+    } = props;
 
     const data = {
         labels,
@@ -56,7 +59,11 @@ function HistogramView(props: Props): JSX.Element | null {
         },
     };
 
-    return <Bar options={options} data={data} />;
+    return (
+        <div style={{ maxHeight: '200px' }}>
+            <Bar options={options} data={data} />
+        </div>
+    );
 }
 
 export default React.memo(HistogramView);

@@ -128,7 +128,6 @@ function AnalyticsPage(): JSX.Element {
     const receieveReport = (timeInterval: DateIntervals): void => {
         if (Number.isInteger(instanceID) && Number.isInteger(reportRequestID)) {
             let reportRequest = null;
-            console.log(timeInterval);
             const [endDate, startDate] = handleTimePeriod(timeInterval);
 
             switch (instanceType) {

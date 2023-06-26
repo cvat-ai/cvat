@@ -6,6 +6,7 @@ import './styles.scss';
 
 import React from 'react';
 import moment from 'moment';
+import GridLayout from 'react-grid-layout';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import { AnalyticsReport, AnalyticsEntryViewType } from 'cvat-core-wrapper';
@@ -38,19 +39,35 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
 
     // TODO make it more expressive
     if (!report) return null;
-
+    const layout: any = [];
+    let x = 0;
+    let y = 0;
     const views = Object.entries(report.statistics).map(([name, entry]) => {
         switch (entry.defaultView) {
             case AnalyticsEntryViewType.NUMERIC: {
-                return (
-                    <AnalyticsCard
+                layout.push({
+                    i: name,
+                    w: 2,
+                    h: 1,
+                    x,
+                    y,
+                });
+                if (x !== 4) {
+                    x += 2;
+                } else {
+                    x = 0;
+                    y += 1;
+                }
+                return ({
+                    view: (<AnalyticsCard
                         title={entry.title}
                         value={entry.dataseries[Object.keys(entry.dataseries)[0]][0].value as number}
                         size={12}
                         bottomElement={<Text>{entry.description}</Text>}
                         key={name}
-                    />
-                );
+                    />),
+                    key: name,
+                });
             }
             case AnalyticsEntryViewType.HISTOGRAM: {
                 const firstDataset = Object.keys(entry.dataseries)[0];
@@ -75,28 +92,45 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                         return 0;
                     });
 
-                    colorIndex += 1;
+                    colorIndex = colorIndex >= colors.length - 1 ? 0 : colorIndex + 1;
                     return {
                         label,
                         data,
                         backgroundColor: colors[colorIndex],
                     };
                 });
-                return (
-                    <HistogramView
-                        datasets={datasets}
-                        labels={dateLabels}
-                        title={entry.title}
-                        key={name}
-                    />
-                );
+                layout.push({
+                    i: name,
+                    h: 1,
+                    w: 2,
+                    x,
+                    y,
+                });
+                if (x !== 2) {
+                    x += 2;
+                } else {
+                    x = 0;
+                    y += 1;
+                }
+                return ({
+                    view: (
+                        <HistogramView
+                            datasets={datasets}
+                            labels={dateLabels}
+                            title={entry.title}
+                            size={12}
+                            key={name}
+                        />
+                    ),
+                    key: name,
+                });
             }
             default: {
                 throw Error(`View type ${entry.defaultView} is not supported`);
             }
         }
     });
-
+    console.log(layout);
     return (
         <div className='cvat-analytics-overview'>
             <Row justify='end'>
@@ -126,7 +160,22 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     />
                 </Col>
             </Row>
-            {views}
+            <GridLayout
+                className='layout'
+                layout={layout}
+                cols={4}
+                rowHeight={200}
+                width={1000}
+            >
+
+                { views.map(({ view, key }): JSX.Element => (
+                    <div
+                        key={key}
+                    >
+                        { view }
+                    </div>
+                )) }
+            </GridLayout>
         </div>
     );
 }
