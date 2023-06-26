@@ -682,6 +682,12 @@ DATABASES = {
         'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
         'PASSWORD': os.getenv('CVAT_POSTGRES_PASSWORD', ''),
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
+        'OPTIONS': {
+            'sslmode': os.getenv('CVAT_POSTGRES_SSL_MODE'),
+            'sslcert': os.getenv('CVAT_POSTGRES_SSL_CERT'),
+            'sslkey': os.getenv('CVAT_POSTGRES_SSL_KEY'),
+            'sslrootcert': os.getenv('CVAT_POSTGRES_SSL_ROOT_CERT'),
+        },
     }
 }
 

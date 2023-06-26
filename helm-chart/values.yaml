@@ -219,6 +219,10 @@ postgresql:
   external:
     host: 127.0.0.1
     port: 5432
+    ssl_mode: ""
+    ssl_cert: ""
+    ssl_key: ""
+    ssl_root_cert: ""
  # If not external following config will be applied by default
   auth:
     existingSecret: "{{ .Release.Name }}-postgres-secret"

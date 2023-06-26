@@ -84,6 +84,14 @@ Create the name of the service account to use
   value: "{{ .Values.postgresql.external.host }}"
 - name: CVAT_POSTGRES_PORT
   value: "{{ .Values.postgresql.external.port }}"
+- name: CVAT_POSTGRES_SSL_MODE
+  value: "{{ .Values.postgresql.external.ssl_mode }}"
+- name: CVAT_POSTGRES_SSL_CERT
+  value: "{{ .Values.postgresql.external.ssl_cert }}"
+- name: CVAT_POSTGRES_SSL_KEY
+  value: "{{ .Values.postgresql.external.ssl_key }}"
+- name: CVAT_POSTGRES_SSL_ROOT_CERT
+  value: "{{ .Values.postgresql.external.ssl_root_cert }}"
 {{- end }}
 - name: CVAT_POSTGRES_USER
   valueFrom:
