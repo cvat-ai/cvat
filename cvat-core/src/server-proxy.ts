@@ -13,6 +13,7 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob,
 } from 'server-response-types';
+import { SerializedAnalyticsReport } from './analytics-report';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
@@ -2167,6 +2168,24 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
+async function getAnalyticsReports(filter): Promise<SerializedAnalyticsReport> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/analytics/report`, {
+            params: {
+                ...params,
+                ...filter,
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2309,5 +2328,11 @@ export default Object.freeze({
         delete: deleteWebhook,
         ping: pingWebhook,
         events: receiveWebhookEvents,
+    }),
+
+    analytics: Object.freeze({
+        common: Object.freeze({
+            reports: getAnalyticsReports,
+        }),
     }),
 });

@@ -270,6 +270,14 @@ function build() {
                 return result;
             },
         },
+        analytics: {
+            common: {
+                async reports(filter = {}) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.common.reports, filter);
+                    return result;
+                },
+            },
+        },
         classes: {
             User,
             Project: implementProject(Project),

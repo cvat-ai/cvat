@@ -25,6 +25,7 @@ import Project from './project';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
+import AnalyticsReport from './analytics-report';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -355,6 +356,29 @@ export default function implementAPI(cvat) {
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
         webhooks.count = webhooksData.count;
         return webhooks;
+    };
+
+    cvat.analytics.common.reports.implementation = async (filter) => {
+        let updatedParams: Record<string, string> = {};
+
+        if ('taskID' in filter) {
+            updatedParams = {
+                task_id: filter.reportId,
+            };
+        }
+        if ('jobID' in filter) {
+            updatedParams = {
+                job_id: filter.reportId,
+            };
+        }
+        if ('projectID' in filter) {
+            updatedParams = {
+                project_id: filter.reportId,
+            };
+        }
+
+        const reportData = await serverProxy.analytics.common.reports(updatedParams);
+        return new AnalyticsReport(reportData);
     };
 
     return cvat;
