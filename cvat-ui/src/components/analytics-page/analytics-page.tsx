@@ -376,7 +376,7 @@ function AnalyticsPage(): JSX.Element {
         <div className='cvat-analytics-page'>
             {
                 fetching ? (
-                    <div className='cvat-analytics-loding'>
+                    <div className='cvat-analytics-loading'>
                         <Spin size='large' className='cvat-spinner' />
                     </div>
                 ) : (

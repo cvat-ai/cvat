@@ -60,7 +60,7 @@ function HistogramView(props: Props): JSX.Element | null {
     };
 
     return (
-        <div style={{ maxHeight: '200px' }}>
+        <div style={{ height: '100%', width: '100%' }}>
             <Bar options={options} data={data} />
         </div>
     );

@@ -6,13 +6,15 @@ import './styles.scss';
 
 import React from 'react';
 import moment from 'moment';
-import GridLayout from 'react-grid-layout';
+import RGL, { WidthProvider } from 'react-grid-layout';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 import { AnalyticsReport, AnalyticsEntryViewType } from 'cvat-core-wrapper';
 import { Col, Row } from 'antd/lib/grid';
 import HistogramView from './views/histogram-view';
 import AnalyticsCard from './views/analytics-card';
+
+const ReactGridLayout = WidthProvider(RGL);
 
 export enum DateIntervals {
     LAST_WEEK = 'Last 7 days',
@@ -59,20 +61,21 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     y += 1;
                 }
                 return ({
-                    view: (<AnalyticsCard
-                        title={entry.title}
-                        value={entry.dataseries[Object.keys(entry.dataseries)[0]][0].value as number}
-                        size={12}
-                        bottomElement={<Text>{entry.description}</Text>}
-                        key={name}
-                    />),
+                    view: (
+                        <AnalyticsCard
+                            title={entry.title}
+                            value={entry.dataseries[Object.keys(entry.dataseries)[0]][0].value as number}
+                            bottomElement={<Text>{entry.description}</Text>}
+                            key={name}
+                        />
+                    ),
                     key: name,
                 });
             }
             case AnalyticsEntryViewType.HISTOGRAM: {
                 const firstDataset = Object.keys(entry.dataseries)[0];
                 const dateLabels = entry.dataseries[firstDataset].map((dataEntry) => (
-                    moment.utc(dataEntry.datetime).local().format('YYYY-MM-DD HH:mm:ss')
+                    moment.utc(dataEntry.datetime).local().format('YYYY-MM-DD')
                 ));
 
                 let colorIndex = -1;
@@ -118,7 +121,6 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                             datasets={datasets}
                             labels={dateLabels}
                             title={entry.title}
-                            size={12}
                             key={name}
                         />
                     ),
@@ -130,7 +132,6 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
             }
         }
     });
-    console.log(layout);
     return (
         <div className='cvat-analytics-overview'>
             <Row justify='end'>
@@ -160,12 +161,11 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     />
                 </Col>
             </Row>
-            <GridLayout
+            <ReactGridLayout
                 className='layout'
                 layout={layout}
                 cols={4}
                 rowHeight={200}
-                width={1000}
             >
 
                 { views.map(({ view, key }): JSX.Element => (
@@ -175,7 +175,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                         { view }
                     </div>
                 )) }
-            </GridLayout>
+            </ReactGridLayout>
         </div>
     );
 }
