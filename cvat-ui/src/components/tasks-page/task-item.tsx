@@ -144,6 +144,10 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { taskInstance, history } = this.props;
         const { id } = taskInstance;
 
+        const onViewAnalytics = (): void => {
+            history.push(`/tasks/${taskInstance.id}/analytics`);
+        };
+
         return (
             <Col span={4}>
                 <Row justify='end'>
@@ -164,7 +168,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </Col>
                 </Row>
                 <Row justify='end'>
-                    <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
+                    <Dropdown overlay={(
+                        <ActionsMenuContainer
+                            taskInstance={taskInstance}
+                            onViewAnalytics={onViewAnalytics}
+                        />
+                    )}
+                    >
                         <Col className='cvat-item-open-task-actions'>
                             <Text className='cvat-text-color'>Actions</Text>
                             <MoreOutlined className='cvat-menu-icon' />

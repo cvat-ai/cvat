@@ -64,6 +64,11 @@ import SVGShowPasswordIcon from './assets/show-password.svg';
 import SVGPlusIcon from './assets/plus-icon.svg';
 import SVGCheckIcon from './assets/check-icon.svg';
 import SVGGuideIcon from './assets/guide-icon.svg';
+import SVGDurationIcon from './assets/duration-icon.svg';
+import SVGFrameCountIcon from './assets/frame-count-icon.svg';
+import SVGFramesIcon from './assets/frames-icon.svg';
+import SVGConflictIcon from './assets/conflict.svg';
+import SVGShowGroundTruthIcon from './assets/show-gt-icon.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
@@ -124,3 +129,8 @@ export const ShowPasswordIcon = React.memo((): JSX.Element => <SVGShowPasswordIc
 export const PlusIcon = React.memo((): JSX.Element => <SVGPlusIcon />);
 export const CheckIcon = React.memo((): JSX.Element => <SVGCheckIcon />);
 export const GuideIcon = React.memo((): JSX.Element => <SVGGuideIcon />);
+export const DurationIcon = React.memo((): JSX.Element => <SVGDurationIcon />);
+export const FrameCountIcon = React.memo((): JSX.Element => <SVGFrameCountIcon />);
+export const FramesIcon = React.memo((): JSX.Element => <SVGFramesIcon />);
+export const ConflictIcon = React.memo((): JSX.Element => <SVGConflictIcon />);
+export const ShowGroundTruthIcon = React.memo((): JSX.Element => <SVGShowGroundTruthIcon />);
