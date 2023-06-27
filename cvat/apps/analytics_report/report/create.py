@@ -193,22 +193,22 @@ class JobAnalyticsReportUpdateManager():
     def _compute_reports(self, job_id: int) -> int:
         statistics = {
             "objects": {
-                "title": "Some Title",
-                "description": "Detailed description",
+                "title": "Objects",
+                "description": "Metric shows number of added/changed/deleted objects.",
                 "granularity": "day",
                 "default_view": "histogram",
                 "dataseries": self._compute_objects_report(job_id),
             },
             "working_time": {
-                "title": "Some Title",
-                "description": "Detailed description",
+                "title": "Working time",
+                "description": "Metric shows the annotation speed in objects per hour.",
                 "granularity": "day",
                 "default_view": "histogram",
                 "dataseries": self._compute_working_time_report(job_id),
             },
             "annotation_time": {
-                "title": "Some Title",
-                "description": "Detailed description",
+                "title": "Annotation time",
+                "description": "Metric shows how long the task is in progress state.",
                 "default_view": "numeric",
                 "dataseries": self._compute_annotation_time_report(job_id),
             },
