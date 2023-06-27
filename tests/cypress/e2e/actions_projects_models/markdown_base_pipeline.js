@@ -46,36 +46,32 @@ context('Basic markdown pipeline', () => {
         cy.get('.cvat-md-guide-control-wrapper button').click();
         cy.url().should('to.match', /\/projects\/\d+\/guide/);
         cy.get('.cvat-guide-page-editor-wrapper').should('exist').and('be.visible');
-        if (guideID === null) {
-            cy.intercept('GET', '/api/projects/**').as('getProjects');
-            cy.window().then(async ($win) => {
-                $win.cvat.projects.get({ id: projectID }).then(({ guideId }) => {
-                    guideID = guideId;
+        cy.get('.cvat-spinner-container').should('not.exist').then(() => {
+            if (guideID === null) {
+                cy.intercept('GET', '/api/projects/**').as('getProjects');
+                cy.window().then(async ($win) => {
+                    $win.cvat.projects.get({ id: projectID }).then(([project]) => {
+                        guideID = project.guideId;
+                    });
                 });
-            });
-            cy.wait('@getProjects').its('response.statusCode').should('equal', 200);
-        }
+                cy.wait('@getProjects').its('response.statusCode').should('equal', 200);
+            }
+        });
     }
 
-    function updatePlainText(actions) {
+    function updatePlainText(value) {
         cy.get('.cvat-guide-page-editor-wrapper textarea').clear();
-        for (const { action, value } of actions) {
-            if (action === 'type') {
-                cy.get('.cvat-guide-page-editor-wrapper textarea').type(value);
-            } else if (action === 'paste') {
-                throw new Error('Not implemented');
-            }
-        }
+        cy.get('.cvat-guide-page-editor-wrapper textarea').type(value);
         cy.intercept('PATCH', '/api/guides/**').as('patchGuide');
         cy.get('.cvat-guide-page-bottom button').should('exist').and('be.visible').and('not.be.disabled').click();
         cy.get('.cvat-spinner-container').should('not.exist');
         cy.wait('@patchGuide').its('response.statusCode').should('equal', 200);
     }
 
-    function setupGuide(actions) {
+    function setupGuide(value) {
         openProject();
         openGuide();
-        updatePlainText(actions);
+        updatePlainText(value);
     }
 
     before(() => {
@@ -92,6 +88,7 @@ context('Basic markdown pipeline', () => {
 
         cy.login();
         cy.get('.cvat-tasks-page').should('exist').and('be.visible');
+
         cy.headlessCreateProject({
             labels: projectLabels,
             name: projectName,
@@ -113,6 +110,7 @@ context('Basic markdown pipeline', () => {
             }).then((taskResponse) => {
                 taskID = taskResponse.taskID;
                 [jobID] = taskResponse.jobID;
+
                 cy.visit(`/tasks/${taskID}`);
                 cy.get('.cvat-task-details').should('exist').and('be.visible');
                 cy.assignTaskToUser(additionalUsers.taskAssignee.username);
@@ -135,17 +133,30 @@ context('Basic markdown pipeline', () => {
 
     describe('Markdown text can be bounded to the project', () => {
         it('Plain text', () => {
-            const value = 'A plain markdown text';
-            setupGuide([{ action: 'type', value }]);
+            setupGuide('A plain markdown text');
         });
 
         it('Plain text with 3rdparty picture', () => {
             const url = 'https://github.com/opencv/cvat/raw/develop/site/content/en/images/cvat_poster_with_name.png';
-            const value = 'Plain text with 3rdparty picture\n' +
-                `![image](${url})`;
+            const value = `Plain text with 3rdparty picture\n![image](${url})`;
             cy.intercept('GET', url).as('getPicture');
-            setupGuide([{ action: 'type', value }]);
+            setupGuide(value);
             cy.wait('@getPicture');
+        });
+
+        it('Text and an uploaded picture', () => {
+            cy.window().then(($win) => {
+                cy.readFile('mounted_file_share/images/image_1.jpg', 'base64').should('exist').then((image) => {
+                    const base64 = `data:image/jpg;base64,${image}`;
+                    return fetch(base64);
+                }).then((res) => res.blob()).then((blob) => (
+                    $win.cvat.assets.create(
+                        new $win.File([blob], 'file.jpg', { type: 'image/jpeg' }), guideID,
+                    )
+                )).then(({ uuid }) => {
+                    setupGuide(`Plain text with a picture\n![image](/api/assets/${uuid})`);
+                });
+            });
         });
     });
 
@@ -160,7 +171,7 @@ context('Basic markdown pipeline', () => {
         }
 
         before(() => {
-            setupGuide([{ action: 'type', value }]);
+            setupGuide(value);
             cy.logout();
         });
 
