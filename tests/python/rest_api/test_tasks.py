@@ -714,7 +714,7 @@ class TestPostTaskData:
         # check that the frames have correct width and height
         with make_api_client(self._USERNAME) as api_client:
             _, response = api_client.tasks_api.retrieve_data(
-                task_id, number=0, type='chunk', quality='original'
+                task_id, number=0, type="chunk", quality="original"
             )
             with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
                 for name in zip_file.namelist():
