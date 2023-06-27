@@ -283,29 +283,81 @@ class JobAnalyticsReportUpdateManager():
 
     @staticmethod
     def _compute_working_time_report(job_id: int):
-        # data = dm.task.get_job_data(job_id)
-        return {
-                "object_count": [
-                {
-                    "value": 123,
-                    "datetime": "2023-06-05T00:00:00Z"
-                },
-                {
-                    "value": 123,
-                    "datetime": "2023-06-06T00:00:00Z"
-                }
-                ],
-                "working_time": [
-                {
-                    "value": 123,
-                    "datetime": "2023-06-05T00:00:00Z"
-                },
-                {
-                    "value": 123,
-                    "datetime": "2023-06-06T00:00:00Z"
-                }
-                ]
+        def get_tags_count(annotations):
+            return len(annotations["tags"])
+
+        def get_shapes_count(annotations):
+            return len(annotations["shapes"])
+
+        def get_track_count(annotations):
+            db_job = Job.objects.select_related("segment").get(pk=job_id)
+
+            count = 0
+            for track in annotations["tracks"]:
+                if len(track["shapes"]) == 1:
+                    count += db_job.segment.stop_frame - track["shapes"][0]["frame"] + 1
+                for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
+                    if prev_shape["outside"] is not True:
+                        count += cur_shape["frame"] - prev_shape["frame"]
+
+            return count
+
+        # Calculate object count
+
+        annotations = dm.task.get_job_data(job_id)
+        object_count = 0
+        object_count += get_tags_count(annotations)
+        object_count += get_shapes_count(annotations)
+        object_count += get_track_count(annotations)
+
+        timestamp = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        timestamp_str = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        report, _ = AnalyticsReport.objects.get_or_create(pk=job_id, statistics={})
+        wt_statistics = report.statistics.get("working_time", {})
+        if not wt_statistics:
+            dataseries = {
+                "object_count": [],
+                "working_time": [],
             }
+        else:
+            dataseries = wt_statistics["dataseries"]
+
+        if dataseries["object_count"]:
+            last_entry = dataseries["object_count"][-1]
+            last_entry_timestamp = parser.parse(last_entry["datetime"])
+            if last_entry_timestamp.date() == timestamp.date():
+                dataseries["object_count"] = dataseries["object_count"][:-1]
+
+        dataseries["object_count"].append({
+            "value": object_count,
+            "datetime": timestamp_str,
+        })
+
+        dates = [parser.isoparse(ds_entry["datetime"]).date() for ds_entry in dataseries["object_count"]]
+
+        # Calculate working time
+
+        query = "SELECT toStartOfDay(timestamp) as day, sum(JSONExtractUInt(payload, 'working_time')) / 1000 as wt from cvat.events WHERE job_id={job_id:UInt64} GROUP BY day ORDER BY day"
+        parameters = {
+            "job_id": job_id,
+        }
+
+        result = make_clickhouse_query(query, parameters)
+
+        wt_data = {r[0].date(): r[1] for r in result.result_rows}
+
+        working_time = []
+        for date in dates:
+            working_time.append({
+                "value": wt_data.get(date, 0),
+                "datetime": datetime.combine(date, datetime.min.time()).isoformat()+"Z"
+            })
+
+        return {
+            "object_count": dataseries["object_count"],
+            "working_time": working_time,
+        }
 
     @staticmethod
     def _compute_annotation_time_report(job_id: int):
@@ -320,12 +372,18 @@ class JobAnalyticsReportUpdateManager():
             if prev_row[1] == "in progress":
                 total_annotating_time += int((cur_row[0] - prev_row[0]).total_seconds())
                 last_change = cur_row[0]
+        if result.result_rows[-1][1] == "in progress":
+            total_annotating_time += int((datetime.now(timezone.utc) - result.result_rows[-1][0]).total_seconds())
 
+        if last_change:
+            last_change = last_change.isoformat().replace("+00:00", "Z")
+        else:
+            last_change = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
         return {
             "total_annotating_time": [
                 {
                     "value": total_annotating_time,
-                    "datetime": last_change.isoformat()
+                    "datetime": last_change,
                 },
             ]
         }
