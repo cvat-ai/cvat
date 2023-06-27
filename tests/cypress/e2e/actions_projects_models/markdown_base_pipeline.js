@@ -184,13 +184,13 @@ context('Basic markdown pipeline', () => {
         it('Job assignee can see markdown on annotation view', () => {
             cy.login(additionalUsers.jobAssignee.username, additionalUsers.jobAssignee.password);
             checkGuideOnAnnotationView();
-            cy.logout(additionalUsers.jobAssignee.username);
+            cy.logout();
         });
 
         it('Task assignee can see markdown on annotation view', () => {
             cy.login(additionalUsers.taskAssignee.username, additionalUsers.taskAssignee.password);
             checkGuideOnAnnotationView();
-            cy.logout(additionalUsers.taskAssignee.username);
+            cy.logout();
         });
 
         it('Not assignee can not access the guide', () => {
