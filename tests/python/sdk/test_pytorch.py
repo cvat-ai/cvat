@@ -21,7 +21,10 @@ try:
     import torchvision.transforms
     import torchvision.transforms.functional as TF
     from torch.utils.data import DataLoader
-except ImportError:
+except ModuleNotFoundError as e:
+    if e.name.split(".")[0] not in {"torch", "torchvision"}:
+        raise
+
     cvatpt = None
 
 from shared.utils.helpers import generate_image_files
