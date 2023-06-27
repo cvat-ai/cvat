@@ -9,8 +9,9 @@ import math
 from collections import Counter
 from copy import deepcopy
 from datetime import timedelta
-from functools import cached_property, partial
-from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
+from functools import cached_property, partial, reduce
+from operator import add
+from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Set, Tuple, Union, cast
 from uuid import uuid4
 
 import datumaro as dm
@@ -305,13 +306,9 @@ class ComparisonReportAnnotationsSummary(_Serializable):
                 if d.get("confusion_matrix")
                 else None
             ),
-            **dict(accuracy=d["accuracy"])
-            if "accuracy" in d
-            else {} ** dict(precision=d["precision"])
-            if "precision" in d
-            else {} ** dict(recall=d["recall"])
-            if "recall" in d
-            else {},
+            **dict(accuracy=d["accuracy"]) if "accuracy" in d else {},
+            **dict(precision=d["precision"]) if "precision" in d else {},
+            **dict(recall=d["recall"]) if "recall" in d else {},
         )
 
 
@@ -434,6 +431,7 @@ class ComparisonReportComparisonSummary(_Serializable):
     warning_count: int
     error_count: int
     conflicts_by_type: Dict[AnnotationConflictType, int]
+    frames_with_errors: int
 
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: Optional[ComparisonReportAnnotationComponentsSummary]
@@ -468,6 +466,7 @@ class ComparisonReportComparisonSummary(_Serializable):
             conflict_count=d["conflict_count"],
             warning_count=d.get("warning_count", 0),
             error_count=d.get("error_count", 0),
+            frames_with_errors=d.get("frames_with_errors", 0),
             conflicts_by_type={
                 AnnotationConflictType(k): v for k, v in d.get("conflicts_by_type", {}).items()
             },
@@ -2084,6 +2083,7 @@ class DatasetComparator:
                     [c for c in conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in conflicts),
+                frames_with_errors=len([f for f in self._frame_results.values() if f.error_count]),
                 annotations=ComparisonReportAnnotationsSummary(
                     valid_count=valid_annotations_count,
                     missing_count=missing_annotations_count,
@@ -2414,7 +2414,7 @@ class TaskQualityReportUpdateManager:
         task_annotations_summary = None
         task_ann_components_summary = None
         task_mean_shape_ious = []
-        task_frame_results = {}
+        task_frame_results: Dict[int, Optional[ComparisonReportFrameSummary]] = {}
         task_frame_results_counts = {}
         for r in job_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
@@ -2470,6 +2470,7 @@ class TaskQualityReportUpdateManager:
                     [c for c in task_conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
+                frames_with_errors=len([f for f in task_frame_results.values() if f.error_count]),
                 annotations=task_annotations_summary,
                 annotation_components=task_ann_components_summary,
             ),
@@ -2784,14 +2785,16 @@ class ProjectQualityReportUpdateManager:
         # It's possible that there are no children reports available,
         # but we still need to return a meaningful report
 
-        project_intersection_frames = set()
+        project_intersection_frames: Dict[int, Set[int]] = {}
         project_conflicts: List[AnnotationConflict] = []
         project_annotations_summary = None
         project_ann_components_summary = None
         project_frame_results = {}
         project_frame_results_counts = {}
-        for r in task_reports.values():
-            project_intersection_frames.update(r.comparison_summary.frames)
+        for task_id, r in task_reports.items():
+            project_intersection_frames.setdefault(task_id, set()).update(
+                r.comparison_summary.frames
+            )
             project_conflicts.extend(r.conflicts)
 
             if project_annotations_summary:
@@ -2870,12 +2873,13 @@ class ProjectQualityReportUpdateManager:
                 confusion_matrix=None,
             )
 
+        all_intersection_frames = reduce(add, project_intersection_frames.values())
         total_frames = sum(t.data.size for t in tasks)
         project_report_data = ComparisonReport(
             parameters=ComparisonParameters.from_dict(project.quality_settings.to_dict()),
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share=len(project_intersection_frames) / (total_frames or 1),
-                frames=sorted(project_intersection_frames),
+                frame_share=len(all_intersection_frames) / (total_frames or 1),
+                frames=all_intersection_frames,
                 conflict_count=len(project_conflicts),
                 warning_count=len(
                     [
@@ -2888,10 +2892,13 @@ class ProjectQualityReportUpdateManager:
                     [c for c in project_conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in project_conflicts),
+                frames_with_errors=sum(
+                    s.comparison_summary.frames_with_errors for s in task_reports.values()
+                ),
                 annotations=project_annotations_summary,
                 annotation_components=project_ann_components_summary,
             ),
-            frame_results=project_frame_results,
+            frame_results={},  # this is a too detailed representation for the project report
         )
 
         return project_report_data
@@ -2937,26 +2944,45 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         gt_last_updated=str(db_report.gt_last_updated),
     )
 
+    jobs_to_tasks: Dict[int, int] = {}
+    if db_report.project:
+        jobs = Job.objects.filter(segment__task__project=db_report.project).all()
+        jobs_to_tasks.update((j.id, j.segment.task.id) for j in jobs)
+    elif db_report.task:
+        jobs = Job.objects.filter(segment__task=task).all()
+        jobs_to_tasks.update((j.id, task_id) for j in jobs)
+    elif db_report.job:
+        jobs_to_tasks[db_report.job.id] = task_id
+    else:
+        assert False
+
     comparison_report = ComparisonReport.from_json(db_report.get_json_report())
     serialized_data.update(comparison_report.to_dict())
 
-    for frame_result in serialized_data["frame_results"].values():
-        for conflict in frame_result["conflicts"]:
-            for ann_id in conflict["annotation_ids"]:
-                ann_id["url"] = (
-                    f"{host}tasks/{task_id}/jobs/{ann_id['job_id']}"
-                    f"?frame={conflict['frame_id']}"
-                    f"&type={ann_id['type']}"
-                    f"&serverID={ann_id['obj_id']}"
-                )
+    if db_report.project:
+        # project reports should not have per-frame statistics, it's too detailed for this level
+        serialized_data["comparison_summary"].pop("frames")
+        serialized_data.pop("frame_results")
+    else:
+        for frame_result in serialized_data["frame_results"].values():
+            for conflict in frame_result["conflicts"]:
+                for ann_id in conflict["annotation_ids"]:
+                    task_id = jobs_to_tasks[ann_id["job_id"]]
+                    ann_id["url"] = (
+                        f"{host}tasks/{task_id}/jobs/{ann_id['job_id']}"
+                        f"?frame={conflict['frame_id']}"
+                        f"&type={ann_id['type']}"
+                        f"&serverID={ann_id['obj_id']}"
+                    )
+
+        # String keys are needed for json dumping
+        serialized_data["frame_results"] = {
+            str(k): v for k, v in serialized_data["frame_results"].items()
+        }
 
     # Add the percent representation for better human readability
     serialized_data["comparison_summary"]["frame_share_percent"] = (
         serialized_data["comparison_summary"]["frame_share"] * 100
     )
 
-    # String keys are needed for json dumping
-    serialized_data["frame_results"] = {
-        str(k): v for k, v in serialized_data["frame_results"].items()
-    }
     return dump_json(serialized_data, indent=True, append_newline=True).decode()
