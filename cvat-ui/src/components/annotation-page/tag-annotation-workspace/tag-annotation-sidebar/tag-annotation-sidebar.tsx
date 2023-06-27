@@ -40,6 +40,7 @@ interface StateToProps {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     frameData: any;
+    showDeletedFrames: boolean;
 }
 
 interface DispatchToProps {
@@ -59,6 +60,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: { instance: jobInstance, labels },
         },
         shortcuts: { keyMap, normalizedKeyMap },
+        settings: {
+            player: { showDeletedFrames },
+        },
     } = state;
 
     return {
@@ -69,6 +73,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         frameData,
+        showDeletedFrames,
     };
 }
 
@@ -101,6 +106,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         createAnnotations,
         keyMap,
         frameData,
+        showDeletedFrames,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -174,10 +180,13 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         if (objectState) removeObject(objectState);
     };
 
-    const onChangeFrame = (): void => {
-        const frame = Math.min(jobInstance.stopFrame, frameNumber + 1);
-
-        if (isAbleToChangeFrame()) {
+    const onChangeFrame = async (): Promise<void> => {
+        const frame = await jobInstance.frames.search(
+            { notDeleted: !showDeletedFrames },
+            frameNumber + 1,
+            jobInstance.stopFrame,
+        );
+        if (frame !== null && isAbleToChangeFrame()) {
             changeFrame(frame);
         }
     };

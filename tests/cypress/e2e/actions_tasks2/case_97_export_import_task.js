@@ -43,7 +43,8 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
-        cy.url().then((link) => {
+        cy.url().then((url) => {
+            const [link] = url.split('?');
             taskId = Number(link.split('/').slice(-1)[0]);
         });
         cy.addNewLabel(newLabelName);
@@ -122,7 +123,8 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.contains('The task has been restored successfully. Click here to open').should('exist').and('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
             cy.openTask(taskName);
-            cy.url().then((link) => {
+            cy.url().then((url) => {
+                const [link] = url.split('?');
                 expect(Number(link.split('/').slice(-1)[0])).to.be.equal(taskId + 1);
             });
             cy.get('.cvat-constructor-viewer-item').then((labels) => {

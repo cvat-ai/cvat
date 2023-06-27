@@ -626,7 +626,7 @@ export default class Collection {
         }
     }
 
-    statistics(): Statistics {
+    statistics(filter): Statistics {
         const labels = {};
         const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
         const body = {
@@ -700,6 +700,10 @@ export default class Collection {
 
         for (const object of Object.values(this.objects)) {
             if (object.removed) {
+                continue;
+            }
+
+            if ((object.jobID && filter?.jobID) && object.jobID !== filter.jobID) {
                 continue;
             }
 
