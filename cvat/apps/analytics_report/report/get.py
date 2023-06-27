@@ -15,6 +15,8 @@ from cvat.apps.engine.models import Job, Task, Project
 from cvat.apps.analytics_report.models import TypeChoice
 from cvat.apps.analytics_report.serializers import AnalytcisReportSerializer
 
+from cvat.apps.analytics_report.report.mock_data import mock_data
+
 def _filter_statistics_by_date(statistics, start_date, end_date):
     for _, st_entry in statistics.items():
         dataseries = st_entry.get("dataseries", {})
@@ -88,10 +90,10 @@ def get_analytics_report(request, query_params):
         serializer = AnalytcisReportSerializer(data=data)
     elif task_id is not None:
         pk = int(task_id)
-        raise NotImplementedError()
+        return Response(data=mock_data, status=status.HTTP_200_OK)
     elif project_id is not None:
         pk = int(project_id)
-        raise NotImplementedError()
+        return Response(data=mock_data, status=status.HTTP_200_OK)
 
     serializer.is_valid(raise_exception=True)
 

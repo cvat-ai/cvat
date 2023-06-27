@@ -1,4 +1,4 @@
-moc_data =  {
+mock_data =  {
         "last_updated": "2023-06-06T00:00:00Z",
         "type": "job",
         "id": 123,
