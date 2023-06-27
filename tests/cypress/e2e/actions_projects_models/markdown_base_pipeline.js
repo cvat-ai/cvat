@@ -192,5 +192,15 @@ context('Basic markdown pipeline', () => {
             checkGuideOnAnnotationView();
             cy.logout(additionalUsers.taskAssignee.username);
         });
+
+        it('Not assignee can not access the guide', () => {
+            cy.login(additionalUsers.notAssignee.username, additionalUsers.notAssignee.password);
+            cy.request({
+                method: 'GET',
+                url: `/api/guides/${guideID}`,
+                failOnStatusCode: false,
+            }).its('status').should('equal', 403);
+            cy.logout();
+        });
     });
 });
