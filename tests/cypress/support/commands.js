@@ -32,9 +32,9 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     });
 });
 
-Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
+Cypress.Commands.add('logout', () => {
     cy.get('.cvat-right-header').within(() => {
-        cy.get('.cvat-header-menu-user-dropdown-user').should('have.text', username).trigger('mouseover');
+        cy.get('.cvat-header-menu-user-dropdown-user').trigger('mouseover');
     });
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
@@ -248,9 +248,39 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
         }
 
         const result = await task.save();
-        cy.log(result);
         return cy.wrap({ taskID: result.id, jobID: result.jobs.map((job) => job.id) });
     });
+});
+
+Cypress.Commands.add('headlessCreateProject', (projectSpec) => {
+    cy.window().then(async ($win) => {
+        const project = new $win.cvat.classes.Project({
+            ...projectSpec,
+        });
+
+        const result = await project.save();
+        return cy.wrap({ projectID: result.id });
+    });
+});
+
+Cypress.Commands.add('headlessCreateUser', (userSpec) => {
+    cy.request({
+        method: 'POST',
+        url: '/api/auth/register',
+        body: {
+            confirmations: [],
+            password1: userSpec.password,
+            password2: userSpec.password,
+            email: userSpec.email,
+            first_name: userSpec.firstName,
+            last_name: userSpec.lastName,
+            username: userSpec.username,
+        },
+        headers: {
+            'Content-type': 'application/json',
+        },
+    });
+    return cy.wrap();
 });
 
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
