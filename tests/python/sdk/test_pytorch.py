@@ -7,7 +7,8 @@ import itertools
 import os
 from logging import Logger
 from pathlib import Path
-from typing import Tuple
+from typing import Container, Tuple
+from urllib.parse import urlparse
 
 import pytest
 from cvat_sdk import Client, models
@@ -46,11 +47,18 @@ def _common_setup(
         api_client.configuration.logger[k] = logger
 
 
-def _disable_api_requests(monkeypatch: pytest.MonkeyPatch) -> None:
-    def disabled_request(*args, **kwargs):
-        raise RuntimeError("Disabled!")
+def _restrict_api_requests(
+    monkeypatch: pytest.MonkeyPatch, allow_paths: Container[str] = ()
+) -> None:
+    original_request = RESTClientObject.request
 
-    monkeypatch.setattr(RESTClientObject, "request", disabled_request)
+    def restricted_request(self, method, url, *args, **kwargs):
+        parsed_url = urlparse(url)
+        if parsed_url.path in allow_paths:
+            return original_request(self, method, url, *args, **kwargs)
+        raise RuntimeError("Disallowed!")
+
+    monkeypatch.setattr(RESTClientObject, "request", restricted_request)
 
 
 @pytest.mark.skipif(cvatpt is None, reason="PyTorch dependencies are not installed")
@@ -246,7 +254,7 @@ class TestTaskVisionDataset:
 
         fresh_samples = list(dataset)
 
-        _disable_api_requests(monkeypatch)
+        _restrict_api_requests(monkeypatch)
 
         dataset = cvatpt.TaskVisionDataset(
             self.client,
@@ -257,6 +265,44 @@ class TestTaskVisionDataset:
         cached_samples = list(dataset)
 
         assert fresh_samples == cached_samples
+
+    def test_update(self, monkeypatch: pytest.MonkeyPatch):
+        dataset = cvatpt.TaskVisionDataset(
+            self.client,
+            self.task.id,
+        )
+
+        # Recreating the dataset should only result in minimal requests.
+        _restrict_api_requests(
+            monkeypatch, allow_paths={f"/api/tasks/{self.task.id}", "/api/labels"}
+        )
+
+        dataset = cvatpt.TaskVisionDataset(
+            self.client,
+            self.task.id,
+        )
+
+        assert dataset[5][1].annotations.tags[0].label_id == self.label_ids[0]
+
+        # After an update, the annotations should be redownloaded.
+        monkeypatch.undo()
+
+        self.task.update_annotations(
+            models.PatchedLabeledDataRequest(
+                tags=[
+                    models.LabeledImageRequest(
+                        id=dataset[5][1].annotations.tags[0].id, frame=5, label_id=self.label_ids[1]
+                    ),
+                ]
+            )
+        )
+
+        dataset = cvatpt.TaskVisionDataset(
+            self.client,
+            self.task.id,
+        )
+
+        assert dataset[5][1].annotations.tags[0].label_id == self.label_ids[1]
 
 
 @pytest.mark.skipif(cvatpt is None, reason="PyTorch dependencies are not installed")
@@ -401,7 +447,7 @@ class TestProjectVisionDataset:
 
         fresh_samples = list(dataset)
 
-        _disable_api_requests(monkeypatch)
+        _restrict_api_requests(monkeypatch)
 
         dataset = cvatpt.ProjectVisionDataset(
             self.client,
