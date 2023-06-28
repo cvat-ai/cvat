@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Some internal errors occurring during lambda function invocations
   could be mistakenly reported as invalid requests
   (<https://github.com/opencv/cvat/pull/6394>)
+- \[SDK\] Loading tasks that have been cached with the PyTorch adapter
+  (<https://github.com/opencv/cvat/issues/6047>)
 
 ### Security
 - TDB
