@@ -663,11 +663,11 @@ class ZipChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
-                ext = os.path.splitext(path)[1]
+                ext = os.path.splitext(path)[1].replace('.', '')
                 output = io.BytesIO()
                 if self._dimension == DimensionType.DIM_2D:
                     pil_image = rotate_within_exif(Image.open(image))
-                    pil_image.save(output, format=pil_image.format if pil_image.format else ext or self.IMAGE_EXT, quality=100, subsampling=0)
+                    pil_image.save(output, format=pil_image.format if pil_image.format else self.IMAGE_EXT, quality=100, subsampling=0)
                 else:
                     output, ext = self._write_pcd_file(image)[0:2]
                 arcname = '{:06d}.{}'.format(idx, ext)

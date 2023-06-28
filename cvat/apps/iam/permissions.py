@@ -17,7 +17,7 @@ from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import BasePermission
 
-from cvat.apps.engine.models import CloudStorage, Label, Project, Task, Job, Issue
+from cvat.apps.engine.models import CloudStorage, Label, Project, Task, Job, Issue, AnnotationGuide
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.quality_control.models import AnnotationConflict, QualityReport, QualityReportTarget, QualitySettings
 from cvat.apps.webhooks.models import WebhookTypeChoice
@@ -1657,6 +1657,125 @@ class LabelPermission(OpenPolicyAgentPermission):
 
         return data
 
+class AnnotationGuidePermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        VIEW = 'view'
+        UPDATE = 'update'
+        DELETE = 'delete'
+        CREATE  = 'create'
+
+    @classmethod
+    def create(cls, request, view, obj, iam_context):
+        Scopes = __class__.Scopes
+        permissions = []
+
+        if view.basename == 'annotationguide':
+            project_id = request.data.get('project_id')
+            task_id = request.data.get('task_id')
+            params = { 'project_id': project_id, 'task_id': task_id }
+
+            for scope in cls.get_scopes(request, view, obj):
+                if scope == Scopes.VIEW and isinstance(obj, Job):
+                    permissions.append(JobPermission.create_base_perm(
+                        request, view, JobPermission.Scopes.VIEW, iam_context, obj=obj,
+                    ))
+                else:
+                    self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
+                    permissions.append(self)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/annotationguides/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'create': Scopes.CREATE,
+            'destroy': Scopes.DELETE,
+            'partial_update': Scopes.UPDATE,
+            'retrieve': Scopes.VIEW,
+        }.get(view.action, None)]
+
+    def get_resource(self):
+        data = {}
+        if self.obj:
+            db_target = getattr(self.obj, 'target', {})
+            db_organization = getattr(db_target, 'organization', {})
+            data.update({
+                'id': self.obj.id,
+                'target': {
+                    'owner': { 'id': getattr(getattr(db_target, 'owner', {}), 'id', None) },
+                    'assignee': { 'id': getattr(getattr(db_target, 'assignee', {}), 'id', None) },
+                    'is_job_staff': db_target.is_job_staff(self.user_id),
+                },
+                'organization': { 'id': getattr(db_organization, 'id', None) }
+            })
+        elif self.scope == __class__.Scopes.CREATE:
+            db_target = None
+            if self.project_id is not None:
+                try:
+                    db_target = Project.objects.get(id=self.project_id)
+                except Project.DoesNotExist as ex:
+                    raise ValidationError(str(ex))
+            elif self.task_id is not None:
+                try:
+                    db_target = Task.objects.get(id=self.task_id)
+                except Task.DoesNotExist as ex:
+                    raise ValidationError(str(ex))
+            db_organization = getattr(db_target, 'organization', {})
+            data.update({
+                'target': {
+                    'owner': { 'id': db_target.owner.id },
+                    'assignee': { 'id': getattr(db_target.assignee, 'id', None) }
+                },
+                'organization': { 'id': getattr(db_organization, 'id', None) }
+            })
+        return data
+
+class GuideAssetPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        VIEW = 'view'
+        DELETE = 'delete'
+        CREATE  = 'create'
+
+    @classmethod
+    def create(cls, request, view, obj, iam_context):
+        Scopes = __class__.Scopes
+        permissions = []
+
+        if view.basename == 'asset':
+            for scope in cls.get_scopes(request, view, obj):
+                if scope == Scopes.VIEW and isinstance(obj, AnnotationGuide):
+                    permissions.append(AnnotationGuidePermission.create_base_perm(
+                        request, view, AnnotationGuidePermission.Scopes.VIEW, iam_context, obj=obj)
+                    )
+                if scope == Scopes.DELETE and isinstance(obj, AnnotationGuide):
+                    permissions.append(AnnotationGuidePermission.create_base_perm(
+                        request, view, AnnotationGuidePermission.Scopes.UPDATE, iam_context, obj=obj)
+                    )
+                if scope == Scopes.CREATE:
+                    guide_id = request.data.get('guide_id')
+                    try:
+                        obj = AnnotationGuide.objects.get(id=guide_id)
+                        permissions.append(AnnotationGuidePermission.create_base_perm(
+                            request, view, AnnotationGuidePermission.Scopes.UPDATE, iam_context, obj=obj)
+                        )
+                    except AnnotationGuide.DoesNotExist as ex:
+                        raise ValidationError(str(ex))
+
+        return permissions
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'create': Scopes.CREATE,
+            'destroy': Scopes.DELETE,
+            'retrieve': Scopes.VIEW,
+        }.get(view.action, None)]
 
 class QualityReportPermission(OpenPolicyAgentPermission):
     obj: Optional[QualityReport]

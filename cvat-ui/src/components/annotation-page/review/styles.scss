@@ -37,6 +37,30 @@
     }
 }
 
+.cvat-conflict-label {
+    position: absolute;
+    min-width: 2 * $grid-unit-size;
+    z-index: 99;
+    transition: none;
+    pointer-events: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 0;
+    transform-origin: top left;
+    background: none;
+    border: none;
+    margin: 0;
+
+    &:hover {
+        opacity: 1;
+    }
+
+    svg {
+        width: 1.5em;
+        height: 1.5em;
+    }
+}
+
 .cvat-issue-dialog {
     width: $grid-unit-size * 35;
     position: absolute;
@@ -109,4 +133,28 @@
     @extend .cvat-hidden-issue-indicator;
 
     color: $danger-icon-color;
+}
+
+.cvat-conflict-error {
+    svg {
+        path:first-child {
+            fill: #e10602;
+        }
+    }
+}
+
+.cvat-conflict-warning {
+    svg {
+        path:first-child {
+            fill: #ff7300;
+        }
+    }
+}
+
+.cvat-conflict-darken {
+    svg {
+        path:first-child {
+            fill: #838383;
+        }
+    }
 }

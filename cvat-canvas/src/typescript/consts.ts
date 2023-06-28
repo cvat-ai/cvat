@@ -27,6 +27,10 @@ const DEFAULT_SHAPE_TEXT_CONTENT = 'id,label,attributes,source,descriptions';
 const DEFAULT_SHAPE_TEXT_POSITION: 'auto' | 'center' = 'auto';
 const DEFAULT_UNDEFINED_ATTR_VALUE = '__undefined__';
 
+const CONFLICT_COLOR = '#ff4800';
+const WARNING_COLOR = '#ff7301';
+const SHADED_COLOR = '#808080';
+
 export default {
     BASE_STROKE_WIDTH,
     BASE_GRID_WIDTH,
@@ -50,4 +54,7 @@ export default {
     DEFAULT_UNDEFINED_ATTR_VALUE,
     MINIMUM_TEXT_FONT_SIZE,
     SKELETON_RECT_MARGIN,
+    CONFLICT_COLOR,
+    WARNING_COLOR,
+    SHADED_COLOR,
 };

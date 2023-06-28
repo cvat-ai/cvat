@@ -336,6 +336,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 serverID={objectState.serverID}
                 locked={objectState.lock}
                 labelID={objectState.label.id}
+                isGroundTruth={objectState.isGroundTruth}
                 color={getColor(objectState, colorBy)}
                 attributes={attributes}
                 elements={objectState.elements}
