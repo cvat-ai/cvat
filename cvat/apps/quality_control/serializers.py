@@ -35,6 +35,7 @@ class QualityReportSummarySerializer(serializers.Serializer):
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
     frames_with_errors = serializers.IntegerField()
+    total_frames = serializers.IntegerField()
 
     # This set is enough for basic characteristics, such as
     # DS_unmatched, GT_unmatched, accuracy, precision and recall

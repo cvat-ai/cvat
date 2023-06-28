@@ -432,6 +432,7 @@ class ComparisonReportComparisonSummary(_Serializable):
     error_count: int
     conflicts_by_type: Dict[AnnotationConflictType, int]
     frames_with_errors: int
+    total_frames: int
 
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: Optional[ComparisonReportAnnotationComponentsSummary]
@@ -467,6 +468,7 @@ class ComparisonReportComparisonSummary(_Serializable):
             warning_count=d.get("warning_count", 0),
             error_count=d.get("error_count", 0),
             frames_with_errors=d.get("frames_with_errors", 0),
+            total_frames=d.get("total_frames", 0),
             conflicts_by_type={
                 AnnotationConflictType(k): v for k, v in d.get("conflicts_by_type", {}).items()
             },
@@ -1658,6 +1660,7 @@ class DatasetComparator:
         self,
         ds_data_provider: JobDataProvider,
         gt_data_provider: JobDataProvider,
+        task: Task,
         *,
         settings: Optional[ComparisonParameters] = None,
     ) -> None:
@@ -1669,6 +1672,7 @@ class DatasetComparator:
         self._gt_data_provider = gt_data_provider
         self._ds_dataset = self._ds_data_provider.dm_dataset
         self._gt_dataset = self._gt_data_provider.dm_dataset
+        self._task = task
 
         self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
 
@@ -1688,6 +1692,9 @@ class DatasetComparator:
             assert False
 
         return source_data_provider.dm_ann_to_ann_id(ann)
+
+    def _get_total_frames(self) -> int:
+        return self._task.data.size
 
     def _find_gt_conflicts(self):
         ds_job_dataset = self._ds_dataset
@@ -2084,6 +2091,7 @@ class DatasetComparator:
                 ),
                 conflicts_by_type=Counter(c.type for c in conflicts),
                 frames_with_errors=len([f for f in self._frame_results.values() if f.error_count]),
+                total_frames=self._get_total_frames(),
                 annotations=ComparisonReportAnnotationsSummary(
                     valid_count=valid_annotations_count,
                     missing_count=missing_annotations_count,
@@ -2346,7 +2354,7 @@ class TaskQualityReportUpdateManager:
         for job in jobs:
             job_data_provider = job_data_providers[job.id]
             comparator = DatasetComparator(
-                job_data_provider, gt_job_data_provider, settings=quality_params
+                job_data_provider, gt_job_data_provider, task=task, settings=quality_params
             )
             job_comparison_reports[job.id] = comparator.generate_report()
 
@@ -2471,6 +2479,7 @@ class TaskQualityReportUpdateManager:
                 ),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
                 frames_with_errors=len([f for f in task_frame_results.values() if f.error_count]),
+                total_frames=task.data.size,
                 annotations=task_annotations_summary,
                 annotation_components=task_ann_components_summary,
             ),
@@ -2899,6 +2908,7 @@ class ProjectQualityReportUpdateManager:
                 frames_with_errors=sum(
                     s.comparison_summary.frames_with_errors for s in task_reports.values()
                 ),
+                total_frames=total_frames,
                 annotations=project_annotations_summary,
                 annotation_components=project_ann_components_summary,
             ),
