@@ -349,6 +349,31 @@ class ShapeManager(ObjectManager):
             else:
                 return 0 # if there's invalid polygon, assume similarity is 0
 
+        def _calc_points_similarity(p0,p1):
+            # Use Euclidean distance btw points / Frobenius norm of their differences in coordinates
+            if p0.is_valid and p1.is_valid: # check validity of points
+                difference = p1-p0
+                distance = np.linalg.norm([difference.x, difference.y]) + np.finfo(np.float64).eps # compute euclidean distances / frobenius norm btw points
+                return 1. / distance # similarity as inverse of distance
+            else:
+                return 0
+
+        def _calc_linestrings_similarity(p0, p1):
+            # Use Chamfer distance between two line string
+            p0_x, p0_y = [np.array(p0_c.tolist(),dtype=np.float64) for p0_c in p0.coords.xy]
+            p1_x, p1_y = [np.array(p1_c.tolist(),dtype=np.float64) for p1_c in p1.coords.xy]
+
+            if p0.is_valid and p1.is_valid:
+                distance = np.finfo(np.float64).eps
+                for (x,y) in zip(p0_x,p0_y):
+                    distance += np.min((x - p1_x)**2) + np.min((y - p1_y)**2)
+                for (x,y) in zip(p1_x,p1_y):
+                    distance += np.min((p0_x - x)**2) + np.min((p0_y - y)**2)
+
+                return 1. / distance
+            else:
+                return 0
+
         has_same_type = obj0["type"] == obj1["type"]
         has_same_label = obj0.get("label_id") == obj1.get("label_id")
         if has_same_type and has_same_label:
@@ -406,6 +431,21 @@ class ShapeManager(ObjectManager):
                 p1 = geometry.Polygon(pairwise(obj1["points"]))
 
                 return _calc_polygons_similarity(p0, p1)
+            elif obj0["type"] == ShapeType.POINTS:
+                p0 = geometry.Point(pairwise(obj0["points"]))
+                p1 = geometry.Point(pairwise(obj1["points"]))
+
+                return _calc_points_similarity(p0, p1)
+            elif obj0["type"] == ShapeType.POLYLINE:
+                p0 = geometry.LineString(pairwise(obj0["points"]))
+                p1 = geometry.LineString(pairwise(obj1["points"]))
+
+                return _calc_linestrings_similarity(p0,p1)
+
+            elif obj0["type"] == ShapeType.ELLIPSE:
+                pass
+            elif obj0["type"] == ShapeType.CUBOID and dimension == DimensionType.DIM_2D:
+                pass
             else:
                 return 0 # FIXME: need some similarity for points, polylines, ellipses and 2D cuboids
         return 0
