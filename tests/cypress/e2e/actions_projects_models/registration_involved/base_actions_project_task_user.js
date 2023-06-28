@@ -122,7 +122,7 @@ context('Base actions on the project', () => {
             cy.goToRegisterPage();
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
             cy.goToProjectsList();
-            cy.logout(userName);
+            cy.logout();
         });
         it('Login first user. Assign project to second user. Logout.', () => {
             cy.login();
@@ -141,7 +141,7 @@ context('Base actions on the project', () => {
             cy.goToTaskList();
             cy.openTask(taskName.firstTask);
             cy.goToTaskList();
-            cy.logout(userName);
+            cy.logout();
         });
         it('Delete the project. Deleted project not exist. Checking the availability of tasks.', () => {
             cy.login();
