@@ -36,55 +36,17 @@ context('Basic markdown pipeline', () => {
     let taskID = null;
     let jobID = null;
     let guideID = null;
-
-    function openProject() {
-        cy.visit(`/projects/${projectID}`);
-        cy.get('.cvat-project-details').should('exist').and('be.visible');
-    }
-
-    function openGuide() {
-        cy.get('.cvat-md-guide-control-wrapper button').click();
-        cy.url().should('to.match', /\/projects\/\d+\/guide/);
-        cy.get('.cvat-guide-page-editor-wrapper').should('exist').and('be.visible');
-        cy.get('.cvat-spinner-container').should('not.exist').then(() => {
-            if (guideID === null) {
-                cy.intercept('GET', '/api/projects/**').as('getProjects');
-                cy.window().then(async ($win) => {
-                    $win.cvat.projects.get({ id: projectID }).then(([project]) => {
-                        guideID = project.guideId;
-                    });
-                });
-                cy.wait('@getProjects').its('response.statusCode').should('equal', 200);
-            }
-        });
-    }
-
-    function updatePlainText(value) {
-        cy.get('.cvat-guide-page-editor-wrapper textarea').clear();
-        cy.get('.cvat-guide-page-editor-wrapper textarea').type(value);
-        cy.intercept('PATCH', '/api/guides/**').as('patchGuide');
-        cy.get('.cvat-guide-page-bottom button').should('exist').and('be.visible').and('not.be.disabled').click();
-        cy.get('.cvat-spinner-container').should('not.exist');
-        cy.wait('@patchGuide').its('response.statusCode').should('equal', 200);
-    }
-
-    function setupGuide(value) {
-        openProject();
-        openGuide();
-        updatePlainText(value);
-    }
+    let assetID = null;
 
     before(() => {
         cy.visit('/');
         cy.get('.cvat-login-form-wrapper').should('exist').and('be.visible');
 
         cy.clearCookies();
-        cy.headlessCreateUser(additionalUsers.jobAssignee);
-        cy.clearCookies();
-        cy.headlessCreateUser(additionalUsers.taskAssignee);
-        cy.clearCookies();
-        cy.headlessCreateUser(additionalUsers.notAssignee);
-        cy.clearCookies();
+        for (const user of Object.values(additionalUsers)) {
+            cy.headlessCreateUser(user);
+            cy.clearCookies();
+        }
 
         cy.login();
         cy.get('.cvat-tasks-page').should('exist').and('be.visible');
@@ -132,6 +94,43 @@ context('Basic markdown pipeline', () => {
     });
 
     describe('Markdown text can be bounded to the project', () => {
+        function openProject() {
+            cy.visit(`/projects/${projectID}`);
+            cy.get('.cvat-project-details').should('exist').and('be.visible');
+        }
+
+        function openGuide() {
+            cy.get('.cvat-md-guide-control-wrapper button').click();
+            cy.url().should('to.match', /\/projects\/\d+\/guide/);
+            cy.get('.cvat-guide-page-editor-wrapper').should('exist').and('be.visible');
+            cy.get('.cvat-spinner-container').should('not.exist').then(() => {
+                if (guideID === null) {
+                    cy.intercept('GET', '/api/projects/**').as('getProjects');
+                    cy.window().then(async ($win) => {
+                        $win.cvat.projects.get({ id: projectID }).then(([project]) => {
+                            guideID = project.guideId;
+                        });
+                    });
+                    cy.wait('@getProjects').its('response.statusCode').should('equal', 200);
+                }
+            });
+        }
+
+        function updatePlainText(value) {
+            cy.get('.cvat-guide-page-editor-wrapper textarea').clear();
+            cy.get('.cvat-guide-page-editor-wrapper textarea').type(value);
+            cy.intercept('PATCH', '/api/guides/**').as('patchGuide');
+            cy.get('.cvat-guide-page-bottom button').should('exist').and('be.visible').and('not.be.disabled').click();
+            cy.get('.cvat-spinner-container').should('not.exist');
+            cy.wait('@patchGuide').its('response.statusCode').should('equal', 200);
+        }
+
+        function setupGuide(value) {
+            openProject();
+            openGuide();
+            updatePlainText(value);
+        }
+
         it('Plain text', () => {
             setupGuide('A plain markdown text');
         });
@@ -154,50 +153,55 @@ context('Basic markdown pipeline', () => {
                         new $win.File([blob], 'file.jpg', { type: 'image/jpeg' }), guideID,
                     )
                 )).then(({ uuid }) => {
+                    assetID = uuid;
                     setupGuide(`Plain text with a picture\n![image](/api/assets/${uuid})`);
                 });
             });
         });
+
+        after(() => {
+            cy.logout();
+        });
     });
 
     describe('Staff can see markdown', () => {
-        const value = 'A plain markdown text';
-
-        function checkGuideOnAnnotationView() {
+        function checkGuideAndAssetAvailableOnAnnotationView() {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.intercept('GET', `/api/assets/${assetID}**`).as('assetGet');
             cy.get('.cvat-annotation-header-guide-button').should('exist').and('be.visible').click();
-            cy.get('.cvat-annotation-view-markdown-guide-modal').should('contain', value);
+            cy.wait('@assetGet');
+            cy.get('.cvat-annotation-view-markdown-guide-modal').should('exist').and('be.visible');
             cy.get('.cvat-annotation-view-markdown-guide-modal button').contains('OK').click();
         }
 
-        before(() => {
-            setupGuide(value);
-            cy.logout();
-        });
-
         it('Project owner can see markdown on annotation view', () => {
             cy.login();
-            checkGuideOnAnnotationView();
+            checkGuideAndAssetAvailableOnAnnotationView();
             cy.logout();
         });
 
         it('Job assignee can see markdown on annotation view', () => {
             cy.login(additionalUsers.jobAssignee.username, additionalUsers.jobAssignee.password);
-            checkGuideOnAnnotationView();
+            checkGuideAndAssetAvailableOnAnnotationView();
             cy.logout();
         });
 
         it('Task assignee can see markdown on annotation view', () => {
             cy.login(additionalUsers.taskAssignee.username, additionalUsers.taskAssignee.password);
-            checkGuideOnAnnotationView();
+            checkGuideAndAssetAvailableOnAnnotationView();
             cy.logout();
         });
 
-        it('Not assignee can not access the guide', () => {
+        it('Not assignee can not access the guide and the asset', () => {
             cy.login(additionalUsers.notAssignee.username, additionalUsers.notAssignee.password);
             cy.request({
                 method: 'GET',
                 url: `/api/guides/${guideID}`,
+                failOnStatusCode: false,
+            }).its('status').should('equal', 403);
+            cy.request({
+                method: 'GET',
+                url: `/api/assets/${assetID}`,
                 failOnStatusCode: false,
             }).its('status').should('equal', 403);
             cy.logout();
