@@ -38,8 +38,8 @@ context('Connected file share.', () => {
                 cy.get('button').contains('images').click();
                 cy.wait('@shareRequest').then((interception) => {
                     expect(interception.response.body
-                        .sort((a, b) => a.name.localeCompare(b.name)))
-                        .filter((el) => el.mime_type === 'image')
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .filter((el) => el.mime_type === 'image'))
                         .to.deep.equal(expectedImagesList);
                 });
                 expectedImagesList.forEach((el) => {
