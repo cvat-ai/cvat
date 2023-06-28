@@ -7,6 +7,7 @@ import io
 import json
 import os
 import os.path as osp
+import zipfile
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
@@ -169,6 +170,53 @@ class TestGetTasks:
         assert len(tasks)
 
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org["slug"])
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_get_job_validation_summary(self, admin_user, tasks, jobs):
+        task = next(t for t in tasks if t["jobs"]["count"] > 0 if t["jobs"]["validation"] == 0)
+        job = next(j for j in jobs if j["task_id"] == task["id"])
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(stage="validation"),
+            )
+
+            (server_task, _) = api_client.tasks_api.retrieve(task["id"])
+
+        assert server_task.jobs.validation == 1
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_get_job_completed_summary(self, admin_user, tasks, jobs):
+        task = next(t for t in tasks if t["jobs"]["count"] > 0 if t["jobs"]["completed"] == 0)
+        job = next(j for j in jobs if j["task_id"] == task["id"])
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(
+                    state="completed", stage="acceptance"
+                ),
+            )
+
+            (server_task, _) = api_client.tasks_api.retrieve(task["id"])
+
+        assert server_task.jobs.completed == 1
+
+    def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, tasks):
+        # test for API schema regressions
+        source_task = next(
+            t for t in tasks if t.get("owner") and t["owner"]["username"] != admin_user
+        ).copy()
+
+        with make_api_client(admin_user) as api_client:
+            api_client.users_api.destroy(source_task["owner"]["id"])
+
+            (_, response) = api_client.tasks_api.retrieve(source_task["id"])
+            fetched_task = json.loads(response.data)
+
+        source_task["owner"] = None
+        assert DeepDiff(source_task, fetched_task, ignore_order=True) == {}
 
 
 class TestListTasksFilters(CollectionSimpleFilterTestBase):
@@ -641,6 +689,39 @@ class TestPostTaskData:
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
+
+    def test_can_create_task_with_exif_rotated_images(self):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with exif rotated images",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        image_files = ["images/exif_rotated/left.jpg", "images/exif_rotated/right.jpg"]
+        task_data = {
+            "server_files": image_files,
+            "image_quality": 70,
+            "segment_size": 500,
+            "use_cache": True,
+            "sorting_method": "natural",
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check that the frames have correct width and height
+        with make_api_client(self._USERNAME) as api_client:
+            _, response = api_client.tasks_api.retrieve_data(
+                task_id, number=0, type="chunk", quality="original"
+            )
+            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                for name in zip_file.namelist():
+                    with zip_file.open(name) as zipped_img:
+                        im = Image.open(zipped_img)
+                        # original is 480x640 with 90/-90 degrees rotation
+                        assert im.height == 640 and im.width == 480
 
     def test_can_create_task_with_sorting_method_natural(self):
         task_spec = {
@@ -1493,6 +1574,118 @@ class TestWorkWithTask:
             except Exception as ex:
                 assert ex.status == HTTPStatus.NOT_FOUND
                 assert image_name in ex.body
+
+
+class TestTaskBackups:
+    def _make_client(self) -> Client:
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, restore_cvat_data, tmp_path: Path, admin_user: str):
+        self.tmp_dir = tmp_path
+
+        self.client = self._make_client()
+        self.user = admin_user
+
+        with self.client:
+            self.client.login((self.user, USER_PASS))
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_export_backup(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode)["id"]
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        assert filename.is_file()
+        assert filename.stat().st_size > 0
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_import_backup(self, tasks, mode):
+        task_json = next(t for t in tasks if t["mode"] == mode)
+        self._test_can_restore_backup_task(task_json["id"])
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
+        # Reproduces the problem with empty 'mode' in a restored task,
+        # described in the reproduction steps https://github.com/opencv/cvat/issues/5668
+
+        task_json = next(t for t in tasks if t["mode"] == mode and t["jobs"]["count"])
+
+        task = self.client.tasks.retrieve(task_json["id"])
+        jobs = task.get_jobs()
+        for j in jobs:
+            j.update({"stage": "validation"})
+
+        self._test_can_restore_backup_task(task_json["id"])
+
+    def _test_can_restore_backup_task(self, task_id: int):
+        task = self.client.tasks.retrieve(task_id)
+        (_, response) = self.client.api_client.tasks_api.retrieve(task_id)
+        task_json = json.loads(response.data)
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        restored_task = self.client.tasks.create_from_backup(filename)
+
+        old_jobs = task.get_jobs()
+        new_jobs = restored_task.get_jobs()
+        assert len(old_jobs) == len(new_jobs)
+
+        for old_job, new_job in zip(old_jobs, new_jobs):
+            assert old_job.status == new_job.status
+            assert old_job.start_frame == new_job.start_frame
+            assert old_job.stop_frame == new_job.stop_frame
+
+        (_, response) = self.client.api_client.tasks_api.retrieve(restored_task.id)
+        restored_task_json = json.loads(response.data)
+
+        assert restored_task_json["assignee"] is None
+        assert restored_task_json["owner"]["username"] == self.user
+        assert restored_task_json["id"] != task_json["id"]
+        assert restored_task_json["data"] != task_json["data"]
+        assert restored_task_json["organization"] is None
+        assert restored_task_json["data_compressed_chunk_type"] in ["imageset", "video"]
+        if task_json["jobs"]["count"] == 1:
+            assert restored_task_json["overlap"] == 0
+        else:
+            assert restored_task_json["overlap"] == task_json["overlap"]
+        assert restored_task_json["jobs"]["completed"] == 0
+        assert restored_task_json["jobs"]["validation"] == 0
+        assert restored_task_json["source_storage"] is None
+        assert restored_task_json["target_storage"] is None
+        assert restored_task_json["project_id"] is None
+
+        assert (
+            DeepDiff(
+                task_json,
+                restored_task_json,
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root\['id'\]",  # id, must be different
+                    r"root\['created_date'\]",  # must be different
+                    r"root\['updated_date'\]",  # must be different
+                    r"root\['assignee'\]",  # id, depends on the situation
+                    r"root\['owner'\]",  # id, depends on the situation
+                    r"root\['data'\]",  # id, must be different
+                    r"root\['organization'\]",  # depends on the task setup
+                    r"root\['project_id'\]",  # should be dropped
+                    r"root(\['.*'\])*\['url'\]",  # depends on the task id
+                    r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
+                    r"root\['source_storage'\]",  # should be dropped
+                    r"root\['target_storage'\]",  # should be dropped
+                    r"root\['jobs'\]\['completed'\]",  # job statuses should be renewed
+                    r"root\['jobs'\]\['validation'\]",  # job statuses should be renewed
+                    # depends on the actual job configuration,
+                    # unlike to what is obtained from the regular task creation,
+                    # where the requested number is recorded
+                    r"root\['overlap'\]",
+                ],
+            )
+            == {}
+        )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

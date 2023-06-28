@@ -2241,10 +2241,9 @@ class QualityReportUpdateManager:
             except Task.DoesNotExist:
                 return
 
-            # Try to use shared queryset to minimize DB requests
-            job_queryset = Job.objects.prefetch_related("segment")
-            job_queryset = JobDataProvider.add_prefetch_info(job_queryset)
-            job_queryset = job_queryset.filter(segment__task_id=task_id).all()
+            # Try to use a shared queryset to minimize DB requests
+            job_queryset = Job.objects.select_related("segment")
+            job_queryset = job_queryset.filter(segment__task_id=task_id)
 
             # The GT job could have been removed during scheduling, so we need to check it exists
             gt_job: Job = next(
@@ -2257,6 +2256,14 @@ class QualityReportUpdateManager:
             # - task updated (the gt job, frame set or labels changed) -> everything is computed
             # - job updated -> job report is computed
             #   old reports can be reused in this case (need to add M-1 relationship in reports)
+
+            # Add prefetch data to the shared queryset
+            # All the jobs / segments share the same task, so we can load it just once.
+            # We reuse the same object for better memory use (OOM is possible otherwise).
+            # Perform manual "join", since django can't do this.
+            gt_job = JobDataProvider.add_prefetch_info(job_queryset).get(id=gt_job.id)
+            for job in job_queryset:
+                job.segment.task = gt_job.segment.task
 
             # Preload all the data for the computations
             # It must be done in a single transaction and before all the remaining computations

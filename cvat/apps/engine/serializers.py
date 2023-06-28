@@ -16,7 +16,6 @@ from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
-from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
@@ -136,7 +135,8 @@ class _CollectionSummarySerializer(serializers.Serializer):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
-    completed = serializers.IntegerField(source='completed_jobs_count', default=0)
+    completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
+    validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
@@ -542,6 +542,7 @@ class LabelSerializer(SublabelSerializer):
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
+    guide_id = serializers.ReadOnlyField(source="get_guide_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     frame_count = serializers.ReadOnlyField(source="segment.frame_count")
@@ -558,7 +559,7 @@ class JobReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
+        fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
             'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization')
@@ -951,15 +952,9 @@ class DataSerializer(serializers.ModelSerializer):
             and attrs['start_frame'] > attrs['stop_frame']:
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
 
-        if (
-            (server_files := attrs.get('server_files'))
-            and attrs.get('cloud_storage_id')
-            and sum(1 for f in server_files if not f['file'].endswith('.jsonl')) > settings.CLOUD_STORAGE_MAX_FILES_COUNT
-        ):
-            raise serializers.ValidationError(f'The maximum number of the cloud storage attached files is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
-
         filename_pattern = attrs.get('filename_pattern')
         server_files_exclude = attrs.get('server_files_exclude')
+        server_files = attrs.get('server_files', [])
 
         if filename_pattern and len(list(filter(lambda x: not x['file'].endswith('.jsonl'), server_files))):
             raise serializers.ValidationError('The filename_pattern can only be used with specified manifest or without server_files')
@@ -1036,9 +1031,10 @@ class TaskReadSerializer(serializers.ModelSerializer):
     size = serializers.ReadOnlyField(source='data.size', required=False)
     image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
     data = serializers.ReadOnlyField(source='data.id', required=False)
-    owner = BasicUserSerializer(required=False)
+    owner = BasicUserSerializer(required=False, allow_null=True)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
+    guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
@@ -1049,7 +1045,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
-            'status', 'data_chunk_size', 'data_compressed_chunk_type',
+            'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
         )
@@ -1251,8 +1247,9 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return attrs
 
 class ProjectReadSerializer(serializers.ModelSerializer):
-    owner = BasicUserSerializer(required=False, read_only=True)
+    owner = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
+    guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
@@ -1262,7 +1259,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'owner', 'assignee', 'guide_id',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
             'tasks', 'labels',
@@ -1639,7 +1636,7 @@ class ManifestSerializer(serializers.ModelSerializer):
         return instance.filename if instance else instance
 
 class CloudStorageReadSerializer(serializers.ModelSerializer):
-    owner = BasicUserSerializer(required=False)
+    owner = BasicUserSerializer(required=False, allow_null=True)
     manifests = ManifestSerializer(many=True, default=[])
     class Meta:
         model = models.CloudStorage
@@ -1980,3 +1977,87 @@ def _validate_existence_of_cloud_storage(cloud_storage_id):
         _ = models.CloudStorage.objects.get(id=cloud_storage_id)
     except models.CloudStorage.DoesNotExist:
         raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
+
+class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    filename = serializers.CharField(required=True, max_length=1024)
+    owner = BasicUserSerializer(required=False)
+
+    class Meta:
+        model = models.Asset
+        fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id', )
+        read_only_fields = fields
+
+class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    uuid = serializers.CharField(required=False)
+    filename = serializers.CharField(required=True, max_length=1024)
+    guide_id = serializers.IntegerField(required=True)
+
+    class Meta:
+        model = models.Asset
+        fields = ('uuid', 'filename', 'created_date', 'guide_id', )
+        write_once_fields = ('uuid', 'filename', 'created_date', 'guide_id', )
+
+class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    class Meta:
+        model = models.AnnotationGuide
+        fields = ('id', 'task_id', 'project_id', 'created_date', 'updated_date', 'markdown', )
+        read_only_fields = fields
+
+class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    project_id = serializers.IntegerField(required=False, allow_null=True)
+    task_id = serializers.IntegerField(required=False, allow_null=True)
+
+    @transaction.atomic
+    def create(self, validated_data):
+        project_id = validated_data.get("project_id", None)
+        task_id = validated_data.get("task_id", None)
+        if project_id is None and task_id is None:
+            raise serializers.ValidationError('One of project_id or task_id must be specified')
+        if project_id is not None and task_id is not None:
+            raise serializers.ValidationError('Both project_id and task_id must not be specified')
+
+        project = None
+        task = None
+        if project_id is not None:
+            try:
+                project = models.Project.objects.get(id=project_id)
+            except models.Project.DoesNotExist:
+                raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
+
+        if task_id is not None:
+            try:
+                task = models.Task.objects.get(id=task_id)
+            except models.Task.DoesNotExist:
+                raise serializers.ValidationError(f'The specified task #{task_id} does not exist.')
+        db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
+        return db_data
+
+    @transaction.atomic
+    def save(self, **kwargs):
+        instance = super().save(**kwargs)
+        def _update_assets(guide):
+            md_assets = []
+            current_assets = list(guide.assets.all())
+            markdown = guide.markdown
+
+            # pylint: disable=anomalous-backslash-in-string
+            pattern = re.compile('\!\[image\]\(\/api\/assets\/([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})\)')
+            results = re.findall(pattern, markdown)
+
+            for asset_id in results:
+                db_asset = models.Asset.objects.get(pk=asset_id)
+                if db_asset.guide_id != guide.id:
+                    raise serializers.ValidationError('Asset is already related to another guide')
+                md_assets.append(db_asset)
+
+            for current_asset in current_assets:
+                if current_asset not in md_assets:
+                    current_asset.delete()
+
+        _update_assets(instance)
+        return instance
+
+
+    class Meta:
+        model = models.AnnotationGuide
+        fields = ('id', 'task_id', 'project_id', 'markdown', )

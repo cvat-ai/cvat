@@ -5,57 +5,151 @@ weight: 2
 description: 'Using organization in CVAT.'
 ---
 
+**Organization** is a feature for teams of several users
+who work together on projects and share tasks.
+
+Create an **Organization**, invite your team members, and assign
+roles to make the team work better on shared tasks.
+
+See:
+
+- [Personal workspace](#personal-workspace)
+- [Create new organization](#create-new-organization)
+  - [Switching between organizations](#switching-between-organizations)
+- [Organization page](#organization-page)
+  - [Invite members into organization](#invite-members-into-organization)
+  - [Delete organization](#delete-organization)
+
 ## Personal workspace
 
-Your `Personal workspace` will display the tasks and projects you've created.
+The account's default state is activated when no **Organization** is selected.
 
-## Create a new organization
+If you do not select an **Organization**, the system links all new resources directly
+to your personal account, that inhibits resource sharing with others.
 
-To create an organization, open the user menu, go to `Organization` and click `Create`.
+When **Personal workspace** is selected, it will be marked with a tick in the menu.
 
-![](/images/image233.jpg)
+![](/images/personal_account.jpg)
 
-Fill in the required information to create your organization.
-You need to enter a `Short name` of the organization, which will be displayed in the menu.
-You can specify other fields: `Full Name`, `Description` and the organization contacts.
-Of them will be visible on the organization settings page.
+## Create new organization
 
-![](/images/image234.jpg)
+To create an organization, do the following:
+
+1. Log in to the CVAT.
+2. On the top menu, click your **Username** > **Organization** > **+ Create**.
+
+   ![](/images/image233.jpg)
+
+3. Fill in the following fields and click **Submit**.
+
+   ![](/images/image234.jpg)
+
+<!--lint disable maximum-line-length-->
+
+| Field            | Description                                                         |
+| ---------------- | ------------------------------------------------------------------- |
+| **Short name**   | A name of the organization that will be displayed in the CVAT menu. |
+| **Full Name**    | Optional. Full name of the organization.                            |
+| **Description**  | Optional. Description of organization.                              |
+| **Email**        | Optional. Your email.                                               |
+| **Phone number** | Optional. Your phone number.                                        |
+| **Location**     | Optional. Organization address.                                     |
+
+<!--lint enable maximum-line-length-->
+
+The created organization will be available
+at you **Username** > **Organization**
+
+### Switching between organizations
+
+If you have more than one **Organization**,
+it is possible to switch between these **Organizations** at any given time.
+
+Follow these steps:
+
+1. In the top menu, select your **Username** > **Organization**.
+2. From the drop-down menu, under the **Personal space** section,
+   choose the desired **Organization**.
+
+![](/images/image233_1.jpg)
+
+Note, that if you've created more than 10 organizations,
+a **Switch organization** line will appear in the drop-down menu.
+
+![](/images/switch_org.png)
+
+Click on it to see the **Select organization** dialog, and select organization
+from drop-down list.
+
+![](/images/select_org.png)
 
 ## Organization page
 
-To go to the organization page, open the user menu, go to `Organization` and click `Settings`.
+**Organization page** is a place, where you can edit the **Organization** information
+and manage **Organization** members.
+
+![](/images/orgpage.jpg)
+
+> **Note** that in order to access the organization page, you must first activate
+> the organization (see [Switching between organizations](#switching-between-organizations)).
+> Without activation, the organization page will remain inaccessible.
+> <br>An organization is considered activated when it's ticked in the drop-down menu
+> and its name is visible in the top-right corner under the username.
+
+
+To go to the **Organization page**, do the following:
+
+1. On the top menu, click your **Username** > **Organization**.
+2. In the drop-down menu, select **Organization**.
+3. In the drop-down menu, click **Settings**.
 
 ![](/images/image235.jpg)
 
 ### Invite members into organization
 
-To add members, click `Invite members`. In the window that appears,
-enter the email of the user you want to add and select the role (the role defines a set of rules):
+To add members to **Organization** do the following:
 
-- `Worker` - workers have only access to tasks, projects, and jobs, assigned to them.
-- `Supervisor` - this role allows you to create and assign jobs, tasks and projects to members of the organization.
-- `Maintainer` - a member with this role has all the capabilities of the role supervisor,
-  sees all the tasks and the projects created by other members of the organization,
-  has full access to the `Cloud Storages` feature, and can modify members and their roles.
-- `Owner` - a role assigned to the creator of the organization with maximum capabilities.
+1. Go to the [**Organization page**](#organization-page), and click **Invite members**.
+2. Fill in the form (see below).
 
-In addition to roles, there are groups of users that are configured on the `Admin page`.
-Read more about the roles in [IAM system roles section](/docs/administration/advanced/iam_system_roles).
+   ![](/images/image236.jpg)
 
-![](/images/image236.jpg)
+3. Click **Ok**.
 
-After you add members, they will appear on your organization settings page,
-with each member listed and information about invitation details.
-You can change a member's role or remove a member at any time.
+The **Invite Members** form has the following fields:
+
+![](/images/invitemembers.jpg)
+
+<!--lint disable maximum-line-length-->
+
+| Field               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Email**           | Specifies the email address of the user who is being added to the **Organization**.  <br><br>**Note**, that the user you're inviting must already have a CVAT account (on the same instance) registered to the email address you're sending the invitation to.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Role drop-down list | Defines the role of the user which sets the level of access within the **Organization**: <br><li>**Worker**: Has access only to the tasks, projects, and jobs assigned to them. <li>**Supervisor**: Can create and assign jobs, tasks, and projects to the **Organization** members. <li>**Maintainer**: Has the same capabilities as the **Supervisor**, but with additional visibility over all tasks and projects created by other members, complete access to **Cloud Storages**, and the ability to modify members and their roles. <li>**Owner**: role assigned to the creator of the organization by default. Has maximum capabilities and cannot be changed or assigned to the other user. |
+| **Invite more**     | Button to add another user to the **Organization**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
+<!--lint enable maximum-line-length-->
+
+Members of **Organization** will appear on the **Organization page**.
 
 ![](/images/image237.jpg)
 
-The member can leave the organization on his own by clicking `Leave organization` on the organization settings page.
+The member of the organization can leave the organization
+by going to **Organization page** > **Leave organization**.
 
-### Remove organization
+The organization owner can remove members, by
+clicking on the **Bin** icon.
+
+### Delete organization
 
 You can remove an organization that you created.
-Deleting an organization will delete all related resources (annotations, jobs, tasks, projects, cloud storages, ..).
-In order to remove an organization, click `Remove organization`,
-you will be asked to confirm the deletion by entering the short name of the organization.
+
+> **Note**: Removing an organization will delete all related resources (annotations,
+> jobs, tasks, projects, cloud storage, and so on).
+
+To remove an organization, do the following:
+
+1. Go to the **Organization page**.
+2. In the top-right corner click **Actions** > **Remove organization**.
+3. Enter the short name of the organization in the dialog field.
+4. Click **Remove**.

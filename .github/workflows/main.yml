@@ -5,7 +5,7 @@ on:
       - 'master'
       - 'develop'
   pull_request:
-    types: [edited, ready_for_review, opened, synchronize, reopened]
+    types: [ready_for_review, opened, synchronize, reopened]
     paths-ignore:
       - 'site/**'
       - '**/*.md'
@@ -152,22 +152,27 @@ jobs:
           name: expected_schema
           path: cvat/schema-expected.yml
 
-      - name: Running REST API and SDK tests
-        id: run_tests
-        env:
-          COVERAGE_PROCESS_START: ".coveragerc"
+      - name: Generate SDK
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
-          pip3 install -r ./tests/python/requirements.txt
-          pip3 install -e ./cvat-sdk
-          pip3 install -e ./cvat-cli
+      - name: Install SDK
+        run: |
+          pip3 install -r ./tests/python/requirements.txt \
+            -e './cvat-sdk[pytorch]' -e ./cvat-cli
 
+      - name: Run REST API and SDK tests
+        id: run_tests
+        env:
+          COVERAGE_PROCESS_START: ".coveragerc"
+        run: |
           pytest tests/python/ --cov --cov-report xml
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
@@ -232,6 +237,8 @@ jobs:
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -335,6 +342,8 @@ jobs:
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
