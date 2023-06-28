@@ -2771,6 +2771,10 @@ class ProjectQualityReportUpdateManager:
                 project_report=dict(
                     project=project,
                     target_last_updated=project.updated_date,
+                    gt_last_updated=max(
+                        [r.gt_last_updated for r in task_quality_reports.values()],
+                        default=None,
+                    ),
                     data=project_comparison_report.to_json(),
                     conflicts=[],  # the project doesn't have own conflicts
                 ),
@@ -2911,6 +2915,7 @@ class ProjectQualityReportUpdateManager:
         db_project_report = models.QualityReport(
             project=project_report["project"],
             target_last_updated=project_report["target_last_updated"],
+            gt_last_updated=project_report["gt_last_updated"],
             data=project_report["data"],
         )
         db_project_report.save()
@@ -2932,29 +2937,41 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     # - covert some fractions to percents
     # - add common report info
 
-    task = db_report.get_task()
-    task_id = task.id if task is not None else None
-    serialized_data = dict(
-        job_id=db_report.job.id if db_report.job is not None else None,
-        task_id=task_id,
-        project_id=db_report.project.id if db_report.project is not None else None,
-        parent_id=db_report.parent.id if db_report.parent is not None else None,
-        created_date=str(db_report.created_date),
-        target_last_updated=str(db_report.target_last_updated),
-        gt_last_updated=str(db_report.gt_last_updated),
-    )
-
+    project_id = None
+    task_id = None
+    job_id = None
     jobs_to_tasks: Dict[int, int] = {}
     if db_report.project:
-        jobs = Job.objects.filter(segment__task__project=db_report.project).all()
+        project_id = db_report.project
+
+        jobs = Job.objects.filter(segment__task__project__id=project_id).all()
         jobs_to_tasks.update((j.id, j.segment.task.id) for j in jobs)
     elif db_report.task:
-        jobs = Job.objects.filter(segment__task=task).all()
+        project_id = getattr(db_report.task.project, "id", None)
+        task_id = db_report.task
+
+        jobs = Job.objects.filter(segment__task__id=task_id).all()
         jobs_to_tasks.update((j.id, task_id) for j in jobs)
     elif db_report.job:
+        project_id = getattr(db_report.get_task().project, "id", None)
+        task_id = db_report.get_task().id
+        job_id = db_report.job
+
         jobs_to_tasks[db_report.job.id] = task_id
     else:
         assert False
+
+    # Add ids for the hierarchy objects, don't add empty ids
+    serialized_data = dict(
+        id=db_report.id,
+        **dict(job_id=db_report.job.id) if job_id else {},
+        **dict(task_id=task_id) if task_id else {},
+        **dict(project_id=project_id) if project_id else {},
+        **dict(parent_id=db_report.parent.id) if db_report.parent else {},
+        created_date=str(db_report.created_date),
+        target_last_updated=str(db_report.target_last_updated),
+        gt_last_updated=str(db_report.gt_last_updated) if db_report.gt_last_updated else "",
+    )
 
     comparison_report = ComparisonReport.from_json(db_report.get_json_report())
     serialized_data.update(comparison_report.to_dict())
