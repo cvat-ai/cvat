@@ -5,15 +5,18 @@
 
 import io
 import json
+from enum import Enum
 from http import HTTPStatus
+from typing import Any, Optional
 
 import pytest
 from cvat_sdk.api_client import ApiClient, models
 from cvat_sdk.api_client.api_client import Endpoint
+from cvat_sdk.api_client.model.file_info import FileInfo
 from deepdiff import DeepDiff
 from PIL import Image
 
-from shared.utils.config import make_api_client
+from shared.utils.config import get_method, make_api_client
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -23,11 +26,10 @@ pytestmark = [pytest.mark.with_external_services]
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetCloudStorage:
-    def _test_can_see(self, user, storage_id, data, **kwargs):
+    def _test_can_see(self, user, storage_id, data):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.retrieve(
                 id=storage_id,
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -41,11 +43,10 @@ class TestGetCloudStorage:
                 == {}
             )
 
-    def _test_cannot_see(self, user, storage_id, **kwargs):
+    def _test_cannot_see(self, user, storage_id):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.retrieve(
                 id=storage_id,
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -63,7 +64,6 @@ class TestGetCloudStorage:
     def test_sandbox_user_get_cloud_storage(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
     ):
-        org = ""
         cloud_storage = cloud_storages[storage_id]
         username = (
             cloud_storage["owner"]["username"]
@@ -78,9 +78,9 @@ class TestGetCloudStorage:
         )
 
         if is_allow:
-            self._test_can_see(username, storage_id, cloud_storage, org=org)
+            self._test_can_see(username, storage_id, cloud_storage)
         else:
-            self._test_cannot_see(username, storage_id, org=org)
+            self._test_cannot_see(username, storage_id)
 
     @pytest.mark.parametrize("org_id", [2])
     @pytest.mark.parametrize("storage_id", [2])
@@ -109,9 +109,24 @@ class TestGetCloudStorage:
         )
 
         if is_allow:
-            self._test_can_see(username, storage_id, cloud_storage, org_id=org_id)
+            self._test_can_see(username, storage_id, cloud_storage)
         else:
-            self._test_cannot_see(username, storage_id, org_id=org_id)
+            self._test_cannot_see(username, storage_id)
+
+    def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, cloud_storages):
+        # test for API schema regressions
+        source_storage = next(
+            s for s in cloud_storages if s.get("owner") and s["owner"]["username"] != admin_user
+        ).copy()
+
+        with make_api_client(admin_user) as api_client:
+            api_client.users_api.destroy(source_storage["owner"]["id"])
+
+            (_, response) = api_client.cloudstorages_api.retrieve(source_storage["id"])
+            fetched_storage = json.loads(response.data)
+
+        source_storage["owner"] = None
+        assert DeepDiff(source_storage, fetched_storage, ignore_order=True) == {}
 
 
 class TestCloudStoragesListFilters(CollectionSimpleFilterTestBase):
@@ -255,12 +270,11 @@ class TestPatchCloudStorage:
         }
     ]
 
-    def _test_can_update(self, user, storage_id, spec, **kwargs):
+    def _test_can_update(self, user, storage_id, spec):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.partial_update(
                 id=storage_id,
                 patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(**spec),
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -272,12 +286,11 @@ class TestPatchCloudStorage:
                 == {}
             )
 
-    def _test_cannot_update(self, user, storage_id, spec, **kwargs):
+    def _test_cannot_update(self, user, storage_id, spec):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.partial_update(
                 id=storage_id,
                 patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(**spec),
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -295,7 +308,6 @@ class TestPatchCloudStorage:
     def test_sandbox_user_update_cloud_storage(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
     ):
-        org = ""
         cloud_storage = cloud_storages[storage_id]
         username = (
             cloud_storage["owner"]["username"]
@@ -310,9 +322,9 @@ class TestPatchCloudStorage:
         )
 
         if is_allow:
-            self._test_can_update(username, storage_id, self._SPEC, org=org)
+            self._test_can_update(username, storage_id, self._SPEC)
         else:
-            self._test_cannot_update(username, storage_id, self._SPEC, org=org)
+            self._test_cannot_update(username, storage_id, self._SPEC)
 
     @pytest.mark.parametrize("org_id", [2])
     @pytest.mark.parametrize("storage_id", [2])
@@ -341,18 +353,17 @@ class TestPatchCloudStorage:
         )
 
         if is_allow:
-            self._test_can_update(username, storage_id, self._PRIVATE_BUCKET_SPEC, org_id=org_id)
+            self._test_can_update(username, storage_id, self._PRIVATE_BUCKET_SPEC)
         else:
-            self._test_cannot_update(username, storage_id, self._PRIVATE_BUCKET_SPEC, org_id=org_id)
+            self._test_cannot_update(username, storage_id, self._PRIVATE_BUCKET_SPEC)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetCloudStoragePreview:
-    def _test_can_see(self, user, storage_id, **kwargs):
+    def _test_can_see(self, user, storage_id):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.retrieve_preview(
                 id=storage_id,
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -361,11 +372,10 @@ class TestGetCloudStoragePreview:
             (width, height) = Image.open(io.BytesIO(response.data)).size
             assert width > 0 and height > 0
 
-    def _test_cannot_see(self, user, storage_id, **kwargs):
+    def _test_cannot_see(self, user, storage_id):
         with make_api_client(user) as api_client:
             (_, response) = api_client.cloudstorages_api.retrieve_preview(
                 id=storage_id,
-                **kwargs,
                 _parse_response=False,
                 _check_status=False,
             )
@@ -383,7 +393,6 @@ class TestGetCloudStoragePreview:
     def test_sandbox_user_get_cloud_storage_preview(
         self, storage_id, group, is_owner, is_allow, users, cloud_storages
     ):
-        org = ""
         cloud_storage = cloud_storages[storage_id]
         username = (
             cloud_storage["owner"]["username"]
@@ -398,9 +407,9 @@ class TestGetCloudStoragePreview:
         )
 
         if is_allow:
-            self._test_can_see(username, storage_id, org=org)
+            self._test_can_see(username, storage_id)
         else:
-            self._test_cannot_see(username, storage_id, org=org)
+            self._test_cannot_see(username, storage_id)
 
     @pytest.mark.parametrize("org_id", [2])
     @pytest.mark.parametrize("storage_id", [2])
@@ -429,6 +438,174 @@ class TestGetCloudStoragePreview:
         )
 
         if is_allow:
-            self._test_can_see(username, storage_id, org_id=org_id)
+            self._test_can_see(username, storage_id)
         else:
-            self._test_cannot_see(username, storage_id, org_id=org_id)
+            self._test_cannot_see(username, storage_id)
+
+
+class TestGetCloudStorageContent:
+    USER = "admin1"
+
+    class SUPPORTED_VERSIONS(str, Enum):
+        V1 = "v1"
+        V2 = "v2"
+
+    def _test_get_cloud_storage_content(
+        self,
+        cloud_storage_id: int,
+        version: SUPPORTED_VERSIONS = SUPPORTED_VERSIONS.V2,
+        manifest: Optional[str] = None,
+        **kwargs,
+    ):
+        with make_api_client(self.USER) as api_client:
+            content_kwargs = {"manifest_path": manifest} if manifest else {}
+
+            if version == self.SUPPORTED_VERSIONS.V2:
+                for item in ["next_token", "prefix", "page_size"]:
+                    if item_value := kwargs.get(item):
+                        content_kwargs[item] = item_value
+
+            methods = {
+                self.SUPPORTED_VERSIONS.V1: api_client.cloudstorages_api.retrieve_content,
+                self.SUPPORTED_VERSIONS.V2: api_client.cloudstorages_api.retrieve_content_v2,
+            }
+            (data, _) = methods[version](cloud_storage_id, **content_kwargs)
+
+            return data
+
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize(
+        "version, manifest, prefix, page_size, expected_content",
+        [
+            (
+                SUPPORTED_VERSIONS.V1,  # [v1] list all bucket content
+                "sub/manifest.jsonl",
+                None,
+                None,
+                ["sub/image_case_65_1.png", "sub/image_case_65_2.png"],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list the top level of bucket with based on manifest
+                "sub/manifest.jsonl",
+                None,
+                None,
+                [FileInfo(mime_type="DIR", name="sub", type="DIR")],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] search by some prefix in bucket content based on manifest
+                "sub/manifest.jsonl",
+                "sub/image_case_65_1",
+                None,
+                [
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list the second layer (directory "sub") of bucket content based on manifest
+                "sub/manifest.jsonl",
+                "sub/",
+                None,
+                [
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_2.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list the top layer of real bucket content
+                None,
+                None,
+                None,
+                [FileInfo(mime_type="DIR", name="sub", type="DIR")],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list the second layer (directory "sub") of real bucket content
+                None,
+                "sub/",
+                2,
+                [
+                    FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,
+                None,
+                "/sub/",  # cover case: API is identical to share point API
+                None,
+                [
+                    FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_2.png", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest_1.jsonl", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest_2.jsonl", type="REG"),
+                ],
+            ),
+        ],
+    )
+    def test_get_cloud_storage_content(
+        self,
+        cloud_storage_id: int,
+        version: SUPPORTED_VERSIONS,
+        manifest: Optional[str],
+        prefix: Optional[str],
+        page_size: Optional[int],
+        expected_content: Optional[Any],
+    ):
+        result = self._test_get_cloud_storage_content(
+            cloud_storage_id, version, manifest, prefix=prefix, page_size=page_size
+        )
+        if expected_content:
+            if version == self.SUPPORTED_VERSIONS.V1:
+                assert result == expected_content
+            else:
+                assert result["content"] == expected_content
+        if page_size:
+            assert len(result["content"]) <= page_size
+
+    @pytest.mark.parametrize("cloud_storage_id, prefix, page_size", [(2, "sub/", 2)])
+    def test_iterate_over_cloud_storage_content(
+        self, cloud_storage_id: int, prefix: str, page_size: int
+    ):
+        expected_content = self._test_get_cloud_storage_content(
+            cloud_storage_id, self.SUPPORTED_VERSIONS.V2, prefix=prefix
+        )["content"]
+
+        current_content = []
+        next_token = None
+        while True:
+            result = self._test_get_cloud_storage_content(
+                cloud_storage_id,
+                self.SUPPORTED_VERSIONS.V2,
+                prefix=prefix,
+                page_size=page_size,
+                next_token=next_token,
+            )
+            content = result["content"]
+            assert len(content) <= page_size
+            current_content.extend(content)
+
+            next_token = result["next"]
+            if not next_token:
+                break
+
+        assert expected_content == current_content
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestListCloudStorages:
+    def _test_can_see_cloud_storages(self, user, data, **kwargs):
+        response = get_method(user, "cloudstorages", **kwargs)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(data, response.json()["results"]) == {}
+
+    def test_admin_can_see_all_cloud_storages(self, cloud_storages):
+        self._test_can_see_cloud_storages("admin2", cloud_storages.raw, page_size="all")
+
+    @pytest.mark.parametrize("field_value, query_value", [(2, 2), (None, "")])
+    def test_can_filter_by_org_id(self, field_value, query_value, cloud_storages):
+        cloud_storages = filter(lambda i: i["organization"] == field_value, cloud_storages)
+        self._test_can_see_cloud_storages(
+            "admin2", list(cloud_storages), page_size="all", org_id=query_value
+        )

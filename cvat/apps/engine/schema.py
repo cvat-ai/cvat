@@ -4,11 +4,12 @@
 
 import textwrap
 from typing import Type
-from rest_framework import serializers
+
 from drf_spectacular.extensions import OpenApiSerializerExtension
-from drf_spectacular.plumbing import force_instance, build_basic_type
-from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.plumbing import build_basic_type, force_instance
 from drf_spectacular.serializers import PolymorphicProxySerializerExtension
+from drf_spectacular.types import OpenApiTypes
+from rest_framework import serializers
 
 
 def _copy_serializer(
@@ -227,5 +228,6 @@ class CloudStorageReadSerializerExtension(_CloudStorageSerializerExtension):
 
 class CloudStorageWriteSerializerExtension(_CloudStorageSerializerExtension):
     target_class = 'cvat.apps.engine.serializers.CloudStorageWriteSerializer'
+
 
 __all__ = [] # No public symbols here

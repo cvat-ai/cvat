@@ -11,9 +11,10 @@ import shutil
 import tempfile
 from typing import Any, Dict, Iterable
 import uuid
+import mimetypes
 from zipfile import ZipFile
 from datetime import datetime
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 
 import django_rq
 from django.conf import settings
@@ -31,10 +32,13 @@ from distutils.util import strtobool
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer, LabelSerializer,
+from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
+    JobWriteSerializer, LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
-    ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer)
-from cvat.apps.engine.utils import av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta
+    ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
+from cvat.apps.engine.utils import (
+    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after
+)
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
 from cvat.apps.engine.task import JobFileMapping, _create_thread
@@ -46,7 +50,6 @@ from cvat.apps.dataset_manager.bindings import CvatImportError
 
 class Version(Enum):
     V1 = '1.0'
-
 
 def _get_label_mapping(db_labels):
     label_mapping = {db_label.id: db_label.name for db_label in db_labels}
@@ -60,7 +63,67 @@ def _get_label_mapping(db_labels):
 
     return label_mapping
 
+def _write_annotation_guide(zip_object, annotation_guide, guide_filename, assets_dirname, target_dir=None):
+    if annotation_guide is not None:
+        md = annotation_guide.markdown
+        assets = annotation_guide.assets.all()
+        assets_dirname = os.path.join(target_dir or '', assets_dirname)
+        guide_filename = os.path.join(target_dir or '', guide_filename)
+
+        for db_asset in assets:
+            md = md.replace(f'/api/assets/{str(db_asset.pk)}', os.path.join(assets_dirname, db_asset.filename))
+            file = os.path.join(settings.ASSETS_ROOT, str(db_asset.pk), db_asset.filename)
+            with open(file, 'rb') as asset_file:
+                zip_object.writestr(os.path.join(assets_dirname, db_asset.filename), asset_file.read())
+        zip_object.writestr(guide_filename, data=md)
+
+def _read_annotation_guide(zip_object, guide_filename, assets_dirname):
+    files = zip_object.namelist()
+    if guide_filename in files:
+        annotation_guide = io.BytesIO(zip_object.read(guide_filename))
+        assets = filter(lambda x: x.startswith(f'{assets_dirname}/'), files)
+        assets = list(map(lambda x: (x, zip_object.read(x)), assets))
+
+        if len(assets) > settings.ASSET_MAX_COUNT_PER_GUIDE:
+            raise ValidationError(f'Maximum number of assets per guide reached')
+        for asset in assets:
+            if len(asset[1]) / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
+                raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
+            if mimetypes.guess_type(asset[0])[0] not in settings.ASSET_SUPPORTED_TYPES:
+                raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
+
+        return annotation_guide.getvalue(), assets
+
+    return None, []
+
+def _import_annotation_guide(guide_data, assets):
+    guide_serializer = AnnotationGuideWriteSerializer(data=guide_data)
+    markdown = guide_data['markdown']
+    if guide_serializer.is_valid(raise_exception=True):
+        guide_serializer.save()
+
+    for asset in assets:
+        name, data = asset
+        basename = os.path.basename(name)
+        asset_serializer = AssetWriteSerializer(data={
+            'filename': basename,
+            'guide_id': guide_serializer.instance.id,
+        })
+        if asset_serializer.is_valid(raise_exception=True):
+            asset_serializer.save()
+            markdown = markdown.replace(f'{name}', f'/api/assets/{asset_serializer.instance.pk}')
+            path = os.path.join(settings.ASSETS_ROOT, str(asset_serializer.instance.uuid))
+            os.makedirs(path)
+            with open(os.path.join(path, basename), 'wb') as destination:
+                destination.write(data)
+
+    guide_serializer.instance.markdown = markdown
+    guide_serializer.instance.save()
+
 class _BackupBase():
+    ANNOTATION_GUIDE_FILENAME = 'annotation_guide.md'
+    ASSETS_DIRNAME = 'assets'
+
     def __init__(self, *args, logger=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._logger = logger
@@ -146,6 +209,7 @@ class _TaskBackupBase(_BackupBase):
     def _prepare_job_meta(self, job):
         allowed_fields = {
             'status',
+            'type',
         }
         return self._prepare_meta(allowed_fields, job)
 
@@ -258,13 +322,17 @@ class _ExporterBase():
 class TaskExporter(_ExporterBase, _TaskBackupBase):
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.task[pk])
-        self._db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
+        self._db_task = models.Task.objects.prefetch_related('data__images', 'annotation_guide__assets').select_related('data__video', 'annotation_guide').get(pk=pk)
         self._db_data = self._db_task.data
         self._version = version
 
         db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
             'attributespec_set')
         self._label_mapping = _get_label_mapping(db_labels)
+
+    def _write_annotation_guide(self, zip_object, target_dir=None):
+        annotation_guide = self._db_task.annotation_guide if hasattr(self._db_task, 'annotation_guide') else None
+        _write_annotation_guide(zip_object, annotation_guide, self.ANNOTATION_GUIDE_FILENAME, self.ASSETS_DIRNAME, target_dir = target_dir)
 
     def _write_data(self, zip_object, target_dir=None):
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME) if target_dir else self.DATA_DIRNAME
@@ -330,12 +398,13 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 job_serializer.fields.pop(field)
             job_data = self._prepare_job_meta(job_serializer.data)
 
-            segment_serailizer = SegmentSerializer(db_segment)
-            segment_serailizer.fields.pop('jobs')
-            segment = segment_serailizer.data
+            segment_serializer = SegmentSerializer(db_segment)
+            segment_serializer.fields.pop('jobs')
+            segment = segment_serializer.data
+            segment_type = segment.pop("type")
             segment.update(job_data)
 
-            if self._db_task.segment_size == 0:
+            if self._db_task.segment_size == 0 and segment_type == models.SegmentType.RANGE:
                 segment.update(serialize_custom_file_mapping(db_segment))
 
             return segment
@@ -399,6 +468,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         self._write_task(zip_obj, target_dir)
         self._write_manifest(zip_obj, target_dir)
         self._write_annotations(zip_obj, target_dir)
+        self._write_annotation_guide(zip_obj, target_dir)
 
     def export_to(self, file, target_dir=None):
         if self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM and \
@@ -478,19 +548,25 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._subdir = subdir
         self._user_id = user_id
         self._org_id = org_id
-        self._manifest, self._annotations = self._read_meta()
+        self._manifest, self._annotations, self._annotation_guide, self._assets = self._read_meta()
         self._version = self._read_version(self._manifest)
         self._labels_mapping = label_mapping
         self._db_task = None
         self._project_id=project_id
 
+    def _read_annotation_guide(self, zip_object):
+        annotation_guide_filename = os.path.join(self._subdir or '', self.ANNOTATION_GUIDE_FILENAME)
+        assets_dirname = os.path.join(self._subdir or '', self.ASSETS_DIRNAME)
+        return _read_annotation_guide(zip_object, annotation_guide_filename, assets_dirname)
+
     def _read_meta(self):
         def read(zip_object):
-            manifest_filename = os.path.join(self._subdir, self.MANIFEST_FILENAME) if self._subdir else self.MANIFEST_FILENAME
-            annotations_filename = os.path.join(self._subdir, self.ANNOTATIONS_FILENAME) if self._subdir else self.ANNOTATIONS_FILENAME
+            manifest_filename = os.path.join(self._subdir or '', self.MANIFEST_FILENAME)
+            annotations_filename = os.path.join(self._subdir or '', self.ANNOTATIONS_FILENAME)
             manifest = JSONParser().parse(io.BytesIO(zip_object.read(manifest_filename)))
             annotations = JSONParser().parse(io.BytesIO(zip_object.read(annotations_filename)))
-            return manifest, annotations
+            annotation_guide, assets = self._read_annotation_guide(zip_object)
+            return manifest, annotations, annotation_guide, assets
 
         if isinstance(self._file, str):
             with ZipFile(self._file, 'r') as input_file:
@@ -509,6 +585,12 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
     @staticmethod
     def _calculate_segment_size(jobs):
+        # The type field will be missing in backups create before the GT jobs were introduced
+        jobs = [
+            j for j in jobs
+            if j.get("type", models.JobType.ANNOTATION) == models.JobType.ANNOTATION
+        ]
+
         segment_size = jobs[0]['stop_frame'] - jobs[0]['start_frame'] + 1
         overlap = 0 if len(jobs) == 1 else jobs[0]['stop_frame'] - jobs[1]['start_frame'] + 1
 
@@ -604,6 +686,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             data['job_file_mapping'] = job_file_mapping
 
         _create_thread(self._db_task.pk, data.copy(), isBackupRestore=True)
+        self._db_task.refresh_from_db()
+        db_data.refresh_from_db()
+
         db_data.start_frame = data['start_frame']
         db_data.stop_frame = data['stop_frame']
         db_data.frame_filter = data['frame_filter']
@@ -611,18 +696,50 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         db_data.storage = StorageChoice.LOCAL
         db_data.save(update_fields=['start_frame', 'stop_frame', 'frame_filter', 'storage', 'deleted_frames'])
 
+        # Recreate Ground Truth jobs (they won't be created automatically)
+        self._import_gt_jobs(jobs)
+
         for db_job, job in zip(self._get_db_jobs(), jobs):
             db_job.status = job['status']
             db_job.save()
+
+    def _import_gt_jobs(self, jobs):
+        for job in jobs:
+            # The type field will be missing in backups create before the GT jobs were introduced
+            try:
+                raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
+                job_type = models.JobType(raw_job_type)
+            except ValueError:
+                raise ValidationError(f"Unexpected job type {raw_job_type}")
+
+            if job_type == models.JobType.GROUND_TRUTH:
+                job_serializer = JobWriteSerializer(data={
+                    'task_id': self._db_task.id,
+                    'type': job_type.value,
+                    'frame_selection_method': models.JobFrameSelectionMethod.MANUAL.value,
+                    'frames': job['frames']
+                })
+                job_serializer.is_valid(raise_exception=True)
+                job_serializer.save()
+            elif job_type == models.JobType.ANNOTATION:
+                continue
+            else:
+                assert False
 
     def _import_annotations(self):
         db_jobs = self._get_db_jobs()
         for db_job, annotations in zip(db_jobs, self._annotations):
             self._create_annotations(db_job, annotations)
 
+    def _import_annotation_guide(self):
+        if self._annotation_guide:
+            markdown = self._annotation_guide.decode()
+            _import_annotation_guide({ 'markdown': markdown, 'task_id': self._db_task.id }, self._assets)
+
     def import_task(self):
         self._import_task()
         self._import_annotations()
+        self._import_annotation_guide()
         return self._db_task
 
 @transaction.atomic
@@ -650,11 +767,15 @@ class _ProjectBackupBase(_BackupBase):
 class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     def __init__(self, pk, version=Version.V1):
         super().__init__(logger=slogger.project[pk])
-        self._db_project = models.Project.objects.prefetch_related('tasks').get(pk=pk)
+        self._db_project = models.Project.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
         self._version = version
 
         db_labels = self._db_project.label_set.all().prefetch_related('attributespec_set')
         self._label_mapping = _get_label_mapping(db_labels)
+
+    def _write_annotation_guide(self, zip_object, target_dir=None):
+        annotation_guide = self._db_project.annotation_guide if hasattr(self._db_project, 'annotation_guide') else None
+        _write_annotation_guide(zip_object, annotation_guide, self.ANNOTATION_GUIDE_FILENAME, self.ASSETS_DIRNAME, target_dir = target_dir)
 
     def _write_tasks(self, zip_object):
         for idx, db_task in enumerate(self._db_project.tasks.all().order_by('id')):
@@ -682,8 +803,9 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 
     def export_to(self, filename):
         with ZipFile(filename, 'w') as output_file:
-            self._write_tasks(output_file)
+            self._write_annotation_guide(output_file)
             self._write_manifest(output_file)
+            self._write_tasks(output_file)
 
 class ProjectImporter(_ImporterBase, _ProjectBackupBase):
     TASKNAME_RE = r'task_(\d+)/'
@@ -693,16 +815,20 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         self._filename = filename
         self._user_id = user_id
         self._org_id = org_id
-        self._manifest = self._read_meta()
+        self._manifest, self._annotation_guide, self._assets = self._read_meta()
         self._version = self._read_version(self._manifest)
         self._db_project = None
         self._labels_mapping = {}
 
+    def _read_annotation_guide(self, zip_object):
+        return _read_annotation_guide(zip_object, self.ANNOTATION_GUIDE_FILENAME, self.ASSETS_DIRNAME)
+
     def _read_meta(self):
         with ZipFile(self._filename, 'r') as input_file:
             manifest = JSONParser().parse(io.BytesIO(input_file.read(self.MANIFEST_FILENAME)))
+            annotation_guide, assets = self._read_annotation_guide(input_file)
 
-        return manifest
+        return manifest, annotation_guide, assets
 
     def _import_project(self):
         labels = self._manifest.pop('labels')
@@ -738,8 +864,14 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
                     subdir=task_dir,
                     label_mapping=self._labels_mapping).import_task()
 
+    def _import_annotation_guide(self):
+        if self._annotation_guide:
+            markdown = self._annotation_guide.decode()
+            _import_annotation_guide({ 'markdown': markdown, 'project_id': self._db_project.id }, self._assets)
+
     def import_project(self):
         self._import_project()
+        self._import_annotation_guide()
         self._import_tasks()
 
         return self._db_project
@@ -869,7 +1001,7 @@ def export(db_instance, request, queue_name):
                     if os.path.exists(file_path):
                         return Response(status=status.HTTP_201_CREATED)
             elif rq_job.is_failed:
-                exc_info = str(rq_job.exc_info)
+                exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
                 rq_job.delete()
                 return Response(exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -896,9 +1028,11 @@ def _download_file_from_bucket(db_storage, filename, key):
 def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
     rq_job = queue.fetch_job(rq_id)
 
+    if (user_id_from_meta := getattr(rq_job, 'meta', {}).get('user', {}).get('id')) and user_id_from_meta != request.user.id:
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
-        fd = None
         dependent_job = None
 
         location = location_conf.get('location')
@@ -907,10 +1041,13 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 serializer = Serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 payload_file = serializer.validated_data[file_field_name]
-                fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
-                with open(filename, 'wb+') as f:
+                with NamedTemporaryFile(
+                    prefix='cvat_',
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
                     for chunk in payload_file.chunks():
-                        f.write(chunk)
+                        tf.write(chunk)
         else:
             file_name = request.query_params.get('filename')
             assert file_name, "The filename wasn't specified"
@@ -926,7 +1063,9 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 is_default=location_conf['is_default'])
 
             key = filename
-            fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_FILES_ROOT)
+            with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as tf:
+                filename = tf.name
+
             dependent_job = configure_dependent_job(
                 queue=queue,
                 rq_id=rq_id,
@@ -935,24 +1074,25 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 filename=filename,
                 key=key,
                 request=request,
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
         rq_job = queue.enqueue_call(
-            func=importer,
-            args=(filename, request.user.id, org_id),
+            func=import_resource_with_clean_up_after,
+            args=(importer, filename, request.user.id, org_id),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
-                'tmp_file_descriptor': fd,
                 **get_rq_job_meta(request=request, db_obj=None)
             },
-            depends_on=dependent_job
+            depends_on=dependent_job,
+            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
         )
     else:
         if rq_job.is_finished:
             project_id = rq_job.return_value
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-            os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \
@@ -969,7 +1109,10 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 return Response(data=exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
+    serializer = RqIdSerializer(data={'rq_id': rq_id})
+    serializer.is_valid(raise_exception=True)
+
+    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 def get_backup_dirname():
     return settings.TMP_FILES_ROOT
@@ -978,7 +1121,7 @@ def import_project(request, queue_name, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = f"import:project.{uuid.uuid4()}-by-{request.user}"
+        rq_id = get_import_rq_id('project', uuid.uuid4(), 'backup', request.user)
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
@@ -1001,10 +1144,8 @@ def import_project(request, queue_name, filename=None):
     )
 
 def import_task(request, queue_name, filename=None):
-    if 'rq_id' in request.data:
-        rq_id = request.data['rq_id']
-    else:
-        rq_id = f"import:task.{uuid.uuid4()}-by-{request.user}"
+    rq_id = request.data.get('rq_id',  get_import_rq_id('task', uuid.uuid4(), 'backup', request.user))
+
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 

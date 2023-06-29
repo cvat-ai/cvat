@@ -36,7 +36,7 @@ context('Register user, change password, login with new password', () => {
 
     after(() => {
         cy.get('.cvat-modal-change-password').find('[aria-label="Close"]').click();
-        cy.logout(userName);
+        cy.logout();
         cy.getAuthKey().then((authKey) => {
             cy.deleteUsers(authKey, [userName]);
         });
@@ -49,7 +49,7 @@ context('Register user, change password, login with new password', () => {
             cy.contains('New password has been saved.').should('exist');
         });
         it('Logout', () => {
-            cy.logout(userName);
+            cy.logout();
         });
         it('Login with the new password', () => {
             cy.login(userName, newPassword);

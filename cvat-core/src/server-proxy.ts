@@ -10,16 +10,19 @@ import * as tus from 'tus-js-client';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser,
-    SerializedAbout, SerializedShare, SerializedUserAgreement,
-    SerializedRegister, JobsFilter, SerializedJob,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
 } from 'server-response-types';
+import { SerializedQualityReportData } from 'quality-report';
+import { SerializedQualitySettingsData } from 'quality-settings';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
-import { isEmail } from './common';
+import { isEmail, isResourceURL } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { FunctionsResponseBody } from './server-response-types';
+import { SerializedQualityConflictData } from './quality-conflict';
 
 type Params = {
     org: number | string,
@@ -32,7 +35,7 @@ type Params = {
 };
 
 function enableOrganization(): { org: string } {
-    return { org: config.organizationID || '' };
+    return { org: config.organization.organizationSlug || '' };
 }
 
 function configureStorage(storage: Storage, useDefaultLocation = false): Partial<Params> {
@@ -266,8 +269,23 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    if (isResourceURL(reqConfig.url)) {
+        return reqConfig;
+    }
+
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
+});
+
+Axios.interceptors.response.use((response) => {
+    if (isResourceURL(response.config.url)) {
+        const newOrg = response.data.organization;
+        if (newOrg && config.organization.organizationID !== newOrg) {
+            config?.onOrganizationChange(newOrg);
+        }
+    }
+
+    return response;
 });
 
 let token = store.get('token');
@@ -309,7 +327,7 @@ async function about(): Promise<SerializedAbout> {
     return response.data;
 }
 
-async function share(directoryArg: string): Promise<SerializedShare[]> {
+async function share(directoryArg: string): Promise<SerializedRemoteFile[]> {
     const { backendAPI } = config;
 
     let response = null;
@@ -716,7 +734,7 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
         const params: Params = {
             ...enableOrganization(),
             ...configureStorage(targetStorage, useDefaultSettings),
-            ...(name ? { filename: name.replace(/\//g, '_') } : {}),
+            ...(name ? { filename: name } : {}),
             format,
         };
 
@@ -768,13 +786,14 @@ async function importDataset(
     };
 
     const url = `${backendAPI}/projects/${id}/dataset`;
+    let rqId: string;
 
     async function wait() {
         return new Promise<void>((resolve, reject) => {
             async function requestStatus() {
                 try {
                     const response = await Axios.get(url, {
-                        params: { ...params, action: 'import_status' },
+                        params: { ...params, action: 'import_status', rq_id: rqId },
                     });
                     if (response.status === 202) {
                         if (response.data.message) {
@@ -797,10 +816,11 @@ async function importDataset(
 
     if (isCloudStorage) {
         try {
-            await Axios.post(url,
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -822,11 +842,12 @@ async function importDataset(
                     headers: { 'Upload-Start': true },
                 });
             await chunkUpload(file, uploadConfig);
-            await Axios.post(url,
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                     headers: { 'Upload-Finish': true },
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -1241,36 +1262,38 @@ async function getJobs(
     return response.data;
 }
 
-async function getJobIssues(jobID: number) {
+async function getIssues(filter) {
     const { backendAPI } = config;
 
     let response = null;
     try {
         const organization = enableOrganization();
         response = await fetchAll(`${backendAPI}/issues`, {
-            job_id: jobID,
+            ...filter,
             ...organization,
         });
 
-        const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
-            job_id: jobID,
-            ...organization,
-        });
+        if (filter.job_id) {
+            const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
+                ...filter,
+                ...organization,
+            });
 
-        const issuesById = response.results.reduce((acc, val: { id: number }) => {
-            acc[val.id] = val;
-            return acc;
-        }, {});
+            const issuesById = response.results.reduce((acc, val: { id: number }) => {
+                acc[val.id] = val;
+                return acc;
+            }, {});
 
-        const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
-            acc[val.issue] = acc[val.issue] || [];
-            acc[val.issue].push(val);
-            return acc;
-        }, {});
+            const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
+                acc[val.issue] = acc[val.issue] || [];
+                acc[val.issue].push(val);
+                return acc;
+            }, {});
 
-        for (const issue of Object.keys(commentsByIssue)) {
-            commentsByIssue[issue].sort((a, b) => a.id - b.id);
-            issuesById[issue].comments = commentsByIssue[issue];
+            for (const issue of Object.keys(commentsByIssue)) {
+                commentsByIssue[issue].sort((a, b) => a.id - b.id);
+                issuesById[issue].comments = commentsByIssue[issue];
+            }
         }
     } catch (errorData) {
         throw generateError(errorData);
@@ -1351,6 +1374,33 @@ async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<Ser
     return response.data;
 }
 
+async function createJob(jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.post(`${backendAPI}/jobs`, jobData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
+}
+
+async function deleteJob(jobID: number): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/jobs/${jobID}`, {
+            params: {
+                ...enableOrganization(),
+            },
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function getUsers(filter = { page_size: 'all' }) {
     const { backendAPI } = config;
 
@@ -1368,7 +1418,7 @@ async function getUsers(filter = { page_size: 'all' }) {
     return response.data.results;
 }
 
-function getPreview(instance) {
+function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages') {
     return async function (id: number) {
         const { backendAPI } = config;
 
@@ -1383,7 +1433,7 @@ function getPreview(instance) {
             throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
         }
 
-        return response.data;
+        return (response.status === 200) ? response.data : '';
     };
 }
 
@@ -1436,9 +1486,10 @@ async function getData(tid, jid, chunk) {
     return response;
 }
 
-export interface FramesMetaData {
+export interface RawFramesMetaData {
     chunk_size: number;
     deleted_frames: number[];
+    included_frames: number[];
     frame_filter: string;
     frames: {
         width: number;
@@ -1452,7 +1503,7 @@ export interface FramesMetaData {
     stop_frame: number;
 }
 
-async function getMeta(session, jid): Promise<FramesMetaData> {
+async function getMeta(session, jid): Promise<RawFramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1602,6 +1653,7 @@ async function uploadAnnotations(
         filename: typeof file === 'string' ? file : file.name,
         conv_mask_to_poly: options.convMaskToPoly,
     };
+    let rqId: string;
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;
     async function wait() {
@@ -1612,7 +1664,7 @@ async function uploadAnnotations(
                         url,
                         new FormData(),
                         {
-                            params,
+                            params: { ...params, rq_id: rqId },
                         },
                     );
                     if (response.status === 202) {
@@ -1631,10 +1683,11 @@ async function uploadAnnotations(
 
     if (isCloudStorage) {
         try {
-            await Axios.post(url,
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -1652,11 +1705,12 @@ async function uploadAnnotations(
                     headers: { 'Upload-Start': true },
                 });
             await chunkUpload(file, uploadConfig);
-            await Axios.post(url,
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                     headers: { 'Upload-Finish': true },
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -1860,14 +1914,17 @@ async function getCloudStorages(filter = {}) {
     return response.data.results;
 }
 
-async function getCloudStorageContent(id, manifestPath) {
+async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
+Promise<{ content: SerializedRemoteFile[], next: string | null }> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        const url = `${backendAPI}/cloudstorages/${id}/content`;
+        const url = `${backendAPI}/cloudstorages/${id}/content-v2`;
         response = await Axios.get(url, {
             params: {
+                prefix: path,
+                ...(nextToken ? { next_token: nextToken } : {}),
                 ...(manifestPath ? { manifest_path: manifestPath } : {}),
             },
         });
@@ -2143,6 +2200,123 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
+async function getGuide(id: number): Promise<SerializedGuide> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/guides/${id}`);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createGuide(data: Partial<SerializedGuide>): Promise<SerializedGuide> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/guides`, data);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateGuide(id: number, data: Partial<SerializedGuide>): Promise<SerializedGuide> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/guides/${id}`, data);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createAsset(file: File, guideId: number): Promise<SerializedAsset> {
+    const { backendAPI } = config;
+    const form = new FormData();
+    form.append('file', file);
+    form.append('guide_id', guideId);
+
+    try {
+        const response = await Axios.post(`${backendAPI}/assets`, form, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getQualitySettings(taskID: number): Promise<SerializedQualitySettingsData> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/quality/settings`, {
+            params: {
+                task_id: taskID,
+            },
+        });
+
+        return response.data.results[0];
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateQualitySettings(
+    settingsID: number,
+    settingsData: SerializedQualitySettingsData,
+): Promise<SerializedQualitySettingsData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/quality/settings/${settingsID}`, settingsData, {
+            params,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getQualityConflicts(filter): Promise<SerializedQualityConflictData[]> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await fetchAll(`${backendAPI}/quality/conflicts`, {
+            ...params,
+            ...filter,
+        });
+
+        return response.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getQualityReports(filter): Promise<SerializedQualityReportData[]> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/quality/reports`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        return response.data.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2197,6 +2371,8 @@ export default Object.freeze({
         get: getJobs,
         getPreview: getPreview('jobs'),
         save: saveJob,
+        create: createJob,
+        delete: deleteJob,
         exportDataset: exportDataset('jobs'),
     }),
 
@@ -2248,7 +2424,7 @@ export default Object.freeze({
     issues: Object.freeze({
         create: createIssue,
         update: updateIssue,
-        get: getJobIssues,
+        get: getIssues,
         delete: deleteIssue,
     }),
 
@@ -2285,5 +2461,26 @@ export default Object.freeze({
         delete: deleteWebhook,
         ping: pingWebhook,
         events: receiveWebhookEvents,
+    }),
+
+    guides: Object.freeze({
+        get: getGuide,
+        create: createGuide,
+        update: updateGuide,
+    }),
+
+    assets: Object.freeze({
+        create: createAsset,
+    }),
+
+    analytics: Object.freeze({
+        quality: Object.freeze({
+            reports: getQualityReports,
+            conflicts: getQualityConflicts,
+            settings: Object.freeze({
+                get: getQualitySettings,
+                update: updateQualitySettings,
+            }),
+        }),
     }),
 });

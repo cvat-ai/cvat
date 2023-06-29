@@ -57,7 +57,7 @@
     }
 
     > span[role='img'] {
-        font-size: 24px;
+        font-size: 20px;
     }
 
     &:hover > span[role='img'] {
@@ -102,7 +102,7 @@
     margin-right: 10px;
 
     > span {
-        font-size: 25px;
+        font-size: 20px;
         margin: 0 4px;
         color: $player-buttons-color;
 
@@ -119,9 +119,10 @@
 .cvat-player-controls {
     height: 100%;
     line-height: 27px;
+    padding-top: 16px;
 
     > div {
-        height: 50%;
+        height: 25%;
     }
 }
 
@@ -448,6 +449,11 @@
                 background: rgba(216, 233, 250, 0.5);
                 border: 1px solid #d3e0ec;
             }
+        }
+
+        .ant-typography {
+            display: block;
+            padding: $grid-unit-size * 2 $grid-unit-size * 3 $grid-unit-size  $grid-unit-size * 2;
         }
     }
 }

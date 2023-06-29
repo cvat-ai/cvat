@@ -1,30 +1,37 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import io
+import os
 import zipfile
-from io import BytesIO
 from datetime import datetime
+from io import BytesIO
 from tempfile import NamedTemporaryFile
+from typing import Optional, Tuple
+
 import cv2
+import PIL.Image
 import pytz
-
-from django.core.cache import caches
 from django.conf import settings
-from rest_framework.exceptions import ValidationError, NotFound
+from django.core.cache import caches
+from rest_framework.exceptions import NotFound, ValidationError
 
+from cvat.apps.engine.cloud_provider import (Credentials,
+                                             db_storage_to_storage_instance,
+                                             get_cloud_storage_instance)
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.media_extractors import (Mpeg4ChunkWriter,
-    Mpeg4CompressedChunkWriter, ZipChunkWriter, ZipCompressedChunkWriter,
-    ImageDatasetManifestReader, VideoDatasetManifestReader)
-from cvat.apps.engine.models import DataChoice, StorageChoice, Image
-from cvat.apps.engine.models import DimensionType
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
-from cvat.apps.engine.utils import md5_hash
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
+from cvat.apps.engine.media_extractors import (ImageDatasetManifestReader,
+                                               Mpeg4ChunkWriter,
+                                               Mpeg4CompressedChunkWriter,
+                                               VideoDatasetManifestReader,
+                                               ZipChunkWriter,
+                                               ZipCompressedChunkWriter)
 from cvat.apps.engine.mime_types import mimetypes
+from cvat.apps.engine.models import (DataChoice, DimensionType, Job, Image,
+                                     StorageChoice, CloudStorage)
+from cvat.apps.engine.utils import md5_hash
 from utils.dataset_manifest import ImageManifestManager
 
 
@@ -34,18 +41,30 @@ class MediaCache:
         self._cache = caches['media']
 
     def _get_or_set_cache_item(self, key, create_function):
+        slogger.glob.info(f'Starting to get chunk from cache: key {key}')
         item = self._cache.get(key)
+        slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
         if not item:
+            slogger.glob.info(f'Starting to prepare chunk: key {key}')
             item = create_function()
+            slogger.glob.info(f'Ending to prepare chunk: key {key}')
             if item[0]:
                 self._cache.set(key, item)
 
         return item
 
-    def get_buf_chunk_with_mime(self, chunk_number, quality, db_data):
+    def get_task_chunk_data_with_mime(self, chunk_number, quality, db_data):
         item = self._get_or_set_cache_item(
             key=f'{db_data.id}_{chunk_number}_{quality}',
-            create_function=lambda: self._prepare_chunk_buff(db_data, quality, chunk_number),
+            create_function=lambda: self._prepare_task_chunk(db_data, quality, chunk_number),
+        )
+
+        return item
+
+    def get_selective_job_chunk_data_with_mime(self, chunk_number, quality, job):
+        item = self._get_or_set_cache_item(
+            key=f'{job.id}_{chunk_number}_{quality}',
+            create_function=lambda: self.prepare_selective_job_chunk(job, quality, chunk_number),
         )
 
         return item
@@ -58,10 +77,21 @@ class MediaCache:
 
         return item
 
-    def get_cloud_preview_with_mime(self, db_storage):
+    def get_cloud_preview_with_mime(
+        self,
+        db_storage: CloudStorage,
+    ) -> Optional[Tuple[io.BytesIO, str]]:
+        key = f'cloudstorage_{db_storage.id}_preview'
+        return self._cache.get(key)
+
+    def get_or_set_cloud_preview_with_mime(
+        self,
+        db_storage: CloudStorage,
+    ) -> Tuple[io.BytesIO, str]:
+        key = f'cloudstorage_{db_storage.id}_preview'
+
         item = self._get_or_set_cache_item(
-            key=f'cloudstorage_{db_storage.id}_preview',
-            create_function=lambda: self._prepare_cloud_preview(db_storage)
+            key, create_function=lambda: self._prepare_cloud_preview(db_storage)
         )
 
         return item
@@ -83,12 +113,13 @@ class MediaCache:
         return item
 
     @staticmethod
-    def _get_frame_provider():
-        from cvat.apps.engine.frame_provider import FrameProvider # TODO: remove circular dependency
+    def _get_frame_provider_class():
+        from cvat.apps.engine.frame_provider import \
+            FrameProvider  # TODO: remove circular dependency
         return FrameProvider
 
     def _prepare_chunk_buff(self, db_data, quality, chunk_number, get_context_images=False):
-        FrameProvider = self._get_frame_provider()
+        FrameProvider = self._get_frame_provider_class()
 
         writer_classes = {
             FrameProvider.Quality.COMPRESSED : Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter,
@@ -164,8 +195,66 @@ class MediaCache:
                 os.remove(image_path)
         return buff, mime_type
 
+    def prepare_selective_job_chunk(self, db_job: Job, quality, chunk_number: int):
+        db_data = db_job.segment.task.data
+
+        FrameProvider = self._get_frame_provider_class()
+        frame_provider = FrameProvider(db_data, self._dimension)
+
+        frame_set = db_job.segment.frame_set
+        frame_step = db_data.get_frame_step()
+        chunk_frames = []
+
+        writer = ZipCompressedChunkWriter(db_data.image_quality, dimension=self._dimension)
+        dummy_frame = BytesIO()
+        PIL.Image.new('RGB', (1, 1)).save(dummy_frame, writer.IMAGE_EXT)
+
+        if hasattr(db_data, 'video'):
+            frame_size = (db_data.video.width, db_data.video.height)
+        else:
+            frame_size = None
+
+        for frame_idx in range(db_data.chunk_size):
+            frame_idx = (
+                db_data.start_frame + chunk_number * db_data.chunk_size + frame_idx * frame_step
+            )
+            if db_data.stop_frame < frame_idx:
+                break
+
+            frame_bytes = None
+
+            if frame_idx in frame_set:
+                frame_bytes = frame_provider.get_frame(frame_idx, quality=quality)[0]
+
+                if frame_size is not None:
+                    # Decoded video frames can have different size, restore the original one
+
+                    frame = PIL.Image.open(frame_bytes)
+                    if frame.size != frame_size:
+                        frame = frame.resize(frame_size)
+
+                    frame_bytes = BytesIO()
+                    frame.save(frame_bytes, writer.IMAGE_EXT)
+                    frame_bytes.seek(0)
+
+            else:
+                # Populate skipped frames with placeholder data,
+                # this is required for video chunk decoding implementation in UI
+                frame_bytes = BytesIO(dummy_frame.getvalue())
+
+            if frame_bytes is not None:
+                chunk_frames.append((frame_bytes, None, None))
+
+        buff = BytesIO()
+        writer.save_as_chunk(chunk_frames, buff, compress_frames=False,
+            zip_compress_level=1 # these are likely to be many skips in SPECIFIC_FRAMES segments
+        )
+        buff.seek(0)
+
+        return buff, 'application/zip'
+
     def _prepare_local_preview(self, frame_number, db_data):
-        FrameProvider = self._get_frame_provider()
+        FrameProvider = self._get_frame_provider_class()
         frame_provider = FrameProvider(db_data, self._dimension)
         buff, mime_type = frame_provider.get_preview(frame_number)
 
@@ -205,7 +294,7 @@ class MediaCache:
         return buff, mime_type
 
     def _prepare_context_image(self, db_data, frame_number):
-        zip_buffer = io.BytesIO()
+        zip_buffer = BytesIO()
         try:
             image = Image.objects.get(data_id=db_data.id, frame=frame_number)
         except Image.DoesNotExist:

@@ -3,11 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 from collections import OrderedDict
+from itertools import groupby
 from io import BytesIO
 from typing import Dict, Optional
 from unittest import mock, skip
+import json
 import os
 
 import requests
@@ -17,15 +18,15 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from cvat.apps.engine.tests.utils import get_paginated_collection
+from cvat.apps.engine.tests.utils import filter_dict, get_paginated_collection
 
 LAMBDA_ROOT_PATH = '/api/lambda'
 LAMBDA_FUNCTIONS_PATH = f'{LAMBDA_ROOT_PATH}/functions'
 LAMBDA_REQUESTS_PATH = f'{LAMBDA_ROOT_PATH}/requests'
 
 id_function_detector = "test-openvino-omz-public-yolo-v3-tf"
-id_function_reid_response_data = "test-openvino-omz-intel-person-reidentification-retail-0300"
-id_function_reid_response_no_data = "test-openvino-omz-intel-person-reidentification-retail-1234"
+id_function_reid_with_response_data = "test-openvino-omz-intel-person-reidentification-retail-0300"
+id_function_reid_with_no_response_data = "test-openvino-omz-intel-person-reidentification-retail-1234"
 id_function_interactor = "test-openvino-dextr"
 id_function_tracker = "test-pth-foolwood-siammask"
 id_function_non_type = "test-model-has-non-type"
@@ -78,15 +79,15 @@ class _LambdaTestCaseBase(APITestCase):
     def setUp(self):
         self.client = APIClient()
 
-        http_patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', side_effect = self.__get_data_from_lambda_manager_http)
+        http_patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', side_effect = self._get_data_from_lambda_manager_http)
         self.addCleanup(http_patcher.stop)
         http_patcher.start()
 
-        invoke_patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway.invoke', side_effect = self.__invoke_function)
+        invoke_patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway.invoke', side_effect = self._invoke_function)
         self.addCleanup(invoke_patcher.stop)
         invoke_patcher.start()
 
-    def __get_data_from_lambda_manager_http(self, **kwargs):
+    def _get_data_from_lambda_manager_http(self, **kwargs):
         url = kwargs["url"]
         if url == "/api/functions":
             return functions["positive"]
@@ -104,12 +105,12 @@ class _LambdaTestCaseBase(APITestCase):
                 r.response = HttpResponseNotFound()
                 raise r # raise 404 Not Found error
 
-    def __invoke_function(self, func, payload):
+    def _invoke_function(self, func, payload):
         data = []
         func_id = func.id
         type_function = functions["positive"][func_id]["metadata"]["annotations"]["type"]
         if type_function == "reid":
-            if func_id == id_function_reid_response_data:
+            if func_id == id_function_reid_with_response_data:
                 data = [0, 1]
             else:
                 data = []
@@ -170,15 +171,15 @@ class _LambdaTestCaseBase(APITestCase):
         cls.user = user_dummy
 
 
-    def _create_task(self, data, image_data, *, owner=None, org_id=None):
+    def _create_task(self, task_spec, data, *, owner=None, org_id=None):
         with ForceLogin(owner or self.admin, self.client):
-            response = self.client.post('/api/tasks', data=data, format="json",
+            response = self.client.post('/api/tasks', data=task_spec, format="json",
                 QUERY_STRING=f'org_id={org_id}' if org_id is not None else None)
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
             response = self.client.post("/api/tasks/%s/data" % tid,
-                data=image_data,
+                data=data,
                 QUERY_STRING=f'org_id={org_id}' if org_id is not None else None)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
@@ -229,6 +230,14 @@ class _LambdaTestCaseBase(APITestCase):
         data = json.dumps(data)
         with ForceLogin(user, self.client):
             response = self.client.patch(path, data=data, content_type='application/json',
+                QUERY_STRING=f'org_id={org_id}' if org_id is not None else '')
+        return response
+
+
+    def _put_request(self, path, user, data, *, org_id=None):
+        data = json.dumps(data)
+        with ForceLogin(user, self.client):
+            response = self.client.put(path, data=data, content_type='application/json',
                 QUERY_STRING=f'org_id={org_id}' if org_id is not None else '')
         return response
 
@@ -294,7 +303,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
 
     def test_api_v2_lambda_functions_read(self):
         ids_functions = [id_function_detector, id_function_interactor,\
-                         id_function_tracker, id_function_reid_response_data, \
+                         id_function_tracker, id_function_reid_with_response_data, \
                          id_function_non_type, id_function_wrong_type, id_function_unknown_type]
 
         for id_func in ids_functions:
@@ -437,7 +446,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
 
     def test_api_v2_lambda_requests_create(self):
         ids_functions = [id_function_detector, id_function_interactor, id_function_tracker, \
-                         id_function_reid_response_data, id_function_detector, id_function_reid_response_no_data, \
+                         id_function_reid_with_response_data, id_function_detector, id_function_reid_with_no_response_data, \
                          id_function_non_type, id_function_wrong_type, id_function_unknown_type]
 
         for id_func in ids_functions:
@@ -772,22 +781,22 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "quality": None,
         }
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_data}", self.admin, data_main_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_response_data}", self.admin, data_main_task)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_data}", self.user, data_assigneed_to_user_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_response_data}", self.user, data_assigneed_to_user_task)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_data}", None, data_main_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_response_data}", None, data_main_task)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_no_data}", self.admin, data_main_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_no_response_data}", self.admin, data_main_task)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_no_data}", self.user, data_assigneed_to_user_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_no_response_data}", self.user, data_assigneed_to_user_task)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_response_no_data}", None, data_main_task)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_no_response_data}", None, data_main_task)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -1042,6 +1051,468 @@ class LambdaTestCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class TestComplexFrameSetupCases(_LambdaTestCaseBase):
+    def _invoke_function(self, func, payload):
+        data = []
+        func_id = func.id
+        type_function = functions["positive"][func_id]["metadata"]["annotations"]["type"]
+        if type_function == "reid":
+            if func_id == id_function_reid_with_response_data:
+                data = [0]
+            else:
+                data = []
+        elif type_function == "tracker":
+            data = {
+                "shape": [12.34, 34.0, 35.01, 41.99],
+                "state": {"key": "value"},
+            }
+        elif type_function == "interactor":
+            data = [
+                [8, 12],
+                [34, 56],
+                [77, 77],
+            ]
+        elif type_function == "detector":
+            data = [
+                {
+                    "confidence": "0.9959098",
+                    "label": "car",
+                    "points": [3, 3, 15, 15],
+                    "type": "rectangle",
+                },
+            ]
+
+        return data
+
+    def setUp(self):
+        super().setUp()
+
+        image_count = 50
+        frame_step = 5
+        start_frame = 3
+        stop_frame = image_count - 4
+        segment_size = 2
+
+        data = self._generate_task_images(image_count)
+        data["frame_filter"] = f"step={frame_step}"
+        data["start_frame"] = start_frame
+        data["stop_frame"] = stop_frame
+
+        self.task = self._create_task(
+            task_spec={
+                'name': 'test_task',
+                'labels': [{'name': 'car'}],
+                'segment_size': segment_size
+            },
+            data=data,
+            owner=self.user
+        )
+        self.task_rel_frame_range = range(len(range(start_frame, stop_frame, frame_step)))
+        self.start_frame = start_frame
+        self.frame_step = frame_step
+        self.segment_size = segment_size
+
+        self.labels = get_paginated_collection(lambda page:
+            self._get_request(
+                f"/api/labels?task_id={self.task['id']}&page={page}&sort=id",
+                self.admin
+            )
+        )
+
+        self.jobs = get_paginated_collection(lambda page:
+            self._get_request(
+                f"/api/jobs?task_id={self.task['id']}&page={page}",
+                self.admin
+            )
+        )
+
+        self.detector_function_id = id_function_detector
+        self.reid_function_id = id_function_reid_with_response_data
+
+        self.common_request_data = {
+            "task": self.task['id'],
+            "cleanup": True,
+        }
+
+    def _run_offline_function(self, function_id, data, user):
+        data["function"] = function_id
+        response = self._post_request(LAMBDA_REQUESTS_PATH, user, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+        request_id = response.json()["id"]
+
+        request_status = self._wait_request(request_id)
+        self.assertEqual(request_status, "finished")
+
+    def _wait_request(self, request_id: str) -> str:
+        request_status = "started"
+        while request_status != "finished" and request_status != "failed":
+            response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{request_id}', self.admin)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            request_status = response.json().get("status")
+
+        return request_status
+
+    def _run_online_function(self, function_id, data, user):
+        response = self._post_request(f'{LAMBDA_FUNCTIONS_PATH}/{function_id}', user, data)
+        return response
+
+    def test_can_run_offline_detector_function_on_whole_task(self):
+        data = self.common_request_data.copy()
+        self._run_offline_function(self.detector_function_id, data, self.user)
+
+        response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+
+        self.assertEqual(len(annotations["tags"]), 0)
+        self.assertEqual(len(annotations["tracks"]), 0)
+
+        requested_frame_range = self.task_rel_frame_range
+        self.assertEqual(
+            {
+                frame: 1 for frame in requested_frame_range
+            },
+            {
+                frame: len(list(group))
+                for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
+            }
+        )
+
+    def test_can_run_offline_reid_function_on_whole_task(self):
+        # Add starting shapes to be tracked on following frames
+        requested_frame_range = self.task_rel_frame_range
+        shape_template = {
+            'attributes': [],
+            'group': None,
+            'label_id': self.labels[0]["id"],
+            'occluded': False,
+            'points': [0, 5, 5, 0],
+            'source': 'manual',
+            'type': 'rectangle',
+            'z_order': 0,
+        }
+        response = self._put_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin, data={
+            'tags': [],
+            'shapes': [
+                { 'frame': frame, **shape_template }
+                for frame in requested_frame_range
+            ],
+            'tracks': []
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = self.common_request_data.copy()
+        data["cleanup"] = False # cleanup is not compatible with reid
+        self._run_offline_function(self.reid_function_id, data, self.user)
+
+        response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+
+        self.assertEqual(len(annotations["tags"]), 0)
+        self.assertEqual(len(annotations["shapes"]), 0)
+        self.assertEqual(
+            [
+                # The single track will be split by job segments
+                {
+                    'frame': job["start_frame"],
+                    'shapes': [
+                        { 'frame': frame, 'outside': frame > job["stop_frame"] }
+                        for frame in requested_frame_range
+                        if frame in range(job["start_frame"], job["stop_frame"] + self.segment_size)
+                    ]
+                }
+                for job in sorted(self.jobs, key=lambda j: j["start_frame"])
+            ],
+            [
+                {
+                    'frame': track['frame'],
+                    'shapes': [
+                        filter_dict(shape, keep=['frame', 'outside'])
+                        for shape in track["shapes"]
+                    ]
+                }
+                for track in annotations['tracks']
+            ]
+        )
+
+    def test_can_run_offline_detector_function_on_whole_job(self):
+        data = self.common_request_data.copy()
+        job = self.jobs[3]
+        data["job"] = job["id"]
+        self._run_offline_function(self.detector_function_id, data, self.user)
+
+        response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+
+        self.assertEqual(len(annotations["tags"]), 0)
+        self.assertEqual(len(annotations["tracks"]), 0)
+
+        requested_frame_range = range(job["start_frame"], job["stop_frame"] + 1)
+        self.assertEqual(
+            {
+                frame: 1 for frame in requested_frame_range
+            },
+            {
+                frame: len(list(group))
+                for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
+            }
+        )
+
+    def test_can_run_offline_reid_function_on_whole_job(self):
+        job = self.jobs[3]
+        requested_frame_range = range(job["start_frame"], job["stop_frame"] + 1)
+
+        # Add starting shapes to be tracked on following frames
+        shape_template = {
+            'attributes': [],
+            'group': None,
+            'label_id': self.labels[0]["id"],
+            'occluded': False,
+            'points': [0, 5, 5, 0],
+            'source': 'manual',
+            'type': 'rectangle',
+            'z_order': 0,
+        }
+        response = self._put_request(f'/api/jobs/{job["id"]}/annotations', self.admin, data={
+            'tags': [],
+            'shapes': [
+                { 'frame': frame, **shape_template }
+                for frame in requested_frame_range
+            ],
+            'tracks': []
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = self.common_request_data.copy()
+        data["cleanup"] = False # cleanup is not compatible with reid
+        data["job"] = job["id"]
+        self._run_offline_function(self.reid_function_id, data, self.user)
+
+        response = self._get_request(f'/api/jobs/{job["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+
+        self.assertEqual(len(annotations["tags"]), 0)
+        self.assertEqual(len(annotations["shapes"]), 0)
+        self.assertEqual(
+            [
+                {
+                    'frame': job["start_frame"],
+                    'shapes': [
+                        { 'frame': frame, 'outside': frame > job["stop_frame"] }
+                        for frame in requested_frame_range
+                        if frame in range(job["start_frame"], job["stop_frame"] + self.segment_size)
+                    ]
+                }
+            ],
+            [
+                {
+                    'frame': track['frame'],
+                    'shapes': [
+                        filter_dict(shape, keep=['frame', 'outside'])
+                        for shape in track["shapes"]
+                    ]
+                }
+                for track in annotations['tracks']
+            ]
+        )
+
+    def test_can_run_offline_detector_function_on_whole_gt_job(self):
+        requested_frame_range = self.task_rel_frame_range[::3]
+        response = self._post_request("/api/jobs", self.admin, data={
+            "type": "ground_truth",
+            "task_id": self.task["id"],
+            "frame_selection_method": "manual",
+            "frames": [
+                self.start_frame + frame * self.frame_step for frame in requested_frame_range
+            ],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job = response.json()
+
+        data = self.common_request_data.copy()
+        data["job"] = job["id"]
+        self._run_offline_function(self.detector_function_id, data, self.user)
+
+        response = self._get_request(f'/api/jobs/{job["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+
+        self.assertEqual(len(annotations["tags"]), 0)
+        self.assertEqual(len(annotations["tracks"]), 0)
+
+        self.assertEqual(
+            {
+                frame: 1 for frame in requested_frame_range
+            },
+            {
+                frame: len(list(group))
+                for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
+            }
+        )
+
+        response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+        self.assertEqual(annotations, {'version': 0, 'tags': [], 'shapes': [], 'tracks': []})
+
+    def test_can_run_offline_reid_function_on_whole_gt_job(self):
+        requested_frame_range = self.task_rel_frame_range[::3]
+        response = self._post_request("/api/jobs", self.admin, data={
+            "type": "ground_truth",
+            "task_id": self.task["id"],
+            "frame_selection_method": "manual",
+            "frames": [
+                self.start_frame + frame * self.frame_step for frame in requested_frame_range
+            ],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job = response.json()
+
+        # Add starting shapes to be tracked on following frames
+        shape_template = {
+            'attributes': [],
+            'group': None,
+            'label_id': self.labels[0]["id"],
+            'occluded': False,
+            'points': [0, 5, 5, 0],
+            'source': 'manual',
+            'type': 'rectangle',
+            'z_order': 0,
+        }
+        response = self._put_request(f'/api/jobs/{job["id"]}/annotations', self.admin, data={
+            'tags': [],
+            'shapes': [
+                { 'frame': frame, **shape_template }
+                for frame in requested_frame_range
+            ],
+            'tracks': []
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data = self.common_request_data.copy()
+        data["cleanup"] = False # cleanup is not compatible with reid
+        data["job"] = job["id"]
+        self._run_offline_function(self.reid_function_id, data, self.user)
+
+        response = self._get_request(f'/api/jobs/{job["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+
+        self.assertEqual(len(annotations["tags"]), 0)
+        self.assertEqual(len(annotations["shapes"]), 0)
+        self.assertEqual(
+            [
+                {
+                    'frame': job["start_frame"],
+                    'shapes': [
+                        { 'frame': frame, 'outside': frame > job["stop_frame"] }
+                        for frame in requested_frame_range
+                        if frame in range(job["start_frame"], job["stop_frame"] + self.segment_size)
+                    ]
+                }
+            ],
+            [
+                {
+                    'frame': track['frame'],
+                    'shapes': [
+                        filter_dict(shape, keep=['frame', 'outside'])
+                        for shape in track["shapes"]
+                    ]
+                }
+                for track in annotations['tracks']
+            ]
+        )
+
+        response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+        self.assertEqual(annotations, {'version': 0, 'tags': [], 'shapes': [], 'tracks': []})
+
+    def test_offline_function_run_on_task_does_not_affect_gt_job(self):
+        response = self._post_request("/api/jobs", self.admin, data={
+            "type": "ground_truth",
+            "task_id": self.task["id"],
+            "frame_selection_method": "manual",
+            "frames": [
+                self.start_frame + frame * self.frame_step
+                for frame in self.task_rel_frame_range[::3]
+            ],
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        job = response.json()
+
+        data = self.common_request_data.copy()
+        self._run_offline_function(self.detector_function_id, data, self.user)
+
+        response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+
+        self.assertEqual(len(annotations["tags"]), 0)
+        self.assertEqual(len(annotations["tracks"]), 0)
+
+        requested_frame_range = self.task_rel_frame_range
+        self.assertEqual(
+            {
+                frame: 1 for frame in requested_frame_range
+            },
+            {
+                frame: len(list(group))
+                for frame, group in groupby(annotations["shapes"], key=lambda a: a["frame"])
+            }
+        )
+
+        response = self._get_request(f'/api/jobs/{job["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        annotations = response.json()
+        self.assertEqual(annotations, {'version': 0, 'tags': [], 'shapes': [], 'tracks': []})
+
+    def test_can_run_online_function_on_valid_task_frame(self):
+        data = self.common_request_data.copy()
+        requested_frame = self.task_rel_frame_range[4]
+        data["frame"] = requested_frame
+
+        response = self._run_online_function(self.detector_function_id, data, self.user)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        annotations = response.json()
+        self.assertEqual(1, len(annotations))
+
+    def test_can_run_online_function_on_invalid_task_frame(self):
+        data = self.common_request_data.copy()
+        requested_frame = self.task_rel_frame_range[-1] + 1
+        data["frame"] = requested_frame
+
+        response = self._run_online_function(self.detector_function_id, data, self.user)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_can_run_online_function_on_valid_job_frame(self):
+        data = self.common_request_data.copy()
+        job = self.jobs[2]
+        requested_frame = job["start_frame"] + 1
+        data["frame"] = requested_frame
+        data["job"] = job["id"]
+
+        response = self._run_online_function(self.detector_function_id, data, self.user)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        annotations = response.json()
+        self.assertEqual(1, len(annotations))
+
+    def test_can_run_online_function_on_invalid_job_frame(self):
+        data = self.common_request_data.copy()
+        job = self.jobs[2]
+        requested_frame = job["stop_frame"] + 1
+        data["frame"] = requested_frame
+        data["job"] = job["id"]
+
+        response = self._run_online_function(self.detector_function_id, data, self.user)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
 class Issue4996_Cases(_LambdaTestCaseBase):
     # Check regressions for https://github.com/opencv/cvat/issues/4996#issuecomment-1266123032
     # We need to check that job assignee can call functions in the assigned jobs
@@ -1083,14 +1554,16 @@ class Issue4996_Cases(_LambdaTestCaseBase):
         assert response.status_code == status.HTTP_200_OK
 
     def setUp(self):
+        super().setUp()
+
         self.org = self._create_org(owner=self.admin, members={self.user: 'worker'})
 
-        task = self._create_task(data={
+        task = self._create_task(task_spec={
                 'name': 'test_task',
                 'labels': [{'name': 'cat'}],
                 'segment_size': 2
             },
-            image_data=self._generate_task_images(6),
+            data=self._generate_task_images(6),
             owner=self.admin,
             org_id=self.org['id'],
         )
@@ -1104,7 +1577,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
         )
         self.job = jobs[1]
 
-        self.common_data = {
+        self.common_request_data = {
             "task": self.task['id'],
             "frame": 0,
             "cleanup": True,
@@ -1113,81 +1586,79 @@ class Issue4996_Cases(_LambdaTestCaseBase):
             },
         }
 
-        self.function_name = f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}"
+        self.function_url = f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}"
 
-        return super().setUp()
-
-    def _get_valid_job_params(self):
-        return {
+    def _get_valid_job_request_data(self):
+        data = self.common_request_data.copy()
+        data.update({
             "job": self.job['id'],
             "frame": 2
-        }
+        })
+        return data
 
-    def _get_invalid_job_params(self):
-        return {
+    def _get_invalid_job_request_data(self):
+        data = self.common_request_data.copy()
+        data.update({
             "job": self.job['id'],
             "frame": 0
-        }
+        })
+        return data
 
     def test_can_call_function_for_job_worker_in_org__deny_unassigned_worker_with_task_request(self):
-        data = self.common_data.copy()
+        data = self.common_request_data.copy()
         with self.subTest(job=None, assignee=None):
-            response = self._post_request(self.function_name, self.user, data,
+            response = self._post_request(self.function_url, self.user, data,
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_can_call_function_for_job_worker_in_org__deny_unassigned_worker_with_job_request(self):
-        data = self.common_data.copy()
-        data.update(self._get_valid_job_params())
+        data = self._get_valid_job_request_data()
         with self.subTest(job='defined', assignee=None):
-            response = self._post_request(self.function_name, self.user, data,
+            response = self._post_request(self.function_url, self.user, data,
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_can_call_function_for_job_worker_in_org__allow_task_assigned_worker_with_task_request(self):
         self._set_task_assignee(self.task['id'], self.user.id, org_id=self.org['id'])
 
-        data = self.common_data.copy()
+        data = self.common_request_data.copy()
         with self.subTest(job=None, assignee='task'):
-            response = self._post_request(self.function_name, self.user, data,
+            response = self._post_request(self.function_url, self.user, data,
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_can_call_function_for_job_worker_in_org__deny_job_assigned_worker_with_task_request(self):
         self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
 
-        data = self.common_data.copy()
+        data = self.common_request_data.copy()
         with self.subTest(job=None, assignee='job'):
-            response = self._post_request(self.function_name, self.user, data,
+            response = self._post_request(self.function_url, self.user, data,
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_can_call_function_for_job_worker_in_org__allow_job_assigned_worker_with_job_request(self):
         self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
 
-        data = self.common_data.copy()
-        data.update(self._get_valid_job_params())
+        data = self._get_valid_job_request_data()
         with self.subTest(job='defined', assignee='job'):
-            response = self._post_request(self.function_name, self.user, data,
+            response = self._post_request(self.function_url, self.user, data,
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_can_check_job_boundaries_in_function_call__fail_for_frame_outside_job(self):
         self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
 
-        data = self.common_data.copy()
-        data.update(self._get_invalid_job_params())
+        data = self._get_invalid_job_request_data()
         with self.subTest(job='defined', frame='outside'):
-            response = self._post_request(self.function_name, self.user, data,
+            response = self._post_request(self.function_url, self.user, data,
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_can_check_job_boundaries_in_function_call__ok_for_frame_inside_job(self):
         self._set_job_assignee(self.job['id'], self.user.id, org_id=self.org['id'])
 
-        data = self.common_data.copy()
-        data.update(self._get_valid_job_params())
+        data = self._get_valid_job_request_data()
         with self.subTest(job='defined', frame='inside'):
-            response = self._post_request(self.function_name, self.user, data,
+            response = self._post_request(self.function_url, self.user, data,
                 org_id=self.org['id'])
             self.assertEqual(response.status_code, status.HTTP_200_OK)

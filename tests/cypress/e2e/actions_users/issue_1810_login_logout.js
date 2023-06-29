@@ -36,7 +36,8 @@ context('When clicking on the Logout button, get the user session closed.', () =
             cy.login();
             cy.openTask(taskName);
             // get id task
-            cy.url().then((link) => {
+            cy.url().then((url) => {
+                const [link] = url.split('?');
                 taskId = Number(link.split('/').slice(-1)[0]);
             });
         });
