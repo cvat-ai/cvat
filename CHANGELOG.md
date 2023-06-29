@@ -32,7 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/issues/6047>)
 
 ### Security
-- TDB
+- More comprehensive SSRF mitigations were implemented.
+  Previously, on task creation it was prohibited to specify remote data URLs
+  with hosts that resolved to IP addresses in the private ranges.
+  Now, redirects to such URLs are also prohibited.
+  In addition, this restriction is now also applied to webhook URLs.
+  System administrators can allow or deny custom IP address ranges
+  with the `SMOKESCREEN_OPTS` environment variable.
+  (<https://github.com/opencv/cvat/pull/6362>).
 
 ## \[2.4.8] - 2023-06-22
 ### Fixed
