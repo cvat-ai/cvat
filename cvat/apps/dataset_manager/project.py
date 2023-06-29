@@ -77,7 +77,7 @@ class ProjectAnnotationAndData:
 
         data_serializer = DataSerializer(data={
             "server_files": files['media'],
-            #TODO: followed fields whould be replaced with proper input values from request in future
+            #TODO: following fields should be replaced with proper input values from request in future
             "use_cache": False,
             "use_zip_chunks": True,
             "image_quality": 70,

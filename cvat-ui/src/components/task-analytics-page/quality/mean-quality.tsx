@@ -88,7 +88,7 @@ function MeanQuality(props: Props): JSX.Element {
     return (
         <AnalyticsCard
             title='Mean annotation quality'
-            className='cvat-task-mean-annotaion-quality'
+            className='cvat-task-mean-annotation-quality'
             value={toRepresentation(reportSummary?.accuracy)}
             tooltip={tooltip}
             rightElement={dowloadReportButton}

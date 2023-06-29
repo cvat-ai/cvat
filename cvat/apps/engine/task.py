@@ -358,7 +358,7 @@ def _validate_scheme(url):
     parsed_url = urlparse.urlparse(url)
 
     if parsed_url.scheme not in ALLOWED_SCHEMES:
-        raise ValueError('Unsupported URL sheme: {}. Only http and https are supported'.format(parsed_url.scheme))
+        raise ValueError('Unsupported URL scheme: {}. Only http and https are supported'.format(parsed_url.scheme))
 
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()

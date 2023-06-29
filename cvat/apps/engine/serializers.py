@@ -1877,9 +1877,9 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         storage_status = storage.get_status()
         if storage_status == Status.AVAILABLE:
             new_manifest_names = set(i.get('filename') for i in validated_data.get('manifests', []))
-            previos_manifest_names = set(i.filename for i in instance.manifests.all())
-            delta_to_delete = tuple(previos_manifest_names - new_manifest_names)
-            delta_to_create = tuple(new_manifest_names - previos_manifest_names)
+            previous_manifest_names = set(i.filename for i in instance.manifests.all())
+            delta_to_delete = tuple(previous_manifest_names - new_manifest_names)
+            delta_to_create = tuple(new_manifest_names - previous_manifest_names)
             if delta_to_delete:
                 instance.manifests.filter(filename__in=delta_to_delete).delete()
             if delta_to_create:
