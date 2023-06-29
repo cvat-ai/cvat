@@ -41,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with the `SMOKESCREEN_OPTS` environment variable.
   (<https://github.com/opencv/cvat/pull/6362>).
 
+## \[2.4.9] - 2023-06-22
+### Fixed
+- Error related to calling serverless functions on some image formats (<https://github.com/opencv/cvat/pull/6384>)
+
 ## \[2.4.8] - 2023-06-22
 ### Fixed
 - Getting original chunks for items in specific cases (<https://github.com/opencv/cvat/pull/6355>)
