@@ -2930,12 +2930,7 @@ class ProjectQualityReportUpdateManager:
         )
         db_project_report.save()
 
-        db_task_reports = []
-        for task_report in task_reports:
-            task_report.parent = db_project_report
-        models.QualityReport.objects.bulk_update(
-            db_task_reports, fields=["parent"], batch_size=self._DEFAULT_DB_BATCH_SIZE
-        )
+        db_project_report.children.set(task_reports, bulk=True, clear=False)
 
         return db_project_report
 

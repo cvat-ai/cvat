@@ -180,14 +180,16 @@ class QualityReportViewSet(
         "id",
         "job_id",
         "task_id",
+        "parent_id",
         "project_id",
         "created_date",
         "gt_last_updated",
         "target_last_updated",
-        "parent_id",
     ]
     simple_filters = list(
-        set(filter_fields) - {"id", "created_date", "gt_last_updated", "target_last_updated"}
+        set(filter_fields) - {
+            "id", "created_date", "gt_last_updated", "target_last_updated", "task_id", "project_id"
+        }
     )
     ordering_fields = list(filter_fields)
     ordering = "-id"
