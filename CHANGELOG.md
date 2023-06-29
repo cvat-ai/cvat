@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added missed auto_add argument to Issue model (<https://github.com/opencv/cvat/pull/6364>)
 - \[API\] Performance of several API endpoints (<https://github.com/opencv/cvat/pull/6340>)
 - \[API\] Invalid schema for the owner field in several endpoints (<https://github.com/opencv/cvat/pull/6343>)
+- \[SDK\] Loading tasks that have been cached with the PyTorch adapter
+  (<https://github.com/opencv/cvat/issues/6047>)
 - The problem with importing annotations if dataset has extra dots in filenames (<https://github.com/opencv/cvat/pull/6350>)
 
 ### Security
