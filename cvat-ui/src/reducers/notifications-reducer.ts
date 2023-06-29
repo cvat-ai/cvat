@@ -23,6 +23,7 @@ import { OrganizationActionsTypes } from 'actions/organization-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
 import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 
+import { AnalyticsActionsTypes } from 'actions/analytics-actions';
 import { NotificationsState } from '.';
 
 const defaultState: NotificationsState = {
@@ -60,6 +61,8 @@ const defaultState: NotificationsState = {
         jobs: {
             updating: null,
             fetching: null,
+            creating: null,
+            deleting: null,
         },
         formats: {
             fetching: null,
@@ -150,6 +153,11 @@ const defaultState: NotificationsState = {
             creating: null,
             updating: null,
             deleting: null,
+        },
+        analytics: {
+            fetching: null,
+            fetchingSettings: null,
+            updatingSettings: null,
         },
     },
     messages: {
@@ -1533,7 +1541,40 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         fetching: {
                             message: 'Could not fetch a list of jobs',
                             reason: action.payload.error.toString(),
-                            className: 'cvat-notification-notice-update-organization-membership-failed',
+                            className: 'cvat-notification-notice-get-jobs-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.CREATE_JOB_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    jobs: {
+                        ...state.errors.jobs,
+                        creating: {
+                            message: 'Could not create job',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-job-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.DELETE_JOB_FAILED: {
+            const { jobID } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    jobs: {
+                        ...state.errors.jobs,
+                        deleting: {
+                            message: `Could not delete the job #${jobID}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-delete-job-failed',
                         },
                     },
                 },
@@ -1598,6 +1639,54 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not delete webhook',
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-webhook-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AnalyticsActionsTypes.GET_QUALITY_REPORTS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    analytics: {
+                        ...state.errors.analytics,
+                        fetching: {
+                            message: 'Could not fetch quality reports',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-get-quality-reports-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AnalyticsActionsTypes.GET_QUALITY_SETTINGS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    analytics: {
+                        ...state.errors.analytics,
+                        fetchingSettings: {
+                            message: 'Could not fetch quality settings',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-get-quality-settings-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AnalyticsActionsTypes.UPDATE_QUALITY_SETTINGS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    analytics: {
+                        ...state.errors.analytics,
+                        updatingSettings: {
+                            message: 'Could not update quality settings',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-quality-settings-failed',
                         },
                     },
                 },

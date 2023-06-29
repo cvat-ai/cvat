@@ -20,6 +20,7 @@ import { importActions } from 'actions/import-actions';
 
 interface OwnProps {
     taskInstance: any;
+    onViewAnalytics: () => void;
 }
 
 interface StateToProps {
@@ -87,8 +88,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         deleteTask,
         openRunModelWindow,
         openMoveTaskToProjectWindow,
+        onViewAnalytics,
     } = props;
-
     const onClickMenu = (params: MenuInfo): void | JSX.Element => {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_TASK_DATASET) {
@@ -105,6 +106,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             openMoveTaskToProjectWindow(taskInstance.id);
         } else if (action === Actions.LOAD_TASK_ANNO) {
             showImportModal(taskInstance);
+        } else if (action === Actions.VIEW_ANALYTICS) {
+            onViewAnalytics();
         }
     };
 

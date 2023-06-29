@@ -325,12 +325,21 @@ class TestWebhookTaskEvents:
 
         assert create_payload["event"] == "create:task"
         assert delete_payload["event"] == "delete:task"
+
+        # These values cannot be computed if the task has no data
+        assert create_payload["task"]["jobs"]["completed"] is None
+        assert create_payload["task"]["jobs"]["validation"] is None
+        assert task["jobs"]["completed"] == 0
+        assert task["jobs"]["validation"] == 0
+        assert delete_payload["task"]["jobs"]["completed"] == 0
+        assert delete_payload["task"]["jobs"]["validation"] == 0
+
         assert (
             DeepDiff(
                 create_payload["task"],
                 task,
                 ignore_order=True,
-                exclude_paths=["root['updated_date']", "root['labels']"],
+                exclude_paths=["root['updated_date']", "root['jobs']", "root['labels']"],
             )
             == {}
         )
@@ -339,7 +348,7 @@ class TestWebhookTaskEvents:
                 delete_payload["task"],
                 task,
                 ignore_order=True,
-                exclude_paths=["root['updated_date']", "root['labels']"],
+                exclude_paths=["root['updated_date']", "root['jobs']", "root['labels']"],
             )
             == {}
         )
