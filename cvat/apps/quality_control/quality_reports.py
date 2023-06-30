@@ -2947,20 +2947,20 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     job_id = None
     jobs_to_tasks: Dict[int, int] = {}
     if db_report.project:
-        project_id = db_report.project
+        project_id = db_report.project.id
 
         jobs = Job.objects.filter(segment__task__project__id=project_id).all()
         jobs_to_tasks.update((j.id, j.segment.task.id) for j in jobs)
     elif db_report.task:
         project_id = getattr(db_report.task.project, "id", None)
-        task_id = db_report.task
+        task_id = db_report.task.id
 
         jobs = Job.objects.filter(segment__task__id=task_id).all()
         jobs_to_tasks.update((j.id, task_id) for j in jobs)
     elif db_report.job:
         project_id = getattr(db_report.get_task().project, "id", None)
         task_id = db_report.get_task().id
-        job_id = db_report.job
+        job_id = db_report.job.id
 
         jobs_to_tasks[db_report.job.id] = task_id
     else:
