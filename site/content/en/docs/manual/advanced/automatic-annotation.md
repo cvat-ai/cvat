@@ -43,7 +43,7 @@ CVAT will show the progress of annotation on the progress bar.
 
 ![Progress bar](/images/image121_detrac.jpg)
 
-You can stop the automatic at any moment by clicking **Cancel**.
+You can stop the automatic annotation at any moment by clicking **Cancel**.
 
 ## Labels matching
 
