@@ -31,7 +31,7 @@ To start automatic annotation, do the following:
    ![](/images/image119_detrac.jpg)
 
 3. In the Automatic annotation dialog, from the drop-down list, select [model](#models).
-4. [Match labels](#labels-matching) of the model and the task.
+4. [Match the labels](#labels-matching) of the model and the task.
 5. (Optional) In case you need the model to return masks as polygons, switch toggle **Return masks as polygons**.
 6. (Optional) In case you need to remove all previous annotations, switch toggle **Clean old annotations**.
 
