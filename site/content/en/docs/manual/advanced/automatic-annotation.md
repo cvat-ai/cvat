@@ -68,7 +68,7 @@ for certain labels.
 
 ## Models
 
-Automatic annotation uses pre-installed and added models for annotation.
+Automatic annotation uses pre-installed and added models.
 
 > For self-hosted solutions,
 > you need to [install Automatic Annotation first](/docs/administration/advanced/installation_automatic_annotation/)
