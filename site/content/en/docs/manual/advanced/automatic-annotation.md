@@ -5,7 +5,7 @@ weight: 16
 description: 'Automatic annotation of tasks'
 ---
 
-Automatic Annotation in CVAT is a tool that you can use
+Automatic annotation in CVAT is a tool that you can use
 to automatically pre-annotate your data with pre-trained models.
 
 You can also **add models** from popular platforms
