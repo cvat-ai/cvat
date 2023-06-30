@@ -3738,8 +3738,8 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''id'', ''job_id'',
-          ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'', ''target_last_updated'',
-          ''parent_id'']'
+          ''task_id'', ''parent_id'', ''project_id'', ''created_date'', ''gt_last_updated'',
+          ''target_last_updated'']'
         schema:
           type: string
       - name: job_id
@@ -3783,8 +3783,8 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''job_id'', ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'',
-          ''target_last_updated'', ''parent_id'']'
+          [''id'', ''job_id'', ''task_id'', ''parent_id'', ''project_id'', ''created_date'',
+          ''gt_last_updated'', ''target_last_updated'']'
         schema:
           type: string
       - in: query
@@ -8307,10 +8307,12 @@ components:
         iou_threshold:
           type: number
           format: double
+          default: 0.4
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          default: 0.09
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox area, used as the radius of the circle around the GT point,
@@ -8319,6 +8321,7 @@ components:
         line_thickness:
           type: number
           format: double
+          default: 0.01
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -8326,44 +8329,53 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
           type: boolean
+          default: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
+          default: 0.1
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'compare_line_orientation' parameter is true
         compare_groups:
           type: boolean
+          default: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
+          default: 0.5
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
         check_covered_annotations:
           type: boolean
+          default: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
           type: number
           format: double
+          default: 0.05
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
+          default: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         compare_attributes:
           type: boolean
+          default: true
           description: Enables or disables annotation attribute comparison
     PatchedTaskWriteRequest:
       type: object
@@ -8691,6 +8703,10 @@ components:
           type: object
           additionalProperties:
             type: integer
+        frames_with_errors:
+          type: integer
+        total_frames:
+          type: integer
         valid_count:
           type: integer
         ds_count:
@@ -8704,7 +8720,9 @@ components:
       - error_count
       - frame_count
       - frame_share
+      - frames_with_errors
       - gt_count
+      - total_frames
       - valid_count
       - warning_count
     QualityReportTarget:
@@ -8732,10 +8750,12 @@ components:
         iou_threshold:
           type: number
           format: double
+          default: 0.4
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          default: 0.09
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox area, used as the radius of the circle around the GT point,
@@ -8744,6 +8764,7 @@ components:
         line_thickness:
           type: number
           format: double
+          default: 0.01
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -8751,44 +8772,53 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
           type: boolean
+          default: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
+          default: 0.1
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'compare_line_orientation' parameter is true
         compare_groups:
           type: boolean
+          default: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
+          default: 0.5
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
         check_covered_annotations:
           type: boolean
+          default: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
           type: number
           format: double
+          default: 0.05
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
+          default: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         compare_attributes:
           type: boolean
+          default: true
           description: Enables or disables annotation attribute comparison
     QualitySettingsRequest:
       type: object
@@ -8798,10 +8828,12 @@ components:
         iou_threshold:
           type: number
           format: double
+          default: 0.4
           description: Used for distinction between matched / unmatched shapes
         oks_sigma:
           type: number
           format: double
+          default: 0.09
           description: |
             Like IoU threshold, but for points.
             The percent of the bbox area, used as the radius of the circle around the GT point,
@@ -8810,6 +8842,7 @@ components:
         line_thickness:
           type: number
           format: double
+          default: 0.01
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
@@ -8817,44 +8850,53 @@ components:
         low_overlap_threshold:
           type: number
           format: double
+          default: 0.8
           description: |
             Used for distinction between strong / weak (low_overlap) matches
         compare_line_orientation:
           type: boolean
+          default: true
           description: Enables or disables polyline orientation comparison
         line_orientation_threshold:
           type: number
           format: double
+          default: 0.1
           description: |
             The minimal gain in the GT IoU between the given and reversed line directions
             to consider the line inverted.
             Only used when the 'compare_line_orientation' parameter is true
         compare_groups:
           type: boolean
+          default: true
           description: Enables or disables annotation group checks
         group_match_threshold:
           type: number
           format: double
+          default: 0.5
           description: |
             Minimal IoU for groups to be considered matching.
             Only used when the 'compare_groups' parameter is true
         check_covered_annotations:
           type: boolean
+          default: true
           description: |
             Check for partially-covered annotations, useful in segmentation tasks
         object_visibility_threshold:
           type: number
           format: double
+          default: 0.05
           description: |
             Minimal visible area percent of the spatial annotations (polygons, masks)
             for reporting covered annotations.
             Only used when the 'object_visibility_threshold' parameter is true
         panoptic_comparison:
           type: boolean
+          default: true
           description: |
             Use only the visible part of the masks and polygons in comparisons
         compare_attributes:
           type: boolean
+          default: true
           description: Enables or disables annotation attribute comparison
     RegisterSerializerEx:
       type: object

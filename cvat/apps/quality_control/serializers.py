@@ -150,6 +150,21 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))
             )
 
+    def get_extra_kwargs(self):
+        from .models import QualitySettings
+
+        defaults = QualitySettings.get_defaults()
+
+        extra_kwargs = super().get_extra_kwargs()
+
+        for param_name in defaults.keys() | extra_kwargs.keys():
+            param_kwargs: dict = extra_kwargs.setdefault(param_name, {})
+
+            if param_name in defaults:
+                param_kwargs.setdefault("default", defaults[param_name])
+
+        return extra_kwargs
+
     def validate(self, attrs):
         for k, v in attrs.items():
             if k.endswith("_threshold") or k in ["oks_sigma", "line_thickness"]:
