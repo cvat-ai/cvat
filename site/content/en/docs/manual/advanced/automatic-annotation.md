@@ -26,7 +26,7 @@ See:
 To start automatic annotation, do the following:
 
 1. On the top menu, click **Tasks**.
-2. Find the task you want to annotate and click **Action** > **Automatic Annotation**.
+1. Find the task you want to annotate and click **Action** > **Automatic Annotation**.
 
    ![](/images/image119_detrac.jpg)
 
