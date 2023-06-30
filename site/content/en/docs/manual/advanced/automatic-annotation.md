@@ -16,7 +16,7 @@ range of available options.
 > **Note**, that on self-hosted instances the automatic annotation feature is free,
 > but you have to add your own models. Integration with Hugging Face
 > and Roboflow is not supported for self-hosted solution.
-> <br>On CVAT Cloud Automatic Annotation is a [paid CVAT feature](https://www.cvat.ai/pricing/cloud)
+> <br>On CVAT Cloud Automatic annotation is a [paid CVAT feature](https://www.cvat.ai/pricing/cloud)
 > with several pre-installed models available by default,
 > also you can add models from Roboflow and Hugging Face.
 
