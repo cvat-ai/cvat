@@ -983,7 +983,7 @@ paths:
   /api/events:
     get:
       operationId: events_list
-      description: Recieve logs from the server
+      description: Receive logs from the server
       summary: 'Method returns csv log file '
       parameters:
       - in: query

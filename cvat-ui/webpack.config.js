@@ -46,9 +46,6 @@ module.exports = (env) => {
             publicPath: '/',
         },
         devServer: {
-            devMiddleware: {
-                writeToDisk: true,
-            },
             compress: false,
             host: process.env.CVAT_UI_HOST || 'localhost',
             client: {

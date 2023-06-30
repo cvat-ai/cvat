@@ -77,6 +77,11 @@ RUN --mount=type=cache,target=/root/.cache/pip/http \
     -r /tmp/cvat/requirements/${DJANGO_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
+FROM golang:1.20.5 AS build-smokescreen
+
+RUN git clone --depth=1 -b v0.0.4 https://github.com/stripe/smokescreen.git
+RUN cd smokescreen && go build -o /tmp/smokescreen
+
 FROM ${BASE_IMAGE}
 
 ARG http_proxy
@@ -125,6 +130,9 @@ RUN apt-get update && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'application/wasm wasm' >> /etc/mime.types
+
+# Install smokescreen
+COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
 
 # Add a non-root user
 ENV USER=${USER}

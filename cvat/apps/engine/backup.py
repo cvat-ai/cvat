@@ -481,7 +481,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         elif isinstance(file, ZipFile):
             self._export_task(zip_obj=file, target_dir=target_dir)
         else:
-            raise ValueError('Unsuported type of file argument')
+            raise ValueError('Unsupported type of file argument')
 
 class _ImporterBase():
     def __init__(self, *args, **kwargs):
@@ -574,7 +574,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         elif isinstance(self._file, ZipFile):
             return read(self._file)
 
-        raise ValueError('Unsuported type of file argument')
+        raise ValueError('Unsupported type of file argument')
 
     def _create_annotations(self, db_job, annotations):
         self._prepare_annotations(annotations, self._labels_mapping)
@@ -940,7 +940,7 @@ def export(db_instance, request, queue_name):
         use_target_storage_conf = request.query_params.get('use_default_location', True)
     else:
         raise Exception(
-            "Unexpected type of db_isntance: {}".format(type(db_instance)))
+            "Unexpected type of db_instance: {}".format(type(db_instance)))
     use_settings = strtobool(str(use_target_storage_conf))
     obj = db_instance if use_settings else request.query_params
     location_conf = get_location_configuration(

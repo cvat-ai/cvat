@@ -69,6 +69,7 @@ function RightGroup(props: Props): JSX.Element {
                             Modal.info({
                                 icon: null,
                                 width: window.screen.availWidth - PADDING,
+                                className: 'cvat-annotation-view-markdown-guide-modal',
                                 content: (
                                     <>
                                         <MDEditor
