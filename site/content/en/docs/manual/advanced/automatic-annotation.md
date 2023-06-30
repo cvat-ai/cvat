@@ -91,7 +91,7 @@ List of models available by default:
 
 ## Adding models from Hugging Face and Roboflow
 
-In case you did not find the model you need, you can add model
+In case you did not find the model you need, you can add a model
 of your choice from [Hugging Face](https://huggingface.co/)
 or [Roboflow](https://roboflow.com/).
 
