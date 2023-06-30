@@ -61,7 +61,7 @@ For example:
 - Your task (or project) has the label `vehicle`.
 
 To annotate, you need to match these two labels to give
-CVAT model a hint that, in this case, `car` = `vehicle`.
+CVAT a hint that, in this case, `car` = `vehicle`.
 
 If you have a label that is not on the list
 of DL labels, you will not be able to
