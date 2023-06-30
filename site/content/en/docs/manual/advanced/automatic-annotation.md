@@ -2,7 +2,7 @@
 title: 'Automatic annotation'
 linkTitle: 'Automatic annotation'
 weight: 16
-description: 'Guide to using the automatic annotation of tasks.'
+description: 'Automatic annotation of tasks'
 ---
 
 Automatic Annotation in CVAT is a tool that you can use
