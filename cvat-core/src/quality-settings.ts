@@ -7,7 +7,8 @@ import serverProxy from './server-proxy';
 
 export interface SerializedQualitySettingsData {
     id?: number;
-    task?: number;
+    task_id?: number;
+    project_id?: number;
     iou_threshold?: number;
     oks_sigma?: number;
     line_thickness?: number;
@@ -24,7 +25,8 @@ export interface SerializedQualitySettingsData {
 
 export default class QualitySettings {
     #id: number;
-    #task: number;
+    #task_id: number | null;
+    #project_id: number | null;
     #iouThreshold: number;
     #oksSigma: number;
     #lineThickness: number;
@@ -40,7 +42,8 @@ export default class QualitySettings {
 
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
-        this.#task = initialData.task;
+        this.#task_id = initialData.task_id || null;
+        this.#project_id = initialData.project_id || null;
         this.#iouThreshold = initialData.iou_threshold;
         this.#oksSigma = initialData.oks_sigma;
         this.#lineThickness = initialData.line_thickness;
@@ -60,7 +63,11 @@ export default class QualitySettings {
     }
 
     get task(): number {
-        return this.#task;
+        return this.#task_id;
+    }
+
+    get project(): number {
+        return this.#project_id;
     }
 
     get iouThreshold(): number {
@@ -173,6 +180,7 @@ export default class QualitySettings {
             object_visibility_threshold: this.#objectVisibilityThreshold,
             panoptic_comparison: this.#panopticComparison,
             compare_attributes: this.#compareAttributes,
+            project_id: this.#project_id,
         };
 
         return result;
@@ -182,15 +190,31 @@ export default class QualitySettings {
         const result = await PluginRegistry.apiWrapper.call(this, QualitySettings.prototype.save);
         return result;
     }
+
+    public async create(): Promise<QualitySettings> {
+        const result = await PluginRegistry.apiWrapper.call(this, QualitySettings.prototype.create);
+        return result;
+    }
 }
 
-Object.defineProperties(QualitySettings.prototype.save, {
-    implementation: {
-        writable: false,
-        enumerable: false,
-        value: async function implementation() {
-            const result = await serverProxy.analytics.quality.settings.update(this.id, this.toJSON());
-            return new QualitySettings(result);
-        },
-    },
-});
+Object.defineProperties(
+    QualitySettings.prototype,
+    Object.freeze({
+        save: Object.freeze({
+            writable: false,
+            enumerable: false,
+            value: async function implementation() {
+                const result = await serverProxy.analytics.quality.settings.update(this.id, this.toJSON());
+                return new QualitySettings(result);
+            },
+        }),
+        create: Object.freeze({
+            writable: false,
+            enumerable: false,
+            value: async function implementation() {
+                const result = await serverProxy.analytics.quality.settings.create(this.toJSON());
+                return result;
+            }
+        }),
+    })
+);

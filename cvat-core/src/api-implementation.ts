@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { omit } from 'lodash';
+import { camelCase, omit, snakeCase } from 'lodash';
 import config from './config';
 
 import PluginRegistry from './plugins';
@@ -362,23 +362,29 @@ export default function implementAPI(cvat) {
 
     cvat.analytics.quality.reports.implementation = async (filter) => {
         let updatedParams: Record<string, string> = {};
+        if ('parentId' in filter) {
+            updatedParams.parent_id = filter.parentId;
+        }
+        if ('projectId' in filter) {
+            updatedParams.project_id = filter.projectId;
+        }
         if ('taskId' in filter) {
-            updatedParams = {
-                task_id: filter.taskId,
-                sort: '-created_date',
-                target: filter.target,
-            };
+            updatedParams.task_id = filter.taskId;
         }
         if ('jobId' in filter) {
-            updatedParams = {
-                job_id: filter.jobId,
-                sort: '-created_date',
-                target: filter.target,
-            };
+            updatedParams.job_id = filter.jobId;
         }
-        const reportsData = await serverProxy.analytics.quality.reports(updatedParams);
+        if ('target' in filter) {
+            updatedParams.target = filter.target;
+        }
+        if (!updatedParams?.sort) {
+            updatedParams.sort = '-created_date'
+        }
 
-        return reportsData.map((report) => new QualityReport({ ...report }));
+        const reportsData = await serverProxy.analytics.quality.reports(updatedParams);
+        const reports = reportsData.map((report) => new QualityReport({ ...report }));
+        reports.count = reportsData.count;
+        return reports;
     };
 
     cvat.analytics.quality.conflicts.implementation = async (filter) => {
@@ -389,19 +395,68 @@ export default function implementAPI(cvat) {
             };
         }
 
-        const reportsData = await serverProxy.analytics.quality.conflicts(updatedParams);
-
-        return reportsData.map((conflict) => new QualityConflict({ ...conflict }));
+        const conflictsData = await serverProxy.analytics.quality.conflicts(updatedParams);
+        const conflicts = conflictsData.map((conflict) => new QualityConflict({ ...conflict }));
+        conflicts.count = conflictsData.count;
+        return conflicts;
     };
 
-    cvat.analytics.quality.settings.get.implementation = async (taskID: number) => {
-        const settings = await serverProxy.analytics.quality.settings.get(taskID);
-        return new QualitySettings({ ...settings });
+    cvat.analytics.quality.settings.get.implementation = async (filter: any) => {
+        interface FilterParams {
+            id?: number, taskId?: number, projectId?: number
+        };
+        const {id, taskId, projectId}: FilterParams = filter;
+
+        const settings = await serverProxy.analytics.quality.settings.get(id, taskId, projectId);
+        if (settings) {
+            return new QualitySettings({ ...settings });
+        } else {
+            return null;
+        }
+    };
+
+    cvat.analytics.quality.settings.update.implementation = async (settingsId: number, values: any) => {
+        const settings = await serverProxy.analytics.quality.settings.update(settingsId, values);
+
+        if (settings) {
+            return new QualitySettings({ ...settings });
+        } else {
+            return null;
+        }
+    };
+
+    cvat.analytics.quality.settings.create.implementation = async (values: any) => {
+        const settings = await serverProxy.analytics.quality.settings.create(values);
+
+        if (settings) {
+            return new QualitySettings({ ...settings });
+        } else {
+            return null;
+        }
+    };
+
+    cvat.analytics.quality.settings.defaults.implementation = async () => {
+        const scheme = await cvat.scheme.get();
+
+        const defaults = {};
+        const requestParams = scheme.components.schemas.QualitySettingsRequest.properties;
+        for (const key of Object.keys(requestParams)) {
+            if ('default' in requestParams[key]) {
+                // constructor uses the api names, in snake case
+                defaults[key] = requestParams[key]['default'];
+            }
+        }
+
+        return defaults;
     };
 
     cvat.frames.getMeta.implementation = async (type, id) => {
         const result = await serverProxy.frames.getMeta(type, id);
         return new FramesMetaData({ ...result });
+    };
+
+    cvat.scheme.get.implementation = async () => {
+        return await serverProxy.scheme.get();
     };
 
     return cvat;

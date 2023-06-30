@@ -7,25 +7,23 @@ import '../styles.scss';
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
-import { QualityReport, Task, getCore } from 'cvat-core-wrapper';
-import { useSelector, useDispatch } from 'react-redux';
-import { CombinedState } from 'reducers';
+import { QualityReport, getCore } from 'cvat-core-wrapper';
+import { useDispatch } from 'react-redux';
 import Button from 'antd/lib/button';
 import { DownloadOutlined, MoreOutlined } from '@ant-design/icons';
-import { analyticsActions } from 'actions/analytics-actions';
 import AnalyticsCard from './analytics-card';
 import { toRepresentation } from './common';
 
 interface Props {
-    task: Task;
+    projectId: number;
+    projectReport: QualityReport | null;
+    setQualitySettingsVisible: Function;
 }
 
-function MeanQuality(props: Props): JSX.Element {
-    const { task } = props;
+function QualitySummary(props: Props): JSX.Element {
+    const { projectId, projectReport, setQualitySettingsVisible } = props;
     const dispatch = useDispatch();
-    const tasksReports: QualityReport[] = useSelector((state: CombinedState) => state.analytics.quality.tasksReports);
-    const taskReport = tasksReports.find((report: QualityReport) => report.taskId === task.id);
-    const reportSummary = taskReport?.summary;
+    const reportSummary = projectReport?.summary;
 
     const tooltip = (
         <div className='cvat-analytics-tooltip-inner'>
@@ -37,7 +35,7 @@ function MeanQuality(props: Props): JSX.Element {
                 {reportSummary?.validCount || 0}
             </Text>
             <Text>
-                Task annotations:&nbsp;
+                Project annotations:&nbsp;
                 {reportSummary?.dsCount || 0}
             </Text>
             <Text>
@@ -45,39 +43,42 @@ function MeanQuality(props: Props): JSX.Element {
                 {reportSummary?.gtCount || 0}
             </Text>
             <Text>
-                Accuracy:&nbsp;
+                Weighted avg. Accuracy*:&nbsp;
                 {toRepresentation(reportSummary?.accuracy)}
             </Text>
             <Text>
-                Precision:&nbsp;
+                Weighted avg. Precision*:&nbsp;
                 {toRepresentation(reportSummary?.precision)}
             </Text>
             <Text>
-                Recall:&nbsp;
+                Weighted avg. Recall*:&nbsp;
                 {toRepresentation(reportSummary?.recall)}
+            </Text>
+            <Text>
+                * Weights correspond to task sizes in the whole project
             </Text>
         </div>
     );
 
-    const dowloadReportButton = (
+    const downloadReportButton = (
         <div>
             {
-                taskReport?.id ? (
+                projectReport ? (
                     <>
                         <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
                             <a
-                                href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
-                                download={`quality-report-task_${task.id}-${taskReport?.id}.json`}
+                                href={`${getCore().config.backendAPI}/quality/reports/${projectReport?.id}/data`}
+                                download={`quality-report-project_${projectId}-${projectReport?.id}.json`}
                             >
                                 Quality Report
                             </a>
                         </Button>
                         <MoreOutlined
                             className='cvat-quality-settings-switch'
-                            onClick={() => dispatch(analyticsActions.switchQualitySettingsVisible(true))}
+                            onClick={() => setQualitySettingsVisible(true)}
                         />
                         <div className='cvat-analytics-time-hint'>
-                            <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
+                            <Text type='secondary'>{projectReport?.createdDate ? moment(projectReport?.createdDate).fromNow() : ''}</Text>
                         </div>
                     </>
                 ) : null
@@ -88,12 +89,12 @@ function MeanQuality(props: Props): JSX.Element {
     return (
         <AnalyticsCard
             title='Mean annotation quality'
-            className='cvat-task-mean-annotation-quality'
+            className='cvat-project-mean-annotation-quality'
             value={toRepresentation(reportSummary?.accuracy)}
             tooltip={tooltip}
-            rightElement={dowloadReportButton}
+            rightElement={downloadReportButton}
         />
     );
 }
 
-export default React.memo(MeanQuality);
+export default React.memo(QualitySummary);

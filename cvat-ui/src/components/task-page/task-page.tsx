@@ -34,7 +34,7 @@ function TaskPageComponent(): JSX.Element {
 
     const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
 
-    const receieveTask = (): void => {
+    const receiveTask = (): void => {
         if (Number.isInteger(id)) {
             core.tasks.get({ id })
                 .then(([task]: Task[]) => {
@@ -63,7 +63,7 @@ function TaskPageComponent(): JSX.Element {
     };
 
     useEffect(() => {
-        receieveTask();
+        receiveTask();
         mounted.current = true;
         return () => {
             mounted.current = false;
@@ -118,7 +118,7 @@ function TaskPageComponent(): JSX.Element {
         setUpdatingTask(true);
         job.save().then(() => {
             if (mounted.current) {
-                receieveTask();
+                receiveTask();
             }
         }).catch((error: Error) => {
             notification.error({

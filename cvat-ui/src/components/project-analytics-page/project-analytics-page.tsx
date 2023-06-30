@@ -15,78 +15,58 @@ import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
 import { LeftOutlined } from '@ant-design/icons/lib/icons';
 import { useIsMounted } from 'utils/hooks';
-import { Task } from 'reducers';
-import { Job, getCore } from 'cvat-core-wrapper';
-import TaskQualityComponent from './quality/task-quality-component';
+import { Project } from 'reducers';
+import { Task, getCore } from 'cvat-core-wrapper';
+import ProjectQualityComponent from './quality/project-quality-component';
 
 const core = getCore();
 
-function TaskAnalyticsPage(): JSX.Element {
-    const [fetchingTask, setFetchingTask] = useState(true);
-    const [taskInstance, setTaskInstance] = useState<Task | null>(null);
+function ProjectAnalyticsPage(): JSX.Element {
+    const [fetchingProject, setFetchingProject] = useState(true);
+    const [projectInstance, setProjectInstance] = useState<Project | null>(null);
     const isMounted = useIsMounted();
 
     const history = useHistory();
 
     const id = +useParams<{ id: string }>().id;
 
-    const receiveTask = (): void => {
+    const receiveProject = (): void => {
         if (Number.isInteger(id)) {
-            core.tasks.get({ id })
-                .then(([task]: Task[]) => {
-                    if (isMounted() && task) {
-                        setTaskInstance(task);
+            core.projects.get({ id })
+                .then(([project]: Project[]) => {
+                    if (isMounted() && project) {
+                        setProjectInstance(project);
                     }
                 }).catch((error: Error) => {
                     if (isMounted()) {
                         notification.error({
-                            message: 'Could not receive the requested task from the server',
+                            message: 'Could not receive the requested project from the server',
                             description: error.toString(),
                         });
                     }
                 }).finally(() => {
                     if (isMounted()) {
-                        setFetchingTask(false);
+                        setFetchingProject(false);
                     }
                 });
         } else {
             notification.error({
-                message: 'Could not receive the requested task from the server',
-                description: `Requested task id "${id}" is not valid`,
+                message: 'Could not receive the requested project from the server',
+                description: `Requested project id "${id}" is not valid`,
             });
-            setFetchingTask(false);
+            setFetchingProject(false);
         }
     };
 
-    const onJobUpdate = useCallback((job: Job): void => {
-        setFetchingTask(true);
-        job.save().then(() => {
-            if (isMounted()) {
-                receiveTask();
-            }
-        }).catch((error: Error) => {
-            if (isMounted()) {
-                notification.error({
-                    message: 'Could not update the job',
-                    description: error.toString(),
-                });
-            }
-        }).finally(() => {
-            if (isMounted()) {
-                setFetchingTask(false);
-            }
-        });
-    }, [notification]);
-
     useEffect((): void => {
-        receiveTask();
-    }, []);
+        receiveProject();
+    }, [id]);
 
     return (
-        <div className='cvat-task-analytics-page'>
+        <div className='cvat-project-analytics-page'>
             {
-                fetchingTask ? (
-                    <div className='cvat-create-job-loading'>
+                fetchingProject ? (
+                    <div className='cvat-create-task-loading'>
                         <Spin size='large' className='cvat-spinner' />
                     </div>
                 ) : (
@@ -95,29 +75,29 @@ function TaskAnalyticsPage(): JSX.Element {
                         align='top'
                         className='cvat-analytics-wrapper'
                     >
-                        <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
+                        <Col span={22} xl={18} xxl={14} className='cvat-project-top-bar'>
                             <Button
-                                className='cvat-back-to-task-button'
-                                onClick={() => history.push(`/tasks/${taskInstance.id}`)}
+                                className='cvat-back-to-project-button'
+                                onClick={() => history.push(`/projects/${projectInstance.id}`)}
                                 type='link'
                                 size='large'
                             >
                                 <LeftOutlined />
-                                Back to task
+                                Back to project
                             </Button>
                         </Col>
                         <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
-                            <Col className='cvat-task-analytics-title'>
+                            <Col className='cvat-project-analytics-title'>
                                 <Title
                                     level={4}
                                     className='cvat-text-color'
                                 >
-                                    {taskInstance.name}
+                                    {projectInstance.name}
                                 </Title>
                                 <Text
                                     type='secondary'
                                 >
-                                    {`#${taskInstance.id}`}
+                                    {`#${projectInstance.id}`}
                                 </Text>
                             </Col>
                             <Tabs type='card'>
@@ -129,7 +109,7 @@ function TaskAnalyticsPage(): JSX.Element {
                                     )}
                                     key='quality'
                                 >
-                                    <TaskQualityComponent task={taskInstance} onJobUpdate={onJobUpdate} />
+                                    <ProjectQualityComponent project={projectInstance} />
                                 </Tabs.TabPane>
                             </Tabs>
                         </Col>
@@ -140,4 +120,4 @@ function TaskAnalyticsPage(): JSX.Element {
     );
 }
 
-export default React.memo(TaskAnalyticsPage);
+export default React.memo(ProjectAnalyticsPage);

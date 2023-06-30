@@ -23,6 +23,8 @@ import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { FunctionsResponseBody } from './server-response-types';
 import { SerializedQualityConflictData } from './quality-conflict';
+import { assert } from 'console';
+import { getDefaultSettings } from 'http2';
 
 type Params = {
     org: number | string,
@@ -2251,17 +2253,31 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
     }
 }
 
-async function getQualitySettings(taskID: number): Promise<SerializedQualitySettingsData> {
+async function getQualitySettings(id?: number, taskId?: number, projectId?: number): Promise<SerializedQualitySettingsData> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/quality/settings`, {
-            params: {
-                task_id: taskID,
-            },
-        });
+        if (!(id ^ taskId ^ projectId)) {
+            throw new TypeError(
+                `One and only one argument is expected, but got ` +
+                `id=${id}, taskId=${taskId}, projectId=${projectId}`
+            );
+        }
 
-        return response.data.results[0];
+        if (taskId || projectId) {
+            const response = await Axios.get(`${backendAPI}/quality/settings`, {
+                params: {
+                    ...(taskId ? {task_id: taskId} : {}),
+                    ...(projectId ? {project_id: projectId} : {}),
+                },
+            });
+
+            return response.data.results[0];
+        } else if (id) {
+            const response = await Axios.get(`${backendAPI}/quality/settings/${id}`);
+            return response.data;
+        }
+
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2279,6 +2295,19 @@ async function updateQualitySettings(
             params,
         });
 
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createQualitySettings(
+    settingsData: SerializedQualitySettingsData,
+): Promise<SerializedQualitySettingsData> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/quality/settings`, settingsData);
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
@@ -2311,7 +2340,20 @@ async function getQualityReports(filter): Promise<SerializedQualityReportData[]>
             },
         });
 
+        response.data.results.count = response.data.count;
+
         return response.data.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getApiScheme(): Promise<Object> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/schema/?scheme=json`);
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2480,7 +2522,12 @@ export default Object.freeze({
             settings: Object.freeze({
                 get: getQualitySettings,
                 update: updateQualitySettings,
+                create: createQualitySettings,
             }),
         }),
+    }),
+
+    scheme: Object.freeze({
+        get: getApiScheme,
     }),
 });

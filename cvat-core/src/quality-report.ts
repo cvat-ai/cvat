@@ -5,6 +5,7 @@
 export interface SerializedQualityReportData {
     id?: number;
     parent_id?: number;
+    project_id?: number;
     task_id?: number;
     job_id?: number;
     target: string;
@@ -13,6 +14,8 @@ export interface SerializedQualityReportData {
     summary?: {
         frame_count: number,
         frame_share: number,
+        frames_with_errors: number,
+        total_frames: number,
         conflict_count: number,
         valid_count: number,
         ds_count: number,
@@ -35,6 +38,8 @@ export interface SerializedQualityReportData {
 export interface QualitySummary {
     frameCount: number;
     frameSharePercent: number;
+    framesWithErrors: number;
+    totalFrames: number;
     conflictCount: number;
     validCount: number;
     dsCount: number;
@@ -59,6 +64,7 @@ export interface QualitySummary {
 export default class QualityReport {
     #id: number;
     #parentId: number;
+    #projectId: number;
     #taskId: number;
     #jobId: number;
     #target: string;
@@ -69,6 +75,7 @@ export default class QualityReport {
     constructor(initialData: SerializedQualityReportData) {
         this.#id = initialData.id;
         this.#parentId = initialData.parent_id;
+        this.#projectId = initialData.project_id;
         this.#taskId = initialData.task_id;
         this.#jobId = initialData.job_id;
         this.#target = initialData.target;
@@ -83,6 +90,10 @@ export default class QualityReport {
 
     get parentId(): number {
         return this.#parentId;
+    }
+
+    get projectId(): number {
+        return this.#projectId;
     }
 
     get taskId(): number {
@@ -109,6 +120,8 @@ export default class QualityReport {
         return {
             frameCount: this.#summary.frame_count,
             frameSharePercent: this.#summary.frame_share * 100,
+            framesWithErrors: this.#summary.frames_with_errors,
+            totalFrames: this.#summary.total_frames,
             conflictCount: this.#summary.conflict_count,
             validCount: this.#summary.valid_count,
             dsCount: this.#summary.ds_count,

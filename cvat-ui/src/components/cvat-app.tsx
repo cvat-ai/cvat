@@ -77,6 +77,7 @@ import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect
 import CreateModelPage from './create-model-page/create-model-page';
 import CreateJobPage from './create-job-page/create-job-page';
 import TaskAnalyticsPage from './task-analytics-page/task-analytics-page';
+import ProjectAnalyticsPage from './project-analytics-page/project-analytics-page';
 import OrganizationWatcher from './watchers/organization-watcher';
 
 interface CVATAppProps {
@@ -461,6 +462,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/projects' component={ProjectsPageComponent} />
                                             <Route exact path='/projects/create' component={CreateProjectPageComponent} />
                                             <Route exact path='/projects/:id' component={ProjectPageComponent} />
+                                            <Route exact path='/projects/:id/analytics' component={ProjectAnalyticsPage} />
                                             <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
                                             <Route exact path='/projects/:id/guide' component={GuidePage} />
                                             <Route exact path='/tasks' component={TasksPageContainer} />

@@ -12,7 +12,7 @@ import { Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import JobItem from 'components/job-item/job-item';
 import { useDispatch, useSelector } from 'react-redux';
-import { getQualityReportsAsync, getQualitySettingsAsync } from 'actions/analytics-actions';
+import { getTaskQualityReportsAsync, getQualitySettingsAsync } from 'actions/analytics-actions';
 import { CombinedState } from 'reducers';
 import MeanQuality from './mean-quality';
 import JobList from './job-list';
@@ -32,7 +32,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
     const query = useSelector((state: CombinedState) => state.analytics.quality.query);
 
     useEffect(() => {
-        dispatch(getQualityReportsAsync(task, { ...query, taskId: task.id }));
+        dispatch(getTaskQualityReportsAsync(task, { ...query, taskId: task.id }));
         dispatch(getQualitySettingsAsync(task));
     }, []);
 

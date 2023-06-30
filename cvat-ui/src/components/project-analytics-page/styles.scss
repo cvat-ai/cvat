@@ -15,14 +15,14 @@
     }
 }
 
-.cvat-task-quality-page {
+.cvat-project-quality-page {
     >.ant-row {
         margin-top: $grid-unit-size;
     }
 }
 
-.cvat-task-quality-page-empty {
-    @extend .cvat-task-quality-page;
+.cvat-project-quality-page-empty {
+    @extend .cvat-project-quality-page;
 
     display: flex;
     justify-content: center;
@@ -30,7 +30,7 @@
     height: $grid-unit-size * 68;
 }
 
-.cvat-task-mean-annotation-quality {
+.cvat-project-mean-annotation-quality {
     .ant-statistic {
         display: flex;
         flex-direction: column;
@@ -97,7 +97,7 @@
     right: $grid-unit-size * 4;
 }
 
-.cvat-task-analytics-page {
+.cvat-project-analytics-page {
     height: 100%;
 }
 
@@ -108,7 +108,7 @@
     padding-bottom: $grid-unit-size * 2;
 }
 
-.cvat-task-analytics-title {
+.cvat-project-analytics-title {
     margin-bottom: $grid-unit-size;
 
     h4 {
@@ -117,11 +117,11 @@
     }
 }
 
-.cvat-task-quality-reports-hint {
+.cvat-project-quality-reports-hint {
     margin-bottom: $grid-unit-size * 3;
 }
 
-.cvat-job-item-empty-gt {
+.cvat-task-item-empty-gt {
     .ant-card-body {
         padding: $grid-unit-size * 3;
     }
@@ -157,8 +157,18 @@
     }
 }
 
-.cvat-job-list-item-conflicts {
+.cvat-task-list-item-conflicts {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.cvat-quality-task-list {
+    width: 100%;
+    height: auto;
+    margin-top: $grid-unit-size * 2;
+
+    .cvat-job-item {
+        margin-bottom: $grid-unit-size;
+    }
 }

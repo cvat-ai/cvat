@@ -8,12 +8,15 @@ import { AnalyticsState } from 'reducers';
 const defaultState: AnalyticsState = {
     fetching: false,
     quality: {
+        projectsReports: [],
         tasksReports: [],
         jobsReports: [],
         query: {
+            projectId: null,
             taskId: null,
             jobId: null,
             parentId: null,
+            target: null,
         },
         settings: {
             modalVisible: false,
@@ -46,11 +49,36 @@ export default function (
                 fetching: false,
                 quality: {
                     ...state.quality,
+                },
+            };
+        case AnalyticsActionsTypes.GET_QUALITY_REPORTS_FAILED:
+            return {
+                ...state,
+                fetching: false,
+            };
+        case AnalyticsActionsTypes.GET_TASK_QUALITY_REPORTS: {
+            return {
+                ...state,
+                fetching: true,
+                quality: {
+                    ...state.quality,
+                    query: {
+                        ...action.payload.query,
+                    },
+                },
+            };
+        }
+        case AnalyticsActionsTypes.GET_TASK_QUALITY_REPORTS_SUCCESS:
+            return {
+                ...state,
+                fetching: false,
+                quality: {
+                    ...state.quality,
                     tasksReports: action.payload.tasksReports,
                     jobsReports: action.payload.jobsReports,
                 },
             };
-        case AnalyticsActionsTypes.GET_QUALITY_REPORTS_FAILED:
+        case AnalyticsActionsTypes.GET_TASK_QUALITY_REPORTS_FAILED:
             return {
                 ...state,
                 fetching: false,

@@ -59,7 +59,7 @@ function CreateJobPage(): JSX.Element {
             </Row>
             {
                 fetchingTask ? (
-                    <div className='cvat-create-job-loding'>
+                    <div className='cvat-create-job-loading'>
                         <Spin size='large' className='cvat-spinner' />
                     </div>
                 ) : (

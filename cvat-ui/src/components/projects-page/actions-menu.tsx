@@ -87,13 +87,30 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
     ), 30]);
 
     menuItems.push([(
+        <Menu.Item key='open-analytics'>
+            <a
+                href={`/projects/${projectInstance.id}/analytics`}
+                onClick={(e: React.MouseEvent) => {
+                    e.preventDefault();
+                    history.push({
+                        pathname: `/projects/${projectInstance.id}/analytics`,
+                    });
+                    return false;
+                }}
+            >
+                View Analytics
+            </a>
+        </Menu.Item>
+    ), 40]);
+
+    menuItems.push([(
         <React.Fragment key='delete'>
             <Menu.Divider />
             <Menu.Item key='delete' onClick={onDeleteProject}>
                 Delete
             </Menu.Item>
         </React.Fragment>
-    ), 40]);
+    ), 50]);
 
     menuItems.push(
         ...plugins.map(({ component: Component, weight }, index) => {

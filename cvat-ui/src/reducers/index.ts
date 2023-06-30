@@ -895,23 +895,34 @@ export interface WebhooksState {
 }
 
 export interface QualityQuery {
-    taskId: number | null;
-    jobId: number | null;
-    parentId: number | null;
+    projectId?: number | null;
+    taskId?: number | null;
+    jobId?: number | null;
+    parentId?: number | null;
+    target?: string | null;
+}
+
+export interface QualitySettingsQuery {
+    id?: number | null;
+    projectId?: number | null;
+    taskId?: number | null;
+}
+
+export interface QualityAnalyticsState {
+    projectsReports: QualityReport[];
+    tasksReports: QualityReport[];
+    jobsReports: QualityReport[];
+    query: QualityQuery;
+    settings: {
+        modalVisible: boolean;
+        current: QualitySettings | null;
+        fetching: boolean;
+    }
 }
 
 export interface AnalyticsState {
     fetching: boolean;
-    quality: {
-        tasksReports: QualityReport[];
-        jobsReports: QualityReport[];
-        query: QualityQuery;
-        settings: {
-            modalVisible: boolean;
-            current: QualitySettings | null;
-            fetching: boolean;
-        }
-    }
+    quality: QualityAnalyticsState | null;
 }
 
 export interface CombinedState {
