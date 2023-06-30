@@ -6,13 +6,19 @@ description: 'Automatic annotation of tasks'
 ---
 
 Automatic annotation in CVAT is a tool that you can use
-to automatically pre-annotate your data with pre-trained models.
+to automatically pre-annotate your data with pre-trained
+and pre-installed [Models](#models).
 
 You can also **add models** from popular platforms
 like **Hugging Face** or **Roboflow** to expand the
 range of available options.
 
-> Note: Automatic Annotation is a [paid CVAT Cloud feature](https://www.cvat.ai/pricing/cloud).
+> **Note**, that on self-hosted instances the automatic annotation feature is free,
+> but you have to add your own models. Integration with Hugging Face
+> and Roboflow is not supported for self-hosted solution.
+> <br>On CVAT Cloud Automatic Annotation is a [paid CVAT feature](https://www.cvat.ai/pricing/cloud)
+> with several pre-installed models available by default,
+> also you can add models from Roboflow and Hugging Face.
 
 See:
 
@@ -30,20 +36,20 @@ To start automatic annotation, do the following:
 
    ![](/images/image119_detrac.jpg)
 
-3. In the Automatic annotation dialog, from the drop-down list, select [model](#models).
-4. [Match the labels](#labels-matching) of the model and the task.
-5. (Optional) In case you need the model to return masks as polygons, switch toggle **Return masks as polygons**.
-6. (Optional) In case you need to remove all previous annotations, switch toggle **Clean old annotations**.
+1. In the Automatic annotation dialog, from the drop-down list, select [model](#models).
+1. [Match the labels](#labels-matching) of the model and the task.
+1. (Optional) In case you need the model to return masks as polygons, switch toggle **Return masks as polygons**.
+1. (Optional) In case you need to remove all previous annotations, switch toggle **Clean old annotations**.
 
    ![](/images/image120.jpg)
 
-7. Click **Annotate**.
+1. Click **Annotate**.
 
 CVAT will show the progress of annotation on the progress bar.
 
 ![Progress bar](/images/image121_detrac.jpg)
 
-You can stop the automatic annotation at any moment by clicking **Cancel**.
+You can stop the automatic annotation at any moment by clicking cancel.
 
 ## Labels matching
 
@@ -55,7 +61,7 @@ For example:
 - Your task (or project) has the label `vehicle`.
 
 To annotate, you need to match these two labels to give
-DL model a hint that, in this case, `car` = `vehicle`.
+CVAT model a hint that, in this case, `car` = `vehicle`.
 
 If you have a label that is not on the list
 of DL labels, you will not be able to
@@ -64,7 +70,8 @@ match them.
 For this reason, supported DL models are suitable only
 for certain labels.
 
-<br>To check the list of labels for each model, see information about [Models](#models).
+To check the list of labels for each model, see  [Models](#models)
+papers and official documentation.
 
 ## Models
 
@@ -74,18 +81,18 @@ Automatic annotation uses pre-installed and added models for annotation.
 > you need to [install Automatic Annotation first](/docs/administration/advanced/installation_automatic_annotation/)
 > and [add models](/docs/manual/advanced/models/).
 
-List of models available by default:
+List of pre-installed models:
 
 <!--lint disable maximum-line-length-->
 
 | Model                     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Yolo v7                   | YOLOv7 is an advanced object detection model that outperforms other detectors in terms of both speed and accuracy. It can process frames at a rate ranging from 5 to 160 frames per second (FPS) and achieves the highest accuracy with 56.8% average precision (AP) among real-time object detectors running at 30 FPS or higher on the V100 graphics processing unit (GPU). <br><br> For more information, see: <li>[GitHub: YOLO v7](https://github.com/WongKinYiu/yolov7) <li>[Paper: YOLO v7](https://arxiv.org/pdf/2207.02696.pdf)                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Attributed face detection | Three OpenVINO models work together: <br><br><li> [Face Detection 0205](https://docs.openvino.ai/2023.0/omz_models_model_face_detection_0205.html): face detector based on MobileNetV2 as a backbone with a FCOS head for indoor and outdoor scenes shot by a front-facing camera. <li>[Emotions recognition retail 0003](https://docs.openvino.ai/2022.3/omz_models_model_emotions_recognition_retail_0003.html#emotions-recognition-retail-0003): fully convolutional network for recognition of five emotions (‘neutral’, ‘happy’, ‘sad’, ‘surprise’, ‘anger’). <li>[Age gender recognition retail 0013](https://docs.openvino.ai/2022.3/omz_models_model_age_gender_recognition_retail_0013.html): fully convolutional network for simultaneous Age/Gender recognition. The network can recognize the age of people in the [18 - 75] years old range; it is not applicable for children since their faces were not in the training set. |
+| Attributed face detection | Three OpenVINO models work together: <br><br><li> [Face Detection 0205](https://docs.openvino.ai/2022.3/omz_models_model_face_detection_0205.html): face detector based on MobileNetV2 as a backbone with a FCOS head for indoor and outdoor scenes shot by a front-facing camera. <li>[Emotions recognition retail 0003](https://docs.openvino.ai/2022.3/omz_models_model_emotions_recognition_retail_0003.html#emotions-recognition-retail-0003): fully convolutional network for recognition of five emotions (‘neutral’, ‘happy’, ‘sad’, ‘surprise’, ‘anger’). <li>[Age gender recognition retail 0013](https://docs.openvino.ai/2022.3/omz_models_model_age_gender_recognition_retail_0013.html): fully convolutional network for simultaneous Age/Gender recognition. The network can recognize the age of people in the [18 - 75] years old range; it is not applicable for children since their faces were not in the training set. |
+| RetinaNet R101            | RetinaNet is a one-stage object detection model that utilizes a focal loss function to address class imbalance during training. Focal loss applies a modulating term to the cross entropy loss to focus learning on hard negative examples. RetinaNet is a single, unified network composed of a backbone network and two task-specific subnetworks. <br><br>For more information, see: <li>[Site: RetinaNET](https://paperswithcode.com/lib/detectron2/retinanet)                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | Text detection            | Text detector based on PixelLink architecture with MobileNetV2, depth_multiplier=1.4 as a backbone for indoor/outdoor scenes. <br><br> For more information, see: <li>[Site: OpenVINO Text detection 004](https://docs.openvino.ai/2023.0/omz_models_model_text_detection_0004.html)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| YOLO v3                   | YOLO v3 is a family of object detection architectures and models pre-trained on the COCO dataset. <br><br> For more information, see: <li>[GitHub: YOLO v3](https://github.com/ultralytics/yolov3) <li>[Site: YOLO v3](https://docs.ultralytics.com/#yolov3) <li>[Paper: YOLO v3](https://arxiv.org/pdf/1804.02767v1.pdf)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| RetinaNet R101            | etinaNet is a one-stage object detection model that utilizes a focal loss function to address class imbalance during training. Focal loss applies a modulating term to the cross entropy loss to focus learning on hard negative examples. RetinaNet is a single, unified network composed of a backbone network and two task-specific subnetworks. <br><br>For more information, see: <li>[GitHub: Segment Anything](https://github.com/facebookresearch/segment-anything) <li>[Site: Segment Anything](https://segment-anything.com/)<li>[Paper: Segment Anything](https://ai.facebook.com/research/publications/segment-anything/)                                                                                                                                                                                                                                                                                                       |
+| YOLO v3                   | YOLO v3 is a family of object detection architectures and models pre-trained on the COCO dataset. <br><br> For more information, see: <li>[Site: YOLO v3](https://docs.openvino.ai/2023.0/omz_models_model_yolo_v3_tf.html)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | YOLO v5                   | YOLO v5 is a family of object detection architectures and models based on the Pytorch framework. <br><br> For more information, see: <li>[GitHub: YOLO v5](https://github.com/ultralytics/yolov5) <li>[Site: YOLO v5](https://docs.ultralytics.com/#yolov5)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Yolo v7                   | YOLOv7 is an advanced object detection model that outperforms other detectors in terms of both speed and accuracy. It can process frames at a rate ranging from 5 to 160 frames per second (FPS) and achieves the highest accuracy with 56.8% average precision (AP) among real-time object detectors running at 30 FPS or higher on the V100 graphics processing unit (GPU). <br><br> For more information, see: <li>[GitHub: YOLO v7](https://github.com/WongKinYiu/yolov7) <li>[Paper: YOLO v7](https://arxiv.org/pdf/2207.02696.pdf)                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 <!--lint enable maximum-line-length-->
 
@@ -94,6 +101,8 @@ List of models available by default:
 In case you did not find the model you need, you can add a model
 of your choice from [Hugging Face](https://huggingface.co/)
 or [Roboflow](https://roboflow.com/).
+
+> **Note**, that you cannot add models from Hugging Face and Roboflow to self-hosted CVAT.
 
 <!--lint disable maximum-line-length-->
 
