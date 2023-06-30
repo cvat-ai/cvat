@@ -1,5 +1,5 @@
 ---
-title: 'Automatic Annotation'
+title: 'Automatic annotation'
 linkTitle: 'Automatic annotation'
 weight: 16
 description: 'Guide to using the automatic annotation of tasks.'
