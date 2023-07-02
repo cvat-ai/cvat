@@ -273,7 +273,7 @@ pycocotools==2.0.6
     # via datumaro
 pycparser==2.21
     # via cffi
-pygments==2.7.4
+pygments==2.15.0
     # via -r cvat/requirements/base.in
 pyjwt[crypto]==2.7.0
     # via django-allauth
