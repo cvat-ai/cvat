@@ -43,29 +43,41 @@ function TaskQualityComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-task-quality-page'>
-            <Row>
-                <MeanQuality task={task} />
-            </Row>
-            <Row gutter={16}>
-                <GtConflicts task={task} />
-                <Issues task={task} />
-            </Row>
-            <Row>
-                <Text type='secondary' className='cvat-task-quality-reports-hint'>
-                    Quality reports are not computed unless the GT job is in the&nbsp;
-                    <strong>completed state</strong>
-                    &nbsp;and&nbsp;
-                    <strong>acceptance stage.</strong>
-                </Text>
-            </Row>
-            <Row>
-                {gtJob ?
-                    <JobItem job={gtJob} task={task} onJobUpdate={onJobUpdate} /> :
-                    <EmptyGtJob taskId={task.id} />}
-            </Row>
-            <Row>
-                <JobList task={task} />
-            </Row>
+            {
+                gtJob ? (
+                    <>
+                        <Row>
+                            <MeanQuality task={task} />
+                        </Row>
+                        <Row gutter={16}>
+                            <GtConflicts task={task} />
+                            <Issues task={task} />
+                        </Row>
+                        {
+                            (!(gtJob && gtJob.stage === 'acceptance' && gtJob.state === 'completed')) ? (
+                                <Row>
+                                    <Text type='secondary' className='cvat-task-quality-reports-hint'>
+                                        Quality reports are not computed unless the GT job is in the&nbsp;
+                                        <strong>completed state</strong>
+                                        &nbsp;and&nbsp;
+                                        <strong>acceptance stage.</strong>
+                                    </Text>
+                                </Row>
+                            ) : null
+                        }
+                        <Row>
+                            <JobItem job={gtJob} task={task} onJobUpdate={onJobUpdate} />
+                        </Row>
+                        <Row>
+                            <JobList task={task} />
+                        </Row>
+                    </>
+                ) : (
+                    <Row justify='center'>
+                        <EmptyGtJob taskId={task.id} />
+                    </Row>
+                )
+            }
             <QualitySettingsModal task={task} />
         </div>
     );

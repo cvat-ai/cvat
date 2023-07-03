@@ -21,10 +21,12 @@ function EmptyJobComponent(props: Props): JSX.Element {
     return (
         <Col span={24}>
             <Card className='cvat-job-item-empty-gt'>
-                <Row justify='space-between' align='middle'>
+                <Row justify='center'>
                     <Col>
-                        <Title level={5}>No Ground Truth job created yet...</Title>
+                        No Ground Truth job created yet
                     </Col>
+                </Row>
+                <Row justify='center'>
                     <Col>
                         <Button type='primary'>
                             <Link to={`/tasks/${taskId}/jobs/create`}>Create new</Link>
