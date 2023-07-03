@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
-import { useHistory } from 'react-router';
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -26,7 +25,6 @@ interface Props {
 
 function JobActionsMenu(props: Props): JSX.Element {
     const { job, onJobUpdate } = props;
-    const history = useHistory();
     const dispatch = useDispatch();
 
     const onDelete = useCallback(() => {
@@ -46,39 +44,32 @@ function JobActionsMenu(props: Props): JSX.Element {
     }, [job]);
 
     return (
-        <Menu className='cvat-actions-menu' onClick={(action: MenuInfo) => {
-            if (action.key === 'task') {
-                history.push(`/tasks/${job.taskId}`);
-            } else if (action.key === 'project') {
-                history.push(`/projects/${job.projectId}`);
-            } else if (action.key === 'bug_tracker') {
-                if (job.bugTracker) window.open(job.bugTracker, '_blank', 'noopener noreferrer');
-            } else if (action.key === 'import_job') {
-                dispatch(importActions.openImportDatasetModal(job));
-            } else if (action.key === 'export_job') {
-                dispatch(exportActions.openExportDatasetModal(job));
-            } else if (action.key === 'renew_job') {
-                job.state = core.enums.JobState.NEW;
-                job.stage = JobStage.ANNOTATION;
-                if (onJobUpdate) {
-                    onJobUpdate(job);
-                } else {
-                    dispatch(updateJobAsync(job));
+        <Menu
+            className='cvat-actions-menu'
+            onClick={(action: MenuInfo) => {
+                if (action.key === 'import_job') {
+                    dispatch(importActions.openImportDatasetModal(job));
+                } else if (action.key === 'export_job') {
+                    dispatch(exportActions.openExportDatasetModal(job));
+                } else if (action.key === 'renew_job') {
+                    job.state = core.enums.JobState.NEW;
+                    job.stage = JobStage.ANNOTATION;
+                    if (onJobUpdate) {
+                        onJobUpdate(job);
+                    } else {
+                        dispatch(updateJobAsync(job));
+                    }
+                } else if (action.key === 'finish_job') {
+                    job.stage = JobStage.ACCEPTANCE;
+                    job.state = core.enums.JobState.COMPLETED;
+                    if (onJobUpdate) {
+                        onJobUpdate(job);
+                    } else {
+                        dispatch(updateJobAsync(job));
+                    }
                 }
-            } else if (action.key === 'finish_job') {
-                job.stage = JobStage.ACCEPTANCE;
-                job.state = core.enums.JobState.COMPLETED;
-                if (onJobUpdate) {
-                    onJobUpdate(job);
-                } else {
-                    dispatch(updateJobAsync(job));
-                }
-            }
-        }}
+            }}
         >
-            <Menu.Item key='task' disabled={job.taskId === null}>Go to the task</Menu.Item>
-            <Menu.Item key='project' disabled={job.projectId === null}>Go to the project</Menu.Item>
-            <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
             <Menu.Item key='import_job'>Import annotations</Menu.Item>
             <Menu.Item key='export_job'>Export annotations</Menu.Item>
             {[JobStage.ANNOTATION, JobStage.VALIDATION].includes(job.stage) ?
