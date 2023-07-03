@@ -11,7 +11,7 @@ import { QualityReport, Task, getCore } from 'cvat-core-wrapper';
 import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState } from 'reducers';
 import Button from 'antd/lib/button';
-import { DownloadOutlined, MoreOutlined } from '@ant-design/icons';
+import { DownloadOutlined, SettingOutlined } from '@ant-design/icons';
 import { analyticsActions } from 'actions/analytics-actions';
 import AnalyticsCard from './analytics-card';
 import { toRepresentation } from '../../../utils/quality-common';
@@ -72,7 +72,7 @@ function MeanQuality(props: Props): JSX.Element {
                                 Quality Report
                             </a>
                         </Button>
-                        <MoreOutlined
+                        <SettingOutlined
                             className='cvat-quality-settings-switch'
                             onClick={() => dispatch(analyticsActions.switchQualitySettingsVisible(true))}
                         />

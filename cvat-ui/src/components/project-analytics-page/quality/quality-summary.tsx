@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import { QualityReport, getCore } from 'cvat-core-wrapper';
 import Button from 'antd/lib/button';
-import { DownloadOutlined, MoreOutlined } from '@ant-design/icons';
+import { DownloadOutlined, SettingOutlined } from '@ant-design/icons';
 import AnalyticsCard from './analytics-card';
 import { toRepresentation } from '../../../utils/quality-common';
 
@@ -71,7 +71,7 @@ function QualitySummary(props: Props): JSX.Element {
                                 Quality Report
                             </a>
                         </Button>
-                        <MoreOutlined
+                        <SettingOutlined
                             className='cvat-quality-settings-switch'
                             onClick={() => setQualitySettingsVisible(true)}
                         />
