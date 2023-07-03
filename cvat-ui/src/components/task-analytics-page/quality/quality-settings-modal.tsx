@@ -361,7 +361,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                 (settings && !formEnabled && task.projectId) ? (
                     <>
                         <Text>The task is in a project, please check </Text>
-                        <Link to={`/projects/${task.projectId}/analytics`}
+                        <Link to={`/projects/${task.projectId}/analytics`} onClick={onCancel}
                         >the&nbsp;project&nbsp;quality&nbsp;settings </Link>
                         <Text>instead.</Text>
                     </>
