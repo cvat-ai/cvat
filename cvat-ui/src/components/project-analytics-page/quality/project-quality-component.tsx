@@ -7,6 +7,7 @@ import '../styles.scss';
 import React, { useEffect, useState } from 'react';
 import { Project, QualityReport, QualitySettings, getCore } from 'cvat-core-wrapper';
 import { Col, Row } from 'antd/lib/grid';
+import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 import QualitySummary from './quality-summary';
 import TaskList from './task-list';
@@ -81,29 +82,27 @@ function ProjectQualityComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-project-quality-page'>
-            <>
-                {
-                qualitySettingsFetching ? <CVATLoadingSpinner size='large' /> :
-                ((!qualitySettingsInitialized) ?
+            {
+                qualitySettingsFetching ? (
+                    <CVATLoadingSpinner size='large' />
+                ) : ((!qualitySettingsInitialized) ?
                     (
-                        <>
-                            <Row justify='center'>
-                                <Card className='cvat-project-quality-page-not-configured-block'>
-                                    <Col>
-                                        <Row justify='center'>
-                                            <Col>
-                                                Quality settings are not configured
-                                            </Col>
-                                        </Row>
-                                        <Row justify='center'>
-                                            <Col>
-                                                <Button type='primary' onClick={configureQualitySettings}>Configure</Button>
-                                            </Col>
-                                        </Row>
-                                    </Col>
-                                </Card>
-                            </Row>
-                        </>
+                        <Row justify='center'>
+                            <Card className='cvat-project-quality-page-not-configured-block'>
+                                <Col>
+                                    <Row justify='center'>
+                                        <Col>
+                                            Quality settings are not configured
+                                        </Col>
+                                    </Row>
+                                    <Row justify='center'>
+                                        <Col>
+                                            <Button type='primary' onClick={configureQualitySettings}>Configure</Button>
+                                        </Col>
+                                    </Row>
+                                </Col>
+                            </Card>
+                        </Row>
                     ) : (
                         <>
                             <Row>
@@ -115,20 +114,29 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                                 <ConflictsSummary projectId={project.id} projectReport={projectReport} />
                                 <CoverageSummary projectId={project.id} projectReport={projectReport} />
                             </Row>
+                            {
+                                (!projectReport || !projectReport.summary.gtCount) ? (
+                                    <Row>
+                                        <Text type='secondary' className='cvat-task-quality-reports-hint'>
+                                            Quality estimation requires annotated GT jobs in the tasks.
+                                            Please add more GT jobs to make the estimate more accurate.
+                                        </Text>
+                                    </Row>
+                                ) : null
+                            }
                             <Row>
                                 <TaskList projectId={project.id} projectReport={projectReport} />
                             </Row>
                         </>
                     )
                 )
-                }
-                <QualitySettingsModal projectId={project.id}
-                    qualitySettings={qualitySettings} setQualitySettings={setQualitySettings}
-                    fetching={qualitySettingsFetching}
-                    visible={qualitySettingsVisible} setVisible={setQualitySettingsVisible}
-                    settingsInitialized={qualitySettingsInitialized} setInitialized={setQualitySettingsInitialized}
-                />
-            </>
+            }
+            <QualitySettingsModal projectId={project.id}
+                qualitySettings={qualitySettings} setQualitySettings={setQualitySettings}
+                fetching={qualitySettingsFetching}
+                visible={qualitySettingsVisible} setVisible={setQualitySettingsVisible}
+                settingsInitialized={qualitySettingsInitialized} setInitialized={setQualitySettingsInitialized}
+            />
         </div>
     );
 }

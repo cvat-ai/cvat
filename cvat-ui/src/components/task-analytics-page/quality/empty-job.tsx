@@ -9,7 +9,6 @@ import { Link } from 'react-router-dom';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Button from 'antd/lib/button';
-import Title from 'antd/lib/typography/Title';
 
 interface Props {
     taskId: number,
