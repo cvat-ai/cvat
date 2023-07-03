@@ -56,6 +56,7 @@ function TaskListComponent(props: Props): JSX.Element {
             projectId: projectId,
             target: 'task',
             parentId: projectReportId,
+            ordering: 'task_id',
         })
             .catch((_error: any) => {
                 if (isMounted()) {
@@ -70,6 +71,7 @@ function TaskListComponent(props: Props): JSX.Element {
         const tasksPromise = core.tasks.get({
             ...query?.tasks || {},
             projectId: projectId,
+            ordering: 'id',
         })
             .catch((_error: any) => {
                 if (isMounted()) {

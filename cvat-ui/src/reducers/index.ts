@@ -922,7 +922,7 @@ export interface QualityAnalyticsState {
 
 export interface AnalyticsState {
     fetching: boolean;
-    quality: QualityAnalyticsState | null;
+    quality: QualityAnalyticsState;
 }
 
 export interface CombinedState {

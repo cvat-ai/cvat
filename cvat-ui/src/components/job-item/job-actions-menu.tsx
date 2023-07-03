@@ -46,7 +46,7 @@ function JobActionsMenu(props: Props): JSX.Element {
     }, [job]);
 
     return (
-        <Menu onClick={(action: MenuInfo) => {
+        <Menu className='cvat-actions-menu' onClick={(action: MenuInfo) => {
             if (action.key === 'task') {
                 history.push(`/tasks/${job.taskId}`);
             } else if (action.key === 'project') {
