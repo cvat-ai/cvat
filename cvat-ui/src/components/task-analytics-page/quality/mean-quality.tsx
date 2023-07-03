@@ -63,23 +63,25 @@ function MeanQuality(props: Props): JSX.Element {
         <div>
             {
                 taskReport?.id ? (
-                    <>
-                        <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
-                            <a
-                                href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
-                                download={`quality-report-task_${task.id}-${taskReport?.id}.json`}
-                            >
-                                Quality Report
-                            </a>
-                        </Button>
-                        <SettingOutlined
-                            className='cvat-quality-settings-switch'
-                            onClick={() => dispatch(analyticsActions.switchQualitySettingsVisible(true))}
-                        />
-                        <div className='cvat-analytics-time-hint'>
-                            <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
-                        </div>
-                    </>
+                    <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
+                        <a
+                            href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
+                            download={`quality-report-task_${task.id}-${taskReport?.id}.json`}
+                        >
+                            Quality Report
+                        </a>
+                    </Button>
+                ) : null
+            }
+            <SettingOutlined
+                className='cvat-quality-settings-switch'
+                onClick={() => dispatch(analyticsActions.switchQualitySettingsVisible(true))}
+            />
+            {
+                taskReport?.id ? (
+                    <div className='cvat-analytics-time-hint'>
+                        <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
+                    </div>
                 ) : null
             }
         </div>
