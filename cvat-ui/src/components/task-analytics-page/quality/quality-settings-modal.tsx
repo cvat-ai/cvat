@@ -357,7 +357,17 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                     </Row>
                 </Form>
             ) : (
-                <Text>No quality settings</Text>
+                (settings && !formEnabled && task.projectId) ? (
+                    <>
+                        <Text>The task is in a project, please check </Text>
+                        <a
+                            href={`/projects/${task.projectId}/analytics`}
+                        >the project quality settings </a>
+                        <Text>instead.</Text>
+                    </>
+                ) : (
+                    <Text>No quality settings</Text>
+                )
             )}
         </Modal>
     );
