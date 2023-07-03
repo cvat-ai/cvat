@@ -2206,14 +2206,6 @@ class TaskQualityReportUpdateManager:
         if task.dimension != DimensionType.DIM_2D:
             raise self.QualityReportsNotAvailable("Quality reports are only supported in 2d tasks")
 
-        if task.project:
-            try:
-                task.project.quality_settings
-            except models.QualitySettings.DoesNotExist as ex:
-                raise self.QualityReportsNotAvailable(
-                    "Quality settings are not configured in the project"
-                ) from ex
-
         gt_job = task.gt_job
         if gt_job is None or not (
             gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StatusChoice.COMPLETED
@@ -2550,13 +2542,13 @@ class TaskQualityReportUpdateManager:
         return db_task_report
 
     def _get_task_quality_params(self, task: Task) -> Optional[ComparisonParameters]:
+        params = {}
         if task.project:
-            try:
-                quality_params = task.project.quality_settings
-            except models.QualitySettings.DoesNotExist:
-                quality_params = None
+            params["project"] = task.project
         else:
-            quality_params, _ = models.QualitySettings.objects.get_or_create(task=task)
+            params["task"] = task
+
+        quality_params, _ = models.QualitySettings.objects.get_or_create(**params)
 
         if quality_params:
             return ComparisonParameters.from_dict(quality_params.to_dict())
@@ -2640,12 +2632,7 @@ class ProjectQualityReportUpdateManager:
         pass
 
     def _check_quality_reporting_available(self, project: Project):
-        try:
-            project.quality_settings
-        except models.QualitySettings.DoesNotExist as ex:
-            raise self.QualityReportsNotAvailable(
-                "Quality settings are not configured for this project yet"
-            ) from ex
+        pass
 
     def _should_update(self, project: Project) -> bool:
         try:

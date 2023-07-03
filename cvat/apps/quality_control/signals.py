@@ -120,22 +120,34 @@ def _on_task_or_job_delete__update_project_quality_metrics(instance, **kwargs):
 
 @receiver(post_save, sender=Job, dispatch_uid=__name__ + ".save_job-initialize_quality_settings")
 @receiver(post_save, sender=Task, dispatch_uid=__name__ + ".save_task-initialize_quality_settings")
+@receiver(
+    post_save, sender=Project, dispatch_uid=__name__ + ".save_project-initialize_quality_settings"
+)
 def _initialize_quality_settings(instance, created, **kwargs):
-    # Initializes default quality settings for the task
+    # Initializes default quality settings
     # this is done in a signal to decouple this component from the engine app
 
     if created:
-        task = None
+        params = {}
 
-        if isinstance(instance, Task):
-            task = instance
-        elif isinstance(instance, Job):
-            task = instance.segment.task
+        if isinstance(instance, (Job, Task)):
+            task = None
+
+            if isinstance(instance, Task):
+                task = instance
+            elif isinstance(instance, Job):
+                task = instance.segment.task
+            else:
+                assert False
+
+            if task.project:
+                # The project is responsible for the settings
+                return
+
+            params["task"] = task
+        elif isinstance(instance, Project):
+            params["project"] = instance
         else:
             assert False
 
-        if task.project:
-            # The project is responsible for the settings
-            return
-
-        QualitySettings.objects.get_or_create(task=task)
+        QualitySettings.objects.get_or_create(**params)
