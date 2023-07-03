@@ -87,8 +87,8 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                 ((!qualitySettingsInitialized) ?
                     (
                         <>
-                            <Row /*TODO: vertical span=2*/ justify='center'>
-                                <Card /* TODO: must fit the whole page width*/>
+                            <Row justify='center'>
+                                <Card className='cvat-project-quality-page-not-configured-block'>
                                     <Col>
                                         <Row justify='center'>
                                             <Col>
