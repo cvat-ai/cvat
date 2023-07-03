@@ -14,8 +14,10 @@ class StatisticsItemSerializer(serializers.Serializer):
     dataseries = serializers.DictField()
 
 
-class AnalytcisReportSerializer(serializers.Serializer):
+class AnalyticsReportSerializer(serializers.Serializer):
     created_date = serializers.DateTimeField()
-    type = serializers.ChoiceField(choices=TypeChoice.choices())
-    id = serializers.IntegerField()
+    target = serializers.ChoiceField(choices=TypeChoice.choices())
+    job_id = serializers.IntegerField(required=False)
+    task_id = serializers.IntegerField(required=False)
+    project_id = serializers.IntegerField(required=False)
     statistics = serializers.DictField(child=StatisticsItemSerializer())

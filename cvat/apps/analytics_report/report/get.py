@@ -6,14 +6,13 @@ from datetime import datetime, timedelta, timezone
 from dateutil import parser
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.conf import settings
 
 from rest_framework import serializers, status
 from rest_framework.response import Response
 
 from cvat.apps.engine.models import Job, Task, Project
 from cvat.apps.analytics_report.models import TypeChoice
-from cvat.apps.analytics_report.serializers import AnalytcisReportSerializer
+from cvat.apps.analytics_report.serializers import AnalyticsReportSerializer
 
 from cvat.apps.analytics_report.report.mock_data import mock_data
 
@@ -21,9 +20,49 @@ def _filter_statistics_by_date(statistics, start_date, end_date):
     for _, st_entry in statistics.items():
         dataseries = st_entry.get("dataseries", {})
         for ds_name, ds_entry in dataseries.items():
-            dataseries[ds_name] = list(filter(lambda ds_endtry: start_date <= parser.parse(ds_endtry["datetime"]) <= end_date, ds_entry))
+            dataseries[ds_name] = list(filter(lambda df: start_date <= parser.parse(df["datetime"]) <= end_date, ds_entry))
 
     return statistics
+
+def _convert_datetime_to_date(statistics):
+    for st_entry in statistics.values():
+        dataseries = st_entry.get("dataseries", {})
+        for ds_entry in dataseries.values():
+            for df in ds_entry:
+                df["date"] = parser.parse(df["datetime"]).date()
+                del df["datetime"]
+    return statistics
+
+def _get_object_report(obj_model, pk, start_date, end_date):
+    db_job = obj_model.objects.get(pk=pk)
+    db_analytics_report = db_job.analytics_report
+
+    statistics = _filter_statistics_by_date(db_analytics_report.statistics, start_date, end_date)
+    statistics = _convert_datetime_to_date(statistics)
+
+    if obj_model is Job:
+        target = TypeChoice.JOB
+    elif obj_model is Task:
+        target = TypeChoice.TASK
+    elif obj_model is Project:
+        target = TypeChoice.PROJECT
+
+    data = {
+        "target": target,
+        f"{obj_model.__name__.lower()}_id": pk,
+        "statistics": statistics,
+        "created_date": db_analytics_report.created_date,
+    }
+    return data
+
+def _get_job_report(job_id, start_date, end_date):
+    return _get_object_report(Job, int(job_id), start_date, end_date)
+
+def _get_task_report(task_id, start_date, end_date):
+    return _get_object_report(Task, int(task_id), start_date, end_date)
+
+def _get_project_report(project_id, start_date, end_date):
+    return _get_object_report(Project, int(project_id), start_date, end_date)
 
 def get_analytics_report(request, query_params):
     query_params = {
@@ -71,30 +110,19 @@ def get_analytics_report(request, query_params):
     if [job_id, task_id, project_id].count(True) > 1:
         raise serializers.ValidationError("Only one of job_id, task_id or project_id must be specified")
 
-    if job_id is not None:
-        pk = int(job_id)
-        try:
-            db_job = Job.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            return Response('Job not found', status=status.HTTP_404_NOT_FOUND)
-        try:
-            db_analytics_report = db_job.analytics_report
-        except ObjectDoesNotExist:
-            return Response('Analytics report not found', status=status.HTTP_404_NOT_FOUND)
-        data = {
-            "type": TypeChoice.JOB,
-            "id": pk,
-            "statistics": _filter_statistics_by_date(db_analytics_report.statistics, query_params['start_date'], query_params['end_date']),
-            "created_date": db_analytics_report.created_date,
-        }
-        serializer = AnalytcisReportSerializer(data=data)
-    elif task_id is not None:
-        pk = int(task_id)
-        return Response(data=mock_data, status=status.HTTP_200_OK)
-    elif project_id is not None:
-        pk = int(project_id)
-        return Response(data=mock_data, status=status.HTTP_200_OK)
+    report = None
 
+    if job_id is not None:
+        report = _get_job_report(job_id, query_params["start_date"], query_params["end_date"])
+    elif task_id is not None:
+        report = _get_task_report(task_id, query_params["start_date"], query_params["end_date"])
+    elif project_id is not None:
+        report = _get_task_report(project_id, query_params["start_date"], query_params["end_date"])
+
+    if report is None:
+        return Response('Analytics report not found', status=status.HTTP_404_NOT_FOUND)
+
+    serializer = AnalyticsReportSerializer(data=report)
     serializer.is_valid(raise_exception=True)
 
     return Response(serializer.data)

@@ -21,7 +21,7 @@ from cvat.apps.engine.models import Job, Task, Project
 
 from cvat.apps.analytics_report.models import AnalyticsReport
 from cvat.apps.analytics_report.report.get import get_analytics_report
-from cvat.apps.analytics_report.serializers import AnalytcisReportSerializer
+from cvat.apps.analytics_report.serializers import AnalyticsReportSerializer
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.analytics_report.report.create import JobAnalyticsReportUpdateManager
 from cvat.apps.analytics_report.report.get import get_analytics_report
@@ -58,7 +58,7 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 description="TODO"),
         ],
         responses={
-            "201": AnalytcisReportSerializer,
+            "201": AnalyticsReportSerializer,
             "202": OpenApiResponse(
                 RqIdSerializer,
                 description=textwrap.dedent(

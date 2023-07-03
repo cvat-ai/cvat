@@ -5,7 +5,7 @@
 from enum import Enum
 from django.db import models
 
-from cvat.apps.engine.models import Job
+from cvat.apps.engine.models import Job, Task, Project
 
 class TypeChoice(str, Enum):
     JOB = 'job'
@@ -24,6 +24,7 @@ class TypeChoice(str, Enum):
         return self.value
 
 class GranularityChoice(str, Enum):
+    NONE = 'NONE'
     DAY = 'day'
     WEEK = 'week'
     MONTH = 'month'
@@ -59,19 +60,19 @@ class AnalyticsReport(models.Model):
         Job,
         on_delete=models.CASCADE,
         related_name="analytics_report",
-        primary_key=True,
+        null=True,
+    )
+    task = models.OneToOneField(
+        Task,
+        on_delete=models.CASCADE,
+        related_name="analytics_report",
+        null=True,
+    )
+    project = models.OneToOneField(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="analytics_report",
+        null=True,
     )
     created_date = models.DateTimeField(auto_now=True)
     statistics = models.JSONField()
-
-    # def get_task(self):
-    #     return self.job.segment.task
-
-    # def get_json_report(self) -> str:
-    #     return self.data
-
-    # @property
-    # def organization_id(self):
-    #     if task := self.get_task():
-    #         return getattr(task.organization, "id", None)
-    #     return None

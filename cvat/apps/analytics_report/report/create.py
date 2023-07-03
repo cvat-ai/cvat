@@ -2,47 +2,22 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-from datetime import datetime, timedelta
-from dateutil import parser
-import uuid
-
+from datetime import timedelta
 from django.utils import timezone
 
 from typing import Sequence, Optional
 
 import django_rq
 from django.conf import settings
-import clickhouse_connect
 
 from uuid import uuid4
 
-from rest_framework import serializers, status
-from rest_framework.response import Response
-from django_sendfile import sendfile
-
-from cvat.apps.dataset_manager.views import clear_export_cache, log_exception
-from cvat.apps.engine.log import slogger
-
 from cvat.apps.engine.models import Job
 from cvat.apps.analytics_report import models
-import cvat.apps.dataset_manager as dm
 
 from cvat.apps.analytics_report.models import AnalyticsReport
-
-def make_clickhouse_query(query, parameters):
-    clickhouse_settings = settings.CLICKHOUSE['events']
-
-    with clickhouse_connect.get_client(
-        host=clickhouse_settings['HOST'],
-        database=clickhouse_settings['NAME'],
-        port=clickhouse_settings['PORT'],
-        username=clickhouse_settings['USER'],
-        password=clickhouse_settings['PASSWORD'],
-    ) as client:
-        result = client.query(query, parameters=parameters)
-
-    return result
+from cvat.apps.analytics_report.report.primary_metrics import AnnotationSpeed, AnnotationTime, Objects
+from cvat.apps.analytics_report.report.derived_metrics import TotalAnnotationSpeed, TotalObjectCount
 
 class JobAnalyticsReportUpdateManager():
     _QUEUE_JOB_PREFIX = "update-analytics-metrics-job-"
@@ -73,7 +48,7 @@ class JobAnalyticsReportUpdateManager():
 
     @classmethod
     def _get_last_report_time(cls, job: Job) :
-        report = models.AnalyticsReport.objects.get(pk=job.id)
+        report = models.AnalyticsReport.objects.get(job_id=job.id)
         if report:
             return report.created_date
         return None
@@ -191,30 +166,31 @@ class JobAnalyticsReportUpdateManager():
         return cls()._compute_reports(job_id=cvat_job_id)
 
     def _compute_reports(self, job_id: int) -> int:
+        def get_statistics_entry(statistics_object):
+            return {
+                "title": statistics_object.title,
+                "description": statistics_object.description,
+                "granularity": statistics_object.granularity,
+                "default_view": statistics_object.default_view,
+                "dataseries": statistics_object.calculate(),
+            }
+        annotation_speed = AnnotationSpeed(job_id=job_id)
+        objects = Objects(job_id=job_id)
+        annotation_time = AnnotationTime(job_id=job_id)
+
         statistics = {
-            "objects": {
-                "title": "Objects",
-                "description": "Metric shows number of added/changed/deleted objects.",
-                "granularity": "day",
-                "default_view": "histogram",
-                "dataseries": self._compute_objects_report(job_id),
-            },
-            "working_time": {
-                "title": "Working time",
-                "description": "Metric shows the annotation speed in objects per hour.",
-                "granularity": "day",
-                "default_view": "histogram",
-                "dataseries": self._compute_working_time_report(job_id),
-            },
-            "annotation_time": {
-                "title": "Annotation time",
-                "description": "Metric shows how long the task is in progress state.",
-                "default_view": "numeric",
-                "dataseries": self._compute_annotation_time_report(job_id),
-            },
+            "objects": get_statistics_entry(objects),
+            "annotation_speed": get_statistics_entry(annotation_speed),
+            "annotation_time": get_statistics_entry(annotation_time),
         }
 
-        report, _ = AnalyticsReport.objects.get_or_create(pk=job_id)
+        total_annotation_speed = TotalAnnotationSpeed(job_id=job_id, primary_statistics=statistics["annotation_speed"])
+        total_object_count = TotalObjectCount(job_id=job_id, primary_statistics=statistics["annotation_speed"])
+
+        statistics["total_annotation_speed"] = get_statistics_entry(total_annotation_speed)
+        statistics["total_object_count"] = get_statistics_entry(total_object_count)
+
+        report, _ = AnalyticsReport.objects.get_or_create(job_id=job_id, defaults={"statistics": {}})
         report.statistics = statistics
         report.save()
 
@@ -224,166 +200,3 @@ class JobAnalyticsReportUpdateManager():
         from rq import get_current_job
 
         return get_current_job()
-
-    @staticmethod
-    def _compute_objects_report(job_id: int):
-        def _get_clickhouse_data(scope, job_id):
-            object_type = scope.split(':')[1]
-            query = "SELECT toStartOfDay(timestamp) as day, sum(JSONLength(JSONExtractString(payload, {object_type:String}))) as s FROM events WHERE scope = {scope:String} AND job_id = {job_id:UInt64} GROUP BY day ORDER BY day ASC"
-            parameters = {
-                "scope": scope,
-                "object_type": object_type,
-                "job_id": job_id,
-            }
-
-            result = make_clickhouse_query(query, parameters)
-            return {entry[0]: entry[1] for entry in result.result_rows}
-
-        statistics = {
-            "created": {
-                "tracks": _get_clickhouse_data("create:tracks", job_id),
-                "shapes": _get_clickhouse_data("create:shapes", job_id),
-                "tags": _get_clickhouse_data("create:tags", job_id),
-            },
-            "updated": {
-                "tracks": _get_clickhouse_data("update:tracks", job_id),
-                "shapes": _get_clickhouse_data("update:shapes", job_id),
-                "tags": _get_clickhouse_data("update:tags", job_id),
-            },
-            "deleted": {
-                "tracks": _get_clickhouse_data("delete:tracks", job_id),
-                "shapes": _get_clickhouse_data("delete:shapes", job_id),
-                "tags": _get_clickhouse_data("delete:tags", job_id),
-            },
-        }
-
-        objects_statistics = {
-            "created": [],
-            "updated": [],
-            "deleted": [],
-        }
-
-        dates = set()
-        for action in ["created", "updated", "deleted"]:
-            for obj in ["tracks", "shapes", "tags"]:
-                dates.update(statistics[action][obj].keys())
-
-        for action in ["created", "updated", "deleted"]:
-            for date in dates:
-                objects_statistics[action].append({
-                    "value": {
-                        "tracks": statistics[action]["tracks"].get(date, 0),
-                        "shapes": statistics[action]["shapes"].get(date, 0),
-                        "tags":  statistics[action]["tags"].get(date, 0),
-                    },
-                    "datetime": date.isoformat()+'Z',
-                })
-
-        return objects_statistics
-
-    @staticmethod
-    def _compute_working_time_report(job_id: int):
-        def get_tags_count(annotations):
-            return len(annotations["tags"])
-
-        def get_shapes_count(annotations):
-            return len(annotations["shapes"])
-
-        def get_track_count(annotations):
-            db_job = Job.objects.select_related("segment").get(pk=job_id)
-
-            count = 0
-            for track in annotations["tracks"]:
-                if len(track["shapes"]) == 1:
-                    count += db_job.segment.stop_frame - track["shapes"][0]["frame"] + 1
-                for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
-                    if prev_shape["outside"] is not True:
-                        count += cur_shape["frame"] - prev_shape["frame"]
-
-            return count
-
-        # Calculate object count
-
-        annotations = dm.task.get_job_data(job_id)
-        object_count = 0
-        object_count += get_tags_count(annotations)
-        object_count += get_shapes_count(annotations)
-        object_count += get_track_count(annotations)
-
-        timestamp = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-        timestamp_str = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-        report, _ = AnalyticsReport.objects.get_or_create(pk=job_id, statistics={})
-        wt_statistics = report.statistics.get("working_time", {})
-        if not wt_statistics:
-            dataseries = {
-                "object_count": [],
-                "working_time": [],
-            }
-        else:
-            dataseries = wt_statistics["dataseries"]
-
-        if dataseries["object_count"]:
-            last_entry = dataseries["object_count"][-1]
-            last_entry_timestamp = parser.parse(last_entry["datetime"])
-            if last_entry_timestamp.date() == timestamp.date():
-                dataseries["object_count"] = dataseries["object_count"][:-1]
-
-        dataseries["object_count"].append({
-            "value": object_count,
-            "datetime": timestamp_str,
-        })
-
-        dates = [parser.isoparse(ds_entry["datetime"]).date() for ds_entry in dataseries["object_count"]]
-
-        # Calculate working time
-
-        query = "SELECT toStartOfDay(timestamp) as day, sum(JSONExtractUInt(payload, 'working_time')) / 1000 as wt from cvat.events WHERE job_id={job_id:UInt64} GROUP BY day ORDER BY day"
-        parameters = {
-            "job_id": job_id,
-        }
-
-        result = make_clickhouse_query(query, parameters)
-
-        wt_data = {r[0].date(): r[1] for r in result.result_rows}
-
-        working_time = []
-        for date in dates:
-            working_time.append({
-                "value": wt_data.get(date, 0),
-                "datetime": datetime.combine(date, datetime.min.time()).isoformat()+"Z"
-            })
-
-        return {
-            "object_count": dataseries["object_count"],
-            "working_time": working_time,
-        }
-
-    @staticmethod
-    def _compute_annotation_time_report(job_id: int):
-        query = "SELECT timestamp, obj_val  FROM cvat.events WHERE scope='update:job' AND job_id={job_id:UInt64} AND obj_name='state' ORDER BY timestamp ASC"
-        parameters = {
-            "job_id": job_id,
-        }
-        result = make_clickhouse_query(query, parameters)
-        total_annotating_time = 0
-        last_change = None
-        for prev_row, cur_row in zip(result.result_rows, result.result_rows[1:]):
-            if prev_row[1] == "in progress":
-                total_annotating_time += int((cur_row[0] - prev_row[0]).total_seconds())
-                last_change = cur_row[0]
-        if result.result_rows[-1][1] == "in progress":
-            total_annotating_time += int((datetime.now(timezone.utc) - result.result_rows[-1][0]).total_seconds())
-
-        if last_change:
-            last_change = last_change.isoformat().replace("+00:00", "Z")
-        else:
-            last_change = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-        return {
-            "total_annotating_time": [
-                {
-                    "value": total_annotating_time,
-                    "datetime": last_change,
-                },
-            ]
-        }
