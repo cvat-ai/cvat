@@ -10,7 +10,7 @@ import notification from 'antd/lib/notification';
 import { Task } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
 import AnalyticsCard from './analytics-card';
-import { percent, clampValue } from './common';
+import { percent, clampValue } from '../../../utils/quality-common';
 
 interface Props {
     task: Task;

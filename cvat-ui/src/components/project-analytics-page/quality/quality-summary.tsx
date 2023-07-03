@@ -8,11 +8,10 @@ import React from 'react';
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import { QualityReport, getCore } from 'cvat-core-wrapper';
-import { useDispatch } from 'react-redux';
 import Button from 'antd/lib/button';
 import { DownloadOutlined, MoreOutlined } from '@ant-design/icons';
 import AnalyticsCard from './analytics-card';
-import { toRepresentation } from './common';
+import { toRepresentation } from '../../../utils/quality-common';
 
 interface Props {
     projectId: number;
@@ -22,7 +21,6 @@ interface Props {
 
 function QualitySummary(props: Props): JSX.Element {
     const { projectId, projectReport, setQualitySettingsVisible } = props;
-    const dispatch = useDispatch();
     const reportSummary = projectReport?.summary;
 
     const tooltip = (

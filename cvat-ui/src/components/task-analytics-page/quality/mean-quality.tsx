@@ -14,7 +14,7 @@ import Button from 'antd/lib/button';
 import { DownloadOutlined, MoreOutlined } from '@ant-design/icons';
 import { analyticsActions } from 'actions/analytics-actions';
 import AnalyticsCard from './analytics-card';
-import { toRepresentation } from './common';
+import { toRepresentation } from '../../../utils/quality-common';
 
 interface Props {
     task: Task;
@@ -59,7 +59,7 @@ function MeanQuality(props: Props): JSX.Element {
         </div>
     );
 
-    const dowloadReportButton = (
+    const downloadReportButton = (
         <div>
             {
                 taskReport?.id ? (
@@ -91,7 +91,7 @@ function MeanQuality(props: Props): JSX.Element {
             className='cvat-task-mean-annotation-quality'
             value={toRepresentation(reportSummary?.accuracy)}
             tooltip={tooltip}
-            rightElement={dowloadReportButton}
+            rightElement={downloadReportButton}
         />
     );
 }

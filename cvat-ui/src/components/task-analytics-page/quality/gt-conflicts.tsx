@@ -11,7 +11,7 @@ import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import { Col, Row } from 'antd/lib/grid';
 import AnalyticsCard from './analytics-card';
-import { percent, clampValue } from './common';
+import { percent, clampValue } from '../../../utils/quality-common';
 
 interface Props {
     task: Task;

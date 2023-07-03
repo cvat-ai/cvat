@@ -4,7 +4,7 @@
 
 import './styles.scss';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
@@ -16,7 +16,7 @@ import notification from 'antd/lib/notification';
 import { LeftOutlined } from '@ant-design/icons/lib/icons';
 import { useIsMounted } from 'utils/hooks';
 import { Project } from 'reducers';
-import { Task, getCore } from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import ProjectQualityComponent from './quality/project-quality-component';
 
 const core = getCore();

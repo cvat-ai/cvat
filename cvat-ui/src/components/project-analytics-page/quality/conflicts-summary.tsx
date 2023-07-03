@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import { QualityReport, QualitySummary } from 'cvat-core-wrapper';
 import { Col, Row } from 'antd/lib/grid';
 import AnalyticsCard from './analytics-card';
-import { percent, clampValue, toRepresentation } from './common';
+import { percent, clampValue, toRepresentation } from '../../../utils/quality-common';
 
 interface Props {
     projectId: number;

@@ -12,18 +12,14 @@ import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 
-import {
-    Project, Task, QualityReport, getCore,
-} from 'cvat-core-wrapper';
+import { Task, QualityReport, getCore } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState, QualityQuery, TasksQuery } from 'reducers';
-import { useSelector } from 'react-redux';
+import { QualityQuery, TasksQuery } from 'reducers';
 import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
-import { toRepresentation } from './common';
 import { ConflictsTooltip } from './conflicts-summary';
 import { useIsMounted } from 'utils/hooks';
-import { percent } from './common';
+import { percent, toRepresentation } from '../../../utils/quality-common';
 
 interface Props {
     projectId: number;
