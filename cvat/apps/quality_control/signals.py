@@ -73,6 +73,7 @@ def _on_update_project_quality_metrics_on_task_move_from_project(instance, **kwa
     # labels / attributes and settings can be different
     QualityReport.objects.filter(task_id=instance.id).delete()
 
+    # The old settings must not be available anymore
     with suppress(QualitySettings.DoesNotExist):
         QualitySettings.objects.get(task_id=instance.id).delete()
 
@@ -106,7 +107,10 @@ def _on_task_report_save__update_project_quality_metrics(instance, created, **kw
 def _on_task_or_job_delete__update_project_quality_metrics(instance, **kwargs):
     try:
         if isinstance(instance, Job):
-            project = instance.segment.task.project
+            task = instance.segment.task
+            project = task.project
+
+            QualityReport.objects.filter(task=task).delete()
         elif isinstance(instance, Task):
             project = instance.project
         else:
