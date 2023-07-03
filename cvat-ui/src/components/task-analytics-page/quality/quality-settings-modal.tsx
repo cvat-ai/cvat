@@ -16,6 +16,7 @@ import Checkbox from 'antd/lib/checkbox/Checkbox';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
 import { Task } from 'cvat-core-wrapper';
+import { Link } from 'react-router-dom';
 
 interface Props {
     task: Task;
@@ -360,9 +361,8 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                 (settings && !formEnabled && task.projectId) ? (
                     <>
                         <Text>The task is in a project, please check </Text>
-                        <a
-                            href={`/projects/${task.projectId}/analytics`}
-                        >the project quality settings </a>
+                        <Link to={`/projects/${task.projectId}/analytics`}
+                        >the&nbsp;project&nbsp;quality&nbsp;settings </Link>
                         <Text>instead.</Text>
                     </>
                 ) : (
