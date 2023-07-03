@@ -116,7 +116,7 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                                 <CoverageSummary projectId={project.id} projectReport={projectReport} />
                             </Row>
                             <Row>
-                                <TaskList projectId={project.id} projectReportId={projectReport?.id || null} />
+                                <TaskList projectId={project.id} projectReport={projectReport} />
                             </Row>
                         </>
                     )

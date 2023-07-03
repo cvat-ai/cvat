@@ -23,11 +23,12 @@ import { percent, toRepresentation } from '../../../utils/quality-common';
 
 interface Props {
     projectId: number;
-    projectReportId: number | null;
+    projectReport: QualityReport | null;
 }
 
 function TaskListComponent(props: Props): JSX.Element {
-    const { projectId, projectReportId } = props;
+    const { projectId, projectReport } = props;
+    const projectReportId = projectReport?.id;
 
     const history = useHistory();
     const isMounted = useIsMounted();
@@ -156,6 +157,7 @@ function TaskListComponent(props: Props): JSX.Element {
             title: 'Task',
             dataIndex: 'task',
             key: 'task',
+            sorter: sorter('task'),
             render: (id: number): JSX.Element => (
                 <div>
                     <Button
@@ -246,6 +248,7 @@ function TaskListComponent(props: Props): JSX.Element {
                     <div className='cvat-task-list-item-errors'>
                         <Text>
                             {errorCount || 0}
+                            {errorCount ? ` (${percent(errorCount, projectReport?.summary?.errorCount)})` : ''}
                         </Text>
                         <CVATTooltip
                             title={<ConflictsTooltip reportSummary={report?.summary} />}
@@ -316,8 +319,8 @@ function TaskListComponent(props: Props): JSX.Element {
             subset: task,
             status: task,
             assignee: task,
-            quality: report || 'N/A',
-            errors: report || 'N/A',
+            quality: report || undefined,
+            errors: report || undefined,
         });
 
         return acc;
