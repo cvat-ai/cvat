@@ -121,21 +121,6 @@
     margin-bottom: $grid-unit-size * 3;
 }
 
-.cvat-task-item-empty-gt {
-    .ant-card-body {
-        padding: $grid-unit-size * 3;
-    }
-
-    h5 {
-        margin: 0;
-    }
-
-    .ant-btn {
-        padding-left: $grid-unit-size * 3;
-        padding-right: $grid-unit-size * 3;
-    }
-}
-
 .cvat-quality-settings-switch {
     padding-left: $grid-unit-size * 2;
 }
@@ -168,7 +153,7 @@
     height: auto;
     margin-top: $grid-unit-size * 2;
 
-    .cvat-job-item {
+    .cvat-project-tasks-table-row {
         margin-bottom: $grid-unit-size;
     }
 }
