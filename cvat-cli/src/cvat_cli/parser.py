@@ -369,6 +369,22 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         help="time interval between checks if archive processing was finished, in seconds",
     )
 
+    #######################################################################
+    # Auto-annotate
+    #######################################################################
+    auto_annotate_task_parser = task_subparser.add_parser(
+        "auto-annotate",
+        description="Automatically annotate a CVAT task by running a function on the local machine.",
+    )
+    auto_annotate_task_parser.add_argument("task_id", type=int, help="task ID")
+    auto_annotate_task_parser.add_argument(
+        "--function",
+        help="name of module to use as the function",
+        metavar="MODULE",
+        required=True,
+        dest="function_module",
+    )
+
     return parser
 
 

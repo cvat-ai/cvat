@@ -302,3 +302,16 @@ class TestCLI:
         all_task_ids = list(map(int, self.run_cli("ls").split()))
         assert personal_task_id in all_task_ids
         assert org_task_id in all_task_ids
+
+    def test_auto_annotate(self, fxt_new_task: Task):
+        annotations = fxt_new_task.get_annotations()
+        assert not annotations.shapes
+
+        self.run_cli(
+            "auto-annotate",
+            str(fxt_new_task.id),
+            f"--function={__package__}.example_function",
+        )
+
+        annotations = fxt_new_task.get_annotations()
+        assert annotations.shapes

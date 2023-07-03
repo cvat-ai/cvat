@@ -4,9 +4,11 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 from typing import Dict, List, Sequence, Tuple
 
+import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client, models
 from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
@@ -140,3 +142,7 @@ class CLI:
             status_check_period=status_check_period,
             pbar=DeferredTqdmProgressReporter(),
         )
+
+    def tasks_auto_annotate(self, task_id: int, function_module: str) -> None:
+        function = importlib.import_module(function_module)
+        cvataa.annotate_task(self.client, task_id, function)
