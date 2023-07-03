@@ -33,7 +33,10 @@ function TaskQualityComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         dispatch(getTaskQualityReportsAsync(task, { ...query, taskId: task.id }));
-        dispatch(getQualitySettingsAsync({ taskId: task.id }));
+        dispatch(getQualitySettingsAsync({
+            ...(!task.projectId ? {taskId: task.id} : {}),
+            ...(task.projectId ? {projectId: task.projectId} : {}),
+        }));
     }, []);
 
     const gtJob = task.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);
@@ -63,7 +66,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
             <Row>
                 <JobList task={task} />
             </Row>
-            <QualitySettingsModal />
+            <QualitySettingsModal task={task} />
         </div>
     );
 }

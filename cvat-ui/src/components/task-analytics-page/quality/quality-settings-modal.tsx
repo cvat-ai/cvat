@@ -15,18 +15,25 @@ import Form from 'antd/lib/form';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
+import { Task } from 'cvat-core-wrapper';
 
-export default function QualitySettingsModal(): JSX.Element | null {
+interface Props {
+    task: Task;
+}
+
+export default function QualitySettingsModal(props: Props): JSX.Element | null {
+    const { task } = props;
     const visible = useSelector((state: CombinedState) => state.analytics.quality.settings.modalVisible);
     const loading = useSelector((state: CombinedState) => state.analytics.quality.settings.fetching);
     const settings = useSelector((state: CombinedState) => state.analytics.quality.settings.current);
+    const formEnabled = !task.projectId;
     const [form] = Form.useForm();
 
     const dispatch = useDispatch();
 
     const onOk = useCallback(async () => {
         try {
-            if (settings) {
+            if (settings && formEnabled) {
                 const values = await form.validateFields();
                 settings.lowOverlapThreshold = values.lowOverlapThreshold / 100;
                 settings.iouThreshold = values.iouThreshold / 100;
@@ -135,8 +142,9 @@ export default function QualitySettingsModal(): JSX.Element | null {
             onCancel={onCancel}
             confirmLoading={loading}
             className='cvat-modal-quality-settings'
+            okButtonProps={{disabled: !formEnabled}}
         >
-            { settings ? (
+            { settings && formEnabled ? (
                 <Form
                     form={form}
                     layout='vertical'
