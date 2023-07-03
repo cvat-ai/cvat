@@ -46,7 +46,7 @@
 
         .cvat-task-item-preview {
             width: 100%;
-            object-fit: cover;
+            object-fit: contain;
             height: $grid-unit-size * 34;
         }
     }
