@@ -60,9 +60,9 @@ function QualitySummary(props: Props): JSX.Element {
 
     const downloadReportButton = (
         <div>
-            {
-                projectReport ? (
-                    <>
+            <>
+                {
+                    projectReport ? (
                         <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
                             <a
                                 href={`${getCore().config.backendAPI}/quality/reports/${projectReport?.id}/data`}
@@ -71,16 +71,20 @@ function QualitySummary(props: Props): JSX.Element {
                                 Quality Report
                             </a>
                         </Button>
-                        <SettingOutlined
-                            className='cvat-quality-settings-switch'
-                            onClick={() => setQualitySettingsVisible(true)}
-                        />
+                    ) : null
+                }
+                <SettingOutlined
+                    className='cvat-quality-settings-switch'
+                    onClick={() => setQualitySettingsVisible(true)}
+                />
+                {
+                    projectReport ? (
                         <div className='cvat-analytics-time-hint'>
                             <Text type='secondary'>{projectReport?.createdDate ? moment(projectReport?.createdDate).fromNow() : ''}</Text>
                         </div>
-                    </>
-                ) : null
-            }
+                    ) : null
+                }
+            </>
         </div>
 
     );
