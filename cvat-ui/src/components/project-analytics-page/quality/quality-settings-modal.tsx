@@ -31,7 +31,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
         setQualitySettings,
         fetching: loading,
         visible, setVisible,
-        settingsInitialized, setInitialized
+        settingsInitialized, setInitialized,
     } = props;
     const [form] = Form.useForm();
 

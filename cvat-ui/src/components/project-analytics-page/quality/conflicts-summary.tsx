@@ -77,7 +77,7 @@ export function ConflictsTooltip(props: ConflictTooltipProps): JSX.Element {
 }
 
 function ConflictsSummary(props: Props): JSX.Element {
-    const { projectId, projectReport } = props;
+    const { projectReport } = props;
 
     const [epfValue, setEpfValue] = useState<string | number>('N/A');
     useEffect(() => {

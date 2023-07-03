@@ -17,7 +17,6 @@ interface Props {
     projectReport: QualityReport | null;
 }
 
-
 function CoverageSummary(props: Props): JSX.Element {
     const { projectId, projectReport } = props;
 
@@ -30,7 +29,7 @@ function CoverageSummary(props: Props): JSX.Element {
     useEffect(() => {
         const core = getCore();
 
-        core.tasks.get({ projectId: projectId })
+        core.tasks.get({ projectId })
             .then((results: any) => {
                 setTaskCount(results.count);
             })
@@ -51,7 +50,7 @@ function CoverageSummary(props: Props): JSX.Element {
         }
 
         const core = getCore();
-        core.analytics.quality.reports({ projectId: projectId, target: 'task', parentId: projectReport.id })
+        core.analytics.quality.reports({ projectId, target: 'task', parentId: projectReport.id })
             .then((results: any) => {
                 setTaskReportsCount(results.count);
             })
@@ -67,11 +66,10 @@ function CoverageSummary(props: Props): JSX.Element {
 
         const reportSummary = projectReport.summary;
         setGtFramesCount(
-            `${clampValue(reportSummary?.frameCount)}` +
-            (reportSummary?.frameCount
-                ? ` (${percent(reportSummary?.frameCount, reportSummary?.totalFrames)})`
-                : ''
-            )
+            `${clampValue(reportSummary?.frameCount)}${
+                reportSummary?.frameCount ?
+                    ` (${percent(reportSummary?.frameCount, reportSummary?.totalFrames)})` :
+                    ''}`,
         );
 
         setTotalFramesCount(reportSummary?.totalFrames);

@@ -17,8 +17,8 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualityQuery, TasksQuery } from 'reducers';
 import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
-import { ConflictsTooltip } from './conflicts-summary';
 import { useIsMounted } from 'utils/hooks';
+import { ConflictsTooltip } from './conflicts-summary';
 import { percent, toRepresentation } from '../../../utils/quality-common';
 
 interface Props {
@@ -37,7 +37,7 @@ function TaskListComponent(props: Props): JSX.Element {
     const [taskReports, setTaskReports] = useState<QualityReport[]>([]);
     const [tasksMap, setTasksMap] = useState<Record<number, Task>>({});
     const [taskReportsMap, setTaskReportsMap] = useState<Record<number, QualityReport | null>>({});
-    const [query, setQuery] = useState<{tasks: TasksQuery, quality: QualityQuery} | null>(null);
+    const [query, setQuery] = useState<{ tasks: TasksQuery, quality: QualityQuery } | null>(null);
 
     const [displayedTasks, setDisplayedTasks] = useState<Task[]>(tasks);
 
@@ -54,7 +54,7 @@ function TaskListComponent(props: Props): JSX.Element {
 
         const reportsPromise = core.analytics.quality.reports({
             ...query?.quality || {},
-            projectId: projectId,
+            projectId,
             target: 'task',
             parentId: projectReportId,
             ordering: 'task_id',
@@ -67,11 +67,11 @@ function TaskListComponent(props: Props): JSX.Element {
                         className: 'cvat-notification-notice-get-reports-error',
                     });
                 }
-            })
+            });
 
         const tasksPromise = core.tasks.get({
             ...query?.tasks || {},
-            projectId: projectId,
+            projectId,
             ordering: 'id',
         })
             .catch((_error: any) => {
@@ -108,7 +108,7 @@ function TaskListComponent(props: Props): JSX.Element {
                 setTaskReportsMap(tasksReportsMap);
 
                 setDisplayedTasks(tasks);
-            })
+            });
     }, [projectId, projectReportId, query]);
 
     function sorter(path: string) {
@@ -169,7 +169,8 @@ function TaskListComponent(props: Props): JSX.Element {
                         }}
                         href={`/tasks/${id}/analytics`}
                     >
-                        {`#${id}`}{`: ${tasksMap[id].name}` /* TODO: restrict maximum length */ }
+                        {`#${id}`}
+                        {`: ${tasksMap[id].name}` /* TODO: restrict maximum length */ }
                     </Button>
                 </div>
             ),
@@ -209,7 +210,14 @@ function TaskListComponent(props: Props): JSX.Element {
                         <Text>
                             {status}
                             <br />
-                            {taskInstance.progress.completedJobs} / {taskInstance.progress.totalJobs} ({percent(taskInstance.progress.completedJobs, taskInstance.progress.totalJobs, 0)})
+                            {taskInstance.progress.completedJobs}
+                            {' '}
+                            /
+                            {taskInstance.progress.totalJobs}
+                            {' '}
+                            (
+                            {percent(taskInstance.progress.completedJobs, taskInstance.progress.totalJobs, 0)}
+                            )
                         </Text>
                     </div>
                 );

@@ -5,18 +5,20 @@
 import '../styles.scss';
 
 import React, { useEffect, useState } from 'react';
-import { Project, QualityReport, QualitySettings, getCore } from 'cvat-core-wrapper';
+import {
+    Project, QualityReport, QualitySettings, getCore,
+} from 'cvat-core-wrapper';
 import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
+import { useIsMounted } from 'utils/hooks';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
+import { Button, Card } from 'antd';
 import QualitySummary from './quality-summary';
 import TaskList from './task-list';
 import ConflictsSummary from './conflicts-summary';
 import CoverageSummary from './coverage-summary';
 import QualitySettingsModal from './quality-settings-modal';
-import { useIsMounted } from 'utils/hooks';
-import CVATLoadingSpinner from 'components/common/loading-spinner';
-import { Button, Card } from 'antd';
 
 interface Props {
     project: Project,
@@ -36,7 +38,7 @@ function ProjectQualityComponent(props: Props): JSX.Element {
     useEffect(() => {
         const core = getCore();
 
-        core.analytics.quality.reports({projectId: project.id, target: 'project'})
+        core.analytics.quality.reports({ projectId: project.id, target: 'project' })
             .then((results: QualityReport[]) => {
                 setProjectReport(results[0]);
             })
@@ -50,7 +52,7 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                 }
             });
 
-        core.analytics.quality.settings.get({projectId: project.id})
+        core.analytics.quality.settings.get({ projectId: project.id })
             .then((result: QualitySettings | null) => {
                 setQualitySettingsFetching(false);
                 setQualitySettings(result);
@@ -78,7 +80,7 @@ function ProjectQualityComponent(props: Props): JSX.Element {
 
             setQualitySettingsVisible(true);
         });
-    }
+    };
 
     return (
         <div className='cvat-project-quality-page'>
@@ -106,9 +108,11 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                     ) : (
                         <>
                             <Row>
-                                <QualitySummary projectId={project.id} projectReport={projectReport}
+                                <QualitySummary
+                                    projectId={project.id}
+                                    projectReport={projectReport}
                                     setQualitySettingsVisible={setQualitySettingsVisible}
-                                    />
+                                />
                             </Row>
                             <Row gutter={16}>
                                 <ConflictsSummary projectId={project.id} projectReport={projectReport} />
@@ -131,11 +135,15 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                     )
                 )
             }
-            <QualitySettingsModal projectId={project.id}
-                qualitySettings={qualitySettings} setQualitySettings={setQualitySettings}
+            <QualitySettingsModal
+                projectId={project.id}
+                qualitySettings={qualitySettings}
+                setQualitySettings={setQualitySettings}
                 fetching={qualitySettingsFetching}
-                visible={qualitySettingsVisible} setVisible={setQualitySettingsVisible}
-                settingsInitialized={qualitySettingsInitialized} setInitialized={setQualitySettingsInitialized}
+                visible={qualitySettingsVisible}
+                setVisible={setQualitySettingsVisible}
+                settingsInitialized={qualitySettingsInitialized}
+                setInitialized={setQualitySettingsInitialized}
             />
         </div>
     );
