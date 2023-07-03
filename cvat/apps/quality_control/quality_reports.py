@@ -10,7 +10,7 @@ from collections import Counter
 from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property, partial, reduce
-from operator import add
+from operator import or_
 from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Set, Tuple, Union, cast
 from uuid import uuid4
 
@@ -2886,7 +2886,7 @@ class ProjectQualityReportUpdateManager:
                 confusion_matrix=None,
             )
 
-        all_intersection_frames = reduce(add, project_intersection_frames.values())
+        all_intersection_frames = reduce(or_, project_intersection_frames.values(), set())
         total_frames = sum(t.data.size for t in tasks)
         project_report_data = ComparisonReport(
             parameters=ComparisonParameters.from_dict(project.quality_settings.to_dict()),

@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from contextlib import suppress
+
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
@@ -70,6 +72,9 @@ def _on_update_project_quality_metrics_on_task_move_from_project(instance, **kwa
     # Old reports may conflict with newer ones -
     # labels / attributes and settings can be different
     QualityReport.objects.filter(task_id=instance.id).delete()
+
+    with suppress(QualitySettings.DoesNotExist):
+        QualitySettings.objects.get(task_id=instance.id).delete()
 
     qc.ProjectQualityReportUpdateManager().schedule_quality_autoupdate_job(original_project)
 
