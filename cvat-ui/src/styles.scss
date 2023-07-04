@@ -108,8 +108,8 @@ hr {
 }
 
 .cvat-advanced-configuration-wrapper {
-    .ant-collapse-header {
-        align-items: center !important;
+    .ant-collapse-item > .ant-collapse-header {
+        align-items: center;
     }
 
     .cvat-title {
