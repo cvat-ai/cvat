@@ -13,8 +13,7 @@ it will be accessible from the annotation interface (see below).
 
 You can attach the specification to **Projects** or to **Tasks**.
 
-Adding specification procedure is the same for individual users
-and organizations.
+The attachment procedure is the same for individual users and organizations.
 
 See:
 
@@ -37,12 +36,10 @@ To add specification to the **Projects**, do the following:
 
 3. Add instruction to the [Markdown editor](#markdown-editor-guide), and click **Submit**.
 
-CVAT will save the specification, and it will become accessible from the annotation interface.
-
 ### Editing rights
 
-- **For individual users**: only the project owner and project assignee can edit the specification.
-- **For organizations**: specification additionally can be edited by the organization owner or maintainer
+- **For individual users**: only the project owner and the project assignee can edit the specification.
+- **For organizations**: specification additionally can be edited by the organization owner and maintainer
 
 ![Editor rights](/images/editor_access_rights_1.jpg)
 
@@ -57,8 +54,6 @@ To add specification to the **Task**, do the following:
 
 3. Add instruction to the [Markdown editor](#markdown-editor-guide), and click **Submit**.
 
-CVAT will save specification, and it will become accessible from the annotation interface.
-
 ### Editing rights
 
 - **For individual users**: only the task owner and task assignee can edit the specification.
@@ -71,7 +66,7 @@ CVAT will save specification, and it will become accessible from the annotation 
 To open specification, do the following:
 
 1. Open the job to see the annotation interface.
-2. In the top right corner, click **Guide**(![Guide Icon](/images/guide_icon.jpg)).
+2. In the top right corner, click **Guide button**(![Guide Icon](/images/guide_icon.jpg)).
 
 ## Markdown editor guide
 
@@ -96,11 +91,11 @@ You can write in raw markdown or use the toolbar on the top of the editor.
 | 5       | Add a quote.                                                                                                                                                                                                                                                       |
 | 6       | Add a single line of code.                                                                                                                                                                                                                                         |
 | 7       | Add a block of code.                                                                                                                                                                                                                                               |
-| 9       | Add a comment. The comment is only visible to Guide editors and remains invisible to annotators.                                                                                                                                                                   |
-| 10      | Add a picture. To use this option, first, upload the picture to an external resource and then add the link in the editor. Alternatively, you can drag and drop a picture into the editor, which will upload it to the CVAT server and add it to the specification. |
-| 11      | Add a list: bullet list, numbered list, and checklist.                                                                                                                                                                                                             |
-| 12      | Hide the editor pane: options to hide the right pane, show both panes or hide the left pane.                                                                                                                                                                       |
-| 13      | Enable full-screen mode.                                                                                                                                                                                                                                           |
+| 8       | Add a comment. The comment is only visible to Guide editors and remains invisible to annotators.                                                                                                                                                                   |
+| 9      | Add a picture. To use this option, first, upload the picture to an external resource and then add the link in the editor. Alternatively, you can drag and drop a picture into the editor, which will upload it to the CVAT server and add it to the specification. |
+| 10      | Add a list: bullet list, numbered list, and checklist.                                                                                                                                                                                                             |
+| 11      | Hide the editor pane: options to hide the right pane, show both panes or hide the left pane.                                                                                                                                                                       |
+| 12      | Enable full-screen mode.                                                                                                                                                                                                                                           |
 
 <!--lint enable maximum-line-length-->
 
