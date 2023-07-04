@@ -94,6 +94,7 @@ export default function (
                     },
                 },
             };
+        case AnalyticsActionsTypes.CREATE_QUALITY_SETTINGS:
         case AnalyticsActionsTypes.UPDATE_QUALITY_SETTINGS:
         case AnalyticsActionsTypes.GET_QUALITY_SETTINGS: {
             return {
@@ -107,6 +108,7 @@ export default function (
                 },
             };
         }
+        case AnalyticsActionsTypes.CREATE_QUALITY_SETTINGS_SUCCESS:
         case AnalyticsActionsTypes.UPDATE_QUALITY_SETTINGS_SUCCESS:
         case AnalyticsActionsTypes.GET_QUALITY_SETTINGS_SUCCESS:
             return {
@@ -120,6 +122,7 @@ export default function (
                     },
                 },
             };
+        case AnalyticsActionsTypes.CREATE_QUALITY_SETTINGS_FAILED:
         case AnalyticsActionsTypes.UPDATE_QUALITY_SETTINGS_FAILED:
         case AnalyticsActionsTypes.GET_QUALITY_SETTINGS_FAILED:
             return {

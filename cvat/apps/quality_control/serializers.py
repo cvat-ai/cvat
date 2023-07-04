@@ -77,6 +77,7 @@ class QualityReportCreateSerializer(serializers.Serializer):
 
 
 class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    task_id = serializers.IntegerField(required=False)
     project_id = serializers.IntegerField(required=False)
 
     class Meta:
@@ -98,11 +99,8 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "panoptic_comparison",
             "compare_attributes",
         )
-        read_only_fields = (
-            "id",
-            "task_id",
-        )
-        write_once_fields = ("project_id",)
+        read_only_fields = ("id",)
+        write_once_fields = ("task_id", "project_id")
 
         extra_kwargs = {k: {"required": False} for k in fields}
 
@@ -174,8 +172,8 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
-        if not validated_data.get("project_id"):
-            raise ValidationError("Project id must be specified")
+        if not bool(validated_data.get("project_id")) ^ bool(validated_data.get("task_id")):
+            raise ValidationError("Either 'project_id' or 'task_id' must be specified")
 
         try:
             return super().create(validated_data)

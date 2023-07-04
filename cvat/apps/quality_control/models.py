@@ -252,10 +252,14 @@ class QualitySettings(models.Model):
             return super().save(*args, **kwargs)
         except IntegrityError as ex:
             message = str(ex)
-            if (
-                "duplicate key value violates unique constraint" in message
-                and "project_id" in message
-            ):
-                raise self.SettingsAlreadyExistError(
-                    f"Quality parameters for the project id {self.project_id} already exist"
-                )
+            if "duplicate key value violates unique constraint" in message:
+                if "project_id" in message:
+                    raise self.SettingsAlreadyExistError(
+                        f"Quality parameters for the project id {self.project_id} already exist"
+                    )
+                elif "task_id" in message:
+                    raise self.SettingsAlreadyExistError(
+                        f"Quality parameters for the task id {self.task_id} already exist"
+                    )
+                else:
+                    raise

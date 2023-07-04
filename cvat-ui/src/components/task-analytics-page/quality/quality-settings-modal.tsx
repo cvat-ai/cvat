@@ -8,7 +8,9 @@ import { CombinedState } from 'reducers';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 import InputNumber from 'antd/lib/input-number';
-import { analyticsActions, updateQualitySettingsAsync } from 'actions/analytics-actions';
+import {
+    analyticsActions, createQualitySettingsAsync, updateQualitySettingsAsync,
+} from 'actions/analytics-actions';
 import { Col, Row } from 'antd/lib/grid';
 import { Divider } from 'antd';
 import Form from 'antd/lib/form';
@@ -27,6 +29,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
     const visible = useSelector((state: CombinedState) => state.analytics.quality.settings.modalVisible);
     const loading = useSelector((state: CombinedState) => state.analytics.quality.settings.fetching);
     const settings = useSelector((state: CombinedState) => state.analytics.quality.settings.current);
+    const settingsInitialized = !!(settings?.id);
     const formEnabled = !task.projectId;
     const [form] = Form.useForm();
 
@@ -54,7 +57,11 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
 
                 settings.panopticComparison = values.panopticComparison;
 
-                await dispatch(updateQualitySettingsAsync(settings));
+                if (!settingsInitialized) {
+                    await dispatch(createQualitySettingsAsync(settings));
+                } else {
+                    await dispatch(updateQualitySettingsAsync(settings));
+                }
                 await dispatch(analyticsActions.switchQualitySettingsVisible(false));
             }
             return settings;
@@ -143,7 +150,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
             onCancel={onCancel}
             confirmLoading={loading}
             className='cvat-modal-quality-settings'
-            okButtonProps={{disabled: !formEnabled}}
+            okButtonProps={{ disabled: !formEnabled }}
         >
             { settings && formEnabled ? (
                 <Form
@@ -361,8 +368,12 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                 (settings && !formEnabled && task.projectId) ? (
                     <>
                         <Text>The task is in a project, please check </Text>
-                        <Link to={`/projects/${task.projectId}/analytics`} onClick={onCancel}
-                        >the&nbsp;project&nbsp;quality&nbsp;settings </Link>
+                        <Link
+                            to={`/projects/${task.projectId}/analytics`}
+                            onClick={onCancel}
+                        >
+                            the&nbsp;project&nbsp;quality&nbsp;settings
+                        </Link>
                         <Text>instead.</Text>
                     </>
                 ) : (
