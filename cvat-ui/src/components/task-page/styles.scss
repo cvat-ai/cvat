@@ -47,7 +47,13 @@
         .cvat-task-item-preview {
             width: 100%;
             object-fit: contain;
-            height: $grid-unit-size * 34;
+            max-height: $grid-unit-size * 18;
+        }
+    }
+
+    .cvat-task-details:has(.cvat-constructor-viewer-new-item) {
+        .cvat-task-item-preview {
+            max-height: $grid-unit-size * 40;
         }
     }
 
