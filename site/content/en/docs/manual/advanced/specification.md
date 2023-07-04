@@ -5,13 +5,13 @@ weight: 16
 description: 'Learn how to easily create and add specification for annotators using the Guide feature.'
 ---
 
-The **Guide** feature is a built-in markdown editor that
-allows you to create and add specification for annotators.
+The **Guide** feature provides a built-in markdown editor that
+allows you to create specification for annotators.
 
 Once you create and submit the specification,
-it will be accessible from the annotation interface.
+it will be accessible from the annotation interface (see below).
 
-You can add specification to the **Projects** and to the **Tasks**.
+You can attach the specification to **Projects** or to **Tasks**.
 
 Adding specification procedure is the same for individual users
 and organizations.
@@ -19,11 +19,10 @@ and organizations.
 See:
 
 - [Adding specification to Project](#adding-specification-to-project)
-  - [Access to specification for annotators](#access-to-specification-for-annotators)
   - [Editing rights](#editing-rights)
 - [Adding specification to Task](#adding-specification-to-task)
-  - [Access to specification for annotators](#access-to-specification-for-annotators-1)
   - [Editing rights](#editing-rights-1)
+- [Access to specification for annotators](#access-to-specification-for-annotators)
 - [Markdown editor guide](#markdown-editor-guide)
 - [Specification for annotators' video tutorial](#specification-for-annotators-video-tutorial)
 
@@ -34,23 +33,16 @@ To add specification to the **Projects**, do the following:
 1. Go to the **Projects** page and click on the project to which you want to add specification.
 2. Under the **Project description**, click **Edit**.
 
-   ![Project specification](/images/project_spec.jpg)
+![Project specification](/images/project_spec.jpg)
 
 3. Add instruction to the [Markdown editor](#markdown-editor-guide), and click **Submit**.
 
-CVAT will save specification, and it will become accessible from the annotation interface.
-
-### Access to specification for annotators
-
-To open specification, do the following:
-
-1. Open the job to see the annotation interface.
-2. In the top right corner, click **Guide**(![Guide Icon](/images/guide_icon.jpg)).
+CVAT will save the specification, and it will become accessible from the annotation interface.
 
 ### Editing rights
 
 - **For individual users**: only the project owner and project assignee can edit the specification.
-- **For organizations**: only the project owner, maintainer, and project assignee can edit the specification.
+- **For organizations**: specification additionally can be edited by the organization owner or maintainer
 
 ![Editor rights](/images/editor_access_rights_1.jpg)
 
@@ -67,19 +59,19 @@ To add specification to the **Task**, do the following:
 
 CVAT will save specification, and it will become accessible from the annotation interface.
 
-### Access to specification for annotators
-
-To open specification, do the following:
-
-1. Open the job to see the annotation interface.
-2. In the top right corner, click **Guide**(![Guide Icon](/images/guide_icon.jpg)).
-
 ### Editing rights
 
 - **For individual users**: only the task owner and task assignee can edit the specification.
 - **For organizations**: only the task owner, maintainer, and task assignee can edit the specification.
 
 ![Editor rights](/images/editor_access_rights_2.jpg)
+
+## Access to specification for annotators
+
+To open specification, do the following:
+
+1. Open the job to see the annotation interface.
+2. In the top right corner, click **Guide**(![Guide Icon](/images/guide_icon.jpg)).
 
 ## Markdown editor guide
 
