@@ -59,7 +59,7 @@ function QualitySummary(props: Props): JSX.Element {
     );
 
     const downloadReportButton = (
-        <div>
+        <div className='cvat-quality-summary-controls'>
             <>
                 {
                     projectReport ? (

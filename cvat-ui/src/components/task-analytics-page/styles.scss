@@ -134,6 +134,10 @@
 
 .cvat-quality-settings-switch {
     padding-left: $grid-unit-size * 2;
+    padding: 8px;
+    border: 1px solid lightgray;
+    margin-left: 8px;
+    border-radius: 4px;
 }
 
 .cvat-quality-settings-title {
@@ -156,5 +160,10 @@
 .cvat-job-list-item-conflicts {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+}
+
+.cvat-quality-summary-controls {
+    display: flex;
     align-items: center;
 }

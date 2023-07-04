@@ -123,6 +123,10 @@
 
 .cvat-quality-settings-switch {
     padding-left: $grid-unit-size * 2;
+    padding: 8px;
+    border: 1px solid lightgray;
+    margin-left: 8px;
+    border-radius: 4px;
 }
 
 .cvat-quality-settings-title {
@@ -167,4 +171,9 @@
 .cvat-project-quality-page-not-configured-block {
     width: 100%;
     padding: 5% 0;
+}
+
+.cvat-quality-summary-controls {
+    display: flex;
+    align-items: center;
 }

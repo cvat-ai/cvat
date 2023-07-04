@@ -60,7 +60,7 @@ function MeanQuality(props: Props): JSX.Element {
     );
 
     const downloadReportButton = (
-        <div>
+        <div className='cvat-quality-summary-controls'>
             {
                 taskReport?.id ? (
                     <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
