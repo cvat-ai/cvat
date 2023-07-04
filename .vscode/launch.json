@@ -458,7 +458,7 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {"DJANGO_CONFIGURATION": "production"},
+            "env": {},
             "console": "internalConsole"
         },
         {

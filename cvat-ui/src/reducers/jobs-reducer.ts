@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import { JobsActions, JobsActionTypes } from 'actions/jobs-actions';
 import { JobsState } from '.';
 
@@ -16,6 +17,9 @@ const defaultState: JobsState = {
     },
     current: [],
     previews: {},
+    activities: {
+        deletes: {},
+    },
 };
 
 export default (state: JobsState = defaultState, action: JobsActions): JobsState => {
@@ -86,6 +90,48 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
                         fetching: false,
                         initialized: true,
                     },
+                },
+            };
+        }
+        case JobsActionTypes.DELETE_JOB: {
+            const { jobID } = action.payload;
+            const { deletes } = state.activities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: {
+                        ...deletes,
+                        [jobID]: false,
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.DELETE_JOB_SUCCESS: {
+            const { jobID } = action.payload;
+            const { deletes } = state.activities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: {
+                        ...deletes,
+                        [jobID]: true,
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.DELETE_JOB_FAILED: {
+            const { jobID } = action.payload;
+            const { deletes } = state.activities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: _.omit(deletes, jobID),
                 },
             };
         }

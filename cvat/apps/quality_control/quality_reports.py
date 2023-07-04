@@ -2241,10 +2241,9 @@ class QualityReportUpdateManager:
             except Task.DoesNotExist:
                 return
 
-            # Try to use shared queryset to minimize DB requests
-            job_queryset = Job.objects.prefetch_related("segment")
-            job_queryset = JobDataProvider.add_prefetch_info(job_queryset)
-            job_queryset = job_queryset.filter(segment__task_id=task_id).all()
+            # Try to use a shared queryset to minimize DB requests
+            job_queryset = Job.objects.select_related("segment")
+            job_queryset = job_queryset.filter(segment__task_id=task_id)
 
             # The GT job could have been removed during scheduling, so we need to check it exists
             gt_job: Job = next(
@@ -2257,6 +2256,14 @@ class QualityReportUpdateManager:
             # - task updated (the gt job, frame set or labels changed) -> everything is computed
             # - job updated -> job report is computed
             #   old reports can be reused in this case (need to add M-1 relationship in reports)
+
+            # Add prefetch data to the shared queryset
+            # All the jobs / segments share the same task, so we can load it just once.
+            # We reuse the same object for better memory use (OOM is possible otherwise).
+            # Perform manual "join", since django can't do this.
+            gt_job = JobDataProvider.add_prefetch_info(job_queryset).get(id=gt_job.id)
+            for job in job_queryset:
+                job.segment.task = gt_job.segment.task
 
             # Preload all the data for the computations
             # It must be done in a single transaction and before all the remaining computations
@@ -2481,7 +2488,7 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     # Decorate the report for better usability and readability:
     # - add conflicting annotation links like:
     # <host>/tasks/62/jobs/82?frame=250&type=shape&serverID=33741
-    # - covert some fractions to percents
+    # - convert some fractions to percents
     # - add common report info
 
     task_id = db_report.get_task().id

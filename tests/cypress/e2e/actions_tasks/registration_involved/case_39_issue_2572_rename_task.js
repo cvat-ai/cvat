@@ -50,14 +50,14 @@ context('Rename a task.', () => {
             secondUser.emailAddr,
             secondUser.password,
         );
-        cy.logout(secondUserName);
+        cy.logout();
         cy.login();
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
     });
 
     after(() => {
-        cy.logout(secondUserName);
+        cy.logout();
         cy.getAuthKey().then((authKey) => {
             cy.deleteUsers(authKey, [secondUserName]);
             cy.deleteTasks(authKey, [newTaskNameSecondUser]);

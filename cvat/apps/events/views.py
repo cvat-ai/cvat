@@ -39,7 +39,7 @@ class EventsViewSet(viewsets.ViewSet):
 
     @extend_schema(summary='Method returns csv log file ',
         methods=['GET'],
-        description='Recieve logs from the server',
+        description='Receive logs from the server',
         parameters=[
             OpenApiParameter('org_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
                 description="Filter events by organization ID"),

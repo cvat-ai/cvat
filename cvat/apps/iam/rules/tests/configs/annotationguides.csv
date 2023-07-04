@@ -1,0 +1,19 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+view,AnnotationGuide,Sandbox,"Target:owner, Target:assignee",,GET,/guides/{id},Worker,N/A
+view,AnnotationGuide,Sandbox,"Job:assignee",,GET,/guides/{id},Worker,N/A
+view,AnnotationGuide,Organization,N/A,,GET,/guides/{id},User,Maintainer
+view,AnnotationGuide,Organization,"Target:owner, Target:assignee",,GET,/guides/{id},Worker,Worker
+view,AnnotationGuide,Organization,"Job:assignee",,GET,/guides/{id},Worker,Worker
+view,AnnotationGuide,N/A,N/A,,GET,/guides/{id},Admin,N/A
+create,AnnotationGuide,Sandbox,"Target:owner, Target:assignee",,POST,/guides,User,N/A
+create,AnnotationGuide,Organization,N/A,,POST,/guides,User,Maintainer
+create,AnnotationGuide,Organization,"Target:owner, Target:assignee",,POST,/guides,User,Worker
+create,AnnotationGuide,N/A,N/A,,POST,/guides,Admin,N/A
+update,AnnotationGuide,Sandbox,"Target:owner, Target:assignee",,PATCH,/guides/{id},User,N/A
+update,AnnotationGuide,Organization,N/A,,PATCH,/guides/{id},User,Maintainer
+update,AnnotationGuide,Organization,"Target:owner, Target:assignee",,PATCH,/guides/{id},User,Worker
+update,AnnotationGuide,N/A,N/A,,PATCH,/guides/{id},Admin,N/A
+delete,AnnotationGuide,Sandbox,"Target:owner, Target:assignee",,DELETE,/guides/{id},User,N/A
+delete,AnnotationGuide,Organization,N/A,,DELETE,/guides/{id},User,Maintainer
+delete,AnnotationGuide,Organization,"Target:owner, Target:assignee",,DELETE,/guides/{id},User,Worker
+delete,AnnotationGuide,N/A,N/A,,DELETE,/guides/{id},Admin,N/A
