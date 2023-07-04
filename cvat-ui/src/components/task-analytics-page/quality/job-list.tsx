@@ -94,6 +94,7 @@ function JobListComponent(props: Props): JSX.Element {
             title: 'Job',
             dataIndex: 'job',
             key: 'job',
+            sorter: sorter('key'),
             render: (id: number): JSX.Element => (
                 <div>
                     <Button
