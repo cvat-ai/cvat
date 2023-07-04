@@ -23,6 +23,7 @@ import {
     changeShapesOutlinedBorders as changeShapesOutlinedBordersAction,
     changeShowBitmap as changeShowBitmapAction,
     changeShowProjections as changeShowProjectionsAction,
+    changeLineWidth as changeLineWidthAction,
 } from 'actions/settings-actions';
 
 interface StateToProps {
@@ -35,6 +36,7 @@ interface StateToProps {
     showBitmap: boolean;
     showProjections: boolean;
     jobInstance: any;
+    lineWidth: number;
 }
 
 interface DispatchToProps {
@@ -45,6 +47,7 @@ interface DispatchToProps {
     changeShapesOutlinedBorders(outlined: boolean, color: string): void;
     changeShowBitmap(event: CheckboxChangeEvent): void;
     changeShowProjections(event: CheckboxChangeEvent): void;
+    changeLineWidth(value: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -55,7 +58,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         settings: {
             shapes: {
-                colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+                colorBy, opacity, selectedOpacity, outlined, outlineColor, showBitmap, showProjections, lineWidth,
             },
         },
     } = state;
@@ -70,6 +73,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showBitmap,
         showProjections,
         jobInstance,
+        lineWidth,
     };
 }
 
@@ -96,6 +100,9 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeShowProjections(event: CheckboxChangeEvent): void {
             dispatch(changeShowProjectionsAction(event.target.checked));
         },
+        changeLineWidth(value: number): void {
+            dispatch(changeLineWidthAction(value));
+        },
     };
 }
 
@@ -119,6 +126,8 @@ function AppearanceBlock(props: Props): JSX.Element {
         changeShowBitmap,
         changeShowProjections,
         jobInstance,
+        lineWidth,
+        changeLineWidth,
     } = props;
 
     const is2D = jobInstance.dimension === DimensionType.DIM_2D;
@@ -163,6 +172,14 @@ function AppearanceBlock(props: Props): JSX.Element {
                         value={selectedOpacity}
                         min={0}
                         max={100}
+                    />
+                    <Text type='secondary'>Line width</Text>
+                    <Slider
+                        className='cvat-appearance-line-width-slider'
+                        onChange={changeLineWidth}
+                        value={lineWidth}
+                        min={1}
+                        max={10}
                     />
                     <Checkbox
                         className='cvat-appearance-outlinded-borders-checkbox'

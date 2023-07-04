@@ -22,6 +22,7 @@ const defaultState: SettingsState = {
         outlineColor: '#000000',
         showBitmap: false,
         showProjections: false,
+        lineWidth: 1,
     },
     workspace: {
         autoSave: false,
@@ -132,6 +133,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 shapes: {
                     ...state.shapes,
                     selectedOpacity: action.payload.selectedOpacity,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_LINE_WIDTH: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    lineWidth: action.payload.lineWidth,
                 },
             };
         }

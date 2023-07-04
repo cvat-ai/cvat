@@ -792,6 +792,7 @@ export interface ShapesSettingsState {
     outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
+    lineWidth: number;
 }
 
 export interface SettingsState {

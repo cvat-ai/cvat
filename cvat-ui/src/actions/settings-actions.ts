@@ -18,6 +18,7 @@ export enum SettingsActionTypes {
     CHANGE_SHAPES_COLOR_BY = 'CHANGE_SHAPES_COLOR_BY',
     CHANGE_SHAPES_OUTLINED_BORDERS = 'CHANGE_SHAPES_OUTLINED_BORDERS',
     CHANGE_SHAPES_SHOW_PROJECTIONS = 'CHANGE_SHAPES_SHOW_PROJECTIONS',
+    CHANGE_LINE_WIDTH = 'CHANGE_LINE_WIDTH',
     CHANGE_SHOW_UNLABELED_REGIONS = 'CHANGE_SHOW_UNLABELED_REGIONS',
     CHANGE_FRAME_STEP = 'CHANGE_FRAME_STEP',
     CHANGE_FRAME_SPEED = 'CHANGE_FRAME_SPEED',
@@ -97,6 +98,15 @@ export function changeShowProjections(showProjections: boolean): AnyAction {
         type: SettingsActionTypes.CHANGE_SHAPES_SHOW_PROJECTIONS,
         payload: {
             showProjections,
+        },
+    };
+}
+
+export function changeLineWidth(lineWidth: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_LINE_WIDTH,
+        payload: {
+            lineWidth,
         },
     };
 }
