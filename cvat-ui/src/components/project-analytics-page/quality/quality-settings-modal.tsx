@@ -57,11 +57,13 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
 
                 settings.panopticComparison = values.panopticComparison;
 
-                const responseSettings = await settings.create();
-                setQualitySettings(responseSettings);
-
                 if (!settingsInitialized) {
+                    const responseSettings = await settings.create();
+                    setQualitySettings(responseSettings);
                     setInitialized(true);
+                } else {
+                    const responseSettings = await settings.save();
+                    setQualitySettings(responseSettings);
                 }
             }
             setVisible(false);

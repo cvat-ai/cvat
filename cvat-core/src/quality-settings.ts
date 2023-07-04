@@ -180,7 +180,7 @@ export default class QualitySettings {
             object_visibility_threshold: this.#objectVisibilityThreshold,
             panoptic_comparison: this.#panopticComparison,
             compare_attributes: this.#compareAttributes,
-            project_id: this.#project_id,
+            ...(this.#project_id ? { project_id: this.#project_id } : {}),
         };
 
         return result;
@@ -214,7 +214,7 @@ Object.defineProperties(
             value: async function implementation() {
                 const result = await serverProxy.analytics.quality.settings.create(this.toJSON());
                 return result;
-            }
+            },
         }),
-    })
+    }),
 );

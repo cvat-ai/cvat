@@ -8,12 +8,11 @@ import React, { useEffect, useState } from 'react';
 import {
     Project, QualityReport, QualitySettings, getCore,
 } from 'cvat-core-wrapper';
-import { Col, Row } from 'antd/lib/grid';
+import { Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 import { useIsMounted } from 'utils/hooks';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import { Button, Card } from 'antd';
 import QualitySummary from './quality-summary';
 import TaskList from './task-list';
 import ConflictsSummary from './conflicts-summary';
@@ -54,9 +53,28 @@ function ProjectQualityComponent(props: Props): JSX.Element {
 
         core.analytics.quality.settings.get({ projectId: project.id })
             .then((result: QualitySettings | null) => {
-                setQualitySettingsFetching(false);
                 setQualitySettings(result);
                 setQualitySettingsInitialized(!!result);
+
+                if (!result) {
+                    core.analytics.quality.settings.defaults().then((defaults: object) => {
+                        setQualitySettings(new QualitySettings({
+                            ...defaults,
+                            project_id: project.id,
+                        }));
+                        setQualitySettingsFetching(false);
+                    }).catch((_error: any) => {
+                        if (isMounted()) {
+                            notification.error({
+                                description: _error.toString(),
+                                message: "Couldn't fetch default settings",
+                                className: 'cvat-notification-notice-get-settings-error',
+                            });
+                        }
+                    });
+                } else {
+                    setQualitySettingsFetching(false);
+                }
             })
             .catch((_error: any) => {
                 if (isMounted()) {
@@ -69,70 +87,38 @@ function ProjectQualityComponent(props: Props): JSX.Element {
             });
     }, [project?.id]);
 
-    const configureQualitySettings = () => {
-        const core = getCore();
-
-        core.analytics.quality.settings.defaults().then((defaults: object) => {
-            setQualitySettings(new QualitySettings({
-                ...defaults,
-                project_id: project.id,
-            }));
-
-            setQualitySettingsVisible(true);
-        });
-    };
-
     return (
         <div className='cvat-project-quality-page'>
             {
                 qualitySettingsFetching ? (
                     <CVATLoadingSpinner size='large' />
-                ) : ((!qualitySettingsInitialized) ?
-                    (
-                        <Row justify='center'>
-                            <Card className='cvat-project-quality-page-not-configured-block'>
-                                <Col>
-                                    <Row justify='center'>
-                                        <Col>
-                                            Quality settings are not configured
-                                        </Col>
-                                    </Row>
-                                    <Row justify='center'>
-                                        <Col>
-                                            <Button type='primary' onClick={configureQualitySettings}>Configure</Button>
-                                        </Col>
-                                    </Row>
-                                </Col>
-                            </Card>
+                ) : (
+                    <>
+                        <Row>
+                            <QualitySummary
+                                projectId={project.id}
+                                projectReport={projectReport}
+                                setQualitySettingsVisible={setQualitySettingsVisible}
+                            />
                         </Row>
-                    ) : (
-                        <>
-                            <Row>
-                                <QualitySummary
-                                    projectId={project.id}
-                                    projectReport={projectReport}
-                                    setQualitySettingsVisible={setQualitySettingsVisible}
-                                />
-                            </Row>
-                            <Row gutter={16}>
-                                <ConflictsSummary projectId={project.id} projectReport={projectReport} />
-                                <CoverageSummary projectId={project.id} projectReport={projectReport} />
-                            </Row>
-                            {
-                                (!projectReport || !projectReport.summary.gtCount) ? (
-                                    <Row>
-                                        <Text type='secondary' className='cvat-task-quality-reports-hint'>
-                                            Quality estimation requires annotated GT jobs in the tasks.
-                                            Please add more GT jobs to make the estimate more accurate.
-                                        </Text>
-                                    </Row>
-                                ) : null
-                            }
-                            <Row>
-                                <TaskList projectId={project.id} projectReport={projectReport} />
-                            </Row>
-                        </>
-                    )
+                        <Row gutter={16}>
+                            <ConflictsSummary projectId={project.id} projectReport={projectReport} />
+                            <CoverageSummary projectId={project.id} projectReport={projectReport} />
+                        </Row>
+                        {
+                            (!projectReport || !projectReport.summary.gtCount) ? (
+                                <Row>
+                                    <Text type='secondary' className='cvat-task-quality-reports-hint'>
+                                        Quality estimation requires annotated GT jobs in the project tasks.
+                                        Please add more GT jobs to make the estimates more accurate.
+                                    </Text>
+                                </Row>
+                            ) : null
+                        }
+                        <Row>
+                            <TaskList projectId={project.id} projectReport={projectReport} />
+                        </Row>
+                    </>
                 )
             }
             <QualitySettingsModal
