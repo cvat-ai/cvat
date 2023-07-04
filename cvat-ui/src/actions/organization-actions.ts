@@ -222,6 +222,7 @@ export function leaveOrganizationAsync(organization: any): ThunkAction {
             await organization.leave(user);
             dispatch(organizationActions.leaveOrganizationSuccess());
             localStorage.removeItem('currentOrganization');
+            window.location.reload();
         } catch (error) {
             dispatch(organizationActions.leaveOrganizationFailed(error));
         }
