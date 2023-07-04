@@ -82,9 +82,9 @@ class QualityReport(models.Model):
         Project, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
     )
 
-    parent = models.ForeignKey(
-        "self", on_delete=models.CASCADE, related_name="children", null=True, blank=True
-    )
+    # job reports should all have a single parent report
+    # task reports may have none, or be shared between several project reports
+    parents = models.ManyToManyField("self", symmetrical=False, blank=True, related_name="children")
     children: Sequence[QualityReport]
 
     created_date = models.DateTimeField(auto_now_add=True)
@@ -94,6 +94,13 @@ class QualityReport(models.Model):
     data = models.JSONField()
 
     conflicts: Sequence[AnnotationConflict]
+
+    @property
+    def parent(self) -> Optional[QualityReport]:
+        try:
+            return self.parents.first()
+        except self.DoesNotExist:
+            return None
 
     @property
     def target(self) -> QualityReportTarget:

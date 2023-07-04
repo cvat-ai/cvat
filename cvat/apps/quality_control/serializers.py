@@ -47,6 +47,9 @@ class QualityReportSummarySerializer(serializers.Serializer):
 class QualityReportSerializer(serializers.ModelSerializer):
     target = serializers.ChoiceField(models.QualityReportTarget.choices())
     summary = QualityReportSummarySerializer()
+    parent_id = serializers.IntegerField(
+        source="parent.id", default=None, allow_null=True, read_only=True
+    )
 
     class Meta:
         model = models.QualityReport

@@ -3738,8 +3738,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''id'', ''job_id'',
-          ''task_id'', ''parent_id'', ''project_id'', ''created_date'', ''gt_last_updated'',
-          ''target_last_updated'']'
+          ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'', ''target_last_updated'']'
         schema:
           type: string
       - name: job_id
@@ -3769,11 +3768,11 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
-      - name: parent_id
-        in: query
-        description: A simple equality filter for the parent_id field
+      - in: query
+        name: parent_id
         schema:
           type: integer
+        description: A simple equality filter for parent id
       - in: query
         name: project_id
         schema:
@@ -3783,8 +3782,8 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''job_id'', ''task_id'', ''parent_id'', ''project_id'', ''created_date'',
-          ''gt_last_updated'', ''target_last_updated'']'
+          [''id'', ''job_id'', ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'',
+          ''target_last_updated'']'
         schema:
           type: string
       - in: query
@@ -8654,8 +8653,8 @@ components:
           readOnly: true
         parent_id:
           type: integer
-          nullable: true
           readOnly: true
+          nullable: true
         target:
           $ref: '#/components/schemas/QualityReportTarget'
         summary:
@@ -8743,8 +8742,6 @@ components:
           readOnly: true
         task_id:
           type: integer
-          nullable: true
-          readOnly: true
         project_id:
           type: integer
         iou_threshold:
@@ -8823,6 +8820,8 @@ components:
     QualitySettingsRequest:
       type: object
       properties:
+        task_id:
+          type: integer
         project_id:
           type: integer
         iou_threshold:

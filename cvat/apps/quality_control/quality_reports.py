@@ -2494,7 +2494,6 @@ class TaskQualityReportUpdateManager:
         db_job_reports = []
         for job_report in job_reports:
             db_job_report = models.QualityReport(
-                parent=db_task_report,
                 job=job_report["job"],
                 target_last_updated=job_report["target_last_updated"],
                 gt_last_updated=job_report["gt_last_updated"],
@@ -2505,6 +2504,7 @@ class TaskQualityReportUpdateManager:
         db_job_reports = bulk_create(
             db_model=models.QualityReport, objects=db_job_reports, flt_param={}
         )
+        db_task_report.children.add(*db_job_reports)
 
         db_conflicts = []
         db_report_iter = itertools.chain([db_task_report], db_job_reports)
@@ -2917,7 +2917,7 @@ class ProjectQualityReportUpdateManager:
         )
         db_project_report.save()
 
-        db_project_report.children.set(task_reports, bulk=True, clear=False)
+        db_project_report.children.add(*task_reports)
 
         return db_project_report
 

@@ -4,6 +4,21 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def copy_parents_to_new_field(apps, schema_editor):
+    QualityReport = apps.get_model("quality_control", "QualityReport")
+
+    reports = QualityReport.objects.all()
+    QualityReportParentsRel = QualityReport.parents.through
+    QualityReportParentsRel.objects.bulk_create(
+        [
+            QualityReportParentsRel(from_qualityreport=report, to_qualityreport=report.parent)
+            for report in reports
+            if report.parent
+        ],
+        batch_size=1000,
+    )
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("engine", "0070_add_job_type_created_date"),
@@ -48,5 +63,19 @@ class Migration(migrations.Migration):
                 related_name="quality_settings",
                 to="engine.task",
             ),
+        ),
+        migrations.AddField(
+            model_name="qualityreport",
+            name="parents",
+            field=models.ManyToManyField(
+                blank=True, to="quality_control.qualityreport", related_name="children"
+            ),
+        ),
+        migrations.RunPython(
+            code=copy_parents_to_new_field,
+        ),
+        migrations.RemoveField(
+            model_name="qualityreport",
+            name="parent",
         ),
     ]

@@ -63,7 +63,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     queryset = (
         AnnotationConflict.objects.select_related(
             "report",
-            "report__parent",
+            "report__parents",
             "report__job",
             "report__job__segment",
             "report__job__segment__task",
@@ -109,10 +109,13 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
                 if report.target == QualityReportTarget.TASK:
                     queryset = queryset.filter(
-                        Q(report=report) | Q(report__parent=report)
+                        Q(report=report) | Q(report__parents__contains=report)
                     ).distinct()
                 elif report.target == QualityReportTarget.JOB:
                     queryset = queryset.filter(report=report)
+                elif report.target == QualityReportTarget.PROJECT:
+                    # project reports would contain too many conflicts to adequately use such info
+                    queryset = AnnotationConflict.objects.none()
                 else:
                     assert False
             else:
@@ -142,6 +145,11 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
                 "project_id",
                 type=OpenApiTypes.INT,
                 description="A simple equality filter for project id",
+            ),
+            OpenApiParameter(
+                "parent_id",
+                type=OpenApiTypes.INT,
+                description="A simple equality filter for parent id",
             ),
             OpenApiParameter(
                 "target", type=OpenApiTypes.STR, description="A simple equality filter for target"
@@ -180,7 +188,6 @@ class QualityReportViewSet(
         "id",
         "job_id",
         "task_id",
-        "parent_id",
         "project_id",
         "created_date",
         "gt_last_updated",
@@ -201,6 +208,8 @@ class QualityReportViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
+            parent_report = None
+
             if task_id := self.request.query_params.get("task_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
                 try:
@@ -227,9 +236,16 @@ class QualityReportViewSet(
                     | Q(task__project__id=project_id)
                     | Q(project__id=project_id)
                 ).distinct()
-            else:
-                perm = QualityReportPermission.create_scope_list(self.request)
-                queryset = perm.filter(queryset)
+            elif parent_id := self.request.query_params.get("parent_id", None):
+                try:
+                    parent_report = QualityReport.objects.get(id=parent_id)
+                except QualityReport.DoesNotExist as ex:
+                    raise NotFound(f"Quality report {parent_id} does not exist") from ex
+
+                queryset = parent_report.children.all()
+
+            perm = QualityReportPermission.create_scope_list(self.request)
+            queryset = perm.filter(queryset)
 
             if target := self.request.query_params.get("target", None):
                 if target == QualityReportTarget.JOB:
