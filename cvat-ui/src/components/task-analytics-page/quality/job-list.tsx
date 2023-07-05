@@ -152,11 +152,14 @@ function JobListComponent(props: Props): JSX.Element {
             dataIndex: 'frame_intersection',
             key: 'frame_intersection',
             className: 'cvat-job-item-frame-intersection',
+            sorter: sorter('frame_intersection'),
             render: (report?: QualityReport): JSX.Element => {
+                const frames = report?.summary.frameCount;
                 const frameSharePercent = report?.summary?.frameSharePercent;
                 return (
                     <Text>
-                        {toRepresentation(frameSharePercent)}
+                        {toRepresentation(frames, false, 0)}
+                        {frames ? ` (${toRepresentation(frameSharePercent)})` : ''}
                     </Text>
                 );
             },

@@ -54,7 +54,6 @@ function ProjectQualityComponent(props: Props): JSX.Element {
         core.analytics.quality.settings.get({ projectId: project.id })
             .then((result: QualitySettings | null) => {
                 setQualitySettings(result);
-                setQualitySettingsInitialized(!!result);
 
                 if (!result) {
                     core.analytics.quality.settings.defaults().then((defaults: object) => {
@@ -62,6 +61,7 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                             ...defaults,
                             project_id: project.id,
                         }));
+                        setQualitySettingsInitialized(false);
                         setQualitySettingsFetching(false);
                     }).catch((_error: any) => {
                         if (isMounted()) {
@@ -73,6 +73,7 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                         }
                     });
                 } else {
+                    setQualitySettingsInitialized(true);
                     setQualitySettingsFetching(false);
                 }
             })

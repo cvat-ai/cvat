@@ -68,7 +68,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
         } catch (e) {
             return false;
         }
-    }, [settings]);
+    }, [settings, settingsInitialized]);
 
     const onCancel = useCallback(() => {
         dispatch(analyticsActions.switchQualitySettingsVisible(false));
@@ -365,20 +365,24 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                     </Row>
                 </Form>
             ) : (
-                (settings && !formEnabled && task.projectId) ? (
-                    <>
-                        <Text>The task is in a project, please check </Text>
-                        <Link
-                            to={`/projects/${task.projectId}/analytics`}
-                            onClick={onCancel}
-                        >
-                            the&nbsp;project&nbsp;quality&nbsp;settings
-                        </Link>
-                        <Text> instead.</Text>
-                    </>
-                ) : (
-                    <Text>No quality settings</Text>
-                )
+                <>
+                    {
+                        (settings && !formEnabled && task.projectId) ? (
+                            <>
+                                <Text>The task is in a project, please check </Text>
+                                <Link
+                                    to={`/projects/${task.projectId}/analytics`}
+                                    onClick={onCancel}
+                                >
+                                    the&nbsp;project&nbsp;quality&nbsp;settings
+                                </Link>
+                                <Text> instead.</Text>
+                            </>
+                        ) : (
+                            <Text>No quality settings</Text>
+                        )
+                    }
+                </>
             )}
         </Modal>
     );

@@ -66,12 +66,13 @@ export interface ProjectsState {
 }
 
 export interface TasksQuery {
-    page: number;
-    id: number | null;
-    search: string | null;
-    filter: string | null;
-    sort: string | null;
-    projectId: number | null;
+    page?: number;
+    pageSize?: number | 'all';
+    id?: number | null;
+    search?: string | null;
+    filter?: string | null;
+    sort?: string | null;
+    projectId?: number | null;
 }
 
 export type Task = any; // cvat-core instance
@@ -900,6 +901,8 @@ export interface QualityQuery {
     jobId?: number | null;
     parentId?: number | null;
     target?: string | null;
+    page?: number | null;
+    pageSize?: number | 'all';
 }
 
 export interface QualitySettingsQuery {

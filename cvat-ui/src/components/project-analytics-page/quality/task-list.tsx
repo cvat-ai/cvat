@@ -34,23 +34,22 @@ function TaskListComponent(props: Props): JSX.Element {
     const isMounted = useIsMounted();
 
     const [tasks, setTasks] = useState<Task[]>([]);
-    const [taskReports, setTaskReports] = useState<QualityReport[]>([]);
     const [tasksMap, setTasksMap] = useState<Record<number, Task>>({});
     const [taskReportsMap, setTaskReportsMap] = useState<Record<number, QualityReport | null>>({});
-    const [query, setQuery] = useState<{ tasks: TasksQuery, quality: QualityQuery } | null>(null);
+    const [query] = useState<{ tasks: TasksQuery, quality: QualityQuery } | null>({
+        tasks: { pageSize: 'all' },
+        quality: { pageSize: 'all' },
+    });
 
     const [displayedTasks, setDisplayedTasks] = useState<Task[]>(tasks);
 
     useEffect(() => {
         if (!projectId || !projectReportId) {
-            setTaskReports([]);
             setTasks([]);
             return;
         }
 
         const core = getCore();
-
-        /* TODO: implement pagination / caching / prefetch */
 
         const reportsPromise = core.analytics.quality.reports({
             ...query?.quality || {},
@@ -86,28 +85,27 @@ function TaskListComponent(props: Props): JSX.Element {
 
         Promise.all([reportsPromise, tasksPromise])
             .then((values: [QualityReport[], Task[]]) => {
-                const [taskReports, tasks] = values;
-                setTaskReports(taskReports);
-                setTasks(tasks);
+                const [fetchedTaskReports, fetchedTasks] = values;
+                setTasks(fetchedTasks);
 
-                const tasksMap: Record<number, Task> = {};
-                for (const task of (tasks || [])) {
-                    tasksMap[task.id] = task;
+                const newTasksMap: Record<number, Task> = {};
+                for (const task of (fetchedTasks || [])) {
+                    newTasksMap[task.id] = task;
                 }
-                setTasksMap(tasksMap);
+                setTasksMap(newTasksMap);
 
                 const tasksReportsMap: Record<number, QualityReport | null> = {};
-                for (const task of (tasks || [])) {
+                for (const task of (fetchedTasks || [])) {
                     tasksReportsMap[task.id] = null;
                 }
-                for (const report of (taskReports || [])) {
+                for (const report of (fetchedTaskReports || [])) {
                     if (report.taskId in tasksReportsMap) {
                         tasksReportsMap[report.taskId] = report;
                     }
                 }
                 setTaskReportsMap(tasksReportsMap);
 
-                setDisplayedTasks(tasks);
+                setDisplayedTasks(fetchedTasks);
             });
     }, [projectId, projectReportId, query]);
 
@@ -170,7 +168,7 @@ function TaskListComponent(props: Props): JSX.Element {
                         href={`/tasks/${id}/analytics`}
                     >
                         {`#${id}`}
-                        {`: ${tasksMap[id].name}` /* TODO: restrict maximum length */ }
+                        {`: ${tasksMap[id].name.substring(0, 20) + (tasksMap[id].name.length > 20 ? '...' : '')}` }
                     </Button>
                 </div>
             ),
@@ -211,13 +209,10 @@ function TaskListComponent(props: Props): JSX.Element {
                             {status}
                             <br />
                             {taskInstance.progress.completedJobs}
-                            {' '}
-                            /
+                            {' / '}
                             {taskInstance.progress.totalJobs}
-                            {' '}
-                            (
-                            {percent(taskInstance.progress.completedJobs, taskInstance.progress.totalJobs, 0)}
-                            )
+                            {taskInstance.progress.completedJobs ?
+                                ` (${percent(taskInstance.progress.completedJobs, taskInstance.progress.totalJobs, 0)})` : ''}
                         </Text>
                     </div>
                 );

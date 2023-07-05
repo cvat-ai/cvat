@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { camelCase, omit, snakeCase } from 'lodash';
+import { omit } from 'lodash';
 import config from './config';
 
 import PluginRegistry from './plugins';
@@ -32,6 +32,10 @@ import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import { FramesMetaData } from './frames';
+
+function isPageSize(value: any) {
+    return isInteger(value) || value === 'all';
+}
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -214,6 +218,7 @@ export default function implementAPI(cvat) {
     cvat.tasks.get.implementation = async (filter) => {
         checkFilter(filter, {
             page: isInteger,
+            pageSize: isPageSize,
             projectId: isInteger,
             id: isInteger,
             sort: isString,
@@ -225,7 +230,7 @@ export default function implementAPI(cvat) {
         checkExclusiveFields(filter, ['id'], ['page']);
         const searchParams = {};
         for (const key of Object.keys(filter)) {
-            if (['page', 'id', 'sort', 'search', 'filter', 'ordering'].includes(key)) {
+            if (['page', 'pageSize', 'id', 'sort', 'search', 'filter', 'ordering'].includes(key)) {
                 searchParams[key] = filter[key];
             }
         }
@@ -264,6 +269,7 @@ export default function implementAPI(cvat) {
         checkFilter(filter, {
             id: isInteger,
             page: isInteger,
+            pageSize: isPageSize,
             search: isString,
             sort: isString,
             filter: isString,
@@ -272,7 +278,7 @@ export default function implementAPI(cvat) {
         checkExclusiveFields(filter, ['id'], ['page']);
         const searchParams = {};
         for (const key of Object.keys(filter)) {
-            if (['page', 'id', 'sort', 'search', 'filter'].includes(key)) {
+            if (['page', 'pageSize', 'id', 'sort', 'search', 'filter'].includes(key)) {
                 searchParams[key] = filter[key];
             }
         }
@@ -361,7 +367,7 @@ export default function implementAPI(cvat) {
     };
 
     cvat.analytics.quality.reports.implementation = async (filter) => {
-        let updatedParams: Record<string, string> = {};
+        const updatedParams: Record<string, string> = {};
         if ('parentId' in filter) {
             updatedParams.parent_id = filter.parentId;
         }
@@ -377,8 +383,11 @@ export default function implementAPI(cvat) {
         if ('target' in filter) {
             updatedParams.target = filter.target;
         }
+        if ('pageSize' in filter) {
+            updatedParams.page_size = filter.pageSize;
+        }
         if (!updatedParams?.sort) {
-            updatedParams.sort = '-created_date'
+            updatedParams.sort = '-created_date';
         }
 
         const reportsData = await serverProxy.analytics.quality.reports(updatedParams);
@@ -404,15 +413,14 @@ export default function implementAPI(cvat) {
     cvat.analytics.quality.settings.get.implementation = async (filter: any) => {
         interface FilterParams {
             id?: number, taskId?: number, projectId?: number
-        };
-        const {id, taskId, projectId}: FilterParams = filter;
+        }
+        const { id, taskId, projectId }: FilterParams = filter;
 
         const settings = await serverProxy.analytics.quality.settings.get(id, taskId, projectId);
         if (settings) {
             return new QualitySettings({ ...settings });
-        } else {
-            return null;
         }
+        return null;
     };
 
     cvat.analytics.quality.settings.update.implementation = async (settingsId: number, values: any) => {
@@ -420,9 +428,8 @@ export default function implementAPI(cvat) {
 
         if (settings) {
             return new QualitySettings({ ...settings });
-        } else {
-            return null;
         }
+        return null;
     };
 
     cvat.analytics.quality.settings.create.implementation = async (values: any) => {
@@ -430,9 +437,8 @@ export default function implementAPI(cvat) {
 
         if (settings) {
             return new QualitySettings({ ...settings });
-        } else {
-            return null;
         }
+        return null;
     };
 
     cvat.analytics.quality.settings.defaults.implementation = async () => {
@@ -443,7 +449,7 @@ export default function implementAPI(cvat) {
         for (const key of Object.keys(requestParams)) {
             if ('default' in requestParams[key]) {
                 // constructor uses the api names, in snake case
-                defaults[key] = requestParams[key]['default'];
+                defaults[key] = requestParams[key].default;
             }
         }
 
@@ -455,9 +461,7 @@ export default function implementAPI(cvat) {
         return new FramesMetaData({ ...result });
     };
 
-    cvat.scheme.get.implementation = async () => {
-        return await serverProxy.scheme.get();
-    };
+    cvat.scheme.get.implementation = async () => serverProxy.scheme.get();
 
     return cvat;
 }

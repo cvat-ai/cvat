@@ -23,8 +23,6 @@ import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { FunctionsResponseBody } from './server-response-types';
 import { SerializedQualityConflictData } from './quality-conflict';
-import { assert } from 'console';
-import { getDefaultSettings } from 'http2';
 
 type Params = {
     org: number | string,
@@ -647,11 +645,10 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
             });
             return results as SerializedTask[] & { count: number };
         }
-
         response = await Axios.get(`${backendAPI}/tasks`, {
             params: {
                 ...filter,
-                page_size: 10,
+                page_size: (filter.pageSize || 10),
             },
         });
     } catch (errorData) {
@@ -2253,31 +2250,31 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
     }
 }
 
-async function getQualitySettings(id?: number, taskId?: number, projectId?: number): Promise<SerializedQualitySettingsData> {
+async function getQualitySettings(
+    id?: number, taskId?: number, projectId?: number,
+): Promise<SerializedQualitySettingsData> {
     const { backendAPI } = config;
 
     try {
-        if (!(id ^ taskId ^ projectId)) {
+        if (!((!!id) !== (!!taskId) !== (!!projectId))) {
             throw new TypeError(
-                `One and only one argument is expected, but got ` +
-                `id=${id}, taskId=${taskId}, projectId=${projectId}`
+                'One and only one argument is expected, but got ' +
+                `id=${id}, taskId=${taskId}, projectId=${projectId}`,
             );
         }
 
-        if (taskId || projectId) {
-            const response = await Axios.get(`${backendAPI}/quality/settings`, {
-                params: {
-                    ...(taskId ? {task_id: taskId} : {}),
-                    ...(projectId ? {project_id: projectId} : {}),
-                },
-            });
-
-            return response.data.results[0];
-        } else if (id) {
+        if (id) {
             const response = await Axios.get(`${backendAPI}/quality/settings/${id}`);
             return response.data;
         }
+        const response = await Axios.get(`${backendAPI}/quality/settings`, {
+            params: {
+                ...(taskId ? { task_id: taskId } : {}),
+                ...(projectId ? { project_id: projectId } : {}),
+            },
+        });
 
+        return response.data.results[0];
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2348,7 +2345,7 @@ async function getQualityReports(filter): Promise<SerializedQualityReportData[]>
     }
 }
 
-async function getApiScheme(): Promise<Object> {
+async function getApiScheme(): Promise<object> {
     const { backendAPI } = config;
 
     try {

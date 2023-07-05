@@ -31,6 +31,7 @@ export interface FunctionsResponseBody {
 
 export interface ProjectsFilter {
     page?: number;
+    pageSize?: number | 'all';
     id?: number;
     sort?: string;
     search?: string;
@@ -71,7 +72,9 @@ export interface SerializedProject {
     status: ProjectStatus;
 }
 
-export type TasksFilter = ProjectsFilter & { ordering?: string; }; // TODO: Need to clarify how "ordering" is used
+export type TasksFilter = ProjectsFilter & {
+    ordering?: string;
+};
 export type JobsFilter = ProjectsFilter & {
     task_id?: number;
 };

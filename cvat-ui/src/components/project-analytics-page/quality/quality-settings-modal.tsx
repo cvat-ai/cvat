@@ -71,7 +71,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
         } catch (e) {
             return false;
         }
-    }, [settings]);
+    }, [settings, settingsInitialized]);
 
     const onCancel = useCallback(() => {
         setVisible(false);
