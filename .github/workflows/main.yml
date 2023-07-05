@@ -167,12 +167,17 @@ jobs:
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
-          pytest tests/python/ --cov --cov-report xml
+          pytest tests/python/ --cov --cov-report json
+
+          cat coverage.json coverage_cvat_server.json coverage_cvat_worker_annotation.json coverage_cvat_worker_import.json \
+            coverage_cvat_worker_export.json coverage_cvat_worker_quality_reports.json coverage_cvat_worker_webhooks.json \
+            coverage_cvat_utils.json > coverage_merged.json
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage_merged.json
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
@@ -239,6 +244,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage-final.json.json
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -344,6 +350,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: tests/coverage/coverage-final.json
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
