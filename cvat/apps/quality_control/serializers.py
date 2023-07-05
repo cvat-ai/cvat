@@ -180,5 +180,8 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         try:
             return super().create(validated_data)
-        except models.QualitySettings.SettingsAlreadyExistError as ex:
+        except (
+            models.QualitySettings.SettingsAlreadyExistError,
+            models.QualitySettings.InvalidParametersError,
+        ) as ex:
             raise ValidationError(ex.message)

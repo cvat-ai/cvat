@@ -6,11 +6,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
 from django.core.exceptions import ValidationError
-from django.db import models
-from django.db.utils import IntegrityError
+from django.db import IntegrityError, models, transaction
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, Project, ShapeType, Task
@@ -196,16 +195,71 @@ class AnnotationId(models.Model):
             raise ValidationError(f"Unexpected type value '{self.type}'")
 
 
+class QualitySettingsQuerySet(models.QuerySet):
+    @transaction.atomic
+    def create(self, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().create(**kwargs)
+
+    @transaction.atomic
+    def update(self, **kwargs: Any) -> int:
+        self._validate_constraints(kwargs)
+
+        return super().update(**kwargs)
+
+    @transaction.atomic
+    def get_or_create(self, *args, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().get_or_create(*args, **kwargs)
+
+    @transaction.atomic
+    def update_or_create(self, *args, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().update_or_create(*args, **kwargs)
+
+    def _validate_constraints(self, obj: Dict[str, Any]):
+        # Constraints can't be set on the related model fields
+        # This method requires the save operation to be called as a transaction
+        if obj.get("task_id") and obj.get("project_id"):
+            raise QualitySettings.InvalidParametersError(
+                "'task[_id]' and 'project[_id]' cannot be used together"
+            )
+
+        task_id = obj.get("task_id")
+        if not task_id:
+            return
+
+        try:
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist as ex:
+            raise QualitySettings.InvalidParametersError(
+                f"Task with id '{task_id}' does not exist"
+            ) from ex
+
+        if task.project_id:
+            raise QualitySettings.SettingsAlreadyExistError(
+                "Can't define quality settings for a task if the task is in the project."
+            )
+
+
 class QualitySettings(models.Model):
     class SettingsAlreadyExistError(ValidationError):
         pass
 
+    class InvalidParametersError(ValidationError):
+        pass
+
+    objects = QualitySettingsQuerySet.as_manager()
+
     task = models.OneToOneField(
         Task, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
-    )
+    )  # OneToOneField implies unique
     project = models.OneToOneField(
         Project, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
-    )
+    )  # OneToOneField implies unique
 
     iou_threshold = models.FloatField()
     oks_sigma = models.FloatField()
@@ -254,6 +308,7 @@ class QualitySettings(models.Model):
             return getattr(self.project.organization, "id", None)
         return None
 
+    @transaction.atomic
     def save(self, *args, **kwargs) -> None:
         try:
             return super().save(*args, **kwargs)
