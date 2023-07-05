@@ -43,7 +43,7 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin, logging_disabled,
     generate_image_file, generate_video_file)
 
-#supress av warnings
+#suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
 
 def create_db_users(cls):

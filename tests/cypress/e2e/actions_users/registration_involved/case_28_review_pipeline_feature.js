@@ -153,7 +153,7 @@ context('Review pipeline feature', () => {
                 secondUser.emailAddr,
                 secondUser.password,
             );
-            cy.logout(secondUserName);
+            cy.logout();
             cy.goToRegisterPage();
             cy.userRegistration(
                 thirdUser.firstName,
@@ -162,7 +162,7 @@ context('Review pipeline feature', () => {
                 thirdUser.emailAddr,
                 thirdUser.password,
             );
-            cy.logout(thirdUserName);
+            cy.logout();
         });
 
         it('First user login. Create a task. Open the task. Assign to himself.', () => {
@@ -183,10 +183,10 @@ context('Review pipeline feature', () => {
         it('Login the second, the third user. The task is missing.', () => {
             cy.login(secondUserName, secondUser.password);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
-            cy.logout(secondUserName);
+            cy.logout();
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
-            cy.logout(thirdUserName);
+            cy.logout();
         });
 
         it('First user login. Assign the first job to the second user.', () => {
@@ -245,7 +245,7 @@ context('Review pipeline feature', () => {
                     cy.get('[data-icon="close"]').click(); // Close the notice.
                 });
             cy.goToTaskList();
-            cy.logout(secondUserName);
+            cy.logout();
         });
 
         it('The third user opens the job. Review mode is opened automatically.', () => {
@@ -336,7 +336,7 @@ context('Review pipeline feature', () => {
                     cy.get('[data-icon="close"]').click({ multiple: true }); // Close the notice.
                 });
             cy.goToTaskList();
-            cy.logout(thirdUserName);
+            cy.logout();
         });
 
         it('The second user login. Opens the job again. All issues are visible.', () => {
@@ -438,7 +438,7 @@ context('Review pipeline feature', () => {
                 });
                 cy.contains('[type="button"]', 'Submit').click();
             });
-            cy.logout(secondUserName);
+            cy.logout();
         });
 
         it('The third user login, opens the job, goes to menu, "Submit review"
@@ -451,7 +451,7 @@ context('Review pipeline feature', () => {
         });
         it('The third user logout. The first user login and opens the job, goes to menu,
             "Submit review" => Accept => Submit', () => {
-            cy.logout(thirdUserName);
+            cy.logout();
             cy.login();
             cy.openTaskJob(taskName, 0, false);
             cy.interactMenu('Submit the review');
@@ -474,11 +474,11 @@ context('Review pipeline feature', () => {
             cy.saveJob();
             cy.get('.cvat-notification-notice-save-annotations-failed').should('exist');
             cy.goToTaskList();
-            cy.logout(secondUserName);
+            cy.logout();
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('strong', taskName).should('not.exist');
             cy.goToTaskList();
-            cy.logout(thirdUserName);
+            cy.logout();
         });
 
         it('The first user login. Remove the issue on third frame.', () => {

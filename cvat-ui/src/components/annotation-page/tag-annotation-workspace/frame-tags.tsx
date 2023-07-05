@@ -11,10 +11,14 @@ import { ThunkDispatch } from 'redux-thunk';
 import {
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
-import { CombinedState, ObjectType } from 'reducers';
+import { CombinedState, ObjectType, Workspace } from 'reducers';
+import { ObjectState } from 'cvat-core-wrapper';
+import { filterAnnotations } from 'utils/filter-annotations';
 
 interface StateToProps {
-    states: any[];
+    states: ObjectState[];
+    statesSources: number[];
+    workspace: Workspace;
 }
 
 interface DispatchToProps {
@@ -24,18 +28,21 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            annotations: { states },
+            annotations: { states, statesSources },
+            workspace,
         },
     } = state;
 
     return {
         states,
+        statesSources,
+        workspace,
     };
 }
 
 function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
     return {
-        removeObject(objectState: any): void {
+        removeObject(objectState: ObjectState): void {
             dispatch(removeObjectAction(objectState, false));
         },
     };
@@ -44,18 +51,26 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
 function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
     const {
         states,
+        statesSources,
+        workspace,
         removeObject,
     } = props;
 
-    const [frameTags, setFrameTags] = useState([] as any[]);
+    const [frameTags, setFrameTags] = useState([] as ObjectState[]);
 
-    const onRemoveState = (objectState: any): void => {
+    const onRemoveState = (objectState: ObjectState): void => {
         removeObject(objectState);
     };
 
     useEffect(() => {
-        setFrameTags(states.filter((objectState: any): boolean => objectState.objectType === ObjectType.TAG));
-    }, [states]);
+        setFrameTags(
+            filterAnnotations(states, {
+                statesSources,
+                workspace,
+                include: [ObjectType.TAG],
+            }),
+        );
+    }, [states, statesSources]);
 
     return (
         <>

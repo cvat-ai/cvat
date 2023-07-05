@@ -25,7 +25,7 @@ services:
 
   cvat_server:
     container_name: cvat_server
-    image: cvat/server:${CVAT_VERSION:-v2.4.9}
+    image: cvat/server:${CVAT_VERSION:-v2.5.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -45,6 +45,7 @@ services:
       CLICKHOUSE_HOST: clickhouse
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
+      SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
     entrypoint: /home/django/backend_entrypoint.sh
     labels:
       - traefik.enable=true
@@ -63,7 +64,7 @@ services:
 
   cvat_utils:
     container_name: cvat_utils
-    image: cvat/server:${CVAT_VERSION:-v2.4.9}
+    image: cvat/server:${CVAT_VERSION:-v2.5.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -88,7 +89,7 @@ services:
 
   cvat_worker_import:
     container_name: cvat_worker_import
-    image: cvat/server:${CVAT_VERSION:-v2.4.9}
+    image: cvat/server:${CVAT_VERSION:-v2.5.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -100,6 +101,7 @@ services:
       DJANGO_LOG_SERVER_PORT: 80
       no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
       NUMPROCS: 2
+      SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
     command: -c supervisord/worker.import.conf
     volumes:
       - cvat_data:/home/django/data
@@ -110,7 +112,7 @@ services:
 
   cvat_worker_export:
     container_name: cvat_worker_export
-    image: cvat/server:${CVAT_VERSION:-v2.4.9}
+    image: cvat/server:${CVAT_VERSION:-v2.5.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -133,7 +135,7 @@ services:
 
   cvat_worker_annotation:
     container_name: cvat_worker_annotation
-    image: cvat/server:${CVAT_VERSION:-v2.4.9}
+    image: cvat/server:${CVAT_VERSION:-v2.5.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -156,7 +158,7 @@ services:
 
   cvat_worker_webhooks:
     container_name: cvat_worker_webhooks
-    image: cvat/server:${CVAT_VERSION:-v2.4.9}
+    image: cvat/server:${CVAT_VERSION:-v2.5.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -169,6 +171,7 @@ services:
       DJANGO_LOG_SERVER_PORT: 80
       no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
       NUMPROCS: 1
+      SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
     command: -c supervisord/worker.webhooks.conf
     volumes:
       - cvat_data:/home/django/data
@@ -179,7 +182,7 @@ services:
 
   cvat_worker_quality_reports:
     container_name: cvat_worker_quality_reports
-    image: cvat/server:${CVAT_VERSION:-v2.4.9}
+    image: cvat/server:${CVAT_VERSION:-v2.5.0}
     restart: always
     depends_on:
       - cvat_redis
@@ -201,7 +204,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-v2.4.9}
+    image: cvat/ui:${CVAT_VERSION:-v2.5.0}
     restart: always
     depends_on:
       - cvat_server

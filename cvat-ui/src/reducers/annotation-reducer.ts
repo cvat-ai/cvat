@@ -12,6 +12,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { DimensionType } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
+import { SettingsActionTypes } from 'actions/settings-actions';
 import {
     ActiveControl,
     AnnotationState,
@@ -55,6 +56,7 @@ const defaultState: AnnotationState = {
         openTime: null,
         labels: [],
         requestedId: null,
+        groundTruthJobId: null,
         instance: null,
         attributes: {},
         fetching: false,
@@ -83,12 +85,14 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedElementID: null,
         activatedAttributeID: null,
+        highlightedConflict: null,
         saving: {
             forceExit: false,
             uploading: false,
         },
         collapsed: {},
         collapsedAll: true,
+        statesSources: [],
         states: [],
         filters: [],
         resetGroupFlag: false,
@@ -148,6 +152,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frameData: data,
                 minZ,
                 maxZ,
+                groundTruthJobId,
+                groundTruthJobFramesMeta,
             } = action.payload;
 
             const isReview = job.stage === JobStage.REVIEW;
@@ -179,6 +185,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
+                    groundTruthJobId,
+                    groundTruthJobFramesMeta,
                 },
                 annotations: {
                     ...state.annotations,
@@ -189,6 +197,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         max: maxZ,
                         cur: maxZ,
                     },
+                    statesSources: [job.id],
                 },
                 player: {
                     ...state.player,
@@ -267,7 +276,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 delay,
                 changeTime,
             } = action.payload;
-
             return {
                 ...state,
                 player: {
@@ -285,6 +293,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    highlightedConflict: null,
                     states,
                     zLayer: {
                         min: minZ,
@@ -686,9 +695,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             const {
                 canvas: { activeControl, instance },
+                annotations: { highlightedConflict },
             } = state;
 
-            if (activeControl !== ActiveControl.CURSOR || (instance as Canvas | Canvas3d).mode() !== CanvasMode.IDLE) {
+            if (activeControl !== ActiveControl.CURSOR ||
+                (instance as Canvas | Canvas3d).mode() !== CanvasMode.IDLE ||
+                highlightedConflict) {
                 return state;
             }
 
@@ -1091,6 +1103,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 return state;
             }
 
+            let { statesSources } = state.annotations;
+            if (workspace !== Workspace.REVIEW_WORKSPACE) {
+                statesSources = [state.job.instance.id];
+            }
+
             return {
                 ...state,
                 workspace,
@@ -1098,6 +1115,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID: null,
                     activatedAttributeID: null,
+                    statesSources,
                 },
             };
         }
@@ -1173,6 +1191,55 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     ready: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.HIGHLIGHT_CONFLICT: {
+            const { conflict } = action.payload;
+            if (conflict) {
+                const { annotationConflicts } = conflict;
+                const [mainConflict] = annotationConflicts;
+                const { clientID } = mainConflict;
+                return {
+                    ...state,
+                    annotations: {
+                        ...state.annotations,
+                        highlightedConflict: conflict,
+                        activatedStateID: clientID,
+                        activatedElementID: null,
+                        activatedAttributeID: null,
+                    },
+                };
+            }
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    highlightedConflict: conflict,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHOW_GROUND_TRUTH: {
+            if (action.payload.showGroundTruth) {
+                return {
+                    ...state,
+                    annotations: {
+                        ...state.annotations,
+                        statesSources: [
+                            state.job.instance.id,
+                            state.job.groundTruthJobId,
+                        ],
+                    },
+                };
+            }
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    statesSources: [
+                        state.job.instance.id,
+                    ],
                 },
             };
         }

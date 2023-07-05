@@ -60,7 +60,7 @@ function CreateURLItem(props: ItemProps): JSX.Element {
         <Menu.Item {...rest}>
             <Button
                 className='cvat-object-item-menu-create-url'
-                disabled={serverID === undefined}
+                disabled={!Number.isInteger(serverID)}
                 type='link'
                 icon={<LinkOutlined />}
                 onClick={createURL}
@@ -283,7 +283,7 @@ export default function ItemMenu(props: Props): JSX.Element {
             {is2D && !readonly && shapeType === ShapeType.CUBOID && (
                 <ResetPerspectiveItem key={MenuKeys.RESET_PERSPECIVE} toolProps={props} />
             )}
-            {is2D && objectType !== ObjectType.TAG && (
+            {is2D && !readonly && objectType !== ObjectType.TAG && (
                 <ToBackgroundItem key={MenuKeys.TO_BACKGROUND} toolProps={props} />
             )}
             {is2D && !readonly && objectType !== ObjectType.TAG && (

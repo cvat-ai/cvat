@@ -159,7 +159,7 @@ class _CacheManagerOnline(CacheManager):
             if task_dir.exists():
                 shutil.rmtree(task_dir)
         else:
-            if saved_task.updated_date < task.updated_date:
+            if saved_task.api_model.updated_date < task.updated_date:
                 self._logger.info(
                     f"Task {task.id} has been updated on the server since it was cached; purging the cache"
                 )

@@ -111,18 +111,48 @@
 .cvat-objects-sidebar-issue-item {
     width: 100%;
     margin: 1px;
-    padding: 2px;
+    padding: $grid-unit-size;
+    border-left: 3px solid #ff7300;
+    border-bottom: 1px solid $border-color-1;
 
     &:hover {
-        padding: 0;
-
-        > .ant-alert {
-            border-width: 3px;
-        }
+        border-left: 4px solid #ff7300;
     }
 
     > .ant-alert.ant-alert-with-description {
         padding: $grid-unit-size $grid-unit-size $grid-unit-size $grid-unit-size * 8;
+    }
+
+    p {
+        margin-bottom: 0;
+    }
+}
+
+.cvat-objects-sidebar-conflict-item {
+    width: 100%;
+    margin: 1px;
+    padding: $grid-unit-size;
+    border-left: 3px solid #e10602;
+    border-bottom: 1px solid $border-color-1;
+
+    p {
+        margin-bottom: 0;
+    }
+}
+
+.cvat-objects-sidebar-warning-item {
+    @extend .cvat-objects-sidebar-issue-item;
+}
+
+.cvat-objects-sidebar-item-active {
+    border-left-width: 4px;
+}
+
+.cvat-objects-sidebar-issue-resolved {
+    border-left: 3px solid $border-color-1;
+
+    &:hover {
+        border-left: 4px solid $border-color-1;
     }
 }
 
@@ -150,6 +180,10 @@
                 }
             }
         }
+    }
+
+    .cvat-objects-sidebar-show-ground-truth {
+        margin-right: $grid-unit-size;
     }
 }
 
@@ -448,4 +482,10 @@
 .cvat-objects-sidebar-state-item-elements.cvat-objects-sidebar-state-active-element {
     border: 2px dashed $object-item-border-color;
     padding: 0;
+}
+
+.cvat-objects-sidebar-show-ground-truth-active {
+    path {
+        fill: #1890ff;
+    }
 }

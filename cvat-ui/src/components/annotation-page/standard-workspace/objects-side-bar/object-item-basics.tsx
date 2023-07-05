@@ -23,6 +23,7 @@ interface Props {
     labels: any[];
     shapeType: ShapeType;
     objectType: ObjectType;
+    isGroundTruth: boolean;
     color: string;
     colorBy: ColorBy;
     type: string;
@@ -67,6 +68,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackgroundShortcut,
         toForegroundShortcut,
         removeShortcut,
+        isGroundTruth,
         changeColor,
         changeLabel,
         copy,
@@ -100,6 +102,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         <Row align='middle'>
             <Col span={10}>
                 <Text style={{ fontSize: 12 }}>{clientID}</Text>
+                {isGroundTruth ? <Text style={{ fontSize: 12 }}>&nbsp;GT</Text> : null}
                 <br />
                 <Text
                     type='secondary'
@@ -121,44 +124,46 @@ function ItemTopComponent(props: Props): JSX.Element {
                     />
                 </CVATTooltip>
             </Col>
-            <Col span={2}>
-                <Dropdown
-                    visible={menuVisible}
-                    onVisibleChange={changeMenuVisible}
-                    placement='bottomLeft'
-                    overlay={ItemMenu({
-                        jobInstance,
-                        readonly,
-                        serverID,
-                        locked,
-                        shapeType,
-                        objectType,
-                        color,
-                        colorBy,
-                        colorPickerVisible,
-                        changeColorShortcut,
-                        copyShortcut,
-                        pasteShortcut,
-                        propagateShortcut,
-                        toBackgroundShortcut,
-                        toForegroundShortcut,
-                        removeShortcut,
-                        changeColor,
-                        copy,
-                        remove,
-                        propagate,
-                        createURL,
-                        switchOrientation,
-                        toBackground,
-                        toForeground,
-                        resetCuboidPerspective,
-                        changeColorPickerVisible,
-                        edit,
-                    })}
-                >
-                    <MoreOutlined />
-                </Dropdown>
-            </Col>
+            { !isGroundTruth && (
+                <Col span={2}>
+                    <Dropdown
+                        visible={menuVisible}
+                        onVisibleChange={changeMenuVisible}
+                        placement='bottomLeft'
+                        overlay={ItemMenu({
+                            jobInstance,
+                            readonly,
+                            serverID,
+                            locked,
+                            shapeType,
+                            objectType,
+                            color,
+                            colorBy,
+                            colorPickerVisible,
+                            changeColorShortcut,
+                            copyShortcut,
+                            pasteShortcut,
+                            propagateShortcut,
+                            toBackgroundShortcut,
+                            toForegroundShortcut,
+                            removeShortcut,
+                            changeColor,
+                            copy,
+                            remove,
+                            propagate,
+                            createURL,
+                            switchOrientation,
+                            toBackground,
+                            toForeground,
+                            resetCuboidPerspective,
+                            changeColorPickerVisible,
+                            edit,
+                        })}
+                    >
+                        <MoreOutlined />
+                    </Dropdown>
+                </Col>
+            )}
         </Row>
     );
 }

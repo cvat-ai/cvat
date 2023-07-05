@@ -18,6 +18,7 @@ import {
     CuboidDrawingMethod,
     Configuration,
     Geometry,
+    HighlightSeverity as _HighlightSeverity,
 } from './canvasModel';
 import { Master } from './master';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
@@ -32,7 +33,9 @@ interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[], zLayer?: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
-    activate(clientID: number | null, attributeID?: number): void;
+    setupConflictRegions(clientID: number): number[];
+    activate(clientID: number | null, attributeID?: number): number[];
+    highlight(clientIDs: number[] | null, severity: HighlightSeverity | null): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
@@ -84,6 +87,10 @@ class CanvasImpl implements Canvas {
         this.model.setupIssueRegions(issueRegions);
     }
 
+    public setupConflictsRegions(clientID: number): number[] {
+        return this.view.setupConflictsRegions(clientID);
+    }
+
     public fitCanvas(): void {
         this.model.fitCanvas(this.view.html().clientWidth, this.view.html().clientHeight);
     }
@@ -106,6 +113,10 @@ class CanvasImpl implements Canvas {
 
     public activate(clientID: number | null, attributeID: number | null = null): void {
         this.model.activate(clientID, attributeID);
+    }
+
+    public highlight(clientIDs: number[] | null, severity: HighlightSeverity | null = null): void {
+        this.model.highlight(clientIDs, severity);
     }
 
     public rotate(rotationAngle: number): void {
@@ -179,6 +190,7 @@ class CanvasImpl implements Canvas {
 
 export type InteractionData = _InteractionData;
 export type InteractionResult = _InteractionResult;
+export type HighlightSeverity = _HighlightSeverity;
 
 export {
     CanvasImpl as Canvas, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,
