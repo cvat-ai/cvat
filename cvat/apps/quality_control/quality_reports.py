@@ -2307,11 +2307,16 @@ class TaskQualityReportUpdateManager:
             job_queryset = Job.objects.select_related("segment")
             job_queryset = job_queryset.filter(segment__task_id=task_id)
 
-            # The GT job could have been removed during scheduling, so we need to check it exists
+            # The GT job could have been removed or marked incomplete during scheduling,
+            # so we need to check it
             gt_job: Job = next(
                 (job for job in job_queryset if job.type == JobType.GROUND_TRUTH), None
             )
-            if gt_job is None:
+            if (
+                gt_job is None
+                or gt_job.stage != StageChoice.ACCEPTANCE
+                or gt_job.status != StatusChoice.COMPLETED
+            ):
                 return
 
             # TODO: Probably, can be optimized to this:
@@ -2732,7 +2737,11 @@ class ProjectQualityReportUpdateManager:
                 Count("quality_reports"),
                 gt_jobs=Count(
                     "segment__job",
-                    filter=Q(segment__job__type=JobType.GROUND_TRUTH),
+                    filter=Q(
+                        segment__job__type=JobType.GROUND_TRUTH,
+                        segment__job__stage=StageChoice.ACCEPTANCE,
+                        segment__job__status=StatusChoice.COMPLETED,
+                    ),
                     distinct=True,
                 ),
             ).filter(quality_reports__count__gt=0, gt_jobs__gt=0)
