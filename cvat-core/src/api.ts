@@ -304,13 +304,13 @@ function build() {
                     async defaults() {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.defaults);
                         return result;
-                    }
+                    },
                 },
             },
         },
         scheme: {
             async get() {
-                return await PluginRegistry.apiWrapper(cvat.scheme.get);
+                return PluginRegistry.apiWrapper(cvat.scheme.get);
             },
         },
         classes: {

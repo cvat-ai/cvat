@@ -181,7 +181,7 @@ export default class QualitySettings {
             panoptic_comparison: this.#panopticComparison,
             compare_attributes: this.#compareAttributes,
             ...(this.#project_id ? { project_id: this.#project_id } : {}),
-            ...(this.#task_id ? {task_id: this.#task_id} : {}),
+            ...(this.#task_id ? { task_id: this.#task_id } : {}),
         };
 
         return result;
