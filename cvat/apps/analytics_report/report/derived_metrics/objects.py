@@ -1,3 +1,7 @@
+# Copyright (C) 2023 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from dateutil import parser
 from datetime import datetime, timezone
 from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMetric

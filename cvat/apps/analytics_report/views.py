@@ -2,20 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 import textwrap
 
-from django.conf import settings
 from rest_framework import status, viewsets, serializers
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError
 from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema
 from drf_spectacular.types import OpenApiTypes
-from rest_framework.renderers import JSONRenderer
-
-
-from cvat.apps.iam.permissions import EventsPermission
-from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 from cvat.apps.engine.models import Job, Task, Project
 
@@ -24,7 +17,6 @@ from cvat.apps.analytics_report.report.get import get_analytics_report
 from cvat.apps.analytics_report.serializers import AnalyticsReportSerializer
 from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.analytics_report.report.create import JobAnalyticsReportUpdateManager
-from cvat.apps.analytics_report.report.get import get_analytics_report
 
 class AnalyticsReportViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -59,10 +51,10 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 RqIdSerializer,
                 description=textwrap.dedent(
                     """\
-                    A quality report request has been enqueued, the request id is returned.
+                    A analytics report request has been enqueued, the request id is returned.
                     The request status can be checked at this endpoint by passing the {}
                     as the query parameter. If the request id is specified, this response
-                    means the quality report request is queued or is being processed.
+                    means the analytics report request is queued or is being processed.
                 """.format(
                         "rq_id"
                     )
@@ -161,9 +153,9 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
             OpenApiParameter('job_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
                 description="Specify job ID"),
             OpenApiParameter('start_date', location=OpenApiParameter.QUERY, type=OpenApiTypes.DATETIME, required=False,
-                description="TODO"),
+                description="Specify a start date for filtering report data."),
             OpenApiParameter('end_date', location=OpenApiParameter.QUERY, type=OpenApiTypes.DATETIME, required=False,
-                description="TODO"),
+                description="Specify the end date for filtering report data."),
         ],
         responses={
             '200': OpenApiResponse(description='...'),

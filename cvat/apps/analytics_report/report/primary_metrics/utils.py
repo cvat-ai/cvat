@@ -1,3 +1,7 @@
+# Copyright (C) 2023 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.conf import settings
 
 import clickhouse_connect

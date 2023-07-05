@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: '2.5'
+  version: 2.5.dev20230705091014
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -12,6 +12,106 @@ info:
     name: MIT License
     url: https://en.wikipedia.org/wiki/MIT_License
 paths:
+  /api/analytics/reports:
+    get:
+      operationId: analytics_list_reports
+      description: Receive analytics report
+      summary: Method returns analytics report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date-time
+        description: Specify the end date for filtering report data.
+      - in: query
+        name: job_id
+        schema:
+          type: integer
+        description: Specify job ID
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: Specify project ID
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date-time
+        description: Specify a start date for filtering report data.
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: Specify task ID
+      tags:
+      - analytics
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: '...'
+        '404':
+          description: Not found
+    post:
+      operationId: analytics_create_report
+      summary: Creates a analytics report asynchronously and allows to check request
+        status
+      parameters:
+      - in: query
+        name: job_id
+        schema:
+          type: integer
+        description: Specify job ID
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: Specify project ID
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: |
+          The report creation request id. Can be specified to check the report
+          creation status.
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: Specify task ID
+      tags:
+      - analytics
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsReport'
+          description: ''
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: |
+            A analytics report request has been enqueued, the request id is returned.
+            The request status can be checked at this endpoint by passing the rq_id
+            as the query parameter. If the request id is specified, this response
+            means the analytics report request is queued or is being processed.
+        '400':
+          description: Invalid or failed request, check the response data for details
   /api/assets:
     post:
       operationId: assets_create
@@ -5826,6 +5926,38 @@ components:
       - description
       - name
       - version
+    AnalyticsReport:
+      type: object
+      properties:
+        created_date:
+          type: string
+          format: date-time
+        target:
+          $ref: '#/components/schemas/AnalyticsReportTargetEnum'
+        job_id:
+          type: integer
+        task_id:
+          type: integer
+        project_id:
+          type: integer
+        statistics:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/StatisticsItem'
+      required:
+      - created_date
+      - statistics
+      - target
+    AnalyticsReportTargetEnum:
+      enum:
+      - job
+      - task
+      - project
+      type: string
+      description: |-
+        * `job` - JOB
+        * `task` - TASK
+        * `project` - PROJECT
     AnnotationConflict:
       type: object
       properties:
@@ -6563,6 +6695,14 @@ components:
       oneOf:
       - $ref: '#/components/schemas/DatasetFileRequest'
       nullable: true
+    DefaultViewEnum:
+      enum:
+      - numeric
+      - histogram
+      type: string
+      description: |-
+        * `numeric` - NUMERIC
+        * `histogram` - HISTOGRAM
     Event:
       type: object
       properties:
@@ -6895,6 +7035,18 @@ components:
       required:
       - function
       - task
+    GranularityEnum:
+      enum:
+      - NONE
+      - day
+      - week
+      - month
+      type: string
+      description: |-
+        * `NONE` - NONE
+        * `day` - DAY
+        * `week` - WEEK
+        * `month` - MONTH
     InputTypeEnum:
       enum:
       - checkbox
@@ -8888,6 +9040,31 @@ components:
         * `natural` - NATURAL
         * `predefined` - PREDEFINED
         * `random` - RANDOM
+    StatisticsItem:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        granularity:
+          $ref: '#/components/schemas/GranularityEnum'
+        default_view:
+          $ref: '#/components/schemas/DefaultViewEnum'
+        dataseries:
+          type: object
+          additionalProperties: {}
+        transformations:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - dataseries
+      - default_view
+      - description
+      - title
+      - transformations
     Storage:
       type: object
       properties:

@@ -1,3 +1,7 @@
+# Copyright (C) 2023 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMetric
 
 class JobTotalAnnotationSpeed(IDerivedMetric):

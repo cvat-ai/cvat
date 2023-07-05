@@ -5,4 +5,4 @@
 import os
 
 ANALYTICS_CHECK_JOB_DELAY = int(os.getenv("CVAT_ANALYTICS_CHECK_JOB_DELAY", 15 * 60))
-"The delay before the next quality check job is queued, in seconds"
+"The delay before the next analytics check job is queued, in seconds"
