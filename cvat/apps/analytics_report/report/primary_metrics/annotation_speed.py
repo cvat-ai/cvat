@@ -8,6 +8,16 @@ class JobAnnotationSpeed(IPrimaryMetric):
     _default_view = "histogram"
     _query = "SELECT sum(JSONExtractUInt(payload, 'working_time')) / 1000 as wt FROM events WHERE job_id={job_id:UInt64} AND timestamp >= {start_datetime:DateTime64} AND timestamp < {end_datetime:DateTime64}"
     _granularity = "day"
+    _transformations = [
+        {
+            "name": "annotation_speed",
+            "binary": {
+                "left": "object_count",
+                "operator": "/",
+                "right": "annotation_time",
+            },
+        },
+    ]
 
     def calculate(self):
         def get_tags_count(annotations):

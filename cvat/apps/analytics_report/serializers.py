@@ -12,7 +12,7 @@ class StatisticsItemSerializer(serializers.Serializer):
     granularity = serializers.ChoiceField(choices=GranularityChoice.choices(), required=False)
     default_view = serializers.ChoiceField(choices=ViewChoice.choices())
     dataseries = serializers.DictField()
-
+    transformations = serializers.ListField(child=serializers.DictField())
 
 class AnalyticsReportSerializer(serializers.Serializer):
     created_date = serializers.DateTimeField()

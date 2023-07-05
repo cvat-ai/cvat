@@ -8,6 +8,16 @@ class TaskAnnotationSpeed(IDerivedMetric):
     _default_view = "histogram"
     _query = None
     _granularity = "day"
+    _transformations = [
+        {
+            "name": "annotation_speed",
+            "binary": {
+                "left": "object_count",
+                "operator": "/",
+                "right": "annotation_time",
+            },
+        }
+    ]
 
     def calculate(self):
         combined_statistics = {}

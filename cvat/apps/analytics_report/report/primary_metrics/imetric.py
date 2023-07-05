@@ -7,6 +7,7 @@ class IPrimaryMetric():
     _query = None
     _granularity = None
     _default_view = None
+    _transformations = []
 
     def __init__(self, db_obj):
         self._db_obj = db_obj
@@ -26,6 +27,10 @@ class IPrimaryMetric():
     @property
     def default_view(cls):
         return cls._default_view
+
+    @property
+    def transformations(cls):
+        return cls._transformations
 
     def calculate(self):
         raise NotImplementedError

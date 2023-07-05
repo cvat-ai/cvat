@@ -198,6 +198,7 @@ class JobAnalyticsReportUpdateManager():
             "description": statistics_object.description,
             "granularity": statistics_object.granularity,
             "default_view": statistics_object.default_view,
+            "transformations": statistics_object.transformations,
             "dataseries": statistics_object.calculate(),
         }
 

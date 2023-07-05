@@ -7,17 +7,29 @@ export interface SerializedDataEntry {
     value?: number | Record<string, number>
 }
 
+export interface SerializedTransformBinaryOp {
+    left: string;
+    operator: string;
+    right: string;
+}
+
+export interface SerializedTransformationEntry {
+    name?: string;
+    binary?: SerializedTransformBinaryOp;
+}
+
 export interface SerializedAnalyticsEntry {
     title?: string;
     description?: string;
     granularity?: string;
     default_view?: string;
     dataseries?: Record<string, SerializedDataEntry[]>;
+    transformations?: SerializedTransformationEntry[];
 }
 
 export interface SerializedAnalyticsReport {
     id?: number;
-    type?: string;
+    target?: string;
     created_date?: string;
     statistics?: Record<string, SerializedAnalyticsEntry>
 }
@@ -39,6 +51,7 @@ export class AnalyticsEntry {
     #granularity: string;
     #defaultView: AnalyticsEntryViewType;
     #dataseries: Record<string, SerializedDataEntry[]>;
+    #transformations: SerializedTransformationEntry[];
 
     constructor(initialData: SerializedAnalyticsEntry) {
         this.#title = initialData.title;
@@ -46,6 +59,7 @@ export class AnalyticsEntry {
         this.#granularity = initialData.granularity;
         this.#defaultView = initialData.default_view as AnalyticsEntryViewType;
         this.#dataseries = initialData.dataseries;
+        this.#transformations = initialData.transformations;
     }
 
     get title(): string {
@@ -68,6 +82,10 @@ export class AnalyticsEntry {
     get dataseries(): Record<string, SerializedDataEntry[]> {
         return this.#dataseries;
     }
+
+    get transformations(): SerializedTransformationEntry[] {
+        return this.#transformations;
+    }
 }
 
 export default class AnalyticsReport {
@@ -78,7 +96,7 @@ export default class AnalyticsReport {
 
     constructor(initialData: SerializedAnalyticsReport) {
         this.#id = initialData.id;
-        this.#target = initialData.type as AnalyticsReportType;
+        this.#target = initialData.target as AnalyticsReportType;
         this.#createdDate = initialData.created_date;
 
         this.#statistics = {};
