@@ -68,10 +68,10 @@ function JobListComponent(props: Props): JSX.Element {
             }
 
             if (field1 === null || !Number.isFinite(field1)) {
-                return 1;
+                return -1;
             }
 
-            return -1;
+            return 1;
         };
     }
 
