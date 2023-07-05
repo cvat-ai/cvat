@@ -296,6 +296,7 @@ class CVAT_QUEUES(Enum):
     WEBHOOKS = 'webhooks'
     NOTIFICATIONS = 'notifications'
     QUALITY_REPORTS = 'quality_reports'
+    ANALYTICS_REPORTS = 'analytics_reports'
     CLEANING = 'cleaning'
 
 RQ_QUEUES = {
@@ -334,6 +335,12 @@ RQ_QUEUES = {
         'PORT': 6379,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h',
+    },
+    CVAT_QUEUES.ANALYTICS_REPORTS.value: {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h'
     },
     CVAT_QUEUES.CLEANING.value: {
         'HOST': 'localhost',

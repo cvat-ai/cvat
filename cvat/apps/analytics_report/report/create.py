@@ -46,10 +46,10 @@ class JobAnalyticsReportUpdateManager():
         return timedelta(seconds=settings.ANALYTICS_CHECK_JOB_DELAY)
 
     def _get_scheduler(self):
-        return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
+        return django_rq.get_scheduler(settings.CVAT_QUEUES.ANALYTICS_REPORTS.value)
 
     def _get_queue(self):
-        return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
+        return django_rq.get_queue(settings.CVAT_QUEUES.ANALYTICS_REPORTS.value)
 
     def _make_queue_job_prefix(self, obj) -> str:
         if isinstance(obj, Task):
