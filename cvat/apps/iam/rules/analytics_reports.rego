@@ -28,8 +28,6 @@ allow {
 }
 
 allow {
-    { utils.LIST, utils.CREATE }[input.scope]
+    input.scope == utils.LIST
     utils.has_perm(utils.WORKER)
 }
-
-

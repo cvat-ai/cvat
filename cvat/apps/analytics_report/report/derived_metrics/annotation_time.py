@@ -5,7 +5,7 @@
 from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMetric
 
 class TaskAnnotationTime(IDerivedMetric):
-    _title = "Annotation time"
+    _title = "Annotation time (hours)"
     _description = "Metric shows how long the Task is in progress state."
     _default_view = "numeric"
     _query = None

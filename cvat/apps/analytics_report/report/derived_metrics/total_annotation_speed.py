@@ -5,7 +5,7 @@
 from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMetric
 
 class JobTotalAnnotationSpeed(IDerivedMetric):
-    _title = "Total Annotation Speed"
+    _title = "Total Annotation Speed (objects per hour)"
     _description = "Metric shows total annotation speed in the Job."
     _default_view = "numeric"
     _granularity = "NONE"
@@ -27,12 +27,8 @@ class JobTotalAnnotationSpeed(IDerivedMetric):
             ]
         }
 
-class TaskTotalAnnotationSpeed(IDerivedMetric):
-    _title = "Total Annotation Speed"
+class TaskTotalAnnotationSpeed(JobTotalAnnotationSpeed):
     _description = "Metric shows total annotation speed in the Task."
-    _default_view = "numeric"
-    _granularity = "NONE"
-    _query = None
 
     def calculate(self):
         total_count = 0

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMetric
 
 class TaskAnnotationSpeed(IDerivedMetric):
-    _title = "Annotation speed"
+    _title = "Annotation speed (objects per hour)"
     _description = "Metric shows the annotation speed in objects per hour for the Task."
     _default_view = "histogram"
     _query = None
@@ -18,7 +18,7 @@ class TaskAnnotationSpeed(IDerivedMetric):
             "binary": {
                 "left": "object_count",
                 "operator": "/",
-                "right": "annotation_time",
+                "right": "working_time",
             },
         }
     ]

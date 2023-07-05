@@ -42,8 +42,8 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
     // TODO make it more expressive
     if (!report) return null;
     const layout: any = [];
-    let x = 0;
-    let y = 0;
+    let histogramCount = 0;
+    let numericCount = 0;
     const views = Object.entries(report.statistics).map(([name, entry]) => {
         switch (entry.defaultView) {
             case AnalyticsEntryViewType.NUMERIC: {
@@ -51,20 +51,16 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     i: name,
                     w: 2,
                     h: 1,
-                    x,
-                    y,
+                    x: 2,
+                    y: numericCount,
                 });
-                if (x !== 4) {
-                    x += 2;
-                } else {
-                    x = 0;
-                    y += 1;
-                }
+                numericCount += 1;
+                const { value } = entry.dataseries[Object.keys(entry.dataseries)[0]][0];
                 return ({
                     view: (
                         <AnalyticsCard
                             title={entry.title}
-                            value={entry.dataseries[Object.keys(entry.dataseries)[0]][0].value as number}
+                            value={typeof value === 'number' ? value.toFixed(2) : 0}
                             bottomElement={<Text>{entry.description}</Text>}
                             key={name}
                         />
@@ -78,13 +74,61 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     moment.utc(dataEntry.date).local().format('YYYY-MM-DD')
                 ));
 
+                const { dataseries } = entry;
+                entry.transformations.forEach((transform) => {
+                    if (transform.binary) {
+                        let operator: (left: number, right: number) => number;
+                        switch (transform.binary.operator) {
+                            case '+': {
+                                operator = (left: number, right: number) => left + right;
+                                break;
+                            }
+                            case '-': {
+                                operator = (left: number, right: number) => left - right;
+                                break;
+                            }
+                            case '*': {
+                                operator = (left: number, right: number) => left * right;
+                                break;
+                            }
+                            case '/': {
+                                operator = (left: number, right: number) => (right !== 0 ? left / right : 0);
+                                break;
+                            }
+                            default: {
+                                throw Error(`Operator type ${transform.binary.operator} is not supported`);
+                            }
+                        }
+
+                        const leftName = transform.binary.left;
+                        const rightName = transform.binary.right;
+                        if (Object.hasOwn(dataseries, leftName) && Object.hasOwn(dataseries, rightName)) {
+                            dataseries[transform.name] = dataseries[leftName].map((left, i) => {
+                                const right = dataseries[rightName][i];
+                                if (typeof left.value === 'number' && typeof right.value === 'number') {
+                                    return {
+                                        value: operator(left.value, right.value),
+                                        date: left.date,
+                                    };
+                                }
+                                return {
+                                    value: 0,
+                                    date: left.date,
+                                };
+                            });
+                            delete dataseries[leftName];
+                            delete dataseries[rightName];
+                        }
+                    }
+                });
+
                 let colorIndex = -1;
-                const datasets = Object.entries(entry.dataseries).map(([key, series]) => {
+                const datasets = Object.entries(dataseries).map(([key, series]) => {
                     let label = key.split('_').join(' ');
                     label = label.charAt(0).toUpperCase() + label.slice(1);
 
                     const data: number[] = series.map((s) => {
-                        if (Number.isInteger(s.value)) {
+                        if (typeof s.value === 'number') {
                             return s.value as number;
                         }
 
@@ -106,15 +150,10 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     i: name,
                     h: 1,
                     w: 2,
-                    x,
-                    y,
+                    x: 0,
+                    y: histogramCount,
                 });
-                if (x !== 2) {
-                    x += 2;
-                } else {
-                    x = 0;
-                    y += 1;
-                }
+                histogramCount += 1;
                 return ({
                     view: (
                         <HistogramView

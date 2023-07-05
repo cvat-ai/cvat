@@ -7,10 +7,10 @@ import cvat.apps.dataset_manager as dm
 from dateutil import parser
 
 class JobAnnotationSpeed(IPrimaryMetric):
-    _title = "Annotation speed"
+    _title = "Annotation speed (objects per hour)"
     _description = "Metric shows the annotation speed in objects per hour."
     _default_view = "histogram"
-    _query = "SELECT sum(JSONExtractUInt(payload, 'working_time')) / 1000 as wt FROM events WHERE job_id={job_id:UInt64} AND timestamp >= {start_datetime:DateTime64} AND timestamp < {end_datetime:DateTime64}"
+    _query = "SELECT sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as wt FROM events WHERE job_id={job_id:UInt64} AND timestamp >= {start_datetime:DateTime64} AND timestamp < {end_datetime:DateTime64}"
     _granularity = "day"
     _transformations = [
         {
@@ -18,7 +18,7 @@ class JobAnnotationSpeed(IPrimaryMetric):
             "binary": {
                 "left": "object_count",
                 "operator": "/",
-                "right": "annotation_time",
+                "right": "working_time",
             },
         },
     ]

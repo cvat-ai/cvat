@@ -5,7 +5,7 @@
 from cvat.apps.analytics_report.report.primary_metrics.imetric import IPrimaryMetric
 
 class JobAnnotationTime(IPrimaryMetric):
-    _title = "Annotation time"
+    _title = "Annotation time (hours)"
     _description = "Metric shows how long the task is in progress state."
     _default_view = "numeric"
     _granularity = "NONE"
@@ -31,7 +31,7 @@ class JobAnnotationTime(IPrimaryMetric):
         return {
             "total_annotating_time": [
                 {
-                    "value": total_annotating_time,
+                    "value": total_annotating_time / 3600, # convert to hours
                     "datetime": last_change.strftime('%Y-%m-%dT%H:%M:%SZ'),
                 },
             ]

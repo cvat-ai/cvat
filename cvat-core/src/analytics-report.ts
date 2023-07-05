@@ -14,7 +14,7 @@ export interface SerializedTransformBinaryOp {
 }
 
 export interface SerializedTransformationEntry {
-    name?: string;
+    name: string;
     binary?: SerializedTransformBinaryOp;
 }
 
