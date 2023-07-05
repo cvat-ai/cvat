@@ -374,7 +374,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                         >
                             the&nbsp;project&nbsp;quality&nbsp;settings
                         </Link>
-                        <Text>instead.</Text>
+                        <Text> instead.</Text>
                     </>
                 ) : (
                     <Text>No quality settings</Text>
