@@ -167,11 +167,18 @@ jobs:
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
-          pytest tests/python/ --cov --cov-report json
+          pytest tests/python/ --cov --cov-report=json
 
           cat coverage.json coverage_cvat_server.json coverage_cvat_worker_annotation.json coverage_cvat_worker_import.json \
             coverage_cvat_worker_export.json coverage_cvat_worker_quality_reports.json coverage_cvat_worker_webhooks.json \
             coverage_cvat_utils.json > coverage_merged.json
+
+      # - name: Uploading code coverage results as an artifact
+      #   uses: actions/upload-artifact@v3.1.1
+      #   with:
+      #     name: coverage_results
+      #     path: |
+      #       ${{ github.workspace }}/coverage_merge.json
 
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v3
@@ -240,11 +247,19 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
             -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
 
-      - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v3
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v3.1.1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage-final.json.json
+          name: coverage_results
+          path: |
+            ${{ github.workspace }}/coverage-final.json
+            ${{ github.workspace }}/coverage.json
+
+      # - name: Upload coverage reports to Codecov with GitHub Action
+      #   uses: codecov/codecov-action@v3
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     files: coverage-final.json.json
 
       - name: Creating a log file from cvat containers
         if: failure()
