@@ -74,7 +74,7 @@ function MeanQuality(props: Props): JSX.Element {
                 ) : null
             }
             <SettingOutlined
-                className='cvat-quality-settings-switch'
+                className='cvat-quality-settings-switch ant-btn ant-btn-default'
                 onClick={() => dispatch(analyticsActions.switchQualitySettingsVisible(true))}
             />
             {

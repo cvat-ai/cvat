@@ -74,7 +74,7 @@ function QualitySummary(props: Props): JSX.Element {
                     ) : null
                 }
                 <SettingOutlined
-                    className='cvat-quality-settings-switch'
+                    className='cvat-quality-settings-switch ant-btn ant-btn-default'
                     onClick={() => setQualitySettingsVisible(true)}
                 />
                 {
