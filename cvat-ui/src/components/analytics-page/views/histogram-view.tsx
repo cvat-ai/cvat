@@ -38,7 +38,7 @@ interface Props {
 
 function HistogramView(props: Props): JSX.Element | null {
     const {
-        datasets, labels, title, size,
+        datasets, labels, title,
     } = props;
 
     const data = {
