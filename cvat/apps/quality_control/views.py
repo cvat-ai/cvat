@@ -166,16 +166,20 @@ class QualityReportViewSet(
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
 ):
-    queryset = QualityReport.objects.prefetch_related(
-        "job",
-        "job__segment",
-        "job__segment__task",
-        "job__segment__task__organization",
-        "task",
-        "task__organization",
-        "project",
-        "project__organization",
-    ).all()
+    @staticmethod
+    def _add_prefetch_params(queryset):
+        return queryset.prefetch_related(
+            "job",
+            "job__segment",
+            "job__segment__task",
+            "job__segment__task__organization",
+            "task",
+            "task__organization",
+            "project",
+            "project__organization",
+        )
+
+    queryset = _add_prefetch_params(QualityReport.objects.get_queryset()).all()
 
     iam_organization_field = [
         "job__segment__task__organization",
@@ -208,7 +212,15 @@ class QualityReportViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
-            parent_report = None
+            # NOTE: parent id filter requires a different queryset,
+            # since there is no 'contains' lookup for an m2m relation in Django
+            if parent_id := self.request.query_params.get("parent_id", None):
+                try:
+                    parent_report = QualityReport.objects.get(id=parent_id)
+                except QualityReport.DoesNotExist as ex:
+                    raise NotFound(f"Quality report {parent_id} does not exist") from ex
+
+                queryset = self._add_prefetch_params(parent_report.children).all()
 
             if task_id := self.request.query_params.get("task_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
@@ -222,7 +234,8 @@ class QualityReportViewSet(
                 queryset = queryset.filter(
                     Q(job__segment__task__id=task_id) | Q(task__id=task_id)
                 ).distinct()
-            elif project_id := self.request.query_params.get("project_id", None):
+
+            if project_id := self.request.query_params.get("project_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
                 try:
                     project = Project.objects.get(id=project_id)
@@ -236,13 +249,6 @@ class QualityReportViewSet(
                     | Q(task__project__id=project_id)
                     | Q(project__id=project_id)
                 ).distinct()
-            elif parent_id := self.request.query_params.get("parent_id", None):
-                try:
-                    parent_report = QualityReport.objects.get(id=parent_id)
-                except QualityReport.DoesNotExist as ex:
-                    raise NotFound(f"Quality report {parent_id} does not exist") from ex
-
-                queryset = parent_report.children.all()
 
             perm = QualityReportPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)

@@ -22,7 +22,7 @@ from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 from scipy.optimize import linear_sum_assignment
 
@@ -2722,15 +2722,20 @@ class ProjectQualityReportUpdateManager:
 
             # The project could have been deleted during scheduling
             try:
-                project = Project.objects.prefetch_related("tasks", "tasks__data").get(
-                    id=project_id
-                )
+                project = Project.objects.prefetch_related(
+                    "tasks", "tasks__data", "tasks__segment_set__job_set"
+                ).get(id=project_id)
             except Project.DoesNotExist:
                 return
 
-            tasks_with_reports = project.tasks.annotate(Count("quality_reports")).filter(
-                quality_reports__count__gt=0
-            )
+            tasks_with_reports = project.tasks.annotate(
+                Count("quality_reports"),
+                gt_jobs=Count(
+                    "segment__job",
+                    filter=Q(segment__job__type=JobType.GROUND_TRUTH),
+                    distinct=True,
+                ),
+            ).filter(quality_reports__count__gt=0, gt_jobs__gt=0)
 
             task_quality_reports: Dict[int, models.QualityReport] = {}
             task_comparison_reports: Dict[int, ComparisonReport] = {}
