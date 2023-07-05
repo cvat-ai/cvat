@@ -31,3 +31,9 @@ codecov:
     # Codecov should wait to receive 16 uploaded reports before sending statuses
     after_n_builds: 16
 
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%
