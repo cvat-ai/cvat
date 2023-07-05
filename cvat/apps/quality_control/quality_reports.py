@@ -2299,9 +2299,6 @@ class TaskQualityReportUpdateManager:
                 return
 
             quality_params = self._get_task_quality_params(task)
-            if not quality_params:
-                # Task quality params are not configured
-                return
 
             # Try to use a shared queryset to minimize DB requests
             job_queryset = Job.objects.select_related("segment")
@@ -2363,7 +2360,7 @@ class TaskQualityReportUpdateManager:
         with transaction.atomic():
             # The task could have been deleted during processing
             try:
-                Task.objects.get(id=task_id)
+                updated_task = Task.objects.get(id=task_id)
             except Task.DoesNotExist:
                 return
 
@@ -2374,6 +2371,10 @@ class TaskQualityReportUpdateManager:
             ):
                 # Discard this report as it has probably been computed in parallel
                 # with another one
+                return
+
+            # The task could have been moved to a project during the computations
+            if updated_task.project_id != task.project_id:
                 return
 
             job_quality_reports = {}
@@ -2546,7 +2547,7 @@ class TaskQualityReportUpdateManager:
 
         return db_task_report
 
-    def _get_task_quality_params(self, task: Task) -> Optional[ComparisonParameters]:
+    def _get_task_quality_params(self, task: Task) -> ComparisonParameters:
         params = {}
         if task.project:
             params["project"] = task.project
@@ -2554,11 +2555,7 @@ class TaskQualityReportUpdateManager:
             params["task"] = task
 
         quality_params, _ = models.QualitySettings.objects.get_or_create(**params)
-
-        if quality_params:
-            return ComparisonParameters.from_dict(quality_params.to_dict())
-
-        return None
+        return ComparisonParameters.from_dict(quality_params.to_dict())
 
 
 class ProjectQualityReportUpdateManager:
@@ -2762,7 +2759,7 @@ class ProjectQualityReportUpdateManager:
         )
 
         with transaction.atomic():
-            # The task could have been deleted during processing
+            # The project could have been deleted during processing
             try:
                 Project.objects.get(id=project_id)
             except Project.DoesNotExist:
