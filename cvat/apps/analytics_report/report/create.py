@@ -284,8 +284,10 @@ class JobAnalyticsReportUpdateManager():
         if db_report.created_date < db_project.updated_date or was_created:
             job_reports = []
             for db_task in db_project.tasks.all():
+                self._compute_report_for_task(db_task)
                 for db_segment in db_task.segment_set.all():
                     for db_job in db_segment.job_set.all():
+                        db_job.analytics_report.refresh_from_db()
                         job_reports.append(self._compute_report_for_job(db_job))
 
             objects = ProjectObjects(db_project, [jr.statistics["objects"] for jr in job_reports])

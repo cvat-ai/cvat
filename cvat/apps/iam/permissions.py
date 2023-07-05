@@ -2045,7 +2045,7 @@ class AnalyticsReportPermission(OpenPolicyAgentPermission):
                 perm = JobPermission.create_scope_view(iam_context, int(job_id))
                 permissions.append(perm)
             elif task_id := request.query_params.get('task_id', None):
-                perm = TaskPermission.create_scope_view(iam_context, int(task_id))
+                perm = TaskPermission.create_scope_view(request, int(task_id), iam_context)
                 permissions.append(perm)
             elif project_id := request.query_params.get('project_id', None):
                 perm = ProjectPermission.create_scope_view(iam_context, int(project_id))

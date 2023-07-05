@@ -16,7 +16,7 @@ import { useIsMounted } from 'utils/hooks';
 import { Project, Task } from 'reducers';
 import { AnalyticsReport, Job, getCore } from 'cvat-core-wrapper';
 import moment from 'moment';
-import AnalyticsOverview, { DateIntervals } from './analytics-overview';
+import AnalyticsOverview, { DateIntervals } from './analytics-performance';
 import TaskQualityComponent from './quality/task-quality-component';
 
 const core = getCore();
@@ -244,7 +244,7 @@ function AnalyticsPage(): JSX.Element {
                         <Tabs.TabPane
                             tab={(
                                 <span>
-                                    <Text>Overview</Text>
+                                    <Text>Performance</Text>
                                 </span>
                             )}
                             key='Overview'
@@ -292,7 +292,7 @@ function AnalyticsPage(): JSX.Element {
                         <Tabs.TabPane
                             tab={(
                                 <span>
-                                    <Text>Overview</Text>
+                                    <Text>Performance</Text>
                                 </span>
                             )}
                             key='overview'
@@ -352,7 +352,7 @@ function AnalyticsPage(): JSX.Element {
                         <Tabs.TabPane
                             tab={(
                                 <span>
-                                    <Text>Overview</Text>
+                                    <Text>Performance</Text>
                                 </span>
                             )}
                             key='overview'

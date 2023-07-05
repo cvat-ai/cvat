@@ -75,7 +75,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
             case AnalyticsEntryViewType.HISTOGRAM: {
                 const firstDataset = Object.keys(entry.dataseries)[0];
                 const dateLabels = entry.dataseries[firstDataset].map((dataEntry) => (
-                    moment.utc(dataEntry.datetime).local().format('YYYY-MM-DD')
+                    moment.utc(dataEntry.date).local().format('YYYY-MM-DD')
                 ));
 
                 let colorIndex = -1;
@@ -89,7 +89,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                         }
 
                         if (typeof s.value === 'object') {
-                            return Object.keys(s.value).reduce((acc, _key) => acc + s.value[_key], 0);
+                            return Object.keys(s.value).reduce((acc, k) => acc + s.value[k], 0);
                         }
 
                         return 0;

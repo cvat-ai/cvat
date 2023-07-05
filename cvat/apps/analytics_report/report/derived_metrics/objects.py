@@ -5,7 +5,7 @@ from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMe
 class TaskObjects(IDerivedMetric):
     _title = "Objects"
     _description = "Metric shows number of added/changed/deleted objects for the Task."
-    _default_view = "numeric"
+    _default_view = "histogram"
     _granularity = "day"
     _query = None
 

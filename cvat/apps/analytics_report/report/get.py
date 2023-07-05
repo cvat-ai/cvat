@@ -69,8 +69,8 @@ def get_analytics_report(request, query_params):
         'project_id': query_params.get('project_id', None),
         'task_id': query_params.get('task_id', None),
         'job_id': query_params.get('job_id', None),
-        'start_date': query_params.get('startDate', None),
-        'end_date': query_params.get('endDate', None),
+        'start_date': query_params.get('start_date', None),
+        'end_date': query_params.get('end_date', None),
     }
 
     try:

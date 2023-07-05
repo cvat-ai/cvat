@@ -406,25 +406,27 @@ export default function implementAPI(cvat) {
     };
 
     cvat.analytics.common.reports.implementation = async (filter) => {
-        let updatedParams: Record<string, string> = {};
+        const updatedParams: Record<string, string> = { ...filter };
 
         if ('taskID' in filter) {
-            updatedParams = {
-                task_id: filter.reportId,
-                ...filter,
-            };
+            updatedParams.task_id = updatedParams.taskID;
+            delete updatedParams.taskID;
         }
         if ('jobID' in filter) {
-            updatedParams = {
-                job_id: filter.reportId,
-                ...filter,
-            };
+            updatedParams.job_id = updatedParams.jobID;
+            delete updatedParams.jobID;
         }
         if ('projectID' in filter) {
-            updatedParams = {
-                project_id: filter.reportId,
-                ...filter,
-            };
+            updatedParams.project_id = updatedParams.projectID;
+            delete updatedParams.projectID;
+        }
+        if ('startDate' in filter) {
+            updatedParams.start_date = updatedParams.startDate;
+            delete updatedParams.startDate;
+        }
+        if ('endDate' in filter) {
+            updatedParams.end_date = updatedParams.endDate;
+            delete updatedParams.endDate;
         }
 
         const reportData = await serverProxy.analytics.common.reports(updatedParams);

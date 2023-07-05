@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 export interface SerializedDataEntry {
-    datetime?: string;
+    date?: string;
     value?: number | Record<string, number>
 }
 
@@ -72,13 +72,13 @@ export class AnalyticsEntry {
 
 export default class AnalyticsReport {
     #id: number;
-    #type: AnalyticsReportType;
+    #target: AnalyticsReportType;
     #createdDate: string;
     #statistics: Record<string, AnalyticsEntry>;
 
     constructor(initialData: SerializedAnalyticsReport) {
         this.#id = initialData.id;
-        this.#type = initialData.type as AnalyticsReportType;
+        this.#target = initialData.type as AnalyticsReportType;
         this.#createdDate = initialData.created_date;
 
         this.#statistics = {};
@@ -91,8 +91,8 @@ export default class AnalyticsReport {
         return this.#id;
     }
 
-    get type(): AnalyticsReportType {
-        return this.#type;
+    get target(): AnalyticsReportType {
+        return this.#target;
     }
 
     get createdDate(): string {

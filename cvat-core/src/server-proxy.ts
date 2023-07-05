@@ -2322,7 +2322,7 @@ async function getAnalyticsReports(filter): Promise<SerializedAnalyticsReport> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/analytics/report`, {
+        const response = await Axios.get(`${backendAPI}/analytics/reports`, {
             params: {
                 ...filter,
             },
