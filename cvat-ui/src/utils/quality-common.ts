@@ -4,7 +4,26 @@
 
 import config from 'config';
 
-export function percent(a?: number, b?: number, decimals: number = 1): string | number {
+export function toRepresentation(val?: number, isPercent = true, decimals = 1): string {
+    if (!Number.isFinite(val)) {
+        return 'N/A';
+    }
+
+    let repr = '';
+    if (!val || (isPercent && (val === 100))) {
+        repr = `${val}`; // remove noise in the fractional part
+    } else {
+        repr = `${val?.toFixed(decimals)}`;
+    }
+
+    if (isPercent) {
+        repr += `${isPercent ? '%' : ''}`;
+    }
+
+    return repr;
+}
+
+export function percent(a?: number, b?: number, decimals = 1): string | number {
     if (typeof a !== 'undefined' && Number.isFinite(a) && b) {
         return toRepresentation(Number(a / b) * 100, true, decimals);
     }
@@ -17,23 +36,4 @@ export function clampValue(a?: number): string | number {
         return `> ${config.NUMERIC_VALUE_CLAMP_THRESHOLD}`;
     }
     return 'N/A';
-}
-
-export function toRepresentation(val?: number, isPercent: boolean = true, decimals: number = 1): string {
-    if (!Number.isFinite(val)) {
-        return 'N/A';
-    }
-
-    let repr = '';
-    if (!val || isPercent && (val == 100)) {
-        repr = `${val}`; // remove noise in the fractional part
-    } else {
-        repr = `${val?.toFixed(decimals)}`;
-    }
-
-    if (isPercent) {
-        repr += `${isPercent ? '%' : ''}`;
-    }
-
-    return repr;
 }

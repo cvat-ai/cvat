@@ -37,14 +37,18 @@ export const analyticsActions = {
     getQualityReportsSuccess: (result: any) => createAction(
         AnalyticsActionsTypes.GET_QUALITY_REPORTS_SUCCESS, { result },
     ),
-    getQualityReportsFailed: (error: any) => createAction(AnalyticsActionsTypes.GET_QUALITY_REPORTS_FAILED, { error }),
+    getQualityReportsFailed: (error: any) => createAction(
+        AnalyticsActionsTypes.GET_QUALITY_REPORTS_FAILED, { error },
+    ),
     getTaskQualityReports: (task: Task, query: QualityQuery) => (
         createAction(AnalyticsActionsTypes.GET_TASK_QUALITY_REPORTS, { query })
     ),
     getTaskQualityReportsSuccess: (tasksReports: QualityReport[], jobsReports: QualityReport[]) => createAction(
         AnalyticsActionsTypes.GET_TASK_QUALITY_REPORTS_SUCCESS, { tasksReports, jobsReports },
     ),
-    getTaskQualityReportsFailed: (error: any) => createAction(AnalyticsActionsTypes.GET_TASK_QUALITY_REPORTS_FAILED, { error }),
+    getTaskQualityReportsFailed: (error: any) => createAction(
+        AnalyticsActionsTypes.GET_TASK_QUALITY_REPORTS_FAILED, { error },
+    ),
     switchQualitySettingsVisible: (visible: boolean) => (
         createAction(AnalyticsActionsTypes.SWITCH_QUALITY_SETTINGS_VISIBLE, { visible })
     ),
@@ -88,7 +92,7 @@ export const getQualityReportsAsync = (query: Partial<QualityQuery>): ThunkActio
             dispatch(analyticsActions.getQualityReportsFailed(error));
         }
     }
-)
+);
 
 export const getTaskQualityReportsAsync = (task: Task, query: QualityQuery): ThunkAction => (
     async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
@@ -106,7 +110,7 @@ export const getTaskQualityReportsAsync = (task: Task, query: QualityQuery): Thu
             });
 
             dispatch(analyticsActions.getTaskQualityReportsSuccess(
-                taskReport ? [taskReport] : [], relevantReports
+                taskReport ? [taskReport] : [], relevantReports,
             ));
         } catch (error) {
             dispatch(analyticsActions.getTaskQualityReportsFailed(error));
@@ -130,7 +134,7 @@ export const createQualitySettingsAsync = (qualitySettings: QualitySettings): Th
 
 export const getQualitySettingsAsync = (
     query: Partial<QualitySettingsQuery>,
-    loadDefaults: boolean = false
+    loadDefaults = false,
 ): ThunkAction => (
     async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(analyticsActions.getQualitySettings(query));
@@ -142,8 +146,8 @@ export const getQualitySettingsAsync = (
                 const defaults = await cvat.analytics.quality.settings.defaults();
                 qualitySettings = new QualitySettings({
                     ...defaults,
-                    ...(query.taskId ? {task_id: query.taskId} : {}),
-                    ...(query.projectId ? {task_id: query.projectId} : {}),
+                    ...(query.taskId ? { task_id: query.taskId } : {}),
+                    ...(query.projectId ? { task_id: query.projectId } : {}),
                 });
             }
 
