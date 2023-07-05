@@ -471,10 +471,10 @@ def collect_code_coverage_from_container(container):
 
     # get code coverage report
     docker_exec(container, "coverage combine", capture_output=False)
-    docker_exec(container, "coverage html", capture_output=False)
+    docker_exec(container, "coverage xml", capture_output=False)
     docker_cp(
-        f"{PREFIX}_{container}_1:home/django/htmlcov",
-        f"coverage_{container}",
+        f"{PREFIX}_{container}_1:home/django/coverage.xml",
+        f"coverage_{container}.xml",
     )
 
 
