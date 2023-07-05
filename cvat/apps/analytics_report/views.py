@@ -52,10 +52,6 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 description="Specify task ID"),
             OpenApiParameter('job_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
                 description="Specify job ID"),
-            OpenApiParameter('startDate', location=OpenApiParameter.QUERY, type=OpenApiTypes.DATETIME, required=False,
-                description="TODO"),
-            OpenApiParameter('endDate', location=OpenApiParameter.QUERY, type=OpenApiTypes.DATETIME, required=False,
-                description="TODO"),
         ],
         responses={
             "201": AnalyticsReportSerializer,
@@ -78,9 +74,6 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
         },
     )
     def create(self, request, *args, **kwargs):
-        # TODO
-        # self.check_permissions(request)
-
         rq_id = request.query_params.get("rq_id", None)
 
         if rq_id is None:
@@ -102,7 +95,7 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
 
                 try:
                     rq_id = JobAnalyticsReportUpdateManager().schedule_analytics_check_job(
-                        job, user_id=request.user.id
+                        job=job, user_id=request.user.id
                     )
                     serializer = RqIdSerializer({"rq_id": rq_id})
                     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
@@ -113,13 +106,28 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                     task = Task.objects.get(pk=int(task_id))
                 except Task.DoesNotExist as ex:
                     raise NotFound(f"Task {task_id} does not exist") from ex
-                raise NotImplementedError()
+
+                try:
+                    rq_id = JobAnalyticsReportUpdateManager().schedule_analytics_check_job(
+                        task=task, user_id=request.user.id
+                    )
+                    serializer = RqIdSerializer({"rq_id": rq_id})
+                    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+                except JobAnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
+                    raise ValidationError(str(ex))
             elif project_id is not None:
                 try:
                     project = Project.objects.get(pk=int(project_id))
                 except Project.DoesNotExist as ex:
                     raise NotFound(f"Project {project_id} does not exist") from ex
-                raise NotImplementedError()
+                try:
+                    rq_id = JobAnalyticsReportUpdateManager().schedule_analytics_check_job(
+                        project=project, user_id=request.user.id
+                    )
+                    serializer = RqIdSerializer({"rq_id": rq_id})
+                    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+                except JobAnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
+                    raise ValidationError(str(ex))
         else:
             serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
@@ -127,16 +135,6 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
 
             report_manager = JobAnalyticsReportUpdateManager()
             rq_job = report_manager.get_analytics_check_job(rq_id)
-            # if (
-            #     not rq_job
-            #     or not QualityReportPermission.create_scope_check_status(
-            #         request, job_owner_id=rq_job.meta["user_id"]
-            #     )
-            #     .check_access()
-            #     .allow
-            # ):
-            #     # We should not provide job existence information to unauthorized users
-            #     raise NotFound("Unknown request id")
 
             if rq_job.is_failed:
                 message = str(rq_job.exc_info)
@@ -162,9 +160,9 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 description="Specify task ID"),
             OpenApiParameter('job_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
                 description="Specify job ID"),
-            OpenApiParameter('startDate', location=OpenApiParameter.QUERY, type=OpenApiTypes.DATETIME, required=False,
+            OpenApiParameter('start_date', location=OpenApiParameter.QUERY, type=OpenApiTypes.DATETIME, required=False,
                 description="TODO"),
-            OpenApiParameter('endDate', location=OpenApiParameter.QUERY, type=OpenApiTypes.DATETIME, required=False,
+            OpenApiParameter('end_date', location=OpenApiParameter.QUERY, type=OpenApiTypes.DATETIME, required=False,
                 description="TODO"),
         ],
         responses={
@@ -172,11 +170,7 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
             '404': OpenApiResponse(description='Not found'),
         })
     def list(self, request):
-        # TODO implement permission check
-        # perm = EventsPermission.create_scope_list(request)
-        # filter_query = perm.filter(request.query_params)
         return get_analytics_report(
             request=request,
             query_params=request.query_params,
-            # queue_name=settings.CVAT_QUEUES.EXPORT_DATA.value,
         )

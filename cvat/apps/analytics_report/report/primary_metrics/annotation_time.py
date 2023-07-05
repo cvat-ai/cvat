@@ -1,6 +1,6 @@
-from cvat.apps.analytics_report.report.primary_metrics.imetric import IJobPrimaryMetric
+from cvat.apps.analytics_report.report.primary_metrics.imetric import IPrimaryMetric
 
-class AnnotationTime(IJobPrimaryMetric):
+class JobAnnotationTime(IPrimaryMetric):
     _title = "Annotation time"
     _description = "Metric shows how long the task is in progress state."
     _default_view = "numeric"
@@ -9,7 +9,7 @@ class AnnotationTime(IJobPrimaryMetric):
 
     def calculate(self):
         results = self._make_clickhouse_query({
-            "job_id": self._job_id,
+            "job_id": self._db_obj.id,
         })
         total_annotating_time = 0
         last_change = None
@@ -18,8 +18,8 @@ class AnnotationTime(IJobPrimaryMetric):
                 total_annotating_time += int((cur_row[0] - prev_row[0]).total_seconds())
                 last_change = cur_row[0]
 
-        if results.result_rows[-1][1] == "in progress":
-            total_annotating_time += int((self._get_utc_now() - results.result_rows[-1][0]).total_seconds())
+        if results.result_rows and results.result_rows[-1][1] == "in progress":
+            total_annotating_time += int((self._db_obj.updated_date - results.result_rows[-1][0]).total_seconds())
 
         if not last_change:
             last_change = self._get_utc_now()

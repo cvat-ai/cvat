@@ -1,7 +1,6 @@
-from datetime import datetime, timezone
-from cvat.apps.analytics_report.report.primary_metrics.imetric import IJobPrimaryMetric
+from cvat.apps.analytics_report.report.primary_metrics.imetric import IPrimaryMetric
 
-class Objects(IJobPrimaryMetric):
+class JobObjects(IPrimaryMetric):
     _title = "Objects"
     _description = "Metric shows number of added/changed/deleted objects."
     _default_view = "histogram"
@@ -17,7 +16,7 @@ class Objects(IJobPrimaryMetric):
                 result = self._make_clickhouse_query({
                     "scope": f"{action}:{obj_type}",
                     "object_type": obj_type,
-                    "job_id": self._job_id,
+                    "job_id": self._db_obj.id,
                 })
                 action_data[obj_type] = {entry[0]: entry[1] for entry in result.result_rows}
 

@@ -1,10 +1,8 @@
-from cvat.apps.analytics_report.report.primary_metrics.imetric import IJobPrimaryMetric
-from cvat.apps.engine.models import Job
+from cvat.apps.analytics_report.report.primary_metrics.imetric import IPrimaryMetric
 import cvat.apps.dataset_manager as dm
-from cvat.apps.analytics_report.models import AnalyticsReport
 from dateutil import parser
 
-class AnnotationSpeed(IJobPrimaryMetric):
+class JobAnnotationSpeed(IPrimaryMetric):
     _title = "Annotation speed"
     _description = "Metric shows the annotation speed in objects per hour."
     _default_view = "histogram"
@@ -22,7 +20,7 @@ class AnnotationSpeed(IJobPrimaryMetric):
             count = 0
             for track in annotations["tracks"]:
                 if len(track["shapes"]) == 1:
-                    count += db_job.segment.stop_frame - track["shapes"][0]["frame"] + 1
+                    count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
                 for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):
                     if prev_shape["outside"] is not True:
                         count += cur_shape["frame"] - prev_shape["frame"]
@@ -37,11 +35,9 @@ class AnnotationSpeed(IJobPrimaryMetric):
                 }
             }
 
-        db_job = Job.objects.select_related("segment").get(pk=self._job_id)
-
         # Calculate object count
 
-        annotations = dm.task.get_job_data(self._job_id)
+        annotations = dm.task.get_job_data(self._db_obj.id)
         object_count = 0
         object_count += get_tags_count(annotations)
         object_count += get_shapes_count(annotations)
@@ -50,18 +46,16 @@ class AnnotationSpeed(IJobPrimaryMetric):
         timestamp = self._get_utc_now()
         timestamp_str = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-        try:
-            report = AnalyticsReport.objects.get(job_id=self._job_id)
-            as_statistics = report.statistics.get("annotation_speed", {})
-        except AnalyticsReport.DoesNotExist:
-            as_statistics = get_default()
-        if not as_statistics:
-            as_statistics = get_default()
+        report = self._db_obj.analytics_report
+        if report is None:
+            statistics = get_default()
+        else:
+            statistics = report.statistics.get("annotation_speed",  get_default())
 
-        dataseries = as_statistics["dataseries"]
+        dataseries = statistics["dataseries"]
 
         last_entry_count = 0
-        start_datetime = db_job.created_date
+        start_datetime = self._db_obj.created_date
         if dataseries["object_count"]:
             last_entry = dataseries["object_count"][-1]
             last_entry_timestamp = parser.parse(last_entry["datetime"])
@@ -86,7 +80,7 @@ class AnnotationSpeed(IJobPrimaryMetric):
         # Calculate working time
 
         parameters = {
-            "job_id": self._job_id,
+            "job_id": self._db_obj.id,
             "start_datetime": start_datetime,
             "end_datetime": self._get_utc_now(),
         }

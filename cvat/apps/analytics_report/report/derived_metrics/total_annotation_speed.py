@@ -1,6 +1,6 @@
-from cvat.apps.analytics_report.report.derived_metrics.imetric import IJobDerivedMetric
+from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMetric
 
-class TotalAnnotationSpeed(IJobDerivedMetric):
+class JobTotalAnnotationSpeed(IDerivedMetric):
     _title = "Total Annotation Speed"
     _description = "Metric shows total annotation speed in the Job."
     _default_view = "numeric"
@@ -22,3 +22,32 @@ class TotalAnnotationSpeed(IJobDerivedMetric):
                 },
             ]
         }
+
+class TaskTotalAnnotationSpeed(IDerivedMetric):
+    _title = "Total Annotation Speed"
+    _description = "Metric shows total annotation speed in the Task."
+    _default_view = "numeric"
+    _granularity = "NONE"
+    _query = None
+
+    def calculate(self):
+        total_count = 0
+        total_wt = 0
+
+        for job_report in self._primary_statistics:
+            dataseries = job_report["dataseries"]
+            for oc_entry, wt_entry in zip(dataseries["object_count"], dataseries["working_time"]):
+                total_count += oc_entry["value"]
+                total_wt += wt_entry["value"]
+
+        return {
+            "total_annotation_speed": [
+                {
+                    "value": total_count / total_wt if total_wt != 0 else 0,
+                    "datetime": self._get_utc_now().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                },
+            ]
+        }
+
+class ProjectTotalAnnotationSpeed(TaskTotalAnnotationSpeed):
+    _description = "Metric shows total annotation speed in the Project."
