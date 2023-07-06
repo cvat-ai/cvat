@@ -568,7 +568,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const clientID = +key;
             const object = this.svgShapes[clientID];
             object.attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'stroke-width': this.getBaseStrokeWidth() / this.geometry.scale,
             });
             if (object.type === 'circle') {
                 object.attr('r', `${this.configuration.controlPointsSize / this.geometry.scale}`);
@@ -580,7 +580,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Transform skeleton edges
         for (const skeletonEdge of window.document.getElementsByClassName('cvat_canvas_skeleton_edge')) {
-            skeletonEdge.setAttribute('stroke-width', `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`);
+            skeletonEdge.setAttribute('stroke-width', `${this.getBaseStrokeWidth() / this.geometry.scale}`);
         }
 
         // Transform all drawn issues region
@@ -588,7 +588,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             ((issueRegion as any) as SVG.Shape).attr('r', `${(consts.BASE_POINT_SIZE * 3) / this.geometry.scale}`);
             ((issueRegion as any) as SVG.Shape).attr(
                 'stroke-width',
-                `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
+                `${this.getBaseStrokeWidth() / this.geometry.scale}`,
             );
         }
 
@@ -600,7 +600,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             pattern.children().forEach((element: SVG.Element): void => {
-                element.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
+                element.attr('stroke-width', this.getBaseStrokeWidth() / this.geometry.scale);
             });
         }
 
@@ -662,7 +662,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .attr({
                         id: `cvat_canvas_issue_region_${issueRegion}`,
                         fill: 'url(#cvat_issue_region_pattern_1)',
-                        'stroke-width': `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
+                        'stroke-width': `${this.getBaseStrokeWidth() / this.geometry.scale}`,
                     });
             } else {
                 const stringified = this.stringifyToCanvas(points);
@@ -672,7 +672,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .attr({
                         id: `cvat_canvas_issue_region_${issueRegion}`,
                         fill: 'url(#cvat_issue_region_pattern_1)',
-                        'stroke-width': `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
+                        'stroke-width': `${this.getBaseStrokeWidth() / this.geometry.scale}`,
                     });
             }
 
@@ -1255,7 +1255,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                         (shapeView as any).instance
                             .fill({ color: fill, opacity: fillOpacity })
-                            .stroke({ color: stroke });
+                            .stroke({ color: stroke, width: this.getBaseStrokeWidth() / this.geometry.scale });
                     }
 
                     if (state.elements) {
@@ -1267,7 +1267,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (configuration.shapeOpacity !== this.configuration.shapeOpacity ||
                 configuration.selectedShapeOpacity !== this.configuration.selectedShapeOpacity ||
                 configuration.outlinedBorders !== this.configuration.outlinedBorders ||
-                configuration.colorBy !== this.configuration.colorBy) {
+                configuration.colorBy !== this.configuration.colorBy ||
+                configuration.shapeLineWidth !== this.configuration.shapeLineWidth) {
                 updateShapeViews(Object.values(this.drawnStates));
             }
 
@@ -2503,7 +2504,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
                 'shape-rendering': 'geometricprecision',
-                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'stroke-width': this.getBaseStrokeWidth() / this.geometry.scale,
                 'data-z-order': state.zOrder,
                 ...this.getShapeColorization(state),
             }).move(xtl, ytl).addClass('cvat_canvas_shape');
@@ -2531,7 +2532,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
                 'shape-rendering': 'geometricprecision',
-                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'stroke-width': this.getBaseStrokeWidth() / this.geometry.scale,
                 'data-z-order': state.zOrder,
                 ...this.getShapeColorization(state),
             }).addClass('cvat_canvas_shape');
@@ -2555,7 +2556,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
                 'shape-rendering': 'geometricprecision',
-                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'stroke-width': this.getBaseStrokeWidth() / this.geometry.scale,
                 'data-z-order': state.zOrder,
                 ...this.getShapeColorization(state),
             }).addClass('cvat_canvas_shape');
@@ -2580,7 +2581,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
                 'shape-rendering': 'geometricprecision',
-                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'stroke-width': this.getBaseStrokeWidth() / this.geometry.scale,
                 'data-z-order': state.zOrder,
                 ...this.getShapeColorization(state),
             }).addClass('cvat_canvas_shape');
@@ -2604,7 +2605,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
                 'shape-rendering': 'geometricprecision',
-                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'stroke-width': this.getBaseStrokeWidth() / this.geometry.scale,
                 'data-z-order': state.zOrder,
                 ...this.getShapeColorization(state),
             }).addClass('cvat_canvas_shape') as SVG.G;
@@ -2639,7 +2640,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         r: this.configuration.controlPointsSize / this.geometry.scale,
                         'color-rendering': 'optimizeQuality',
                         'shape-rendering': 'geometricprecision',
-                        'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                        'stroke-width': this.getBaseStrokeWidth() / this.geometry.scale,
                         'data-node-id': templateElement.attr('data-node-id'),
                         'data-element-id': templateElement.attr('data-element-id'),
                         'data-label-id': templateElement.attr('data-label-id'),
@@ -2690,7 +2691,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 const mouseleave = (): void => {
                     circle.attr({
-                        'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                        'stroke-width': this.getBaseStrokeWidth() / this.geometry.scale,
                     });
                 };
 
@@ -3112,7 +3113,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'color-rendering': 'optimizeQuality',
                 id: `cvat_canvas_shape_${state.clientID}`,
                 'shape-rendering': 'geometricprecision',
-                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'stroke-width': this.getBaseStrokeWidth() / this.geometry.scale,
                 'data-z-order': state.zOrder,
                 ...this.getShapeColorization(state),
             })
@@ -3160,5 +3161,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         return shape;
+    }
+
+    private getBaseStrokeWidth(): number {
+        return consts.BASE_STROKE_WIDTH * this.configuration.shapeLineWidth;
     }
 }

@@ -66,6 +66,7 @@ interface StateToProps {
     opacity: number;
     colorBy: ColorBy;
     selectedOpacity: number;
+    lineWidth: number;
     outlined: boolean;
     outlineColor: string;
     showBitmap: boolean;
@@ -177,7 +178,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 textContent,
             },
             shapes: {
-                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections, lineWidth,
             },
         },
         shortcuts: { keyMap },
@@ -198,6 +199,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         opacity: opacity / 100,
         colorBy,
         selectedOpacity: selectedOpacity / 100,
+        lineWidth,
         outlined,
         outlineColor,
         showBitmap,

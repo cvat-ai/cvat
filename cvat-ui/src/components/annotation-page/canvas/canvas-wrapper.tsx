@@ -41,6 +41,7 @@ interface Props {
     opacity: number;
     colorBy: ColorBy;
     selectedOpacity: number;
+    lineWidth: number;
     outlined: boolean;
     outlineColor: string;
     showBitmap: boolean;
@@ -113,6 +114,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             showProjections,
             selectedOpacity,
             opacity,
+            lineWidth,
             smoothImage,
             textFontSize,
             controlPointsSize,
@@ -145,6 +147,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             textFontSize,
             textPosition,
             textContent,
+            shapeLineWidth: lineWidth,
         });
 
         this.initialSetup();
@@ -155,6 +158,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             opacity,
             selectedOpacity,
+            lineWidth,
             outlined,
             outlineColor,
             showBitmap,
@@ -197,6 +201,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.intelligentPolygonCrop !== intelligentPolygonCrop ||
             prevProps.opacity !== opacity ||
             prevProps.selectedOpacity !== selectedOpacity ||
+            prevProps.lineWidth !== lineWidth ||
             prevProps.smoothImage !== smoothImage ||
             prevProps.textFontSize !== textFontSize ||
             prevProps.controlPointsSize !== controlPointsSize ||
@@ -221,6 +226,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 controlPointsSize,
                 textPosition,
                 textContent,
+                shapeLineWidth: lineWidth,
             });
         }
 
