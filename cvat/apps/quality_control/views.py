@@ -63,7 +63,6 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     queryset = (
         AnnotationConflict.objects.select_related(
             "report",
-            "report__parents",
             "report__job",
             "report__job__segment",
             "report__job__segment__task",
@@ -72,6 +71,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             "report__task__organization",
         )
         .prefetch_related(
+            "report__parents",
             "annotation_ids",
         )
         .all()
@@ -109,7 +109,7 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
                 if report.target == QualityReportTarget.TASK:
                     queryset = queryset.filter(
-                        Q(report=report) | Q(report__parents__contains=report)
+                        Q(report=report) | Q(report__parents__in=[report])
                     ).distinct()
                 elif report.target == QualityReportTarget.JOB:
                     queryset = queryset.filter(report=report)
