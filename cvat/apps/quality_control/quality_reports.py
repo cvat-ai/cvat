@@ -43,7 +43,7 @@ from cvat.apps.engine.models import (
     Project,
     ShapeType,
     StageChoice,
-    StatusChoice,
+    StateChoice,
     Task,
 )
 from cvat.apps.profiler import silk_profile
@@ -2208,12 +2208,12 @@ class TaskQualityReportUpdateManager:
 
         gt_job = task.gt_job
         if gt_job is None or not (
-            gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StatusChoice.COMPLETED
+            gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StateChoice.COMPLETED
         ):
             raise self.QualityReportsNotAvailable(
                 "Quality reports require a Ground Truth job in the task "
                 f"at the {StageChoice.ACCEPTANCE} stage "
-                f"and in the {StatusChoice.COMPLETED} state"
+                f"and in the {StateChoice.COMPLETED} state"
             )
 
     def _should_update(self, task: Task) -> bool:
@@ -2312,7 +2312,7 @@ class TaskQualityReportUpdateManager:
             if (
                 gt_job is None
                 or gt_job.stage != StageChoice.ACCEPTANCE
-                or gt_job.status != StatusChoice.COMPLETED
+                or gt_job.state != StateChoice.COMPLETED
             ):
                 return
 
@@ -2737,7 +2737,7 @@ class ProjectQualityReportUpdateManager:
                     filter=Q(
                         segment__job__type=JobType.GROUND_TRUTH,
                         segment__job__stage=StageChoice.ACCEPTANCE,
-                        segment__job__status=StatusChoice.COMPLETED,
+                        segment__job__state=StateChoice.COMPLETED,
                     ),
                     distinct=True,
                 ),
