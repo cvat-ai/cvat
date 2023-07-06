@@ -4,11 +4,12 @@
   "previous": null,
   "results": [
     {
-      "created_date": "2023-05-26T16:25:36.613000Z",
+      "created_date": "2023-07-05T16:29:35.417000Z",
       "gt_last_updated": "2023-05-26T16:16:50.630000Z",
       "id": 1,
       "job_id": null,
       "parent_id": null,
+      "project_id": null,
       "summary": {
         "conflict_count": 37,
         "conflicts_by_type": {
@@ -25,7 +26,9 @@
         "error_count": 22,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
+        "frames_with_errors": 2,
         "gt_count": 33,
+        "total_frames": 11,
         "valid_count": 21,
         "warning_count": 15
       },
@@ -34,11 +37,12 @@
       "task_id": 22
     },
     {
-      "created_date": "2023-05-26T16:25:36.616000Z",
+      "created_date": "2023-07-05T16:29:35.420000Z",
       "gt_last_updated": "2023-05-26T16:16:50.630000Z",
       "id": 2,
       "job_id": 27,
       "parent_id": 1,
+      "project_id": null,
       "summary": {
         "conflict_count": 37,
         "conflicts_by_type": {
@@ -55,7 +59,9 @@
         "error_count": 22,
         "frame_count": 3,
         "frame_share": 0.2727272727272727,
+        "frames_with_errors": 2,
         "gt_count": 33,
+        "total_frames": 11,
         "valid_count": 21,
         "warning_count": 15
       },
