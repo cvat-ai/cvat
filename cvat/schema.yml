@@ -8742,8 +8742,10 @@ components:
           readOnly: true
         task_id:
           type: integer
+          nullable: true
         project_id:
           type: integer
+          nullable: true
         iou_threshold:
           type: number
           format: double
@@ -8822,8 +8824,10 @@ components:
       properties:
         task_id:
           type: integer
+          nullable: true
         project_id:
           type: integer
+          nullable: true
         iou_threshold:
           type: number
           format: double
