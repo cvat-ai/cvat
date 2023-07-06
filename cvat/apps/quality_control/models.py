@@ -241,7 +241,7 @@ class QualitySettingsQuerySet(models.QuerySet):
 
         if task.project_id:
             raise QualitySettings.SettingsAlreadyExistError(
-                "Can't define quality settings for a task if the task is in the project."
+                "Can't define quality settings for a task if the task is in a project."
             )
 
 
