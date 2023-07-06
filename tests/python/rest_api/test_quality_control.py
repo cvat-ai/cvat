@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from collections import Counter
 from copy import deepcopy
+from datetime import datetime
 from http import HTTPStatus
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -14,15 +16,25 @@ from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
+from shared.utils.helpers import generate_image_files
 
-from .utils import CollectionSimpleFilterTestBase
+from .utils import CollectionSimpleFilterTestBase, create_task
 
 
 class _PermissionTestBase:
-    def create_quality_report(self, user: str, task_id: int):
+    def create_quality_report(
+        self, user: str, task_id: Optional[int] = None, project_id: Optional[int] = None
+    ) -> dict:
+        assert bool(task_id) ^ bool(project_id), "task or project id must be specified"
+
+        params = {
+            **(dict(task_id=task_id) if task_id else {}),
+            **(dict(project_id=project_id) if project_id else {}),
+        }
+
         with make_api_client(user) as api_client:
             (_, response) = api_client.quality_api.create_report(
-                quality_report_create_request=models.QualityReportCreateRequest(task_id=task_id),
+                quality_report_create_request=models.QualityReportCreateRequest(**params),
                 _parse_response=False,
             )
             assert response.status == HTTPStatus.ACCEPTED
@@ -39,7 +51,7 @@ class _PermissionTestBase:
 
             return json.loads(response.data)
 
-    def create_gt_job(self, user, task_id):
+    def create_gt_job(self, user: str, task_id: int) -> models.JobRead:
         with make_api_client(user) as api_client:
             (meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
             start_frame = meta.start_frame
@@ -78,6 +90,22 @@ class _PermissionTestBase:
 
         return job
 
+    user_sandbox_cases = ("is_staff, allow", [(True, True), (False, False)])
+
+    user_org_cases = (
+        "org_role, is_staff, allow",
+        [
+            ("owner", True, True),
+            ("owner", False, True),
+            ("maintainer", True, True),
+            ("maintainer", False, True),
+            ("supervisor", True, True),
+            ("supervisor", False, False),
+            ("worker", True, True),
+            ("worker", False, False),
+        ],
+    )
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListQualityReports(_PermissionTestBase):
@@ -111,7 +139,7 @@ class TestListQualityReports(_PermissionTestBase):
         self._test_list_reports_200(admin_user, task_id, expected_data=reports)
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
     def test_user_list_reports_in_sandbox_task(
         self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
     ):
@@ -137,19 +165,7 @@ class TestListQualityReports(_PermissionTestBase):
             self._test_list_reports_403(user, task["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
     def test_user_list_reports_in_org_task(
         self,
         tasks,
@@ -219,7 +235,7 @@ class TestGetQualityReports(_PermissionTestBase):
         return response
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
     def test_user_get_report_in_sandbox_task(
         self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
     ):
@@ -245,19 +261,7 @@ class TestGetQualityReports(_PermissionTestBase):
             self._test_get_report_403(user, report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
     def test_user_get_report_in_org_task(
         self,
         tasks,
@@ -338,7 +342,7 @@ class TestGetQualityReportData(_PermissionTestBase):
             assert key in report_data.keys(), key
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
     def test_user_get_report_data_in_sandbox_task(
         self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
     ):
@@ -365,19 +369,7 @@ class TestGetQualityReportData(_PermissionTestBase):
             self._test_get_report_data_403(user, report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
     def test_user_get_report_data_in_org_task(
         self,
         tasks,
@@ -529,7 +521,7 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
 
     @pytest.mark.parametrize(
         "field",
-        ("task_id", "job_id", "parent_id", "target", "org_id"),
+        ("project_id", "task_id", "job_id", "parent_id", "target", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)
@@ -566,7 +558,7 @@ class TestListQualityConflicts(_PermissionTestBase):
         self._test_list_conflicts_200(admin_user, report["id"], expected_data=conflicts)
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
     def test_user_list_conflicts_in_sandbox_task(
         self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
     ):
@@ -594,19 +586,7 @@ class TestListQualityConflicts(_PermissionTestBase):
             self._test_list_conflicts_403(user, report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
     def test_user_list_conflicts_in_org_task(
         self,
         tasks,
@@ -712,7 +692,7 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
 
     @pytest.mark.parametrize(
         "field",
-        ("report_id", "severity", "type", "frame", "job_id", "task_id", "org_id"),
+        ("report_id", "severity", "type", "frame", "job_id", "task_id", "project_id", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)
@@ -727,7 +707,7 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.quality_api.list_settings_endpoint
 
-    @pytest.mark.parametrize("field", ("task_id",))
+    @pytest.mark.parametrize("field", ("task_id", "project_id"))
     def test_can_use_simple_filter_for_object_list(self, field):
         return super().test_can_use_simple_filter_for_object_list(field)
 
@@ -735,10 +715,10 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListSettings(_PermissionTestBase):
     def _test_list_settings_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user: str, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_settings(obj_id, **kwargs)
+            (_, response) = api_client.quality_api.list_settings(**kwargs)
             assert response.status == HTTPStatus.OK
 
         if expected_data is not None:
@@ -746,16 +726,16 @@ class TestListSettings(_PermissionTestBase):
 
         return response
 
-    def _test_list_settings_403(self, user: str, obj_id: int, **kwargs):
+    def _test_list_settings_403(self, user: str, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_settings(
-                obj_id, **kwargs, _parse_response=False, _check_status=False
+            (_, response) = api_client.quality_api.list_settings(
+                **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
 
         return response
 
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
     def test_user_list_settings_in_sandbox(
         self, quality_settings, tasks, users, is_task_staff, is_staff, allow
     ):
@@ -770,28 +750,14 @@ class TestListSettings(_PermissionTestBase):
         else:
             user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
 
-        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
-        settings_id = settings["id"]
-
         if allow:
-            self._test_list_settings_200(user, settings_id, expected_data=settings)
+            settings = [s for s in quality_settings if s["task_id"] == task["id"]]
+            self._test_list_settings_200(user, expected_data=settings, task_id=task["id"])
         else:
-            self._test_list_settings_403(user, settings_id)
+            self._test_list_settings_403(user)
 
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
-    def test_user_get_settings_in_org_task(
+    @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
+    def test_user_list_settings_in_org_task(
         self,
         tasks,
         users,
@@ -821,13 +787,13 @@ class TestListSettings(_PermissionTestBase):
 
         assert task
 
-        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
-        settings_id = settings["id"]
-
         if allow:
-            self._test_list_settings_200(user["username"], settings_id, expected_data=settings)
+            settings = next(s for s in quality_settings if s["task_id"] == task["id"])
+            self._test_list_settings_200(
+                user["username"], expected_data=settings, task_id=task["id"]
+            )
         else:
-            self._test_list_settings_403(user["username"], settings_id)
+            self._test_list_settings_403(user["username"])
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -858,7 +824,7 @@ class TestGetSettings(_PermissionTestBase):
         settings_id = settings["id"]
         self._test_get_settings_200(admin_user, settings_id, expected_data=settings)
 
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
     def test_user_get_settings_in_sandbox_task(
         self, quality_settings, tasks, users, is_task_staff, is_staff, allow
     ):
@@ -881,19 +847,7 @@ class TestGetSettings(_PermissionTestBase):
         else:
             self._test_get_settings_403(user, settings_id)
 
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
     def test_user_get_settings_in_org_task(
         self,
         tasks,
@@ -931,6 +885,125 @@ class TestGetSettings(_PermissionTestBase):
             self._test_get_settings_200(user["username"], settings_id, expected_data=settings)
         else:
             self._test_get_settings_403(user["username"], settings_id)
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPostSettings(_PermissionTestBase):
+    def _test_post_settings_201(
+        self,
+        user: str,
+        data: Dict[str, Any],
+        **kwargs,
+    ):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.quality_api.create_settings(
+                quality_settings_request=data, **kwargs
+            )
+            assert response.status == HTTPStatus.CREATED
+
+        response_data = json.loads(response.data)
+        assert response_data["task_id"] == data.get("task_id")
+        assert response_data["project_id"] == data.get("project_id")
+
+        return response
+
+    def _test_post_settings_403(self, user: str, data: Dict[str, Any], **kwargs):
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.quality_api.create_settings(
+                quality_settings_request=data,
+                **kwargs,
+                _parse_response=False,
+                _check_status=False,
+            )
+            assert response.status == HTTPStatus.FORBIDDEN
+
+        return response
+
+    def test_can_create_task_settings(self, admin_user, quality_settings, tasks):
+        task_id = next(
+            t["id"]
+            for t in tasks
+            if not any(s for s in quality_settings if s.get("task_id") == t["id"])
+            and not t["project_id"]
+        )
+        data = {"task_id": task_id}
+
+        self._test_post_settings_201(admin_user, data)
+
+    def test_can_create_project_settings(self, admin_user, quality_settings, projects):
+        project_id = next(
+            t["id"]
+            for t in projects
+            if not any(s for s in quality_settings if s.get("project_id") == t["id"])
+        )
+        data = {"project_id": project_id}
+
+        self._test_post_settings_201(admin_user, data)
+
+    @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
+    def test_user_create_settings_in_sandbox_task(
+        self, quality_settings, tasks, users, is_task_staff, is_staff, allow
+    ):
+        task = next(
+            t
+            for t in tasks
+            if t["organization"] is None
+            and not users[t["owner"]["id"]]["is_superuser"]
+            and not any(s for s in quality_settings if s.get("task_id") == t["id"])
+            and not t["project_id"]
+        )
+
+        if is_staff:
+            user = task["owner"]["username"]
+        else:
+            user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
+
+        data = {"task_id": task["id"]}
+
+        if allow:
+            self._test_post_settings_201(user, data)
+        else:
+            self._test_post_settings_403(user, data)
+
+    @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
+    def test_user_patch_settings_in_org_task(
+        self,
+        tasks,
+        users,
+        is_org_member,
+        is_task_staff,
+        org_role,
+        is_staff,
+        allow,
+        quality_settings,
+    ):
+        for user in users:
+            if user["is_superuser"]:
+                continue
+
+            task = next(
+                (
+                    t
+                    for t in tasks
+                    if t["organization"] is not None
+                    and is_task_staff(user["id"], t["id"]) == is_staff
+                    and is_org_member(user["id"], t["organization"], role=org_role)
+                    and not any(s for s in quality_settings if s.get("task_id") == t["id"])
+                    and not t["project_id"]
+                ),
+                None,
+            )
+            if task is not None:
+                break
+
+        assert task
+
+        data = {"task_id": task["id"]}
+
+        if allow:
+            self._test_post_settings_201(user["username"], data)
+        else:
+            self._test_post_settings_403(user["username"], data)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -987,7 +1060,7 @@ class TestPatchSettings(_PermissionTestBase):
         data, expected_data = self._get_request_data(settings)
         self._test_patch_settings_200(admin_user, settings_id, data, expected_data=expected_data)
 
-    @pytest.mark.parametrize("is_staff, allow", [(True, True), (False, False)])
+    @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
     def test_user_patch_settings_in_sandbox_task(
         self, quality_settings, tasks, users, is_task_staff, is_staff, allow
     ):
@@ -1011,19 +1084,7 @@ class TestPatchSettings(_PermissionTestBase):
         else:
             self._test_patch_settings_403(user, settings_id, data)
 
-    @pytest.mark.parametrize(
-        "org_role, is_staff, allow",
-        [
-            ("owner", True, True),
-            ("owner", False, True),
-            ("maintainer", True, True),
-            ("maintainer", False, True),
-            ("supervisor", True, True),
-            ("supervisor", False, False),
-            ("worker", True, True),
-            ("worker", False, False),
-        ],
-    )
+    @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
     def test_user_patch_settings_in_org_task(
         self,
         tasks,
@@ -1191,3 +1252,335 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
         new_report = self.create_quality_report(admin_user, task_id)
         assert new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestProjectInteraction(_PermissionTestBase):
+    def test_can_create_task_settings_when_not_in_project(
+        self, admin_user, tasks, quality_settings
+    ):
+        task = next(
+            t
+            for t in tasks
+            if not t["project_id"]
+            and not any(qs for qs in quality_settings if qs["task_id"] == t["id"])
+        )
+
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.quality_api.create_settings(
+                quality_settings_request=models.QualitySettingsRequest(task_id=task["id"])
+            )
+            assert response.status == HTTPStatus.CREATED
+
+    def test_cannot_create_task_settings_when_in_project(self, admin_user, tasks, quality_settings):
+        task = next(
+            t
+            for t in tasks
+            if t["project_id"]
+            and not any(qs for qs in quality_settings if qs["task_id"] == t["id"])
+        )
+
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.quality_api.create_settings(
+                quality_settings_request=models.QualitySettingsRequest(task_id=task["id"]),
+                _check_status=False,
+                _parse_response=False,
+            )
+
+        assert response.status == HTTPStatus.BAD_REQUEST
+        assert (
+            b"Can't define quality settings for a task if the task is in a project."
+            in response.data
+        )
+
+    def test_can_create_project_settings(self, admin_user):
+        with make_api_client(admin_user) as api_client:
+            (project, _) = api_client.projects_api.create(
+                models.ProjectWriteRequest(name="test task move")
+            )
+
+            (_, response) = api_client.quality_api.create_settings(
+                quality_settings_request=models.QualitySettingsRequest(project_id=project.id)
+            )
+            assert response.status == HTTPStatus.CREATED
+
+    def test_can_create_project_settings_on_report_creation_when_in_project(
+        self, admin_user, labels, tasks, quality_reports
+    ):
+        task_id = next(
+            r
+            for r in quality_reports
+            if r["target"] == "task" and r["task_id"] and not tasks[r["task_id"]]["project_id"]
+        )["task_id"]
+        task_labels = [l for l in labels if l.get("task_id") == task_id]
+
+        with make_api_client(admin_user) as api_client:
+            (project, _) = api_client.projects_api.create(
+                models.ProjectWriteRequest(name="test task move", labels=task_labels)
+            )
+
+            api_client.tasks_api.partial_update(
+                task_id,
+                patched_task_write_request=models.PatchedTaskWriteRequest(project_id=project.id),
+            )
+
+            (settings_list, _) = api_client.quality_api.list_settings(project_id=project.id)
+            assert settings_list.count == 0
+
+            self.create_quality_report(admin_user, task_id)
+
+            (settings_list, _) = api_client.quality_api.list_settings(task_id=task_id)
+            assert settings_list.count == 0
+
+            (settings_list, _) = api_client.quality_api.list_settings(project_id=project.id)
+            assert settings_list.count == 1
+            assert settings_list.results[0].project_id == project.id
+
+    def test_can_delete_task_settings_when_moved_into_project(
+        self, admin_user, quality_settings, labels
+    ):
+        task_id = next(qs for qs in quality_settings if qs["task_id"])["task_id"]
+        task_labels = [l for l in labels if l.get("task_id") == task_id]
+
+        with make_api_client(admin_user) as api_client:
+            (project, _) = api_client.projects_api.create(
+                models.ProjectWriteRequest(name="test task move", labels=task_labels)
+            )
+
+            api_client.tasks_api.partial_update(
+                task_id,
+                patched_task_write_request=models.PatchedTaskWriteRequest(project_id=project.id),
+            )
+
+            (settings_list, _) = api_client.quality_api.list_settings(task_id=task_id)
+            assert settings_list.count == 0
+
+    def test_can_delete_task_reports_when_moved_into_project(
+        self, admin_user, quality_reports, tasks, labels
+    ):
+        task_id = next(
+            r
+            for r in quality_reports
+            if r["target"] == "task" and r["task_id"] and not tasks[r["task_id"]]["project_id"]
+        )["task_id"]
+        task_labels = [l for l in labels if l.get("task_id") == task_id]
+
+        self.create_quality_report(admin_user, task_id)
+
+        with make_api_client(admin_user) as api_client:
+            (project, _) = api_client.projects_api.create(
+                models.ProjectWriteRequest(name="test task move", labels=task_labels)
+            )
+
+            api_client.tasks_api.partial_update(
+                task_id,
+                patched_task_write_request=models.PatchedTaskWriteRequest(project_id=project.id),
+            )
+
+            (settings_list, _) = api_client.quality_api.list_settings(task_id=task_id)
+            assert settings_list.count == 0
+
+            (reports_list, _) = api_client.quality_api.list_reports(task_id=task_id)
+            assert reports_list.count == 0
+
+    @pytest.mark.xfail(
+        raises=exceptions.ApiException, reason="Task movement into sandbox is disabled"
+    )
+    def test_can_delete_task_reports_when_moved_out_of_project(
+        self, admin_user, quality_reports, tasks, labels
+    ):
+        task_id = next(
+            r
+            for r in quality_reports
+            if r["target"] == "task" and r["task_id"] and not tasks[r["task_id"]]["project_id"]
+        )["task_id"]
+        task_labels = [l for l in labels if l.get("task_id") == task_id]
+
+        with make_api_client(admin_user) as api_client:
+            (project, _) = api_client.projects_api.create(
+                models.ProjectWriteRequest(name="test task move", labels=task_labels)
+            )
+
+            api_client.tasks_api.partial_update(
+                task_id,
+                patched_task_write_request=models.PatchedTaskWriteRequest(project_id=project.id),
+            )
+            self.create_quality_report(admin_user, task_id)
+
+            api_client.tasks_api.partial_update(
+                task_id, patched_task_write_request=models.PatchedTaskWriteRequest(project_id=None)
+            )
+
+            (settings_list, _) = api_client.quality_api.list_settings(task_id=task_id)
+            assert settings_list.count == 0
+
+            (reports_list, _) = api_client.quality_api.list_reports(task_id=task_id)
+            assert reports_list.count == 0
+
+    def test_can_reuse_task_report_in_project_reports(self, admin_user):
+        with make_api_client(admin_user) as api_client:
+            (project, _) = api_client.projects_api.create(
+                models.ProjectWriteRequest(
+                    name="test task report reuse", labels=[dict(name="cat"), dict(name="dog")]
+                )
+            )
+
+            (task1_id, _) = create_task(
+                admin_user,
+                spec=dict(name="test task 1", project_id=project.id),
+                data=dict(image_quality=70, client_files=generate_image_files(2)),
+            )
+            self.create_gt_job(admin_user, task1_id)
+            task1_jobs = [
+                j.id
+                for j in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task1_id
+                )
+                if j.type == "annotation"
+            ]
+
+            (task2_id, _) = create_task(
+                admin_user,
+                spec=dict(name="test task 2", project_id=project.id),
+                data=dict(image_quality=70, client_files=generate_image_files(2)),
+            )
+            self.create_gt_job(admin_user, task2_id)
+            task2_jobs = [
+                j.id
+                for j in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task2_id
+                )
+                if j.type == "annotation"
+            ]
+
+            self.create_quality_report(admin_user, task1_id)
+            self.create_quality_report(admin_user, project_id=project.id)
+
+            self.create_quality_report(admin_user, task2_id)
+            self.create_quality_report(admin_user, project_id=project.id)
+
+            (reports_list, _) = api_client.quality_api.list_reports(project_id=project.id)
+            assert reports_list.count == 6
+            assert Counter((r.job_id, r.task_id, r.project_id) for r in reports_list.results) == {
+                **{(jid, None, None): 1 for jid in task1_jobs},
+                **{(jid, None, None): 1 for jid in task2_jobs},
+                (None, task1_id, None): 1,
+                (None, task2_id, None): 1,
+                (None, None, project.id): 2,
+            }
+
+    @pytest.mark.parametrize(
+        "task_count, gt_task_count",
+        [(0, 0), (1, 0), (1, 1), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2)],
+    )
+    def test_can_compute_project_report(self, admin_user, task_count, gt_task_count):
+        with make_api_client(admin_user) as api_client:
+            (project, _) = api_client.projects_api.create(
+                models.ProjectWriteRequest(
+                    name="test task report reuse", labels=[dict(name="cat"), dict(name="dog")]
+                )
+            )
+
+            task_ids = []
+            task_jobs = {}
+            task_reports = {}
+            task_frame_count = 2
+            for i in range(task_count):
+                (task_id, _) = create_task(
+                    admin_user,
+                    spec=dict(name="test task", project_id=project.id),
+                    data=dict(
+                        image_quality=70, client_files=generate_image_files(task_frame_count)
+                    ),
+                )
+                task_ids.append(task_id)
+                task_jobs[task_id] = [
+                    j
+                    for j in get_paginated_collection(
+                        api_client.jobs_api.list_endpoint, task_id=task_id
+                    )
+                    if j.type == "annotation"
+                ]
+
+                if i < gt_task_count:
+                    self.create_gt_job(admin_user, task_id)
+
+                    task_report = self.create_quality_report(admin_user, task_id)
+                    task_reports[task_id] = task_report
+
+            project_report = self.create_quality_report(admin_user, project_id=project.id)
+            for param in [
+                "error_count",
+                "warning_count",
+                "conflict_count",
+                "gt_count",
+                "ds_count",
+                "valid_count",
+                "frame_count",
+                "frames_with_errors",
+            ]:
+                assert project_report["summary"][param] == sum(
+                    r["summary"][param] for r in task_reports.values()
+                ), param
+
+            assert project_report["summary"]["total_frames"] == task_count * task_frame_count, param
+            assert project_report["summary"]["frame_share"] == (
+                project_report["summary"]["frame_count"] / (task_count * task_frame_count or 1)
+            ), param
+            assert project_report["gt_last_updated"] == max(
+                (r["gt_last_updated"] for r in task_reports.values()),
+                key=lambda v: datetime.fromisoformat(
+                    v.rstrip("Z")  # timezone is not important here
+                ),
+                default=None,
+            )
+
+    def test_project_reports_do_not_display_conflicts(self, admin_user):
+        with make_api_client(admin_user) as api_client:
+            (project, _) = api_client.projects_api.create(
+                models.ProjectWriteRequest(
+                    name="test task report reuse", labels=[dict(name="cat"), dict(name="dog")]
+                )
+            )
+
+            (task_id, _) = create_task(
+                admin_user,
+                spec=dict(name="test task", project_id=project.id),
+                data=dict(image_quality=70, client_files=generate_image_files(2)),
+            )
+            self.create_gt_job(admin_user, task_id)
+
+            self.create_quality_report(admin_user, task_id)
+            project_report = self.create_quality_report(admin_user, project_id=project.id)
+            assert project_report["conflicts"] > 0
+
+            (project_conflicts, _) = api_client.quality_api.list_conflicts(
+                report_id=project_report["id"]
+            )
+            assert project_conflicts.count == 0
+
+    def test_task_reports_use_project_settings(self, admin_user):
+        with make_api_client(admin_user) as api_client:
+            (project, _) = api_client.projects_api.create(
+                models.ProjectWriteRequest(
+                    name="test task report reuse", labels=[dict(name="cat"), dict(name="dog")]
+                )
+            )
+
+            (task_id, _) = create_task(
+                admin_user,
+                spec=dict(name="test task", project_id=project.id),
+                data=dict(image_quality=70, client_files=generate_image_files(2)),
+            )
+            self.create_gt_job(admin_user, task_id)
+
+            (project_settings, _) = api_client.quality_api.create_settings(
+                quality_settings_request=models.QualitySettingsRequest(
+                    project_id=project.id, iou_threshold=0.001
+                )
+            )
+
+            task_report = self.create_quality_report(admin_user, task_id)
+
+            (task_report_data, _) = api_client.quality_api.retrieve_report_data(task_report["id"])
+            assert task_report_data["parameters"]["iou_threshold"] == project_settings.iou_threshold
