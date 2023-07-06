@@ -1944,32 +1944,54 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'quality_settings':
             for scope in cls.get_scopes(request, view, obj):
-                if scope in [Scopes.VIEW, Scopes.UPDATE]:
-                    obj = cast(QualitySettings, obj)
+                if scope in [Scopes.CREATE, Scopes.VIEW, Scopes.UPDATE]:
+                    project = None
+                    task = None
 
-                    if obj.task:
+                    if scope in [Scopes.VIEW, Scopes.UPDATE]:
+                        obj = cast(QualitySettings, obj)
+                        project = obj.project
+                        task = obj.task
+                    elif scope == Scopes.CREATE:
+                        if (project_id := request.data.get('project_id')):
+                            try:
+                                project = Project.objects.get(id=project_id)
+                            except Project.DoesNotExist:
+                                raise ValidationError(f"Project {project_id} does not exist")
+
+                        if (task_id := request.data.get('task_id')):
+                            try:
+                                task = Task.objects.get(id=task_id)
+                            except Task.DoesNotExist:
+                                raise ValidationError(f"Task {task_id} does not exist")
+                    else:
+                        assert False
+
+                    if task:
                         if scope == Scopes.VIEW:
                             task_scope = TaskPermission.Scopes.VIEW
-                        elif scope == Scopes.UPDATE:
+                        elif scope in [Scopes.UPDATE, Scopes.CREATE]:
                             task_scope = TaskPermission.Scopes.UPDATE_DESC
                         else:
                             assert False
 
                         parent_perm = TaskPermission.create_base_perm(
                             request, view,
-                            iam_context=iam_context, scope=task_scope, obj=obj.task
+                            iam_context=get_iam_context(request, task),
+                            scope=task_scope, obj=task
                         )
-                    elif obj.project:
+                    elif project:
                         if scope == Scopes.VIEW:
                             project_scope = ProjectPermission.Scopes.VIEW
-                        elif scope == Scopes.UPDATE:
+                        elif scope in [Scopes.UPDATE, Scopes.CREATE]:
                             project_scope = ProjectPermission.Scopes.UPDATE_DESC
                         else:
                             assert False
 
                         parent_perm = ProjectPermission.create_base_perm(
                             request, view,
-                            iam_context=iam_context, scope=project_scope, obj=obj.project
+                            iam_context=get_iam_context(request, project),
+                            scope=project_scope, obj=project
                         )
                     else:
                         assert False
@@ -1977,16 +1999,6 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                     # Access rights are the same as in the owning object
                     # This component doesn't define its own rules in this case
                     permissions.append(parent_perm)
-                elif scope == Scopes.CREATE and (project_id := request.data.get('project_id')):
-                    try:
-                        project = Project.objects.get(pk=project_id)
-                    except Project.DoesNotExist as ex:
-                        raise ValidationError(str(ex))
-
-                    permissions.append(ProjectPermission.create_base_perm(
-                        request, view, iam_context=iam_context,
-                        scope=ProjectPermission.Scopes.UPDATE_DESC, obj=project
-                    ))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
