@@ -174,14 +174,7 @@ jobs:
         with:
           name: coverage_results
           path: |
-            coverage.json
-            coverage_cvat_server.json
-            coverage_cvat_worker_annotation.json
-            coverage_cvat_worker_import.json
-            coverage_cvat_worker_export.json
-            coverage_cvat_worker_quality_reports.json
-            coverage_cvat_worker_webhooks.json
-            coverage_cvat_utils.json
+            coverage*.json
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
@@ -490,12 +483,7 @@ jobs:
         with:
           name: coverage_results
 
-      - name: Combining coverage results
-        run: |
-          cat *.json > merged.json
-
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: merged.json
