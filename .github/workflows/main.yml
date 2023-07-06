@@ -183,12 +183,6 @@ jobs:
             coverage_cvat_worker_webhooks.json
             coverage_cvat_utils.json
 
-      # - name: Upload coverage reports to Codecov with GitHub Action
-      #   uses: codecov/codecov-action@v3
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
-      #     files: coverage_merged.json
-
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
         env:
@@ -257,12 +251,6 @@ jobs:
           path: |
             ${{ github.workspace }}/coverage-final.json
             ${{ github.workspace }}/unit_tests_coverage.json
-
-      # - name: Upload coverage reports to Codecov with GitHub Action
-      #   uses: codecov/codecov-action@v3
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
-      #     files: coverage-final.json.json
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -371,12 +359,6 @@ jobs:
           name: coverage_results
           path: |
             tests/coverage/${{ matrix.specs }}_coverage.json
-
-      # - name: Upload coverage reports to Codecov with GitHub Action
-      #   uses: codecov/codecov-action@v3
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
-      #     files: tests/coverage/coverage-final.json
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
