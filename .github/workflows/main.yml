@@ -363,7 +363,7 @@ jobs:
               --browser chrome \
               --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
-          mv tests/coverage/coverage-final.json tests/coverage/${{ matrix.specs }}_coverage.json
+          mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
 
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v3.1.1
