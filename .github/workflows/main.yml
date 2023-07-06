@@ -169,16 +169,19 @@ jobs:
         run: |
           pytest tests/python/ --cov --cov-report=json
 
-          cat coverage.json coverage_cvat_server.json coverage_cvat_worker_annotation.json coverage_cvat_worker_import.json \
-            coverage_cvat_worker_export.json coverage_cvat_worker_quality_reports.json coverage_cvat_worker_webhooks.json \
-            coverage_cvat_utils.json > coverage_merged.json
-
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v3.1.1
         with:
           name: coverage_results
           path: |
-            coverage_merged.json
+            coverage.json
+            coverage_cvat_server.json
+            coverage_cvat_worker_annotation.json
+            coverage_cvat_worker_import.json
+            coverage_cvat_worker_export.json
+            coverage_cvat_worker_quality_reports.json
+            coverage_cvat_worker_webhooks.json
+            coverage_cvat_utils.json
 
       # - name: Upload coverage reports to Codecov with GitHub Action
       #   uses: codecov/codecov-action@v3
@@ -242,7 +245,7 @@ jobs:
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}'
+            -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
             -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
@@ -253,7 +256,7 @@ jobs:
           name: coverage_results
           path: |
             ${{ github.workspace }}/coverage-final.json
-            ${{ github.workspace }}/coverage.json
+            ${{ github.workspace }}/unit_tests_coverage.json
 
       # - name: Upload coverage reports to Codecov with GitHub Action
       #   uses: codecov/codecov-action@v3
@@ -360,13 +363,14 @@ jobs:
               --browser chrome \
               --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
+          mv tests/coverage/coverage-final.json tests/coverage/${{ matrix.specs }}_coverage.json
 
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v3.1.1
         with:
           name: coverage_results
           path: |
-            tests/coverage/coverage-final.json
+            tests/coverage/${{ matrix.specs }}_coverage.json
 
       # - name: Upload coverage reports to Codecov with GitHub Action
       #   uses: codecov/codecov-action@v3
