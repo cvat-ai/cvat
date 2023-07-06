@@ -9,8 +9,7 @@ import math
 from collections import Counter
 from copy import deepcopy
 from datetime import timedelta
-from functools import cached_property, partial, reduce
-from operator import or_
+from functools import cached_property, partial
 from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Set, Tuple, Union, cast
 from uuid import uuid4
 
@@ -420,12 +419,15 @@ class ComparisonReportAnnotationComponentsSummary(_Serializable):
 
 @define(kw_only=True)
 class ComparisonReportComparisonSummary(_Serializable):
-    frame_share: float
     frames: List[str]
 
-    @property
+    @cached_property
+    def frame_share(self) -> float:
+        return self.frame_count / (self.total_frames or 1)
+
+    @cached_property
     def mean_conflict_count(self) -> float:
-        return self.conflict_count / (len(self.frames) or 1)
+        return self.conflict_count / (self.frame_count or 1)
 
     conflict_count: int
     warning_count: int
@@ -437,7 +439,7 @@ class ComparisonReportComparisonSummary(_Serializable):
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: Optional[ComparisonReportAnnotationComponentsSummary]
 
-    @property
+    @cached_property
     def frame_count(self) -> int:
         return len(self.frames)
 
@@ -451,6 +453,7 @@ class ComparisonReportComparisonSummary(_Serializable):
         return super()._fields_dict(
             include_properties=include_properties
             or [
+                "frame_share",
                 "frame_count",
                 "mean_conflict_count",
                 "warning_count",
@@ -459,11 +462,27 @@ class ComparisonReportComparisonSummary(_Serializable):
             ]
         )
 
+    _CACHED_FIELDS = ["frame_count", "mean_conflict_count", "frame_share"]
+
+    def __init__(self, *args, **kwargs):
+        # these fields are optional, but can be computed on access
+        for field_name in self._CACHED_FIELDS:
+            if field_name in kwargs:
+                setattr(self, field_name, kwargs.pop(field_name))
+
+        self.__attrs_init__(*args, **kwargs)
+
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
-            frame_share=d["frame_share"],
             frames=list(d["frames"]),
+            **(dict(frame_share=d["frame_share"]) if "frame_share" in d else {}),
+            **(dict(frame_count=d["frame_count"]) if "frame_count" in d else {}),
+            **(
+                dict(mean_conflict_count=d["mean_conflict_count"])
+                if "mean_conflict_count" in d
+                else {}
+            ),
             conflict_count=d["conflict_count"],
             warning_count=d.get("warning_count", 0),
             error_count=d.get("error_count", 0),
@@ -2725,10 +2744,12 @@ class ProjectQualityReportUpdateManager:
             # The project could have been deleted during scheduling
             try:
                 project = Project.objects.prefetch_related(
-                    "tasks", "tasks__data", "tasks__segment_set__job_set"
+                    "tasks", "tasks__data", "tasks__segment_set__job_set", "quality_settings"
                 ).get(id=project_id)
             except Project.DoesNotExist:
                 return
+
+            quality_params = self._get_quality_params(project)
 
             tasks_with_reports = project.tasks.annotate(
                 Count("quality_reports"),
@@ -2755,7 +2776,9 @@ class ProjectQualityReportUpdateManager:
                 )
 
         project_comparison_report = self._compute_project_report(
-            project, project.tasks.all(), task_comparison_reports
+            project.tasks.all(),
+            task_comparison_reports,
+            quality_params,
         )
 
         with transaction.atomic():
@@ -2791,7 +2814,10 @@ class ProjectQualityReportUpdateManager:
         return project_report.id
 
     def _compute_project_report(
-        self, project: Project, tasks: List[Task], task_reports: Dict[int, ComparisonReport]
+        self,
+        tasks: List[Task],
+        task_reports: Dict[int, ComparisonReport],
+        quality_params: ComparisonParameters,
     ) -> ComparisonReport:
         # It's possible that there are no children reports available,
         # but we still need to return a meaningful report
@@ -2803,9 +2829,7 @@ class ProjectQualityReportUpdateManager:
         project_frame_results = {}
         project_frame_results_counts = {}
         for task_id, r in task_reports.items():
-            project_intersection_frames.setdefault(task_id, set()).update(
-                r.comparison_summary.frames
-            )
+            project_intersection_frames[task_id] = r.comparison_summary.frames
             project_conflicts.extend(r.conflicts)
 
             if project_annotations_summary:
@@ -2884,13 +2908,17 @@ class ProjectQualityReportUpdateManager:
                 confusion_matrix=None,
             )
 
-        all_intersection_frames = reduce(or_, project_intersection_frames.values(), set())
+        total_intersection_frames = sum(
+            len(task_intersection_frames)
+            for task_intersection_frames in project_intersection_frames.values()
+        )
         total_frames = sum(t.data.size for t in tasks)
         project_report_data = ComparisonReport(
-            parameters=ComparisonParameters.from_dict(project.quality_settings.to_dict()),
+            parameters=quality_params,
             comparison_summary=ComparisonReportComparisonSummary(
-                frame_share=len(all_intersection_frames) / (total_frames or 1),
-                frames=all_intersection_frames,
+                frame_share=total_intersection_frames / (total_frames or 1),
+                frame_count=total_intersection_frames,
+                frames=[],  # project reports do not provide this info
                 conflict_count=len(project_conflicts),
                 warning_count=len(
                     [
@@ -2931,6 +2959,10 @@ class ProjectQualityReportUpdateManager:
         db_project_report.children.add(*task_reports)
 
         return db_project_report
+
+    def _get_quality_params(self, project: Project) -> ComparisonParameters:
+        quality_params, _ = models.QualitySettings.objects.get_or_create(project_id=project.id)
+        return ComparisonParameters.from_dict(quality_params.to_dict())
 
 
 def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str) -> str:
