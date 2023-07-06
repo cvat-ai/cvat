@@ -7,6 +7,7 @@ from django.utils import timezone
 
 import django_rq
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 from uuid import uuid4
 
@@ -68,10 +69,12 @@ class JobAnalyticsReportUpdateManager():
 
     @classmethod
     def _get_last_report_time(cls, obj) :
-        report = obj.analytics_report
-        if report:
-            return report.created_date
-        return None
+        try:
+            report = obj.analytics_report
+            if report:
+                return report.created_date
+        except ObjectDoesNotExist:
+            return None
 
     def _find_next_job_id(
         self, existing_job_ids, obj, *, now
