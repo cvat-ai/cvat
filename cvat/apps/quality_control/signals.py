@@ -4,6 +4,7 @@
 
 from contextlib import suppress
 
+from django.db.models.query import Q
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
@@ -62,22 +63,22 @@ def _on_update_project_quality_metrics_on_task_move_from_project(instance, **kwa
         return
 
     original_project = original_task.project
-    if not original_project:
-        # There was no project before the update, nothing to update
-        return
-    elif instance.project and original_project.pk == instance.project.pk:
+    if original_project and instance.project and original_project.pk == instance.project.pk:
         # The project has been changed to the same value, nothing to update
         return
 
     # Old reports may conflict with newer ones -
     # labels / attributes and settings can be different
-    QualityReport.objects.filter(task_id=instance.id).delete()
+    QualityReport.objects.filter(
+        Q(job__segment__task__id=instance.id) | Q(task__id=instance.id)
+    ).delete()
 
     # The old settings must not be available anymore
     with suppress(QualitySettings.DoesNotExist):
         QualitySettings.objects.get(task_id=instance.id).delete()
 
-    qc.ProjectQualityReportUpdateManager().schedule_quality_autoupdate_job(original_project)
+    if original_project:
+        qc.ProjectQualityReportUpdateManager().schedule_quality_autoupdate_job(original_project)
 
 
 @receiver(
@@ -120,38 +121,3 @@ def _on_task_or_job_delete__update_project_quality_metrics(instance, **kwargs):
 
     if project:
         qc.ProjectQualityReportUpdateManager().schedule_quality_autoupdate_job(project)
-
-
-@receiver(post_save, sender=Job, dispatch_uid=__name__ + ".save_job-initialize_quality_settings")
-@receiver(post_save, sender=Task, dispatch_uid=__name__ + ".save_task-initialize_quality_settings")
-@receiver(
-    post_save, sender=Project, dispatch_uid=__name__ + ".save_project-initialize_quality_settings"
-)
-def _initialize_quality_settings(instance, created, **kwargs):
-    # Initializes default quality settings
-    # this is done in a signal to decouple this component from the engine app
-
-    if created:
-        params = {}
-
-        if isinstance(instance, (Job, Task)):
-            task = None
-
-            if isinstance(instance, Task):
-                task = instance
-            elif isinstance(instance, Job):
-                task = instance.segment.task
-            else:
-                assert False
-
-            if task.project:
-                # The project is responsible for the settings
-                return
-
-            params["task"] = task
-        elif isinstance(instance, Project):
-            params["project"] = instance
-        else:
-            assert False
-
-        QualitySettings.objects.get_or_create(**params)

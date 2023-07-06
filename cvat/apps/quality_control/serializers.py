@@ -80,8 +80,8 @@ class QualityReportCreateSerializer(serializers.Serializer):
 
 
 class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
-    task_id = serializers.IntegerField(required=False)
-    project_id = serializers.IntegerField(required=False)
+    task_id = serializers.IntegerField(required=False, allow_null=True)
+    project_id = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = models.QualitySettings
