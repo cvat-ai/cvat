@@ -70,6 +70,7 @@ export interface Configuration {
     shapeOpacity?: number;
     controlPointsSize?: number;
     outlinedBorders?: string | false;
+    shapeLineWidth?: number;
 }
 
 export interface DrawData {
@@ -281,6 +282,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 colorBy: 'Label',
                 selectedShapeOpacity: 0.5,
                 shapeOpacity: 0.2,
+                shapeLineWidth: 1,
                 outlinedBorders: false,
                 textFontSize: consts.DEFAULT_SHAPE_TEXT_SIZE,
                 controlPointsSize: consts.BASE_POINT_SIZE,
@@ -731,6 +733,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (typeof configuration.shapeOpacity === 'number') {
             this.data.configuration.shapeOpacity = configuration.shapeOpacity;
+        }
+        if (typeof configuration.shapeLineWidth === 'number') {
+            this.data.configuration.shapeLineWidth = configuration.shapeLineWidth;
         }
         if (['string', 'boolean'].includes(typeof configuration.outlinedBorders)) {
             this.data.configuration.outlinedBorders = configuration.outlinedBorders;
