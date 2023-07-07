@@ -1779,7 +1779,7 @@ class GuideAssetPermission(OpenPolicyAgentPermission):
 
 class QualityReportPermission(OpenPolicyAgentPermission):
     obj: Optional[QualityReport]
-    job_owner_id: Optional[int]
+    rq_job_owner_id: Optional[int]
 
     class Scopes(StrEnum):
         LIST = 'list'
@@ -1801,11 +1801,18 @@ class QualityReportPermission(OpenPolicyAgentPermission):
             except QualityReport.DoesNotExist as ex:
                 raise ValidationError(str(ex))
 
-        # Access rights are the same as in the owning task
+        # Access rights are the same as in the owning object
         # This component doesn't define its own rules in this case
-        return TaskPermission.create_scope_view(request,
-            task=report.get_task(), iam_context=iam_context,
-        )
+        if task := report.get_task():
+            return TaskPermission.create_scope_view(
+                request=request, task=task, iam_context=iam_context
+            )
+        elif project := report.project:
+            return ProjectPermission.create_scope_view(
+                request=request, project=project, iam_context=iam_context
+            )
+        else:
+            assert False
 
     @classmethod
     def create(cls, request, view, obj, iam_context):
@@ -1820,14 +1827,14 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                     permissions.append(TaskPermission.create_scope_view(request, task=obj))
                 elif scope == Scopes.LIST and isinstance(obj, Project):
                     permissions.append(
-                        ProjectPermission.create_scope_view(None, project=obj, request=request)
+                        ProjectPermission.create_scope_view(iam_context, project=obj)
                     )
                 elif scope == Scopes.CREATE:
                     if task_id := request.data.get('task_id'):
                         permissions.append(TaskPermission.create_scope_view(request, task_id))
                     elif project_id := request.data.get('project_id'):
                         permissions.append(
-                            ProjectPermission.create_scope_view(None, project_id, request=request)
+                            ProjectPermission.create_scope_view(iam_context, project_id)
                         )
 
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
@@ -1838,7 +1845,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         if 'job_owner_id' in kwargs:
-            self.job_owner_id = int(kwargs.pop('job_owner_id'))
+            self.rq_job_owner_id = int(kwargs.pop('job_owner_id'))
 
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/quality_reports/allow'
@@ -1888,7 +1895,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
                 } if project else None,
             }
         elif self.scope == self.Scopes.VIEW_STATUS:
-            data = { "owner": self.job_owner_id }
+            data = { "owner": self.rq_job_owner_id }
 
         return data
 

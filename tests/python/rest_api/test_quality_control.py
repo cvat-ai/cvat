@@ -109,44 +109,46 @@ class _PermissionTestBase:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListQualityReports(_PermissionTestBase):
-    def _test_list_reports_200(self, user, task_id, *, expected_data=None, **kwargs):
+    def _test_list_reports_200(self, user, *, expected_data=None, **kwargs):
         with make_api_client(user) as api_client:
             results = get_paginated_collection(
                 api_client.quality_api.list_reports_endpoint,
                 return_json=True,
-                task_id=task_id,
                 **kwargs,
             )
 
             if expected_data is not None:
-                assert DeepDiff(expected_data, results) == {}
+                assert DeepDiff(expected_data, results, ignore_order=True) == {}
 
-    def _test_list_reports_403(self, user, task_id, **kwargs):
+    def _test_list_reports_403(self, user, **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.quality_api.list_reports(
-                task_id=task_id, **kwargs, _parse_response=False, _check_status=False
+                **kwargs, _parse_response=False, _check_status=False
             )
 
             assert response.status == HTTPStatus.FORBIDDEN
 
-    def test_can_list_quality_reports(self, admin_user, quality_reports):
-        parent_report = next(r for r in quality_reports if r["task_id"])
-        task_id = parent_report["task_id"]
-        reports = [parent_report] + [
-            r for r in quality_reports if r["parent_id"] == parent_report["id"]
+    @pytest.mark.parametrize("target", ["job", "task", "project"])
+    def test_admin_can_list_quality_reports(self, admin_user, quality_reports, target):
+        obj_report = next(r for r in quality_reports if r["target"] == target)
+        obj_id = obj_report["job_id"] or obj_report["task_id"] or obj_report["project_id"]
+        obj_reports = [
+            r for r in quality_reports if r["target"] == target and r[f"{target}_id"] == obj_id
         ]
 
-        self._test_list_reports_200(admin_user, task_id, expected_data=reports)
+        kwargs = {f"{target}_id": obj_id, "target": target}
+        self._test_list_reports_200(admin_user, expected_data=obj_reports, **kwargs)
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
-    def test_user_list_reports_in_sandbox_task(
+    def test_user_list_task_reports_in_sandbox(
         self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
     ):
         task = next(
             t
             for t in tasks
             if t["organization"] is None
+            and t["dimension"] == "2d"
             and not users[t["owner"]["id"]]["is_superuser"]
             and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
         )
@@ -160,13 +162,52 @@ class TestListQualityReports(_PermissionTestBase):
         report = self.create_quality_report(admin_user, task["id"])
 
         if allow:
-            self._test_list_reports_200(user, task["id"], expected_data=[report], target="task")
+            self._test_list_reports_200(
+                user, task_id=task["id"], expected_data=[report], target="task"
+            )
         else:
-            self._test_list_reports_403(user, task["id"])
+            self._test_list_reports_403(user, task_id=task["id"])
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
+    def test_user_list_project_reports_in_sandbox(
+        self, projects, tasks, jobs, users, is_project_staff, is_staff, allow, admin_user
+    ):
+        project = next(
+            p
+            for p in projects
+            if p["organization"] is None
+            and p["dimension"] == "2d"
+            and not users[p["owner"]["id"]]["is_superuser"]
+            and not any(
+                j
+                for t in tasks
+                for j in jobs
+                if j["task_id"] == t["id"]
+                and j["type"] == "ground_truth"
+                and t["project_id"] == p["id"]
+            )
+        )
+
+        if is_staff:
+            user = project["owner"]["username"]
+        else:
+            user = next(u for u in users if not is_project_staff(u["id"], project["id"]))[
+                "username"
+            ]
+
+        report = self.create_quality_report(admin_user, project_id=project["id"])
+
+        if allow:
+            self._test_list_reports_200(
+                user, project_id=project["id"], expected_data=[report], target="project"
+            )
+        else:
+            self._test_list_reports_403(user, project_id=project["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
-    def test_user_list_reports_in_org_task(
+    def test_user_list_task_reports_in_org(
         self,
         tasks,
         jobs,
@@ -187,6 +228,7 @@ class TestListQualityReports(_PermissionTestBase):
                     t
                     for t in tasks
                     if t["organization"] is not None
+                    and t["dimension"] == "2d"
                     and is_task_staff(user["id"], t["id"]) == is_staff
                     and is_org_member(user["id"], t["organization"], role=org_role)
                     and not any(
@@ -205,10 +247,62 @@ class TestListQualityReports(_PermissionTestBase):
 
         if allow:
             self._test_list_reports_200(
-                user["username"], task["id"], expected_data=[report], target="task"
+                user["username"], task_id=task["id"], expected_data=[report], target="task"
             )
         else:
-            self._test_list_reports_403(user["username"], task["id"])
+            self._test_list_reports_403(user["username"], task_id=task["id"])
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
+    def test_user_list_project_reports_in_org(
+        self,
+        projects,
+        tasks,
+        jobs,
+        users,
+        is_org_member,
+        is_project_staff,
+        org_role,
+        is_staff,
+        allow,
+        admin_user,
+    ):
+        for user in users:
+            if user["is_superuser"]:
+                continue
+
+            project = next(
+                (
+                    p
+                    for p in projects
+                    if p["organization"] is not None
+                    and p["dimension"] == "2d"
+                    and is_project_staff(user["id"], p["id"]) == is_staff
+                    and is_org_member(user["id"], p["organization"], role=org_role)
+                    and not any(
+                        j
+                        for t in tasks
+                        for j in jobs
+                        if j["task_id"] == t["id"]
+                        and j["type"] == "ground_truth"
+                        and t["project_id"] == p["id"]
+                    )
+                ),
+                None,
+            )
+            if project is not None:
+                break
+
+        assert project
+
+        report = self.create_quality_report(admin_user, project_id=project["id"])
+
+        if allow:
+            self._test_list_reports_200(
+                user["username"], project_id=project["id"], expected_data=[report], target="project"
+            )
+        else:
+            self._test_list_reports_403(user["username"], project_id=project["id"])
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -234,9 +328,14 @@ class TestGetQualityReports(_PermissionTestBase):
 
         return response
 
+    @pytest.mark.parametrize("target", ["job", "task", "project"])
+    def test_admin_can_get_quality_report(self, admin_user, quality_reports, target):
+        report = next(r for r in quality_reports if r["target"] == target)
+        self._test_get_report_200(admin_user, report["id"], expected_data=report)
+
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
-    def test_user_get_report_in_sandbox_task(
+    def test_user_get_task_report_in_sandbox(
         self, tasks, jobs, users, is_task_staff, is_staff, allow, admin_user
     ):
         task = next(
@@ -261,8 +360,43 @@ class TestGetQualityReports(_PermissionTestBase):
             self._test_get_report_403(user, report["id"])
 
     @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize(*_PermissionTestBase.user_sandbox_cases)
+    def test_user_get_project_report_in_sandbox(
+        self, projects, tasks, jobs, users, is_project_staff, is_staff, allow, admin_user
+    ):
+        project = next(
+            p
+            for p in projects
+            if p["organization"] is None
+            and p["dimension"] == "2d"
+            and not users[p["owner"]["id"]]["is_superuser"]
+            and not any(
+                j
+                for t in tasks
+                for j in jobs
+                if j["task_id"] == t["id"]
+                and j["type"] == "ground_truth"
+                and t["project_id"] == p["id"]
+            )
+        )
+
+        if is_staff:
+            user = project["owner"]["username"]
+        else:
+            user = next(u for u in users if not is_project_staff(u["id"], project["id"]))[
+                "username"
+            ]
+
+        report = self.create_quality_report(admin_user, project_id=project["id"])
+
+        if allow:
+            self._test_get_report_200(user, report["id"], expected_data=report)
+        else:
+            self._test_get_report_403(user, report["id"])
+
+    @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
-    def test_user_get_report_in_org_task(
+    def test_user_get_task_report_in_org(
         self,
         tasks,
         jobs,
@@ -298,6 +432,56 @@ class TestGetQualityReports(_PermissionTestBase):
 
         self.create_gt_job(admin_user, task["id"])
         report = self.create_quality_report(admin_user, task["id"])
+
+        if allow:
+            self._test_get_report_200(user["username"], report["id"], expected_data=report)
+        else:
+            self._test_get_report_403(user["username"], report["id"])
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.parametrize(*_PermissionTestBase.user_org_cases)
+    def test_user_get_project_report_in_org(
+        self,
+        projects,
+        tasks,
+        jobs,
+        users,
+        is_org_member,
+        is_project_staff,
+        org_role,
+        is_staff,
+        allow,
+        admin_user,
+    ):
+        for user in users:
+            if user["is_superuser"]:
+                continue
+
+            project = next(
+                (
+                    p
+                    for p in projects
+                    if p["organization"] is not None
+                    and p["dimension"] == "2d"
+                    and is_project_staff(user["id"], p["id"]) == is_staff
+                    and is_org_member(user["id"], p["organization"], role=org_role)
+                    and not any(
+                        j
+                        for t in tasks
+                        for j in jobs
+                        if j["task_id"] == t["id"]
+                        and j["type"] == "ground_truth"
+                        and t["project_id"] == p["id"]
+                    )
+                ),
+                None,
+            )
+            if project is not None:
+                break
+
+        assert project
+
+        report = self.create_quality_report(admin_user, project_id=project["id"])
 
         if allow:
             self._test_get_report_200(user["username"], report["id"], expected_data=report)
@@ -480,17 +664,30 @@ class TestPostQualityReports(_PermissionTestBase):
 
 class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_class, admin_user, quality_reports, jobs, tasks):
+    def setup(self, restore_db_per_class, admin_user, quality_reports, jobs, tasks, projects):
         self.user = admin_user
         self.samples = quality_reports
         self.job_samples = jobs
         self.task_samples = tasks
+        self.project_samples = projects
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.quality_api.list_reports_endpoint
 
     def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:
-        if field == "task_id":
+        if field == "project_id":
+            # This filter includes both the project and nested task reports
+            project_id, project_reports = super()._get_field_samples(field)
+            project_task_ids = set(
+                t["id"] for t in self.task_samples if t["project_id"] == project_id
+            )
+            project_reports = list(project_reports) + [
+                r
+                for r in self.samples
+                if self._get_field(r, self._map_field("task_id")) in project_task_ids
+            ]
+            return project_id, project_reports
+        elif field == "task_id":
             # This filter includes both the task and nested job reports
             task_id, task_reports = super()._get_field_samples(field)
             task_job_ids = set(j["id"] for j in self.job_samples if j["task_id"] == task_id)

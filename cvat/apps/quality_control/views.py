@@ -26,6 +26,7 @@ from cvat.apps.iam.permissions import (
     AnnotationConflictPermission,
     QualityReportPermission,
     QualitySettingPermission,
+    get_iam_context,
 )
 from cvat.apps.quality_control import quality_reports as qc
 from cvat.apps.quality_control.models import (
@@ -212,6 +213,8 @@ class QualityReportViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
+            iam_context = None
+
             # NOTE: parent id filter requires a different queryset,
             # since there is no 'contains' lookup for an m2m relation in Django
             if parent_id := self.request.query_params.get("parent_id", None):
@@ -219,6 +222,8 @@ class QualityReportViewSet(
                     parent_report = QualityReport.objects.get(id=parent_id)
                 except QualityReport.DoesNotExist as ex:
                     raise NotFound(f"Quality report {parent_id} does not exist") from ex
+
+                iam_context = get_iam_context(self.request, parent_report)
 
                 queryset = self._add_prefetch_params(parent_report.children).all()
 
@@ -230,6 +235,7 @@ class QualityReportViewSet(
                     raise NotFound(f"Task {task_id} does not exist") from ex
 
                 self.check_object_permissions(self.request, task)
+                iam_context = get_iam_context(self.request, task)
 
                 queryset = queryset.filter(
                     Q(job__segment__task__id=task_id) | Q(task__id=task_id)
@@ -243,6 +249,7 @@ class QualityReportViewSet(
                     raise NotFound(f"Project {project_id} does not exist") from ex
 
                 self.check_object_permissions(self.request, project)
+                iam_context = get_iam_context(self.request, project)
 
                 queryset = queryset.filter(
                     Q(job__segment__task__project__id=project_id)
@@ -250,7 +257,7 @@ class QualityReportViewSet(
                     | Q(project__id=project_id)
                 ).distinct()
 
-            perm = QualityReportPermission.create_scope_list(self.request)
+            perm = QualityReportPermission.create_scope_list(self.request, iam_context=iam_context)
             queryset = perm.filter(queryset)
 
             if target := self.request.query_params.get("target", None):
