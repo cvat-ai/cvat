@@ -131,3 +131,59 @@ hr {
         margin-bottom: 0;
     }
 }
+
+.query-builder-container {
+    .query-builder {
+        margin: $grid-unit-size;
+
+        .group--header {
+            display: flex;
+            justify-content: space-between;
+
+            &::before {
+                left: 10px !important;
+            }
+        }
+
+        .group {
+            background: none !important;
+            border: none !important;
+        }
+
+        .rule.group-or-rule {
+            display: flex;
+            background: none !important;
+            border: none !important;
+
+            .rule--body {
+                display: flex;
+
+                .rule--field {
+                    > .ant-select {
+                        width: 128px !important;
+                        min-width: 128px !important;
+                    }
+                }
+
+                .rule--operator {
+                    margin-right: $grid-unit-size;
+
+                    > .ant-select {
+                        width: 56px !important;
+                    }
+                }
+
+                .rule--value {
+                    .ant-select {
+                        width: 156px !important;
+                        min-width: 156px !important;
+                    }
+
+                    .ant-picker {
+                        width: 156px !important;
+                    }
+                }
+            }
+        }
+    }
+}

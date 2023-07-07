@@ -6,10 +6,8 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     Builder, Config, ImmutableTree, JsonLogicTree, Query, Utils as QbUtils,
-} from 'react-awesome-query-builder';
-import AntdWidgets from 'react-awesome-query-builder/lib/components/widgets/antd';
-import AntdConfig from 'react-awesome-query-builder/lib/config/antd';
-import 'react-awesome-query-builder/lib/css/styles.css';
+    AntdConfig, AntdWidgets,
+} from '@react-awesome-query-builder/antd';
 import { DownOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Menu from 'antd/lib/menu';
@@ -222,7 +220,7 @@ function FiltersModalComponent(): JSX.Element {
 
     const renderBuilder = (builderProps: any): JSX.Element => (
         <div className='query-builder-container'>
-            <div className='query-builder qb-lite'>
+            <div className='query-builder'>
                 <Builder {...builderProps} />
             </div>
         </div>
