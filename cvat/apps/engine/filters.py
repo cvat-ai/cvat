@@ -19,6 +19,8 @@ from django.utils.encoding import force_str
 from rest_framework import filters
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
+from copy import deepcopy
+from cvat.apps.engine.log import slogger
 
 DEFAULT_FILTER_FIELDS_ATTR = 'filter_fields'
 DEFAULT_LOOKUP_MAP_ATTR = 'lookup_fields'
@@ -172,10 +174,10 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         else:
             raise ValidationError(f'filter: {op} operation with {args} arguments is not implemented')
 
-    def _parse_query(self, json_rules: str) -> Rules:
+    def _parse_query(self, json_rules: str, filter_can_be_empty: bool = False) -> Rules:
         try:
             rules = json.loads(json_rules)
-            if not len(rules):
+            if not len(rules) and not filter_can_be_empty:
                 raise ValidationError(f"filter shouldn't be empty")
         except json.decoder.JSONDecodeError:
             raise ValidationError(f'filter: Json syntax should be used')
@@ -194,6 +196,21 @@ class JsonLogicFilter(filters.BaseFilterBackend):
 
     def filter_queryset(self, request, queryset, view):
         json_rules = request.query_params.get(self.filter_param)
+
+        diff_to_add = [f for f in view.default_filters.keys() if f not in (json_rules or [])] if hasattr(view, 'default_filters') else None
+        try:
+            if diff_to_add:
+                new_filter = deepcopy(self._parse_query(json_rules or '{}', filter_can_be_empty=True))
+                if not new_filter.get('and'):
+                    new_filter['and'] = []
+                for f in diff_to_add:
+                    new_filter['and'].append({view.default_filters[f]['op']: [{'var': f}, view.default_filters[f]['value']]})
+                json_rules = json.dumps(new_filter)
+        except ValidationError:
+            raise
+        except Exception as ex:
+            slogger.glob.exception(f'Impossible to apply default filter: {ex}')
+
         if json_rules:
             parsed_rules = self._parse_query(json_rules)
             lookup_fields = self._get_lookup_fields(view)
@@ -206,8 +223,9 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
 
         filter_fields = getattr(view, 'filter_fields', [])
+        filter_description = getattr(view, 'filter_description', '')
         full_description = self.filter_description + \
-            f' Available filter_fields: {filter_fields}'
+            f' Available filter_fields: {filter_fields}.' + filter_description
 
         return [
             coreapi.Field(
@@ -223,8 +241,9 @@ class JsonLogicFilter(filters.BaseFilterBackend):
 
     def get_schema_operation_parameters(self, view):
         filter_fields = getattr(view, 'filter_fields', [])
+        filter_description = getattr(view, 'filter_description', '')
         full_description = self.filter_description + \
-            f' Available filter_fields: {filter_fields}'
+            f' Available filter_fields: {filter_fields}.' + filter_description
         return [
             {
                 'name': self.filter_param,

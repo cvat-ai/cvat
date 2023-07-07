@@ -324,7 +324,7 @@ paths:
         in: query
         description: 'A filter term. Available filter_fields: [''provider_type'',
           ''name'', ''resource'', ''credentials_type'', ''owner'', ''description'',
-          ''id'']'
+          ''id''].'
         schema:
           type: string
       - name: name
@@ -790,7 +790,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''owner'', ''id'',
-          ''issue_id'', ''frame_id'', ''job_id'']'
+          ''issue_id'', ''frame_id'', ''job_id''].'
         schema:
           type: string
       - name: frame_id
@@ -1213,7 +1213,7 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''owner'']'
+        description: 'A filter term. Available filter_fields: [''owner''].'
         schema:
           type: string
       - name: org
@@ -1407,7 +1407,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''owner'', ''assignee'',
-          ''id'', ''job_id'', ''task_id'', ''resolved'', ''frame_id'']'
+          ''id'', ''job_id'', ''task_id'', ''resolved'', ''frame_id''].'
         schema:
           type: string
       - name: frame_id
@@ -1631,7 +1631,7 @@ paths:
         in: query
         description: 'A filter term. Available filter_fields: [''task_name'', ''project_name'',
           ''assignee'', ''state'', ''stage'', ''id'', ''task_id'', ''project_id'',
-          ''updated_date'', ''dimension'', ''type'']'
+          ''updated_date'', ''dimension'', ''type''].'
         schema:
           type: string
       - name: org
@@ -2344,7 +2344,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''name'', ''parent'',
-          ''id'', ''type'', ''color'', ''parent_id'']'
+          ''id'', ''type'', ''color'', ''parent_id''].'
         schema:
           type: string
       - in: query
@@ -2698,7 +2698,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''user'', ''role'',
-          ''id'']'
+          ''id''].'
         schema:
           type: string
       - name: org
@@ -2852,7 +2852,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''name'', ''owner'',
-          ''id'', ''slug'']'
+          ''id'', ''slug''].'
         schema:
           type: string
       - name: name
@@ -3030,7 +3030,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''name'', ''owner'',
-          ''assignee'', ''status'', ''id'', ''updated_date'']'
+          ''assignee'', ''status'', ''id'', ''updated_date''].'
         schema:
           type: string
       - name: name
@@ -4283,9 +4283,12 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''project_name'', ''name'',
-          ''owner'', ''status'', ''assignee'', ''subset'', ''mode'', ''dimension'',
-          ''tracker_link'', ''id'', ''project_id'', ''updated_date'']'
+        description: |
+          A filter term. Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'id', 'project_id', 'updated_date'].
+
+          Examples:
+          Get all tasks from 1,2,3 projects: {"and":[{"in":[{"var":"project_id"}, [1, 2, 3]]}]}
+          Get all tasks created by me: {"and":[{"==":[{"var":"owner"},"<user>"]}]}
         schema:
           type: string
       - name: mode
@@ -5248,7 +5251,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''username'', ''first_name'',
-          ''last_name'', ''id'', ''is_active'']'
+          ''last_name'', ''id'', ''is_active''].'
         schema:
           type: string
       - name: first_name
@@ -5433,7 +5436,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''target_url'', ''owner'',
-          ''type'', ''description'', ''id'', ''project_id'', ''updated_date'']'
+          ''type'', ''description'', ''id'', ''project_id'', ''updated_date''].'
         schema:
           type: string
       - name: org

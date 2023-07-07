@@ -15,7 +15,9 @@ from copy import copy
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
+from textwrap import dedent
 from typing import Any, Dict, List, cast
+from textwrap import dedent
 
 import django_rq
 from django.apps import apps
@@ -786,6 +788,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'subset', 'mode', 'dimension', 'tracker_link'
     )
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
+    filter_description = dedent("""
+
+        Examples:
+        Get all tasks from 1,2,3 projects: {"and":[{"in":[{"var":"project_id"}, [1, 2, 3]]}]}
+        Get all tasks created by me: {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+    """)
     simple_filters = list(search_fields) + ['project_id']
     ordering_fields = list(filter_fields)
     ordering = "-id"
