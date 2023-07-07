@@ -1,8 +1,56 @@
 {
-  "count": 5,
+  "count": 7,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "comments": {
+        "count": 1,
+        "url": "http://localhost:8080/api/comments?issue_id=7"
+      },
+      "created_date": "2023-07-07T14:41:27.020000Z",
+      "frame": 0,
+      "id": 7,
+      "job": 32,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "position": [
+        245.5732421875,
+        75.6484375
+      ],
+      "resolved": true,
+      "updated_date": "2023-07-07T14:41:29.867000Z"
+    },
+    {
+      "assignee": null,
+      "comments": {
+        "count": 1,
+        "url": "http://localhost:8080/api/comments?issue_id=6"
+      },
+      "created_date": "2023-07-07T14:41:16.302000Z",
+      "frame": 0,
+      "id": 6,
+      "job": 32,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "position": [
+        136.08984375,
+        45.5517578125
+      ],
+      "resolved": false,
+      "updated_date": "2023-07-07T14:41:16.302000Z"
+    },
     {
       "assignee": null,
       "comments": {

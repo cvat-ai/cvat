@@ -1,8 +1,36 @@
 {
-  "count": 6,
+  "count": 8,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "created_date": "2023-07-07T14:41:27.055000Z",
+      "id": 8,
+      "issue": 7,
+      "message": "Problem 2",
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "updated_date": "2023-07-07T14:41:27.055000Z"
+    },
+    {
+      "created_date": "2023-07-07T14:41:16.334000Z",
+      "id": 7,
+      "issue": 6,
+      "message": "Problem",
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "updated_date": "2023-07-07T14:41:16.334000Z"
+    },
     {
       "created_date": "2022-03-16T12:49:29.372000Z",
       "id": 6,

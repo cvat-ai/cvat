@@ -1,5 +1,5 @@
 {
-  "count": 38,
+  "count": 42,
   "next": null,
   "previous": null,
   "results": [
@@ -760,6 +760,50 @@
       "parent_id": null,
       "sublabels": [],
       "task_id": 22,
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 68,
+      "name": "cat",
+      "parent_id": null,
+      "project_id": 14,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 69,
+      "name": "dog",
+      "parent_id": null,
+      "project_id": 14,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 70,
+      "name": "cat",
+      "parent_id": null,
+      "project_id": 15,
+      "sublabels": [],
+      "type": "any"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 71,
+      "name": "dog",
+      "parent_id": null,
+      "project_id": 15,
+      "sublabels": [],
       "type": "any"
     }
   ]

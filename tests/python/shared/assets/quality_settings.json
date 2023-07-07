@@ -1,5 +1,5 @@
 {
-  "count": 1,
+  "count": 3,
   "next": null,
   "previous": null,
   "results": [
@@ -19,6 +19,40 @@
       "panoptic_comparison": true,
       "project_id": null,
       "task_id": 22
+    },
+    {
+      "check_covered_annotations": true,
+      "compare_attributes": true,
+      "compare_groups": true,
+      "compare_line_orientation": true,
+      "group_match_threshold": 0.5,
+      "id": 23,
+      "iou_threshold": 0.4,
+      "line_orientation_threshold": 0.1,
+      "line_thickness": 0.01,
+      "low_overlap_threshold": 0.8,
+      "object_visibility_threshold": 0.05,
+      "oks_sigma": 0.09,
+      "panoptic_comparison": true,
+      "project_id": 14,
+      "task_id": null
+    },
+    {
+      "check_covered_annotations": true,
+      "compare_attributes": true,
+      "compare_groups": true,
+      "compare_line_orientation": true,
+      "group_match_threshold": 0.5,
+      "id": 24,
+      "iou_threshold": 0.4,
+      "line_orientation_threshold": 0.1,
+      "line_thickness": 0.01,
+      "low_overlap_threshold": 0.8,
+      "object_visibility_threshold": 0.05,
+      "oks_sigma": 0.09,
+      "panoptic_comparison": true,
+      "project_id": 15,
+      "task_id": null
     }
   ]
 }
