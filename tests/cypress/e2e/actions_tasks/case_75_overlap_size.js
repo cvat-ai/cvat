@@ -51,24 +51,11 @@ context('Overlap size.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('The task parameters is correct.', () => {
-            cy.get('.cvat-task-parameters').within(() => {
-                cy.get('table')
-                    .find('tr')
-                    .last()
-                    .find('td')
-                    .then(($taskParameters) => {
-                        expect(Number($taskParameters[0].innerText)).equal(calculatedOverlapSize);
-                        expect(Number($taskParameters[1].innerText)).equal(advancedConfigurationParams.segmentSize);
-                    });
-            });
-        });
-
         it('The range of frame values corresponds to the parameters.', () => {
             cy.getJobNum(0).then(($job) => {
                 cy.contains('a', `Job #${$job}`)
-                    .parents('tr')
-                    .find('.cvat-job-item-frames')
+                    .parents('.cvat-job-item')
+                    .find('.cvat-job-item-frame-range')
                     .then(($frameRange) => {
                         expect(Number($frameRange.text().split('-')[1])).equal(
                             advancedConfigurationParams.segmentSize - 1,
@@ -77,8 +64,8 @@ context('Overlap size.', () => {
             });
             cy.getJobNum(1).then(($job) => {
                 cy.contains('a', `Job #${$job}`)
-                    .parents('tr')
-                    .find('.cvat-job-item-frames')
+                    .parents('.cvat-job-item')
+                    .find('.cvat-job-item-frame-range')
                     .then(($frameRange) => {
                         expect(Number($frameRange.text().split('-')[0])).equal(
                             advancedConfigurationParams.segmentSize - 2,

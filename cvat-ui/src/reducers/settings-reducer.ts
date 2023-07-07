@@ -23,6 +23,7 @@ const defaultState: SettingsState = {
         outlineColor: '#000000',
         showBitmap: false,
         showProjections: false,
+        showGroundTruth: false,
     },
     workspace: {
         autoSave: false,
@@ -115,6 +116,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 shapes: {
                     ...state.shapes,
                     colorBy: action.payload.colorBy,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_SHOW_GROUND_TRUTH: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    showGroundTruth: action.payload.showGroundTruth,
                 },
             };
         }
@@ -434,6 +444,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                         buttonVisible: true,
                         algorithmsLocked: false,
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.CHANGE_WORKSPACE: {
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    showGroundTruth: false,
                 },
             };
         }

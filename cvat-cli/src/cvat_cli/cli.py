@@ -17,10 +17,6 @@ class CLI:
     def __init__(self, client: Client, credentials: Tuple[str, str]):
         self.client = client
 
-        # allow arbitrary kwargs in models
-        # TODO: will silently ignore invalid args, so remove this ASAP
-        self.client.api_client.configuration.discard_unknown_keys = True
-
         self.client.login(credentials)
 
         self.client.check_server_version(fail_if_unsupported=False)
@@ -51,11 +47,21 @@ class CLI:
         """
         Create a new task with the given name and labels JSON and add the files to it.
         """
+
+        task_params = {}
+        data_params = {}
+
+        for k, v in kwargs.items():
+            if k in models.DataRequest.attribute_map or k == "frame_step":
+                data_params[k] = v
+            else:
+                task_params[k] = v
+
         task = self.client.tasks.create_from_data(
-            spec=models.TaskWriteRequest(name=name, labels=labels, **kwargs),
+            spec=models.TaskWriteRequest(name=name, labels=labels, **task_params),
             resource_type=resource_type,
             resources=resources,
-            data_params=kwargs,
+            data_params=data_params,
             annotation_path=annotation_path,
             annotation_format=annotation_format,
             status_check_period=status_check_period,

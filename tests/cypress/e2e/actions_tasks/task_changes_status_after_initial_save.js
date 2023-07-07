@@ -46,7 +46,7 @@ context('Delete a label from a task.', () => {
 
     describe(`Testing "${labelName}"`, () => {
         it('State of the created task should be "new".', () => {
-            cy.get('td.cvat-job-item-state').invoke('text').should('equal', 'new');
+            cy.get('.cvat-job-item .cvat-job-item-state').invoke('text').should('equal', 'New');
         });
 
         it('Create object, save annotation, state should be "in progress"', () => {
@@ -56,11 +56,11 @@ context('Delete a label from a task.', () => {
             cy.saveJob();
             cy.interactMenu('Open the task');
             cy.wait('@searchUsers');
-            cy.get('.cvat-task-jobs-table-row').each(() => {
+            cy.get('.cvat-job-item').each(() => {
                 cy.wait('@searchUsers');
             });
             cy.reload();
-            cy.get('td.cvat-job-item-state').invoke('text').should('equal', 'in progress');
+            cy.get('.cvat-job-item .cvat-job-item-state').invoke('text').should('equal', 'In progress');
         });
     });
 });

@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import uuid
 from enum import Enum
 from functools import cached_property
 from typing import Any, Dict, Optional, Sequence
@@ -18,6 +19,7 @@ from django.core.files.storage import FileSystemStorage
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
 from django.db.models.fields import FloatField
+from django.db.models import Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
@@ -350,6 +352,17 @@ class Project(models.Model):
     def get_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "project.log")
 
+    def is_job_staff(self, user_id):
+        if self.owner == user_id:
+            return True
+
+        if self.assignee == user_id:
+            return True
+
+        return self.tasks.prefetch_related('segment_set', 'segment_set__job_set').filter(
+            Q(owner=user_id) | Q(assignee=user_id) | Q(segment__job__assignee=user_id)
+        ).count() > 0
+
     @cache_deleted
     def delete(self, using=None, keep_parents=False):
         super().delete(using, keep_parents)
@@ -361,7 +374,44 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+class TaskQuerySet(models.QuerySet):
+    def with_label_summary(self):
+        return self.prefetch_related(
+            'label_set',
+            'label_set__parent',
+            'project__label_set',
+            'project__label_set__parent',
+        ).annotate(
+            task_labels_count=models.Count('label',
+                filter=models.Q(label__parent__isnull=True),
+                distinct=True
+            ),
+            proj_labels_count=models.Count('project__label',
+                filter=models.Q(project__label__parent__isnull=True),
+                distinct=True
+            )
+        )
+
+    def with_job_summary(self):
+        return self.prefetch_related(
+            'segment_set__job_set',
+        ).annotate(
+            completed_jobs_count=models.Count(
+                'segment__job',
+                filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
+                       models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value),
+                distinct=True,
+            ),
+            validation_jobs_count=models.Count(
+                'segment__job',
+                filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value),
+                distinct=True,
+            )
+        )
+
 class Task(models.Model):
+    objects = TaskQuerySet.as_manager()
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
         null=True, blank=True, related_name="tasks",
         related_query_name="task")
@@ -415,6 +465,27 @@ class Task(models.Model):
 
     def get_tmp_dirname(self):
         return os.path.join(self.get_dirname(), "tmp")
+
+    def is_job_staff(self, user_id):
+        if self.owner == user_id:
+            return True
+        if self.assignee == user_id:
+            return True
+        return self.segment_set.prefetch_related('job_set').filter(job__assignee=user_id).count() > 0
+
+    @cached_property
+    def completed_jobs_count(self) -> Optional[int]:
+        # Requires this field to be defined externally,
+        # e.g. by calling Task.objects.with_job_summary,
+        # to avoid unexpected DB queries on access.
+        return None
+
+    @cached_property
+    def validation_jobs_count(self) -> Optional[int]:
+        # Requires this field to be defined externally,
+        # e.g. by calling Task.objects.with_job_summary,
+        # to avoid unexpected DB queries on access.
+        return None
 
     @cached_property
     def gt_job(self) -> Optional[Job]:
@@ -648,6 +719,15 @@ class Job(models.Model):
     def get_project_id(self):
         project = self.segment.task.project
         return project.id if project else None
+
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_guide_id(self):
+        source = self.segment.task.project
+        if not source:
+            source = self.segment.task
+        if hasattr(source, 'annotation_guide'):
+            return source.annotation_guide.id
+        return None
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_task_id(self):
@@ -914,7 +994,7 @@ class Issue(models.Model):
     assignee = models.ForeignKey(User, null=True, blank=True, related_name='+',
         on_delete=models.SET_NULL)
     created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(null=True, blank=True)
+    updated_date = models.DateTimeField(auto_now=True)
     resolved = models.BooleanField(default=False)
 
     def get_project_id(self):
@@ -1073,3 +1153,32 @@ class Storage(models.Model):
 
     class Meta:
         default_permissions = ()
+
+class AnnotationGuide(models.Model):
+    task = models.OneToOneField(Task, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
+    project = models.OneToOneField(Project, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
+    markdown = models.TextField(blank=True, default='')
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    @property
+    def target(self):
+        return self.project or self.task
+
+    @property
+    def organization_id(self):
+        return self.target.organization_id
+
+class Asset(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    filename = models.CharField(max_length=1024)
+    created_date = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
+    guide = models.ForeignKey(AnnotationGuide, on_delete=models.CASCADE, related_name="assets")
+
+    @property
+    def organization_id(self):
+        return self.guide.organization_id
+
+    def get_asset_dir(self):
+        return os.path.join(settings.ASSETS_ROOT, str(self.uuid))

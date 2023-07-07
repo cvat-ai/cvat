@@ -110,7 +110,7 @@ class Git:
             raise ex
 
 
-    # Method creates the main branch if repostory doesn't have any branches
+    # Method creates the main branch if repository doesn't have any branches
     def _create_master_branch(self):
         if len(self._rep.heads):
             raise Exception("Some heads already exists")

@@ -78,6 +78,15 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         help="port (default: 80 for http and 443 for https connections)",
     )
     parser.add_argument(
+        "--organization",
+        "--org",
+        metavar="SLUG",
+        help="""short name (slug) of the organization
+                to use when listing or creating resources;
+                set to blank string to use the personal workspace
+                (default: list all accessible objects, create in personal workspace)""",
+    )
+    parser.add_argument(
         "--debug",
         action="store_const",
         dest="loglevel",

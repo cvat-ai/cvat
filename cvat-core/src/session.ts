@@ -6,7 +6,7 @@
 import _ from 'lodash';
 import {
     ChunkType, DimensionType, JobStage,
-    JobState, StorageLocation, TaskMode, TaskStatus,
+    JobState, JobType, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
 
@@ -15,6 +15,8 @@ import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
+import { SerializedJob, SerializedTask } from './server-response-types';
+import AnnotationGuide from './guide';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -67,13 +69,14 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async get(frame, allTracks = false, filters = []) {
+                async get(frame, allTracks = false, filters = [], groundTruthJobId = null) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.get,
                         frame,
                         allTracks,
                         filters,
+                        groundTruthJobId,
                     );
                     return result;
                 },
@@ -311,13 +314,19 @@ export class Job extends Session {
     public readonly id: number;
     public readonly startFrame: number;
     public readonly stopFrame: number;
+    public readonly frameCount: number;
     public readonly projectId: number | null;
+    public readonly guideId: number | null;
     public readonly taskId: number;
     public readonly dimension: DimensionType;
-    public readonly dataCompressedChunkType: ChunkType;
+    public readonly dataChunkType: ChunkType;
     public readonly bugTracker: string | null;
     public readonly mode: TaskMode;
     public readonly labels: Label[];
+    public readonly type: JobType;
+    public readonly frameSelectionMethod: JobType;
+    public readonly createdDate: string;
+    public readonly updatedDate: string;
 
     public annotations: {
         get: CallableFunction;
@@ -361,16 +370,19 @@ export class Job extends Session {
         log: CallableFunction;
     };
 
-    constructor(initialData) {
+    constructor(initialData: SerializedJob) {
         super();
         const data = {
             id: undefined,
             assignee: null,
             stage: undefined,
             state: undefined,
+            type: JobType.ANNOTATION,
             start_frame: undefined,
             stop_frame: undefined,
-            project_id: null,
+            frame_count: undefined,
+            project_id: undefined,
+            guide_id: null,
             task_id: undefined,
             labels: [],
             dimension: undefined,
@@ -378,6 +390,8 @@ export class Job extends Session {
             data_chunk_size: undefined,
             bug_tracker: null,
             mode: undefined,
+            created_date: undefined,
+            updated_date: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -386,10 +400,6 @@ export class Job extends Session {
             if (Object.prototype.hasOwnProperty.call(data, property)) {
                 if (property in initialData) {
                     data[property] = initialData[property];
-                }
-
-                if (data[property] === undefined) {
-                    throw new ArgumentError(`Job field "${property}" was not initialized`);
                 }
             }
         }
@@ -467,14 +477,23 @@ export class Job extends Session {
                         data.state = state;
                     },
                 },
+                type: {
+                    get: () => data.type,
+                },
                 startFrame: {
                     get: () => data.start_frame,
                 },
                 stopFrame: {
                     get: () => data.stop_frame,
                 },
+                frameCount: {
+                    get: () => data.frame_count,
+                },
                 projectId: {
                     get: () => data.project_id,
+                },
+                guideId: {
+                    get: () => data.guide_id,
                 },
                 taskId: {
                     get: () => data.task_id,
@@ -496,6 +515,12 @@ export class Job extends Session {
                 },
                 bugTracker: {
                     get: () => data.bug_tracker,
+                },
+                createdDate: {
+                    get: () => data.created_date,
+                },
+                updatedDate: {
+                    get: () => data.updated_date,
                 },
                 _updateTrigger: {
                     get: () => updateTrigger,
@@ -549,13 +574,18 @@ export class Job extends Session {
         };
     }
 
-    async save() {
-        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save);
+    async save(additionalData = {}) {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save, additionalData);
         return result;
     }
 
     async issues() {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.issues);
+        return result;
+    }
+
+    async guide(): Promise<AnnotationGuide | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.guide);
         return result;
     }
 
@@ -568,6 +598,11 @@ export class Job extends Session {
         const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.close);
         return result;
     }
+
+    async delete(): Promise<void> {
+        const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.delete);
+        return result;
+    }
 }
 
 export class Task extends Session {
@@ -577,6 +612,7 @@ export class Task extends Session {
     public bugTracker: string;
     public subset: string;
     public labels: Label[];
+    public readonly guideId: number | null;
     public readonly id: number;
     public readonly status: TaskStatus;
     public readonly size: number;
@@ -588,8 +624,7 @@ export class Task extends Session {
     public readonly segmentSize: number;
     public readonly imageQuality: number;
     public readonly dataChunkSize: number;
-    public readonly dataCompressedChunkType: ChunkType;
-    public readonly dataOriginalChunkType: ChunkType;
+    public readonly dataChunkType: ChunkType;
     public readonly dimension: DimensionType;
     public readonly sourceStorage: Storage;
     public readonly targetStorage: Storage;
@@ -648,13 +683,14 @@ export class Task extends Session {
         log: CallableFunction;
     };
 
-    constructor(initialData) {
+    constructor(initialData: SerializedTask) {
         super();
 
         const data = {
             id: undefined,
             name: undefined,
             project_id: null,
+            guide_id: undefined,
             status: undefined,
             size: undefined,
             mode: undefined,
@@ -687,6 +723,8 @@ export class Task extends Session {
             cloud_storage_id: undefined,
             sorting_method: undefined,
             files: undefined,
+
+            quality_settings: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -727,9 +765,14 @@ export class Task extends Session {
                     assignee: job.assignee,
                     state: job.state,
                     stage: job.stage,
+                    type: job.type,
                     start_frame: job.start_frame,
                     stop_frame: job.stop_frame,
-
+                    frame_count: job.frame_count,
+                    guide_id: job.guide_id,
+                    issues: job.issues,
+                    updated_date: job.updated_date,
+                    created_date: job.created_date,
                     // following fields also returned when doing API request /jobs/<id>
                     // here we know them from task and append to constructor
                     task_id: data.id,
@@ -741,7 +784,6 @@ export class Task extends Session {
                     data_compressed_chunk_type: data.data_compressed_chunk_type,
                     data_chunk_size: data.data_chunk_size,
                 });
-
                 data.jobs.push(jobInstance);
             }
         }
@@ -772,6 +814,9 @@ export class Task extends Session {
                         updateTrigger.update('projectId');
                         data.project_id = projectId;
                     },
+                },
+                guideId: {
+                    get: () => data.guide_id,
                 },
                 status: {
                     get: () => data.status,
@@ -1081,8 +1126,18 @@ export class Task extends Session {
         return result;
     }
 
+    async issues() {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.issues);
+        return result;
+    }
+
     static async restore(storage: Storage, file: File | string) {
         const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file);
+        return result;
+    }
+
+    async guide(): Promise<AnnotationGuide | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.guide);
         return result;
     }
 }

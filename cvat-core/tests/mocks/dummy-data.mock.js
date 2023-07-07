@@ -852,6 +852,7 @@ const jobsDummyData = {
     results: [
         {
             id: 112,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -863,6 +864,7 @@ const jobsDummyData = {
         },
         {
             id: 100,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -874,6 +876,7 @@ const jobsDummyData = {
         },
         {
             id: 40,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -885,6 +888,7 @@ const jobsDummyData = {
         },
         {
             id: 111,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -896,6 +900,7 @@ const jobsDummyData = {
         },
         {
             id: 110,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -907,6 +912,7 @@ const jobsDummyData = {
         },
         {
             id: 109,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -918,6 +924,7 @@ const jobsDummyData = {
         },
         {
             id: 108,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -929,6 +936,7 @@ const jobsDummyData = {
         },
         {
             id: 107,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -940,6 +948,7 @@ const jobsDummyData = {
         },
         {
             id: 106,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -951,6 +960,7 @@ const jobsDummyData = {
         },
         {
             id: 105,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -962,6 +972,7 @@ const jobsDummyData = {
         },
         {
             id: 104,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -973,6 +984,7 @@ const jobsDummyData = {
         },
         {
             id: 103,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -984,6 +996,7 @@ const jobsDummyData = {
         },
         {
             id: 102,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -995,6 +1008,7 @@ const jobsDummyData = {
         },
         {
             id: 101,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -1006,6 +1020,7 @@ const jobsDummyData = {
         },
         {
             id: 9,
+            guide_id: null,
             assignee: null,
             status: 'completed',
             stage: 'acceptance',
@@ -1017,6 +1032,7 @@ const jobsDummyData = {
         },
         {
             id: 8,
+            guide_id: null,
             assignee: null,
             status: 'completed',
             stage: 'acceptance',
@@ -1028,6 +1044,7 @@ const jobsDummyData = {
         },
         {
             id: 7,
+            guide_id: null,
             assignee: null,
             status: 'completed',
             stage: 'acceptance',
@@ -1039,6 +1056,7 @@ const jobsDummyData = {
         },
         {
             id: 6,
+            guide_id: null,
             assignee: null,
             status: 'completed',
             stage: 'acceptance',
@@ -1050,6 +1068,7 @@ const jobsDummyData = {
         },
         {
             id: 5,
+            guide_id: null,
             assignee: null,
             status: 'completed',
             stage: 'acceptance',
@@ -1061,6 +1080,7 @@ const jobsDummyData = {
         },
         {
             id: 4,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -1072,6 +1092,7 @@ const jobsDummyData = {
         },
         {
             id: 3,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -1083,6 +1104,7 @@ const jobsDummyData = {
         },
         {
             id: 2,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: 'annotation',
@@ -1094,6 +1116,7 @@ const jobsDummyData = {
         },
         {
             id: 1,
+            guide_id: null,
             assignee: null,
             status: 'annotation',
             stage: "annotation",
@@ -1114,6 +1137,7 @@ const projectsDummyData = {
         {
             url: 'http://localhost:7000/api/projects/6',
             id: 6,
+            guide_id: null,
             name: 'Some empty project',
             labels: { count: projectsDummyLabelsData[6].length, url: 'http://localhost:7000/api/labels?project_id=6' },
             tasks: [],
@@ -1135,6 +1159,7 @@ const projectsDummyData = {
         {
             url: 'http://localhost:7000/api/projects/1',
             id: 2,
+            guide_id: null,
             name: 'Test project with roads',
             labels: { count: projectsDummyLabelsData[2].length, url: 'http://localhost:7000/api/labels?project_id=2' },
             tasks: [
@@ -1150,6 +1175,7 @@ const projectsDummyData = {
                         username: 'admin',
                     },
                     assignee: null,
+                    guide_id: null,
                     bug_tracker: '',
                     created_date: '2020-10-12T08:59:59.878083Z',
                     updated_date: '2020-10-18T21:02:20.831294Z',
@@ -1205,6 +1231,7 @@ const tasksDummyData = {
         {
             url: 'http://localhost:7000/api/tasks/102',
             id: 102,
+            guide_id: null,
             name: 'Test',
             size: 1,
             mode: 'annotation',
@@ -1237,6 +1264,7 @@ const tasksDummyData = {
         {
             url: 'http://localhost:7000/api/tasks/100',
             id: 100,
+            guide_id: null,
             name: 'Image Task',
             size: 9,
             mode: 'annotation',
@@ -1269,6 +1297,7 @@ const tasksDummyData = {
         {
             url: 'http://localhost:7000/api/tasks/10',
             id: 101,
+            guide_id: null,
             name: 'Video Task',
             size: 5002,
             mode: 'interpolation',
@@ -1301,6 +1330,7 @@ const tasksDummyData = {
         {
             url: 'http://localhost:7000/api/tasks/40',
             id: 40,
+            guide_id: null,
             name: 'test',
             project_id: null,
             mode: 'annotation',
@@ -1339,6 +1369,7 @@ const tasksDummyData = {
         {
             url: 'http://localhost:7000/api/tasks/3',
             id: 3,
+            guide_id: null,
             name: 'Test Task',
             size: 5002,
             mode: 'interpolation',
@@ -1368,6 +1399,7 @@ const tasksDummyData = {
         {
             url: 'http://localhost:7000/api/tasks/2',
             id: 2,
+            guide_id: null,
             name: 'Video',
             size: 75,
             mode: 'interpolation',
@@ -1398,6 +1430,7 @@ const tasksDummyData = {
         {
             url: 'http://localhost:7000/api/tasks/1',
             id: 1,
+            guide_id: null,
             name: 'Labels Set',
             size: 9,
             mode: 'annotation',
