@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: '2.5'
+  version: '2.6'
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -983,7 +983,7 @@ paths:
   /api/events:
     get:
       operationId: events_list
-      description: Recieve logs from the server
+      description: Receive logs from the server
       summary: 'Method returns csv log file '
       parameters:
       - in: query

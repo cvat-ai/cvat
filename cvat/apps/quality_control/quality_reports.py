@@ -2488,7 +2488,7 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     # Decorate the report for better usability and readability:
     # - add conflicting annotation links like:
     # <host>/tasks/62/jobs/82?frame=250&type=shape&serverID=33741
-    # - covert some fractions to percents
+    # - convert some fractions to percents
     # - add common report info
 
     task_id = db_report.get_task().id

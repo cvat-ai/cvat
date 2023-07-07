@@ -385,3 +385,6 @@ traefik:
   service:
     externalIPs:
       # - "192.168.49.2"
+
+smokescreen:
+  opts: ''
