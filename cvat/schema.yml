@@ -3624,6 +3624,7 @@ paths:
   /api/quality/conflicts:
     get:
       operationId: quality_list_conflicts
+      description: Please note that no conflicts will be returned for project reports
       summary: Method returns a paginated list of annotation conflicts
       parameters:
       - name: X-Organization
