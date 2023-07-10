@@ -4,13 +4,11 @@
 
 from dateutil import parser
 from datetime import datetime, timezone
-from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMetric
+from .imetric import DerivedMetricBase
+from cvat.apps.analytics_report.report.primary_metrics import JobObjects
 
-class TaskObjects(IDerivedMetric):
-    _title = "Objects"
+class TaskObjects(DerivedMetricBase, JobObjects):
     _description = "Metric shows number of added/changed/deleted objects for the Task."
-    _default_view = "histogram"
-    _granularity = "day"
     _query = None
 
     def calculate(self):

@@ -197,11 +197,11 @@ class JobAnalyticsReportUpdateManager():
     @staticmethod
     def _get_statistics_entry(statistics_object):
         return {
-            "title": statistics_object.title,
-            "description": statistics_object.description,
-            "granularity": statistics_object.granularity,
-            "default_view": statistics_object.default_view,
-            "transformations": statistics_object.transformations,
+            "title": statistics_object.title(),
+            "description": statistics_object.description(),
+            "granularity": statistics_object.granularity(),
+            "default_view": statistics_object.default_view(),
+            "transformations": statistics_object.transformations(),
             "dataseries": statistics_object.calculate(),
         }
 
@@ -219,23 +219,22 @@ class JobAnalyticsReportUpdateManager():
         # recalculate the report if it is not relevant
         if db_report.created_date < db_job.updated_date or was_created:
 
-            annotation_speed = JobAnnotationSpeed(db_job)
-            objects = JobObjects(db_job)
-            annotation_time = JobAnnotationTime(db_job)
+            primary_metrics = [
+                JobAnnotationSpeed(db_job),
+                JobObjects(db_job),
+                JobAnnotationTime(db_job),
+            ]
 
-            statistics = {
-                "objects": self._get_statistics_entry(objects),
-                "annotation_speed": self._get_statistics_entry(annotation_speed),
-                "annotation_time": self._get_statistics_entry(annotation_time),
-            }
+            primary_statistics = { pm.key(): self._get_statistics_entry(pm) for pm in primary_metrics }
 
-            total_annotation_speed = JobTotalAnnotationSpeed(db_job, primary_statistics=statistics["annotation_speed"])
-            total_object_count = JobTotalObjectCount(db_job, primary_statistics=statistics["annotation_speed"])
+            derived_metrics = [
+                JobTotalAnnotationSpeed(db_job, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]),
+                JobTotalObjectCount(db_job, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]),
+            ]
 
-            statistics["total_annotation_speed"] = self._get_statistics_entry(total_annotation_speed)
-            statistics["total_object_count"] = self._get_statistics_entry(total_object_count)
+            derived_statistics = { dm.key(): self._get_statistics_entry(dm) for dm in derived_metrics }
 
-            db_report.statistics = statistics
+            db_report.statistics = { **primary_statistics, **derived_statistics }
             db_report.save()
 
         return db_report
@@ -256,20 +255,16 @@ class JobAnalyticsReportUpdateManager():
                 for db_job in db_segment.job_set.all():
                     job_reports.append(self._compute_report_for_job(db_job))
 
-            objects = TaskObjects(db_task, [jr.statistics["objects"] for jr in job_reports])
-            annotation_speed = TaskAnnotationSpeed(db_task, [jr.statistics["annotation_speed"] for jr in job_reports])
-            annotation_time = TaskAnnotationTime(db_task, [jr.statistics["annotation_time"] for jr in job_reports])
-            total_annotation_speed = TaskTotalAnnotationSpeed(db_task, [jr.statistics["annotation_speed"] for jr in job_reports])
-            total_object_count = TaskTotalObjectCount(db_task, [jr.statistics["annotation_speed"] for jr in job_reports])
+            derived_metrics = [
+                TaskObjects(db_task, [jr.statistics[JobObjects.key()] for jr in job_reports]),
+                TaskAnnotationSpeed(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
+                TaskAnnotationTime(db_task, [jr.statistics[JobAnnotationTime.key()] for jr in job_reports]),
+                TaskTotalAnnotationSpeed(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
+                TaskTotalObjectCount(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
+            ]
 
-            statistics = {
-                "objects": self._get_statistics_entry(objects),
-                "annotation_speed": self._get_statistics_entry(annotation_speed),
-                "annotation_time": self._get_statistics_entry(annotation_time),
-                "total_annotation_speed": self._get_statistics_entry(total_annotation_speed),
-                "total_object_count": self._get_statistics_entry(total_object_count),
-            }
 
+            statistics = { dm.key(): self._get_statistics_entry(dm) for dm in derived_metrics }
             db_report.statistics = statistics
             db_report.save()
 
@@ -294,20 +289,15 @@ class JobAnalyticsReportUpdateManager():
                         db_job.analytics_report.refresh_from_db()
                         job_reports.append(self._compute_report_for_job(db_job))
 
-            objects = ProjectObjects(db_project, [jr.statistics["objects"] for jr in job_reports])
-            annotation_speed = ProjectAnnotationSpeed(db_task, [jr.statistics["annotation_speed"] for jr in job_reports])
-            annotation_time = ProjectAnnotationTime(db_task, [jr.statistics["annotation_time"] for jr in job_reports])
-            total_annotation_speed = ProjectTotalAnnotationSpeed(db_task, [jr.statistics["annotation_speed"] for jr in job_reports])
-            total_object_count = ProjectTotalObjectCount(db_task, [jr.statistics["annotation_speed"] for jr in job_reports])
+            derived_metrics = [
+                ProjectObjects(db_project, [jr.statistics[JobObjects.key()] for jr in job_reports]),
+                ProjectAnnotationSpeed(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
+                ProjectAnnotationTime(db_task, [jr.statistics[JobAnnotationTime.key()] for jr in job_reports]),
+                ProjectTotalAnnotationSpeed(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
+                ProjectTotalObjectCount(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
+            ]
 
-            statistics = {
-                "objects": self._get_statistics_entry(objects),
-                "annotation_speed": self._get_statistics_entry(annotation_speed),
-                "annotation_time": self._get_statistics_entry(annotation_time),
-                "total_annotation_speed": self._get_statistics_entry(total_annotation_speed),
-                "total_object_count": self._get_statistics_entry(total_object_count),
-            }
-
+            statistics = { dm.key: self._get_statistics_entry(dm) for dm in derived_metrics }
             db_report.statistics = statistics
             db_report.save()
 

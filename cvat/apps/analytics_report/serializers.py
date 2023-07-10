@@ -9,7 +9,7 @@ from cvat.apps.analytics_report.models import TypeChoice, GranularityChoice, Vie
 class StatisticsItemSerializer(serializers.Serializer):
     title = serializers.CharField()
     description = serializers.CharField(allow_blank=True)
-    granularity = serializers.ChoiceField(choices=GranularityChoice.choices(), required=False)
+    granularity = serializers.ChoiceField(choices=GranularityChoice.choices(), required=False, allow_null=True)
     default_view = serializers.ChoiceField(choices=ViewChoice.choices())
     dataseries = serializers.DictField()
     transformations = serializers.ListField(child=serializers.DictField())

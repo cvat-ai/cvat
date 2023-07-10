@@ -2,14 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.analytics_report.report.primary_metrics.imetric import IPrimaryMetric
+from cvat.apps.analytics_report.report.primary_metrics.imetric import PrimaryMetricBase
+from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
 
-class JobObjects(IPrimaryMetric):
+class JobObjects(PrimaryMetricBase):
     _title = "Objects"
-    _description = "Metric shows number of added/changed/deleted objects."
-    _default_view = "histogram"
+    _description = "Metric shows number of added/changed/deleted objects for the Job."
+    _default_view = ViewChoice.HISTOGRAM
+    _key = "objects"
     _query = "SELECT toStartOfDay(timestamp) as day, sum(JSONLength(JSONExtractString(payload, {object_type:String}))) as s FROM events WHERE scope = {scope:String} AND job_id = {job_id:UInt64} GROUP BY day ORDER BY day ASC"
-    _granularity = "day"
+    _granularity = GranularityChoice.DAY
 
     def calculate(self):
         statistics = {}

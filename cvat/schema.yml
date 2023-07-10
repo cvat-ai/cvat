@@ -7037,13 +7037,11 @@ components:
       - task
     GranularityEnum:
       enum:
-      - NONE
       - day
       - week
       - month
       type: string
       description: |-
-        * `NONE` - NONE
         * `day` - DAY
         * `week` - WEEK
         * `month` - MONTH
@@ -9048,7 +9046,10 @@ components:
         description:
           type: string
         granularity:
-          $ref: '#/components/schemas/GranularityEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GranularityEnum'
+          - $ref: '#/components/schemas/NullEnum'
         default_view:
           $ref: '#/components/schemas/DefaultViewEnum'
         dataseries:

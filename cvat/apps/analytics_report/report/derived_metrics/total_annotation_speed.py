@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMetric
+from .imetric import DerivedMetricBase
+from cvat.apps.analytics_report.models import ViewChoice
 
-class JobTotalAnnotationSpeed(IDerivedMetric):
+class JobTotalAnnotationSpeed(DerivedMetricBase):
     _title = "Total Annotation Speed (objects per hour)"
     _description = "Metric shows total annotation speed in the Job."
-    _default_view = "numeric"
-    _granularity = "NONE"
+    _default_view = ViewChoice.NUMERIC
+    _key = "total_annotation_speed"
 
     def calculate(self):
         total_count = 0

@@ -2,16 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.analytics_report.report.primary_metrics.imetric import IPrimaryMetric
+from cvat.apps.analytics_report.report.primary_metrics.imetric import PrimaryMetricBase
+from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
 import cvat.apps.dataset_manager as dm
 from dateutil import parser
 
-class JobAnnotationSpeed(IPrimaryMetric):
+class JobAnnotationSpeed(PrimaryMetricBase):
     _title = "Annotation speed (objects per hour)"
     _description = "Metric shows the annotation speed in objects per hour."
-    _default_view = "histogram"
+    _default_view = ViewChoice.HISTOGRAM
+    _key = "annotation_speed"
     _query = "SELECT sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as wt FROM events WHERE job_id={job_id:UInt64} AND timestamp >= {start_datetime:DateTime64} AND timestamp < {end_datetime:DateTime64}"
-    _granularity = "day"
+    _granularity = GranularityChoice.DAY
     _transformations = [
         {
             "name": "annotation_speed",

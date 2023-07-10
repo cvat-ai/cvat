@@ -24,7 +24,6 @@ class TypeChoice(str, Enum):
         return self.value
 
 class GranularityChoice(str, Enum):
-    NONE = 'NONE'
     DAY = 'day'
     WEEK = 'week'
     MONTH = 'month'

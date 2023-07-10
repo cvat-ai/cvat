@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMetric
+from .imetric import DerivedMetricBase
+from cvat.apps.analytics_report.models import ViewChoice
 
-class JobTotalObjectCount(IDerivedMetric):
+class JobTotalObjectCount(DerivedMetricBase):
     _title = "Total Object Count"
     _description = "Metric shows total object count in the Job."
-    _default_view = "numeric"
-    _granularity = "NONE"
+    _default_view = ViewChoice.NUMERIC
+    _key = "total_object_count"
 
     def calculate(self):
         count = 0

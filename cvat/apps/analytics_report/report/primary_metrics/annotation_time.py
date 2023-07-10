@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.analytics_report.report.primary_metrics.imetric import IPrimaryMetric
+from cvat.apps.analytics_report.report.primary_metrics.imetric import PrimaryMetricBase
+from cvat.apps.analytics_report.models import ViewChoice
 
-class JobAnnotationTime(IPrimaryMetric):
+class JobAnnotationTime(PrimaryMetricBase):
     _title = "Annotation time (hours)"
-    _description = "Metric shows how long the task is in progress state."
-    _default_view = "numeric"
-    _granularity = "NONE"
+    _description = "Metric shows how long the Job is in progress state."
+    _default_view = ViewChoice.NUMERIC
+    _key = "annotation_time"
     _query = "SELECT timestamp, obj_val  FROM cvat.events WHERE scope='update:job' AND job_id={job_id:UInt64} AND obj_name='state' ORDER BY timestamp ASC"
 
     def calculate(self):

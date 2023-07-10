@@ -2,14 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.analytics_report.report.derived_metrics.imetric import IDerivedMetric
+from .imetric import DerivedMetricBase
+from cvat.apps.analytics_report.report.primary_metrics import JobAnnotationTime
 
-class TaskAnnotationTime(IDerivedMetric):
-    _title = "Annotation time (hours)"
+class TaskAnnotationTime(DerivedMetricBase, JobAnnotationTime):
     _description = "Metric shows how long the Task is in progress state."
-    _default_view = "numeric"
     _query = None
-    _granularity = "NONE"
 
     def calculate(self):
         entry = {
