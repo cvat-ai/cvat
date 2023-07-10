@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased]
 ### Added
-- TDB
+- Quality analytics for projects (<https://github.com/opencv/cvat/pull/6367>)
 
 ### Changed
 - TDB
