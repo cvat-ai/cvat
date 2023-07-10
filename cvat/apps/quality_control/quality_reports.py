@@ -2653,7 +2653,7 @@ class ProjectQualityReportUpdateManager:
         pass
 
     def _check_quality_reporting_available(self, project: Project):
-        pass
+        pass  # nothing prevents report computation
 
     def _should_update(self, project: Project) -> bool:
         try:
@@ -2993,6 +2993,7 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
         job_id = db_report.job.id
 
         jobs_to_tasks[db_report.job.id] = task_id
+        jobs_to_tasks[db_report.get_task().gt_job.id] = task_id
     else:
         assert False
 

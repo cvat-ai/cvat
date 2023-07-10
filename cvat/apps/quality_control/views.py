@@ -47,6 +47,7 @@ from cvat.apps.quality_control.serializers import (
 @extend_schema_view(
     list=extend_schema(
         summary="Method returns a paginated list of annotation conflicts",
+        description="Please note that no conflicts will be returned for project reports",
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
@@ -473,7 +474,31 @@ class QualitySettingsViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
-            permissions = QualitySettingPermission.create_scope_list(self.request)
+            iam_context = None
+
+            if task_id := self.request.query_params.get("task_id", None):
+                # NOTE: This filter requires extra checks
+                try:
+                    task = Task.objects.get(id=task_id)
+                except Task.DoesNotExist as ex:
+                    raise NotFound(f"Task {task_id} does not exist") from ex
+
+                self.check_object_permissions(self.request, task)
+                iam_context = get_iam_context(self.request, task)
+
+            if project_id := self.request.query_params.get("project_id", None):
+                # NOTE: This filter requires extra checks
+                try:
+                    project = Project.objects.get(id=project_id)
+                except Project.DoesNotExist as ex:
+                    raise NotFound(f"Project {project_id} does not exist") from ex
+
+                self.check_object_permissions(self.request, project)
+                iam_context = get_iam_context(self.request, project)
+
+            permissions = QualitySettingPermission.create_scope_list(
+                self.request, iam_context=iam_context
+            )
             queryset = permissions.filter(queryset)
 
         return queryset

@@ -1951,7 +1951,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'quality_settings':
             for scope in cls.get_scopes(request, view, obj):
-                if scope in [Scopes.CREATE, Scopes.VIEW, Scopes.UPDATE]:
+                if scope in [Scopes.CREATE, Scopes.VIEW, Scopes.UPDATE] or scope == Scopes.LIST and isinstance(obj, (Task, Project)):
                     project = None
                     task = None
 
@@ -1971,11 +1971,18 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                                 task = Task.objects.get(id=task_id)
                             except Task.DoesNotExist:
                                 raise ValidationError(f"Task {task_id} does not exist")
+                    elif scope == Scopes.LIST:
+                        if isinstance(obj, Task):
+                            task = obj
+                        elif isinstance(obj, Project):
+                            project = obj
+                        else:
+                            assert False
                     else:
                         assert False
 
                     if task:
-                        if scope == Scopes.VIEW:
+                        if scope in [Scopes.VIEW, Scopes.LIST]:
                             task_scope = TaskPermission.Scopes.VIEW
                         elif scope in [Scopes.UPDATE, Scopes.CREATE]:
                             task_scope = TaskPermission.Scopes.UPDATE_DESC
@@ -1988,7 +1995,7 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                             scope=task_scope, obj=task
                         )
                     elif project:
-                        if scope == Scopes.VIEW:
+                        if scope in [Scopes.VIEW, Scopes.LIST]:
                             project_scope = ProjectPermission.Scopes.VIEW
                         elif scope in [Scopes.UPDATE, Scopes.CREATE]:
                             project_scope = ProjectPermission.Scopes.UPDATE_DESC

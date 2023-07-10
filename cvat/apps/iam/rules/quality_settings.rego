@@ -96,7 +96,7 @@ filter = [] { # Django Q object to filter list of entries
     user := input.auth.user
     org := input.auth.organization
     qobject := [
-        {"task__organization": org.id}, "|",
+        {"task__organization": org.id},
         {"task__project__organization": org.id}, "|",
         {"project__organization": org.id}, "|",
 
