@@ -3,40 +3,37 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import timedelta
-from django.utils import timezone
+from uuid import uuid4
 
 import django_rq
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-
-from uuid import uuid4
-
-from cvat.apps.engine.models import Job, Task, Project
+from django.utils import timezone
 
 from cvat.apps.analytics_report.models import AnalyticsReport
+from cvat.apps.analytics_report.report.derived_metrics import (
+    JobTotalAnnotationSpeed,
+    JobTotalObjectCount,
+    ProjectAnnotationSpeed,
+    ProjectAnnotationTime,
+    ProjectObjects,
+    ProjectTotalAnnotationSpeed,
+    ProjectTotalObjectCount,
+    TaskAnnotationSpeed,
+    TaskAnnotationTime,
+    TaskObjects,
+    TaskTotalAnnotationSpeed,
+    TaskTotalObjectCount,
+)
 from cvat.apps.analytics_report.report.primary_metrics import (
     JobAnnotationSpeed,
     JobAnnotationTime,
     JobObjects,
 )
-from cvat.apps.analytics_report.report.derived_metrics import (
-    JobTotalAnnotationSpeed,
-    JobTotalObjectCount,
+from cvat.apps.engine.models import Job, Project, Task
 
-    TaskAnnotationSpeed,
-    TaskObjects,
-    TaskAnnotationTime,
-    TaskTotalAnnotationSpeed,
-    TaskTotalObjectCount,
 
-    ProjectAnnotationSpeed,
-    ProjectObjects,
-    ProjectAnnotationTime,
-    ProjectTotalAnnotationSpeed,
-    ProjectTotalObjectCount,
-)
-
-class JobAnalyticsReportUpdateManager():
+class JobAnalyticsReportUpdateManager:
     _QUEUE_JOB_PREFIX_TASK = "update-analytics-report-task-"
     _QUEUE_JOB_PREFIX_PROJECT = "update-analytics-report-project-"
     _RQ_CUSTOM_ANALYTICS_CHECK_JOB_TYPE = "custom_analytics_check"
@@ -68,7 +65,7 @@ class JobAnalyticsReportUpdateManager():
         return f"{self._make_queue_job_prefix(obj)}{start_time.timestamp()}"
 
     @classmethod
-    def _get_last_report_time(cls, obj) :
+    def _get_last_report_time(cls, obj):
         try:
             report = obj.analytics_report
             if report:
@@ -76,9 +73,7 @@ class JobAnalyticsReportUpdateManager():
         except ObjectDoesNotExist:
             return None
 
-    def _find_next_job_id(
-        self, existing_job_ids, obj, *, now
-    ) -> str:
+    def _find_next_job_id(self, existing_job_ids, obj, *, now) -> str:
         job_id_prefix = self._make_queue_job_prefix(obj)
 
         def _get_timestamp(job_id: str) -> timezone.datetime:
@@ -183,15 +178,25 @@ class JobAnalyticsReportUpdateManager():
         return rq_job.meta.get("job_type") == self._RQ_CUSTOM_ANALYTICS_CHECK_JOB_TYPE
 
     @classmethod
-    def _check_job_analytics(cls, *, cvat_job_id: int=None, cvat_task_id: int=None, cvat_project_id: int=None) -> int:
+    def _check_job_analytics(
+        cls, *, cvat_job_id: int = None, cvat_task_id: int = None, cvat_project_id: int = None
+    ) -> int:
         if cvat_job_id is not None:
             db_job = Job.objects.select_related("analytics_report").get(pk=cvat_job_id)
             return cls()._compute_report_for_job(db_job)
         elif cvat_task_id is not None:
-            db_task = Task.objects.select_related("analytics_report").prefetch_related("segment_set__job_set").get(pk=cvat_task_id)
+            db_task = (
+                Task.objects.select_related("analytics_report")
+                .prefetch_related("segment_set__job_set")
+                .get(pk=cvat_task_id)
+            )
             return cls()._compute_report_for_task(db_task)
         elif cvat_project_id is not None:
-            db_project = Project.objects.select_related("analytics_report").prefetch_related("tasks__segment_set__job_set").get(pk=cvat_project_id)
+            db_project = (
+                Project.objects.select_related("analytics_report")
+                .prefetch_related("tasks__segment_set__job_set")
+                .get(pk=cvat_project_id)
+            )
             return cls()._compute_report_for_project(db_project)
 
     @staticmethod
@@ -209,32 +214,37 @@ class JobAnalyticsReportUpdateManager():
         db_report = getattr(db_job, "analytics_report", None)
         was_created = False
         if db_report is None:
-            db_report = AnalyticsReport.objects.create(
-                job_id=db_job.id,
-                statistics={})
+            db_report = AnalyticsReport.objects.create(job_id=db_job.id, statistics={})
             db_report.save()
             was_created = True
             db_job.analytics_report = db_report
 
         # recalculate the report if it is not relevant
         if db_report.created_date < db_job.updated_date or was_created:
-
             primary_metrics = [
                 JobAnnotationSpeed(db_job),
                 JobObjects(db_job),
                 JobAnnotationTime(db_job),
             ]
 
-            primary_statistics = { pm.key(): self._get_statistics_entry(pm) for pm in primary_metrics }
+            primary_statistics = {
+                pm.key(): self._get_statistics_entry(pm) for pm in primary_metrics
+            }
 
             derived_metrics = [
-                JobTotalAnnotationSpeed(db_job, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]),
-                JobTotalObjectCount(db_job, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]),
+                JobTotalAnnotationSpeed(
+                    db_job, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]
+                ),
+                JobTotalObjectCount(
+                    db_job, primary_statistics=primary_statistics[JobAnnotationSpeed.key()]
+                ),
             ]
 
-            derived_statistics = { dm.key(): self._get_statistics_entry(dm) for dm in derived_metrics }
+            derived_statistics = {
+                dm.key(): self._get_statistics_entry(dm) for dm in derived_metrics
+            }
 
-            db_report.statistics = { **primary_statistics, **derived_statistics }
+            db_report.statistics = {**primary_statistics, **derived_statistics}
             db_report.save()
 
         return db_report
@@ -257,14 +267,21 @@ class JobAnalyticsReportUpdateManager():
 
             derived_metrics = [
                 TaskObjects(db_task, [jr.statistics[JobObjects.key()] for jr in job_reports]),
-                TaskAnnotationSpeed(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
-                TaskAnnotationTime(db_task, [jr.statistics[JobAnnotationTime.key()] for jr in job_reports]),
-                TaskTotalAnnotationSpeed(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
-                TaskTotalObjectCount(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
+                TaskAnnotationSpeed(
+                    db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
+                ),
+                TaskAnnotationTime(
+                    db_task, [jr.statistics[JobAnnotationTime.key()] for jr in job_reports]
+                ),
+                TaskTotalAnnotationSpeed(
+                    db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
+                ),
+                TaskTotalObjectCount(
+                    db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
+                ),
             ]
 
-
-            statistics = { dm.key(): self._get_statistics_entry(dm) for dm in derived_metrics }
+            statistics = {dm.key(): self._get_statistics_entry(dm) for dm in derived_metrics}
             db_report.statistics = statistics
             db_report.save()
 
@@ -291,13 +308,21 @@ class JobAnalyticsReportUpdateManager():
 
             derived_metrics = [
                 ProjectObjects(db_project, [jr.statistics[JobObjects.key()] for jr in job_reports]),
-                ProjectAnnotationSpeed(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
-                ProjectAnnotationTime(db_task, [jr.statistics[JobAnnotationTime.key()] for jr in job_reports]),
-                ProjectTotalAnnotationSpeed(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
-                ProjectTotalObjectCount(db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]),
+                ProjectAnnotationSpeed(
+                    db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
+                ),
+                ProjectAnnotationTime(
+                    db_task, [jr.statistics[JobAnnotationTime.key()] for jr in job_reports]
+                ),
+                ProjectTotalAnnotationSpeed(
+                    db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
+                ),
+                ProjectTotalObjectCount(
+                    db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
+                ),
             ]
 
-            statistics = { dm.key: self._get_statistics_entry(dm) for dm in derived_metrics }
+            statistics = {dm.key: self._get_statistics_entry(dm) for dm in derived_metrics}
             db_report.statistics = statistics
             db_report.save()
 

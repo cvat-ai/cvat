@@ -5,13 +5,15 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from cvat.apps.engine.models import Annotation, Job, Project, Task
 from cvat.apps.analytics_report.report.create import JobAnalyticsReportUpdateManager
+from cvat.apps.engine.models import Annotation, Job, Project, Task
 
 
 @receiver(post_save, sender=Job, dispatch_uid=__name__ + ".save_job-update_analytics_report")
 @receiver(post_save, sender=Task, dispatch_uid=__name__ + ".save_task-update_analytics_report")
-@receiver(post_save, sender=Project, dispatch_uid=__name__ + ".save_project-update_analytics_report")
+@receiver(
+    post_save, sender=Project, dispatch_uid=__name__ + ".save_project-update_analytics_report"
+)
 @receiver(
     post_save, sender=Annotation, dispatch_uid=__name__ + ".save_annotation-update_analytics_report"
 )

@@ -2,10 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.analytics_report.report.primary_metrics.imetric import PrimaryMetricBase
-from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
-import cvat.apps.dataset_manager as dm
 from dateutil import parser
+
+import cvat.apps.dataset_manager as dm
+from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
+from cvat.apps.analytics_report.report.primary_metrics.imetric import PrimaryMetricBase
+
 
 class JobAnnotationSpeed(PrimaryMetricBase):
     _title = "Annotation speed (objects per hour)"
@@ -60,13 +62,13 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         object_count += get_track_count(annotations)
 
         timestamp = self._get_utc_now()
-        timestamp_str = timestamp.strftime('%Y-%m-%dT%H:%M:%SZ')
+        timestamp_str = timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         report = self._db_obj.analytics_report
         if report is None:
             statistics = get_default()
         else:
-            statistics = report.statistics.get("annotation_speed",  get_default())
+            statistics = report.statistics.get("annotation_speed", get_default())
 
         dataseries = statistics["dataseries"]
 
@@ -87,11 +89,12 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                 last_entry_count = last_entry["value"]
                 start_datetime = parser.parse(last_entry["datetime"])
 
-
-        dataseries["object_count"].append({
-            "value": object_count - last_entry_count,
-            "datetime": timestamp_str,
-        })
+        dataseries["object_count"].append(
+            {
+                "value": object_count - last_entry_count,
+                "datetime": timestamp_str,
+            }
+        )
 
         # Calculate working time
 
@@ -103,9 +106,8 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
         result = self._make_clickhouse_query(parameters)
 
-        dataseries["working_time"].append({
-            "value": next(iter(result.result_rows))[0],
-            "datetime": timestamp_str
-        })
+        dataseries["working_time"].append(
+            {"value": next(iter(result.result_rows))[0], "datetime": timestamp_str}
+        )
 
         return dataseries

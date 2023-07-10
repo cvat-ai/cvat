@@ -6,7 +6,7 @@ from django.apps import AppConfig
 
 
 class EventsConfig(AppConfig):
-    name = 'cvat.apps.analytics_report'
+    name = "cvat.apps.analytics_report"
 
     def ready(self):
         from django.conf import settings

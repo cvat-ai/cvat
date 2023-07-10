@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABCMeta, abstractmethod
+from datetime import datetime, timezone
 
 from cvat.apps.analytics_report.report.primary_metrics.utils import make_clickhouse_query
-from datetime import datetime, timezone
+
 
 class PrimaryMetricBase(metaclass=ABCMeta):
     _title = None
@@ -53,4 +54,3 @@ class PrimaryMetricBase(metaclass=ABCMeta):
     @staticmethod
     def _get_utc_now():
         return datetime.now(timezone.utc)
-

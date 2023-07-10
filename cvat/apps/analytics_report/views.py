@@ -4,19 +4,22 @@
 
 import textwrap
 
-from rest_framework import status, viewsets, serializers
-from rest_framework.response import Response
-from rest_framework.exceptions import NotFound, ValidationError
-from drf_spectacular.utils import OpenApiResponse, OpenApiParameter, extend_schema
 from drf_spectacular.types import OpenApiTypes
-
-from cvat.apps.engine.models import Job, Task, Project
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from rest_framework import status, viewsets
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.response import Response
 
 from cvat.apps.analytics_report.models import AnalyticsReport
-from cvat.apps.analytics_report.report.get import get_analytics_report
-from cvat.apps.analytics_report.serializers import AnalyticsReportSerializer
-from cvat.apps.engine.serializers import RqIdSerializer
 from cvat.apps.analytics_report.report.create import JobAnalyticsReportUpdateManager
+from cvat.apps.analytics_report.report.get import get_analytics_report
+from cvat.apps.analytics_report.serializers import (
+    AnalyticsReportCreateSerializer,
+    AnalyticsReportSerializer,
+)
+from cvat.apps.engine.models import Job, Project, Task
+from cvat.apps.engine.serializers import RqIdSerializer
+
 
 class AnalyticsReportViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -38,13 +41,8 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 """
                 ),
             ),
-            OpenApiParameter('project_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
-                description="Specify project ID"),
-            OpenApiParameter('task_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
-                description="Specify task ID"),
-            OpenApiParameter('job_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
-                description="Specify job ID"),
         ],
+        request=AnalyticsReportCreateSerializer(),
         responses={
             "201": AnalyticsReportSerializer,
             "202": OpenApiResponse(
@@ -69,15 +67,12 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
         rq_id = request.query_params.get("rq_id", None)
 
         if rq_id is None:
-            job_id = request.query_params.get('job_id', None)
-            task_id = request.query_params.get('task_id', None)
-            project_id = request.query_params.get('project_id', None)
+            input_serializer = AnalyticsReportCreateSerializer(data=request.data)
+            input_serializer.is_valid(raise_exception=True)
 
-            if job_id is None and task_id is None and project_id is None:
-                raise serializers.ValidationError("No any job, task or project specified")
-
-            if [job_id, task_id, project_id].count(True) > 1:
-                raise serializers.ValidationError("Only one of job_id, task_id or project_id must be specified")
+            job_id = input_serializer.validated_data.get("job_id")
+            task_id = input_serializer.validated_data.get("task_id")
+            project_id = input_serializer.validated_data.get("project_id")
 
             if job_id is not None:
                 try:
@@ -140,27 +135,57 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 if not return_value:
                     raise ValidationError("No report has been computed")
 
-                return get_analytics_report(request, {**request.query_params, "job_id": return_value})
+                return get_analytics_report(
+                    request, {**request.query_params, "job_id": return_value}
+                )
 
-    @extend_schema(summary='Method returns analytics report',
-        methods=['GET'],
-        description='Receive analytics report',
+    @extend_schema(
+        summary="Method returns analytics report",
+        methods=["GET"],
+        operation_id="analytics_get_reports",
+        description="Receive analytics report",
         parameters=[
-            OpenApiParameter('project_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
-                description="Specify project ID"),
-            OpenApiParameter('task_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
-                description="Specify task ID"),
-            OpenApiParameter('job_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False,
-                description="Specify job ID"),
-            OpenApiParameter('start_date', location=OpenApiParameter.QUERY, type=OpenApiTypes.DATETIME, required=False,
-                description="Specify a start date for filtering report data."),
-            OpenApiParameter('end_date', location=OpenApiParameter.QUERY, type=OpenApiTypes.DATETIME, required=False,
-                description="Specify the end date for filtering report data."),
+            OpenApiParameter(
+                "project_id",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.INT,
+                required=False,
+                description="Specify project ID",
+            ),
+            OpenApiParameter(
+                "task_id",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.INT,
+                required=False,
+                description="Specify task ID",
+            ),
+            OpenApiParameter(
+                "job_id",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.INT,
+                required=False,
+                description="Specify job ID",
+            ),
+            OpenApiParameter(
+                "start_date",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.DATETIME,
+                required=False,
+                description="Specify a start date for filtering report data.",
+            ),
+            OpenApiParameter(
+                "end_date",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.DATETIME,
+                required=False,
+                description="Specify the end date for filtering report data.",
+            ),
         ],
         responses={
-            '200': OpenApiResponse(description='...'),
-            '404': OpenApiResponse(description='Not found'),
-        })
+            "200": AnalyticsReportSerializer,
+            "404": OpenApiResponse(description="Not found"),
+        },
+    )
     def list(self, request):
         return get_analytics_report(
             request=request,

@@ -2,25 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+from .annotation_speed import ProjectAnnotationSpeed, TaskAnnotationSpeed
+from .annotation_time import ProjectAnnotationTime, TaskAnnotationTime
+from .objects import ProjectObjects, TaskObjects
 from .total_annotation_speed import (
     JobTotalAnnotationSpeed,
-    TaskTotalAnnotationSpeed,
     ProjectTotalAnnotationSpeed,
+    TaskTotalAnnotationSpeed,
 )
-from .total_object_count import (
-    JobTotalObjectCount,
-    TaskTotalObjectCount,
-    ProjectTotalObjectCount,
-)
-from .annotation_speed import (
-    TaskAnnotationSpeed,
-    ProjectAnnotationSpeed,
-)
-from .objects import (
-    TaskObjects,
-    ProjectObjects,
-)
-from .annotation_time import (
-    TaskAnnotationTime,
-    ProjectAnnotationTime,
-)
+from .total_object_count import JobTotalObjectCount, ProjectTotalObjectCount, TaskTotalObjectCount

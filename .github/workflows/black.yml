@@ -13,6 +13,7 @@ jobs:
               cvat-cli/**/*.py
               tests/python/**/*.py
               cvat/apps/quality_control/**/*.py
+              cvat/apps/analytics_report/**/*.py
           dir_names: true
 
       - name: Run checks

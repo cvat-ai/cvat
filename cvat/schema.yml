@@ -14,7 +14,7 @@ info:
 paths:
   /api/analytics/reports:
     get:
-      operationId: analytics_list_reports
+      operationId: analytics_get_reports
       description: Receive analytics report
       summary: Method returns analytics report
       parameters:
@@ -55,7 +55,13 @@ paths:
       - basicAuth: []
       responses:
         '200':
-          description: '...'
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnalyticsReport'
+          description: ''
         '404':
           description: Not found
     post:
@@ -64,29 +70,19 @@ paths:
         status
       parameters:
       - in: query
-        name: job_id
-        schema:
-          type: integer
-        description: Specify job ID
-      - in: query
-        name: project_id
-        schema:
-          type: integer
-        description: Specify project ID
-      - in: query
         name: rq_id
         schema:
           type: string
         description: |
           The report creation request id. Can be specified to check the report
           creation status.
-      - in: query
-        name: task_id
-        schema:
-          type: integer
-        description: Specify task ID
       tags:
       - analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyticsReportCreateRequest'
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -5948,6 +5944,15 @@ components:
       - created_date
       - statistics
       - target
+    AnalyticsReportCreateRequest:
+      type: object
+      properties:
+        job_id:
+          type: integer
+        task_id:
+          type: integer
+        project_id:
+          type: integer
     AnalyticsReportTargetEnum:
       enum:
       - job

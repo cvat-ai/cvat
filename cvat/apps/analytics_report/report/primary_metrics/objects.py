@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cvat.apps.analytics_report.report.primary_metrics.imetric import PrimaryMetricBase
 from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
+from cvat.apps.analytics_report.report.primary_metrics.imetric import PrimaryMetricBase
+
 
 class JobObjects(PrimaryMetricBase):
     _title = "Objects"
@@ -19,11 +20,13 @@ class JobObjects(PrimaryMetricBase):
         for action in ["create", "update", "delete"]:
             action_data = statistics.setdefault(f"{action}d", {})
             for obj_type in ["tracks", "shapes", "tags"]:
-                result = self._make_clickhouse_query({
-                    "scope": f"{action}:{obj_type}",
-                    "object_type": obj_type,
-                    "job_id": self._db_obj.id,
-                })
+                result = self._make_clickhouse_query(
+                    {
+                        "scope": f"{action}:{obj_type}",
+                        "object_type": obj_type,
+                        "job_id": self._db_obj.id,
+                    }
+                )
                 action_data[obj_type] = {entry[0]: entry[1] for entry in result.result_rows}
 
         objects_statistics = {
@@ -39,13 +42,15 @@ class JobObjects(PrimaryMetricBase):
 
         for action in ["created", "updated", "deleted"]:
             for date in dates:
-                objects_statistics[action].append({
-                    "value": {
-                        "tracks": statistics[action]["tracks"].get(date, 0),
-                        "shapes": statistics[action]["shapes"].get(date, 0),
-                        "tags":  statistics[action]["tags"].get(date, 0),
-                    },
-                    "datetime": date.isoformat()+'Z',
-                })
+                objects_statistics[action].append(
+                    {
+                        "value": {
+                            "tracks": statistics[action]["tracks"].get(date, 0),
+                            "shapes": statistics[action]["shapes"].get(date, 0),
+                            "tags": statistics[action]["tags"].get(date, 0),
+                        },
+                        "datetime": date.isoformat() + "Z",
+                    }
+                )
 
         return objects_statistics

@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .imetric import DerivedMetricBase
 from cvat.apps.analytics_report.models import ViewChoice
+
+from .imetric import DerivedMetricBase
+
 
 class JobTotalObjectCount(DerivedMetricBase):
     _title = "Total Object Count"
@@ -21,10 +23,11 @@ class JobTotalObjectCount(DerivedMetricBase):
             "total_object_count": [
                 {
                     "value": count,
-                    "datetime": self._get_utc_now().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                    "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 },
             ]
         }
+
 
 class TaskTotalObjectCount(JobTotalObjectCount):
     _description = "Metric shows total object count in the Task."
@@ -40,10 +43,11 @@ class TaskTotalObjectCount(JobTotalObjectCount):
             "total_object_count": [
                 {
                     "value": total_count,
-                    "datetime": self._get_utc_now().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                    "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 },
             ]
         }
+
 
 class ProjectTotalObjectCount(TaskTotalObjectCount):
     _description = "Metric shows total object count in the Project."

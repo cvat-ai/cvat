@@ -2,8 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .imetric import DerivedMetricBase
 from cvat.apps.analytics_report.models import ViewChoice
+
+from .imetric import DerivedMetricBase
+
 
 class JobTotalAnnotationSpeed(DerivedMetricBase):
     _title = "Total Annotation Speed (objects per hour)"
@@ -23,10 +25,11 @@ class JobTotalAnnotationSpeed(DerivedMetricBase):
             "total_annotation_speed": [
                 {
                     "value": total_count / total_wt if total_wt != 0 else 0,
-                    "datetime": self._get_utc_now().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                    "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 },
             ]
         }
+
 
 class TaskTotalAnnotationSpeed(JobTotalAnnotationSpeed):
     _description = "Metric shows total annotation speed in the Task."
@@ -45,10 +48,11 @@ class TaskTotalAnnotationSpeed(JobTotalAnnotationSpeed):
             "total_annotation_speed": [
                 {
                     "value": total_count / total_wt if total_wt != 0 else 0,
-                    "datetime": self._get_utc_now().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                    "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 },
             ]
         }
+
 
 class ProjectTotalAnnotationSpeed(TaskTotalAnnotationSpeed):
     _description = "Metric shows total annotation speed in the Project."

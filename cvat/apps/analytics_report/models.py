@@ -3,14 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 from enum import Enum
+
 from django.db import models
 
-from cvat.apps.engine.models import Job, Task, Project
+from cvat.apps.engine.models import Job, Project, Task
+
 
 class TypeChoice(str, Enum):
-    JOB = 'job'
-    TASK = 'task'
-    PROJECT = 'project'
+    JOB = "job"
+    TASK = "task"
+    PROJECT = "project"
 
     @classmethod
     def choices(cls):
@@ -22,11 +24,12 @@ class TypeChoice(str, Enum):
 
     def __str__(self):
         return self.value
+
 
 class GranularityChoice(str, Enum):
-    DAY = 'day'
-    WEEK = 'week'
-    MONTH = 'month'
+    DAY = "day"
+    WEEK = "week"
+    MONTH = "month"
 
     @classmethod
     def choices(cls):
@@ -38,10 +41,11 @@ class GranularityChoice(str, Enum):
 
     def __str__(self):
         return self.value
+
 
 class ViewChoice(str, Enum):
-    NUMERIC = 'numeric'
-    HISTOGRAM = 'histogram'
+    NUMERIC = "numeric"
+    HISTOGRAM = "histogram"
 
     @classmethod
     def choices(cls):
@@ -53,6 +57,7 @@ class ViewChoice(str, Enum):
 
     def __str__(self):
         return self.value
+
 
 class AnalyticsReport(models.Model):
     job = models.OneToOneField(
