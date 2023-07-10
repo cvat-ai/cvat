@@ -128,7 +128,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         (annotationConflict: AnnotationConflict) => annotationConflict.clientID === state.clientID,
     ));
 
-    const copyObject = state.isGroundTruth ? state : null;
+    const copyObject = state?.isGroundTruth ? state : null;
 
     if (workspace === Workspace.REVIEW_WORKSPACE) {
         return ReactDOM.createPortal(
