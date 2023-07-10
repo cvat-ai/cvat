@@ -212,7 +212,7 @@ class CommonData(InstanceLabelData):
         self._create_callback = create_callback
         self._MAX_ANNO_SIZE = 30000
         self._frame_info = {}
-        self._frame_mapping = {}
+        self._frame_mapping: Dict[str, int] = {}
         self._frame_step = db_task.data.get_frame_step()
         self._db_data = db_task.data
         self._use_server_track_ids = use_server_track_ids
@@ -613,28 +613,37 @@ class CommonData(InstanceLabelData):
         raise NotImplementedError()
 
     @staticmethod
-    def _get_filename(path):
+    def _get_filename(path: str) -> str:
         return osp.splitext(path)[0]
 
-    def match_frame(self, path, root_hint=None, path_has_ext=True):
+    def match_frame(self,
+        path: str, root_hint: Optional[str] = None, *, path_has_ext: bool = True
+    ) -> Optional[int]:
         if path_has_ext:
             path = self._get_filename(path)
+
         match = self._frame_mapping.get(path)
+
         if not match and root_hint and not path.startswith(root_hint):
             path = osp.join(root_hint, path)
             match = self._frame_mapping.get(path)
+
         return match
 
-    def match_frame_fuzzy(self, path):
+    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> Optional[int]:
         # Preconditions:
         # - The input dataset is full, i.e. all items present. Partial dataset
         # matching can't be correct for all input cases.
         # - path is the longest path of input dataset in terms of path parts
 
-        path = Path(self._get_filename(path)).parts
+        if path_has_ext:
+            path = self._get_filename(path)
+
+        path = Path(path).parts
         for p, v in self._frame_mapping.items():
             if Path(p).parts[-len(path):] == path: # endswith() for paths
                 return v
+
         return None
 
 class JobData(CommonData):
@@ -1254,20 +1263,30 @@ class ProjectData(InstanceLabelData):
     def _get_filename(path):
         return osp.splitext(path)[0]
 
-    def match_frame(self, path: str, subset: str=dm.DEFAULT_SUBSET_NAME, root_hint: str=None, path_has_ext: bool=True):
+    def match_frame(self,
+        path: str, subset: str = dm.DEFAULT_SUBSET_NAME,
+        root_hint: str = None, path_has_ext: bool = True
+    ) -> Optional[int]:
         if path_has_ext:
             path = self._get_filename(path)
+
         match_task, match_frame = self._frame_mapping.get((subset, path), (None, None))
+
         if not match_frame and root_hint and not path.startswith(root_hint):
             path = osp.join(root_hint, path)
             match_task, match_frame = self._frame_mapping.get((subset, path), (None, None))
+
         return match_task, match_frame
 
-    def match_frame_fuzzy(self, path):
-        path = Path(self._get_filename(path)).parts
+    def match_frame_fuzzy(self, path: str, *, path_has_ext: bool = True) -> Optional[int]:
+        if path_has_ext:
+            path = self._get_filename(path)
+
+        path = Path(path).parts
         for (_subset, _path), (_tid, frame_number) in self._frame_mapping.items():
             if Path(_path).parts[-len(path):] == path :
                 return frame_number
+
         return None
 
     def split_dataset(self, dataset: dm.Dataset):
@@ -1814,7 +1833,11 @@ def convert_cvat_anno_to_dm(
     return converter.convert()
 
 
-def match_dm_item(item, instance_data, root_hint=None):
+def match_dm_item(
+    item: dm.DatasetItem,
+    instance_data: Union[ProjectData, CommonData],
+    root_hint: Optional[str] = None
+) -> int:
     is_video = instance_data.meta[instance_data.META_FIELD]['mode'] == 'interpolation'
 
     frame_number = None
@@ -1832,20 +1855,23 @@ def match_dm_item(item, instance_data, root_hint=None):
             "'%s' with any task frame" % item.id)
     return frame_number
 
-def find_dataset_root(dm_dataset, instance_data: Union[ProjectData, CommonData]):
-    longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts),
-        default=None)
-    if longest_path is None:
+def find_dataset_root(
+    dm_dataset: dm.IDataset, instance_data: Union[ProjectData, CommonData]
+) -> Optional[str]:
+    longest_path_item = max(dm_dataset, key=lambda item: len(Path(item.id).parts), default=None)
+    if longest_path_item is None:
         return None
-    longest_path = longest_path.id
+    longest_path = longest_path_item.id
 
-    longest_match = instance_data.match_frame_fuzzy(longest_path)
-    if longest_match is None:
+    matched_frame_number = instance_data.match_frame_fuzzy(longest_path, path_has_ext=False)
+    if matched_frame_number is None:
         return None
-    longest_match = osp.dirname(instance_data.frame_info[longest_match]['path'])
+
+    longest_match = osp.dirname(instance_data.frame_info[matched_frame_number]['path'])
     prefix = longest_match[:-len(osp.dirname(longest_path)) or None]
     if prefix.endswith('/'):
         prefix = prefix[:-1]
+
     return prefix
 
 def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectData, CommonData]):

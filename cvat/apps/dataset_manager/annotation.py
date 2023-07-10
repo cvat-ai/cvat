@@ -215,7 +215,7 @@ class ObjectManager:
     def _unite_objects(obj0, obj1):
         raise NotImplementedError()
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         raise NotImplementedError()
 
     def merge(self, objects, start_frame, overlap, dimension):
@@ -239,7 +239,7 @@ class ObjectManager:
         if not old_objects_by_frame or not int_objects_by_frame:
             for frame in old_objects_by_frame:
                 for old_obj in old_objects_by_frame[frame]:
-                    self._modify_unmached_object(old_obj, start_frame + overlap)
+                    self._modify_unmatched_object(old_obj, start_frame + overlap)
             self.objects.extend(int_objects)
             return
 
@@ -280,7 +280,7 @@ class ObjectManager:
                 # (e.g. generate a shape with outside=True at the end).
                 for j in old_objects_indexes:
                     if j != -1:
-                        self._modify_unmached_object(old_objects[j],
+                        self._modify_unmatched_object(old_objects[j],
                             start_frame + overlap)
             else:
                 # We don't have old objects on the frame. Let's add all new ones.
@@ -301,7 +301,7 @@ class TagManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         pass
 
 def pairwise(iterable):
@@ -415,7 +415,7 @@ class ShapeManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         pass
 
 class TrackManager(ObjectManager):
@@ -531,7 +531,7 @@ class TrackManager(ObjectManager):
         else:
             return 0
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         shape = obj["shapes"][-1]
         if not shape["outside"]:
             shape = deepcopy(shape)
@@ -540,7 +540,7 @@ class TrackManager(ObjectManager):
             obj["shapes"].append(shape)
 
             for element in obj.get("elements", []):
-                self._modify_unmached_object(element, end_frame)
+                self._modify_unmatched_object(element, end_frame)
 
     @staticmethod
     def get_interpolated_shapes(
@@ -575,7 +575,7 @@ class TrackManager(ObjectManager):
             angle_diff = ((angle_diff + 180) % 360) - 180
             if abs(angle_diff) >= 180:
                 # if the main arc is bigger than 180, go another arc
-                # to find it, just substract absolute value from 360 and inverse sign
+                # to find it, just subtract absolute value from 360 and inverse sign
                 angle_diff = 360 - abs(angle_diff) * -1 if angle_diff > 0 else 1
 
             return angle_diff

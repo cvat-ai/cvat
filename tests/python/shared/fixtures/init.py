@@ -25,12 +25,12 @@ PREFIX = "test"
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
 
-DC_FILES = [
+DC_FILES = CONTAINER_NAME_FILES + [
     "docker-compose.dev.yml",
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.test_servers.yml",
-] + CONTAINER_NAME_FILES
+]
 
 
 class Container(str, Enum):
@@ -471,10 +471,10 @@ def collect_code_coverage_from_containers():
 
         # get code coverage report
         docker_exec(container, "coverage combine", capture_output=False)
-        docker_exec(container, "coverage xml", capture_output=False)
+        docker_exec(container, "coverage json", capture_output=False)
         docker_cp(
-            f"{PREFIX}_{container}_1:home/django/coverage.xml",
-            f"coverage_{container}.xml",
+            f"{PREFIX}_{container}_1:home/django/coverage.json",
+            f"coverage_{container}.json",
         )
 
 
