@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[SDK\] SDK should not change input data in models (<https://github.com/opencv/cvat/pull/6455>)
 - 3D job can not be opened in validation mode (<https://github.com/opencv/cvat/pull/6507>)
 - Memory leak related to unclosed av container (<https://github.com/opencv/cvat/pull/6501>)
+- Server-side validation for attribute specifications
+  (<https://github.com/opencv/cvat/pull/6447>)
 
 ### Security
 - TDB
