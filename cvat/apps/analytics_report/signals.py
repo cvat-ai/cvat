@@ -5,7 +5,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from cvat.apps.analytics_report.report.create import JobAnalyticsReportUpdateManager
+from cvat.apps.analytics_report.report.create import AnalyticsReportUpdateManager
 from cvat.apps.engine.models import Annotation, Job, Project, Task
 
 
@@ -19,12 +19,12 @@ from cvat.apps.engine.models import Annotation, Job, Project, Task
 )
 def __save_job__update_analytics_report(instance, created, **kwargs):
     if isinstance(instance, Project):
-        JobAnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(project=instance)
+        AnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(project=instance)
     elif isinstance(instance, Task):
-        JobAnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(task=instance)
+        AnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(task=instance)
     elif isinstance(instance, Job):
-        JobAnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(job=instance)
+        AnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(job=instance)
     elif isinstance(instance, Annotation):
-        JobAnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(job=instance.job)
+        AnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(job=instance.job)
     else:
         assert False

@@ -119,7 +119,7 @@ def get_analytics_report(request, query_params):
     if job_id is None and task_id is None and project_id is None:
         raise serializers.ValidationError("No any job, task or project specified")
 
-    if [job_id, task_id, project_id].count(True) > 1:
+    if sum(map(bool, [job_id, task_id, project_id])) > 1:
         raise serializers.ValidationError(
             "Only one of job_id, task_id or project_id must be specified"
         )

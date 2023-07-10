@@ -33,7 +33,7 @@ from cvat.apps.analytics_report.report.primary_metrics import (
 from cvat.apps.engine.models import Job, Project, Task
 
 
-class JobAnalyticsReportUpdateManager:
+class AnalyticsReportUpdateManager:
     _QUEUE_JOB_PREFIX_TASK = "update-analytics-report-task-"
     _QUEUE_JOB_PREFIX_PROJECT = "update-analytics-report-project-"
     _RQ_CUSTOM_ANALYTICS_CHECK_JOB_TYPE = "custom_analytics_check"
@@ -110,6 +110,9 @@ class JobAnalyticsReportUpdateManager:
         pass
 
     def schedule_analytics_report_autoupdate_job(self, *, job=None, task=None, project=None):
+        if sum(map(bool, (job, task, project))) > 1:
+            return
+
         now = timezone.now()
         delay = self._get_analytics_check_job_delay()
         next_job_time = now.utcnow() + delay
@@ -142,7 +145,7 @@ class JobAnalyticsReportUpdateManager:
         if queue_job_id not in existing_job_ids:
             scheduler.enqueue_at(
                 next_job_time,
-                self._check_job_analytics,
+                self._check_analytics_report,
                 cvat_task_id=cvat_task_id,
                 cvat_project_id=cvat_project_id,
                 job_id=queue_job_id,
@@ -153,7 +156,7 @@ class JobAnalyticsReportUpdateManager:
 
         queue = self._get_queue()
         queue.enqueue(
-            self._check_job_analytics,
+            self._check_analytics_report,
             cvat_job_id=job.id if job is not None else None,
             cvat_task_id=task.id if task is not None else None,
             cvat_project_id=project.id if project is not None else None,
@@ -178,7 +181,7 @@ class JobAnalyticsReportUpdateManager:
         return rq_job.meta.get("job_type") == self._RQ_CUSTOM_ANALYTICS_CHECK_JOB_TYPE
 
     @classmethod
-    def _check_job_analytics(
+    def _check_analytics_report(
         cls, *, cvat_job_id: int = None, cvat_task_id: int = None, cvat_project_id: int = None
     ) -> int:
         if cvat_job_id is not None:
@@ -210,16 +213,15 @@ class JobAnalyticsReportUpdateManager:
             "dataseries": statistics_object.calculate(),
         }
 
-    def _compute_report_for_job(self, db_job):
+    def _compute_report_for_job(self, db_job: Job) -> AnalyticsReport:
         db_report = getattr(db_job, "analytics_report", None)
         was_created = False
         if db_report is None:
             db_report = AnalyticsReport.objects.create(job_id=db_job.id, statistics={})
-            db_report.save()
             was_created = True
             db_job.analytics_report = db_report
 
-        # recalculate the report if it is not relevant
+        # recalculate the report if there is no report or the existing one is outdated
         if db_report.created_date < db_job.updated_date or was_created:
             primary_metrics = [
                 JobAnnotationSpeed(db_job),
@@ -254,11 +256,10 @@ class JobAnalyticsReportUpdateManager:
         was_created = False
         if db_report is None:
             db_report = AnalyticsReport.objects.create(task_id=db_task.id, statistics={})
-            db_report.save()
             db_task.analytics_report = db_report
             was_created = True
 
-        # recalculate the report if it is not relevant
+        # recalculate the report if there is no report or the existing one is outdated
         if db_report.created_date < db_task.updated_date or was_created:
             job_reports = []
             for db_segment in db_task.segment_set.all():
@@ -292,11 +293,10 @@ class JobAnalyticsReportUpdateManager:
         was_created = False
         if db_report is None:
             db_report = AnalyticsReport.objects.create(project_id=db_project.id, statistics={})
-            db_report.save()
             db_project.analytics_report = db_report
             was_created = True
 
-        # recalculate the report if it is not relevant
+        # recalculate the report if there is no report or the existing one is outdated
         if db_report.created_date < db_project.updated_date or was_created:
             job_reports = []
             for db_task in db_project.tasks.all():

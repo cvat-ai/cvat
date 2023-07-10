@@ -11,7 +11,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
 from cvat.apps.analytics_report.models import AnalyticsReport
-from cvat.apps.analytics_report.report.create import JobAnalyticsReportUpdateManager
+from cvat.apps.analytics_report.report.create import AnalyticsReportUpdateManager
 from cvat.apps.analytics_report.report.get import get_analytics_report
 from cvat.apps.analytics_report.serializers import (
     AnalyticsReportCreateSerializer,
@@ -81,12 +81,12 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                     raise NotFound(f"Job {job_id} does not exist") from ex
 
                 try:
-                    rq_id = JobAnalyticsReportUpdateManager().schedule_analytics_check_job(
+                    rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(
                         job=job, user_id=request.user.id
                     )
                     serializer = RqIdSerializer({"rq_id": rq_id})
                     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-                except JobAnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
+                except AnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
                     raise ValidationError(str(ex))
             elif task_id is not None:
                 try:
@@ -95,12 +95,12 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                     raise NotFound(f"Task {task_id} does not exist") from ex
 
                 try:
-                    rq_id = JobAnalyticsReportUpdateManager().schedule_analytics_check_job(
+                    rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(
                         task=task, user_id=request.user.id
                     )
                     serializer = RqIdSerializer({"rq_id": rq_id})
                     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-                except JobAnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
+                except AnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
                     raise ValidationError(str(ex))
             elif project_id is not None:
                 try:
@@ -108,19 +108,19 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 except Project.DoesNotExist as ex:
                     raise NotFound(f"Project {project_id} does not exist") from ex
                 try:
-                    rq_id = JobAnalyticsReportUpdateManager().schedule_analytics_check_job(
+                    rq_id = AnalyticsReportUpdateManager().schedule_analytics_check_job(
                         project=project, user_id=request.user.id
                     )
                     serializer = RqIdSerializer({"rq_id": rq_id})
                     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-                except JobAnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
+                except AnalyticsReportUpdateManager.AnalyticsReportsNotAvailable as ex:
                     raise ValidationError(str(ex))
         else:
             serializer = RqIdSerializer(data={"rq_id": rq_id})
             serializer.is_valid(raise_exception=True)
             rq_id = serializer.validated_data["rq_id"]
 
-            report_manager = JobAnalyticsReportUpdateManager()
+            report_manager = AnalyticsReportUpdateManager()
             rq_job = report_manager.get_analytics_check_job(rq_id)
 
             if rq_job.is_failed:
