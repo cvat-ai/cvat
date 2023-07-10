@@ -780,7 +780,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create_scope_view(cls, iam_context, project: Union[int, Project], request=None):
-        if isinstance(project, int):
+        if not isinstance(project, Project):
             try:
                 project = Project.objects.get(id=project)
             except Project.DoesNotExist as ex:

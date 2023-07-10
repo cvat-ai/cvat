@@ -1499,13 +1499,6 @@ class TestProjectInteraction(_PermissionTestBase):
                 data=dict(image_quality=70, client_files=generate_image_files(2)),
             )
             self.create_gt_job(admin_user, task1_id)
-            task1_jobs = [
-                j.id
-                for j in get_paginated_collection(
-                    api_client.jobs_api.list_endpoint, task_id=task1_id
-                )
-                if j.type == "annotation"
-            ]
 
             (task2_id, _) = create_task(
                 admin_user,
@@ -1513,28 +1506,22 @@ class TestProjectInteraction(_PermissionTestBase):
                 data=dict(image_quality=70, client_files=generate_image_files(2)),
             )
             self.create_gt_job(admin_user, task2_id)
-            task2_jobs = [
-                j.id
-                for j in get_paginated_collection(
-                    api_client.jobs_api.list_endpoint, task_id=task2_id
-                )
-                if j.type == "annotation"
-            ]
 
-            self.create_quality_report(admin_user, task1_id)
-            self.create_quality_report(admin_user, project_id=project.id)
+            task1_report = self.create_quality_report(admin_user, task1_id)
+            project_report1 = self.create_quality_report(admin_user, project_id=project.id)
 
-            self.create_quality_report(admin_user, task2_id)
-            self.create_quality_report(admin_user, project_id=project.id)
+            task2_report = self.create_quality_report(admin_user, task2_id)
+            project_report2 = self.create_quality_report(admin_user, project_id=project.id)
 
-            (reports_list, _) = api_client.quality_api.list_reports(project_id=project.id)
-            assert reports_list.count == 6
-            assert Counter((r.job_id, r.task_id, r.project_id) for r in reports_list.results) == {
-                **{(jid, None, None): 1 for jid in task1_jobs},
-                **{(jid, None, None): 1 for jid in task2_jobs},
-                (None, task1_id, None): 1,
-                (None, task2_id, None): 1,
-                (None, None, project.id): 2,
+            (task_reports, _) = api_client.quality_api.list_reports(parent_id=project_report1["id"])
+            assert Counter(r.id for r in task_reports.results) == {
+                task1_report["id"]: 1,
+            }
+
+            (task_reports, _) = api_client.quality_api.list_reports(parent_id=project_report2["id"])
+            assert Counter(r.id for r in task_reports.results) == {
+                task1_report["id"]: 1,
+                task2_report["id"]: 1,
             }
 
     @pytest.mark.parametrize(
@@ -1550,7 +1537,6 @@ class TestProjectInteraction(_PermissionTestBase):
             )
 
             task_ids = []
-            task_jobs = {}
             task_reports = {}
             task_frame_count = 2
             for i in range(task_count):
@@ -1562,13 +1548,6 @@ class TestProjectInteraction(_PermissionTestBase):
                     ),
                 )
                 task_ids.append(task_id)
-                task_jobs[task_id] = [
-                    j
-                    for j in get_paginated_collection(
-                        api_client.jobs_api.list_endpoint, task_id=task_id
-                    )
-                    if j.type == "annotation"
-                ]
 
                 if i < gt_task_count:
                     self.create_gt_job(admin_user, task_id)

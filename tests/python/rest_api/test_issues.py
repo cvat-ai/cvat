@@ -375,9 +375,10 @@ class TestCommentsListFilters(CollectionSimpleFilterTestBase):
 
     def _get_field_samples(self, field: str) -> Tuple[Any, List[Dict[str, Any]]]:
         if field == "job_id":
-            issue_id, issue_comments = super()._get_field_samples("issue_id")
-            issue = next((s for s in self.sample_issues if s["id"] == issue_id))
-            return issue["job"], issue_comments
+            job_id = next(obj["job"] for obj in self.sample_issues)
+            issue_ids = set(obj["id"] for obj in self.sample_issues if obj["job"] == job_id)
+            comments = [c for c in self.samples if c["issue"] in issue_ids]
+            return job_id, comments
         elif field == "frame_id":
             frame_id = self._find_valid_field_value(self.sample_issues, ["frame"])
             issues = [s["id"] for s in self.sample_issues if s["frame"] == frame_id]
