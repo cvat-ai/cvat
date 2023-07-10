@@ -157,11 +157,12 @@ hr {
 
             .rule--body {
                 display: flex;
+                row-gap: $grid-unit-size;
 
                 .rule--field {
                     > .ant-select {
-                        width: 128px !important;
-                        min-width: 128px !important;
+                        width: $grid-unit-size * 16 !important;
+                        min-width: $grid-unit-size * 16 !important;
                     }
                 }
 
@@ -169,18 +170,18 @@ hr {
                     margin-right: $grid-unit-size;
 
                     > .ant-select {
-                        width: 56px !important;
+                        width: $grid-unit-size * 7 !important;
                     }
                 }
 
                 .rule--value {
                     .ant-select {
-                        width: 156px !important;
-                        min-width: 156px !important;
+                        width: $grid-unit-size * 15 !important;
+                        min-width: $grid-unit-size * 15 !important;
                     }
 
                     .ant-picker {
-                        width: 156px !important;
+                        width: $grid-unit-size * 15 !important;
                     }
                 }
             }
