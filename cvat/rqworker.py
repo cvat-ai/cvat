@@ -68,11 +68,13 @@ if debug.is_debugging_enabled():
 
 if os.environ.get("COVERAGE_PROCESS_START"):
     import coverage
+    default_exit = os._exit
 
-    def coverage_exit():
+    def coverage_exit(*args, **kwargs):
         cov = coverage.Coverage.current()
-        cov.stop()
-        cov.save()
-        os._exit(0)
+        if cov:
+            cov.stop()
+            cov.save()
+        default_exit(*args, **kwargs)
 
     os._exit = coverage_exit
