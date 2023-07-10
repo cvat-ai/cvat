@@ -36,6 +36,7 @@ See:
   - [Dashboard: Management](#dashboard-management)
   - [Dashboard: Monitoring](#dashboard-monitoring)
   - [Dashboards setup](#dashboards-setup)
+- [Example of use](#example-of-use)
 
 ## High-level architecture
 
@@ -271,7 +272,7 @@ The dashboard shows all events, their timestamps, and their source.
 There are two fields with statistics at the bottom of the dashboard,
 about browser and OS users use.
 
-Every column name can be used like a filter.
+Click on the column name to enable a filter.
 
 If you want to inspect the value, hover over it and click
 on the eye icon.
@@ -298,7 +299,7 @@ The dashboard shows user activity.
 
 <!--lint enable maximum-line-length-->
 
-Every column name can be used like a filter.
+Click on the column name to enable a filter.
 
 If you want to inspect the value, hover over it and click
 on the eye icon.
@@ -331,7 +332,7 @@ The dashboard shows server logs, helps handle errors, and shows user activity.
 
 <!--lint enable maximum-line-length-->
 
-Every column name can be used like a filter.
+Click on the column name to enable a filter.
 
 If you want to inspect the value, hover over it and click
 on the eye icon.
@@ -398,3 +399,13 @@ To save the updated configuration, do the following:
 
 For more information,
 see [Grafana Dashboards](https://grafana.com/docs/grafana/latest/dashboards/).
+
+## Example of use
+
+This video demonstrates available by default CVAT analytics features.
+
+<!--lint disable maximum-line-length-->
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/-1kiLPidXpI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+<!--lint enable maximum-line-length-->

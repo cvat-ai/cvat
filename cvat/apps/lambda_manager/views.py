@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import base64
 import json
 import os
@@ -34,6 +36,9 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.lambda_manager.serializers import (
+    FunctionCallRequestSerializer, FunctionCallSerializer
+)
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
@@ -418,7 +423,11 @@ class LambdaQueue:
 
         return [LambdaJob(job) for job in jobs if job.meta.get("lambda")]
 
-    def enqueue(self, lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance):
+    def enqueue(self,
+        lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance,
+        *,
+        job: Optional[int] = None
+    ) -> LambdaJob:
         jobs = self.get_jobs()
         # It is still possible to run several concurrent jobs for the same task.
         # But the race isn't critical. The filtration is just a light-weight
@@ -433,12 +442,13 @@ class LambdaQueue:
         # with invocation of non-trivial functions. For example, it cannot run
         # staticmethod, it cannot run a callable class. Thus I provide an object
         # which has __call__ function.
-        job = queue.create_job(LambdaJob(None),
+        rq_job = queue.create_job(LambdaJob(None),
             meta = { "lambda": True },
             kwargs = {
                 "function": lambda_func,
                 "threshold": threshold,
                 "task": task,
+                "job": job,
                 "quality": quality,
                 "cleanup": cleanup,
                 "conv_mask_to_poly": conv_mask_to_poly,
@@ -446,18 +456,18 @@ class LambdaQueue:
                 "max_distance": max_distance
             })
 
-        queue.enqueue_job(job)
+        queue.enqueue_job(rq_job)
 
-        return LambdaJob(job)
+        return LambdaJob(rq_job)
 
     def fetch_job(self, pk):
         queue = self._get_queue()
-        job = queue.fetch_job(pk)
-        if job is None or not job.meta.get("lambda"):
+        rq_job = queue.fetch_job(pk)
+        if rq_job is None or not rq_job.meta.get("lambda"):
             raise ValidationError("{} lambda job is not found".format(pk),
                 code=status.HTTP_404_NOT_FOUND)
 
-        return LambdaJob(job)
+        return LambdaJob(rq_job)
 
 class LambdaJob:
     def __init__(self, job):
@@ -470,7 +480,10 @@ class LambdaJob:
             "function": {
                 "id": lambda_func.id if lambda_func else None,
                 "threshold": self.job.kwargs.get("threshold"),
-                "task": self.job.kwargs.get("task")
+                "task": self.job.kwargs.get("task"),
+                **({
+                    "job": self.job.kwargs["job"],
+                } if self.job.kwargs.get("job") else {})
             },
             "status": self.job.get_status(),
             "progress": self.job.meta.get('progress', 0),
@@ -513,11 +526,23 @@ class LambdaJob:
     def delete(self):
         self.job.delete()
 
-    @staticmethod
-    def _call_detector(function, db_task, labels, quality, threshold, mapping, conv_mask_to_poly):
+    @classmethod
+    def _call_detector(
+        cls,
+        function: LambdaFunction,
+        db_task: Task,
+        labels: Dict[str, Dict[str, Any]],
+        quality: str,
+        threshold: float,
+        mapping: Optional[Dict[str, str]],
+        conv_mask_to_poly: bool,
+        *,
+        db_job: Optional[Job] = None
+    ):
         class Results:
-            def __init__(self, task_id):
+            def __init__(self, task_id, job_id: Optional[int] = None):
                 self.task_id = task_id
+                self.job_id = job_id
                 self.reset()
 
             def append_shape(self, shape):
@@ -527,11 +552,17 @@ class LambdaJob:
                 self.data["tags"].append(tag)
 
             def submit(self):
-                if not self.is_empty():
-                    serializer = LabeledDataSerializer(data=self.data)
-                    if serializer.is_valid(raise_exception=True):
+                if self.is_empty():
+                    return
+
+                serializer = LabeledDataSerializer(data=self.data)
+                if serializer.is_valid(raise_exception=True):
+                    if self.job_id:
+                        dm.task.patch_job_data(self.job_id, serializer.data, "create")
+                    else:
                         dm.task.patch_task_data(self.task_id, serializer.data, "create")
-                    self.reset()
+
+                self.reset()
 
             def is_empty(self):
                 return not (self.data["tags"] or self.data["shapes"] or self.data["tracks"])
@@ -541,16 +572,21 @@ class LambdaJob:
                 # FIXME: need to provide the correct version here
                 self.data = {"version": 0, "tags": [], "shapes": [], "tracks": []}
 
-        results = Results(db_task.id)
+        results = Results(db_task.id, job_id=db_job.id if db_job else None)
 
-        for frame in range(db_task.data.size):
+        frame_set = cls._get_frame_set(db_task, db_job)
+
+        for frame in frame_set:
             if frame in db_task.data.deleted_frames:
                 continue
-            annotations = function.invoke(db_task, data={
+
+            annotations = function.invoke(db_task, db_job=db_job, data={
                 "frame": frame, "quality": quality, "mapping": mapping,
-                "threshold": threshold })
+                "threshold": threshold
+            })
+
             progress = (frame + 1) / db_task.data.size
-            if not LambdaJob._update_progress(progress):
+            if not cls._update_progress(progress):
                 break
 
             for anno in annotations:
@@ -594,7 +630,7 @@ class LambdaJob:
 
                     results.append_shape(shape)
 
-            # Accumulate data during 100 frames before sumbitting results.
+            # Accumulate data during 100 frames before submitting results.
             # It is optimization to make fewer calls to our server. Also
             # it isn't possible to keep all results in memory.
             if frame and frame % 100 == 0:
@@ -613,11 +649,40 @@ class LambdaJob:
 
         return job.get_status()
 
+    @classmethod
+    def _get_frame_set(cls, db_task: Task, db_job: Optional[Job]):
+        if db_job:
+            task_data = db_task.data
+            data_start_frame = task_data.start_frame
+            step = task_data.get_frame_step()
+            frame_set = sorted(
+                (abs_id - data_start_frame) // step
+                for abs_id in db_job.segment.frame_set
+            )
+        else:
+            frame_set = range(db_task.data.size)
 
-    @staticmethod
-    def _call_reid(function, db_task, quality, threshold, max_distance):
-        data = dm.task.get_task_data(db_task.id)
-        boxes_by_frame = [[] for _ in range(db_task.data.size)]
+        return frame_set
+
+    @classmethod
+    def _call_reid(
+        cls,
+        function: LambdaFunction,
+        db_task: Task,
+        quality: str,
+        threshold: float,
+        max_distance: int,
+        *,
+        db_job: Optional[Job] = None
+    ):
+        if db_job:
+            data = dm.task.get_job_data(db_job.id)
+        else:
+            data = dm.task.get_task_data(db_task.id)
+
+        frame_set = cls._get_frame_set(db_task, db_job)
+
+        boxes_by_frame = {frame: [] for frame in frame_set}
         shapes_without_boxes = []
         for shape in data["shapes"]:
             if shape["type"] == str(ShapeType.RECTANGLE):
@@ -626,18 +691,18 @@ class LambdaJob:
                 shapes_without_boxes.append(shape)
 
         paths = {}
-        for frame in range(db_task.data.size - 1):
-            boxes0 = boxes_by_frame[frame]
+        for i, (frame0, frame1) in enumerate(zip(frame_set[:-1], frame_set[1:])):
+            boxes0 = boxes_by_frame[frame0]
             for box in boxes0:
                 if "path_id" not in box:
                     path_id = len(paths)
                     paths[path_id] = [box]
                     box["path_id"] = path_id
 
-            boxes1 = boxes_by_frame[frame + 1]
+            boxes1 = boxes_by_frame[frame1]
             if boxes0 and boxes1:
-                matching = function.invoke(db_task, data={
-                    "frame0": frame, "frame1": frame + 1, "quality": quality,
+                matching = function.invoke(db_task, db_job=db_job, data={
+                    "frame0": frame0, "frame1": frame1, "quality": quality,
                     "boxes0": boxes0, "boxes1": boxes1, "threshold": threshold,
                     "max_distance": max_distance})
 
@@ -647,12 +712,11 @@ class LambdaJob:
                         boxes1[idx1]["path_id"] = path_id
                         paths[path_id].append(boxes1[idx1])
 
-            progress = (frame + 2) / db_task.data.size
-            if not LambdaJob._update_progress(progress):
+            if not LambdaJob._update_progress((i + 1) / len(frame_set)):
                 break
 
 
-        for box in boxes_by_frame[db_task.data.size - 1]:
+        for box in boxes_by_frame[frame_set[-1]]:
             if "path_id" not in box:
                 path_id = len(paths)
                 paths[path_id] = [box]
@@ -680,7 +744,7 @@ class LambdaJob:
                 box["attributes"] = []
 
         for track in tracks:
-            if track["shapes"][-1]["frame"] != db_task.data.size - 1:
+            if track["shapes"][-1]["frame"] != frame_set[-1]:
                 box = track["shapes"][-1].copy()
                 box["outside"] = True
                 box["frame"] += 1
@@ -692,14 +756,29 @@ class LambdaJob:
 
             serializer = LabeledDataSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
-                dm.task.put_task_data(db_task.id, serializer.data)
+                if db_job:
+                    dm.task.put_job_data(db_job.id, serializer.data)
+                else:
+                    dm.task.put_task_data(db_task.id, serializer.data)
 
-    @staticmethod
-    def __call__(function, task, quality, cleanup, **kwargs):
+    @classmethod
+    def __call__(cls, function, task: int, quality: str, cleanup: bool, **kwargs):
         # TODO: need logging
-        db_task = Task.objects.get(pk=task)
+        db_job = None
+        if job := kwargs.get('job'):
+            db_job = Job.objects.select_related('segment', 'segment__task').get(pk=job)
+            db_task = db_job.segment.task
+        else:
+            db_task = Task.objects.get(pk=task)
+
         if cleanup:
-            dm.task.delete_task_data(db_task.id)
+            if db_job:
+                dm.task.delete_job_data(db_job.id)
+            elif db_task:
+                dm.task.delete_task_data(db_task.id)
+            else:
+                assert False
+
         db_labels = (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all()
         labels = {}
         for label in db_labels:
@@ -708,11 +787,12 @@ class LambdaJob:
                 labels[label.name]['attributes'][attr['name']] = attr['id']
 
         if function.kind == LambdaType.DETECTOR:
-            LambdaJob._call_detector(function, db_task, labels, quality,
-                kwargs.get("threshold"), kwargs.get("mapping"), kwargs.get("conv_mask_to_poly"))
+            cls._call_detector(function, db_task, labels, quality,
+                kwargs.get("threshold"), kwargs.get("mapping"), kwargs.get("conv_mask_to_poly"),
+                db_job=db_job)
         elif function.kind == LambdaType.REID:
-            LambdaJob._call_reid(function, db_task, quality,
-                kwargs.get("threshold"), kwargs.get("max_distance"))
+            cls._call_reid(function, db_task, quality,
+                kwargs.get("threshold"), kwargs.get("max_distance"), db_job=db_job)
 
 def return_response(success_code=status.HTTP_200_OK):
     def wrap_response(func):
@@ -820,19 +900,36 @@ class FunctionViewSet(viewsets.ViewSet):
         operation_id='lambda_retrieve_requests',
         summary='Method returns the status of the request',
         parameters=[
-            # specify correct type
-            OpenApiParameter('id', location=OpenApiParameter.PATH, type=OpenApiTypes.INT,
+            OpenApiParameter('id', location=OpenApiParameter.PATH, type=OpenApiTypes.STR,
                 description='Request id'),
-        ]),
+        ],
+        responses={
+            '200': FunctionCallSerializer
+        }
+    ),
     list=extend_schema(
         operation_id='lambda_list_requests',
-        summary='Method returns a list of requests'),
-    #TODO
+        summary='Method returns a list of requests',
+        responses={
+            '200': FunctionCallSerializer(many=True)
+        }
+    ),
     create=extend_schema(
         parameters=ORGANIZATION_OPEN_API_PARAMETERS,
-        summary='Method calls the function'
+        summary='Method calls the function',
+        request=FunctionCallRequestSerializer,
+        responses={
+            '200': FunctionCallSerializer
+        }
     ),
-    delete=extend_schema(summary='Method cancels the request')
+    delete=extend_schema(
+        operation_id='lambda_delete_requests',
+        summary='Method cancels the request',
+        parameters=[
+            OpenApiParameter('id', location=OpenApiParameter.PATH, type=OpenApiTypes.STR,
+                description='Request id'),
+        ]
+    ),
 )
 class RequestViewSet(viewsets.ViewSet):
     iam_organization_field = None
@@ -855,47 +952,57 @@ class RequestViewSet(viewsets.ViewSet):
         task_ids = set(queryset.values_list("id", flat=True))
 
         queue = LambdaQueue()
-        return [job.to_dict() for job in queue.get_jobs() if job.get_task() in task_ids]
+        rq_jobs = [job.to_dict() for job in queue.get_jobs() if job.get_task() in task_ids]
+
+        response_serializer = FunctionCallSerializer(rq_jobs, many=True)
+        return response_serializer.data
 
     @return_response()
     def create(self, request):
+        request_serializer = FunctionCallRequestSerializer(data=request.data)
+        request_serializer.is_valid(raise_exception=True)
+        request_data = request_serializer.validated_data
+
         try:
-            function = request.data['function']
-            threshold = request.data.get('threshold')
-            task = request.data['task']
-            quality = request.data.get("quality")
-            cleanup = request.data.get('cleanup', False)
-            conv_mask_to_poly = request.data.get('convMaskToPoly', False)
-            mapping = request.data.get('mapping')
-            max_distance = request.data.get('max_distance')
+            function = request_data['function']
+            threshold = request_data.get('threshold')
+            task = request_data['task']
+            job = request_data.get('job', None)
+            quality = request_data.get("quality")
+            cleanup = request_data.get('cleanup', False)
+            conv_mask_to_poly = request_data.get('convMaskToPoly', False)
+            mapping = request_data.get('mapping')
+            max_distance = request_data.get('max_distance')
         except KeyError as err:
             raise ValidationError(
-                '`{}` lambda function was run '.format(request.data.get('function', 'undefined')) +
+                '`{}` lambda function was run '.format(request_data.get('function', 'undefined')) +
                 'with wrong arguments ({})'.format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST)
 
         gateway = LambdaGateway()
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
-        job = queue.enqueue(lambda_func, threshold, task, quality,
-            mapping, cleanup, conv_mask_to_poly, max_distance)
+        rq_job = queue.enqueue(lambda_func, threshold, task, quality,
+            mapping, cleanup, conv_mask_to_poly, max_distance, job=job)
 
-        return job.to_dict()
+        response_serializer = FunctionCallSerializer(rq_job.to_dict())
+        return response_serializer.data
 
     @return_response()
     def retrieve(self, request, pk):
         self.check_object_permissions(request, pk)
         queue = LambdaQueue()
-        job = queue.fetch_job(pk)
+        rq_job = queue.fetch_job(pk)
 
-        return job.to_dict()
+        response_serializer = FunctionCallSerializer(rq_job.to_dict())
+        return response_serializer.data
 
     @return_response(status.HTTP_204_NO_CONTENT)
     def delete(self, request, pk):
         self.check_object_permissions(request, pk)
         queue = LambdaQueue()
-        job = queue.fetch_job(pk)
-        job.delete()
+        rq_job = queue.fetch_job(pk)
+        rq_job.delete()
 
 def ONNXDetector(request):
     dirname = os.path.join(settings.STATIC_ROOT, 'lambda_manager')

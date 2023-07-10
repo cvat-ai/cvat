@@ -19,7 +19,7 @@ interface StateToProps {
     hidden: boolean;
     taskInstance: any;
     activeInference: ActiveInference | null;
-    taskNamePlugins: PluginComponent[];
+    ribbonPlugins: PluginComponent[];
 }
 
 interface DispatchToProps {
@@ -42,7 +42,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         deleted: id in deletes ? deletes[id] === true : false,
         taskInstance: task,
         activeInference: state.models.inferences[id] || null,
-        taskNamePlugins: state.plugins.components.taskItem.name,
+        ribbonPlugins: state.plugins.components.taskItem.ribbon,
     };
 }
 

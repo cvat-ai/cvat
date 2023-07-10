@@ -10,7 +10,7 @@ import os, os.path as osp
 import zipfile
 
 from django.conf import settings
-from django.db.models import QuerySet
+from django.db import models
 
 
 def current_function_name(depth=1):
@@ -40,15 +40,34 @@ def bulk_create(db_model, objects, flt_param):
 
     return []
 
-def is_prefetched(queryset: QuerySet, field: str) -> bool:
+def is_prefetched(queryset: models.QuerySet, field: str) -> bool:
     return field in queryset._prefetch_related_lookups
 
-def add_prefetch_fields(queryset: QuerySet, fields: Sequence[str]) -> QuerySet:
+def add_prefetch_fields(queryset: models.QuerySet, fields: Sequence[str]) -> models.QuerySet:
     for field in fields:
         if not is_prefetched(queryset, field):
             queryset = queryset.prefetch_related(field)
 
     return queryset
+
+def get_cached(queryset: models.QuerySet, pk: int) -> models.Model:
+    """
+    Like regular queryset.get(), but checks for the cached values first
+    instead of just making a request.
+    """
+
+    # Read more about caching insights:
+    # https://www.mattduck.com/2021-01-django-orm-result-cache.html
+    # The field is initialized on accessing the query results, eg. on iteration
+    if getattr(queryset, '_result_cache'):
+        result = next((obj for obj in queryset if obj.pk == pk), None)
+    else:
+        result = None
+
+    if result is None:
+        result = queryset.get(id=pk)
+
+    return result
 
 def deepcopy_simple(v):
     # Default deepcopy is very slow

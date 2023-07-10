@@ -25,12 +25,12 @@ PREFIX = "test"
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
 
-DC_FILES = [
+DC_FILES = CONTAINER_NAME_FILES + [
     "docker-compose.dev.yml",
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.test_servers.yml",
-] + CONTAINER_NAME_FILES
+]
 
 
 class Container(str, Enum):
@@ -39,6 +39,7 @@ class Container(str, Enum):
     WORKER_ANNOTATION = "cvat_worker_annotation"
     WORKER_IMPORT = "cvat_worker_import"
     WORKER_EXPORT = "cvat_worker_export"
+    WORKER_QUALITY_REPORTS = "cvat_worker_quality_reports"
     WORKER_WEBHOOKS = "cvat_worker_webhooks"
     UTILS = "cvat_utils"
 

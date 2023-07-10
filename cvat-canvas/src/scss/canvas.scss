@@ -148,6 +148,46 @@ polyline.cvat_canvas_shape_splitting {
     stroke-dasharray: 5;
 }
 
+.cvat_canvas_ground_truth {
+    stroke-dasharray: 1;
+}
+
+.cvat_canvas_conflicted {
+    stroke: #ff4800;
+    fill: #ff4800;
+
+    rect,
+    ellipse,
+    polygon,
+    polyline,
+    line {
+        fill: #ff4800;
+        stroke: #ff4800;
+    }
+
+    circle {
+        fill: #ff4800;
+    }
+}
+
+.cvat_canvas_warned {
+    stroke: #ff7301;
+    fill: #ff7301;
+
+    rect,
+    ellipse,
+    polygon,
+    polyline,
+    line {
+        fill: #ff7301;
+        stroke: #ff7301;
+    }
+
+    circle {
+        fill: #ff7301;
+    }
+}
+
 .cvat_canvas_shape_occluded_point {
     stroke-dasharray: 1 !important;
     stroke: white;
@@ -298,6 +338,38 @@ g.cvat_canvas_shape_occluded {
     position: relative;
 }
 
+.cvat-canvas-highlight-enabled {
+    svg {
+        >rect:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >ellipse:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >polygon:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >polyline:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
+        >line:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
+            fill: gray;
+            stroke: gray;
+        }
+
+        >circle:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
+            fill: gray;
+        }
+
+        >g:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned) {
+            rect,
+            ellipse,
+            polygon,
+            polyline,
+            line {
+                fill: gray;
+                stroke: gray;
+            }
+
+            circle {
+                fill: gray;
+            }
+        }
+    }
+}
+
 #cvat_canvas_text_content {
     text-rendering: optimizeSpeed;
     position: absolute;
@@ -379,4 +451,9 @@ g.cvat_canvas_shape_occluded {
         stroke-dashoffset: 300;
         stroke: #09c;
     }
+}
+
+.cvat_canvas_shape_darken {
+    fill: #838383;
+    stroke: #838383;
 }

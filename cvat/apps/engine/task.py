@@ -15,8 +15,6 @@ import shutil
 from distutils.dir_util import copy_tree
 from urllib import parse as urlparse
 from urllib import request as urlrequest
-import ipaddress
-import dns.resolver
 import django_rq
 import pytz
 
@@ -30,7 +28,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
 from cvat.apps.engine.utils import av_scan_paths, get_rq_job_meta
-from cvat.utils.http import make_requests_session
+from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import detect_related_images
@@ -313,6 +311,7 @@ def _validate_manifest(
     db_cloud_storage: Optional[Any],
     data_storage_method: str,
     data_sorting_method: str,
+    isBackupRestore: bool,
 ) -> Optional[str]:
     if manifests:
         if len(manifests) != 1:
@@ -331,15 +330,21 @@ def _validate_manifest(
         if is_manifest(full_manifest_path):
             if not (
                 data_sorting_method == models.SortingMethod.PREDEFINED or
-                data_storage_method == models.StorageMethodChoice.CACHE and settings.USE_CACHE
+                (settings.USE_CACHE and data_storage_method == models.StorageMethodChoice.CACHE) or
+                isBackupRestore
             ):
+                cache_disabled_message = ""
                 if data_storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
-                    slogger.glob.warning("This server doesn't allow to use cache for data. "
-                        "Please turn 'use cache' off and try to recreate the task")
+                    cache_disabled_message = (
+                        "This server doesn't allow to use cache for data. "
+                        "Please turn 'use cache' off and try to recreate the task"
+                    )
+                    slogger.glob.warning(cache_disabled_message)
 
                 raise ValidationError(
                     "A manifest file can only be used with the 'use cache' option "
-                    "or when the 'sorting_method' == 'predefined'"
+                    "or when 'sorting_method' is 'predefined'" + \
+                    (". " + cache_disabled_message if cache_disabled_message else "")
                 )
             return manifest_file
 
@@ -347,44 +352,13 @@ def _validate_manifest(
 
     return None
 
-def _validate_url(url):
-    def _validate_ip_address(ip_address):
-        if not ip_address.is_global:
-            raise ValidationError('Non public IP address \'{}\' is provided!'.format(ip_address))
-
+def _validate_scheme(url):
     ALLOWED_SCHEMES = ['http', 'https']
 
     parsed_url = urlparse.urlparse(url)
 
     if parsed_url.scheme not in ALLOWED_SCHEMES:
-        raise ValueError('Unsupported URL sheme: {}. Only http and https are supported'.format(parsed_url.scheme))
-
-    try:
-        ip_address = ipaddress.ip_address(parsed_url.hostname)
-        _validate_ip_address(ip_address)
-    except ValueError as _:
-        ip_v4_records = None
-        ip_v6_records = None
-        try:
-            ip_v4_records = dns.resolver.query(parsed_url.hostname, 'A')
-            for record in ip_v4_records:
-                _validate_ip_address(ipaddress.ip_address(record.to_text()))
-        except ValidationError:
-            raise
-        except Exception as e:
-            slogger.glob.info('Cannot get A record for domain \'{}\': {}'.format(parsed_url.hostname, e))
-
-        try:
-            ip_v6_records = dns.resolver.query(parsed_url.hostname, 'AAAA')
-            for record in ip_v6_records:
-                _validate_ip_address(ipaddress.ip_address(record.to_text()))
-        except ValidationError:
-            raise
-        except Exception as e:
-            slogger.glob.info('Cannot get AAAA record for domain \'{}\': {}'.format(parsed_url.hostname, e))
-
-        if not ip_v4_records and not ip_v6_records:
-            raise ValidationError('Cannot resolve IP address for domain \'{}\''.format(parsed_url.hostname))
+        raise ValueError('Unsupported URL scheme: {}. Only http and https are supported'.format(parsed_url.scheme))
 
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
@@ -395,18 +369,27 @@ def _download_data(urls, upload_dir):
             name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
             if name in local_files:
                 raise Exception("filename collision: {}".format(name))
-            _validate_url(url)
+            _validate_scheme(url)
             slogger.glob.info("Downloading: {}".format(url))
             job.meta['status'] = '{} is being downloaded..'.format(url)
             job.save_meta()
 
-            response = session.get(url, stream=True)
+            response = session.get(url, stream=True, proxies=PROXIES_FOR_UNTRUSTED_URLS)
             if response.status_code == 200:
                 response.raw.decode_content = True
                 with open(os.path.join(upload_dir, name), 'wb') as output_file:
                     shutil.copyfileobj(response.raw, output_file)
             else:
-                raise Exception("Failed to download " + url)
+                error_message = f"Failed to download {response.url}"
+                if url != response.url:
+                    error_message += f" (redirected from {url})"
+
+                if response.status_code == 407:
+                    error_message += "; likely attempt to access internal host"
+                elif response.status_code:
+                    error_message += f"; HTTP error {response.status_code}"
+
+                raise Exception(error_message)
 
             local_files[name] = True
 
@@ -547,6 +530,7 @@ def _create_thread(
         db_cloud_storage=db_data.cloud_storage if is_data_in_cloud else None,
         data_storage_method=db_data.storage_method,
         data_sorting_method=data['sorting_method'],
+        isBackupRestore=isBackupRestore,
     )
 
     manifest = None

@@ -22,7 +22,7 @@ from cvat.apps.events.handlers import (get_request, get_serializer, get_user,
                                        get_instance_diff, organization_id,
                                        project_id)
 from cvat.apps.organizations.models import Invitation, Membership, Organization
-from cvat.utils.http import make_requests_session
+from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
 
 from .event_type import EventTypeChoice, event_name
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
@@ -55,6 +55,7 @@ def send_webhook(webhook, payload, redelivery=False):
                 headers=headers,
                 timeout=WEBHOOK_TIMEOUT,
                 stream=True,
+                proxies=PROXIES_FOR_UNTRUSTED_URLS,
             )
             status_code = response.status_code
             response_body = response.raw.read(

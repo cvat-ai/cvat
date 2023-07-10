@@ -7,12 +7,13 @@ import React from 'react';
 
 import Text from 'antd/lib/typography/Text';
 
-import { StatesOrdering } from 'reducers';
+import { StatesOrdering, Workspace } from 'reducers';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { ObjectState } from 'cvat-core-wrapper';
 import ObjectListHeader from './objects-list-header';
 
 interface Props {
+    workspace: Workspace;
     readonly: boolean;
     statesHidden: boolean;
     statesLocked: boolean;
@@ -22,6 +23,7 @@ interface Props {
     objectStates: any[];
     switchLockAllShortcut: string;
     switchHiddenAllShortcut: string;
+    showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
     lockAllStates(): void;
     unlockAllStates(): void;
@@ -29,11 +31,13 @@ interface Props {
     expandAllStates(): void;
     hideAllStates(): void;
     showAllStates(): void;
+    changeShowGroundTruth(): void;
 }
 
 function ObjectListComponent(props: Props): JSX.Element {
     const {
         readonly,
+        workspace,
         statesHidden,
         statesLocked,
         statesCollapsedAll,
@@ -42,6 +46,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         objectStates,
         switchLockAllShortcut,
         switchHiddenAllShortcut,
+        showGroundTruth,
         changeStatesOrdering,
         lockAllStates,
         unlockAllStates,
@@ -49,6 +54,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         expandAllStates,
         hideAllStates,
         showAllStates,
+        changeShowGroundTruth,
     } = props;
 
     let latestZOrder: number | null = null;
@@ -56,12 +62,14 @@ function ObjectListComponent(props: Props): JSX.Element {
         <>
             <ObjectListHeader
                 readonly={readonly}
+                workspace={workspace}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
                 statesCollapsed={statesCollapsedAll}
                 statesOrdering={statesOrdering}
                 switchLockAllShortcut={switchLockAllShortcut}
                 switchHiddenAllShortcut={switchHiddenAllShortcut}
+                showGroundTruth={showGroundTruth}
                 changeStatesOrdering={changeStatesOrdering}
                 lockAllStates={lockAllStates}
                 unlockAllStates={unlockAllStates}
@@ -69,6 +77,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                 expandAllStates={expandAllStates}
                 hideAllStates={hideAllStates}
                 showAllStates={showAllStates}
+                changeShowGroundTruth={changeShowGroundTruth}
             />
             <div className='cvat-objects-sidebar-states-list'>
                 {sortedStatesID.map(

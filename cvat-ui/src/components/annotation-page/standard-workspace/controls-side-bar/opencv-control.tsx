@@ -245,7 +245,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     toolsBlockerState.algorithmsLocked ? 0 : threshold);
                 let points = [];
                 if (toolsBlockerState.algorithmsLocked && this.latestPoints.length > 2) {
-                    // disable approximation for lastest two points to disable fickering
+                    // disable approximation for latest two points to disable fickering
                     const [x, y] = this.latestPoints.slice(-2);
                     this.latestPoints.splice(this.latestPoints.length - 2, 2);
                     points = openCVWrapper.contours.approxPoly(

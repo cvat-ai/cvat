@@ -96,7 +96,7 @@ def make_exporter(name):
 
 
 # Add checking for TF availability to avoid CVAT sever instance / interpreter
-# crash and provide a meaningful diagnistic message in the case of AVX
+# crash and provide a meaningful diagnostic message in the case of AVX
 # instructions unavailability:
 # https://github.com/openvinotoolkit/cvat/pull/1567
 import datumaro.util.tf_util as TF

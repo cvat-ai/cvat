@@ -91,6 +91,7 @@ spec:
               secretKeyRef:
                 name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: password
+          {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with .Values.cvat.backend.worker.webhooks.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}

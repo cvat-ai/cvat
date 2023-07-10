@@ -18,9 +18,9 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
 
 Cypress.Commands.add('assignJobToUser', (jobID, user) => {
     cy.getJobNum(jobID).then(($job) => {
-        cy.get('.cvat-task-jobs-table')
+        cy.get('.cvat-jobs-list')
             .contains('a', `Job #${$job}`)
-            .parents('.cvat-task-jobs-table-row')
+            .parents('.cvat-job-item')
             .find('.cvat-job-assignee-selector')
             .click();
     });
