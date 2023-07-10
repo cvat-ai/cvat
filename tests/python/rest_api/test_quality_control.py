@@ -1322,6 +1322,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         assert new_report["summary"]["conflict_count"] != old_report["summary"]["conflict_count"]
 
 
+@pytest.mark.usefixtures("clear_rq_per_class")
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestProjectInteraction(_PermissionTestBase):
     def test_can_create_task_settings_when_not_in_project(

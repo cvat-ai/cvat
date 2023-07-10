@@ -205,6 +205,38 @@ def kube_restore_clickhouse_db():
     )
 
 
+def docker_clear_rq():
+    docker_exec_cvat(
+        [
+            "/bin/sh",
+            "-c",
+            "python",
+            "rqscheduler.py",
+            "--clear",
+            "--host",
+            "${CVAT_REDIS_HOST}",
+            "--password",
+            "${CVAT_REDIS_PASSWORD}",
+        ]
+    )
+
+
+def kube_clear_rq():
+    kube_exec_cvat(
+        [
+            "/bin/sh",
+            "-c",
+            "python",
+            "rqscheduler.py",
+            "--clear",
+            "--host",
+            "${CVAT_REDIS_HOST}",
+            "--password",
+            "${CVAT_REDIS_PASSWORD}",
+        ]
+    )
+
+
 def running_containers():
     return [cn for cn in _run("docker ps --format {{.Names}}")[0].split("\n") if cn]
 
@@ -506,6 +538,24 @@ def restore_cvat_data(request):
         docker_restore_data_volumes()
     else:
         kube_restore_data_volumes()
+
+
+@pytest.fixture(scope="class")
+def clear_rq_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_clear_rq()
+    else:
+        kube_clear_rq()
+
+
+@pytest.fixture(scope="function")
+def clear_rq_per_function(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_clear_rq()
+    else:
+        kube_clear_rq()
 
 
 @pytest.fixture(scope="function")
