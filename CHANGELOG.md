@@ -7,10 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased]
 ### Added
-- Now CVAT supports project/task markdown description with additional assets
-(png, jpeg, gif, webp images and pdf files) (<https://github.com/opencv/cvat/pull/6191>)
-- Ground Truth jobs and quality analytics for tasks (<https://github.com/opencv/cvat/pull/6039>)
-
+- TDB
 
 ### Changed
 - TDB
@@ -22,6 +19,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
+- TDB
+
+### Security
+- TDB
+
+## \[2.5.0] - 2023-07-05
+### Added
+- Now CVAT supports project/task markdown description with additional assets
+  (png, jpeg, gif, webp images and pdf files) (<https://github.com/opencv/cvat/pull/6191>)
+- Ground Truth jobs and quality analytics for tasks (<https://github.com/opencv/cvat/pull/6039>)
+
+### Fixed
 - The problem with manifest file in tasks restored from backup (<https://github.com/opencv/cvat/issues/5971>)
 - The problem with task mode in a task restored from backup (<https://github.com/opencv/cvat/issues/5668>)
 - Visible 'To background' button in review mode (<https://github.com/opencv/cvat/pull/6363>)
@@ -30,7 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[API\] Invalid schema for the owner field in several endpoints (<https://github.com/opencv/cvat/pull/6343>)
 - \[SDK\] Loading tasks that have been cached with the PyTorch adapter
   (<https://github.com/opencv/cvat/issues/6047>)
-- The problem with importing annotations if dataset has extra dots in filenames (<https://github.com/opencv/cvat/pull/6350>)
+- The problem with importing annotations if dataset has extra dots in filenames
+  (<https://github.com/opencv/cvat/pull/6350>)
 
 ### Security
 - More comprehensive SSRF mitigations were implemented.
