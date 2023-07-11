@@ -1615,18 +1615,18 @@ class TestProjectInteraction(_PermissionTestBase):
                 )
             )
 
+            (project_settings, _) = api_client.quality_api.create_settings(
+                quality_settings_request=models.QualitySettingsRequest(
+                    project_id=project.id, iou_threshold=0.001
+                )
+            )
+
             (task_id, _) = create_task(
                 admin_user,
                 spec=dict(name="test task", project_id=project.id),
                 data=dict(image_quality=70, client_files=generate_image_files(2)),
             )
             self.create_gt_job(admin_user, task_id)
-
-            (project_settings, _) = api_client.quality_api.create_settings(
-                quality_settings_request=models.QualitySettingsRequest(
-                    project_id=project.id, iou_threshold=0.001
-                )
-            )
 
             task_report = self.create_quality_report(admin_user, task_id)
 
