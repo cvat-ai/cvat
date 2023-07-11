@@ -1059,11 +1059,41 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     };
 
-    private onMouseUp = (event: MouseEvent): void => {
-        if (event.button === 0 || event.button === 1) {
+    private onMouseDown = (clientX: number, clientY: number, altKey: boolean): void => {
+        if (
+            [Mode.IDLE, Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT]
+                .includes(this.mode) || altKey
+        ) {
+            this.controller.enableDrag(clientX, clientY);
+        }
+    }
+
+    private onMouseUp = (event: MouseEvent | TouchEvent): void => {
+        if (event instanceof TouchEvent || event.button === 0 || event.button === 1) {
             this.controller.disableDrag();
         }
-    };
+    }
+
+    private onMove = (clientX: number, clientY: number, modifierKeyPressed: boolean): void => {
+        this.controller.drag(clientX, clientY);
+
+        if (this.mode !== Mode.IDLE) return;
+        if (modifierKeyPressed) return;
+
+        const { offset } = this.controller.geometry;
+        const [x, y] = translateToSVG(this.content, [clientX, clientY]);
+        const event: CustomEvent = new CustomEvent('canvas.moved', {
+            bubbles: false,
+            cancelable: true,
+            detail: {
+                x: x - offset,
+                y: y - offset,
+                states: this.controller.objects,
+            },
+        });
+
+        this.canvas.dispatchEvent(event);
+    }
 
     public constructor(model: CanvasModel & Master, controller: CanvasController) {
         this.controller = controller;
@@ -1237,18 +1267,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
             e.preventDefault();
         });
 
-        this.canvas.addEventListener('mousedown', (event): void => {
-            if ([0, 1].includes(event.button)) {
-                if (
-                    [Mode.IDLE, Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT]
-                        .includes(this.mode) || event.button === 1 || event.altKey
-                ) {
-                    this.controller.enableDrag(event.clientX, event.clientY);
-                }
+        this.canvas.addEventListener('mousedown', (e: MouseEvent): void => {
+            if ([0, 1].includes(e.button)) {
+                this.onMouseDown(e.clientX, e.clientY, e.altKey);
             }
+        });
+        this.canvas.addEventListener('touchstart', (e: TouchEvent) => {
+            const touch = e.touches[0];
+            this.onMouseDown(touch.clientX, touch.clientY, e.altKey);
         });
 
         window.document.addEventListener('mouseup', this.onMouseUp);
+        window.document.addEventListener('touchend', this.onMouseUp);
         window.document.addEventListener('keydown', this.onShiftKeyDown);
         window.document.addEventListener('keyup', this.onShiftKeyUp);
 
@@ -1266,25 +1296,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             event.preventDefault();
         });
 
-        this.canvas.addEventListener('mousemove', (e): void => {
-            this.controller.drag(e.clientX, e.clientY);
-
-            if (this.mode !== Mode.IDLE) return;
-            if (e.ctrlKey || e.altKey) return;
-
-            const { offset } = this.controller.geometry;
-            const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
-            const event: CustomEvent = new CustomEvent('canvas.moved', {
-                bubbles: false,
-                cancelable: true,
-                detail: {
-                    x: x - offset,
-                    y: y - offset,
-                    states: this.controller.objects,
-                },
-            });
-
-            this.canvas.dispatchEvent(event);
+        this.canvas.addEventListener('mousemove', (e: MouseEvent): void => {
+            this.onMove(e.clientX, e.clientY, e.ctrlKey || e.altKey);
+        });
+        this.canvas.addEventListener('touchmove', (e: TouchEvent): void => {
+            const touch = e.touches[0];
+            this.onMove(touch.clientX, touch.clientY, e.ctrlKey || e.altKey);
         });
 
         this.content.oncontextmenu = (): boolean => false;

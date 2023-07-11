@@ -169,12 +169,14 @@ SVG.Element.prototype.resize = function constructor(...args: any): any {
             const { event } = e.detail;
             this.rotationPointPressed = e.type === 'rot';
             if (
-                event.button === 0 &&
-                // ignore shift key for cuboids (change perspective) and rectangles (precise rotation)
-                (!event.shiftKey || (
-                    this.el.parent().hasClass('cvat_canvas_shape_cuboid')
-                    || this.el.type  === 'rect')
-                ) && !event.altKey
+                (event instanceof MouseEvent &&
+                    event.button === 0 &&
+                    // ignore shift key for cuboids (change perspective) and rectangles (precise rotation)
+                    (!event.shiftKey ||
+                        this.el.parent().hasClass('cvat_canvas_shape_cuboid') ||
+                        this.el.type === 'rect') &&
+                    !event.altKey) ||
+                event instanceof TouchEvent
             ) {
                 return handler.constructor.prototype.resize.call(this, e);
             }
