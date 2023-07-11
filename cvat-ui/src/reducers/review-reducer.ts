@@ -131,8 +131,28 @@ export default function (state: ReviewState = defaultState, action: any): Review
                                 }
                             });
                         });
-                        mainConflict.description = descriptionList.join(', ');
-                        mergedFrameConflicts.push(mainConflict);
+
+                        // decorate the original conflict to avoid changing it
+                        const description = descriptionList.join(', ');
+                        const visibleConflict = new Proxy(mainConflict, {
+                            get(target, prop, receiver) {
+                                if (prop === 'description') {
+                                    return description;
+                                }
+
+                                // By default, it looks like Reflect.get(target, prop, receiver)
+                                // which has a different value of `this`
+                                const value = target[prop];
+                                if (value instanceof Function) {
+                                    return function (...args) {
+                                        return value.apply(this === receiver ? target : this, args);
+                                    };
+                                }
+                                return value;
+                            },
+                        });
+
+                        mergedFrameConflicts.push(visibleConflict);
                     }
                 }
             }
