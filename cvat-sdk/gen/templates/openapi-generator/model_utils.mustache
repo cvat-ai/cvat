@@ -1,7 +1,7 @@
 {{>partial_header}}
 
 from datetime import date, datetime  # noqa: F401
-from copy import deepcopy
+from copy import copy, deepcopy
 import inspect
 import io
 import os
@@ -1311,6 +1311,8 @@ def validate_and_convert_types(input_value, required_types_mixed, path_to_item,
         # for this type, there are not more inner variables left to look at
         return input_value
     if isinstance(input_value, list):
+        input_value = copy(input_value) # avoid changing the input value
+
         if input_value == []:
             # allow an empty list
             return input_value
@@ -1326,6 +1328,8 @@ def validate_and_convert_types(input_value, required_types_mixed, path_to_item,
                 configuration=configuration
             )
     elif isinstance(input_value, dict):
+        input_value = copy(input_value) # avoid changing the input value
+
         if input_value == {}:
             # allow an empty dict
             return input_value
