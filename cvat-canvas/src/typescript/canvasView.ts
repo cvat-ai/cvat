@@ -2183,7 +2183,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private deactivateShape(): void {
-        if (this.activeElement.clientID !== null) {
+        if (this.activeElement.clientID) {
             const { displayAllText } = this.configuration;
             const { clientID } = this.activeElement;
             const drawnState = this.drawnStates[clientID];
