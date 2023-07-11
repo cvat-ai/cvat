@@ -169,6 +169,12 @@ function ItemAttributeComponent(props: Props): JSX.Element {
             <Col span={16}>
                 <TextArea
                     ref={ref}
+                    size='small'
+                    disabled={readonly}
+                    style={{
+                        height: Math.min(120, attrValue.split('\n').length * 24),
+                        minHeight: Math.min(120, attrValue.split('\n').length * 24),
+                    }}
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>): void => {
                         if (ref.current?.resizableTextArea?.textArea) {
                             setSelectionStart(ref.current.resizableTextArea.textArea.selectionStart);
