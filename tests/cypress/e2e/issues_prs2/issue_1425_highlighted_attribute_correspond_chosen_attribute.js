@@ -38,7 +38,7 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
                 });
             });
             cy.get('.cvat-attribute-annotation-sidebar-attr-editor').within(() => {
-                cy.get('[type="text"]').should('have.value', textValue);
+                cy.get('textarea').should('have.value', textValue);
             });
         });
         it('Go to next attribute and check again', () => {
@@ -49,7 +49,7 @@ context('The highlighted attribute in AAM should correspond to the chosen attrib
                 });
             });
             cy.get('.cvat-attribute-annotation-sidebar-attr-editor').within(() => {
-                cy.get('[type="text"]').should('have.value', textValue);
+                cy.get('textarea').should('have.value', textValue);
             });
         });
     });

@@ -1825,6 +1825,10 @@ class DatasetComparator:
                 _matched_shapes.add(matched_ann_id)
             resulting_distances.append(similarity)
 
+        resulting_distances = [
+            sim if sim is not None and (sim >= 0) else 0 for sim in resulting_distances
+        ]
+
         mean_iou = np.mean(resulting_distances) if resulting_distances else 0
 
         if (

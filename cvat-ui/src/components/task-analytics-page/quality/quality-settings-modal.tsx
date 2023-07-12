@@ -88,9 +88,21 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
     const keypointTooltip = (
         <div className='cvat-analytics-settings-tooltip-inner'>
             <Text>
-                OKS Sigma Like IoU threshold, but for points.
-                The percent of the bbox area, used as the radius of the circle around the GT point,
+                Object Keypoint Similarity (OKS) is like IoU, but for skeleton points.
+            </Text>
+            <Text>
+                The Sigma value is the percent of the skeleton bbox area ^ 0.5.
+                Used as the radius of the circle around a GT point,
                 where the checked point is expected to be.
+            </Text>
+            <Text>
+                The value is also used to match single point annotations, in which case
+                the bbox is the whole image. For point groups the bbox is taken
+                for the whole group.
+            </Text>
+            <Text>
+                If there is a rectangle annotation in the points group or skeleton,
+                it is used as the group bbox (supposing the whole group describes a single object).
             </Text>
         </div>
     );
@@ -233,7 +245,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                         <Col span={12}>
                             <Form.Item
                                 name='oksSigma'
-                                label='OKS sigma'
+                                label='OKS sigma (bbox side %)'
                                 rules={[{ required: true }]}
                             >
                                 <InputNumber min={0} max={100} />
