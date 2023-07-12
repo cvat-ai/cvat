@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- \[SDK\] Ability to create attributes with blank default values
+  (<https://github.com/opencv/cvat/pull/6454>)
 
 ### Security
 - TDB
