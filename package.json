@@ -76,7 +76,7 @@
     "sass-loader": "^10.0.0",
     "source-map-support": "^0.5.19",
     "style-loader": "^1.0.0",
-    "stylelint": "^13.6.1",
+    "stylelint": "^15.10.1",
     "stylelint-config-standard": "^20.0.0",
     "typescript": "^5.0.2",
     "vfile-reporter-json": "^2.0.2",

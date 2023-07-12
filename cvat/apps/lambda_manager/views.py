@@ -210,119 +210,123 @@ class LambdaFunction:
         is_interactive: Optional[bool] = False,
         request: Optional[Request] = None
     ):
-        try:
-            if db_job is not None and db_job.get_task_id() != db_task.id:
-                raise ValidationError("Job task id does not match task id",
-                    code=status.HTTP_400_BAD_REQUEST
-                )
+        if db_job is not None and db_job.get_task_id() != db_task.id:
+            raise ValidationError("Job task id does not match task id",
+                code=status.HTTP_400_BAD_REQUEST
+            )
 
-            payload = {}
-            data = {k: v for k,v in data.items() if v is not None}
-            threshold = data.get("threshold")
-            if threshold:
-                payload.update({ "threshold": threshold })
-            quality = data.get("quality")
-            mapping = data.get("mapping", {})
+        payload = {}
+        data = {k: v for k,v in data.items() if v is not None}
 
-            task_attributes = {}
-            mapping_by_default = {}
-            for db_label in (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all():
-                mapping_by_default[db_label.name] = {
-                    'name': db_label.name,
-                    'attributes': {}
+        def mandatory_arg(name: str) -> Any:
+            try:
+                return data[name]
+            except KeyError:
+                raise ValidationError(
+                    "`{}` lambda function was called without mandatory argument: {}"
+                        .format(self.id, name),
+                    code=status.HTTP_400_BAD_REQUEST)
+
+        threshold = data.get("threshold")
+        if threshold:
+            payload.update({ "threshold": threshold })
+        quality = data.get("quality")
+        mapping = data.get("mapping", {})
+
+        task_attributes = {}
+        mapping_by_default = {}
+        for db_label in (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all():
+            mapping_by_default[db_label.name] = {
+                'name': db_label.name,
+                'attributes': {}
+            }
+            task_attributes[db_label.name] = {}
+            for attribute in db_label.attributespec_set.all():
+                task_attributes[db_label.name][attribute.name] = {
+                    'input_type': attribute.input_type,
+                    'values': attribute.values.split('\n')
                 }
-                task_attributes[db_label.name] = {}
-                for attribute in db_label.attributespec_set.all():
-                    task_attributes[db_label.name][attribute.name] = {
-                        'input_type': attribute.input_type,
-                        'values': attribute.values.split('\n')
-                    }
-            if not mapping:
-                # use mapping by default to avoid labels in mapping which
-                # don't exist in the task
-                mapping = mapping_by_default
-            else:
-                # filter labels in mapping which don't exist in the task
-                mapping = {k:v for k,v in mapping.items() if v['name'] in mapping_by_default}
+        if not mapping:
+            # use mapping by default to avoid labels in mapping which
+            # don't exist in the task
+            mapping = mapping_by_default
+        else:
+            # filter labels in mapping which don't exist in the task
+            mapping = {k:v for k,v in mapping.items() if v['name'] in mapping_by_default}
 
-            attr_mapping = { label: mapping[label]['attributes'] if 'attributes' in mapping[label] else {} for label in mapping }
-            mapping = { modelLabel: mapping[modelLabel]['name'] for modelLabel in mapping }
+        attr_mapping = { label: mapping[label]['attributes'] if 'attributes' in mapping[label] else {} for label in mapping }
+        mapping = { modelLabel: mapping[modelLabel]['name'] for modelLabel in mapping }
 
-            supported_attrs = {}
-            for func_label, func_attrs in self.func_attributes.items():
-                if func_label not in mapping:
+        supported_attrs = {}
+        for func_label, func_attrs in self.func_attributes.items():
+            if func_label not in mapping:
+                continue
+
+            mapped_label = mapping[func_label]
+            mapped_attributes = attr_mapping.get(func_label, {})
+            supported_attrs[func_label] = {}
+
+            if mapped_attributes:
+                task_attr_names = [task_attr for task_attr in task_attributes[mapped_label]]
+                for attr in func_attrs:
+                    mapped_attr = mapped_attributes.get(attr["name"])
+                    if mapped_attr in task_attr_names:
+                        supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
+
+        # Check job frame boundaries
+        if db_job:
+            task_data = db_task.data
+            data_start_frame = task_data.start_frame
+            step = task_data.get_frame_step()
+
+            for key, desc in (
+                ('frame', 'frame'),
+                ('frame0', 'start frame'),
+                ('frame1', 'end frame'),
+            ):
+                if key not in data:
                     continue
 
-                mapped_label = mapping[func_label]
-                mapped_attributes = attr_mapping.get(func_label, {})
-                supported_attrs[func_label] = {}
-
-                if mapped_attributes:
-                    task_attr_names = [task_attr for task_attr in task_attributes[mapped_label]]
-                    for attr in func_attrs:
-                        mapped_attr = mapped_attributes.get(attr["name"])
-                        if mapped_attr in task_attr_names:
-                            supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
-
-            # Check job frame boundaries
-            if db_job:
-                task_data = db_task.data
-                data_start_frame = task_data.start_frame
-                step = task_data.get_frame_step()
-
-                for key, desc in (
-                    ('frame', 'frame'),
-                    ('frame0', 'start frame'),
-                    ('frame1', 'end frame'),
-                ):
-                    if key not in data:
-                        continue
-
-                    abs_frame_id = data_start_frame + data[key] * step
-                    if not db_job.segment.contains_frame(abs_frame_id):
-                        raise ValidationError(f"The {desc} is outside the job range",
-                            code=status.HTTP_400_BAD_REQUEST)
+                abs_frame_id = data_start_frame + data[key] * step
+                if not db_job.segment.contains_frame(abs_frame_id):
+                    raise ValidationError(f"The {desc} is outside the job range",
+                        code=status.HTTP_400_BAD_REQUEST)
 
 
-            if self.kind == LambdaType.DETECTOR:
+        if self.kind == LambdaType.DETECTOR:
+            payload.update({
+                "image": self._get_image(db_task, mandatory_arg("frame"), quality)
+            })
+        elif self.kind == LambdaType.INTERACTOR:
+            payload.update({
+                "image": self._get_image(db_task, mandatory_arg("frame"), quality),
+                "pos_points": mandatory_arg("pos_points")[2:] if self.startswith_box else mandatory_arg("pos_points"),
+                "neg_points": mandatory_arg("neg_points"),
+                "obj_bbox": mandatory_arg("pos_points")[0:2] if self.startswith_box else None
+            })
+        elif self.kind == LambdaType.REID:
+            payload.update({
+                "image0": self._get_image(db_task, mandatory_arg("frame0"), quality),
+                "image1": self._get_image(db_task, mandatory_arg("frame1"), quality),
+                "boxes0": mandatory_arg("boxes0"),
+                "boxes1": mandatory_arg("boxes1")
+            })
+            max_distance = data.get("max_distance")
+            if max_distance:
                 payload.update({
-                    "image": self._get_image(db_task, data["frame"], quality)
+                    "max_distance": max_distance
                 })
-            elif self.kind == LambdaType.INTERACTOR:
-                payload.update({
-                    "image": self._get_image(db_task, data["frame"], quality),
-                    "pos_points": data["pos_points"][2:] if self.startswith_box else data["pos_points"],
-                    "neg_points": data["neg_points"],
-                    "obj_bbox": data["pos_points"][0:2] if self.startswith_box else None
-                })
-            elif self.kind == LambdaType.REID:
-                payload.update({
-                    "image0": self._get_image(db_task, data["frame0"], quality),
-                    "image1": self._get_image(db_task, data["frame1"], quality),
-                    "boxes0": data["boxes0"],
-                    "boxes1": data["boxes1"]
-                })
-                max_distance = data.get("max_distance")
-                if max_distance:
-                    payload.update({
-                        "max_distance": max_distance
-                    })
-            elif self.kind == LambdaType.TRACKER:
-                payload.update({
-                    "image": self._get_image(db_task, data["frame"], quality),
-                    "shapes": data.get("shapes", []),
-                    "states": data.get("states", [])
-                })
-            else:
-                raise ValidationError(
-                    '`{}` lambda function has incorrect type: {}'
-                    .format(self.id, self.kind),
-                    code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except KeyError as err:
+        elif self.kind == LambdaType.TRACKER:
+            payload.update({
+                "image": self._get_image(db_task, mandatory_arg("frame"), quality),
+                "shapes": data.get("shapes", []),
+                "states": data.get("states", [])
+            })
+        else:
             raise ValidationError(
-                "`{}` lambda function was called without mandatory argument: {}"
-                .format(self.id, str(err)),
-                code=status.HTTP_400_BAD_REQUEST)
+                '`{}` lambda function has incorrect type: {}'
+                .format(self.id, self.kind),
+                code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         if is_interactive and request:
             interactive_function_call_signal.send(sender=self, request=request)

@@ -31,7 +31,7 @@ context('Mutable attribute.', () => {
     function testChangingAttributeValue(expectedValue, value) {
         cy.get('.cvat-player-next-button').click();
         cy.get('.attribute-annotation-sidebar-attr-elem-wrapper')
-            .find('[type="text"]')
+            .find('textarea')
             .should('have.value', expectedValue)
             .clear()
             .type(value);

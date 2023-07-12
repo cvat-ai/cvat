@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased]
 ### Added
-- TDB
+- Multi-line text attributes supported (<https://github.com/opencv/cvat/pull/6458>)
 
 ### Changed
 - TDB
@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- \[SDK\] Ability to create attributes with blank default values
+  (<https://github.com/opencv/cvat/pull/6454>)
 
 ### Security
 - TDB
@@ -37,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added missed auto_add argument to Issue model (<https://github.com/opencv/cvat/pull/6364>)
 - \[API\] Performance of several API endpoints (<https://github.com/opencv/cvat/pull/6340>)
 - \[API\] Invalid schema for the owner field in several endpoints (<https://github.com/opencv/cvat/pull/6343>)
+- Some internal errors occurring during lambda function invocations
+  could be mistakenly reported as invalid requests
+  (<https://github.com/opencv/cvat/pull/6394>)
 - \[SDK\] Loading tasks that have been cached with the PyTorch adapter
   (<https://github.com/opencv/cvat/issues/6047>)
 - The problem with importing annotations if dataset has extra dots in filenames
