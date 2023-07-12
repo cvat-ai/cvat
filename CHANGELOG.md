@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased]
 ### Added
-- TDB
+- Multi-line text attributes supported (<https://github.com/opencv/cvat/pull/6458>)
 
 ### Changed
 - TDB
@@ -19,7 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- \[SDK\] Ability to create attributes with blank default values
+  (<https://github.com/opencv/cvat/pull/6454>)
+- \[SDK\] SDK should not change input data in models (<https://github.com/opencv/cvat/pull/6455>)
 
 ### Security
 - TDB

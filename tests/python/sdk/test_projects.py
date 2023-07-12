@@ -115,6 +115,30 @@ class TestProjectUsecases:
         assert project.id != 0
         assert project.name == "test project"
 
+    def test_can_create_project_with_attribute_with_blank_default(self):
+        project = self.client.projects.create(
+            spec=models.ProjectWriteRequest(
+                name="test project",
+                labels=[
+                    models.PatchedLabelRequest(
+                        name="text",
+                        attributes=[
+                            models.AttributeRequest(
+                                name="text",
+                                mutable=True,
+                                input_type=models.InputTypeEnum("text"),
+                                values=[],
+                                default_value="",
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+
+        labels = project.get_labels()
+        assert labels[0].attributes[0].default_value == ""
+
     def test_can_create_project_from_dataset(self, fxt_coco_dataset: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
