@@ -1228,8 +1228,8 @@ class TestQualityReportMetrics(_PermissionTestBase):
 
         assert (
             DeepDiff(
-                new_report,
                 old_report,
+                new_report,
                 ignore_order=True,
                 exclude_paths=["root['created_date']", "root['id']", "root['parent_id']"],
             )
@@ -1237,8 +1237,8 @@ class TestQualityReportMetrics(_PermissionTestBase):
         )
         assert (
             DeepDiff(
-                new_report_data,
                 old_report_data,
+                new_report_data,
                 ignore_order=True,
                 exclude_paths=["root['created_date']", "root['id']", "root['parent_id']"],
             )
