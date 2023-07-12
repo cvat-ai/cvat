@@ -89,6 +89,7 @@ class AnnotationIR:
         def filter_track_shapes(shapes):
             shapes = [s for s in shapes if cls._is_shape_inside(s, start, stop)]
             drop_count = 0
+
             for s in shapes:
                 if s['outside']:
                     drop_count += 1
@@ -105,6 +106,7 @@ class AnnotationIR:
                 element = cls._slice_track(element, start, stop, dimension)
             interpolated_shapes = TrackManager.get_interpolated_shapes(
                 track, start, stop, dimension)
+
             scoped_shapes = filter_track_shapes(interpolated_shapes)
 
             if scoped_shapes:
@@ -123,6 +125,7 @@ class AnnotationIR:
         track['shapes'] = segment_shapes
         if 0 < len(segment_shapes):
             track['frame'] = track['shapes'][0]['frame']
+
         return track
 
     def slice(self, start, stop):
@@ -130,9 +133,11 @@ class AnnotationIR:
         splitted_data = AnnotationIR(self.dimension)
         splitted_data.tags = [deepcopy(t)
             for t in self.tags if self._is_shape_inside(t, start, stop)]
+
         splitted_data.shapes = [deepcopy(s)
             for s in self.shapes if self._is_shape_inside(s, start, stop)]
         splitted_tracks = []
+
         for t in self.tracks:
             if self._is_track_inside(t, start, stop):
                 track = self._slice_track(t, start, stop, self.dimension)
