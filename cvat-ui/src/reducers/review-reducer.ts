@@ -135,20 +135,16 @@ export default function (state: ReviewState = defaultState, action: any): Review
                         // decorate the original conflict to avoid changing it
                         const description = descriptionList.join(', ');
                         const visibleConflict = new Proxy(mainConflict, {
-                            get(target, prop, receiver) {
+                            get(target, prop) {
                                 if (prop === 'description') {
                                     return description;
                                 }
 
                                 // By default, it looks like Reflect.get(target, prop, receiver)
-                                // which has a different value of `this`
-                                const value = target[prop];
-                                if (value instanceof Function) {
-                                    return function (...args) {
-                                        return value.apply(this === receiver ? target : this, args);
-                                    };
-                                }
-                                return value;
+                                // which has a different value of `this`. It doesn't allow to
+                                // work with methods / properties that use private members.
+                                const val = Reflect.get(target, prop);
+                                return typeof val === 'function' ? (...args: any[]) => val.apply(target, args) : val;
                             },
                         });
 
