@@ -58,9 +58,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AnalyticsReport'
+                $ref: '#/components/schemas/AnalyticsReport'
           description: ''
         '404':
           description: Not found
@@ -94,8 +92,8 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/AnalyticsReport'
-          description: ''
+                $ref: '#/components/schemas/RqId'
+          description: A analytics report request has been computed
         '202':
           content:
             application/vnd.cvat+json:

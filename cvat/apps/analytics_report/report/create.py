@@ -247,6 +247,7 @@ class AnalyticsReportUpdateManager:
                     return False
 
                 db_report.save()
+            return True
 
         elif cvat_task_id is not None:
             queryset = Task.objects.select_related("analytics_report").prefetch_related("segment_set__job_set")
@@ -286,6 +287,7 @@ class AnalyticsReportUpdateManager:
                 db_report.save()
                 for jr in job_reports:
                     jr.save()
+            return True
 
         elif cvat_project_id is not None:
             queryset = Project.objects.select_related("analytics_report").prefetch_related("tasks__segment_set__job_set")
@@ -436,16 +438,16 @@ class AnalyticsReportUpdateManager:
             derived_metrics = [
                 ProjectObjects(db_project, [jr.statistics[JobObjects.key()] for jr in job_reports]),
                 ProjectAnnotationSpeed(
-                    db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
+                    db_project, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
                 ),
                 ProjectAnnotationTime(
-                    db_task, [jr.statistics[JobAnnotationTime.key()] for jr in job_reports]
+                    db_project, [jr.statistics[JobAnnotationTime.key()] for jr in job_reports]
                 ),
                 ProjectTotalAnnotationSpeed(
-                    db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
+                    db_project, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
                 ),
                 ProjectTotalObjectCount(
-                    db_task, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
+                    db_project, [jr.statistics[JobAnnotationSpeed.key()] for jr in job_reports]
                 ),
             ]
 
