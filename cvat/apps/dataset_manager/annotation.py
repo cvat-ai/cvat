@@ -106,6 +106,9 @@ class AnnotationIR:
             interpolated_shapes = TrackManager.get_interpolated_shapes(
                 track, start, stop, dimension)
             scoped_shapes = filter_track_shapes(interpolated_shapes)
+            temp = []
+            for element in track.get('elements', []):
+                temp.append(element)
 
             if scoped_shapes:
                 if not scoped_shapes[0]['keyframe']:
