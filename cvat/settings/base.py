@@ -646,6 +646,7 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
     'SCHEMA_PATH_PREFIX': '/api',
     'SCHEMA_PATH_PREFIX_TRIM': False,
+    'GENERIC_ADDITIONAL_PROPERTIES': None,
 }
 
 # set similar UI restrictions
