@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -30,9 +31,11 @@ context('Check label attribute changes', () => {
             cy.createRectangle(createRectangleShape2Points);
             cy.get('#cvat_canvas_shape_1').trigger('mousemove').rightclick();
         });
+
         it('Open object menu details', () => {
             cy.get('.cvat-canvas-context-menu').contains('DETAILS').click();
         });
+
         it('Clear field of text attribute and write new value', () => {
             cy.get('.cvat-canvas-context-menu')
                 .contains(attrName)
@@ -44,12 +47,36 @@ context('Check label attribute changes', () => {
                         .type(newLabelAttrValue);
                 });
         });
+
         it('Check what value of right panel is changed too', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .contains(attrName)
                 .parents('.cvat-object-item-attribute-wrapper')
                 .within(() => {
                     cy.get('.cvat-object-item-text-attribute').should('have.value', newLabelAttrValue);
+                });
+        });
+
+        it('Specify many lines for a text attribute, update the page and check values', () => {
+            const multilineValue = 'This text attributes has many lines.\n - Line 1\n - Line 2';
+            cy.get('.cvat-canvas-context-menu')
+                .contains(attrName)
+                .parents('.cvat-object-item-attribute-wrapper')
+                .within(() => {
+                    cy.get('.cvat-object-item-text-attribute')
+                        .clear()
+                        .type(multilineValue);
+                });
+            cy.saveJob();
+            cy.reload();
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+            cy.get('#cvat-objects-sidebar-state-item-1')
+                .contains('DETAILS').click();
+            cy.get('#cvat-objects-sidebar-state-item-1')
+                .contains(attrName)
+                .parents('.cvat-object-item-attribute-wrapper')
+                .within(() => {
+                    cy.get('.cvat-object-item-text-attribute').should('have.value', multilineValue);
                 });
         });
     });
