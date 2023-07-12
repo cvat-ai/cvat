@@ -38,7 +38,7 @@ class JobObjects(PrimaryMetricBase):
                 dates.update(statistics[action][obj].keys())
 
         for action in ["created", "updated", "deleted"]:
-            for date in dates:
+            for date in sorted(dates):
                 objects_statistics[action].append(
                     {
                         "value": {
