@@ -317,6 +317,14 @@ export default class LabelForm extends React.Component<Props> {
         const { key } = fieldInstance;
         const value = attr ? attr.values[0] : '';
 
+        if (attr?.input_type.toUpperCase() === 'TEXT') {
+            return (
+                <Form.Item name={[key, 'values']} fieldKey={[fieldInstance.fieldKey, 'values']} initialValue={value}>
+                    <Input.TextArea className='cvat-attribute-values-input' placeholder='Default value' />
+                </Form.Item>
+            );
+        }
+
         return (
             <Form.Item name={[key, 'values']} fieldKey={[fieldInstance.fieldKey, 'values']} initialValue={value}>
                 <Input className='cvat-attribute-values-input' placeholder='Default value' />
