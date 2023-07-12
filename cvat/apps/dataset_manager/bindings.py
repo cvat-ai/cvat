@@ -284,7 +284,7 @@ class CommonData(InstanceLabelData):
     def _convert_db_labels(db_labels):
         labels = []
         for db_label in db_labels:
-            label = OrderedDict([
+            l = OrderedDict([
                 ("name", db_label.name),
                 ("color", db_label.color),
                 ("type", db_label.type),
@@ -299,14 +299,14 @@ class CommonData(InstanceLabelData):
             ])
 
             if db_label.parent:
-                label["parent"] = db_label.parent.name
+                l["parent"] = db_label.parent.name
 
             if db_label.type == str(LabelType.SKELETON):
-                label["svg"] = db_label.skeleton.svg
+                l["svg"] = db_label.skeleton.svg
                 for db_sublabel in list(db_label.sublabels.all()):
-                    label["svg"] = label["svg"].replace(f'data-label-id="{db_sublabel.id}"', f'data-label-name="{db_sublabel.name}"')
+                    l["svg"] = l["svg"].replace(f'data-label-id="{db_sublabel.id}"', f'data-label-name="{db_sublabel.name}"')
 
-            labels.append(('label', label))
+            labels.append(('label', l))
         return labels
 
     def _init_meta(self):
