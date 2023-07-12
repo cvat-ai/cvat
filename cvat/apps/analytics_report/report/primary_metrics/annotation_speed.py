@@ -6,7 +6,7 @@ from dateutil import parser
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
-from cvat.apps.analytics_report.report.primary_metrics.imetric import PrimaryMetricBase
+from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase
 
 
 class JobAnnotationSpeed(PrimaryMetricBase):
@@ -14,8 +14,10 @@ class JobAnnotationSpeed(PrimaryMetricBase):
     _description = "Metric shows the annotation speed in objects per hour."
     _default_view = ViewChoice.HISTOGRAM
     _key = "annotation_speed"
+    # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
     _query = "SELECT sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as wt FROM events WHERE job_id={job_id:UInt64} AND timestamp >= {start_datetime:DateTime64} AND timestamp < {end_datetime:DateTime64}"
     _granularity = GranularityChoice.DAY
+    _is_filterable_by_date = False
     _transformations = [
         {
             "name": "annotation_speed",
@@ -105,9 +107,18 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         }
 
         result = self._make_clickhouse_query(parameters)
-
-        dataseries["working_time"].append(
-            {"value": next(iter(result.result_rows))[0], "datetime": timestamp_str}
-        )
+        value = 0
+        if (wt := next(iter(result.result_rows))[0]) is not None:
+            value = wt
+        dataseries["working_time"].append({
+            "value": value,
+            "datetime": timestamp_str,
+        })
 
         return dataseries
+
+    def get_empty(self):
+        return {
+            "object_count": [],
+            "working_time": [],
+        }

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from cvat.apps.analytics_report.models import ViewChoice
-from cvat.apps.analytics_report.report.primary_metrics.imetric import PrimaryMetricBase
+from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase
 
 
 class JobAnnotationTime(PrimaryMetricBase):
@@ -11,7 +11,9 @@ class JobAnnotationTime(PrimaryMetricBase):
     _description = "Metric shows how long the Job is in progress state."
     _default_view = ViewChoice.NUMERIC
     _key = "annotation_time"
+    # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
     _query = "SELECT timestamp, obj_val  FROM cvat.events WHERE scope='update:job' AND job_id={job_id:UInt64} AND obj_name='state' ORDER BY timestamp ASC"
+    _is_filterable_by_date = False
 
     def calculate(self):
         results = self._make_clickhouse_query(
@@ -34,11 +36,17 @@ class JobAnnotationTime(PrimaryMetricBase):
         if not last_change:
             last_change = self._get_utc_now()
 
+        metric = self.get_empty()
+        metric["total_annotating_time"][0]["value"] = total_annotating_time / 3600  # convert to hours
+        metric["total_annotating_time"][0]["datetime"] = last_change.strftime("%Y-%m-%dT%H:%M:%SZ")
+        return metric
+
+    def get_empty(self):
         return {
             "total_annotating_time": [
                 {
-                    "value": total_annotating_time / 3600,  # convert to hours
-                    "datetime": last_change.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "value": 0,
+                    "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 },
             ]
         }

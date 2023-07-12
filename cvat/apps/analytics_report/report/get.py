@@ -7,19 +7,22 @@ from datetime import datetime, timedelta, timezone
 from dateutil import parser
 from rest_framework import serializers, status
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
 
 from cvat.apps.analytics_report.models import AnalyticsReport, TypeChoice
 from cvat.apps.analytics_report.serializers import AnalyticsReportSerializer
+from cvat.apps.analytics_report.report.create import get_empty_report
 from cvat.apps.engine.models import Job, Project, Task
 
 
 def _filter_statistics_by_date(statistics, start_date, end_date):
     for _, st_entry in statistics.items():
         dataseries = st_entry.get("dataseries", {})
-        for ds_name, ds_entry in dataseries.items():
-            dataseries[ds_name] = list(
-                filter(lambda df: start_date <= parser.parse(df["datetime"]) <= end_date, ds_entry)
-            )
+        if st_entry.get("is_filterable_by_date", False):
+            for ds_name, ds_entry in dataseries.items():
+                dataseries[ds_name] = list(
+                    filter(lambda df: start_date <= parser.parse(df["datetime"]) <= end_date, ds_entry)
+                )
 
     return statistics
 
@@ -33,13 +36,14 @@ def _convert_datetime_to_date(statistics):
                 del df["datetime"]
     return statistics
 
-
 def _get_object_report(obj_model, pk, start_date, end_date):
-    db_obj = obj_model.objects.get(pk=pk)
     try:
+        db_obj = obj_model.objects.get(pk=pk)
         db_analytics_report = db_obj.analytics_report
+    except obj_model.DoesNotExist as ex:
+        raise NotFound(f"{obj_model.__class__.__name__} object with pk={pk} does not exist") from ex
     except AnalyticsReport.DoesNotExist:
-        raise
+        db_analytics_report = get_empty_report()
 
     statistics = _filter_statistics_by_date(db_analytics_report.statistics, start_date, end_date)
     statistics = _convert_datetime_to_date(statistics)

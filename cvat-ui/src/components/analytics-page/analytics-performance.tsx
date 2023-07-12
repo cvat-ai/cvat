@@ -9,6 +9,7 @@ import moment from 'moment';
 import RGL, { WidthProvider } from 'react-grid-layout';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
+import Notification from 'antd/lib/notification';
 import { AnalyticsReport, AnalyticsEntryViewType } from 'cvat-core-wrapper';
 import { Col, Row } from 'antd/lib/grid';
 import HistogramView from './views/histogram-view';
@@ -20,7 +21,7 @@ export enum DateIntervals {
     LAST_WEEK = 'Last 7 days',
     LAST_MONTH = 'Last 30 days',
     LAST_QUARTER = 'Last 90 days',
-    LAST_YEAR = 'Last 365 days',
+    LAST_YEAR = 'Last year',
 }
 
 interface Props {
@@ -39,12 +40,19 @@ const colors = [
 function AnalyticsOverview(props: Props): JSX.Element | null {
     const { report, onTimePeriodChange } = props;
 
-    // TODO make it more expressive
     if (!report) return null;
     const layout: any = [];
     let histogramCount = 0;
     let numericCount = 0;
-    const views = Object.entries(report.statistics).map(([name, entry]) => {
+    const views: any = [];
+    Object.entries(report.statistics).forEach(([name, entry]) => {
+        const tooltip = (
+            <div className='cvat-analytics-tooltip-inner'>
+                <Text>
+                    {entry.description}
+                </Text>
+            </div>
+        );
         switch (entry.defaultView) {
             case AnalyticsEntryViewType.NUMERIC: {
                 layout.push({
@@ -56,17 +64,19 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                 });
                 numericCount += 1;
                 const { value } = entry.dataseries[Object.keys(entry.dataseries)[0]][0];
-                return ({
+
+                views.push({
                     view: (
                         <AnalyticsCard
                             title={entry.title}
-                            value={typeof value === 'number' ? value.toFixed(2) : 0}
-                            bottomElement={<Text>{entry.description}</Text>}
+                            tooltip={tooltip}
+                            value={typeof value === 'number' ? value.toFixed(1) : 0}
                             key={name}
                         />
                     ),
                     key: name,
                 });
+                break;
             }
             case AnalyticsEntryViewType.HISTOGRAM: {
                 const firstDataset = Object.keys(entry.dataseries)[0];
@@ -75,53 +85,6 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                 ));
 
                 const { dataseries } = entry;
-                entry.transformations.forEach((transform) => {
-                    if (transform.binary) {
-                        let operator: (left: number, right: number) => number;
-                        switch (transform.binary.operator) {
-                            case '+': {
-                                operator = (left: number, right: number) => left + right;
-                                break;
-                            }
-                            case '-': {
-                                operator = (left: number, right: number) => left - right;
-                                break;
-                            }
-                            case '*': {
-                                operator = (left: number, right: number) => left * right;
-                                break;
-                            }
-                            case '/': {
-                                operator = (left: number, right: number) => (right !== 0 ? left / right : 0);
-                                break;
-                            }
-                            default: {
-                                throw Error(`Operator type ${transform.binary.operator} is not supported`);
-                            }
-                        }
-
-                        const leftName = transform.binary.left;
-                        const rightName = transform.binary.right;
-                        if (Object.hasOwn(dataseries, leftName) && Object.hasOwn(dataseries, rightName)) {
-                            dataseries[transform.name] = dataseries[leftName].map((left, i) => {
-                                const right = dataseries[rightName][i];
-                                if (typeof left.value === 'number' && typeof right.value === 'number') {
-                                    return {
-                                        value: operator(left.value, right.value),
-                                        date: left.date,
-                                    };
-                                }
-                                return {
-                                    value: 0,
-                                    date: left.date,
-                                };
-                            });
-                            delete dataseries[leftName];
-                            delete dataseries[rightName];
-                        }
-                    }
-                });
-
                 let colorIndex = -1;
                 const datasets = Object.entries(dataseries).map(([key, series]) => {
                     let label = key.split('_').join(' ');
@@ -154,7 +117,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     y: histogramCount,
                 });
                 histogramCount += 1;
-                return ({
+                views.push({
                     view: (
                         <HistogramView
                             datasets={datasets}
@@ -165,9 +128,12 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     ),
                     key: name,
                 });
+                break;
             }
             default: {
-                throw Error(`View type ${entry.defaultView} is not supported`);
+                Notification.warning({
+                    message: `Cannot display analytics view with view type ${entry.defaultView}`,
+                });
             }
         }
     });

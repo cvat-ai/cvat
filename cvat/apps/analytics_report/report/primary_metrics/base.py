@@ -11,11 +11,13 @@ from cvat.apps.analytics_report.report.primary_metrics.utils import make_clickho
 class PrimaryMetricBase(metaclass=ABCMeta):
     _title = None
     _description = None
+    # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
     _query = None
     _granularity = None
     _default_view = None
     _key = None
     _transformations = []
+    _is_filterable_by_date = True
 
     def __init__(self, db_obj):
         self._db_obj = db_obj
@@ -44,8 +46,16 @@ class PrimaryMetricBase(metaclass=ABCMeta):
     def key(cls):
         return cls._key
 
+    @classmethod
+    def is_filterable_by_date(cls):
+        return cls._is_filterable_by_date
+
     @abstractmethod
     def calculate(self):
+        ...
+
+    @abstractmethod
+    def get_empty(self):
         ...
 
     def _make_clickhouse_query(self, parameters):

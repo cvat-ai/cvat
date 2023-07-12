@@ -405,31 +405,36 @@ export default function implementAPI(cvat) {
         return new FramesMetaData({ ...result });
     };
 
-    cvat.analytics.common.reports.implementation = async (filter) => {
-        const updatedParams: Record<string, string> = { ...filter };
+    cvat.analytics.performance.reports.implementation = async (filter) => {
+        checkFilter(filter, {
+            jobID: isInteger,
+            taskID: isInteger,
+            projectID: isInteger,
+            startDate: isString,
+            endDate: isString,
+        });
+
+        checkExclusiveFields(filter, ['jobID', 'taskID', 'projectID'], ['startDate', 'endDate']);
+
+        const updatedParams: Record<string, string> = {};
 
         if ('taskID' in filter) {
-            updatedParams.task_id = updatedParams.taskID;
-            delete updatedParams.taskID;
+            updatedParams.task_id = filter.taskID;
         }
         if ('jobID' in filter) {
-            updatedParams.job_id = updatedParams.jobID;
-            delete updatedParams.jobID;
+            updatedParams.job_id = filter.jobID;
         }
         if ('projectID' in filter) {
-            updatedParams.project_id = updatedParams.projectID;
-            delete updatedParams.projectID;
+            updatedParams.project_id = filter.projectID;
         }
         if ('startDate' in filter) {
-            updatedParams.start_date = updatedParams.startDate;
-            delete updatedParams.startDate;
+            updatedParams.start_date = filter.startDate;
         }
         if ('endDate' in filter) {
-            updatedParams.end_date = updatedParams.endDate;
-            delete updatedParams.endDate;
+            updatedParams.end_date = filter.endDate;
         }
 
-        const reportData = await serverProxy.analytics.common.reports(updatedParams);
+        const reportData = await serverProxy.analytics.performance.reports(updatedParams);
         return new AnalyticsReport(reportData);
     };
 

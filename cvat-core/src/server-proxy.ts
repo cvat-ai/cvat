@@ -2312,7 +2312,7 @@ async function getQualityReports(filter): Promise<SerializedQualityReportData[]>
             },
         });
 
-        return response.data;
+        return response.data.results;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2491,7 +2491,7 @@ export default Object.freeze({
     }),
 
     analytics: Object.freeze({
-        common: Object.freeze({
+        performance: Object.freeze({
             reports: getAnalyticsReports,
         }),
         quality: Object.freeze({

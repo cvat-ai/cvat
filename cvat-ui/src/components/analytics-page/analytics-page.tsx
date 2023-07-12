@@ -3,19 +3,18 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
-import Spin from 'antd/lib/spin';
-import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
-import { LeftOutlined } from '@ant-design/icons/lib/icons';
 import { useIsMounted } from 'utils/hooks';
 import { Project, Task } from 'reducers';
 import { AnalyticsReport, Job, getCore } from 'cvat-core-wrapper';
 import moment from 'moment';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
+import GoBackButton from 'components/common/go-back-button';
 import AnalyticsOverview, { DateIntervals } from './analytics-performance';
 import TaskQualityComponent from './quality/task-quality-component';
 
@@ -58,16 +57,17 @@ function AnalyticsPage(): JSX.Element {
     const [analyticsReportInstance, setAnalyticsReportInstance] = useState<AnalyticsReport | null>(null);
     const isMounted = useIsMounted();
 
-    const history = useHistory();
-
     let instanceID: number | null = null;
     let reportRequestID: number | null = null;
     switch (instanceType) {
-        case 'project':
-        case 'task':
-        {
-            instanceID = +useParams<{ id: string }>().id;
-            reportRequestID = +useParams<{ id: string }>().id;
+        case 'project': {
+            instanceID = +useParams<{ pid: string }>().pid;
+            reportRequestID = +useParams<{ pid: string }>().pid;
+            break;
+        }
+        case 'task': {
+            instanceID = +useParams<{ tid: string }>().tid;
+            reportRequestID = +useParams<{ tid: string }>().tid;
             break;
         }
         case 'job': {
@@ -76,7 +76,7 @@ function AnalyticsPage(): JSX.Element {
             break;
         }
         default: {
-            throw Error(`Unsupported instance type ${instanceType}`);
+            throw new Error(`Unsupported instance type ${instanceType}`);
         }
     }
 
@@ -94,7 +94,7 @@ function AnalyticsPage(): JSX.Element {
                 break;
             }
             default: {
-                throw Error(`Unsupported instance type ${instanceType}`);
+                throw new Error(`Unsupported instance type ${instanceType}`);
             }
         }
 
@@ -132,7 +132,7 @@ function AnalyticsPage(): JSX.Element {
 
             switch (instanceType) {
                 case 'project': {
-                    reportRequest = core.analytics.common.reports({
+                    reportRequest = core.analytics.performance.reports({
                         projectID: reportRequestID,
                         endDate,
                         startDate,
@@ -140,7 +140,7 @@ function AnalyticsPage(): JSX.Element {
                     break;
                 }
                 case 'task': {
-                    reportRequest = core.analytics.common.reports({
+                    reportRequest = core.analytics.performance.reports({
                         taskID: reportRequestID,
                         endDate,
                         startDate,
@@ -148,7 +148,7 @@ function AnalyticsPage(): JSX.Element {
                     break;
                 }
                 case 'job': {
-                    reportRequest = core.analytics.common.reports({
+                    reportRequest = core.analytics.performance.reports({
                         jobID: reportRequestID,
                         endDate,
                         startDate,
@@ -156,7 +156,7 @@ function AnalyticsPage(): JSX.Element {
                     break;
                 }
                 default: {
-                    throw Error(`Unsupported instance type ${instanceType}`);
+                    throw new Error(`Unsupported instance type ${instanceType}`);
                 }
             }
 
@@ -177,8 +177,11 @@ function AnalyticsPage(): JSX.Element {
     };
 
     useEffect((): void => {
-        receieveInstance();
-        receieveReport(DateIntervals.LAST_WEEK);
+        Promise.all([receieveInstance(), receieveReport(DateIntervals.LAST_WEEK)]).finally(() => {
+            if (isMounted()) {
+                setFetching(false);
+            }
+        });
     }, []);
 
     const onJobUpdate = useCallback((job: Job): void => {
@@ -199,7 +202,7 @@ function AnalyticsPage(): JSX.Element {
                 setFetching(false);
             }
         });
-    }, [notification]);
+    }, []);
 
     const onAnalyticsTimePeriodChange = useCallback((val: DateIntervals): void => {
         receieveReport(val);
@@ -213,28 +216,15 @@ function AnalyticsPage(): JSX.Element {
             case 'project': {
                 backNavigation = (
                     <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
-                        <Button
-                            className='cvat-back-to-project-button'
-                            onClick={() => history.push(`/projects/${instance.id}`)}
-                            type='link'
-                            size='large'
-                        >
-                            <LeftOutlined />
-                            Back to project
-                        </Button>
+                        <GoBackButton />
                     </Col>
                 );
                 title = (
                     <Col className='cvat-project-analytics-title'>
-                        <Title
-                            level={4}
-                            className='cvat-text-color'
-                        >
+                        <Title level={4} className='cvat-text-color'>
                             {instance.name}
                         </Title>
-                        <Text
-                            type='secondary'
-                        >
+                        <Text type='secondary'>
                             {`#${instance.id}`}
                         </Text>
                     </Col>
@@ -261,28 +251,15 @@ function AnalyticsPage(): JSX.Element {
             case 'task': {
                 backNavigation = (
                     <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
-                        <Button
-                            className='cvat-back-to-task-button'
-                            onClick={() => history.push(`/tasks/${instance.id}`)}
-                            type='link'
-                            size='large'
-                        >
-                            <LeftOutlined />
-                            Back to task
-                        </Button>
+                        <GoBackButton />
                     </Col>
                 );
                 title = (
                     <Col className='cvat-task-analytics-title'>
-                        <Title
-                            level={4}
-                            className='cvat-text-color'
-                        >
+                        <Title level={4} className='cvat-text-color'>
                             {instance.name}
                         </Title>
-                        <Text
-                            type='secondary'
-                        >
+                        <Text type='secondary'>
                             {`#${instance.id}`}
                         </Text>
                     </Col>
@@ -320,23 +297,12 @@ function AnalyticsPage(): JSX.Element {
             {
                 backNavigation = (
                     <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
-                        <Button
-                            className='cvat-back-to-task-button'
-                            onClick={() => history.push(`/tasks/${instance.id}`)}
-                            type='link'
-                            size='large'
-                        >
-                            <LeftOutlined />
-                            Back to task
-                        </Button>
+                        <GoBackButton />
                     </Col>
                 );
                 title = (
                     <Col className='cvat-task-analytics-title'>
-                        <Title
-                            level={4}
-                            className='cvat-text-color'
-                        >
+                        <Title level={4} className='cvat-text-color'>
                             Job
                             {' '}
                             {`#${instance.id}`}
@@ -367,7 +333,7 @@ function AnalyticsPage(): JSX.Element {
                 break;
             }
             default: {
-                throw Error(`Unsupported instance type ${instanceType}`);
+                throw new Error(`Unsupported instance type ${instanceType}`);
             }
         }
     }
@@ -377,7 +343,7 @@ function AnalyticsPage(): JSX.Element {
             {
                 fetching ? (
                     <div className='cvat-analytics-loading'>
-                        <Spin size='large' className='cvat-spinner' />
+                        <CVATLoadingSpinner />
                     </div>
                 ) : (
                     <Row

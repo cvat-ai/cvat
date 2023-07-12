@@ -4,7 +4,7 @@
 
 from cvat.apps.analytics_report.models import ViewChoice
 
-from .imetric import DerivedMetricBase
+from .base import DerivedMetricBase
 
 
 class JobTotalAnnotationSpeed(DerivedMetricBase):
@@ -12,6 +12,7 @@ class JobTotalAnnotationSpeed(DerivedMetricBase):
     _description = "Metric shows total annotation speed in the Job."
     _default_view = ViewChoice.NUMERIC
     _key = "total_annotation_speed"
+    _is_filterable_by_date = False
 
     def calculate(self):
         total_count = 0
@@ -21,10 +22,15 @@ class JobTotalAnnotationSpeed(DerivedMetricBase):
             total_count += ds[0]["value"]
             total_wt += ds[1]["value"]
 
+        metric = self.get_empty()
+        metric["total_annotation_speed"][0]["value"] = total_count / total_wt if total_wt != 0 else 0
+        return metric
+
+    def get_empty(self):
         return {
             "total_annotation_speed": [
                 {
-                    "value": total_count / total_wt if total_wt != 0 else 0,
+                    "value": 0,
                     "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 },
             ]

@@ -8,7 +8,7 @@ from dateutil import parser
 
 from cvat.apps.analytics_report.report.primary_metrics import JobAnnotationSpeed
 
-from .imetric import DerivedMetricBase
+from .base import DerivedMetricBase
 
 
 class TaskAnnotationSpeed(DerivedMetricBase, JobAnnotationSpeed):

@@ -80,3 +80,20 @@ class AnalyticsReport(models.Model):
     )
     created_date = models.DateTimeField(auto_now=True)
     statistics = models.JSONField()
+
+    def get_task(self) -> Task:
+        if self.task is not None:
+            return self.task
+        else:
+            return self.job.segment.task
+
+    @property
+    def organization_id(self):
+        if self.job is not None:
+            return getattr(self.job.segment.task.organization, "id")
+        elif self.task is not None:
+            return getattr(self.task.organization, "id", None)
+        elif self.project is not None:
+            return getattr(self.project.organization, "id", None)
+
+        return None

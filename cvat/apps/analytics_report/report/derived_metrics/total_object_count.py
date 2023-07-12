@@ -4,7 +4,7 @@
 
 from cvat.apps.analytics_report.models import ViewChoice
 
-from .imetric import DerivedMetricBase
+from .base import DerivedMetricBase
 
 
 class JobTotalObjectCount(DerivedMetricBase):
@@ -12,6 +12,7 @@ class JobTotalObjectCount(DerivedMetricBase):
     _description = "Metric shows total object count in the Job."
     _default_view = ViewChoice.NUMERIC
     _key = "total_object_count"
+    _is_filterable_by_date = False
 
     def calculate(self):
         count = 0
@@ -19,10 +20,15 @@ class JobTotalObjectCount(DerivedMetricBase):
         for ds in dataseries["object_count"]:
             count += ds["value"]
 
+        metric = self.get_empty()
+        metric["total_object_count"][0]["value"] = count
+        return metric
+
+    def get_empty(self):
         return {
             "total_object_count": [
                 {
-                    "value": count,
+                    "value": 0,
                     "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 },
             ]

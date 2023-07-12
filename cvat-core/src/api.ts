@@ -279,9 +279,9 @@ function build() {
             },
         },
         analytics: {
-            common: {
+            performance: {
                 async reports(filter = {}) {
-                    const result = await PluginRegistry.apiWrapper(cvat.analytics.common.reports, filter);
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.performance.reports, filter);
                     return result;
                 },
             },

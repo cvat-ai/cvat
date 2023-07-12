@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
-from cvat.apps.analytics_report.report.primary_metrics.imetric import PrimaryMetricBase
+from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase
 
 
 class JobObjects(PrimaryMetricBase):
@@ -11,6 +11,7 @@ class JobObjects(PrimaryMetricBase):
     _description = "Metric shows number of added/changed/deleted objects for the Job."
     _default_view = ViewChoice.HISTOGRAM
     _key = "objects"
+    # Raw SQL queries are used to execute ClickHouse queries, as there is no ORM available here
     _query = "SELECT toStartOfDay(timestamp) as day, sum(JSONLength(JSONExtractString(payload, {object_type:String}))) as s FROM events WHERE scope = {scope:String} AND job_id = {job_id:UInt64} GROUP BY day ORDER BY day ASC"
     _granularity = GranularityChoice.DAY
 
@@ -29,11 +30,7 @@ class JobObjects(PrimaryMetricBase):
                 )
                 action_data[obj_type] = {entry[0]: entry[1] for entry in result.result_rows}
 
-        objects_statistics = {
-            "created": [],
-            "updated": [],
-            "deleted": [],
-        }
+        objects_statistics = self.get_empty()
 
         dates = set()
         for action in ["created", "updated", "deleted"]:
@@ -54,3 +51,10 @@ class JobObjects(PrimaryMetricBase):
                 )
 
         return objects_statistics
+
+    def get_empty(self):
+        return {
+            "created": [],
+            "updated": [],
+            "deleted": [],
+        }

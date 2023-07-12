@@ -44,7 +44,10 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
         ],
         request=AnalyticsReportCreateSerializer(),
         responses={
-            "201": AnalyticsReportSerializer,
+            "201": OpenApiResponse(
+                RqIdSerializer,
+                description="A analytics report request has been computed",
+            ),
             "202": OpenApiResponse(
                 RqIdSerializer,
                 description=textwrap.dedent(
@@ -123,6 +126,9 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
             report_manager = AnalyticsReportUpdateManager()
             rq_job = report_manager.get_analytics_check_job(rq_id)
 
+            if rq_job is None:
+                raise NotFound("Unknown request id")
+
             if rq_job.is_failed:
                 message = str(rq_job.exc_info)
                 rq_job.delete()
@@ -135,9 +141,8 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
                 if not return_value:
                     raise ValidationError("No report has been computed")
 
-                return get_analytics_report(
-                    request, {**request.query_params, "job_id": return_value}
-                )
+                serializer = RqIdSerializer({"rq_id": rq_id})
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
         summary="Method returns analytics report",

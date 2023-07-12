@@ -4,5 +4,5 @@
 
 from .annotation_speed import JobAnnotationSpeed
 from .annotation_time import JobAnnotationTime
-from .imetric import PrimaryMetricBase
+from .base import PrimaryMetricBase
 from .objects import JobObjects

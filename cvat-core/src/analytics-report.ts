@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ArgumentError } from './exceptions';
+
 export interface SerializedDataEntry {
     date?: string;
     value?: number | Record<string, number>
@@ -58,8 +60,8 @@ export class AnalyticsEntry {
         this.#description = initialData.description;
         this.#granularity = initialData.granularity;
         this.#defaultView = initialData.default_view as AnalyticsEntryViewType;
-        this.#dataseries = initialData.dataseries;
         this.#transformations = initialData.transformations;
+        this.#dataseries = this.applyTransformations(initialData.dataseries);
     }
 
     get title(): string {
@@ -86,6 +88,58 @@ export class AnalyticsEntry {
     get transformations(): SerializedTransformationEntry[] {
         return this.#transformations;
     }
+
+    private applyTransformations(
+        dataseries: Record<string, SerializedDataEntry[]>,
+    ): Record<string, SerializedDataEntry[]> {
+        this.#transformations.forEach((transform) => {
+            if (transform.binary) {
+                let operator: (left: number, right: number) => number;
+                switch (transform.binary.operator) {
+                    case '+': {
+                        operator = (left: number, right: number) => left + right;
+                        break;
+                    }
+                    case '-': {
+                        operator = (left: number, right: number) => left - right;
+                        break;
+                    }
+                    case '*': {
+                        operator = (left: number, right: number) => left * right;
+                        break;
+                    }
+                    case '/': {
+                        operator = (left: number, right: number) => (right !== 0 ? left / right : 0);
+                        break;
+                    }
+                    default: {
+                        throw new ArgumentError(
+                            `Cannot apply transformation: got unsupported operator type ${transform.binary.operator}.`,
+                        );
+                    }
+                }
+
+                const leftName = transform.binary.left;
+                const rightName = transform.binary.right;
+                dataseries[transform.name] = dataseries[leftName].map((left, i) => {
+                    const right = dataseries[rightName][i];
+                    if (typeof left.value === 'number' && typeof right.value === 'number') {
+                        return {
+                            value: operator(left.value, right.value),
+                            date: left.date,
+                        };
+                    }
+                    return {
+                        value: 0,
+                        date: left.date,
+                    };
+                });
+                delete dataseries[leftName];
+                delete dataseries[rightName];
+            }
+        });
+        return dataseries;
+    }
 }
 
 export default class AnalyticsReport {
@@ -98,7 +152,6 @@ export default class AnalyticsReport {
         this.#id = initialData.id;
         this.#target = initialData.target as AnalyticsReportType;
         this.#createdDate = initialData.created_date;
-
         this.#statistics = {};
         for (const [key, analyticsEntry] of Object.entries(initialData.statistics)) {
             this.#statistics[key] = new AnalyticsEntry(analyticsEntry);

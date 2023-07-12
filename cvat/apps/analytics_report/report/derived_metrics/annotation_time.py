@@ -4,7 +4,7 @@
 
 from cvat.apps.analytics_report.report.primary_metrics import JobAnnotationTime
 
-from .imetric import DerivedMetricBase
+from .base import DerivedMetricBase
 
 
 class TaskAnnotationTime(DerivedMetricBase, JobAnnotationTime):

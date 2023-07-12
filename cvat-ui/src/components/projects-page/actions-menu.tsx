@@ -70,9 +70,7 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
     ), 20]);
 
     menuItems.push([(
-        <Menu.Item
-            key='view-analytics'
-        >
+        <Menu.Item key='view-analytics'>
             <a
                 href={`/projects/${projectInstance.id}/analytics`}
                 onClick={(e: React.MouseEvent) => {
