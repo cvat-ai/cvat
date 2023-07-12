@@ -92,6 +92,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
     const handleKeydown = (event: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>): void => {
         if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Tab', 'Shift', 'Control'].includes(event.key)) {
             event.preventDefault();
+            event.stopPropagation();
             const copyEvent = new KeyboardEvent('keydown', event);
             window.document.dispatchEvent(copyEvent);
         }
