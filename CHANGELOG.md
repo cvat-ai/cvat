@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[Unreleased]
 ### Added
 - Multi-line text attributes supported (<https://github.com/opencv/cvat/pull/6458>)
+- Updated helm deploy documentation ()
 
 ### Changed
 - TDB
