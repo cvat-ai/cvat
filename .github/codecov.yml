@@ -23,5 +23,11 @@ codecov:
   require_ci_to_pass: yes
   notify:
     wait_for_ci: yes
-    after_n_builds: 16
 
+coverage:
+  status:
+    patch: false
+    project:
+      default:
+        target: auto
+        threshold: 5%

@@ -2183,7 +2183,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private deactivateShape(): void {
-        if (this.activeElement.clientID !== null) {
+        if (this.activeElement.clientID) {
             const { displayAllText } = this.configuration;
             const { clientID } = this.activeElement;
             const drawnState = this.drawnStates[clientID];
@@ -2667,9 +2667,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
         }
 
-        for (const tspan of (text.lines() as any).members) {
-            tspan.attr('x', text.attr('x'));
+        function applyParentX(parentText: SVGTSpanElement | SVGTextElement): void {
+            for (let i = 0; i < parentText.children.length; i++) {
+                if (i === 0) {
+                    // do not align the first child
+                    continue;
+                }
+
+                const tspan = parentText.children[i];
+                tspan.setAttribute('x', parentText.getAttribute('x'));
+                applyParentX(tspan as SVGTSpanElement);
+            }
         }
+
+        applyParentX(text.node as any as SVGTextElement);
     }
 
     private deleteText(clientID: number): void {
@@ -2733,15 +2744,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
                 if (withAttr) {
                     for (const attrID of Object.keys(attributes)) {
-                        const value = attributes[attrID] === undefinedAttrValue ? '' : attributes[attrID];
-                        block
-                            .tspan(`${attrNames[attrID]}: ${value}`)
-                            .attr({
-                                attrID,
-                                dy: '1em',
-                                x: 0,
-                            })
-                            .addClass('cvat_canvas_text_attribute');
+                        const values = `${attributes[attrID] === undefinedAttrValue ? '' : attributes[attrID]}`.split('\n');
+                        const parent = block.tspan(`${attrNames[attrID]}: `)
+                            .attr({ attrID, dy: '1em', x: 0 }).addClass('cvat_canvas_text_attribute');
+                        values.forEach((attrLine: string, index: number) => {
+                            parent
+                                .tspan(attrLine)
+                                .attr({
+                                    dy: index === 0 ? 0 : '1em',
+                                });
+                        });
                     }
                 }
             })

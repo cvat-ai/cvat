@@ -6128,7 +6128,6 @@ components:
             type: string
             maxLength: 200
       required:
-      - default_value
       - input_type
       - mutable
       - name
@@ -6146,16 +6145,13 @@ components:
           $ref: '#/components/schemas/InputTypeEnum'
         default_value:
           type: string
-          minLength: 1
           maxLength: 128
         values:
           type: array
           items:
             type: string
-            minLength: 1
             maxLength: 200
       required:
-      - default_value
       - input_type
       - mutable
       - name
