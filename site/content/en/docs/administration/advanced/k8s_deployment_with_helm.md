@@ -326,10 +326,8 @@ cvat:
             claimName: my-claim-name
 
 ```
-
 ### Im receiving service unavailable errors
 It is possible that the migrations did not run automatically, you may need to run them manually:
-
 ```sh
 HELM_RELEASE_NAMESPACE="<desired_namespace>" &&\
 HELM_RELEASE_NAME="<release_name>" &&\
@@ -337,10 +335,7 @@ BACKEND_POD_NAME=$(kubectl get pod --namespace $HELM_RELEASE_NAMESPACE -l tier=b
 kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py migrate &&\
 kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py health_check
 ```
-
-
 ### Im getting multi attach volume errors when my backend pods run on different nodes
-
 This often happens when running cvat using helm chart in a production environment (not locally) you can either change the volume access mode from ReadWriteOnce to ReadWriteMany if your volume supports it, or more conveniently add pod affinity rules to all the backend pods in the cvat values.yaml file to make sure they are all scheduled on the same node. 
 ```yaml
 affinity:
