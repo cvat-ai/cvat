@@ -3,19 +3,14 @@
 # SPDX-License-Identifier: MIT
 
 import json
-from copy import deepcopy
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import pytest
-from cvat_sdk.api_client import exceptions, models
-from cvat_sdk.api_client.api_client import ApiClient, Endpoint
-from cvat_sdk.core.helpers import get_paginated_collection
+from cvat_sdk.api_client import models
 from deepdiff import DeepDiff
 
 from shared.utils.config import make_api_client
-
-from .utils import CollectionSimpleFilterTestBase
 
 
 class _PermissionTestBase:
