@@ -106,6 +106,10 @@ spec:
           value: apt update && apt install --no-install-recommends -y libglib2.0-0
         - kind: WORKDIR
           value: /opt/nuclio
+        - kind: RUN
+          value: pip install supervision
+        - kind: WORKDIR
+          value: /opt/nuclio
 
   triggers:
     myHttpTrigger:
