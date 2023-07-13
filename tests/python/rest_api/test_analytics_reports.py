@@ -15,7 +15,7 @@ from shared.utils.config import make_api_client
 
 class _PermissionTestBase:
     @staticmethod
-    def _get_query_params(job_id: int | None, task_id: int | None, project_id: int | None):
+    def _get_query_params(job_id: Optional[int]=None, task_id: Optional[int]=None, project_id: Optional[int]=None):
         params = {}
         if job_id is not None:
             params["job_id"] = job_id
@@ -30,9 +30,9 @@ class _PermissionTestBase:
         self,
         user: str,
         *,
-        job_id: int | None = None,
-        task_id: int | None = None,
-        project_id: int | None = None,
+        job_id: Optional[int] = None,
+        task_id: Optional[int] = None,
+        project_id: Optional[int] = None,
     ):
         params = self._get_query_params(job_id=job_id, task_id=task_id, project_id=project_id)
 
@@ -60,9 +60,9 @@ class TestGetAnalyticsReports(_PermissionTestBase):
         self,
         user: str,
         *,
-        job_id: int | None = None,
-        task_id: int | None = None,
-        project_id: int | None = None,
+        job_id: Optional[int] = None,
+        task_id: Optional[int] = None,
+        project_id: Optional[int] = None,
         expected_data: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
@@ -80,9 +80,9 @@ class TestGetAnalyticsReports(_PermissionTestBase):
         self,
         user: str,
         *,
-        job_id: int | None = None,
-        task_id: int | None = None,
-        project_id: int | None = None,
+        job_id: Optional[int] = None,
+        task_id: Optional[int] = None,
+        project_id: Optional[int] = None,
         **kwargs,
     ):
         params = self._get_query_params(job_id=job_id, task_id=task_id, project_id=project_id)
