@@ -96,7 +96,7 @@ spec:
   eventTimeout: 30s
   build:
 
-    image: vat.pth.ultralytics.yolov8
+    image: cvat.pth.ultralytics.yolov8
     baseImage: ultralytics/ultralytics:latest-cpu
 
     directives:
