@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_serializer
+from rest_framework import serializers
 
 from cvat.apps.analytics_report.models import GranularityChoice, TypeChoice, ViewChoice
 
@@ -17,6 +17,7 @@ class StatisticsItemSerializer(serializers.Serializer):
     default_view = serializers.ChoiceField(choices=ViewChoice.choices())
     dataseries = serializers.DictField()
     transformations = serializers.ListField(child=serializers.DictField())
+
 
 @extend_schema_serializer(many=False)
 class AnalyticsReportSerializer(serializers.Serializer):

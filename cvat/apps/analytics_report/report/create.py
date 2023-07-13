@@ -2,16 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-from datetime import timedelta, datetime
-from uuid import uuid4
-
+from datetime import datetime, timedelta
 from typing import Callable, Optional, Union
+from uuid import uuid4
 
 import django_rq
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils import timezone
 from django.db import transaction
+from django.utils import timezone
 
 from cvat.apps.analytics_report.models import AnalyticsReport
 from cvat.apps.analytics_report.report.derived_metrics import (
@@ -35,6 +34,7 @@ from cvat.apps.analytics_report.report.primary_metrics import (
 )
 from cvat.apps.engine.models import Job, Project, Task
 
+
 def get_empty_report():
     metrics = [
         JobAnnotationSpeed(None),
@@ -48,10 +48,9 @@ def get_empty_report():
         pm.key(): AnalyticsReportUpdateManager._get_empty_statistics_entry(pm) for pm in metrics
     }
 
-    db_report = AnalyticsReport(
-        statistics=statistics,
-        created_date=datetime.now(timezone.utc))
+    db_report = AnalyticsReport(statistics=statistics, created_date=datetime.now(timezone.utc))
     return db_report
+
 
 class AnalyticsReportUpdateManager:
     _QUEUE_JOB_PREFIX_TASK = "update-analytics-report-task-"
@@ -220,7 +219,7 @@ class AnalyticsReportUpdateManager:
     @classmethod
     def _check_analytics_report(
         cls, *, cvat_job_id: int = None, cvat_task_id: int = None, cvat_project_id: int = None
-    ) ->  bool:
+    ) -> bool:
         if cvat_job_id is not None:
             queryset = Job.objects.select_related("analytics_report")
             with transaction.atomic():
@@ -241,7 +240,11 @@ class AnalyticsReportUpdateManager:
                     return False
 
                 actual_report = getattr(actual_job, "analytics_report", None)
-                actual_created_date = getattr(actual_report, "created_date", None) if actual_report is not None else None
+                actual_created_date = (
+                    getattr(actual_report, "created_date", None)
+                    if actual_report is not None
+                    else None
+                )
                 # The report has been updated during processing
                 if db_report.created_date != actual_created_date:
                     return False
@@ -250,7 +253,9 @@ class AnalyticsReportUpdateManager:
             return True
 
         elif cvat_task_id is not None:
-            queryset = Task.objects.select_related("analytics_report").prefetch_related("segment_set__job_set")
+            queryset = Task.objects.select_related("analytics_report").prefetch_related(
+                "segment_set__job_set"
+            )
             with transaction.atomic():
                 try:
                     db_task = queryset.get(pk=cvat_task_id)
@@ -258,7 +263,9 @@ class AnalyticsReportUpdateManager:
                 except Task.DoesNotExist:
                     return False
 
-            db_report, job_reports = cls()._compute_report_for_task(db_task=db_task, db_report=db_report)
+            db_report, job_reports = cls()._compute_report_for_task(
+                db_task=db_task, db_report=db_report
+            )
 
             with transaction.atomic():
                 # The job could have been deleted during processing
@@ -268,7 +275,9 @@ class AnalyticsReportUpdateManager:
                     return False
 
                 actual_report = getattr(actual_task, "analytics_report", None)
-                actual_created_date = actual_report.created_date if actual_report is not None else None
+                actual_created_date = (
+                    actual_report.created_date if actual_report is not None else None
+                )
                 # The report has been updated during processing
                 if db_report.created_date != actual_created_date:
                     return False
@@ -290,7 +299,9 @@ class AnalyticsReportUpdateManager:
             return True
 
         elif cvat_project_id is not None:
-            queryset = Project.objects.select_related("analytics_report").prefetch_related("tasks__segment_set__job_set")
+            queryset = Project.objects.select_related("analytics_report").prefetch_related(
+                "tasks__segment_set__job_set"
+            )
             with transaction.atomic():
                 try:
                     db_project = queryset.get(pk=cvat_project_id)
@@ -298,7 +309,9 @@ class AnalyticsReportUpdateManager:
                 except Project.DoesNotExist:
                     return False
 
-            db_report, task_reports, job_reports = cls()._compute_report_for_project(db_project=db_project, db_report=db_report)
+            db_report, task_reports, job_reports = cls()._compute_report_for_project(
+                db_project=db_project, db_report=db_report
+            )
 
             with transaction.atomic():
                 # The Project could have been deleted during processing
@@ -308,7 +321,9 @@ class AnalyticsReportUpdateManager:
                     return False
 
                 actual_report = getattr(actual_project, "analytics_report", None)
-                actual_created_date = actual_report.created_date if actual_report is not None else None
+                actual_created_date = (
+                    actual_report.created_date if actual_report is not None else None
+                )
                 # The report has been updated during processing
                 if db_report.created_date != actual_created_date:
                     return False
@@ -396,12 +411,19 @@ class AnalyticsReportUpdateManager:
 
         return db_report
 
-    def _compute_report_for_task(self, db_task: Task, db_report: AnalyticsReport, callback: Optional[Callable[[AnalyticsReport], None]]=None) -> tuple[AnalyticsReport, list[AnalyticsReport]]:
+    def _compute_report_for_task(
+        self,
+        db_task: Task,
+        db_report: AnalyticsReport,
+        callback: Optional[Callable[[AnalyticsReport], None]] = None,
+    ) -> tuple[AnalyticsReport, list[AnalyticsReport]]:
         job_reports = []
         for db_segment in db_task.segment_set.all():
             for db_job in db_segment.job_set.all():
                 job_report = self._get_analytics_report(db_job)
-                job_reports.append(self._compute_report_for_job(db_job=db_job, db_report=job_report))
+                job_reports.append(
+                    self._compute_report_for_job(db_job=db_job, db_report=job_report)
+                )
         # recalculate the report if there is no report or the existing one is outdated
         if db_report.created_date is None or db_report.created_date < db_task.updated_date:
             derived_metrics = [
@@ -425,7 +447,9 @@ class AnalyticsReportUpdateManager:
 
         return db_report, job_reports
 
-    def _compute_report_for_project(self, db_project: Project, db_report: AnalyticsReport) -> tuple[AnalyticsReport, list[AnalyticsReport], list[AnalyticsReport]]:
+    def _compute_report_for_project(
+        self, db_project: Project, db_report: AnalyticsReport
+    ) -> tuple[AnalyticsReport, list[AnalyticsReport], list[AnalyticsReport]]:
         job_reports = []
         task_reports = []
         for db_task in db_project.tasks.all():

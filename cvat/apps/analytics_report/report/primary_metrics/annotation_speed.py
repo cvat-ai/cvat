@@ -110,10 +110,12 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         value = 0
         if (wt := next(iter(result.result_rows))[0]) is not None:
             value = wt
-        dataseries["working_time"].append({
-            "value": value,
-            "datetime": timestamp_str,
-        })
+        dataseries["working_time"].append(
+            {
+                "value": value,
+                "datetime": timestamp_str,
+            }
+        )
 
         return dataseries
 

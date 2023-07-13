@@ -37,7 +37,9 @@ class JobAnnotationTime(PrimaryMetricBase):
             last_change = self._get_utc_now()
 
         metric = self.get_empty()
-        metric["total_annotating_time"][0]["value"] = total_annotating_time / 3600  # convert to hours
+        metric["total_annotating_time"][0]["value"] = (
+            total_annotating_time / 3600
+        )  # convert to hours
         metric["total_annotating_time"][0]["datetime"] = last_change.strftime("%Y-%m-%dT%H:%M:%SZ")
         return metric
 

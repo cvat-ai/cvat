@@ -20,7 +20,7 @@ from .utils import CollectionSimpleFilterTestBase
 
 class _PermissionTestBase:
     @staticmethod
-    def _get_query_params(job_id: int|None, task_id: int|None, project_id: int|None):
+    def _get_query_params(job_id: int | None, task_id: int | None, project_id: int | None):
         params = {}
         if job_id is not None:
             params["job_id"] = job_id
@@ -31,7 +31,14 @@ class _PermissionTestBase:
 
         return params
 
-    def create_analytics_report(self, user: str, *, job_id: int|None=None, task_id: int|None=None, project_id: int|None=None):
+    def create_analytics_report(
+        self,
+        user: str,
+        *,
+        job_id: int | None = None,
+        task_id: int | None = None,
+        project_id: int | None = None,
+    ):
         params = self._get_query_params(job_id=job_id, task_id=task_id, project_id=project_id)
 
         with make_api_client(user) as api_client:
@@ -51,10 +58,18 @@ class _PermissionTestBase:
                 if response.status == HTTPStatus.CREATED:
                     break
 
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetAnalyticsReports(_PermissionTestBase):
     def _test_get_report_200(
-        self, user: str, *, job_id: int|None=None, task_id: int|None=None, project_id: int|None=None, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self,
+        user: str,
+        *,
+        job_id: int | None = None,
+        task_id: int | None = None,
+        project_id: int | None = None,
+        expected_data: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ):
         params = self._get_query_params(job_id=job_id, task_id=task_id, project_id=project_id)
         with make_api_client(user) as api_client:
@@ -66,7 +81,15 @@ class TestGetAnalyticsReports(_PermissionTestBase):
 
         return response
 
-    def _test_get_report_403(self, user: str, *, job_id: int|None=None, task_id: int|None=None, project_id: int|None=None, **kwargs):
+    def _test_get_report_403(
+        self,
+        user: str,
+        *,
+        job_id: int | None = None,
+        task_id: int | None = None,
+        project_id: int | None = None,
+        **kwargs,
+    ):
         params = self._get_query_params(job_id=job_id, task_id=task_id, project_id=project_id)
         with make_api_client(user) as api_client:
             (_, response) = api_client.analytics_api.get_reports(
@@ -84,8 +107,7 @@ class TestGetAnalyticsReports(_PermissionTestBase):
         task = next(
             t
             for t in tasks
-            if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
+            if t["organization"] is None and not users[t["owner"]["id"]]["is_superuser"]
         )
 
         if is_staff:
@@ -105,11 +127,7 @@ class TestGetAnalyticsReports(_PermissionTestBase):
     def test_user_get_report_in_sandbox_job(
         self, jobs, users, is_job_staff, is_staff, allow, admin_user
     ):
-        job = next(
-            j
-            for j in jobs
-            if j["assignee"] is not None and j["type"] != "ground_truth"
-        )
+        job = next(j for j in jobs if j["assignee"] is not None and j["type"] != "ground_truth")
 
         if is_staff:
             user = job["assignee"]["username"]
@@ -131,14 +149,15 @@ class TestGetAnalyticsReports(_PermissionTestBase):
         project = next(
             p
             for p in projects
-            if p["organization"] is None
-            and not users[p["owner"]["id"]]["is_superuser"]
+            if p["organization"] is None and not users[p["owner"]["id"]]["is_superuser"]
         )
 
         if is_staff:
             user = project["owner"]["username"]
         else:
-            user = next(u for u in users if not is_project_staff(u["id"], project["id"]))["username"]
+            user = next(u for u in users if not is_project_staff(u["id"], project["id"]))[
+                "username"
+            ]
 
         self.create_analytics_report(admin_user, project_id=project["id"])
 
@@ -307,8 +326,7 @@ class TestGetAnalyticsReports(_PermissionTestBase):
         task = next(
             t
             for t in tasks
-            if t["organization"] is None
-            and not users[t["owner"]["id"]]["is_superuser"]
+            if t["organization"] is None and not users[t["owner"]["id"]]["is_superuser"]
         )
 
         if is_staff:
@@ -326,11 +344,7 @@ class TestGetAnalyticsReports(_PermissionTestBase):
     def test_user_get_empty_report_in_sandbox_job(
         self, jobs, users, is_job_staff, is_staff, allow, admin_user
     ):
-        job = next(
-            j
-            for j in jobs
-            if j["assignee"] is not None and j["type"] != "ground_truth"
-        )
+        job = next(j for j in jobs if j["assignee"] is not None and j["type"] != "ground_truth")
 
         if is_staff:
             user = job["assignee"]["username"]
@@ -350,14 +364,15 @@ class TestGetAnalyticsReports(_PermissionTestBase):
         project = next(
             p
             for p in projects
-            if p["organization"] is None
-            and not users[p["owner"]["id"]]["is_superuser"]
+            if p["organization"] is None and not users[p["owner"]["id"]]["is_superuser"]
         )
 
         if is_staff:
             user = project["owner"]["username"]
         else:
-            user = next(u for u in users if not is_project_staff(u["id"], project["id"]))["username"]
+            user = next(u for u in users if not is_project_staff(u["id"], project["id"]))[
+                "username"
+            ]
 
         if allow:
             self._test_get_report_200(user, project_id=project["id"])
