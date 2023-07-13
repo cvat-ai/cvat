@@ -15,7 +15,11 @@ from shared.utils.config import make_api_client
 
 class _PermissionTestBase:
     @staticmethod
-    def _get_query_params(job_id: Optional[int]=None, task_id: Optional[int]=None, project_id: Optional[int]=None):
+    def _get_query_params(
+        job_id: Optional[int] = None,
+        task_id: Optional[int] = None,
+        project_id: Optional[int] = None,
+    ):
         params = {}
         if job_id is not None:
             params["job_id"] = job_id
