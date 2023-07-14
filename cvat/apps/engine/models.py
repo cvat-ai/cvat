@@ -1160,6 +1160,7 @@ class AnnotationGuide(models.Model):
     markdown = models.TextField(blank=True, default='')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+    is_public = models.BooleanField(default=False)
 
     @property
     def target(self):
