@@ -62,7 +62,7 @@ def get_organization(request, obj):
         except AttributeError as exc:
             # Skip initialization of organization for those objects that don't related with organization
             view = request.parser_context.get('view')
-            if view and view.basename in ('user', 'function', 'request',):
+            if view and view.basename in settings.OBJECTS_NOT_RELATED_WITH_ORG:
                 return request.iam_context['organization']
 
             raise exc
@@ -88,8 +88,9 @@ def get_iam_context(request, obj):
     organization = get_organization(request, obj)
     membership = get_membership(request, organization)
 
-    if organization and not request.user.is_superuser and membership is None:
-        raise PermissionDenied({'message': 'You should be an active member in the organization'})
+    # TODO
+    # if organization and not request.user.is_superuser and membership is None:
+    #     raise PermissionDenied({'message': 'You should be an active member in the organization'})
 
     return {
         'user_id': request.user.id,

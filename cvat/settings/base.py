@@ -255,7 +255,11 @@ TEMPLATES = [
 # IAM settings
 IAM_TYPE = 'BASIC'
 IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
-IAM_DEFAULT_ROLES = ['user']
+
+# the function should be in uppercase to able get access from django.conf.settings
+def GET_IAM_DEFAULT_ROLES(user) -> list:
+    return ['user']
+
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
@@ -263,6 +267,8 @@ IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
+
+OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'request',]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'

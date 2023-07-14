@@ -209,6 +209,18 @@ allow {
 }
 
 allow {
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA,
+      utils.VIEW_METADATA, utils.VIEW_COMMITS,
+      utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
+      utils.IMPORT_ANNOTATIONS, utils.UPDATE_METADATA
+    }[input.scope]
+    input.auth.organization.id == input.resource.organization.id
+    input.auth.user.privilege == utils.WORKER
+    input.auth.organization.user.role == null
+    is_job_assignee
+}
+
+allow {
     { utils.UPDATE_STAGE, utils.UPDATE_ASSIGNEE }[input.scope]
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
