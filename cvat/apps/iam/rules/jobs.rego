@@ -157,7 +157,7 @@ allow {
 allow {
     { utils.VIEW,
       utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS,
-      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS
+      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA
     }[input.scope]
     utils.is_sandbox
     is_job_staff
@@ -166,7 +166,7 @@ allow {
 allow {
     { utils.CREATE, utils.DELETE, utils.VIEW,
       utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS,
-      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS
+      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA
     }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
@@ -176,7 +176,7 @@ allow {
 allow {
     { utils.VIEW,
       utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS,
-      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS
+      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA
     }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)

@@ -1203,7 +1203,6 @@ class JobPermission(OpenPolicyAgentPermission):
         IMPORT_ANNOTATIONS = 'import:annotations'
         EXPORT_ANNOTATIONS = 'export:annotations'
         EXPORT_DATASET = 'export:dataset'
-        VIEW_COMMITS = 'view:commits'
         VIEW_DATA = 'view:data'
         VIEW_METADATA = 'view:metadata'
         UPDATE_METADATA = 'update:metadata'
@@ -1286,7 +1285,6 @@ class JobPermission(OpenPolicyAgentPermission):
             ('metadata','GET'): Scopes.VIEW_METADATA,
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
             ('issues', 'GET'): Scopes.VIEW,
-            ('commits', 'GET'): Scopes.VIEW_COMMITS,
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
             ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))

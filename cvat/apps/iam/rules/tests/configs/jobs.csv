@@ -49,10 +49,6 @@ update:metadata,Job,Sandbox,None,,PATCH,/jobs/{id}/data/meta,Admin,N/A
 update:metadata,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PATCH,/jobs/{id}/data/meta,Worker,N/A
 update:metadata,Job,Organization,None,,PATCH,/jobs/{id}/data/meta,User,Maintainer
 update:metadata,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PATCH,/jobs/{id}/data/meta,Worker,Worker
-view:commits,Job,Sandbox,None,,GET,/jobs/{id}/commits,Admin,N/A
-view:commits,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/commits,None,N/A
-view:commits,Job,Organization,None,,GET,/jobs/{id}/commits,User,Maintainer
-view:commits,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/commits,None,Worker
 import:annotations,Job,Sandbox,None,,PUT,/jobs/{id}/annotations?format=,Admin,N/A
 import:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PUT,/jobs/{id}/annotations?format=,Worker,N/A
 import:annotations,Job,Organization,None,,PUT,/jobs/{id}/annotations?format=,User,Maintainer
