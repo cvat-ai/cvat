@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[Unreleased]
 ### Added
 - Multi-line text attributes supported (<https://github.com/opencv/cvat/pull/6458>)
-- Added YoloV8 serverless support for semi/automatic annotation
+- Added YoloV8 serverless support for semi/automatic annotation (<https://github.com/opencv/cvat/pull/6491>)
 
 ### Changed
 - TDB
