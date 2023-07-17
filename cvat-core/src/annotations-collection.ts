@@ -664,13 +664,20 @@ export default class Collection {
             labels[label][track.shapeType].track++;
             const keyframes = Object.keys(track.shapes)
                 .sort((a, b) => +a - +b)
-                .map((el) => +el);
+                .map((el) => +el)
+                .filter((frame) => !this.frameMeta.deleted_frames[frame]);
 
             let prevKeyframe = keyframes[0];
             let visible = false;
             for (const keyframe of keyframes) {
                 if (visible) {
-                    const interpolated = keyframe - prevKeyframe - 1;
+                    let removedFrames = 0;
+                    for (let f = prevKeyframe; f < keyframe; f++) {
+                        if (this.frameMeta.deleted_frames[f]) {
+                            removedFrames++;
+                        }
+                    }
+                    const interpolated = keyframe - prevKeyframe - 1 - removedFrames;
                     labels[label].interpolated += interpolated;
                     labels[label].total += interpolated;
                 }
@@ -719,13 +726,13 @@ export default class Collection {
             }
 
             const { name: label } = object.label;
-            if (objectType === 'tag') {
+            if (objectType === 'tag' && !this.frameMeta.deleted_frames[object.frame]) {
                 labels[label].tag++;
                 labels[label].manually++;
                 labels[label].total++;
             } else if (objectType === 'track') {
                 scanTrack(object);
-            } else {
+            } else if (!this.frameMeta.deleted_frames[object.frame]) {
                 const { shapeType } = object as Shape;
                 labels[label][shapeType].shape++;
                 labels[label].manually++;
