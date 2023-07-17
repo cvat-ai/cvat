@@ -659,6 +659,19 @@ export default class Collection {
         fillBody(Object.values(this.labels).filter((label) => !label.hasParent));
 
         const scanTrack = (track, prefix = ''): void => {
+            const countInterpolatedFrames = (start: number, stop: number, lastIsKeyframe: boolean): number => {
+                let count = stop - start;
+                if (lastIsKeyframe) {
+                    count -= 1;
+                }
+                for (let i = start + 1; lastIsKeyframe ? i < stop : i <= stop; i++) {
+                    if (this.frameMeta.deleted_frames[i]) {
+                        count--;
+                    }
+                }
+                return count;
+            };
+
             const pref = prefix ? `${prefix}${sep}` : '';
             const label = `${pref}${track.label.name}`;
             labels[label][track.shapeType].track++;
@@ -671,13 +684,7 @@ export default class Collection {
             let visible = false;
             for (const keyframe of keyframes) {
                 if (visible) {
-                    let removedFrames = 0;
-                    for (let f = prevKeyframe; f < keyframe; f++) {
-                        if (this.frameMeta.deleted_frames[f]) {
-                            removedFrames++;
-                        }
-                    }
-                    const interpolated = keyframe - prevKeyframe - 1 - removedFrames;
+                    const interpolated = countInterpolatedFrames(prevKeyframe, keyframe, true);
                     labels[label].interpolated += interpolated;
                     labels[label].total += interpolated;
                 }
@@ -699,7 +706,7 @@ export default class Collection {
             }
 
             if (lastKey !== this.stopFrame && !track.get(lastKey).outside) {
-                const interpolated = this.stopFrame - lastKey;
+                const interpolated = countInterpolatedFrames(lastKey, this.stopFrame, false);
                 labels[label].interpolated += interpolated;
                 labels[label].total += interpolated;
             }
