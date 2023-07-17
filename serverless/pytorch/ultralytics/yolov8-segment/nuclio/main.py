@@ -19,7 +19,6 @@ def to_cvat_mask(box: list, mask):
 def init_context(context):
     context.logger.info("Init context...  0%")
 
-    model_path = "best.pt"
     model_path = "yolov8m-seg.pt"
 
     model = YOLO(model_path, task="segment")
