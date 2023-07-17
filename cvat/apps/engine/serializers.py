@@ -6,6 +6,7 @@
 import os
 import re
 import shutil
+from typing import List
 
 from tempfile import NamedTemporaryFile
 from io import BytesIO
@@ -19,6 +20,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
+from cvat.apps.engine.media_extractors import sort
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 
@@ -481,6 +483,17 @@ class StorageSerializer(serializers.ModelSerializer):
         fields = ('id', 'location', 'cloud_storage_id')
 
 
+class S3FileSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
+
+    def get_file(self, obj: models.S3File):
+        return os.path.basename(obj.file.name)
+
+    class Meta:
+        model = models.S3File
+        fields = ('file',)
+
+
 class TaskReadSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
@@ -496,6 +509,17 @@ class TaskReadSerializer(serializers.ModelSerializer):
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
+    filenames = serializers.SerializerMethodField()
+
+    def get_filenames(self, obj: models.Task)->List[str]:
+        data = obj.data
+        if data is None or data.sorting_method == models.SortingMethod.RANDOM:
+            return []
+        queryset = obj.data.s3_files.all()
+        if len(queryset) > 0:
+            filenames = [os.path.basename(file.file.name) for file in queryset]
+            return sort(filenames, sorting_method=data.sorting_method)
+        return []
 
     class Meta:
         model = models.Task
@@ -505,6 +529,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             'status', 'labels', 'segments', 'data_chunk_size', 'data_compressed_chunk_type',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'priority',
+            'filenames',
         )
         read_only_fields = fields
         extra_kwargs = {
