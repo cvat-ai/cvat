@@ -117,10 +117,6 @@ spec:
       attributes:
         maxRequestBodySize: 33554432 # 32MB
 
-  resources:
-    limits:
-      nvidia.com/gpu: 1
-
   platform:
     attributes:
       restartPolicy:
