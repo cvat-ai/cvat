@@ -24,6 +24,7 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, Http404, HttpResponseRedirect
 from django.utils import timezone
+from django.core.paginator import Paginator
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -51,13 +52,13 @@ from cvat.apps.engine.cloud_provider import (
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.media_extractors import ImageListReader
+from cvat.apps.engine.media_extractors import ImageListReader, sort
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
-    CloudProviderChoice, Location
+    CloudProviderChoice, Location, SortingMethod,
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
@@ -882,6 +883,27 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             context={"request": request})
 
         return Response(serializer.data)
+
+    @extend_schema(summary='Returns list of files in the task split by jobs',
+                   responses=serializers.ListSerializer(
+                       child=serializers.ListSerializer(
+                           child=serializers.CharField(default="file.jpg")
+                       )
+                   ))
+    @action(detail=True, methods=['GET'], serializer_class=None, pagination_class=None,
+            filter_fields=None, search_fields=None, ordering_fields=None)
+    def files(self, request, pk):
+        task: Task = self.get_object()
+        data = task.data
+        if data.sorting_method == SortingMethod.RANDOM:
+            files = []
+        else:
+            files = sort([os.path.basename(file.file.name) for file in data.s3_files.all()])
+            if len(files) > 0 and task.segment_size > 0:
+                paginator = Paginator(files, task.segment_size)
+                files = [paginator.page(i).object_list for i in paginator.page_range]
+
+        return Response(files)
 
     # UploadMixin method
     def get_upload_dir(self):
