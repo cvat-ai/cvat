@@ -637,6 +637,9 @@ class TestGetTaskDataset:
 
     @pytest.mark.usefixtures("restore_db_per_function")
     def test_can_download_task_with_special_chars_in_name(self, admin_user):
+        # Control characters in filenames may conflict with the Content-Disposition header
+        # value restrictions, as it needs to include the downloaded file name.
+
         task_spec = {
             "name": "test_special_chars_{}_in_name".format("".join(chr(c) for c in range(1, 127))),
             "labels": [{"name": "cat"}],
