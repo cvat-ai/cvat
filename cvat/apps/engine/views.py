@@ -24,7 +24,6 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, Http404, HttpResponseRedirect
 from django.utils import timezone
-from django.core.paginator import Paginator
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -58,7 +57,7 @@ from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
-    CloudProviderChoice, Location, SortingMethod,
+    CloudProviderChoice, Location,
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
@@ -768,6 +767,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return queryset
 
+    def retrieve(self, request, *args, **kwargs):
+        task = self.get_object()
+        context = self.get_serializer_context()
+        context['filenames'] = self._get_filenames(task)
+        serializer = self.get_serializer(task, context=context)
+        return Response(serializer.data)
+
     @extend_schema(summary='Method recreates a task from an attached task backup file',
         parameters=[
             OpenApiParameter('location', description='Where to import the backup file from',
@@ -869,7 +875,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             db_project = instance.project
             db_project.save()
 
-
     @extend_schema(summary='Method returns a list of jobs for a specific task',
         responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
     @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer(many=True),
@@ -877,33 +882,26 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
         pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
     def jobs(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        queryset = Job.objects.filter(segment__task_id=pk)
-        serializer = JobReadSerializer(queryset, many=True,
-            context={"request": request})
+        # add context here
+        task: Task = self.get_object() # force to call check_object_permissions
+        queryset = Job.objects.filter(segment__task_id=pk).select_related('segment')
+        serializer = JobReadSerializer(
+            queryset, many=True,
+            context={
+                "request": request,
+                "filenames": self._get_filenames(task),
+            }
+        )
 
         return Response(serializer.data)
 
-    @extend_schema(summary='Returns list of files in the task split by jobs',
-                   responses=serializers.ListSerializer(
-                       child=serializers.ListSerializer(
-                           child=serializers.CharField(default="file.jpg")
-                       )
-                   ))
-    @action(detail=True, methods=['GET'], serializer_class=None, pagination_class=None,
-            filter_fields=None, search_fields=None, ordering_fields=None)
-    def files(self, request, pk):
-        task: Task = self.get_object()
+    def _get_filenames(self, task: Task):
         data = task.data
-        if data.sorting_method == SortingMethod.RANDOM:
-            files = []
-        else:
-            files = sort([os.path.basename(file.file.name) for file in data.s3_files.all()])
-            if len(files) > 0 and task.segment_size > 0:
-                paginator = Paginator(files, task.segment_size)
-                files = [paginator.page(i).object_list for i in paginator.page_range]
-
-        return Response(files)
+        if data is None or data.sorting_method == models.SortingMethod.RANDOM:
+            return []
+        queryset = data.s3_files.all()
+        filenames = [os.path.basename(file.file.name) for file in queryset]
+        return sort(filenames, sorting_method=data.sorting_method)
 
     # UploadMixin method
     def get_upload_dir(self):
