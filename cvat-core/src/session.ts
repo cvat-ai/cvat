@@ -817,6 +817,7 @@ export class Job extends Session {
             data_chunk_size: undefined,
             bug_tracker: null,
             mode: undefined,
+            filenames: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -846,6 +847,12 @@ export class Job extends Session {
             }).filter((label) => !label.hasParent);
         } else {
             throw new Error('Job labels must be an array');
+        }
+
+        if (Array.isArray(initialData.filenames)) {
+            data.filenames = initialData.filenames;
+        } else {
+            throw new Error('Job filenames must be an array');
         }
 
         Object.defineProperties(
@@ -1045,6 +1052,16 @@ export class Job extends Session {
                  */
                 bugTracker: {
                     get: () => data.bug_tracker,
+                },
+                /**
+                 * @name filenames
+                 * @type {string[]}
+                 * @memberof module:API.cvat.classes.Job
+                 * @instance
+                 * @readonly
+                 */
+                filenames: {
+                    get: () => [...data.filenames],
                 },
                 _updateTrigger: {
                     get: () => updateTrigger,
@@ -1268,6 +1285,7 @@ export class Task extends Session {
                             dimension: data.dimension,
                             data_compressed_chunk_type: data.data_compressed_chunk_type,
                             data_chunk_size: data.data_chunk_size,
+                            filenames: job.filenames,
                         });
 
                         data.jobs.push(jobInstance);
