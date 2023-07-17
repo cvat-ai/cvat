@@ -129,8 +129,7 @@ class AnalyticsReportUpdateManager:
         pass
 
     def schedule_analytics_report_autoupdate_job(self, *, job=None, task=None, project=None):
-        if sum(map(bool, (job, task, project))) > 1:
-            return
+        assert sum(map(bool, (job, task, project))) == 1, "Expected only 1 argument"
 
         now = timezone.now()
         delay = self._get_analytics_check_job_delay()
@@ -226,9 +225,10 @@ class AnalyticsReportUpdateManager:
                 # The Job could have been deleted during scheduling
                 try:
                     db_job = queryset.get(pk=cvat_job_id)
-                    db_report = cls._get_analytics_report(db_job)
                 except Job.DoesNotExist:
                     return False
+
+                db_report = cls._get_analytics_report(db_job)
 
             db_report = cls()._compute_report_for_job(db_job=db_job, db_report=db_report)
 
@@ -259,16 +259,16 @@ class AnalyticsReportUpdateManager:
             with transaction.atomic():
                 try:
                     db_task = queryset.get(pk=cvat_task_id)
-                    db_report = cls._get_analytics_report(db_task)
                 except Task.DoesNotExist:
                     return False
 
+            db_report = cls._get_analytics_report(db_task)
             db_report, job_reports = cls()._compute_report_for_task(
                 db_task=db_task, db_report=db_report
             )
 
             with transaction.atomic():
-                # The job could have been deleted during processing
+                # The task could have been deleted during processing
                 try:
                     actual_task = queryset.get(pk=cvat_task_id)
                 except Task.DoesNotExist:
@@ -305,10 +305,10 @@ class AnalyticsReportUpdateManager:
             with transaction.atomic():
                 try:
                     db_project = queryset.get(pk=cvat_project_id)
-                    db_report = cls._get_analytics_report(db_project)
                 except Project.DoesNotExist:
                     return False
 
+            db_report = cls._get_analytics_report(db_project)
             db_report, task_reports, job_reports = cls()._compute_report_for_project(
                 db_project=db_project, db_report=db_report
             )
