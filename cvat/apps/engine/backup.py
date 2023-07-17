@@ -26,7 +26,6 @@ from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
-from django_sendfile import sendfile
 from distutils.util import strtobool
 
 import cvat.apps.dataset_manager as dm
@@ -37,7 +36,9 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after
+    av_scan_paths, process_failed_job, configure_dependent_job,
+    get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after,
+    sendfile
 )
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
