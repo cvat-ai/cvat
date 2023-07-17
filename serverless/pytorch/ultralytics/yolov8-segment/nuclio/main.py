@@ -2,7 +2,7 @@ import json
 import base64
 from PIL import Image
 import io
-import torch
+
 import numpy as np
 from ultralytics import YOLO
 import supervision as sv
