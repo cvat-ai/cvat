@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[Unreleased]
 ### Added
 - Multi-line text attributes supported (<https://github.com/opencv/cvat/pull/6458>)
+- \{SDK\] `cvat_sdk.datasets`, a framework-agnostic equivalent of `cvat_sdk.pytorch`
+  (<https://github.com/opencv/cvat/pull/6428>)
 
 ### Changed
 - TDB
