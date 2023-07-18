@@ -45,7 +45,6 @@ class AnalyticsReportViewSet(viewsets.ViewSet):
         request=AnalyticsReportCreateSerializer(),
         responses={
             "201": OpenApiResponse(
-                RqIdSerializer,
                 description="A analytics report request has been computed",
             ),
             "202": OpenApiResponse(

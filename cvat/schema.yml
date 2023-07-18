@@ -89,10 +89,6 @@ paths:
       - basicAuth: []
       responses:
         '201':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/RqId'
           description: A analytics report request has been computed
         '202':
           content:
