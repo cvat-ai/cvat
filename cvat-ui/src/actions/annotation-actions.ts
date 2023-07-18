@@ -942,10 +942,11 @@ export function getJobAsync(
                 if (report) conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
             }
 
-            // navigate to correct first frame according to setup
-            const frameNumber = (await job.frames.search(
-                { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
-            )) || job.startFrame;
+            // frame query parameter does not work for GT job
+            const frameNumber = Number.isInteger(initialFrame) && groundTruthJobId !== job.id ?
+                initialFrame : (await job.frames.search(
+                    { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
+                )) || job.startFrame;
 
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
