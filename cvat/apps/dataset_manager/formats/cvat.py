@@ -1151,7 +1151,7 @@ def load_anno(file_object, annotations):
                 track = annotations.Track(
                     label=el.attrib['label'],
                     group=int(el.attrib.get('group_id', 0)),
-                    source=el.attrib.get('source', 'manual'),
+                    source='file',
                     shapes=[],
                     elements=[],
                 )
@@ -1176,7 +1176,7 @@ def load_anno(file_object, annotations):
                         track_elements[el.attrib['label']] = annotations.Track(
                             label=el.attrib['label'],
                             group=0,
-                            source=el.attrib.get('source', 'manual'),
+                            source='file',
                             shapes=[],
                             elements=[],
                         )
@@ -1200,7 +1200,7 @@ def load_anno(file_object, annotations):
                     'label': el.attrib['label'],
                     'group': int(el.attrib.get('group_id', 0)),
                     'attributes': attributes,
-                    'source': str(el.attrib.get('source', 'manual'))
+                    'source': 'file',
                 }
         elif ev == 'end':
             if el.tag == 'attribute' and elem_attributes is not None and shape_element is not None:
@@ -1254,7 +1254,7 @@ def load_anno(file_object, annotations):
 
                 if track is None:
                     shape_element['frame'] = frame_id
-                    shape_element['source'] = str(el.attrib.get('source', 'manual'))
+                    shape_element['source'] = 'file'
                     shape['elements'].append(annotations.LabeledShape(**shape_element))
                 else:
                     shape_element["frame"] = shape['frame']
@@ -1272,7 +1272,7 @@ def load_anno(file_object, annotations):
                     shape['frame'] = frame_id
                     shape['label'] = el.attrib['label']
                     shape['group'] = int(el.attrib.get('group_id', 0))
-                    shape['source'] = str(el.attrib.get('source', 'manual'))
+                    shape['source'] = 'file'
                     shape['outside'] = False
 
                 shape['occluded'] = el.attrib.get('occluded', "0") == '1'

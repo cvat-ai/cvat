@@ -5,6 +5,7 @@
 from dateutil import parser
 
 import cvat.apps.dataset_manager as dm
+from cvat.apps.engine.models import SourceType
 from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
 from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase
 
@@ -31,14 +32,16 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
     def calculate(self):
         def get_tags_count(annotations):
-            return len(annotations["tags"])
+            return sum(1 for t in annotations["tags"] if t["source"] != SourceType.FILE)
 
         def get_shapes_count(annotations):
-            return len(annotations["shapes"])
+            return sum(1 for s in annotations["shapes"] if s["source"] != SourceType.FILE)
 
         def get_track_count(annotations):
             count = 0
             for track in annotations["tracks"]:
+                if track["source"] == SourceType.FILE:
+                    continue
                 if len(track["shapes"]) == 1:
                     count += self._db_obj.segment.stop_frame - track["shapes"][0]["frame"] + 1
                 for prev_shape, cur_shape in zip(track["shapes"], track["shapes"][1:]):

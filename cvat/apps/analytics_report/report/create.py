@@ -415,7 +415,6 @@ class AnalyticsReportUpdateManager:
         self,
         db_task: Task,
         db_report: AnalyticsReport,
-        callback: Optional[Callable[[AnalyticsReport], None]] = None,
     ) -> tuple[AnalyticsReport, list[AnalyticsReport]]:
         job_reports = []
         for db_segment in db_task.segment_set.all():
