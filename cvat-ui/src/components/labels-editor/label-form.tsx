@@ -10,6 +10,7 @@ import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
 import Select from 'antd/lib/select';
+import Tag from 'antd/lib/tag';
 import Form, { FormInstance } from 'antd/lib/form';
 import Badge from 'antd/lib/badge';
 import Modal from 'antd/lib/modal';
@@ -95,7 +96,8 @@ export default class LabelForm extends React.Component<Props> {
                 return {
                     ...attribute,
                     values: attrValues,
-                    default_value: attrValues[0],
+                    default_value: attribute.default_value && attrValues.includes(attribute.default_value) ?
+                        attribute.default_value : attrValues[0],
                     input_type: attribute.type.toLowerCase(),
                 };
             }),
@@ -244,7 +246,7 @@ export default class LabelForm extends React.Component<Props> {
         };
 
         return (
-            <CVATTooltip title='Press enter to add a new value'>
+            <CVATTooltip title='Press enter to add a new value, click the item to select default value'>
                 <Form.Item
                     name={[key, 'values']}
                     rules={[
@@ -262,6 +264,24 @@ export default class LabelForm extends React.Component<Props> {
                         mode='tags'
                         placeholder='Attribute values'
                         dropdownStyle={{ display: 'none' }}
+                        tagRender={(props) => {
+                            const attrs = this.formRef.current?.getFieldValue('attributes');
+                            return (
+                                <Tag
+                                    color={props.value === attrs[key].default_value ? 'red' : undefined}
+                                    onClose={props.onClose}
+                                    onClick={() => {
+                                        attrs[key].default_value = props.value;
+                                        this.formRef.current?.setFieldsValue({
+                                            attributes: attrs,
+                                        });
+                                    }}
+                                    closable={props.closable}
+                                >
+                                    {props.label}
+                                </Tag>
+                            );
+                        }}
                     />
                 </Form.Item>
             </CVATTooltip>
