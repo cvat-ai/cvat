@@ -364,7 +364,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 target_dir=target_data_dir,
             )
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("We don't currently support backing up tasks with data from cloud storage")
 
     def _write_task(self, zip_object, target_dir=None):
         task_dir = self._db_task.get_dirname()

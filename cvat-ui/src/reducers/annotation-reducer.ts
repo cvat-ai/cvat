@@ -221,7 +221,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     instance: job.dimension === DimensionType.DIMENSION_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
-                workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,
+                workspace: isReview && job.dimension === DimensionType.DIMENSION_2D ?
+                    Workspace.REVIEW_WORKSPACE : workspaceSelected,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
