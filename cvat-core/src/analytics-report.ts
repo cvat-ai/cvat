@@ -36,7 +36,7 @@ export interface SerializedAnalyticsReport {
     statistics?: Record<string, SerializedAnalyticsEntry>
 }
 
-export enum AnalyticsReportType {
+export enum AnalyticsReportTarget {
     JOB = 'job',
     TASK = 'task',
     PROJECT = 'project',
@@ -144,13 +144,13 @@ export class AnalyticsEntry {
 
 export default class AnalyticsReport {
     #id: number;
-    #target: AnalyticsReportType;
+    #target: AnalyticsReportTarget;
     #createdDate: string;
     #statistics: Record<string, AnalyticsEntry>;
 
     constructor(initialData: SerializedAnalyticsReport) {
         this.#id = initialData.id;
-        this.#target = initialData.target as AnalyticsReportType;
+        this.#target = initialData.target as AnalyticsReportTarget;
         this.#createdDate = initialData.created_date;
         this.#statistics = {};
         for (const [key, analyticsEntry] of Object.entries(initialData.statistics)) {
@@ -162,7 +162,7 @@ export default class AnalyticsReport {
         return this.#id;
     }
 
-    get target(): AnalyticsReportType {
+    get target(): AnalyticsReportTarget {
         return this.#target;
     }
 

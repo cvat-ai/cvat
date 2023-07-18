@@ -5,8 +5,16 @@
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
-from cvat.apps.analytics_report.models import GranularityChoice, TypeChoice, ViewChoice
+from cvat.apps.analytics_report.models import GranularityChoice, TargetChoice, ViewChoice, BinaryOperatorType
 
+class BinaryOperationSerializer(serializers.Serializer):
+    left = serializers.CharField(required=False, allow_null=True)
+    operator = serializers.ChoiceField(choices=BinaryOperatorType.choices())
+    right = serializers.CharField(required=False, allow_null=True)
+
+class TransformationSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    binary = BinaryOperationSerializer(required=False, allow_null=True)
 
 class StatisticsItemSerializer(serializers.Serializer):
     title = serializers.CharField()
@@ -16,13 +24,13 @@ class StatisticsItemSerializer(serializers.Serializer):
     )
     default_view = serializers.ChoiceField(choices=ViewChoice.choices())
     dataseries = serializers.DictField()
-    transformations = serializers.ListField(child=serializers.DictField())
+    transformations = serializers.ListField(child=TransformationSerializer())
 
 
 @extend_schema_serializer(many=False)
 class AnalyticsReportSerializer(serializers.Serializer):
     created_date = serializers.DateTimeField()
-    target = serializers.ChoiceField(choices=TypeChoice.choices())
+    target = serializers.ChoiceField(choices=TargetChoice.choices())
     job_id = serializers.IntegerField(required=False)
     task_id = serializers.IntegerField(required=False)
     project_id = serializers.IntegerField(required=False)

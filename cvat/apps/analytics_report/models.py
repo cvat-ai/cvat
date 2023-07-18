@@ -9,7 +9,7 @@ from django.db import models
 from cvat.apps.engine.models import Job, Project, Task
 
 
-class TypeChoice(str, Enum):
+class TargetChoice(str, Enum):
     JOB = "job"
     TASK = "task"
     PROJECT = "project"
@@ -58,6 +58,36 @@ class ViewChoice(str, Enum):
     def __str__(self):
         return self.value
 
+class TransformOperationType(str, Enum):
+    BINARY = "binary"
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda x: x.value, cls))
+
+    def __str__(self):
+        return self.value
+
+class BinaryOperatorType(str, Enum):
+    ADDITION = "+"
+    SUBTRACTION = "-"
+    MULTIPLICATION = "*"
+    DIVISION = "/"
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda x: x.value, cls))
+
+    def __str__(self):
+        return self.value
 
 class AnalyticsReport(models.Model):
     job = models.OneToOneField(

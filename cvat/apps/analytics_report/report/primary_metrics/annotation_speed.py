@@ -6,7 +6,7 @@ from dateutil import parser
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.models import SourceType
-from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice
+from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice, TransformOperationType, BinaryOperatorType
 from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase
 
 
@@ -22,9 +22,9 @@ class JobAnnotationSpeed(PrimaryMetricBase):
     _transformations = [
         {
             "name": "annotation_speed",
-            "binary": {
+            TransformOperationType.BINARY: {
                 "left": "object_count",
-                "operator": "/",
+                "operator": BinaryOperatorType.DIVISION,
                 "right": "working_time",
             },
         },

@@ -9,7 +9,7 @@ from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
-from cvat.apps.analytics_report.models import AnalyticsReport, TypeChoice
+from cvat.apps.analytics_report.models import AnalyticsReport, TargetChoice
 from cvat.apps.analytics_report.report.create import get_empty_report
 from cvat.apps.analytics_report.serializers import AnalyticsReportSerializer
 from cvat.apps.engine.models import Job, Project, Task
@@ -52,11 +52,11 @@ def _get_object_report(obj_model, pk, start_date, end_date):
     statistics = _convert_datetime_to_date(statistics)
 
     if obj_model is Job:
-        target = TypeChoice.JOB
+        target = TargetChoice.JOB
     elif obj_model is Task:
-        target = TypeChoice.TASK
+        target = TargetChoice.TASK
     elif obj_model is Project:
-        target = TypeChoice.PROJECT
+        target = TargetChoice.PROJECT
 
     data = {
         "target": target,

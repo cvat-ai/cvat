@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from dateutil import parser
 
 from cvat.apps.analytics_report.report.primary_metrics import JobAnnotationSpeed
+from cvat.apps.analytics_report.models import TransformOperationType, BinaryOperatorType
 
 from .base import DerivedMetricBase
 
@@ -17,12 +18,11 @@ class TaskAnnotationSpeed(DerivedMetricBase, JobAnnotationSpeed):
     _transformations = [
         {
             "name": "annotation_speed",
-            "binary": {
-                "left": "object_count",
-                "operator": "/",
-                "right": "working_time",
-            },
-        }
+            "type": TransformOperationType.BINARY,
+            "left": "object_count",
+            "operator": BinaryOperatorType.DIVISION,
+            "right": "working_time",
+        },
     ]
 
     def calculate(self):

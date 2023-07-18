@@ -6224,6 +6224,19 @@ components:
           maxLength: 150
       required:
       - username
+    BinaryOperation:
+      type: object
+      properties:
+        left:
+          type: string
+          nullable: true
+        operator:
+          $ref: '#/components/schemas/OperatorEnum'
+        right:
+          type: string
+          nullable: true
+      required:
+      - operator
     ChunkType:
       enum:
       - video
@@ -7771,6 +7784,18 @@ components:
         * `in progress` - IN_PROGRESS
         * `completed` - COMPLETED
         * `rejected` - REJECTED
+    OperatorEnum:
+      enum:
+      - +
+      - '-'
+      - '*'
+      - /
+      type: string
+      description: |-
+        * `+` - ADDITION
+        * `-` - SUBTRACTION
+        * `*` - MULTIPLICATION
+        * `/` - DIVISION
     OrganizationRead:
       type: object
       properties:
@@ -9057,8 +9082,7 @@ components:
         transformations:
           type: array
           items:
-            type: object
-            additionalProperties: {}
+            $ref: '#/components/schemas/Transformation'
       required:
       - dataseries
       - default_view
@@ -9589,6 +9613,17 @@ components:
       required:
       - frame
       - type
+    Transformation:
+      type: object
+      properties:
+        name:
+          type: string
+        binary:
+          allOf:
+          - $ref: '#/components/schemas/BinaryOperation'
+          nullable: true
+      required:
+      - name
     User:
       type: object
       properties:
