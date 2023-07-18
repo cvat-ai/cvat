@@ -5933,7 +5933,7 @@ components:
         statistics:
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/StatisticsItem'
+            $ref: '#/components/schemas/Metric'
       required:
       - created_date
       - statistics
@@ -7758,6 +7758,33 @@ components:
       anyOf:
       - $ref: '#/components/schemas/User'
       - $ref: '#/components/schemas/BasicUser'
+    Metric:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        granularity:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GranularityEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        default_view:
+          $ref: '#/components/schemas/DefaultViewEnum'
+        dataseries:
+          type: object
+          additionalProperties: {}
+        transformations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transformation'
+      required:
+      - dataseries
+      - default_view
+      - description
+      - title
+      - transformations
     NullEnum:
       enum:
       - null
@@ -9058,33 +9085,6 @@ components:
         * `natural` - NATURAL
         * `predefined` - PREDEFINED
         * `random` - RANDOM
-    StatisticsItem:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-        granularity:
-          nullable: true
-          oneOf:
-          - $ref: '#/components/schemas/GranularityEnum'
-          - $ref: '#/components/schemas/NullEnum'
-        default_view:
-          $ref: '#/components/schemas/DefaultViewEnum'
-        dataseries:
-          type: object
-          additionalProperties: {}
-        transformations:
-          type: array
-          items:
-            $ref: '#/components/schemas/Transformation'
-      required:
-      - dataseries
-      - default_view
-      - description
-      - title
-      - transformations
     Storage:
       type: object
       properties:
