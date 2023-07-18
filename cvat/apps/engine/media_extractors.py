@@ -11,7 +11,7 @@ import itertools
 import struct
 from enum import IntEnum
 from abc import ABC, abstractmethod
-from contextlib import closing
+from contextlib import closing, contextmanager
 
 import av
 import numpy as np
@@ -429,74 +429,71 @@ class VideoReader(IMediaReader):
 
         return False
 
-    def _decode(self, container):
-        frame_num = 0
-        for packet in container.demux():
-            if packet.stream.type == 'video':
+    def __iter__(self):
+        with self._get_av_container() as container:
+            stream = container.streams.video[0]
+            stream.thread_type = 'AUTO'
+            frame_num = 0
+            for packet in container.demux(stream):
                 for image in packet.decode():
                     frame_num += 1
                     if self._has_frame(frame_num - 1):
                         if packet.stream.metadata.get('rotate'):
-                            old_image = image
+                            pts = image.pts
                             image = av.VideoFrame().from_ndarray(
                                 rotate_image(
                                     image.to_ndarray(format='bgr24'),
-                                    360 - int(container.streams.video[0].metadata.get('rotate'))
+                                    360 - int(stream.metadata.get('rotate'))
                                 ),
                                 format ='bgr24'
                             )
-                            image.pts = old_image.pts
+                            image.pts = pts
                         yield (image, self._source_path[0], image.pts)
-
-    def __iter__(self):
-        container = self._get_av_container()
-        source_video_stream = container.streams.video[0]
-        source_video_stream.thread_type = 'AUTO'
-
-        return self._decode(container)
 
     def get_progress(self, pos):
         duration = self._get_duration()
         return pos / duration if duration else None
 
+    @contextmanager
     def _get_av_container(self):
         if isinstance(self._source_path[0], io.BytesIO):
             self._source_path[0].seek(0) # required for re-reading
-        return av.open(self._source_path[0])
+        with closing(av.open(self._source_path[0])) as container:
+            yield container
 
     def _get_duration(self):
-        container = self._get_av_container()
-        stream = container.streams.video[0]
-        duration = None
-        if stream.duration:
-            duration = stream.duration
-        else:
-            # may have a DURATION in format like "01:16:45.935000000"
-            duration_str = stream.metadata.get("DURATION", None)
-            tb_denominator = stream.time_base.denominator
-            if duration_str and tb_denominator:
-                _hour, _min, _sec = duration_str.split(':')
-                duration_sec = 60*60*float(_hour) + 60*float(_min) + float(_sec)
-                duration = duration_sec * tb_denominator
-        return duration
+        with self._get_av_container() as container:
+            stream = container.streams.video[0]
+            duration = None
+            if stream.duration:
+                duration = stream.duration
+            else:
+                # may have a DURATION in format like "01:16:45.935000000"
+                duration_str = stream.metadata.get("DURATION", None)
+                tb_denominator = stream.time_base.denominator
+                if duration_str and tb_denominator:
+                    _hour, _min, _sec = duration_str.split(':')
+                    duration_sec = 60*60*float(_hour) + 60*float(_min) + float(_sec)
+                    duration = duration_sec * tb_denominator
+            return duration
 
     def get_preview(self, frame):
-        container = self._get_av_container()
-        stream = container.streams.video[0]
-        tb_denominator = stream.time_base.denominator
-        needed_time = int((frame / stream.guessed_rate) * tb_denominator)
-        container.seek(offset=needed_time, stream=stream)
-        for packet in container.demux(stream):
-            for frame in packet.decode():
-                return self._get_preview(frame.to_image() if not stream.metadata.get('rotate') \
-                    else av.VideoFrame().from_ndarray(
-                        rotate_image(
-                            frame.to_ndarray(format='bgr24'),
-                            360 - int(container.streams.video[0].metadata.get('rotate'))
-                        ),
-                        format ='bgr24'
-                    ).to_image()
-                )
+        with self._get_av_container() as container:
+            stream = container.streams.video[0]
+            tb_denominator = stream.time_base.denominator
+            needed_time = int((frame / stream.guessed_rate) * tb_denominator)
+            container.seek(offset=needed_time, stream=stream)
+            for packet in container.demux(stream):
+                for frame in packet.decode():
+                    return self._get_preview(frame.to_image() if not stream.metadata.get('rotate') \
+                        else av.VideoFrame().from_ndarray(
+                            rotate_image(
+                                frame.to_ndarray(format='bgr24'),
+                                360 - int(container.streams.video[0].metadata.get('rotate'))
+                            ),
+                            format ='bgr24'
+                        ).to_image()
+                    )
 
     def get_image_size(self, i):
         image = (next(iter(self)))[0]
@@ -722,21 +719,25 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 "preset": "ultrafast",
             }
 
-    def _create_av_container(self, path, w, h, rate, options, f='mp4'):
+    @contextmanager
+    def _create_av_container(self, path, format='mp4'):
+        with closing(av.open(path, 'w', format=format)) as container:
+            yield container
+
+    def _add_video_stream(self, container, w, h, rate, options):
         # x264 requires width and height must be divisible by 2 for yuv420p
         if h % 2:
             h += 1
         if w % 2:
             w += 1
 
-        container = av.open(path, 'w',format=f)
         video_stream = container.add_stream(self._codec_name, rate=rate)
         video_stream.pix_fmt = "yuv420p"
         video_stream.width = w
         video_stream.height = h
         video_stream.options = options
 
-        return container, video_stream
+        return video_stream
 
     def save_as_chunk(self, images, chunk_path):
         if not images:
@@ -745,16 +746,16 @@ class Mpeg4ChunkWriter(IChunkWriter):
         input_w = images[0][0].width
         input_h = images[0][0].height
 
-        output_container, output_v_stream = self._create_av_container(
-            path=chunk_path,
-            w=input_w,
-            h=input_h,
-            rate=self._output_fps,
-            options=self._codec_opts,
-        )
+        with self._create_av_container(path=chunk_path) as output_container:
+            output_v_stream = self._add_video_stream(
+                container=output_container,
+                w=input_w,
+                h=input_h,
+                rate=self._output_fps,
+                options=self._codec_opts,
+            )
 
-        self._encode_images(images, output_container, output_v_stream)
-        output_container.close()
+            self._encode_images(images, output_container, output_v_stream)
         return [(input_w, input_h)]
 
     @staticmethod
@@ -797,16 +798,16 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
         output_h = input_h // downscale_factor
         output_w = input_w // downscale_factor
 
-        output_container, output_v_stream = self._create_av_container(
-            path=chunk_path,
-            w=output_w,
-            h=output_h,
-            rate=self._output_fps,
-            options=self._codec_opts,
-        )
+        with self._create_av_container(path=chunk_path) as output_container:
+            output_v_stream = self._add_video_stream(
+                container=output_container,
+                w=output_w,
+                h=output_h,
+                rate=self._output_fps,
+                options=self._codec_opts,
+            )
 
-        self._encode_images(images, output_container, output_v_stream)
-        output_container.close()
+            self._encode_images(images, output_container, output_v_stream)
         return [(input_w, input_h)]
 
 def _is_archive(path):
