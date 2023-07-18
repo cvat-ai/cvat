@@ -11,7 +11,7 @@ import itertools
 import struct
 from enum import IntEnum
 from abc import ABC, abstractmethod
-from contextlib import closing, contextmanager
+from contextlib import closing
 
 import av
 import numpy as np
@@ -454,12 +454,10 @@ class VideoReader(IMediaReader):
         duration = self._get_duration()
         return pos / duration if duration else None
 
-    @contextmanager
     def _get_av_container(self):
         if isinstance(self._source_path[0], io.BytesIO):
             self._source_path[0].seek(0) # required for re-reading
-        with closing(av.open(self._source_path[0])) as container:
-            yield container
+        return av.open(self._source_path[0])
 
     def _get_duration(self):
         with self._get_av_container() as container:
@@ -697,6 +695,8 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
         return image_sizes
 
 class Mpeg4ChunkWriter(IChunkWriter):
+    FORMAT = 'mp4'
+
     def __init__(self, quality=67):
         # translate inversed range [1:100] to [0:51]
         quality = round(51 * (100 - quality) / 99)
@@ -718,11 +718,6 @@ class Mpeg4ChunkWriter(IChunkWriter):
                 "crf": str(self._image_quality),
                 "preset": "ultrafast",
             }
-
-    @contextmanager
-    def _create_av_container(self, path, format='mp4'):
-        with closing(av.open(path, 'w', format=format)) as container:
-            yield container
 
     def _add_video_stream(self, container, w, h, rate, options):
         # x264 requires width and height must be divisible by 2 for yuv420p
@@ -746,7 +741,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
         input_w = images[0][0].width
         input_h = images[0][0].height
 
-        with self._create_av_container(path=chunk_path) as output_container:
+        with av.open(chunk_path, 'w', format=self.FORMAT) as output_container:
             output_v_stream = self._add_video_stream(
                 container=output_container,
                 w=input_w,
@@ -798,7 +793,7 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
         output_h = input_h // downscale_factor
         output_w = input_w // downscale_factor
 
-        with self._create_av_container(path=chunk_path) as output_container:
+        with av.open(chunk_path, 'w', format=self.FORMAT) as output_container:
             output_v_stream = self._add_video_stream(
                 container=output_container,
                 w=output_w,

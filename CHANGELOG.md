@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[SDK\] Ability to create attributes with blank default values
   (<https://github.com/opencv/cvat/pull/6454>)
 - \[SDK\] SDK should not change input data in models (<https://github.com/opencv/cvat/pull/6455>)
+- Memory leak related to unclosed av container (<https://github.com/opencv/cvat/pull/6501>)
 
 ### Security
 - TDB
