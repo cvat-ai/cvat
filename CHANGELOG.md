@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[SDK\] Ability to create attributes with blank default values
   (<https://github.com/opencv/cvat/pull/6454>)
 - \[SDK\] SDK should not change input data in models (<https://github.com/opencv/cvat/pull/6455>)
+- Using initial frame from query parameter to open specific frame in a job
+ (<https://github.com/opencv/cvat/pull/6506>)
 
 ### Security
 - TDB
