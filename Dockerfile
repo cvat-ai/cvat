@@ -5,7 +5,6 @@ FROM ${BASE_IMAGE} as build-image-base
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
-        apache2-dev \
         curl \
         g++ \
         gcc \
@@ -42,8 +41,8 @@ RUN curl -sL https://github.com/cisco/openh264/archive/v${OPENH264_VERSION}.tar.
     make -j5 && make install-shared PREFIX=${PREFIX} && make clean
 
 WORKDIR /tmp/ffmpeg
-RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2 --output - | \
-    tar -jx --strip-components=1 && \
+RUN curl -sL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz --output - | \
+    tar -zx --strip-components=1 && \
     ./configure --disable-nonfree --disable-gpl --enable-libopenh264 \
         --enable-shared --disable-static --disable-doc --disable-programs --prefix="${PREFIX}" && \
     make -j5 && make install && make clean
@@ -78,6 +77,11 @@ RUN --mount=type=cache,target=/root/.cache/pip/http \
     -r /tmp/cvat/requirements/${DJANGO_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
+FROM golang:1.20.5 AS build-smokescreen
+
+RUN git clone --depth=1 -b v0.0.4 https://github.com/stripe/smokescreen.git
+RUN cd smokescreen && go build -o /tmp/smokescreen
+
 FROM ${BASE_IMAGE}
 
 ARG http_proxy
@@ -102,19 +106,18 @@ ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 # Install necessary apt packages
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -yq \
-        apache2 \
         bzip2 \
         ca-certificates \
         curl \
         git \
         git-lfs \
-        libapache2-mod-xsendfile \
         libgeos-c1v5 \
         libgl1 \
         libgomp1 \
         libldap-2.5-0 \
         libpython3.10 \
         libsasl2-2 \
+        nginx \
         p7zip-full \
         poppler-utils \
         python3 \
@@ -127,6 +130,9 @@ RUN apt-get update && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'application/wasm wasm' >> /etc/mime.types
+
+# Install smokescreen
+COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
 
 # Add a non-root user
 ENV USER=${USER}
@@ -172,12 +178,19 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
     fi
 
 # Install and initialize CVAT, copy all necessary files
+COPY cvat/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
 COPY --chown=${USER} ssh ${HOME}/.ssh
-COPY --chown=${USER} mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
+COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
+COPY --chown=${USER} rqscheduler.py ${HOME}
+
+ARG COVERAGE_PROCESS_START
+RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
+        echo "import coverage; coverage.process_startup()" > /opt/venv/lib/python3.10/site-packages/coverage_subprocess.pth; \
+    fi
 
 # RUN all commands below as 'django' user
 USER ${USER}

@@ -6,7 +6,7 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, ModelProvider, Organization,
+    Webhook, MLModel, ModelProvider, Organization, QualityReport, QualityConflict, QualitySettings, FramesMetaData,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -92,6 +92,11 @@ export interface JobsState {
     current: Job[];
     previews: {
         [index: number]: Preview;
+    };
+    activities: {
+        deletes: {
+            [tid: number]: boolean;
+        };
     };
 }
 
@@ -297,7 +302,15 @@ export interface PluginsState {
             items: PluginComponent[];
         };
         taskItem: {
-            name: PluginComponent[];
+            ribbon: PluginComponent[];
+        };
+        projectItem: {
+            ribbon: PluginComponent[];
+        };
+        annotationPage: {
+            header: {
+                player: PluginComponent[];
+            };
         };
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
@@ -329,25 +342,7 @@ export interface UserAgreementsState {
     initialized: boolean;
 }
 
-export interface ShareFileInfo {
-    // get this data from cvat-core
-    name: string;
-    type: 'DIR' | 'REG';
-    mime_type: string;
-}
-
-export interface ShareItem {
-    name: string;
-    type: 'DIR' | 'REG';
-    mime_type: string;
-    children: ShareItem[];
-}
-
-export interface ShareState {
-    root: ShareItem;
-    fetching: boolean;
-    initialized: boolean;
-}
+export type RemoteFileType = 'DIR' | 'REG';
 
 export interface ModelAttribute {
     name: string;
@@ -464,6 +459,8 @@ export interface NotificationsState {
         jobs: {
             updating: null | ErrorState;
             fetching: null | ErrorState;
+            creating: null | ErrorState;
+            deleting: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;
@@ -472,9 +469,6 @@ export interface NotificationsState {
             fetching: null | ErrorState;
         };
         about: {
-            fetching: null | ErrorState;
-        };
-        share: {
             fetching: null | ErrorState;
         };
         models: {
@@ -558,6 +552,11 @@ export interface NotificationsState {
             updating: null | ErrorState;
             deleting: null | ErrorState;
         };
+        analytics: {
+            fetching: null | ErrorState;
+            fetchingSettings: null | ErrorState;
+            updatingSettings: null | ErrorState;
+        }
     };
     messages: {
         tasks: {
@@ -676,6 +675,8 @@ export interface AnnotationState {
         openTime: null | number;
         labels: any[];
         requestedId: number | null;
+        groundTruthJobId: number | null;
+        groundTruthJobFramesMeta: FramesMetaData | null;
         instance: any | null | undefined;
         attributes: Record<number, any[]>;
         fetching: boolean;
@@ -709,8 +710,10 @@ export interface AnnotationState {
         activatedStateID: number | null;
         activatedElementID: number | null;
         activatedAttributeID: number | null;
+        highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
+        statesSources: number[];
         states: any[];
         filters: any[];
         resetGroupFlag: boolean;
@@ -820,6 +823,7 @@ export interface ShapesSettingsState {
     outlineColor: string;
     showBitmap: boolean;
     showProjections: boolean;
+    showGroundTruth: boolean;
 }
 
 export interface SettingsState {
@@ -853,6 +857,8 @@ export interface ReviewState {
     newIssuePosition: number[] | null;
     issuesHidden: boolean;
     issuesResolvedHidden: boolean;
+    conflicts: QualityConflict[];
+    frameConflicts: QualityConflict[];
     fetching: {
         jobId: number | null;
         issueId: number | null;
@@ -888,13 +894,32 @@ export interface WebhooksState {
     query: WebhooksQuery;
 }
 
+export interface QualityQuery {
+    taskId: number | null;
+    jobId: number | null;
+    parentId: number | null;
+}
+
+export interface AnalyticsState {
+    fetching: boolean;
+    quality: {
+        tasksReports: QualityReport[];
+        jobsReports: QualityReport[];
+        query: QualityQuery;
+        settings: {
+            modalVisible: boolean;
+            current: QualitySettings | null;
+            fetching: boolean;
+        }
+    }
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
     jobs: JobsState;
     tasks: TasksState;
     about: AboutState;
-    share: ShareState;
     formats: FormatsState;
     userAgreements: UserAgreementsState;
     plugins: PluginsState;
@@ -909,6 +934,7 @@ export interface CombinedState {
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
     webhooks: WebhooksState;
+    analytics: AnalyticsState;
 }
 
 export interface Indexable {

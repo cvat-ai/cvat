@@ -51,7 +51,7 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["-c", "supervisord/server.conf"]
+          command: ["/home/django/backend_entrypoint.sh"]
           env:
           - name: ALLOWED_HOSTS
             value: {{ .Values.cvat.backend.server.envs.ALLOWED_HOSTS | squote}}
@@ -97,7 +97,7 @@ spec:
               secretKeyRef:
                 name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: password
-          {{ include "cvat.nuclioEnv" . | indent 10 }}
+          {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- if .Values.analytics.enabled}}
           - name: CVAT_ANALYTICS
             value: "1"

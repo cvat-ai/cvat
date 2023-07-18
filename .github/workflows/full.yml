@@ -155,10 +155,14 @@ jobs:
       - name: Running REST API and SDK tests
         id: run_tests
         run: |
-          pip3 install --user '/tmp/cvat_sdk/[pytorch]'
-          pip3 install --user cvat-cli/
-          pip3 install --user -r tests/python/requirements.txt
-          pytest tests/python/ -s -v
+          pip3 install -r cvat-sdk/gen/requirements.txt
+          ./cvat-sdk/gen/generate.sh
+
+          pip3 install -r ./tests/python/requirements.txt
+          pip3 install -e ./cvat-sdk
+          pip3 install -e ./cvat-cli
+
+          pytest tests/python/
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'

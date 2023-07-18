@@ -19,11 +19,14 @@ services:
         socks_proxy:
         CLAM_AV:
         CVAT_DEBUG_ENABLED:
+        COVERAGE_PROCESS_START:
     environment:
+      # Use this with CVAT_DEBUG_ENABLED to avoid server response timeouts
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9090'
       # If 'yes', wait for a debugger connection on startup
       CVAT_DEBUG_WAIT: '${CVAT_DEBUG_WAIT_CLIENT:-no}'
+      COVERAGE_PROCESS_START:
     ports:
       - '9090:9090'
 
@@ -35,6 +38,7 @@ services:
       # NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9092'
+      COVERAGE_PROCESS_START:
     ports:
       - '9092:9092'
 
@@ -46,8 +50,21 @@ services:
       # NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9093'
+      COVERAGE_PROCESS_START:
     ports:
       - '9093:9093'
+
+  cvat_worker_quality_reports:
+    environment:
+      # For debugging, make sure to set 1 process
+      # Due to the supervisord specifics, the extra processes will fail and
+      # after few attempts supervisord will give up restarting, leaving only 1 process
+      # NUMPROCS: 1
+      CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
+      CVAT_DEBUG_PORT: '9094'
+      COVERAGE_PROCESS_START:
+    ports:
+      - '9094:9094'
 
   cvat_worker_annotation:
     environment:
@@ -57,6 +74,7 @@ services:
       # NUMPROCS: 1
       CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
       CVAT_DEBUG_PORT: '9091'
+      COVERAGE_PROCESS_START:
     ports:
       - '9091:9091'
 

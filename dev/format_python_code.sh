@@ -17,7 +17,7 @@ fi
 
 # The commands must be run on each module directory separately,
 # otherwise tools confuse the "current" module
-for paths in "cvat-sdk" "cvat-cli" "tests/python/"; do
+for paths in "cvat-sdk" "cvat-cli" "tests/python/" "cvat/apps/quality_control"; do
     ${BLACK} -- ${paths}
     ${ISORT} -- ${paths}
 done

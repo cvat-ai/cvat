@@ -61,7 +61,9 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
-{{- define "cvat.nuclioEnv" }}
+{{- define "cvat.sharedBackendEnv" }}
+- name: SMOKESCREEN_OPTS
+  value: {{ .Values.smokescreen.opts | toJson }}
 {{- if .Values.nuclio.enabled }}
 - name: CVAT_SERVERLESS
   value: "1"

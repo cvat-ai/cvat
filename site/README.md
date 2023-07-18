@@ -26,7 +26,7 @@ the weight (affects the order of files display on the sidebar) and description (
 ### Start site localy
 
 To start the site locally, you need a recent [extended version hugo](https://github.com/gohugoio/hugo/releases)
-(recommend version 0.75.0 or later).
+(recommend version 0.83.1).
 Open the most recent release and scroll down until you find a list of Extended versions. [Read more](https://gohugo.io/getting-started/installing/#quick-install)
 
 Add a path to "hugo" in the "Path" environment variable.

@@ -85,6 +85,26 @@
             "justMyCode": false,
         },
         {
+            "name": "REST API tests: Attach to RQ quality reports worker",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 9094
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/home/django/"
+                },
+                {
+                    "localRoot": "${workspaceFolder}/.env",
+                    "remoteRoot": "/opt/venv",
+                }
+            ],
+            "justMyCode": false,
+        },
+        {
             "type": "pwa-chrome",
             "request": "launch",
             "preLaunchTask": "npm: start - cvat-ui",
@@ -199,7 +219,7 @@
             "console": "internalConsole"
         },
         {
-            "name": "server: RQ - scheduler",
+            "name": "server: RQ - quality reports",
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
@@ -207,13 +227,36 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
-                "rqscheduler",
-                "--queue",
-                "export"
+                "rqworker",
+                "quality_reports",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker",
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {},
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: RQ - scheduler",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/rqscheduler.py",
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-i", "1"
+            ],
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
             "console": "internalConsole"
         },
         {
@@ -268,6 +311,28 @@
             "django": true,
             "cwd": "${workspaceFolder}",
             "env": {},
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: RQ - cleaning",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "cleaning",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
             "console": "internalConsole"
         },
         {
@@ -393,7 +458,7 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {"DJANGO_CONFIGURATION": "production"},
+            "env": {},
             "console": "internalConsole"
         },
         {
@@ -433,6 +498,8 @@
                 "server: RQ - annotation",
                 "server: RQ - webhooks",
                 "server: RQ - scheduler",
+                "server: RQ - quality reports",
+                "server: RQ - cleaning",
                 "server: git",
             ]
         }

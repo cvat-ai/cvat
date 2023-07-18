@@ -7,7 +7,10 @@ import React from 'react';
 import Input from 'antd/lib/input';
 import { Col, Row } from 'antd/lib/grid';
 
-import { ActiveControl, ToolsBlockerState, Workspace } from 'reducers';
+import {
+    ActiveControl, CombinedState, ToolsBlockerState, Workspace,
+} from 'reducers';
+import { usePlugins } from 'utils/hooks';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';
@@ -41,6 +44,7 @@ interface Props {
     focusFrameInputShortcut: string;
     activeControl: ActiveControl;
     toolsBlockerState: ToolsBlockerState;
+    deleteFrameAvailable: boolean;
     changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
     showFilters(): void;
@@ -117,10 +121,68 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onFinishDraw,
         onSwitchToolsBlockerState,
         onDeleteFrame,
+        deleteFrameAvailable,
         onRestoreFrame,
         switchNavigationBlocked,
         jobInstance,
     } = props;
+
+    const playerPlugins = usePlugins(
+        (state: CombinedState) => state.plugins.components.annotationPage.header.player, props,
+    );
+    const playerItems: [JSX.Element, number][] = [];
+    playerItems.push(
+        ...playerPlugins.map(({ component: Component, weight }, index) => {
+            const component = <Component targetProps={props} key={index} />;
+            return [component, weight] as [JSX.Element, number];
+        }),
+    );
+
+    playerItems.push([(
+        <PlayerButtons
+            key='player_buttons'
+            playing={playing}
+            playPauseShortcut={playPauseShortcut}
+            deleteFrameShortcut={deleteFrameShortcut}
+            nextFrameShortcut={nextFrameShortcut}
+            previousFrameShortcut={previousFrameShortcut}
+            forwardShortcut={forwardShortcut}
+            backwardShortcut={backwardShortcut}
+            prevButtonType={prevButtonType}
+            nextButtonType={nextButtonType}
+            onPrevFrame={onPrevFrame}
+            onNextFrame={onNextFrame}
+            onForward={onForward}
+            onBackward={onBackward}
+            onFirstFrame={onFirstFrame}
+            onLastFrame={onLastFrame}
+            onSwitchPlay={onSwitchPlay}
+            setPrevButton={setPrevButtonType}
+            setNextButton={setNextButtonType}
+        />
+    ), 0]);
+
+    playerItems.push([(
+        <PlayerNavigation
+            key='player_navigation'
+            startFrame={startFrame}
+            stopFrame={stopFrame}
+            playing={playing}
+            frameNumber={frameNumber}
+            frameFilename={frameFilename}
+            frameDeleted={frameDeleted}
+            deleteFrameShortcut={deleteFrameShortcut}
+            focusFrameInputShortcut={focusFrameInputShortcut}
+            inputFrameRef={inputFrameRef}
+            onSliderChange={onSliderChange}
+            onInputChange={onInputChange}
+            onURLIconClick={onURLIconClick}
+            onDeleteFrame={onDeleteFrame}
+            onRestoreFrame={onRestoreFrame}
+            switchNavigationBlocked={switchNavigationBlocked}
+            deleteFrameAvailable={deleteFrameAvailable}
+        />
+    ), 10]);
 
     return (
         <Row justify='space-between'>
@@ -143,43 +205,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             />
             <Col className='cvat-annotation-header-player-group'>
                 <Row align='middle'>
-                    <PlayerButtons
-                        playing={playing}
-                        playPauseShortcut={playPauseShortcut}
-                        deleteFrameShortcut={deleteFrameShortcut}
-                        nextFrameShortcut={nextFrameShortcut}
-                        previousFrameShortcut={previousFrameShortcut}
-                        forwardShortcut={forwardShortcut}
-                        backwardShortcut={backwardShortcut}
-                        prevButtonType={prevButtonType}
-                        nextButtonType={nextButtonType}
-                        onPrevFrame={onPrevFrame}
-                        onNextFrame={onNextFrame}
-                        onForward={onForward}
-                        onBackward={onBackward}
-                        onFirstFrame={onFirstFrame}
-                        onLastFrame={onLastFrame}
-                        onSwitchPlay={onSwitchPlay}
-                        setPrevButton={setPrevButtonType}
-                        setNextButton={setNextButtonType}
-                    />
-                    <PlayerNavigation
-                        startFrame={startFrame}
-                        stopFrame={stopFrame}
-                        playing={playing}
-                        frameNumber={frameNumber}
-                        frameFilename={frameFilename}
-                        frameDeleted={frameDeleted}
-                        deleteFrameShortcut={deleteFrameShortcut}
-                        focusFrameInputShortcut={focusFrameInputShortcut}
-                        inputFrameRef={inputFrameRef}
-                        onSliderChange={onSliderChange}
-                        onInputChange={onInputChange}
-                        onURLIconClick={onURLIconClick}
-                        onDeleteFrame={onDeleteFrame}
-                        onRestoreFrame={onRestoreFrame}
-                        switchNavigationBlocked={switchNavigationBlocked}
-                    />
+                    { playerItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
+                        .map((menuItem) => menuItem[0]) }
                 </Row>
             </Col>
             <RightGroup

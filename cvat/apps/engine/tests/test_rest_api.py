@@ -5,6 +5,7 @@
 
 from contextlib import ExitStack
 import io
+from itertools import product
 import os
 import random
 import shutil
@@ -42,7 +43,7 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin, logging_disabled,
     generate_image_file, generate_video_file)
 
-#supress av warnings
+#suppress av warnings
 logging.getLogger('libav').setLevel(logging.ERROR)
 
 def create_db_users(cls):
@@ -1836,9 +1837,9 @@ class ProjectImportExportAPITestCase(ApiTestBase):
             response = self.client.post("/api/projects/{}/dataset?format={}".format(pid, f),  data=data, format="multipart")
         return response
 
-    def _run_api_v2_projects_id_dataset_import_status(self, pid, user):
+    def _run_api_v2_projects_id_dataset_import_status(self, pid, user, rq_id):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/projects/{}/dataset?action=import_status".format(pid), format="json")
+            response = self.client.get("/api/projects/{}/dataset?action=import_status&rq_id={}".format(pid, rq_id), format="json")
         return response
 
     def test_api_v2_projects_id_export_import(self):
@@ -1867,7 +1868,8 @@ class ProjectImportExportAPITestCase(ApiTestBase):
         response = self._run_api_v2_projects_id_dataset_import(pid_import, self.owner, import_data, "CVAT 1.1")
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
-        response = self._run_api_v2_projects_id_dataset_import_status(pid_import, self.owner)
+        rq_id = response.data.get('rq_id')
+        response = self._run_api_v2_projects_id_dataset_import_status(pid_import, self.owner, rq_id)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def tearDown(self):
@@ -3243,8 +3245,12 @@ class TaskDataAPITestCase(ApiTestBase):
             for fn in image_files:
                 f.write(os.path.join(settings.SHARE_ROOT, fn), fn)
         cls._share_files.append(filename)
-        generate_manifest_file(data_type='images', manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl'),
-            sources=[os.path.join(settings.SHARE_ROOT, f'test_{i}.jpg') for i in range(1,4)])
+
+        filename = "test_archive_2_sorted.zip"
+        with zipfile.ZipFile(os.path.join(settings.SHARE_ROOT, filename), 'x') as f:
+            for fn in sorted(image_files):
+                f.write(os.path.join(settings.SHARE_ROOT, fn), fn)
+        cls._share_files.append(filename)
 
         image_sizes, images = generate_random_image_files("test_1.jpg", "test_2.jpg", "test_3.jpg")
         cls._client_images = {
@@ -4042,10 +4048,79 @@ class TaskDataAPITestCase(ApiTestBase):
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                 image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-        task_spec.update([('name', 'my images+manifest #27')])
-        task_data.update([('copy_data', True)])
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-            image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+        for copy_data in [True, False]:
+            with self.subTest(current_function_name(), copy=copy_data):
+                task_spec = task_spec_common.copy()
+                task_spec['name'] = task_spec['name'] + f' copy={copy_data}'
+                task_data['copy_data'] = copy_data
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, StorageMethodChoice.CACHE,
+                    StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
+
+        with self.subTest(current_function_name() + ' file order mismatch'), ExitStack() as es:
+            es.enter_context(self.assertRaisesMessage(Exception,
+                "Incorrect file mapping to manifest content"
+            ))
+
+            # Suppress stacktrace spam from another thread from the expected error
+            es.enter_context(logging_disabled())
+
+            task_spec = task_spec_common.copy()
+            task_spec['name'] = task_spec['name'] + f' mismatching file order'
+            task_data_copy = task_data.copy()
+            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
+                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        for copy_data in [True, False]:
+            with self.subTest(current_function_name(), copy=copy_data):
+                task_spec = task_spec_common.copy()
+                task_spec['name'] = task_spec['name'] + f' copy={copy_data}'
+                task_data['copy_data'] = copy_data
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, StorageMethodChoice.CACHE,
+                    StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
+
+        with self.subTest(current_function_name() + ' file order mismatch'), ExitStack() as es:
+            es.enter_context(self.assertRaisesMessage(Exception,
+                "Incorrect file mapping to manifest content"
+            ))
+
+            # Suppress stacktrace spam from another thread from the expected error
+            es.enter_context(logging_disabled())
+
+            task_spec = task_spec_common.copy()
+            task_spec['name'] = task_spec['name'] + f' mismatching file order'
+            task_data_copy = task_data.copy()
+            task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
+                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        with self.subTest(current_function_name() + ' without use cache'), ExitStack() as es:
+            es.enter_context(self.assertRaisesMessage(Exception,
+                "A manifest file can only be used with the 'use cache' option"
+            ))
+
+            # Suppress stacktrace spam from another thread from the expected error
+            es.enter_context(logging_disabled())
+
+            def _send_callback(*args, **kwargs):
+                response = self._run_api_v2_tasks_id_data_post(*args, **kwargs)
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+                raise Exception(response.content.decode(response.charset))
+
+            task_spec = task_spec_common.copy()
+            task_spec['name'] = task_spec['name'] + f' manifest without cache'
+            task_data_copy = task_data.copy()
+            task_data_copy['use_cache'] = False
+            self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
+                self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
+                send_data_callback=_send_callback)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting(self, user):
         task_spec = {
@@ -4067,8 +4142,11 @@ class TaskDataAPITestCase(ApiTestBase):
         images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
         image_sizes = [self._share_image_sizes[v] for v in images]
 
-        for caching_enabled in [True, False]:
+        for caching_enabled, manifest in product(
+            [True, False], [True, False]
+        ):
             with self.subTest(current_function_name(),
+                manifest=manifest,
                 caching_enabled=caching_enabled,
             ):
                 task_data = task_data_common.copy()
@@ -4079,14 +4157,215 @@ class TaskDataAPITestCase(ApiTestBase):
                 else:
                     storage_method = StorageMethodChoice.FILE_SYSTEM
 
-                task_data.update(
-                    (f"server_files[{i}]", f)
-                    for i, f in enumerate(images)
-                )
+                if manifest:
+                    task_data.update(
+                        (f"server_files[{i}]", f)
+                        for i, f in enumerate(reversed(images + [manifest_name]))
+                        # Use a different order from what we have in the manifest.
+                        # The files should be sorted during the task creation.
+                        # Then we compare them with the original manifest order
+                    )
+                else:
+                    task_data.update(
+                        (f"server_files[{i}]", f)
+                        for i, f in enumerate(images)
+                    )
 
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                     image_sizes, storage_method, StorageChoice.SHARE)
+
+    def _test_api_v2_tasks_id_data_create_can_use_local_images_with_predefined_sorting(self, user):
+        task_spec = {
+            "name": 'task custom data sequence client files single request #28-2',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        with TestDir() as test_dir:
+            image_sizes, image_files = generate_random_image_files(
+                "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
+            )
+            image_paths = []
+            for image in image_files:
+                fp = os.path.join(test_dir, image.name)
+                with open(fp, 'wb') as f:
+                    f.write(image.getvalue())
+                image_paths.append(fp)
+            del image_files
+
+            task_data_common = {
+                "image_quality": 75,
+                "sorting_method": SortingMethod.PREDEFINED
+            }
+
+            for (caching_enabled, manifest) in product(
+                [True, False], [True, False]
+            ):
+                manifest_path = os.path.join(test_dir, "manifest.jsonl")
+                generate_manifest_file("images", manifest_path, image_paths,
+                    sorting_method=SortingMethod.PREDEFINED)
+
+                task_data_common["use_cache"] = caching_enabled
+                if caching_enabled:
+                    storage_method = StorageMethodChoice.CACHE
+                else:
+                    storage_method = StorageMethodChoice.FILE_SYSTEM
+
+                with self.subTest(current_function_name(),
+                    manifest=manifest,
+                    caching_enabled=caching_enabled,
+                ), ExitStack() as es:
+                    images = [es.enter_context(open(p, 'rb')) for p in image_paths]
+
+                    task_data = task_data_common.copy()
+                    expected_image_sizes = image_sizes
+
+                    if manifest:
+                        manifest_file = es.enter_context(open(manifest_path))
+                        task_data.update(
+                            (f"client_files[{i}]", f)
+                            for i, f in enumerate(reversed(images))
+                            # Use a different order from what we have in the manifest.
+                            # The files should be sorted during the task creation.
+                            # Then we compare them with the original manifest order
+                        )
+                        task_data[f"client_files[{len(images)}]"] = manifest_file
+                    else:
+                        task_data.update(
+                            (f"client_files[{i}]", f)
+                            for i, f in enumerate(images)
+                        )
+
+                    self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                        self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                        expected_image_sizes, storage_method, StorageChoice.LOCAL)
+
+    def _test_api_v2_tasks_id_data_create_can_use_server_archive_with_predefined_sorting(self, user):
+        task_spec = {
+            "name": 'task custom data sequence server files single request #28-3',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data_common = {
+            "image_quality": 75,
+            "sorting_method": SortingMethod.PREDEFINED,
+        }
+        archive_name = "test_archive_2.zip"
+
+        for (caching_enabled, manifest) in product(
+            [True, False], [True, False]
+        ):
+            with self.subTest(current_function_name(),
+                manifest=manifest,
+                caching_enabled=caching_enabled,
+            ), ExitStack() as es:
+                task_data = task_data_common.copy()
+
+                task_data["use_cache"] = caching_enabled
+                if caching_enabled:
+                    storage_method = StorageMethodChoice.CACHE
+                else:
+                    storage_method = StorageMethodChoice.FILE_SYSTEM
+
+                task_data["server_files[0]"] = archive_name
+
+                manifest_name = "images_manifest.jsonl"
+                images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
+                image_sizes = [self._share_image_sizes[v] for v in images]
+
+                if manifest:
+                    task_data["server_files[1]"] = manifest_name
+                else:
+                    es.enter_context(self.assertRaisesMessage(FileNotFoundError,
+                        "Can't find upload manifest file"
+                    ))
+
+                    # Suppress stacktrace spam from another thread from the expected error
+                    es.enter_context(logging_disabled())
+
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, storage_method, StorageChoice.LOCAL)
+
+    def _test_api_v2_tasks_id_data_create_can_use_local_archive_with_predefined_sorting(self, user):
+        task_spec = {
+            "name": 'task custom data sequence client files single request #28-4',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        with TestDir() as test_dir:
+            image_sizes, image_files = generate_random_image_files(
+                "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_4.jpg", "test_2.jpg"
+            )
+            image_paths = []
+            for image in image_files:
+                fp = os.path.join(test_dir, image.name)
+                with open(fp, 'wb') as f:
+                    f.write(image.getvalue())
+                image_paths.append(fp)
+
+            archive_path = os.path.join(test_dir, 'archive.zip')
+            with zipfile.ZipFile(archive_path, 'x') as archive:
+                for image_path in image_paths:
+                    archive.write(image_path, os.path.relpath(image_path, test_dir))
+
+            del image_files
+
+            task_data_common = {
+                "image_quality": 75,
+                "sorting_method": SortingMethod.PREDEFINED,
+            }
+
+            for (caching_enabled, include_image_info, manifest) in product(
+                [True, False], [True, False], [True, False]
+            ):
+                with self.subTest(current_function_name(),
+                    manifest=manifest,
+                    caching_enabled=caching_enabled,
+                    include_image_info=include_image_info
+                ), ExitStack() as es:
+                    task_data = task_data_common.copy()
+
+                    manifest_path = os.path.join(test_dir, "manifest.jsonl")
+                    generate_manifest_file("images", manifest_path, image_paths,
+                        sorting_method=SortingMethod.PREDEFINED)
+
+                    task_data["use_cache"] = caching_enabled
+                    if caching_enabled:
+                        storage_method = StorageMethodChoice.CACHE
+                    else:
+                        storage_method = StorageMethodChoice.FILE_SYSTEM
+
+                    task_data[f"client_files[0]"] = es.enter_context(open(archive_path, 'rb'))
+
+                    if manifest:
+                        task_data[f"client_files[1]"] = es.enter_context(open(manifest_path))
+                    else:
+                        es.enter_context(self.assertRaisesMessage(FileNotFoundError,
+                            "Can't find upload manifest file"
+                        ))
+
+                        # Suppress stacktrace spam from another thread from the expected error
+                        es.enter_context(logging_disabled())
+
+                    self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                        self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                        image_sizes, storage_method, StorageChoice.LOCAL)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_natural_sorting(self, user):
         task_spec = {
@@ -4137,6 +4416,146 @@ class TaskDataAPITestCase(ApiTestBase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+
+    def _test_api_v2_tasks_id_data_create_can_send_ordered_images_with_multifile_requests(self, user):
+        task_spec = {
+            "name": 'task custom data sequence client files multi request #31',
+            "overlap": 0,
+            "segment_size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        task_data_common = {
+            "image_quality": 70,
+            "sorting_method": SortingMethod.PREDEFINED,
+        }
+
+        def _send_data(tid, user, data):
+            response = self._run_api_v2_tasks_id_data_post(tid, user,
+                data={ 'image_quality': task_data["image_quality"] },
+                headers={ 'Upload-Start': True })
+            assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
+
+            for group_idx, file_group in enumerate(file_groups):
+                request_data = {k: v for k, v in data.items() if '_files' not in k}
+                request_data.update({
+                    f'client_files[{i}]': images[f] for i, f in enumerate(file_group)
+                })
+
+                if group_idx == len(file_groups) - 1:
+                    headers = { 'Upload-Finish': True }
+                    request_data['upload_file_order'] = upload_info
+                else:
+                    headers = { 'Upload-Multiple': True }
+
+                response = self._run_api_v2_tasks_id_data_post(tid, user, data=request_data,
+                    headers=headers)
+
+                if group_idx != len(file_groups) - 1:
+                    assert response.status_code == status.HTTP_200_OK, response.status_code
+            return response
+
+        def _send_data_and_fail(*args, **kwargs):
+            response = _send_data(*args, **kwargs)
+            assert response.status_code == status.HTTP_400_BAD_REQUEST
+            raise Exception(response.data)
+
+        filenames = [
+            "test_1.jpg", "test_3.jpg", "test_5.jpg", "test_qwe.jpg", "test_4.jpg", "test_2.jpg"
+        ]
+
+        for name, upload_info, file_groups in (
+            (
+                "input ordering, multiple requests, the last one has data",
+                [],
+                [
+                    [ 0, 1, 2 ],
+                    [ 3, 4 ],
+                    [ 5, ],
+                ]
+            ),
+
+            (
+                "input ordering, multiple requests, the last one has no data",
+                [],
+                [
+                    [ 0, 1, 2 ],
+                    [ 3, 4, 5 ],
+                    [ ],
+                ]
+            ),
+
+            (
+                "input ordering, multiple requests, the last one has data, has an empty request",
+                [],
+                [
+                    [ 0, 1, 2 ],
+                    [ ],
+                    [ 3, 4, 5 ],
+                ]
+            ),
+
+            (
+                "custom ordering, multiple requests, the last one has no data, files unordered",
+                filenames,
+                [
+                    [ 2, 4, 0 ],
+                    [ 3, 5, 1 ],
+                    [  ],
+                ]
+            ),
+
+            (
+                "custom ordering, multiple requests, the last one has data, files unordered",
+                filenames,
+                [
+                    [ 2, 0 ],
+                    [ 3, 5, 4 ],
+                    [ 1, ],
+                ]
+            ),
+        ):
+            with self.subTest(current_function_name() + ' ' + name):
+                image_sizes, images = generate_random_image_files(*filenames)
+
+                task_data = task_data_common.copy()
+                task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
+
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    send_data_callback=_send_data)
+
+        with self.subTest(current_function_name() + ' mismatching file sets - extra files'):
+            upload_info = [filenames[0]]
+            file_groups = [[ 0, 1 ]]
+            image_sizes, images = generate_random_image_files(*filenames[:2])
+
+            task_data = task_data_common.copy()
+            task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
+
+            with self.assertRaisesMessage(Exception, "(extra)"):
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    send_data_callback=_send_data_and_fail)
+
+        with self.subTest(current_function_name() + ' mismatching file sets - missing files'):
+            upload_info = filenames[0:3]
+            file_groups = [[ 0, 1 ]]
+            image_sizes, images = generate_random_image_files(*upload_info)
+
+            task_data = task_data_common.copy()
+            task_data.update((f"client_files[{i}]", f) for i, f in enumerate(images))
+
+            with self.assertRaisesMessage(Exception, "(missing)"):
+                self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
+                    self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+                    image_sizes, StorageMethodChoice.FILE_SYSTEM, StorageChoice.LOCAL,
+                    send_data_callback=_send_data_and_fail)
 
     def _test_api_v2_tasks_id_data_create(self, user):
         method_list = {
@@ -4538,7 +4957,7 @@ class JobAnnotationAPITestCase(ApiTestBase):
                     ]
                 },
                 {
-                    "frame": 1,
+                    "frame": 2,
                     "label_id": task["labels"][1]["id"],
                     "group": None,
                     "source": "manual",

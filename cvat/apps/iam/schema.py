@@ -1,43 +1,17 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import re
 import textwrap
+
+from drf_spectacular.authentication import SessionScheme, TokenScheme
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from drf_spectacular.openapi import AutoSchema
-from drf_spectacular.extensions import OpenApiFilterExtension, OpenApiAuthenticationExtension
-from drf_spectacular.authentication import TokenScheme, SessionScheme
-from drf_spectacular.plumbing import build_parameter_type
-from drf_spectacular.utils import OpenApiParameter
 
-# https://drf-spectacular.readthedocs.io/en/latest/customization.html?highlight=OpenApiFilterExtension#step-5-extensions
-class OrganizationFilterExtension(OpenApiFilterExtension):
-    """
-    Describe OrganizationFilterBackend filter
-    """
+from rest_framework import serializers
 
-    target_class = 'cvat.apps.iam.filters.OrganizationFilterBackend'
-    priority = 1
-
-    def get_schema_operation_parameters(self, auto_schema, *args, **kwargs):
-        """Describe query parameters"""
-        return [
-            build_parameter_type(
-                name=self.target.organization_slug,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description=self.target.organization_slug_description,
-                schema={'type': 'string'},
-            ),
-            build_parameter_type(
-                name=self.target.organization_id,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description=self.target.organization_id_description,
-                schema={'type': 'string'},
-            )
-        ]
 
 class SignatureAuthenticationScheme(OpenApiAuthenticationExtension):
     """
@@ -107,36 +81,10 @@ class CookieAuthenticationScheme(SessionScheme):
         return [sessionid_schema, csrftoken_schema]
 
 class CustomAutoSchema(AutoSchema):
-    """
-    https://github.com/tfranzel/drf-spectacular/issues/111
-    Adds organization context parameters to all endpoints
-    """
-
-    def get_override_parameters(self):
-        return [
-            OpenApiParameter(
-                name='org',
-                type=str,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="Organization unique slug",
-            ),
-            OpenApiParameter(
-                name='org_id',
-                type=int,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="Organization identifier",
-            ),
-            OpenApiParameter(
-                name='X-Organization',
-                type=str,
-                required=False,
-                location=OpenApiParameter.HEADER
-            ),
-        ]
-
     def get_operation_id(self):
+        # Change style of operation ids to [viewset _ action _ object]
+        # This form is simpler to handle during SDK generation
+
         tokenized_path = self._tokenize_path()
         # replace dashes as they can be problematic later in code generation
         tokenized_path = [t.replace('-', '_') for t in tokenized_path]
@@ -153,3 +101,16 @@ class CustomAutoSchema(AutoSchema):
             tokenized_path.append('formatted')
 
         return '_'.join([tokenized_path[0]] + [action] + tokenized_path[1:])
+
+    def _get_request_for_media_type(self, serializer, *args, **kwargs):
+        # Enables support for required=False serializers in request body specification
+        # in drf-spectacular. Doesn't block other extensions on the target serializer.
+        # This is supported by OpenAPI and by SDK generator, but not by drf-spectacular
+
+        schema, required = super()._get_request_for_media_type(serializer, *args, **kwargs)
+
+        if isinstance(serializer, serializers.Serializer):
+            if not serializer.required:
+                required = False
+
+        return schema, required

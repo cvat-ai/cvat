@@ -5,7 +5,7 @@ on:
       - 'master'
       - 'develop'
   pull_request:
-    types: [edited, ready_for_review, opened, synchronize, reopened]
+    types: [ready_for_review, opened, synchronize, reopened]
     paths-ignore:
       - 'site/**'
       - '**/*.md'
@@ -52,11 +52,18 @@ jobs:
       - name: CVAT server. Build and push
         uses: docker/build-push-action@v3
         with:
+          build-args: |
+              "COVERAGE_PROCESS_START=.coveragerc"
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
           tags: cvat/server
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
+
+      - name: Instrumentation of the code then rebuilding the CVAT UI
+        run: |
+          yarn --frozen-lockfile
+          yarn run coverage
 
       - name: CVAT UI. Build and push
         uses: docker/build-push-action@v3
@@ -130,12 +137,6 @@ jobs:
           name: cvat_ui
           path: /tmp/cvat_ui/
 
-      - name: Download CVAT SDK package
-        uses: actions/download-artifact@v3
-        with:
-          name: cvat_sdk
-          path: /tmp/cvat_sdk/
-
       - name: Load Docker images
         run: |
           docker load --input /tmp/cvat_server/image.tar
@@ -144,7 +145,6 @@ jobs:
           docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
           docker image ls -a
 
-
       - name: Upload expected schema as an artifact
         if: failure() && steps.verify_schema.conclusion == 'failure'
         uses: actions/upload-artifact@v3.1.2
@@ -152,13 +152,29 @@ jobs:
           name: expected_schema
           path: cvat/schema-expected.yml
 
-      - name: Running REST API and SDK tests
-        id: run_tests
+      - name: Generate SDK
         run: |
-          pip3 install --user '/tmp/cvat_sdk/[pytorch]'
-          pip3 install --user cvat-cli/
-          pip3 install --user -r tests/python/requirements.txt
-          pytest tests/python/ -s -v
+          pip3 install -r cvat-sdk/gen/requirements.txt
+          ./cvat-sdk/gen/generate.sh
+
+      - name: Install SDK
+        run: |
+          pip3 install -r ./tests/python/requirements.txt \
+            -e './cvat-sdk[pytorch]' -e ./cvat-cli
+
+      - name: Run REST API and SDK tests
+        id: run_tests
+        env:
+          COVERAGE_PROCESS_START: ".coveragerc"
+        run: |
+          pytest tests/python/ --cov --cov-report=json
+
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: coverage_results
+          path: |
+            coverage*.json
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
@@ -216,10 +232,18 @@ jobs:
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'python manage.py test cvat/apps -v 2'
+            -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
+            -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
+
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: coverage_results
+          path: |
+            ${{ github.workspace }}/coverage-final.json
+            ${{ github.workspace }}/unit_tests_coverage.json
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -313,15 +337,21 @@ jobs:
             npx cypress run \
               --headed \
               --browser chrome \
-              --env coverage=false \
               --config-file cypress_canvas3d.config.js \
               --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
-              --env coverage=false \
               --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
+          mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
+
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: coverage_results
+          path: |
+            tests/coverage/${{ matrix.specs }}_coverage.json
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
@@ -441,3 +471,19 @@ jobs:
 
           docker tag cvat/ui:latest "${UI_IMAGE_REPO}:dev"
           docker push "${UI_IMAGE_REPO}:dev"
+
+  codecov:
+    runs-on: ubuntu-latest
+    needs: [unit_testing, e2e_testing, rest_api_testing]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Downloading coverage results
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage_results
+
+      - name: Upload coverage reports to Codecov with GitHub Action
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
