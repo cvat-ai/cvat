@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[Unreleased]
 ### Added
 - Multi-line text attributes supported (<https://github.com/opencv/cvat/pull/6458>)
+- Now you can configure default attribute value for SELECT, RADIO types on UI
+ (<https://github.com/opencv/cvat/pull/6474>)
 
 ### Changed
 - TDB

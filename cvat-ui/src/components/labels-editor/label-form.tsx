@@ -246,7 +246,7 @@ export default class LabelForm extends React.Component<Props> {
         };
 
         return (
-            <CVATTooltip title='Press enter to add a new value, click the item to select default value'>
+            <CVATTooltip title='Press enter to add a new value'>
                 <Form.Item
                     name={[key, 'values']}
                     rules={[
@@ -266,20 +266,26 @@ export default class LabelForm extends React.Component<Props> {
                         dropdownStyle={{ display: 'none' }}
                         tagRender={(props) => {
                             const attrs = this.formRef.current?.getFieldValue('attributes');
+                            const isDefault = props.value === attrs[key].default_value;
                             return (
-                                <Tag
-                                    color={props.value === attrs[key].default_value ? 'red' : undefined}
-                                    onClose={props.onClose}
-                                    onClick={() => {
-                                        attrs[key].default_value = props.value;
-                                        this.formRef.current?.setFieldsValue({
-                                            attributes: attrs,
-                                        });
-                                    }}
-                                    closable={props.closable}
+                                <CVATTooltip
+                                    placement='bottom'
+                                    title={isDefault ? 'This value is default' : 'Click to set default value'}
                                 >
-                                    {props.label}
-                                </Tag>
+                                    <Tag
+                                        color={isDefault ? 'blue' : undefined}
+                                        onClose={props.onClose}
+                                        onClick={() => {
+                                            attrs[key].default_value = props.value;
+                                            this.formRef.current?.setFieldsValue({
+                                                attributes: attrs,
+                                            });
+                                        }}
+                                        closable={props.closable}
+                                    >
+                                        {props.label}
+                                    </Tag>
+                                </CVATTooltip>
                             );
                         }}
                     />
