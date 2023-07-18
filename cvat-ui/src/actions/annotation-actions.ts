@@ -13,7 +13,7 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, DimensionType, JobType, Job, QualityConflict,
+    getCore, MLModel, JobType, Job, QualityConflict,
 } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -992,11 +992,6 @@ export function getJobAsync(
                     maxZ,
                 },
             });
-
-            if (job.dimension === DimensionType.DIMENSION_3D) {
-                const workspace = Workspace.STANDARD3D;
-                dispatch(changeWorkspace(workspace));
-            }
 
             dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {
