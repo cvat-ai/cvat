@@ -891,7 +891,7 @@ export default class Collection {
                                     frame: state.frame,
                                     type: element.shapeType,
                                     points: [...element.points],
-                                    zOrder: state.zOrder,
+                                    z_order: state.zOrder,
                                     outside: element.outside || false,
                                     occluded: element.occluded || false,
                                     rotation: element.rotation || 0,
