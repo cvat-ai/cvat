@@ -214,8 +214,9 @@ postgresql:
     postgres_password: cvat_postgresql_postgres
     replication_password: cvat_postgresql_replica
 
+
+# See https://github.com/bitnami/charts/blob/master/bitnami/redis/ for more info
 redis:
-  #See https://github.com/bitnami/charts/blob/master/bitnami/redis/ for more info
   enabled: true
   external:
       host: 127.0.0.1
