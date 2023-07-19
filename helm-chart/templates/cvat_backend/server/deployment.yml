@@ -98,7 +98,7 @@ spec:
                 name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: password
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
-          {{- if .Values.analytics.enabled}}
+          {{- if .Values.analytics.enabled }}
           - name: CVAT_ANALYTICS
             value: "1"
           - name: DJANGO_LOG_SERVER_HOST
