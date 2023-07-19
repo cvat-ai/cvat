@@ -335,7 +335,6 @@ ingress:
   enabled: false
 
 # In case you need an ingress, write them manually in your my.values.eml, see example below:
-
 #  enabled: true
 #  annotations:
 #    traefik.ingress.kubernetes.io/router.entrypoints: web
