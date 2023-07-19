@@ -872,7 +872,29 @@ describe('Feature: get statistics', () => {
         expect(statistics.label[labelName].manually).toBe(2);
         expect(statistics.label[labelName].interpolated).toBe(3);
         expect(statistics.label[labelName].total).toBe(5);
+    });
 
+    test('get statistics from a job with skeletons', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 102 }))[0];
+        await job.annotations.clear(true);
+        let statistics = await job.annotations.statistics();
+        expect(statistics.total.manually).toBe(5);
+        expect(statistics.total.interpolated).toBe(443);
+        expect(statistics.total.tag).toBe(1);
+        expect(statistics.total.rectangle.shape).toBe(1);
+        expect(statistics.total.rectangle.track).toBe(1);
+        await job.frames.delete(500); // track frame
+        await job.frames.delete(510); // rectangle shape frame
+        await job.frames.delete(550); // the first keyframe of a track
+        statistics = await job.annotations.statistics();
+        expect(statistics.total.manually).toBe(2);
+        expect(statistics.total.tag).toBe(0);
+        expect(statistics.total.rectangle.shape).toBe(0);
+        expect(statistics.total.interpolated).toBe(394);
+        await job.frames.delete(650); // intermediate frame in a track
+        statistics = await job.annotations.statistics();
+        expect(statistics.total.interpolated).toBe(393);
+        await job.close();
     });
 });
 
