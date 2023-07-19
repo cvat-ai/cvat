@@ -131,7 +131,7 @@ function modelData(
 }
 
 const samPlugin: SAMPlugin = {
-    name: 'Segmeny Anything',
+    name: 'Segment Anything',
     description: 'Plugin handles non-default SAM serverless function output',
     cvat: {
         jobs: {
