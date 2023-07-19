@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[Unreleased]
 ### Added
 - Multi-line text attributes supported (<https://github.com/opencv/cvat/pull/6458>)
+- Now you can configure default attribute value for SELECT, RADIO types on UI
+ (<https://github.com/opencv/cvat/pull/6474>)
 - \{SDK\] `cvat_sdk.datasets`, a framework-agnostic equivalent of `cvat_sdk.pytorch`
   (<https://github.com/opencv/cvat/pull/6428>)
 
@@ -21,11 +23,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
+- Calculating number of objects on annotation view when frames are deleted
+ (<https://github.com/opencv/cvat/pull/6493>)
 - \[SDK\] Ability to create attributes with blank default values
   (<https://github.com/opencv/cvat/pull/6454>)
 - \[SDK\] SDK should not change input data in models (<https://github.com/opencv/cvat/pull/6455>)
 - 3D job can not be opened in validation mode (<https://github.com/opencv/cvat/pull/6507>)
+- Fixed SAM plugin (403 code for workers in organizations) (<https://github.com/opencv/cvat/pull/6514>)
 - Memory leak related to unclosed av container (<https://github.com/opencv/cvat/pull/6501>)
+- Using initial frame from query parameter to open specific frame in a job
+ (<https://github.com/opencv/cvat/pull/6506>)
 - Server-side validation for attribute specifications
   (<https://github.com/opencv/cvat/pull/6447>)
 
