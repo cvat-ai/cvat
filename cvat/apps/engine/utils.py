@@ -294,8 +294,6 @@ def make_attachment_file_name(filename: str) -> str:
     # Added removal of control characters
 
     filename = str(filename).replace("\\", "\\\\").replace('"', r"\"")
-    filename = unicodedata.normalize("NFKD", filename)
-    filename = filename.encode("ascii", "ignore").decode()
     filename = re.sub(r"\s+", " ", filename)
 
     # From https://github.com/encode/uvicorn/blob/cd18c3b14aa810a4a6ebb264b9a297d6f8afb9ac/uvicorn/protocols/http/httptools_impl.py#L51
