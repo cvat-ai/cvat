@@ -273,8 +273,14 @@ export default class LabelForm extends React.Component<Props> {
                                     title={isDefault ? 'This value is default' : 'Click to set default value'}
                                 >
                                     <Tag
+                                        visible
                                         color={isDefault ? 'blue' : undefined}
-                                        onClose={props.onClose}
+                                        onClose={() => {
+                                            if (isDefault) {
+                                                attrs[key].default_value = undefined;
+                                            }
+                                            props.onClose();
+                                        }}
                                         onClick={() => {
                                             attrs[key].default_value = props.value;
                                             this.formRef.current?.setFieldsValue({
