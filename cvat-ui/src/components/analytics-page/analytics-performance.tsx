@@ -139,7 +139,13 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
     });
     return (
         <div className='cvat-analytics-overview'>
-            <Row justify='end'>
+            <Row justify='space-between'>
+                <Col>
+                    <Text type='secondary'>
+                        Created
+                        {report?.createdDate ? moment(report?.createdDate).fromNow() : ''}
+                    </Text>
+                </Col>
                 <Col>
                     <Select
                         placeholder='Select time period'
