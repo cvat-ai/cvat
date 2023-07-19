@@ -370,14 +370,14 @@ class AnalyticsReportUpdateManager:
     def _get_statistics_entry(statistics_object):
         return {
             **AnalyticsReportUpdateManager._get_statistics_entry_props(statistics_object),
-            **{"dataseries": statistics_object.calculate()},
+            **{"data_series": statistics_object.calculate()},
         }
 
     @staticmethod
     def _get_empty_statistics_entry(statistics_object):
         return {
             **AnalyticsReportUpdateManager._get_statistics_entry_props(statistics_object),
-            **{"dataseries": statistics_object.get_empty()},
+            **{"data_series": statistics_object.get_empty()},
         }
 
     @staticmethod

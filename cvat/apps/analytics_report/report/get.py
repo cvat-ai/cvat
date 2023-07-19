@@ -17,10 +17,10 @@ from cvat.apps.engine.models import Job, Project, Task
 
 def _filter_statistics_by_date(statistics, start_date, end_date):
     for st_entry in statistics:
-        dataseries = st_entry.get("dataseries", {})
+        data_series = st_entry.get("data_series", {})
         if st_entry.get("is_filterable_by_date", False):
-            for ds_name, ds_entry in dataseries.items():
-                dataseries[ds_name] = list(
+            for ds_name, ds_entry in data_series.items():
+                data_series[ds_name] = list(
                     filter(
                         lambda df: start_date <= parser.parse(df["datetime"]) <= end_date, ds_entry
                     )
@@ -31,8 +31,8 @@ def _filter_statistics_by_date(statistics, start_date, end_date):
 
 def _convert_datetime_to_date(statistics):
     for st_entry in statistics:
-        dataseries = st_entry.get("dataseries", {})
-        for ds_entry in dataseries.values():
+        data_series = st_entry.get("data_series", {})
+        for ds_entry in data_series.values():
             for df in ds_entry:
                 df["date"] = parser.parse(df["datetime"]).date()
                 del df["datetime"]

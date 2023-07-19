@@ -26,7 +26,7 @@ export interface SerializedAnalyticsEntry {
     description?: string;
     granularity?: string;
     default_view?: string;
-    dataseries?: Record<string, SerializedDataEntry[]>;
+    data_series?: Record<string, SerializedDataEntry[]>;
     transformations?: SerializedTransformationEntry[];
 }
 
@@ -54,7 +54,7 @@ export class AnalyticsEntry {
     #description: string;
     #granularity: string;
     #defaultView: AnalyticsEntryViewType;
-    #dataseries: Record<string, SerializedDataEntry[]>;
+    #dataSeries: Record<string, SerializedDataEntry[]>;
     #transformations: SerializedTransformationEntry[];
 
     constructor(initialData: SerializedAnalyticsEntry) {
@@ -64,7 +64,7 @@ export class AnalyticsEntry {
         this.#granularity = initialData.granularity;
         this.#defaultView = initialData.default_view as AnalyticsEntryViewType;
         this.#transformations = initialData.transformations;
-        this.#dataseries = this.applyTransformations(initialData.dataseries);
+        this.#dataSeries = this.applyTransformations(initialData.data_series);
     }
 
     get name(): string {
@@ -88,8 +88,8 @@ export class AnalyticsEntry {
         return this.#defaultView;
     }
 
-    get dataseries(): Record<string, SerializedDataEntry[]> {
-        return this.#dataseries;
+    get dataSeries(): Record<string, SerializedDataEntry[]> {
+        return this.#dataSeries;
     }
 
     get transformations(): SerializedTransformationEntry[] {
@@ -97,7 +97,7 @@ export class AnalyticsEntry {
     }
 
     private applyTransformations(
-        dataseries: Record<string, SerializedDataEntry[]>,
+        dataSeries: Record<string, SerializedDataEntry[]>,
     ): Record<string, SerializedDataEntry[]> {
         this.#transformations.forEach((transform) => {
             if (transform.binary) {
@@ -128,8 +128,8 @@ export class AnalyticsEntry {
 
                 const leftName = transform.binary.left;
                 const rightName = transform.binary.right;
-                dataseries[transform.name] = dataseries[leftName].map((left, i) => {
-                    const right = dataseries[rightName][i];
+                dataSeries[transform.name] = dataSeries[leftName].map((left, i) => {
+                    const right = dataSeries[rightName][i];
                     if (typeof left.value === 'number' && typeof right.value === 'number') {
                         return {
                             value: operator(left.value, right.value),
@@ -141,11 +141,11 @@ export class AnalyticsEntry {
                         date: left.date,
                     };
                 });
-                delete dataseries[leftName];
-                delete dataseries[rightName];
+                delete dataSeries[leftName];
+                delete dataSeries[rightName];
             }
         });
-        return dataseries;
+        return dataSeries;
     }
 }
 

@@ -57,7 +57,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
         def get_default():
             return {
-                "dataseries": {
+                "data_series": {
                     "object_count": [],
                     "working_time": [],
                 }
@@ -82,26 +82,26 @@ class JobAnnotationSpeed(PrimaryMetricBase):
                 filter(lambda s: s["name"] == "annotation_speed", report.statistics), get_default()
             )
 
-        dataseries = statistics["dataseries"]
+        data_series = statistics["data_series"]
 
         last_entry_count = 0
         start_datetime = self._db_obj.created_date
-        if dataseries["object_count"]:
-            last_entry = dataseries["object_count"][-1]
+        if data_series["object_count"]:
+            last_entry = data_series["object_count"][-1]
             last_entry_timestamp = parser.parse(last_entry["datetime"])
 
             if last_entry_timestamp.date() == timestamp.date():
-                dataseries["object_count"] = dataseries["object_count"][:-1]
-                dataseries["working_time"] = dataseries["working_time"][:-1]
-                if len(dataseries["object_count"]):
-                    last_last_entry = dataseries["object_count"][-1]
+                data_series["object_count"] = data_series["object_count"][:-1]
+                data_series["working_time"] = data_series["working_time"][:-1]
+                if len(data_series["object_count"]):
+                    last_last_entry = data_series["object_count"][-1]
                     start_datetime = parser.parse(last_last_entry["datetime"])
                     last_entry_count = last_last_entry["value"]
             else:
                 last_entry_count = last_entry["value"]
                 start_datetime = parser.parse(last_entry["datetime"])
 
-        dataseries["object_count"].append(
+        data_series["object_count"].append(
             {
                 "value": object_count - last_entry_count,
                 "datetime": timestamp_str,
@@ -120,14 +120,14 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         value = 0
         if (wt := next(iter(result.result_rows))[0]) is not None:
             value = wt
-        dataseries["working_time"].append(
+        data_series["working_time"].append(
             {
                 "value": value,
                 "datetime": timestamp_str,
             }
         )
 
-        return dataseries
+        return data_series
 
     def get_empty(self):
         return {

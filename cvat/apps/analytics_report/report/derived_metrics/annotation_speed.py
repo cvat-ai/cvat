@@ -29,8 +29,8 @@ class TaskAnnotationSpeed(DerivedMetricBase, JobAnnotationSpeed):
         combined_statistics = {}
 
         for job_report in self._primary_statistics:
-            dataseries = job_report["dataseries"]
-            for oc_entry, wt_entry in zip(dataseries["object_count"], dataseries["working_time"]):
+            data_series = job_report["data_series"]
+            for oc_entry, wt_entry in zip(data_series["object_count"], data_series["working_time"]):
                 entry = combined_statistics.setdefault(
                     parser.parse(oc_entry["datetime"]).date(),
                     {
@@ -41,7 +41,7 @@ class TaskAnnotationSpeed(DerivedMetricBase, JobAnnotationSpeed):
                 entry["object_count"] += oc_entry["value"]
                 entry["working_time"] += wt_entry["value"]
 
-        combined_dataseries = {
+        combined_data_series = {
             "object_count": [],
             "working_time": [],
         }
@@ -51,14 +51,14 @@ class TaskAnnotationSpeed(DerivedMetricBase, JobAnnotationSpeed):
                 key, datetime.min.time(), tzinfo=timezone.utc
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
             for s_name in ("object_count", "working_time"):
-                combined_dataseries[s_name].append(
+                combined_data_series[s_name].append(
                     {
                         "value": combined_statistics[key][s_name],
                         "datetime": timestamp_str,
                     }
                 )
 
-        return combined_dataseries
+        return combined_data_series
 
 
 class ProjectAnnotationSpeed(TaskAnnotationSpeed):

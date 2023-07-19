@@ -17,8 +17,8 @@ class JobTotalAnnotationSpeed(DerivedMetricBase):
     def calculate(self):
         total_count = 0
         total_wt = 0
-        dataseries = self._primary_statistics["dataseries"]
-        for ds in zip(dataseries["object_count"], dataseries["working_time"]):
+        data_series = self._primary_statistics["data_series"]
+        for ds in zip(data_series["object_count"], data_series["working_time"]):
             total_count += ds[0]["value"]
             total_wt += ds[1]["value"]
 
@@ -47,8 +47,8 @@ class TaskTotalAnnotationSpeed(JobTotalAnnotationSpeed):
         total_wt = 0
 
         for job_report in self._primary_statistics:
-            dataseries = job_report["dataseries"]
-            for oc_entry, wt_entry in zip(dataseries["object_count"], dataseries["working_time"]):
+            data_series = job_report["data_series"]
+            for oc_entry, wt_entry in zip(data_series["object_count"], data_series["working_time"]):
                 total_count += oc_entry["value"]
                 total_wt += wt_entry["value"]
 

@@ -14,17 +14,17 @@ class TaskAnnotationTime(DerivedMetricBase, JobAnnotationTime):
     def calculate(self):
         entry = {"value": 0, "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ")}
         for job_report in self._primary_statistics:
-            dataseries = job_report["dataseries"]
-            for at_entry in dataseries["total_annotating_time"]:
+            data_series = job_report["data_series"]
+            for at_entry in data_series["total_annotating_time"]:
                 if at_entry["value"] > entry["value"]:
                     entry["value"] = at_entry["value"]
                     entry["datetime"] = at_entry["datetime"]
 
-        combined_dataseries = {
+        combined_data_series = {
             "total_annotating_time": [entry],
         }
 
-        return combined_dataseries
+        return combined_data_series
 
 
 class ProjectAnnotationTime(TaskAnnotationTime):

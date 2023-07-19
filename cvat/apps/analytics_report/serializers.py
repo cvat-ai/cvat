@@ -32,7 +32,7 @@ class MetricSerializer(serializers.Serializer):
         choices=GranularityChoice.choices(), required=False, allow_null=True
     )
     default_view = serializers.ChoiceField(choices=ViewChoice.choices())
-    dataseries = serializers.DictField()
+    data_series = serializers.DictField()
     transformations = serializers.ListField(child=TransformationSerializer())
 
 

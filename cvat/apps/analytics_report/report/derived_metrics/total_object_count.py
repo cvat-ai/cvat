@@ -16,8 +16,8 @@ class JobTotalObjectCount(DerivedMetricBase):
 
     def calculate(self):
         count = 0
-        dataseries = self._primary_statistics["dataseries"]
-        for ds in dataseries["object_count"]:
+        data_series = self._primary_statistics["data_series"]
+        for ds in data_series["object_count"]:
             count += ds["value"]
 
         metric = self.get_empty()
@@ -41,8 +41,8 @@ class TaskTotalObjectCount(JobTotalObjectCount):
     def calculate(self):
         total_count = 0
         for job_report in self._primary_statistics:
-            dataseries = job_report["dataseries"]
-            for oc_entry in dataseries["object_count"]:
+            data_series = job_report["data_series"]
+            for oc_entry in data_series["object_count"]:
                 total_count += oc_entry["value"]
 
         return {

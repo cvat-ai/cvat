@@ -7774,7 +7774,7 @@ components:
           - $ref: '#/components/schemas/NullEnum'
         default_view:
           $ref: '#/components/schemas/DefaultViewEnum'
-        dataseries:
+        data_series:
           type: object
           additionalProperties: {}
         transformations:
@@ -7782,7 +7782,7 @@ components:
           items:
             $ref: '#/components/schemas/Transformation'
       required:
-      - dataseries
+      - data_series
       - default_view
       - description
       - name

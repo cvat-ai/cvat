@@ -63,7 +63,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     y: numericCount,
                 });
                 numericCount += 1;
-                const { value } = entry.dataseries[Object.keys(entry.dataseries)[0]][0];
+                const { value } = entry.dataSeries[Object.keys(entry.dataSeries)[0]][0];
 
                 views.push({
                     view: (
@@ -79,14 +79,14 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                 break;
             }
             case AnalyticsEntryViewType.HISTOGRAM: {
-                const firstDataset = Object.keys(entry.dataseries)[0];
-                const dateLabels = entry.dataseries[firstDataset].map((dataEntry) => (
+                const firstDataset = Object.keys(entry.dataSeries)[0];
+                const dateLabels = entry.dataSeries[firstDataset].map((dataEntry) => (
                     moment.utc(dataEntry.date).local().format('YYYY-MM-DD')
                 ));
 
-                const { dataseries } = entry;
+                const { dataSeries } = entry;
                 let colorIndex = -1;
-                const datasets = Object.entries(dataseries).map(([key, series]) => {
+                const datasets = Object.entries(dataSeries).map(([key, series]) => {
                     let label = key.split('_').join(' ');
                     label = label.charAt(0).toUpperCase() + label.slice(1);
 

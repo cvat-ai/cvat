@@ -19,9 +19,9 @@ class TaskObjects(DerivedMetricBase, JobObjects):
         combined_statistics = {}
 
         for job_report in self._primary_statistics:
-            dataseries = job_report["dataseries"]
+            data_series = job_report["data_series"]
             for c_entry, u_entry, d_entry in zip(
-                dataseries["created"], dataseries["updated"], dataseries["deleted"]
+                data_series["created"], data_series["updated"], data_series["deleted"]
             ):
                 entry = combined_statistics.setdefault(
                     parser.parse(c_entry["datetime"]).date(),
@@ -36,7 +36,7 @@ class TaskObjects(DerivedMetricBase, JobObjects):
                     entry["updated"][t] += u_entry["value"][t]
                     entry["deleted"][t] += d_entry["value"][t]
 
-        combined_dataseries = {
+        combined_data_series = {
             "created": [],
             "updated": [],
             "deleted": [],
@@ -48,7 +48,7 @@ class TaskObjects(DerivedMetricBase, JobObjects):
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
 
             for action in ("created", "updated", "deleted"):
-                combined_dataseries[action].append(
+                combined_data_series[action].append(
                     {
                         "value": {
                             "tracks": combined_statistics[key][action]["tracks"],
@@ -59,7 +59,7 @@ class TaskObjects(DerivedMetricBase, JobObjects):
                     }
                 )
 
-        return combined_dataseries
+        return combined_data_series
 
 
 class ProjectObjects(TaskObjects):
