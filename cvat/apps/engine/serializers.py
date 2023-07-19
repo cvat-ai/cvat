@@ -214,7 +214,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class AttributeSerializer(serializers.ModelSerializer):
     values = serializers.ListField(allow_empty=True,
-        child=serializers.CharField(max_length=200),
+        child=serializers.CharField(allow_blank=True, max_length=200),
     )
 
     class Meta:
