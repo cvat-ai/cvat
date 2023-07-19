@@ -452,7 +452,11 @@ class JobAnnotation:
             deleted_shapes += labeledshape_set.delete()[0]
             deleted_shapes += labeledtrack_set.delete()[0]
 
-            deleted_data = data
+            deleted_data = {
+                "tags": data["tags"],
+                "shapes": data["shapes"],
+                "tracks": data["tracks"],
+            }
 
         if deleted_shapes:
             self._set_updated_date()
