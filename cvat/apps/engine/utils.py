@@ -13,7 +13,6 @@ from contextlib import suppress
 from typing import Any, Dict, Optional, Callable, Union
 import subprocess
 import os
-import unicodedata
 import urllib.parse
 import re
 import logging
