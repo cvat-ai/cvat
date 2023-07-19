@@ -2743,6 +2743,19 @@ class AssetsViewSet(
         instance = self.get_object()
         return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
 
+    @action(methods=['GET'], detail=True, url_path='public', permission_classes=[])
+    def public_retrieve(self, request, *args, **kwargs):
+        # Note: It is not a good approach to implement one more endpoint for receiving public assets
+        # but it separated to 2 endpoints for better server API specification.
+        # It could be implemented via overwriting get_permissions func,
+        # but in that case the specification would contain incorrect security information.
+        # Note: we cannot move this logic to OPA because OPA permissions
+        # don't imply that the user will be anonymous.
+        instance = self.get_object()
+        if instance.guide.is_public:
+            return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
+        return Response(status=HTTPStatus.NO_CONTENT)
+
     def perform_destroy(self, instance):
         full_path = os.path.join(instance.get_asset_dir(), instance.filename)
         if os.path.exists(full_path):

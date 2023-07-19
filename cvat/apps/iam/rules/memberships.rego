@@ -40,6 +40,7 @@ allow {
 allow {
     input.scope == utils.LIST
     organizations.is_member
+    utils.has_perm(USER)
 }
 
 filter = [] { # Django Q object to filter list of entries

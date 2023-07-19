@@ -62,7 +62,7 @@ def get_organization(request, obj):
         except AttributeError as exc:
             # Skip initialization of organization for those objects that don't related with organization
             view = request.parser_context.get('view')
-            if view and view.basename in ('user', 'function', 'request',):
+            if view and view.basename in settings.OBJECTS_NOT_RELATED_WITH_ORG:
                 return request.iam_context['organization']
 
             raise exc
@@ -88,8 +88,9 @@ def get_iam_context(request, obj):
     organization = get_organization(request, obj)
     membership = get_membership(request, organization)
 
-    if organization and not request.user.is_superuser and membership is None:
-        raise PermissionDenied({'message': 'You should be an active member in the organization'})
+    # TODO
+    # if organization and not request.user.is_superuser and membership is None:
+    #     raise PermissionDenied({'message': 'You should be an active member in the organization'})
 
     return {
         'user_id': request.user.id,
@@ -1202,7 +1203,6 @@ class JobPermission(OpenPolicyAgentPermission):
         IMPORT_ANNOTATIONS = 'import:annotations'
         EXPORT_ANNOTATIONS = 'export:annotations'
         EXPORT_DATASET = 'export:dataset'
-        VIEW_COMMITS = 'view:commits'
         VIEW_DATA = 'view:data'
         VIEW_METADATA = 'view:metadata'
         UPDATE_METADATA = 'update:metadata'
@@ -1285,7 +1285,6 @@ class JobPermission(OpenPolicyAgentPermission):
             ('metadata','GET'): Scopes.VIEW_METADATA,
             ('metadata','PATCH'): Scopes.UPDATE_METADATA,
             ('issues', 'GET'): Scopes.VIEW,
-            ('commits', 'GET'): Scopes.VIEW_COMMITS,
             ('dataset_export', 'GET'): Scopes.EXPORT_DATASET,
             ('preview', 'GET'): Scopes.VIEW,
         }.get((view.action, request.method))
