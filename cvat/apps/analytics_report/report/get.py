@@ -16,9 +16,9 @@ from cvat.apps.engine.models import Job, Project, Task
 
 
 def _filter_statistics_by_date(statistics, start_date, end_date):
-    for st_entry in statistics:
-        data_series = st_entry.get("data_series", {})
-        if st_entry.get("is_filterable_by_date", False):
+    for metric in statistics:
+        data_series = metric.get("data_series", {})
+        if metric.get("is_filterable_by_date", False):
             for ds_name, ds_entry in data_series.items():
                 data_series[ds_name] = list(
                     filter(
@@ -30,14 +30,25 @@ def _filter_statistics_by_date(statistics, start_date, end_date):
 
 
 def _convert_datetime_to_date(statistics):
-    for st_entry in statistics:
-        data_series = st_entry.get("data_series", {})
+    for metric in statistics:
+        data_series = metric.get("data_series", {})
         for ds_entry in data_series.values():
             for df in ds_entry:
                 df["date"] = parser.parse(df["datetime"]).date()
                 del df["datetime"]
     return statistics
 
+def _clamp_working_time(statistics):
+    affected_metrics = ("annotation_speed")
+    for metric in statistics:
+        if metric["name"] not in affected_metrics:
+            continue
+        data_series = metric.get("data_series", {})
+        if data_series:
+            for df in data_series["working_time"]:
+                df["value"] = max(df["value"], 1)
+
+    return statistics
 
 def _get_object_report(obj_model, pk, start_date, end_date):
     try:
@@ -50,6 +61,7 @@ def _get_object_report(obj_model, pk, start_date, end_date):
 
     statistics = _filter_statistics_by_date(db_analytics_report.statistics, start_date, end_date)
     statistics = _convert_datetime_to_date(statistics)
+    statistics = _clamp_working_time(statistics)
 
     if obj_model is Job:
         target = TargetChoice.JOB

@@ -24,7 +24,7 @@ class JobTotalAnnotationSpeed(DerivedMetricBase):
 
         metric = self.get_empty()
         metric["total_annotation_speed"][0]["value"] = (
-            total_count / total_wt if total_wt != 0 else 0
+            total_count / max(total_wt, 1) if total_wt != 0 else 0
         )
         return metric
 
@@ -55,7 +55,7 @@ class TaskTotalAnnotationSpeed(JobTotalAnnotationSpeed):
         return {
             "total_annotation_speed": [
                 {
-                    "value": total_count / total_wt if total_wt != 0 else 0,
+                    "value": total_count / max(total_wt, 1) if total_wt != 0 else 0,
                     "datetime": self._get_utc_now().strftime("%Y-%m-%dT%H:%M:%SZ"),
                 },
             ]
