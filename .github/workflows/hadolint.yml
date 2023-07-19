@@ -14,7 +14,7 @@ jobs:
       - name: Run checks
         env:
           HADOLINT: "${{ github.workspace }}/hadolint"
-          HADOLINT_VER: "2.1.0"
+          HADOLINT_VER: "2.12.0"
           VERIFICATION_LEVEL: "error"
         run: |
           CHANGED_FILES="${{steps.files.outputs.all_changed_files}}"

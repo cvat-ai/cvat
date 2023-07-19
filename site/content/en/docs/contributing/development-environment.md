@@ -25,7 +25,7 @@ description: 'Installing a development environment for different operating syste
   MacOS 10.15
 
   ```bash
-  brew install git python pyenv redis curl openssl node sqlite3 geos httpd
+  brew install git python pyenv redis curl openssl node sqlite3 geos
   ```
 
   Arch Linux
@@ -38,7 +38,7 @@ description: 'Installing a development environment for different operating syste
 
   ```bash
   # Install the required dependencies:
-  sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap apache
+  sudo pacman -S base-devel curl git redis cmake gcc python python-pip tk libldap libsasl pkgconf ffmpeg geos openldap
   ```
 
   ```bash
@@ -82,9 +82,7 @@ description: 'Installing a development environment for different operating syste
   python3 -m venv .env
   . .env/bin/activate
   pip install -U pip wheel setuptools
-  pip install \
-      -r cvat/requirements/development.txt \
-      -r cvat/requirements/production.txt
+  pip install -r cvat/requirements/development.txt
   ```
 
   Note that the `.txt` files in the `cvat/requirements` directory

@@ -1,5 +1,5 @@
 {
-  "count": 36,
+  "count": 38,
   "next": null,
   "previous": null,
   "results": [
@@ -717,6 +717,50 @@
       "svg": "<line x1=\"26.91233253479004\" y1=\"27.74985694885254\" x2=\"67.28083801269531\" y2=\"62.590728759765625\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"26.91233253479004\" cy=\"27.74985694885254\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"64\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"67.28083801269531\" cy=\"62.590728759765625\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"65\"></circle>",
       "task_id": 8,
       "type": "skeleton"
+    },
+    {
+      "attributes": [],
+      "color": "#406040",
+      "has_parent": false,
+      "id": 66,
+      "name": "dog",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 22,
+      "type": "any"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "yy",
+          "id": 13,
+          "input_type": "text",
+          "mutable": false,
+          "name": "x",
+          "values": [
+            "yy"
+          ]
+        },
+        {
+          "default_value": "1",
+          "id": 14,
+          "input_type": "radio",
+          "mutable": false,
+          "name": "y",
+          "values": [
+            "1",
+            "2"
+          ]
+        }
+      ],
+      "color": "#6080c0",
+      "has_parent": false,
+      "id": 67,
+      "name": "cat",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 22,
+      "type": "any"
     }
   ]
 }

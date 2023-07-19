@@ -3,13 +3,14 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 from http import HTTPStatus
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
-from shared.utils.config import get_method, post_method
+from shared.utils.config import get_method, make_api_client, post_method
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -140,3 +141,23 @@ class TestListInvitations:
         self._test_can_see_invitations(
             "admin2", list(invitations), page_size="all", org_id=query_value
         )
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestGetInvitations:
+    def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, invitations):
+        # test for API schema regressions
+        source_inv = next(
+            invitations
+            for invitations in invitations
+            if invitations.get("owner") and invitations["owner"]["username"] != admin_user
+        ).copy()
+
+        with make_api_client(admin_user) as api_client:
+            api_client.users_api.destroy(source_inv["owner"]["id"])
+
+            (_, response) = api_client.invitations_api.retrieve(source_inv["key"])
+            fetched_inv = json.loads(response.data)
+
+        source_inv["owner"] = None
+        assert DeepDiff(source_inv, fetched_inv, ignore_order=True) == {}

@@ -5,7 +5,7 @@ on:
       - 'master'
       - 'develop'
   pull_request:
-    types: [edited, ready_for_review, opened, synchronize, reopened]
+    types: [ready_for_review, opened, synchronize, reopened]
     paths-ignore:
       - 'site/**'
       - '**/*.md'
@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Start minikube
-      uses: medyagh/setup-minikube@master
+      uses: medyagh/setup-minikube@latest
       with:
         cpus: max
         memory: max
@@ -44,7 +44,7 @@ jobs:
 
     - name: Deploy to minikube
       run: |
-        printf "traefik:\n  service:\n    externalIPs:\n      - $(minikube ip)\n" >> tests/values.test.yaml
+        printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> tests/values.test.yaml
         cd helm-chart
         helm dependency update
         cd ..
@@ -83,3 +83,22 @@ jobs:
       run: |
         kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
         pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-cli-level DEBUG
+
+    - name: Creating a log file from "cvat" container logs
+      if: failure()
+      env:
+          LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
+      run: |
+        mkdir ${LOGS_DIR}
+        kubectl logs $(kubectl get pods -l component=server -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_server.log
+        kubectl logs $(kubectl get pods -l component=worker-import -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_import.log
+        kubectl logs $(kubectl get pods -l component=worker-export -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_export.log
+        kubectl logs $(kubectl get pods -l component=worker-webhooks -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_webhooks.log
+        kubectl logs $(kubectl get pods -l app.kubernetes.io/name=traefik -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/traefik.log
+
+    - name: Uploading "cvat" container logs as an artifact
+      if: failure()
+      uses: actions/upload-artifact@v3.1.1
+      with:
+        name: rest_api_container_logs
+        path: "${{ github.workspace }}/rest_api_testing"

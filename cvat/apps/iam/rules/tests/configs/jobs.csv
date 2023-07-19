@@ -57,3 +57,13 @@ import:annotations,Job,Sandbox,None,,PUT,/jobs/{id}/annotations?format=,Admin,N/
 import:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PUT,/jobs/{id}/annotations?format=,Worker,N/A
 import:annotations,Job,Organization,None,,PUT,/jobs/{id}/annotations?format=,User,Maintainer
 import:annotations,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PUT,/jobs/{id}/annotations?format=,Worker,Worker
+create,Job,Sandbox,None,,POST,/jobs,Admin,N/A
+create,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee",,POST,/jobs/{id},User,N/A
+create,Job,Organization,None,,POST,/jobs,User,Maintainer
+create,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee",,POST,/jobs/{id},User,Supervisor
+create,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,POST,/jobs/{id},User,Maintainer
+delete,Job,Sandbox,None,,DELETE,/jobs/{id},Admin,N/A
+delete,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee",,DELETE,/jobs/{id},User,N/A
+delete,Job,Organization,None,,DELETE,/jobs/{id},User,Maintainer
+delete,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee",,DELETE,/jobs/{id},User,Supervisor
+delete,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,DELETE,/jobs/{id},User,Maintainer

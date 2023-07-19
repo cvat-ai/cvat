@@ -91,7 +91,7 @@ spec:
               secretKeyRef:
                 name: "{{ tpl (.Values.postgresql.secret.name) . }}"
                 key: password
-          {{ include "cvat.nuclioEnv" . | indent 10 }}
+          {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- if .Values.analytics.enabled}}
           - name: CVAT_ANALYTICS
             value: "1"

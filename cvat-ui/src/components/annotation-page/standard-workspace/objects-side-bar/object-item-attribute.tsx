@@ -7,12 +7,12 @@ import { Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import Input from 'antd/lib/input';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 
 import config from 'config';
 import { clamp } from 'utils/math';
+import TextArea, { TextAreaRef } from 'antd/lib/input/TextArea';
 
 interface Props {
     readonly: boolean;
@@ -39,10 +39,21 @@ function attrIsTheSame(prevProps: Props, nextProps: Props): boolean {
 
 function ItemAttributeComponent(props: Props): JSX.Element {
     const {
-        attrInputType, attrValues, attrValue, attrName, attrID, readonly, changeAttribute,
+        attrInputType, attrValues, attrValue,
+        attrName, attrID, readonly, changeAttribute,
     } = props;
 
     const attrNameStyle: React.CSSProperties = { wordBreak: 'break-word', lineHeight: '1em', fontSize: 12 };
+    const ref = useRef<TextAreaRef>(null);
+    const [selectionStart, setSelectionStart] = useState<number>(attrValue.length);
+
+    useEffect(() => {
+        const textArea = ref?.current?.resizableTextArea?.textArea;
+        if (textArea instanceof HTMLTextAreaElement) {
+            textArea.selectionStart = selectionStart;
+            textArea.selectionEnd = selectionStart;
+        }
+    }, [attrValue]);
 
     if (attrInputType === 'checkbox') {
         return (
@@ -150,44 +161,24 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         );
     }
 
-    const ref = useRef<Input>(null);
-    const [selection, setSelection] = useState<{
-        start: number | null;
-        end: number | null;
-        direction: 'forward' | 'backward' | 'none' | null;
-    }>({
-        start: null,
-        end: null,
-        direction: null,
-    });
-
-    useEffect(() => {
-        if (ref.current && ref.current.input) {
-            ref.current.input.selectionStart = selection.start;
-            ref.current.input.selectionEnd = selection.end;
-            ref.current.input.selectionDirection = selection.direction;
-        }
-    }, [attrValue]);
-
     return (
         <>
             <Col span={8} style={attrNameStyle}>
                 <Text className='cvat-text'>{attrName}</Text>
             </Col>
             <Col span={16}>
-                <Input
+                <TextArea
                     ref={ref}
                     size='small'
                     disabled={readonly}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>): void => {
-                        if (ref.current && ref.current.input) {
-                            setSelection({
-                                start: ref.current.input.selectionStart,
-                                end: ref.current.input.selectionEnd,
-                                direction: ref.current.input.selectionDirection,
-                            });
+                    style={{
+                        height: Math.min(120, attrValue.split('\n').length * 24),
+                        minHeight: Math.min(120, attrValue.split('\n').length * 24),
+                    }}
+                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>): void => {
+                        if (ref.current?.resizableTextArea?.textArea) {
+                            setSelectionStart(ref.current.resizableTextArea.textArea.selectionStart);
                         }
-
                         changeAttribute(attrID, event.target.value);
                     }}
                     value={attrValue}

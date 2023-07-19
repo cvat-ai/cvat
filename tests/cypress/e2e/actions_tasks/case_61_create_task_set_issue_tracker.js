@@ -75,7 +75,7 @@ context('Create a task with set an issue tracker.', () => {
             cy.get('.cvat-issue-tracker-value').should('have.text', dummyBugTrackerUrl);
             cy.get('.cvat-issue-tracker').find('[aria-label="Edit"]').click();
             cy.get('.cvat-issue-tracker-value').find('textarea').clear().type('{Enter}');
-            cy.get('.cvat-issue-tracker-value').should('not.exist'); // Not specified
+            cy.get('.cvat-open-bug-tracker-button').should('not.exist'); // Not specified
             cy.contains('button', 'Open the issue').should('not.exist');
         });
     });

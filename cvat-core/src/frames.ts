@@ -8,14 +8,14 @@ import { isBrowser, isNode } from 'browser-or-node';
 import * as cvatData from 'cvat-data';
 import { DimensionType } from 'enums';
 import PluginRegistry from './plugins';
-import serverProxy, { FramesMetaData } from './server-proxy';
+import serverProxy, { RawFramesMetaData } from './server-proxy';
 import {
     Exception, ArgumentError, DataError, ServerError,
 } from './exceptions';
 
 // frame storage by job id
 const frameDataCache: Record<string, {
-    meta: FramesMetaData;
+    meta: RawFramesMetaData;
     chunkSize: number;
     mode: 'annotation' | 'interpolation';
     startFrame: number;
@@ -26,6 +26,76 @@ const frameDataCache: Record<string, {
     activeChunkRequest: null;
     nextChunkRequest: null;
 }> = {};
+
+export class FramesMetaData {
+    public chunkSize: number;
+    public deletedFrames: number[];
+    public includedFrames: number[];
+    public frameFilter: string;
+    public frames: {
+        width: number;
+        height: number;
+        name: string;
+        related_files: number;
+    }[];
+    public imageQuality: number;
+    public size: number;
+    public startFrame: number;
+    public stopFrame: number;
+
+    constructor(initialData: RawFramesMetaData) {
+        const data: RawFramesMetaData = {
+            chunk_size: undefined,
+            deleted_frames: [],
+            included_frames: [],
+            frame_filter: undefined,
+            frames: [],
+            image_quality: undefined,
+            size: undefined,
+            start_frame: undefined,
+            stop_frame: undefined,
+        };
+
+        for (const property in data) {
+            if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
+                data[property] = initialData[property];
+            }
+        }
+
+        Object.defineProperties(
+            this,
+            Object.freeze({
+                chunkSize: {
+                    get: () => data.chunk_size,
+                },
+                deletedFrames: {
+                    get: () => data.deleted_frames,
+                },
+                includedFrames: {
+                    get: () => data.included_frames,
+                },
+                frameFilter: {
+                    get: () => data.frame_filter,
+                },
+                frames: {
+                    get: () => data.frames,
+                },
+                imageQuality: {
+                    get: () => data.image_quality,
+                },
+                size: {
+                    get: () => data.size,
+                },
+                startFrame: {
+                    get: () => data.start_frame,
+                },
+                stopFrame: {
+                    get: () => data.stop_frame,
+                },
+            }),
+        );
+    }
+}
 
 export class FrameData {
     constructor({
@@ -315,22 +385,22 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
     });
 };
 
-function getFrameMeta(jobID, frame): FramesMetaData['frames'][0] {
+function getFrameMeta(jobID, frame): RawFramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
-    let size = null;
-    if (mode === 'interpolation') {
-        [size] = meta.frames;
-    } else if (mode === 'annotation') {
-        if (frame >= meta.size) {
+    let frameMeta = null;
+    if (mode === 'interpolation' && meta.frames.length === 1) {
+        // video tasks have 1 frame info, but image tasks will have many infos
+        [frameMeta] = meta.frames;
+    } else if (mode === 'annotation' || (mode === 'interpolation' && meta.frames.length > 1)) {
+        if (frame > meta.stop_frame) {
             throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
-        } else {
-            size = meta.frames[frame - startFrame];
         }
+        frameMeta = meta.frames[frame - startFrame];
     } else {
         throw new DataError(`Invalid mode is specified ${mode}`);
     }
 
-    return size;
+    return frameMeta;
 }
 
 class FrameBuffer {
@@ -685,7 +755,6 @@ export async function getFrame(
             nextChunkRequest: null,
         };
 
-        // relevant only for video chunks
         const frameMeta = getFrameMeta(jobID, frame);
         frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     }
@@ -739,20 +808,32 @@ export async function patchMeta(jobID) {
     frameDataCache[jobID].meta.deleted_frames = prevDeletedFrames;
 }
 
-export async function findNotDeletedFrame(jobID, frameFrom, frameTo, offset) {
+export async function findFrame(jobID, frameFrom, frameTo, filters) {
+    const offset = filters.offset || 1;
     let meta;
     if (!frameDataCache[jobID]) {
         meta = await serverProxy.frames.getMeta('job', jobID);
     } else {
         meta = frameDataCache[jobID].meta;
     }
+
     const sign = Math.sign(frameTo - frameFrom);
     const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
     const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
     let framesCounter = 0;
     let lastUndeletedFrame = null;
+    const check = (frame): boolean => {
+        if (meta.included_frames) {
+            return (meta.included_frames.includes(frame)) &&
+            (!filters.notDeleted || !(frame in meta.deleted_frames));
+        }
+        if (filters.notDeleted) {
+            return !(frame in meta.deleted_frames);
+        }
+        return true;
+    };
     for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
-        if (!(frame in meta.deleted_frames)) {
+        if (check(frame)) {
             lastUndeletedFrame = frame;
             framesCounter++;
             if (framesCounter === offset) {

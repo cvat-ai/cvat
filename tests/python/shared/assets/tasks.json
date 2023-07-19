@@ -1,11 +1,55 @@
 {
-  "count": 16,
+  "count": 17,
   "next": null,
   "previous": null,
   "results": [
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
+      "created_date": "2023-05-26T16:11:23.540000Z",
+      "data": 21,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 22,
+      "image_quality": 70,
+      "jobs": {
+        "completed": 1,
+        "count": 2,
+        "url": "http://localhost:8080/api/jobs?task_id=22",
+        "validation": 0
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?task_id=22"
+      },
+      "mode": "annotation",
+      "name": "task3_with_gt_job",
+      "organization": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "project_id": null,
+      "segment_size": 11,
+      "size": 11,
+      "source_storage": null,
+      "status": "validation",
+      "subset": "Train",
+      "target_storage": null,
+      "updated_date": "2023-05-26T16:17:02.635000Z",
+      "url": "http://localhost:8080/api/tasks/22"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2023-03-27T19:08:07.649000Z",
       "data": 20,
       "data_chunk_size": 72,
@@ -17,7 +61,8 @@
       "jobs": {
         "completed": 0,
         "count": 2,
-        "url": "http://localhost:8080/api/jobs?task_id=21"
+        "url": "http://localhost:8080/api/jobs?task_id=21",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -55,6 +100,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2023-03-10T11:57:31.614000Z",
       "data": 19,
       "data_chunk_size": 72,
@@ -66,7 +112,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=20"
+        "url": "http://localhost:8080/api/jobs?task_id=20",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -104,6 +151,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2023-03-10T11:56:33.757000Z",
       "data": 18,
       "data_chunk_size": 72,
@@ -115,7 +163,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=19"
+        "url": "http://localhost:8080/api/jobs?task_id=19",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -153,6 +202,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2023-03-01T15:36:26.668000Z",
       "data": 17,
       "data_chunk_size": 72,
@@ -164,7 +214,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=18"
+        "url": "http://localhost:8080/api/jobs?task_id=18",
+        "validation": 0
       },
       "labels": {
         "count": 1,
@@ -208,6 +259,7 @@
         "username": "user2"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2023-02-10T14:05:25.947000Z",
       "data": 16,
       "data_chunk_size": 72,
@@ -219,7 +271,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=17"
+        "url": "http://localhost:8080/api/jobs?task_id=17",
+        "validation": 0
       },
       "labels": {
         "count": 3,
@@ -249,6 +302,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-12-01T12:53:10.425000Z",
       "data": 14,
       "data_chunk_size": 72,
@@ -260,7 +314,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=15"
+        "url": "http://localhost:8080/api/jobs?task_id=15",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -298,6 +353,7 @@
     {
       "assignee": null,
       "bug_tracker": "https://bugtracker.localhost/task/12345",
+      "guide_id": null,
       "created_date": "2022-09-22T14:22:25.820000Z",
       "data": 13,
       "data_chunk_size": 72,
@@ -309,7 +365,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=14"
+        "url": "http://localhost:8080/api/jobs?task_id=14",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -353,6 +410,7 @@
         "username": "user3"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-06-08T08:33:06.505000Z",
       "data": 12,
       "data_chunk_size": 72,
@@ -364,7 +422,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=13"
+        "url": "http://localhost:8080/api/jobs?task_id=13",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -394,13 +453,15 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-03-14T13:24:05.852000Z",
       "dimension": "2d",
       "id": 12,
       "jobs": {
         "completed": 0,
         "count": 0,
-        "url": "http://localhost:8080/api/jobs?task_id=12"
+        "url": "http://localhost:8080/api/jobs?task_id=12",
+        "validation": 0
       },
       "labels": {
         "count": 1,
@@ -435,6 +496,7 @@
         "username": "user5"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-03-05T10:32:19.149000Z",
       "data": 11,
       "data_chunk_size": 72,
@@ -446,7 +508,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=11"
+        "url": "http://localhost:8080/api/jobs?task_id=11",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -490,6 +553,7 @@
         "username": "admin1"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data": 9,
       "data_chunk_size": 72,
@@ -501,7 +565,8 @@
       "jobs": {
         "completed": 0,
         "count": 4,
-        "url": "http://localhost:8080/api/jobs?task_id=9"
+        "url": "http://localhost:8080/api/jobs?task_id=9",
+        "validation": 1
       },
       "labels": {
         "count": 2,
@@ -537,6 +602,7 @@
         "username": "worker4"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-03-05T08:30:48.612000Z",
       "data": 8,
       "data_chunk_size": 72,
@@ -548,7 +614,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=8"
+        "url": "http://localhost:8080/api/jobs?task_id=8",
+        "validation": 0
       },
       "labels": {
         "count": 3,
@@ -584,6 +651,7 @@
         "username": "worker2"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-02-21T10:31:52.429000Z",
       "data": 7,
       "data_chunk_size": 72,
@@ -595,7 +663,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=7"
+        "url": "http://localhost:8080/api/jobs?task_id=7",
+        "validation": 0
       },
       "labels": {
         "count": 2,
@@ -625,6 +694,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-02-16T06:26:54.631000Z",
       "data": 6,
       "data_chunk_size": 72,
@@ -636,7 +706,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=6"
+        "url": "http://localhost:8080/api/jobs?task_id=6",
+        "validation": 0
       },
       "labels": {
         "count": 1,
@@ -672,6 +743,7 @@
         "username": "dummy2"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2022-02-16T06:25:48.168000Z",
       "data": 5,
       "data_chunk_size": 72,
@@ -683,7 +755,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=5"
+        "url": "http://localhost:8080/api/jobs?task_id=5",
+        "validation": 0
       },
       "labels": {
         "count": 1,
@@ -719,6 +792,7 @@
         "username": "worker2"
       },
       "bug_tracker": "",
+      "guide_id": null,
       "created_date": "2021-12-14T18:50:29.458000Z",
       "data": 2,
       "data_chunk_size": 72,
@@ -730,7 +804,8 @@
       "jobs": {
         "completed": 0,
         "count": 1,
-        "url": "http://localhost:8080/api/jobs?task_id=2"
+        "url": "http://localhost:8080/api/jobs?task_id=2",
+        "validation": 0
       },
       "labels": {
         "count": 2,

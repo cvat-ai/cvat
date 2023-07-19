@@ -8,6 +8,7 @@ import {
     useRef, useEffect, useState, useCallback,
 } from 'react';
 import { useSelector } from 'react-redux';
+import { useHistory } from 'react-router';
 import { CombinedState, PluginComponent } from 'reducers';
 
 // eslint-disable-next-line import/prefer-default-export
@@ -58,6 +59,19 @@ export function usePlugins(
     }
 
     return ref.current;
+}
+
+export function useGoBack(): () => void {
+    const history = useHistory();
+    const goBack = useCallback(() => {
+        if (history.action !== 'POP') {
+            history.goBack();
+        } else {
+            history.push('/');
+        }
+    }, []);
+
+    return goBack;
 }
 
 export interface ICardHeightHOC {

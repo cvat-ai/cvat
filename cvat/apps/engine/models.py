@@ -3,17 +3,23 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import os
 import re
 import shutil
+import uuid
 from enum import Enum
-from typing import Optional
+from functools import cached_property
+from typing import Any, Dict, Optional, Sequence
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
-from django.db import IntegrityError, models
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, models, transaction
 from django.db.models.fields import FloatField
+from django.db.models import Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
@@ -154,6 +160,28 @@ class SortingMethod(str, Enum):
     def __str__(self):
         return self.value
 
+class JobType(str, Enum):
+    ANNOTATION = 'annotation'
+    GROUND_TRUTH = 'ground_truth'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+class JobFrameSelectionMethod(str, Enum):
+    RANDOM_UNIFORM = 'random_uniform'
+    MANUAL = 'manual'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 class AbstractArrayField(models.TextField):
     separator = ","
     converter = lambda x: x
@@ -213,6 +241,9 @@ class Data(models.Model):
         match = re.search(r"step\s*=\s*([1-9]\d*)", self.frame_filter)
         return int(match.group(1)) if match else 1
 
+    def get_valid_frame_indices(self):
+        return range(self.start_frame, self.stop_frame, self.get_frame_step())
+
     def get_data_dirname(self):
         return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
 
@@ -264,11 +295,6 @@ class Data(models.Model):
         os.makedirs(self.get_original_cache_dirname())
         os.makedirs(self.get_upload_dirname())
 
-    def get_uploaded_files(self):
-        upload_dir = self.get_upload_dirname()
-        uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file))]
-        represented_files = [{'file':f} for f in uploaded_files]
-        return represented_files
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
@@ -326,6 +352,17 @@ class Project(models.Model):
     def get_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "project.log")
 
+    def is_job_staff(self, user_id):
+        if self.owner == user_id:
+            return True
+
+        if self.assignee == user_id:
+            return True
+
+        return self.tasks.prefetch_related('segment_set', 'segment_set__job_set').filter(
+            Q(owner=user_id) | Q(assignee=user_id) | Q(segment__job__assignee=user_id)
+        ).count() > 0
+
     @cache_deleted
     def delete(self, using=None, keep_parents=False):
         super().delete(using, keep_parents)
@@ -337,7 +374,44 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+class TaskQuerySet(models.QuerySet):
+    def with_label_summary(self):
+        return self.prefetch_related(
+            'label_set',
+            'label_set__parent',
+            'project__label_set',
+            'project__label_set__parent',
+        ).annotate(
+            task_labels_count=models.Count('label',
+                filter=models.Q(label__parent__isnull=True),
+                distinct=True
+            ),
+            proj_labels_count=models.Count('project__label',
+                filter=models.Q(project__label__parent__isnull=True),
+                distinct=True
+            )
+        )
+
+    def with_job_summary(self):
+        return self.prefetch_related(
+            'segment_set__job_set',
+        ).annotate(
+            completed_jobs_count=models.Count(
+                'segment__job',
+                filter=models.Q(segment__job__state=StateChoice.COMPLETED.value) &
+                       models.Q(segment__job__stage=StageChoice.ACCEPTANCE.value),
+                distinct=True,
+            ),
+            validation_jobs_count=models.Count(
+                'segment__job',
+                filter=models.Q(segment__job__stage=StageChoice.VALIDATION.value),
+                distinct=True,
+            )
+        )
+
 class Task(models.Model):
+    objects = TaskQuerySet.as_manager()
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
         null=True, blank=True, related_name="tasks",
         related_query_name="task")
@@ -392,6 +466,34 @@ class Task(models.Model):
     def get_tmp_dirname(self):
         return os.path.join(self.get_dirname(), "tmp")
 
+    def is_job_staff(self, user_id):
+        if self.owner == user_id:
+            return True
+        if self.assignee == user_id:
+            return True
+        return self.segment_set.prefetch_related('job_set').filter(job__assignee=user_id).count() > 0
+
+    @cached_property
+    def completed_jobs_count(self) -> Optional[int]:
+        # Requires this field to be defined externally,
+        # e.g. by calling Task.objects.with_job_summary,
+        # to avoid unexpected DB queries on access.
+        return None
+
+    @cached_property
+    def validation_jobs_count(self) -> Optional[int]:
+        # Requires this field to be defined externally,
+        # e.g. by calling Task.objects.with_job_summary,
+        # to avoid unexpected DB queries on access.
+        return None
+
+    @cached_property
+    def gt_job(self) -> Optional[Job]:
+        try:
+            return Job.objects.get(segment__task=self, type=JobType.GROUND_TRUTH)
+        except Job.DoesNotExist:
+            return None
+
     def __str__(self):
         return self.name
 
@@ -424,6 +526,10 @@ class ClientFile(models.Model):
         default_permissions = ()
         unique_together = ("data", "file")
 
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
+
 # For server files on the mounted share
 class ServerFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='server_files')
@@ -431,6 +537,11 @@ class ServerFile(models.Model):
 
     class Meta:
         default_permissions = ()
+        unique_together = ("data", "file")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
 
 # For URLs
 class RemoteFile(models.Model):
@@ -439,6 +550,11 @@ class RemoteFile(models.Model):
 
     class Meta:
         default_permissions = ()
+        unique_together = ("data", "file")
+
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
 
 
 class RelatedFile(models.Model):
@@ -451,21 +567,134 @@ class RelatedFile(models.Model):
         default_permissions = ()
         unique_together = ("data", "path")
 
+        # Some DBs can shuffle the rows. Here we restore the insertion order.
+        # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
+        ordering = ('id', )
+
+
+class SegmentType(str, Enum):
+    RANGE = 'range'
+    SPECIFIC_FRAMES = 'specific_frames'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+
 class Segment(models.Model):
+    # Common fields
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
+    type = models.CharField(choices=SegmentType.choices(), default=SegmentType.RANGE, max_length=32)
+
+    # TODO: try to reuse this field for custom task segments (aka job_file_mapping)
+    # SegmentType.SPECIFIC_FRAMES fields
+    frames = IntArrayField(store_sorted=True, unique_values=True, default='', blank=True)
 
     def contains_frame(self, idx: int) -> bool:
-        return self.start_frame <= idx and idx <= self.stop_frame
+        return idx in self.frame_set
+
+    @property
+    def frame_count(self) -> int:
+        return len(self.frame_set)
+
+    @property
+    def frame_set(self) -> Sequence[int]:
+        data = self.task.data
+        data_start_frame = data.start_frame
+        data_stop_frame = data.stop_frame
+        step = data.get_frame_step()
+        frame_range = range(
+            data_start_frame + self.start_frame * step,
+            min(data_start_frame + self.stop_frame * step, data_stop_frame) + step,
+            step
+        )
+
+        if self.type == SegmentType.RANGE:
+            return frame_range
+        elif self.type == SegmentType.SPECIFIC_FRAMES:
+            return set(frame_range).intersection(self.frames or [])
+        else:
+            assert False
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        if not (self.type == SegmentType.RANGE) ^ bool(self.frames):
+            raise ValidationError(
+                f"frames and type == {SegmentType.SPECIFIC_FRAMES} can only be used together"
+            )
+
+        if self.stop_frame < self.start_frame:
+            raise ValidationError("stop_frame cannot be lesser than start_frame")
+
+        return super().clean()
+
+    @cache_deleted
+    def delete(self, using=None, keep_parents=False):
+        super().delete(using, keep_parents)
 
     class Meta:
         default_permissions = ()
 
+
+
+class TaskGroundTruthJobsLimitError(ValidationError):
+    def __init__(self) -> None:
+        super().__init__("A task can have only 1 ground truth job")
+
+
+
+class JobQuerySet(models.QuerySet):
+    @transaction.atomic
+    def create(self, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().create(**kwargs)
+
+    @transaction.atomic
+    def update(self, **kwargs: Any) -> int:
+        self._validate_constraints(kwargs)
+
+        return super().update(**kwargs)
+
+    @transaction.atomic
+    def get_or_create(self, *args, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().get_or_create(*args, **kwargs)
+
+    @transaction.atomic
+    def update_or_create(self, *args, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().update_or_create(*args, **kwargs)
+
+    def _validate_constraints(self, obj: Dict[str, Any]):
+        # Constraints can't be set on the related model fields
+        # This method requires the save operation to be called as a transaction
+        if obj['type'] == JobType.GROUND_TRUTH and self.filter(
+            segment__task=obj['segment'].task, type=JobType.GROUND_TRUTH.value
+        ).count() != 0:
+            raise TaskGroundTruthJobsLimitError()
+
+
+
 class Job(models.Model):
+    objects = JobQuerySet.as_manager()
+
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+
+    created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+
     # TODO: it has to be deleted in Job, Task, Project and replaced by (stage, state)
     # The stage field cannot be changed by an assignee, but state field can be. For
     # now status is read only and it will be updated by (stage, state). Thus we don't
@@ -477,6 +706,9 @@ class Job(models.Model):
     state = models.CharField(max_length=32, choices=StateChoice.choices(),
         default=StateChoice.NEW)
 
+    type = models.CharField(max_length=32, choices=JobType.choices(),
+        default=JobType.ANNOTATION)
+
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
 
@@ -487,6 +719,15 @@ class Job(models.Model):
     def get_project_id(self):
         project = self.segment.task.project
         return project.id if project else None
+
+    @extend_schema_field(OpenApiTypes.INT)
+    def get_guide_id(self):
+        source = self.segment.task.project
+        if not source:
+            source = self.segment.task
+        if hasattr(source, 'annotation_guide'):
+            return source.annotation_guide.id
+        return None
 
     @extend_schema_field(OpenApiTypes.INT)
     def get_task_id(self):
@@ -512,6 +753,42 @@ class Job(models.Model):
 
     class Meta:
         default_permissions = ()
+
+    @transaction.atomic
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        if not (self.type == JobType.GROUND_TRUTH) ^ (self.segment.type == SegmentType.RANGE):
+            raise ValidationError(
+                f"job type == {JobType.GROUND_TRUTH} and "
+                f"segment type == {SegmentType.SPECIFIC_FRAMES} "
+                "can only be used together"
+            )
+
+        return super().clean()
+
+    @cache_deleted
+    def delete(self, using=None, keep_parents=False):
+        if self.segment:
+            self.segment.delete(using=using, keep_parents=keep_parents)
+
+        super().delete(using, keep_parents)
+
+        self.delete_dirs()
+
+    def delete_dirs(self):
+        job_path = self.get_dirname()
+        if os.path.isdir(job_path):
+            shutil.rmtree(job_path)
+
+    def make_dirs(self):
+        job_path = self.get_dirname()
+        if os.path.isdir(job_path):
+            shutil.rmtree(job_path)
+        os.makedirs(job_path)
+
 
 class InvalidLabel(ValueError):
     pass
@@ -604,8 +881,8 @@ class AttributeSpec(models.Model):
     mutable = models.BooleanField()
     input_type = models.CharField(max_length=16,
         choices=AttributeType.choices())
-    default_value = models.CharField(max_length=128)
-    values = models.CharField(max_length=4096)
+    default_value = models.CharField(blank=True, max_length=128)
+    values = models.CharField(blank=True, max_length=4096)
 
     class Meta:
         default_permissions = ()
@@ -643,6 +920,7 @@ class ShapeType(str, Enum):
 
 class SourceType(str, Enum):
     AUTO = 'auto'
+    SEMI_AUTO = 'semi-auto'
     MANUAL = 'manual'
 
     @classmethod
@@ -716,7 +994,7 @@ class Issue(models.Model):
     assignee = models.ForeignKey(User, null=True, blank=True, related_name='+',
         on_delete=models.SET_NULL)
     created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(null=True, blank=True)
+    updated_date = models.DateTimeField(auto_now=True)
     resolved = models.BooleanField(default=False)
 
     def get_project_id(self):
@@ -875,3 +1153,32 @@ class Storage(models.Model):
 
     class Meta:
         default_permissions = ()
+
+class AnnotationGuide(models.Model):
+    task = models.OneToOneField(Task, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
+    project = models.OneToOneField(Project, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
+    markdown = models.TextField(blank=True, default='')
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    @property
+    def target(self):
+        return self.project or self.task
+
+    @property
+    def organization_id(self):
+        return self.target.organization_id
+
+class Asset(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    filename = models.CharField(max_length=1024)
+    created_date = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="assets")
+    guide = models.ForeignKey(AnnotationGuide, on_delete=models.CASCADE, related_name="assets")
+
+    @property
+    def organization_id(self):
+        return self.guide.organization_id
+
+    def get_asset_dir(self):
+        return os.path.join(settings.ASSETS_ROOT, str(self.uuid))

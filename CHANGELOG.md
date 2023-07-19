@@ -5,19 +5,94 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.5.0] - Unreleased
+## \[Unreleased]
 ### Added
 - Helm: Added configurable default storage option to chart(<https://github.com/opencv/cvat/pull/6137>)
+- Multi-line text attributes supported (<https://github.com/opencv/cvat/pull/6458>)
+- \{SDK\] `cvat_sdk.datasets`, a framework-agnostic equivalent of `cvat_sdk.pytorch`
+  (<https://github.com/opencv/cvat/pull/6428>)
 
 ### Changed
-- Replaced Apache mod_wsgi with Uvicorn ASGI server for backend use(<https://github.com/opencv/cvat/pull/6195>)
 - Helm: Added configurable default storage option to chart(<https://github.com/opencv/cvat/pull/6137>)
--
+
 ### Deprecated
 - TBD
 
 ### Removed
 - Helm: Removed hardcoded mandatory traefik ingress usage(<https://github.com/opencv/cvat/pull/6137>)
+
+### Fixed
+- Helm: fixed issue with multiple caches in same RWX volume, which prevents db migration to start(<https://github.com/opencv/cvat/pull/6137>)
+- \[SDK\] Ability to create attributes with blank default values
+  (<https://github.com/opencv/cvat/pull/6454>)
+- \[SDK\] SDK should not change input data in models (<https://github.com/opencv/cvat/pull/6455>)
+- 3D job can not be opened in validation mode (<https://github.com/opencv/cvat/pull/6507>)
+- Memory leak related to unclosed av container (<https://github.com/opencv/cvat/pull/6501>)
+
+### Security
+- TDB
+
+## \[2.5.0] - 2023-07-05
+### Added
+- Now CVAT supports project/task markdown description with additional assets
+  (png, jpeg, gif, webp images and pdf files) (<https://github.com/opencv/cvat/pull/6191>)
+- Ground Truth jobs and quality analytics for tasks (<https://github.com/opencv/cvat/pull/6039>)
+
+### Fixed
+- The problem with manifest file in tasks restored from backup (<https://github.com/opencv/cvat/issues/5971>)
+- The problem with task mode in a task restored from backup (<https://github.com/opencv/cvat/issues/5668>)
+- Visible 'To background' button in review mode (<https://github.com/opencv/cvat/pull/6363>)
+- Added missed auto_add argument to Issue model (<https://github.com/opencv/cvat/pull/6364>)
+- \[API\] Performance of several API endpoints (<https://github.com/opencv/cvat/pull/6340>)
+- \[API\] Invalid schema for the owner field in several endpoints (<https://github.com/opencv/cvat/pull/6343>)
+- Some internal errors occurring during lambda function invocations
+  could be mistakenly reported as invalid requests
+  (<https://github.com/opencv/cvat/pull/6394>)
+- \[SDK\] Loading tasks that have been cached with the PyTorch adapter
+  (<https://github.com/opencv/cvat/issues/6047>)
+- The problem with importing annotations if dataset has extra dots in filenames
+  (<https://github.com/opencv/cvat/pull/6350>)
+
+### Security
+- More comprehensive SSRF mitigations were implemented.
+  Previously, on task creation it was prohibited to specify remote data URLs
+  with hosts that resolved to IP addresses in the private ranges.
+  Now, redirects to such URLs are also prohibited.
+  In addition, this restriction is now also applied to webhook URLs.
+  System administrators can allow or deny custom IP address ranges
+  with the `SMOKESCREEN_OPTS` environment variable.
+  (<https://github.com/opencv/cvat/pull/6362>).
+
+## \[2.4.9] - 2023-06-22
+### Fixed
+- Error related to calling serverless functions on some image formats (<https://github.com/opencv/cvat/pull/6384>)
+
+## \[2.4.8] - 2023-06-22
+### Fixed
+- Getting original chunks for items in specific cases (<https://github.com/opencv/cvat/pull/6355>)
+
+## \[2.4.7] - 2023-06-16
+### Added
+- \[API\] API Now supports the creation and removal of Ground Truth jobs. (<https://github.com/opencv/cvat/pull/6204>)
+- \[API\] We've introduced task quality estimation endpoints. (<https://github.com/opencv/cvat/pull/6204>)
+- \[CLI\] An option to select the organization. (<https://github.com/opencv/cvat/pull/6317>)
+
+### Fixed
+- Issues with running serverless models for EXIF-rotated images. (<https://github.com/opencv/cvat/pull/6275/>)
+- File uploading issues when using https configuration. (<https://github.com/opencv/cvat/pull/6308>)
+- Dataset export error with `outside` property of tracks. (<https://github.com/opencv/cvat/issues/5971>)
+- Broken logging in the TransT serverless function. (<https://github.com/opencv/cvat/pull/6290>)
+
+## \[2.4.6] - 2023-06-09
+### Added
+- \[Server API\] An option to supply custom file ordering for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
+- New option ``semi-auto`` is available as annotations source (<https://github.com/opencv/cvat/pull/6263>)
+
+### Changed
+- Allowed to use dataset manifest for the `predefined` sorting method for task data (<https://github.com/opencv/cvat/pull/5083>)
+
+### Changed
+- Replaced Apache mod_wsgi with Uvicorn ASGI server for backend use(<https://github.com/opencv/cvat/pull/6195>)
 
 ### Fixed
 - Incorrect location of temporary file during job annotation import.(<https://github.com/opencv/cvat/pull/5909>)
@@ -26,9 +101,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deletion of uploaded files, including annotations and backups,
   after they have been uploaded to the server using the TUS protocol  but before an RQ job has been initiated. (<https://github.com/opencv/cvat/pull/5909>)
 - Simultaneous creation of tasks or projects with identical names from backups by multiple users.(<https://github.com/opencv/cvat/pull/5909>)
-
-### Security
-- TDB
+- \[API\] The `predefined` sorting method for task data uploads (<https://github.com/opencv/cvat/pull/5083>)
+- Allowed slashes in export filenames. (<https://github.com/opencv/cvat/pull/6265>)
 
 ## \[2.4.5] - 2023-06-02
 ### Added
@@ -84,7 +158,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6150>)
 - Prevented sending of empty list of events.
   (<https://github.com/opencv/cvat/pull/6154>)
-- Helm: fixed issue with multiple caches in same RWX volume, which prevents db migration to start(<https://github.com/opencv/cvat/pull/6137>)
 
 ## \[2.4.3] - 2023-04-24
 ### Changed

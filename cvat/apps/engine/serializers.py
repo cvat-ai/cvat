@@ -16,7 +16,6 @@ from typing import Any, Dict, Iterable, Optional, OrderedDict, Union
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 from django.db import transaction
-from django.conf import settings
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
@@ -136,7 +135,8 @@ class _CollectionSummarySerializer(serializers.Serializer):
         return instance
 
 class JobsSummarySerializer(_CollectionSummarySerializer):
-    completed = serializers.IntegerField(source='completed_jobs_count', default=0)
+    completed = serializers.IntegerField(source='completed_jobs_count', allow_null=True)
+    validation = serializers.IntegerField(source='validation_jobs_count', allow_null=True)
 
     def __init__(self, *, model=models.Job, url_filter_key, **kwargs):
         super().__init__(model=model, url_filter_key=url_filter_key, **kwargs)
@@ -214,7 +214,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class AttributeSerializer(serializers.ModelSerializer):
     values = serializers.ListField(allow_empty=True,
-        child=serializers.CharField(max_length=200),
+        child=serializers.CharField(allow_blank=True, max_length=200),
     )
 
     class Meta:
@@ -542,8 +542,10 @@ class LabelSerializer(SublabelSerializer):
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
+    guide_id = serializers.ReadOnlyField(source="get_guide_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
+    frame_count = serializers.ReadOnlyField(source="segment.frame_count")
     assignee = BasicUserSerializer(allow_null=True, read_only=True)
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
@@ -557,20 +559,138 @@ class JobReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
-            'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode',
-            'start_frame', 'stop_frame', 'data_chunk_size', 'organization', 'data_compressed_chunk_type',
-            'updated_date', 'issues', 'labels'
-        )
+        fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
+            'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
+            'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
+            'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization')
         read_only_fields = fields
 
-class JobWriteSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
+            data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
+        return data
+
+
+class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
 
+    # NOTE: Field variations can be expressed using serializer inheritance, but it is
+    # harder to use then: we need to make a manual switch in get_serializer_class()
+    # and create an extra serializer type in the API schema.
+    # Need to investigate how it can be simplified.
+    type = serializers.ChoiceField(choices=models.JobType.choices())
+
+    task_id = serializers.IntegerField()
+    frame_selection_method = serializers.ChoiceField(
+        choices=models.JobFrameSelectionMethod.choices(), required=False)
+
+    frame_count = serializers.IntegerField(min_value=0, required=False,
+        help_text=textwrap.dedent("""\
+            The number of frames included in the job.
+            Applicable only to the random frame selection
+        """))
+    seed = serializers.IntegerField(min_value=0, required=False,
+        help_text=textwrap.dedent("""\
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to the random frame selection.
+            By default, a random value is used.
+        """))
+
+    frames = serializers.ListField(child=serializers.IntegerField(min_value=0),
+        required=False, help_text=textwrap.dedent("""\
+            The list of frame ids. Applicable only to the manual frame selection
+        """))
+
+    class Meta:
+        model = models.Job
+        random_selection_params = ('frame_count', 'seed',)
+        manual_selection_params = ('frames',)
+        write_once_fields = ('type', 'task_id', 'frame_selection_method',) \
+            + random_selection_params + manual_selection_params
+        fields = ('assignee', 'stage', 'state', ) + write_once_fields
+
     def to_representation(self, instance):
-        # FIXME: deal with resquest/response separation
         serializer = JobReadSerializer(instance, context=self.context)
         return serializer.data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        task_id = validated_data.pop('task_id')
+        task = models.Task.objects.get(pk=task_id)
+
+        if validated_data["type"] == models.JobType.GROUND_TRUTH:
+            if not task.data:
+                raise serializers.ValidationError(
+                    "This task has no data attached yet. Please set up task data and try again"
+                )
+            if task.dimension != models.DimensionType.DIM_2D:
+                raise serializers.ValidationError(
+                    "Ground Truth jobs can only be added in 2d tasks"
+                )
+
+            size = task.data.size
+            valid_frame_ids = task.data.get_valid_frame_indices()
+
+            frame_selection_method = validated_data.pop("frame_selection_method", None)
+            if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
+                frame_count = validated_data.pop("frame_count")
+                if size <= frame_count:
+                    raise serializers.ValidationError(
+                        f"The number of frames requested ({frame_count}) must be lesser than "
+                        f"the number of the task frames ({size})"
+                    )
+
+                seed = validated_data.pop("seed", None)
+
+                # The RNG backend must not change to yield reproducible results,
+                # so here we specify it explicitly
+                from numpy import random
+                rng = random.Generator(random.MT19937(seed=seed))
+                frames = rng.choice(
+                    list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
+                ).tolist()
+            elif frame_selection_method == models.JobFrameSelectionMethod.MANUAL:
+                frames = validated_data.pop("frames")
+
+                if not frames:
+                    raise serializers.ValidationError("The list of frames cannot be empty")
+
+                unique_frames = set(frames)
+                if len(unique_frames) != len(frames):
+                    raise serializers.ValidationError(f"Frames must not repeat")
+
+                invalid_ids = unique_frames.difference(valid_frame_ids)
+                if invalid_ids:
+                    raise serializers.ValidationError(
+                        "The following frames are not included "
+                        f"in the task: {','.join(map(str, invalid_ids))}"
+                    )
+            else:
+                raise serializers.ValidationError(
+                    f"Unexpected frame selection method '{frame_selection_method}'"
+                )
+
+            segment = models.Segment.objects.create(
+                start_frame=0,
+                stop_frame=task.data.size - 1,
+                frames=frames,
+                task=task,
+                type=models.SegmentType.SPECIFIC_FRAMES,
+            )
+        else:
+            raise serializers.ValidationError(f"Unexpected job type '{validated_data['type']}'")
+
+        validated_data['segment'] = segment
+
+        try:
+            job = super().create(validated_data)
+        except models.TaskGroundTruthJobsLimitError as ex:
+            raise serializers.ValidationError(ex.message) from ex
+
+        job.make_dirs()
+        return job
 
     def update(self, instance, validated_data):
         state = validated_data.get('state')
@@ -595,25 +715,21 @@ class JobWriteSerializer(serializers.ModelSerializer):
 
         return instance
 
-
-    class Meta:
-        model = models.Job
-        fields = ('assignee', 'stage', 'state')
-
 class SimpleJobSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True)
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status', 'stage', 'state')
+        fields = ('url', 'id', 'assignee', 'status', 'stage', 'state', 'type')
         read_only_fields = fields
 
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')
+    frames = serializers.ListSerializer(child=serializers.IntegerField(), allow_empty=True)
 
     class Meta:
         model = models.Segment
-        fields = ('start_frame', 'stop_frame', 'jobs')
+        fields = ('start_frame', 'stop_frame', 'jobs', 'type', 'frames')
         read_only_fields = fields
 
 class ClientFileSerializer(serializers.ModelSerializer):
@@ -666,7 +782,7 @@ class RqStatusSerializer(serializers.Serializer):
     progress = serializers.FloatField(max_value=100, default=0)
 
 class RqIdSerializer(serializers.Serializer):
-    rq_id = serializers.CharField()
+    rq_id = serializers.CharField(help_text="Request id")
 
 
 class JobFiles(serializers.ListField):
@@ -763,12 +879,33 @@ class DataSerializer(serializers.ModelSerializer):
         """))
     job_file_mapping = JobFileMapping(required=False, write_only=True)
 
+    upload_file_order = serializers.ListField(
+        child=serializers.CharField(max_length=1024),
+        default=list, allow_empty=True, write_only=True,
+        help_text=textwrap.dedent("""\
+            Allows to specify file order for client_file uploads.
+            Only valid with the "{}" sorting method selected.
+
+            To state that the input files are sent in the correct order,
+            pass an empty list.
+
+            If you want to send files in an arbitrary order
+            and reorder them afterwards on the server,
+            pass the list of file names in the required order.
+        """.format(models.SortingMethod.PREDEFINED))
+    )
+
     class Meta:
         model = models.Data
-        fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'server_files_exclude','remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method', 'filename_pattern',
-            'job_file_mapping')
+        fields = (
+            'chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
+            'compressed_chunk_type', 'original_chunk_type',
+            'client_files', 'server_files', 'remote_files',
+            'use_zip_chunks', 'server_files_exclude',
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method',
+            'storage', 'sorting_method', 'filename_pattern',
+            'job_file_mapping', 'upload_file_order',
+        )
         extra_kwargs = {
             'chunk_size': { 'help_text': "Maximum number of frames per chunk" },
             'size': { 'help_text': "The number of frames" },
@@ -815,15 +952,9 @@ class DataSerializer(serializers.ModelSerializer):
             and attrs['start_frame'] > attrs['stop_frame']:
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
 
-        if (
-            (server_files := attrs.get('server_files'))
-            and attrs.get('cloud_storage_id')
-            and sum(1 for f in server_files if not f['file'].endswith('.jsonl')) > settings.CLOUD_STORAGE_MAX_FILES_COUNT
-        ):
-            raise serializers.ValidationError(f'The maximum number of the cloud storage attached files is {settings.CLOUD_STORAGE_MAX_FILES_COUNT}')
-
         filename_pattern = attrs.get('filename_pattern')
         server_files_exclude = attrs.get('server_files_exclude')
+        server_files = attrs.get('server_files', [])
 
         if filename_pattern and len(list(filter(lambda x: not x['file'].endswith('.jsonl'), server_files))):
             raise serializers.ValidationError('The filename_pattern can only be used with specified manifest or without server_files')
@@ -858,8 +989,9 @@ class DataSerializer(serializers.ModelSerializer):
         server_files = validated_data.pop('server_files')
         remote_files = validated_data.pop('remote_files')
 
-        validated_data.pop('job_file_mapping', None) # optional
-        validated_data.pop('server_files_exclude', None) # optional
+        validated_data.pop('job_file_mapping', None) # optional, not present in Data
+        validated_data.pop('upload_file_order', None) # optional, not present in Data
+        validated_data.pop('server_files_exclude', None) # optional, not present in Data
 
         for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
             validated_data.pop(extra_key)
@@ -899,9 +1031,10 @@ class TaskReadSerializer(serializers.ModelSerializer):
     size = serializers.ReadOnlyField(source='data.size', required=False)
     image_quality = serializers.ReadOnlyField(source='data.image_quality', required=False)
     data = serializers.ReadOnlyField(source='data.id', required=False)
-    owner = BasicUserSerializer(required=False)
+    owner = BasicUserSerializer(required=False, allow_null=True)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
+    guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
@@ -912,7 +1045,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap', 'segment_size',
-            'status', 'data_chunk_size', 'data_compressed_chunk_type',
+            'status', 'data_chunk_size', 'data_compressed_chunk_type', 'guide_id',
             'data_original_chunk_type', 'size', 'image_quality', 'data', 'dimension',
             'subset', 'organization', 'target_storage', 'source_storage', 'jobs', 'labels',
         )
@@ -1114,8 +1247,9 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return attrs
 
 class ProjectReadSerializer(serializers.ModelSerializer):
-    owner = BasicUserSerializer(required=False, read_only=True)
+    owner = BasicUserSerializer(allow_null=True, required=False, read_only=True)
     assignee = BasicUserSerializer(allow_null=True, required=False, read_only=True)
+    guide_id = serializers.IntegerField(source='annotation_guide.id', required=False, allow_null=True)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False, read_only=True)
     dimension = serializers.CharField(max_length=16, required=False, read_only=True, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=True, read_only=True)
@@ -1125,7 +1259,7 @@ class ProjectReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'owner', 'assignee',
+        fields = ('url', 'id', 'name', 'owner', 'assignee', 'guide_id',
             'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status',
             'dimension', 'organization', 'target_storage', 'source_storage',
             'tasks', 'labels',
@@ -1232,6 +1366,11 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
+    included_frames = serializers.ListField(
+        child=serializers.IntegerField(min_value=0), allow_null=True, required=False,
+        help_text=textwrap.dedent("""\
+        A list of valid frame ids. The None value means all frames are included.
+        """))
 
     class Meta:
         model = models.Data
@@ -1244,8 +1383,16 @@ class DataMetaReadSerializer(serializers.ModelSerializer):
             'frame_filter',
             'frames',
             'deleted_frames',
+            'included_frames',
         )
         read_only_fields = fields
+        extra_kwargs = {
+            'size': {
+                'help_text': textwrap.dedent("""\
+                    The number of frames included. Deleted frames do not affect this value.
+                """)
+            }
+        }
 
 class DataMetaWriteSerializer(serializers.ModelSerializer):
     deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
@@ -1489,7 +1636,7 @@ class ManifestSerializer(serializers.ModelSerializer):
         return instance.filename if instance else instance
 
 class CloudStorageReadSerializer(serializers.ModelSerializer):
-    owner = BasicUserSerializer(required=False)
+    owner = BasicUserSerializer(required=False, allow_null=True)
     manifests = ManifestSerializer(many=True, default=[])
     class Meta:
         model = models.CloudStorage
@@ -1730,9 +1877,9 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         storage_status = storage.get_status()
         if storage_status == Status.AVAILABLE:
             new_manifest_names = set(i.get('filename') for i in validated_data.get('manifests', []))
-            previos_manifest_names = set(i.filename for i in instance.manifests.all())
-            delta_to_delete = tuple(previos_manifest_names - new_manifest_names)
-            delta_to_create = tuple(new_manifest_names - previos_manifest_names)
+            previous_manifest_names = set(i.filename for i in instance.manifests.all())
+            delta_to_delete = tuple(previous_manifest_names - new_manifest_names)
+            delta_to_create = tuple(new_manifest_names - previous_manifest_names)
             if delta_to_delete:
                 instance.manifests.filter(filename__in=delta_to_delete).delete()
             if delta_to_create:
@@ -1830,3 +1977,87 @@ def _validate_existence_of_cloud_storage(cloud_storage_id):
         _ = models.CloudStorage.objects.get(id=cloud_storage_id)
     except models.CloudStorage.DoesNotExist:
         raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
+
+class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    filename = serializers.CharField(required=True, max_length=1024)
+    owner = BasicUserSerializer(required=False)
+
+    class Meta:
+        model = models.Asset
+        fields = ('uuid', 'filename', 'created_date', 'owner', 'guide_id', )
+        read_only_fields = fields
+
+class AssetWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    uuid = serializers.CharField(required=False)
+    filename = serializers.CharField(required=True, max_length=1024)
+    guide_id = serializers.IntegerField(required=True)
+
+    class Meta:
+        model = models.Asset
+        fields = ('uuid', 'filename', 'created_date', 'guide_id', )
+        write_once_fields = ('uuid', 'filename', 'created_date', 'guide_id', )
+
+class AnnotationGuideReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    class Meta:
+        model = models.AnnotationGuide
+        fields = ('id', 'task_id', 'project_id', 'created_date', 'updated_date', 'markdown', )
+        read_only_fields = fields
+
+class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    project_id = serializers.IntegerField(required=False, allow_null=True)
+    task_id = serializers.IntegerField(required=False, allow_null=True)
+
+    @transaction.atomic
+    def create(self, validated_data):
+        project_id = validated_data.get("project_id", None)
+        task_id = validated_data.get("task_id", None)
+        if project_id is None and task_id is None:
+            raise serializers.ValidationError('One of project_id or task_id must be specified')
+        if project_id is not None and task_id is not None:
+            raise serializers.ValidationError('Both project_id and task_id must not be specified')
+
+        project = None
+        task = None
+        if project_id is not None:
+            try:
+                project = models.Project.objects.get(id=project_id)
+            except models.Project.DoesNotExist:
+                raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
+
+        if task_id is not None:
+            try:
+                task = models.Task.objects.get(id=task_id)
+            except models.Task.DoesNotExist:
+                raise serializers.ValidationError(f'The specified task #{task_id} does not exist.')
+        db_data = models.AnnotationGuide.objects.create(**validated_data, project = project, task = task)
+        return db_data
+
+    @transaction.atomic
+    def save(self, **kwargs):
+        instance = super().save(**kwargs)
+        def _update_assets(guide):
+            md_assets = []
+            current_assets = list(guide.assets.all())
+            markdown = guide.markdown
+
+            # pylint: disable=anomalous-backslash-in-string
+            pattern = re.compile('\!\[image\]\(\/api\/assets\/([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})\)')
+            results = re.findall(pattern, markdown)
+
+            for asset_id in results:
+                db_asset = models.Asset.objects.get(pk=asset_id)
+                if db_asset.guide_id != guide.id:
+                    raise serializers.ValidationError('Asset is already related to another guide')
+                md_assets.append(db_asset)
+
+            for current_asset in current_assets:
+                if current_asset not in md_assets:
+                    current_asset.delete()
+
+        _update_assets(instance)
+        return instance
+
+
+    class Meta:
+        model = models.AnnotationGuide
+        fields = ('id', 'task_id', 'project_id', 'markdown', )

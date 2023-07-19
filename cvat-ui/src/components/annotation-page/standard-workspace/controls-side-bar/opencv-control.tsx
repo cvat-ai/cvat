@@ -245,7 +245,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     toolsBlockerState.algorithmsLocked ? 0 : threshold);
                 let points = [];
                 if (toolsBlockerState.algorithmsLocked && this.latestPoints.length > 2) {
-                    // disable approximation for lastest two points to disable fickering
+                    // disable approximation for latest two points to disable fickering
                     const [x, y] = this.latestPoints.slice(-2);
                     this.latestPoints.splice(this.latestPoints.length - 2, 2);
                     points = openCVWrapper.contours.approxPoly(
@@ -278,6 +278,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     frame,
                     objectType: ObjectType.SHAPE,
                     shapeType: ShapeType.POLYGON,
+                    source: core.enums.Source.SEMI_AUTO,
                     label: labels.filter((label: any) => label.id === activeLabelID)[0],
                     points: openCVWrapper.contours
                         .approxPoly(finalPoints, thresholdFromAccuracy(approxPolyAccuracy))
@@ -321,6 +322,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             const state = new core.classes.ObjectState({
                 shapeType: ShapeType.RECTANGLE,
                 objectType: ObjectType.TRACK,
+                source: core.enums.Source.SEMI_AUTO,
                 zOrder: curZOrder,
                 label,
                 points,

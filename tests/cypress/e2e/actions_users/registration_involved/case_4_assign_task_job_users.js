@@ -94,7 +94,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
                 'success',
             );
             cy.contains('.cvat-item-task-name', secondTaskName).should('exist');
-            cy.logout(secondUserName);
+            cy.logout();
         });
 
         it('Register third user and logout.', () => {
@@ -106,7 +106,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
                 thirdUser.emailAddr,
                 thirdUser.password,
             );
-            cy.logout(thirdUserName);
+            cy.logout();
         });
 
         it('First user login, create a task, assign the task to the second user and logout.', () => {
@@ -128,13 +128,13 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.login(secondUserName, secondUser.password);
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
-            cy.logout(secondUserName);
+            cy.logout();
         });
 
         it('Third user login. The task not exist. Logout', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('strong', taskName).should('not.exist');
-            cy.logout(thirdUserName);
+            cy.logout();
         });
 
         it('First user login and assign the job to the third user. Logout', () => {
@@ -156,7 +156,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.contains('[type="button"]', 'OK').click();
             cy.get('.cvat-job-info-modal-window').should('not.be.visible');
 
-            cy.logout(thirdUserName);
+            cy.logout();
         });
 
         it('First user login. Getting authKey.', () => {

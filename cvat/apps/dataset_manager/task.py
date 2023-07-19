@@ -19,10 +19,10 @@ from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
 
-from .annotation import AnnotationIR, AnnotationManager
-from .bindings import JobData, TaskData, CvatImportError
-from .formats.registry import make_exporter, make_importer
-from .util import bulk_create
+from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
+from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
+from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
+from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
 
 class dotdict(OrderedDict):
     """dot.notation access to dictionary attributes"""
@@ -73,18 +73,45 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
     return list(merged_rows.values())
 
 class JobAnnotation:
-    def __init__(self, pk, is_prefetched=False):
-        if is_prefetched:
-            self.db_job = models.Job.objects.select_related('segment__task') \
-                .select_for_update().get(id=pk)
-        else:
-            self.db_job = models.Job.objects.prefetch_related(
-                'segment',
-                'segment__task',
-                Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+    @classmethod
+    def add_prefetch_info(cls, queryset):
+        assert issubclass(queryset.model, models.Job)
+
+        label_qs = add_prefetch_fields(models.Label.objects.all(), [
+            'skeleton',
+            'parent',
+            'attributespec_set',
+        ])
+        label_qs = JobData.add_prefetch_info(label_qs)
+
+        return queryset.select_related(
+            'segment',
+            'segment__task',
+        ).prefetch_related(
+            'segment__task__owner',
+            'segment__task__assignee',
+            'segment__task__project__owner',
+            'segment__task__project__assignee',
+
+            Prefetch('segment__task__data',
+                queryset=models.Data.objects.select_related('video').prefetch_related(
                     Prefetch('images', queryset=models.Image.objects.order_by('frame'))
-                ))
-            ).get(pk=pk)
+            )),
+
+            Prefetch('segment__task__label_set', queryset=label_qs),
+            Prefetch('segment__task__project__label_set', queryset=label_qs),
+        )
+
+    def __init__(self, pk, *, is_prefetched=False, queryset=None):
+        if queryset is None:
+            queryset = self.add_prefetch_info(models.Job.objects)
+
+        if is_prefetched:
+            self.db_job: models.Job = queryset.select_related(
+                'segment__task'
+            ).select_for_update().get(id=pk)
+        else:
+            self.db_job: models.Job = get_cached(queryset, pk=int(pk))
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
@@ -660,7 +687,9 @@ class TaskAnnotation:
         ).get(id=pk)
 
         # Postgres doesn't guarantee an order by default without explicit order_by
-        self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk).order_by('id')
+        self.db_jobs = models.Job.objects.select_related("segment").filter(
+            segment__task_id=pk, type=models.JobType.ANNOTATION.value,
+        ).order_by('id')
         self.ir_data = AnnotationIR(self.db_task.dimension)
 
     def reset(self):
@@ -711,6 +740,9 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
+            if db_job.type != models.JobType.ANNOTATION:
+                continue
+
             annotation = JobAnnotation(db_job.id, is_prefetched=True)
             annotation.init_from_db()
             if annotation.ir_data.version > self.ir_data.version:

@@ -663,14 +663,6 @@
 },
 {
   "model": "sessions.session",
-  "pk": "ttnnwlz4b1z28uiy24l4gqjgotwhpw1j",
-  "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2hALFKYu3fcMZJhhpGpoUtqV8e7apAvd_vfef6mI21ri1vISJ1YX1anT75aQHrnugO9Yb7Omua7LlPSu6IM2Pc6cn9fD_Tso2Mq3zpzAUyay6EIHThLQQEZEAgdGkJ4hGeOCDBbOvrcYvMOQ2Fp2GYx6fwAZFjiv:1ptmJ8:Ac_26k4kTSoRBplBjwsTvpb0oukXBgpVgB230iP706c",
-    "expire_date": "2023-05-16T09:28:26.391Z"
-  }
-},
-{
-  "model": "sessions.session",
   "pk": "v28l0efbrv9x06z97ilwcf7lwtuf4ctc",
   "fields": {
     "session_data": ".eJxVjDsOwjAQRO_iGlm22fhDSc8ZrLV3gwPIluKkQtydREoBzRTz3sxbRFyXEtfOc5xIXIRW4vRbJsxPrjuhB9Z7k7nVZZ6S3BV50C5vjfh1Pdy_g4K9bGuLXqMDQqdDTtYN6AHIIoGGMIJlQwxB-VFn3gLPzjil3ABkAIBZfL7_vTer:1nABOV:0UAK9VV6D18QF1-189XQ2T9LrQUSdioGNoHdRUzzt7o",
@@ -1384,6 +1376,25 @@
     "image_quality": 70,
     "start_frame": 0,
     "stop_frame": 9,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
+  }
+},
+{
+  "model": "engine.data",
+  "pk": 21,
+  "fields": {
+    "chunk_size": 72,
+    "size": 11,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 10,
     "frame_filter": "",
     "compressed_chunk_type": "imageset",
     "original_chunk_type": "imageset",
@@ -2669,6 +2680,127 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 467,
+  "fields": {
+    "data": 21,
+    "path": "30.png",
+    "frame": 0,
+    "width": 810,
+    "height": 399
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 468,
+  "fields": {
+    "data": 21,
+    "path": "31.png",
+    "frame": 1,
+    "width": 916,
+    "height": 158
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 469,
+  "fields": {
+    "data": 21,
+    "path": "32.png",
+    "frame": 2,
+    "width": 936,
+    "height": 182
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 470,
+  "fields": {
+    "data": 21,
+    "path": "33.png",
+    "frame": 3,
+    "width": 783,
+    "height": 433
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 471,
+  "fields": {
+    "data": 21,
+    "path": "34.png",
+    "frame": 4,
+    "width": 231,
+    "height": 121
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 472,
+  "fields": {
+    "data": 21,
+    "path": "35.png",
+    "frame": 5,
+    "width": 721,
+    "height": 705
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 473,
+  "fields": {
+    "data": 21,
+    "path": "36.png",
+    "frame": 6,
+    "width": 631,
+    "height": 225
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 474,
+  "fields": {
+    "data": 21,
+    "path": "37.png",
+    "frame": 7,
+    "width": 540,
+    "height": 167
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 475,
+  "fields": {
+    "data": 21,
+    "path": "38.png",
+    "frame": 8,
+    "width": 203,
+    "height": 211
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 476,
+  "fields": {
+    "data": 21,
+    "path": "39.png",
+    "frame": 9,
+    "width": 677,
+    "height": 144
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 477,
+  "fields": {
+    "data": 21,
+    "path": "40.png",
+    "frame": 10,
+    "width": 697,
+    "height": 954
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -3310,6 +3442,31 @@
     "organization": null,
     "source_storage": 33,
     "target_storage": 34
+  }
+},
+{
+  "model": "engine.task",
+  "pk": 22,
+  "fields": {
+    "project": null,
+    "name": "task3_with_gt_job",
+    "mode": "annotation",
+    "owner": [
+      "user2"
+    ],
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2023-05-26T16:11:23.540Z",
+    "updated_date": "2023-05-26T16:17:02.635Z",
+    "overlap": 0,
+    "segment_size": 11,
+    "status": "validation",
+    "data": 21,
+    "dimension": "2d",
+    "subset": "Train",
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -4215,7 +4372,9 @@
   "fields": {
     "task": 2,
     "start_frame": 0,
-    "stop_frame": 22
+    "stop_frame": 22,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4224,7 +4383,9 @@
   "fields": {
     "task": 5,
     "start_frame": 0,
-    "stop_frame": 24
+    "stop_frame": 24,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4233,7 +4394,9 @@
   "fields": {
     "task": 6,
     "start_frame": 0,
-    "stop_frame": 0
+    "stop_frame": 0,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4242,7 +4405,9 @@
   "fields": {
     "task": 7,
     "start_frame": 0,
-    "stop_frame": 10
+    "stop_frame": 10,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4251,7 +4416,9 @@
   "fields": {
     "task": 8,
     "start_frame": 0,
-    "stop_frame": 13
+    "stop_frame": 13,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4260,7 +4427,9 @@
   "fields": {
     "task": 9,
     "start_frame": 0,
-    "stop_frame": 4
+    "stop_frame": 4,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4269,7 +4438,9 @@
   "fields": {
     "task": 9,
     "start_frame": 5,
-    "stop_frame": 9
+    "stop_frame": 9,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4278,7 +4449,9 @@
   "fields": {
     "task": 9,
     "start_frame": 10,
-    "stop_frame": 14
+    "stop_frame": 14,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4287,7 +4460,9 @@
   "fields": {
     "task": 9,
     "start_frame": 15,
-    "stop_frame": 19
+    "stop_frame": 19,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4296,7 +4471,9 @@
   "fields": {
     "task": 11,
     "start_frame": 0,
-    "stop_frame": 10
+    "stop_frame": 10,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4305,7 +4482,9 @@
   "fields": {
     "task": 13,
     "start_frame": 0,
-    "stop_frame": 4
+    "stop_frame": 4,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4314,7 +4493,9 @@
   "fields": {
     "task": 14,
     "start_frame": 0,
-    "stop_frame": 7
+    "stop_frame": 7,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4323,7 +4504,9 @@
   "fields": {
     "task": 15,
     "start_frame": 0,
-    "stop_frame": 24
+    "stop_frame": 24,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4332,7 +4515,9 @@
   "fields": {
     "task": 17,
     "start_frame": 0,
-    "stop_frame": 4
+    "stop_frame": 4,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4341,7 +4526,9 @@
   "fields": {
     "task": 18,
     "start_frame": 0,
-    "stop_frame": 1
+    "stop_frame": 1,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4350,7 +4537,9 @@
   "fields": {
     "task": 19,
     "start_frame": 0,
-    "stop_frame": 1
+    "stop_frame": 1,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4359,7 +4548,9 @@
   "fields": {
     "task": 20,
     "start_frame": 0,
-    "stop_frame": 1
+    "stop_frame": 1,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4368,7 +4559,9 @@
   "fields": {
     "task": 21,
     "start_frame": 0,
-    "stop_frame": 5
+    "stop_frame": 5,
+    "type": "range",
+    "frames": "[]"
   }
 },
 {
@@ -4377,7 +4570,31 @@
   "fields": {
     "task": 21,
     "start_frame": 6,
-    "stop_frame": 9
+    "stop_frame": 9,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 27,
+  "fields": {
+    "task": 22,
+    "start_frame": 0,
+    "stop_frame": 10,
+    "type": "range",
+    "frames": "[]"
+  }
+},
+{
+  "model": "engine.segment",
+  "pk": 28,
+  "fields": {
+    "task": 22,
+    "start_frame": 0,
+    "stop_frame": 10,
+    "type": "specific_frames",
+    "frames": "[0, 1, 2]"
   }
 },
 {
@@ -4388,10 +4605,12 @@
     "assignee": [
       "worker1"
     ],
+    "created_date": "2021-12-14T18:50:29.458Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "new"
+    "state": "new",
+    "type": "annotation"
   }
 },
 {
@@ -4402,10 +4621,12 @@
     "assignee": [
       "worker4"
     ],
+    "created_date": "2022-02-16T06:25:48.168Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4414,10 +4635,12 @@
   "fields": {
     "segment": 8,
     "assignee": null,
+    "created_date": "2022-02-16T06:26:54.631Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "new"
+    "state": "new",
+    "type": "annotation"
   }
 },
 {
@@ -4426,10 +4649,12 @@
   "fields": {
     "segment": 9,
     "assignee": null,
+    "created_date": "2022-02-21T10:31:52.429Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4440,10 +4665,12 @@
     "assignee": [
       "admin1"
     ],
+    "created_date": "2022-03-05T08:30:48.612Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4454,10 +4681,12 @@
     "assignee": [
       "worker4"
     ],
+    "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4466,10 +4695,12 @@
   "fields": {
     "segment": 12,
     "assignee": null,
+    "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "validation",
     "stage": "validation",
-    "state": "new"
+    "state": "new",
+    "type": "annotation"
   }
 },
 {
@@ -4478,10 +4709,12 @@
   "fields": {
     "segment": 13,
     "assignee": null,
+    "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "validation",
     "stage": "acceptance",
-    "state": "new"
+    "state": "new",
+    "type": "annotation"
   }
 },
 {
@@ -4490,10 +4723,12 @@
   "fields": {
     "segment": 14,
     "assignee": null,
+    "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-11-03T13:57:26.346Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4504,10 +4739,12 @@
     "assignee": [
       "worker2"
     ],
+    "created_date": "2022-03-05T10:32:19.149Z",
     "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4516,10 +4753,12 @@
   "fields": {
     "segment": 17,
     "assignee": null,
+    "created_date": "2022-06-08T08:33:06.505Z",
     "updated_date": "2022-12-05T07:47:01.633Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4528,10 +4767,12 @@
   "fields": {
     "segment": 18,
     "assignee": null,
+    "created_date": "2022-09-22T14:22:25.820Z",
     "updated_date": "2022-09-23T11:57:02.302Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4540,10 +4781,12 @@
   "fields": {
     "segment": 19,
     "assignee": null,
+    "created_date": "2022-12-01T12:53:10.425Z",
     "updated_date": "2022-12-01T12:53:35.354Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4552,10 +4795,12 @@
   "fields": {
     "segment": 21,
     "assignee": null,
+    "created_date": "2023-02-10T14:05:25.947Z",
     "updated_date": "2023-02-10T14:05:26.022Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "new"
+    "state": "new",
+    "type": "annotation"
   }
 },
 {
@@ -4564,10 +4809,12 @@
   "fields": {
     "segment": 22,
     "assignee": null,
+    "created_date": "2023-03-01T15:36:26.668Z",
     "updated_date": "2023-03-01T15:36:38.114Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4576,10 +4823,12 @@
   "fields": {
     "segment": 23,
     "assignee": null,
+    "created_date": "2023-03-10T11:56:33.757Z",
     "updated_date": "2023-03-10T11:56:55.066Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4588,10 +4837,12 @@
   "fields": {
     "segment": 24,
     "assignee": null,
+    "created_date": "2023-03-10T11:57:31.614Z",
     "updated_date": "2023-03-10T11:57:49.019Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4600,10 +4851,12 @@
   "fields": {
     "segment": 25,
     "assignee": null,
+    "created_date": "2023-03-27T19:08:07.649Z",
     "updated_date": "2023-03-27T19:08:27.216Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
   }
 },
 {
@@ -4612,10 +4865,40 @@
   "fields": {
     "segment": 26,
     "assignee": null,
+    "created_date": "2023-03-27T19:08:07.649Z",
     "updated_date": "2023-03-27T19:08:40.166Z",
     "status": "annotation",
     "stage": "annotation",
-    "state": "in progress"
+    "state": "in progress",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 27,
+  "fields": {
+    "segment": 27,
+    "assignee": null,
+    "created_date": "2023-05-26T16:11:23.880Z",
+    "updated_date": "2023-05-26T16:11:24.294Z",
+    "status": "validation",
+    "stage": "annotation",
+    "state": "new",
+    "type": "annotation"
+  }
+},
+{
+  "model": "engine.job",
+  "pk": 28,
+  "fields": {
+    "segment": 28,
+    "assignee": null,
+    "created_date": "2023-05-26T16:11:23.946Z",
+    "updated_date": "2023-05-26T16:16:50.630Z",
+    "status": "validation",
+    "stage": "acceptance",
+    "state": "completed",
+    "type": "ground_truth"
   }
 },
 {
@@ -5315,6 +5598,30 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 66,
+  "fields": {
+    "task": 22,
+    "project": null,
+    "name": "dog",
+    "color": "#406040",
+    "type": "any",
+    "parent": null
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 67,
+  "fields": {
+    "task": 22,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0",
+    "type": "any",
+    "parent": null
+  }
+},
+{
   "model": "engine.skeleton",
   "pk": 1,
   "fields": {
@@ -5495,6 +5802,30 @@
   }
 },
 {
+  "model": "engine.attributespec",
+  "pk": 13,
+  "fields": {
+    "label": 67,
+    "name": "x",
+    "mutable": false,
+    "input_type": "text",
+    "default_value": "yy",
+    "values": "yy"
+  }
+},
+{
+  "model": "engine.attributespec",
+  "pk": 14,
+  "fields": {
+    "label": 67,
+    "name": "y",
+    "mutable": false,
+    "input_type": "radio",
+    "default_value": "1",
+    "values": "1\n2"
+  }
+},
+{
   "model": "engine.labeledimage",
   "pk": 1,
   "fields": {
@@ -5536,6 +5867,64 @@
     "frame": 3,
     "group": 0,
     "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 7,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimage",
+  "pk": 8,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 1,
+    "group": 0,
+    "source": "manual"
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 1,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "image": 7
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 2,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "image": 7
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 3,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "image": 8
+  }
+},
+{
+  "model": "engine.labeledimageattributeval",
+  "pk": 4,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "image": 8
   }
 },
 {
@@ -6223,6 +6612,1212 @@
   }
 },
 {
+  "model": "engine.labeledshape",
+  "pk": 64,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 3,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[439.001953125, 238.072265625, 442.27361979103625, 279.29221193910234]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 65,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 1,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[109.6181640625, 93.6806640625, 150.7451171875, 154.708984375]",
+    "rotation": 118.39999999999998,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 66,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 3,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[414.140625, 256.392578125, 467.1372624053729, 255.08366924483562]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 67,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 4,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[210.00390625, 274.0576171875, 240.10078833736043, 258.3547764811883, 267.10000000000036, 266.40000000000146, 278.7035955631618, 261.62685883520135, 281.32071996591367, 253.77548562694574]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 68,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 5,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[227.015625, 87.587890625, 225.052845018663, 153.01643273565423, 283.90000000000146, 158.20000000000073, 251.90000000000146, 121.0]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 69,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 2,
+    "source": "manual",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[37.0, 25.0, 49.0, 32.0, 23.0, 59.0, 19.0, 61.0, 17.0, 63.0, 15.0, 65.0, 14.0, 66.0, 12.0, 68.0, 11.0, 69.0, 10.0, 70.0, 9.0, 70.0, 9.0, 70.0, 9.0, 70.0, 9.0, 71.0, 8.0, 71.0, 8.0, 72.0, 7.0, 72.0, 7.0, 72.0, 7.0, 72.0, 7.0, 72.0, 7.0, 73.0, 6.0, 73.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 5.0, 74.0, 4.0, 75.0, 4.0, 75.0, 4.0, 75.0, 3.0, 76.0, 3.0, 76.0, 3.0, 77.0, 2.0, 77.0, 2.0, 77.0, 2.0, 77.0, 2.0, 77.0, 2.0, 77.0, 1.0, 1184.0, 1.0, 77.0, 3.0, 76.0, 4.0, 75.0, 4.0, 75.0, 4.0, 74.0, 5.0, 73.0, 7.0, 71.0, 9.0, 67.0, 13.0, 65.0, 15.0, 9.0, 1.0, 53.0, 29.0, 16.0, 4.0, 29.0, 31.0, 11.0, 16.0, 20.0, 12.0, 458.0, 87.0, 536.0, 158.0]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 70,
+  "fields": {
+    "job": 27,
+    "label": 66,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[459.5, 81.90000000000146, 545.8000000000011, 155.80020141601562]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 71,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 6,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[414.48681640625, 261.001953125, 467.4834538116229, 259.6930442448356]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 72,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 3,
+    "points": "[502.5, 319.90000000000146, 635.3000000000011, 319.90000000000146, 651.0, 374.7000000000007, 499.90000000000146, 375.5]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 73,
+  "fields": {
+    "job": 27,
+    "label": 66,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[532.6000000000004, 300.2000000000007, 533.2000000000007, 391.8000000000011, 678.4693480835958, 393.13736007351145, 639.866763142998, 300.8837248764885]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 74,
+  "fields": {
+    "job": 27,
+    "label": 66,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 3,
+    "points": "[618.228515625, 215.12753906250146, 688.3285156250004, 284.5275390625011, 690.2463290244214, 278.63711201903425, 626.1000000000004, 206.70000000000073]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 75,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[673.2000000000007, 222.40000000000146, 693.5177345278626, 240.03542476937582, 647.8000000000011, 287.2000000000007, 620.8925323514832, 266.8609498975875]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 76,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[310.763369496879, 196.19874876639187, 339.55173792715505, 228.9128038007966]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 77,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 15,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[213.966796875, 46.7294921875, 239.5, 72.30000000000109]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 78,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 16,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[147.900390625, 45.4208984375, 171.40000000000146, 70.30000000000109]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 79,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 16,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[179.9443359375, 46.0751953125, 206.0, 72.80000000000109]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 80,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 16,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[113.80000000000109, 45.400000000001455, 137.3818359375, 69.0]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 81,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 12,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[147.8466796875, 17.6083984375, 170.1457031250011, 39.871289443968635]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 82,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[113.80000000000109, 17.600000000000364, 138.65410232543945, 40.47109413146973]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 83,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[179.908203125, 18.216796875, 203.40000000000146, 41.80000000000109]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 84,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 11,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[603.9000000000015, 13.654296875, 632.6692943572998, 42.400000000001455]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 85,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 11,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[641.2000000000007, 13.0, 670.6457023620605, 42.5]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 86,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 11,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[681.0859375, 13.0, 711.3000000000011, 43.20000000000073]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 87,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 12,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 1,
+    "points": "[212.6220703125, 18.9169921875, 236.8000000000011, 42.5]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 88,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[361.0, 302.10000000000036, 368.90000000000146, 316.0, 348.10000000000036, 318.60000000000036]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 89,
+  "fields": {
+    "job": 27,
+    "label": 66,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[225.70703125, 314.6240234375]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 90,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 17,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[60.828125, 302.1923828125]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 91,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 17,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[34.65674500649766, 268.16966984208375, 75.22217324915982, 324.43784450126077]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 92,
+  "fields": {
+    "job": 27,
+    "label": 66,
+    "frame": 0,
+    "group": 17,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[50.359375, 283.8720703125]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 93,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[138.0, 339.5, 155.0, 338.8000000000011]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 94,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[43.162109375, 178.533203125, 59.51942683264497, 190.96449996088631, 71.29648664503111, 177.22459684643582, 100.08485507530895, 167.41038033611403]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 95,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[101.3935546875, 200.7783203125, 135.41603451246556, 214.5186195856586, 117.75044479388816, 248.54123682144018, 85.03638975948161, 235.4556148076772, 73.25932994709547, 204.0501219746493]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 96,
+  "fields": {
+    "job": 27,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 4,
+    "points": "[216.5673828125, 208.00537109375, 252.552734375, 191.6484375]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 97,
+  "fields": {
+    "job": 28,
+    "label": 66,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[455.359375, 88.2421875, 463.2108659572077, 158.9047260271691, 545.6502846439089, 155.6333205237297, 536.4903492342764, 84.97096164941286]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 98,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[227.015625, 88.2421875, 223.74398310536162, 155.6333205237297, 297.0234663824285, 156.94188272510473, 299.6405907851804, 84.97096164941286, 261.0380058445826, 128.80779539551622]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 99,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[284.591796875, 248.541015625, 264.9636924487113, 261.62685883520135, 242.71813502531586, 251.15836122419205, 219.16401540054358, 270.7867942448356]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 100,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[419.3740234375, 260.318359375, 436.38534082899605, 259.0097344324495, 448.8166817420697, 258.35545333176196, 463.86514705789705, 258.35545333176196]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 101,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[107.28194718287705, 91.51377265629344, 152.42734313035726, 154.32475832235104]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 102,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[362.451171875, 298.9208984375, 345.4402678333481, 317.24075239369085, 368.9943874581204, 315.93219019231583]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 103,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 1,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[113.8251953125, 18.234375, 136.0714843750011, 40.5]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 104,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 1,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[147.84765625, 18.888671875, 170.06289062500036, 42.408593750000364]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 105,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 2,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[180.5615234375, 19.54296875, 202.1408203125011, 41.771484375]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 106,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 2,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[213.2763671875, 18.234375, 236.82363281250036, 44.371484375000364]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 107,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 3,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[567.9000000000015, 14.30859375, 595.3747291564941, 43.80000000000109]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 108,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 3,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[603.9000000000015, 13.654296875, 632.0144577026367, 43.100000000000364]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 109,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 3,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[643.8000000000011, 12.345703125, 671.9000015258789, 43.80000000000109]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 110,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 3,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[681.0859375, 14.30859375, 711.8000000000011, 43.80000000000109]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 111,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[112.5166015625, 47.0224609375, 138.03356448933664, 69.92229946158295]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 112,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 4,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[147.84737542554103, 47.02265780950256, 172.05577615100083, 72.5396207363392]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 113,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 4,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[181.21571156063328, 47.67693891019189, 205.42411228609308, 73.84818293771605]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 114,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 4,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[213.2754854943505, 47.67693891019189, 238.13816732049781, 73.84818293771605]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 115,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[527.0, 319.60000000000036, 530.3000000000011, 372.60000000000036, 500.83202924677244, 375.2100579146554, 502.7948725488368, 319.5961643561677]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 116,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 5,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[672.5810546875, 219.0986328125, 692.2092511980463, 239.3813014118059, 671.2722559760259, 257.70117223107445, 655.5695095595111, 239.3813014118059]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 117,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 5,
+    "source": "manual",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[21.0, 5.0, 32.0, 10.0, 30.0, 12.0, 27.0, 15.0, 25.0, 17.0, 23.0, 19.0, 21.0, 21.0, 19.0, 23.0, 17.0, 25.0, 14.0, 28.0, 12.0, 30.0, 10.0, 31.0, 9.0, 33.0, 8.0, 34.0, 6.0, 36.0, 5.0, 36.0, 5.0, 36.0, 4.0, 38.0, 2.0, 39.0, 2.0, 326.0, 2.0, 38.0, 3.0, 38.0, 3.0, 37.0, 5.0, 35.0, 6.0, 34.0, 8.0, 31.0, 10.0, 29.0, 13.0, 26.0, 16.0, 23.0, 19.0, 21.0, 21.0, 18.0, 24.0, 15.0, 27.0, 13.0, 29.0, 9.0, 22.0, 627.0, 244.0, 667.0, 284.0]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 118,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[37.2744140625, 267.5166015625, 83.07409111066772, 328.36474392649325]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 119,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[46.43359375, 290.4150390625]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 120,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[64.75390625, 302.1923828125]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 121,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 7,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[47.7421875, 309.3896484375]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 122,
+  "fields": {
+    "job": 28,
+    "label": 66,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[140.70000000000073, 338.8000000000011]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 123,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[225.0, 315.2000000000007]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 124,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[213.076171875, 27.58203125, 242.67217060073926, 54.958764913635605, 220.4750788758156, 73.4563413510732, 182.00011988594815, 63.097698546107495, 165.72225262100437, 25.36264261373799]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 125,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "ellipse",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[359.22314453125, 57.5439453125, 381.7900390625, 37.9365234375]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 126,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "cuboid",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[503.8579498973395, 51.35924962614954, 503.8579498973395, 95.65343307599687, 574.1487403595966, 51.25924962614954, 574.1487403595966, 95.65343307599687, 581.1778194058222, 46.91983128116481, 581.1778194058222, 91.11401473101215, 510.88702894356516, 46.91983128116481, 510.88702894356516, 91.11401473101215]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 127,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "mask",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[45.0, 8.0, 64.0, 5.0, 7.0, 11.0, 61.0, 7.0, 5.0, 14.0, 58.0, 9.0, 3.0, 16.0, 56.0, 11.0, 2.0, 18.0, 54.0, 11.0, 2.0, 20.0, 52.0, 35.0, 50.0, 36.0, 49.0, 38.0, 47.0, 39.0, 45.0, 42.0, 43.0, 43.0, 42.0, 45.0, 40.0, 46.0, 39.0, 47.0, 16.0, 7.0, 15.0, 48.0, 14.0, 9.0, 14.0, 48.0, 13.0, 12.0, 12.0, 13.0, 11.0, 25.0, 11.0, 14.0, 10.0, 13.0, 14.0, 24.0, 10.0, 15.0, 9.0, 13.0, 16.0, 23.0, 8.0, 17.0, 7.0, 14.0, 16.0, 23.0, 8.0, 18.0, 5.0, 15.0, 17.0, 23.0, 6.0, 19.0, 5.0, 15.0, 18.0, 23.0, 4.0, 21.0, 3.0, 16.0, 19.0, 23.0, 3.0, 22.0, 2.0, 16.0, 19.0, 23.0, 3.0, 40.0, 19.0, 24.0, 2.0, 40.0, 20.0, 23.0, 2.0, 41.0, 19.0, 23.0, 2.0, 41.0, 19.0, 11.0, 1.0, 12.0, 1.0, 11.0, 1.0, 29.0, 19.0, 11.0, 1.0, 12.0, 1.0, 11.0, 1.0, 29.0, 19.0, 11.0, 2.0, 23.0, 2.0, 29.0, 18.0, 11.0, 2.0, 23.0, 3.0, 28.0, 18.0, 11.0, 2.0, 24.0, 3.0, 28.0, 17.0, 11.0, 3.0, 24.0, 3.0, 27.0, 16.0, 12.0, 3.0, 25.0, 2.0, 28.0, 15.0, 12.0, 2.0, 12.0, 1.0, 43.0, 14.0, 12.0, 3.0, 12.0, 2.0, 43.0, 13.0, 12.0, 3.0, 12.0, 2.0, 44.0, 11.0, 13.0, 3.0, 12.0, 3.0, 43.0, 11.0, 13.0, 3.0, 11.0, 4.0, 43.0, 10.0, 13.0, 4.0, 11.0, 5.0, 44.0, 8.0, 12.0, 5.0, 11.0, 6.0, 44.0, 7.0, 12.0, 5.0, 11.0, 7.0, 45.0, 4.0, 12.0, 5.0, 12.0, 9.0, 14.0, 3.0, 27.0, 3.0, 12.0, 5.0, 12.0, 11.0, 9.0, 7.0, 41.0, 5.0, 12.0, 12.0, 7.0, 9.0, 40.0, 5.0, 12.0, 28.0, 39.0, 5.0, 12.0, 30.0, 38.0, 5.0, 11.0, 32.0, 37.0, 5.0, 11.0, 33.0, 35.0, 5.0, 12.0, 34.0, 33.0, 6.0, 12.0, 35.0, 32.0, 6.0, 11.0, 37.0, 31.0, 6.0, 11.0, 39.0, 29.0, 5.0, 12.0, 40.0, 28.0, 5.0, 12.0, 42.0, 26.0, 4.0, 13.0, 44.0, 40.0, 46.0, 39.0, 47.0, 38.0, 49.0, 35.0, 57.0, 27.0, 60.0, 24.0, 62.0, 22.0, 65.0, 19.0, 68.0, 15.0, 71.0, 13.0, 77.0, 7.0, 14.0, 23.0, 57.0, 107.0, 124.0]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 128,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "points",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[276.7080078125, 105.2724609375, 301.1245121430384, 121.5500400884066, 273.74809901563276, 137.08800429585244, 252.29091034820522, 122.28994314590454]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 129,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "polyline",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[393.6123046875, 109.7119140625, 417.28929217013683, 139.30771346834626, 432.08735332008655, 123.02984620340249, 461.68347561998416, 140.0476165258424]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 130,
+  "fields": {
+    "job": 28,
+    "label": 67,
+    "frame": 1,
+    "group": 0,
+    "source": "manual",
+    "type": "rectangle",
+    "occluded": false,
+    "outside": false,
+    "z_order": 0,
+    "points": "[420.9888074576247, 33.50157624620988, 450.58492975752233, 62.357795488609554]",
+    "rotation": 0.0,
+    "parent": null
+  }
+},
+{
   "model": "engine.labeledshapeattributeval",
   "pk": 1,
   "fields": {
@@ -6283,6 +7878,1086 @@
     "spec": 10,
     "value": "black",
     "shape": 57
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 8,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 64
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 9,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 64
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 10,
+  "fields": {
+    "spec": 13,
+    "value": "yz",
+    "shape": 65
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 11,
+  "fields": {
+    "spec": 14,
+    "value": "2",
+    "shape": 65
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 12,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 66
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 13,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 66
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 14,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 67
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 15,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 67
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 16,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 68
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 17,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 68
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 18,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 69
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 19,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 69
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 20,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 71
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 21,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 71
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 22,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 72
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 23,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 72
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 24,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 75
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 25,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 75
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 26,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 76
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 27,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 76
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 28,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 77
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 29,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 77
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 30,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 78
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 31,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 78
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 32,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 79
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 33,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 79
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 34,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 80
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 35,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 80
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 36,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 81
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 37,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 81
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 38,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 82
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 39,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 82
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 40,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 83
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 41,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 83
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 42,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 84
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 43,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 84
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 44,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 85
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 45,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 85
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 46,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 86
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 47,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 86
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 48,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 87
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 49,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 87
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 50,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 88
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 51,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 88
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 52,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 90
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 53,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 90
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 54,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 91
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 55,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 91
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 56,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 93
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 57,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 93
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 58,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 94
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 59,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 94
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 60,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 95
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 61,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 95
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 62,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 96
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 63,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 96
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 64,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 98
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 65,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 98
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 66,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 99
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 67,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 99
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 68,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 100
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 69,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 100
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 70,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 101
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 71,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 101
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 72,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 102
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 73,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 102
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 74,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 103
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 75,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 103
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 76,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 104
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 77,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 104
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 78,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 105
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 79,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 105
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 80,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 106
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 81,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 106
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 82,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 107
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 83,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 107
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 84,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 108
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 85,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 108
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 86,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 109
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 87,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 109
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 88,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 110
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 89,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 110
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 90,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 111
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 91,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 111
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 92,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 112
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 93,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 112
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 94,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 113
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 95,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 113
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 96,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 114
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 97,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 114
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 98,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 115
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 99,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 115
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 100,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 116
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 101,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 116
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 102,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 117
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 103,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 117
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 104,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 118
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 105,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 118
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 106,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 119
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 107,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 119
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 108,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 120
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 109,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 120
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 110,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 121
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 111,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 121
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 112,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 123
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 113,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 123
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 114,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 124
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 115,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 124
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 116,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 125
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 117,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 125
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 118,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 126
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 119,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 126
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 120,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 127
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 121,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 127
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 122,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 128
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 123,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 128
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 124,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 129
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 125,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 129
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 126,
+  "fields": {
+    "spec": 13,
+    "value": "yy",
+    "shape": 130
+  }
+},
+{
+  "model": "engine.labeledshapeattributeval",
+  "pk": 127,
+  "fields": {
+    "spec": 14,
+    "value": "1",
+    "shape": 130
   }
 },
 {
@@ -6985,7 +9660,7 @@
     ],
     "assignee": null,
     "created_date": "2022-03-16T11:04:39.444Z",
-    "updated_date": null,
+    "updated_date": "2022-03-16T11:04:39.444Z",
     "resolved": true
   }
 },
@@ -7001,7 +9676,7 @@
     ],
     "assignee": null,
     "created_date": "2022-03-16T11:07:22.170Z",
-    "updated_date": null,
+    "updated_date": "2022-03-16T11:07:22.170Z",
     "resolved": false
   }
 },
@@ -7017,7 +9692,7 @@
     ],
     "assignee": null,
     "created_date": "2022-03-16T11:08:18.367Z",
-    "updated_date": null,
+    "updated_date": "2022-03-16T11:08:18.367Z",
     "resolved": false
   }
 },
@@ -7035,7 +9710,7 @@
       "user1"
     ],
     "created_date": "2022-03-16T12:40:00.764Z",
-    "updated_date": null,
+    "updated_date": "2022-03-16T12:40:00.764Z",
     "resolved": false
   }
 },
@@ -7051,7 +9726,7 @@
     ],
     "assignee": null,
     "created_date": "2022-03-16T12:49:29.369Z",
-    "updated_date": null,
+    "updated_date": "2022-03-16T12:49:29.369Z",
     "resolved": false
   }
 },
@@ -7568,6 +10243,1319 @@
     ],
     "project": null,
     "organization": 1
+  }
+},
+{
+  "model": "quality_control.qualityreport",
+  "pk": 1,
+  "fields": {
+    "job": null,
+    "task": 22,
+    "parent": null,
+    "created_date": "2023-05-26T16:25:36.613Z",
+    "target_last_updated": "2023-05-26T16:17:02.635Z",
+    "gt_last_updated": "2023-05-26T16:16:50.630Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2727272727272727,\"frames\":[0,1,2],\"conflict_count\":37,\"warning_count\":15,\"error_count\":22,\"conflicts_by_type\":{\"low_overlap\":6,\"missing_annotation\":9,\"extra_annotation\":10,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6},\"annotations\":{\"valid_count\":21,\"missing_count\":9,\"extra_count\":10,\"total_count\":43,\"ds_count\":34,\"gt_count\":33,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"unmatched\"],\"rows\":[[0,2,3],[1,21,7],[1,8,0]],\"precision\":[0.0,0.7241379310344828,0.0],\"recall\":[0.0,0.6774193548387096,0.0],\"accuracy\":[0.0,0.5384615384615384,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.4883720930232558,\"precision\":0.6176470588235294,\"recall\":0.6363636363636364},\"annotation_components\":{\"shape\":{\"valid_count\":24,\"missing_count\":9,\"extra_count\":10,\"total_count\":43,\"ds_count\":34,\"gt_count\":33,\"mean_iou\":0.19532955159399454,\"accuracy\":0.5581395348837209},\"label\":{\"valid_count\":21,\"invalid_count\":3,\"total_count\":24,\"accuracy\":0.875}},\"frame_count\":3,\"mean_conflict_count\":12.333333333333334},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":91,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":118,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":88,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":102,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":68,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"},{\"obj_id\":98,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":107,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":121,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":122,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":70,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":76,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":93,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":74,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":95,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":73,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":96,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":64,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":66,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":94,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":89,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":123,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"},{\"obj_id\":97,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_direction\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"covered_annotation\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_attributes\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":82,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":103,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":81,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":104,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":83,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":105,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":87,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":106,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":80,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":111,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":77,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":114,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":21,\"missing_count\":3,\"extra_count\":10,\"total_count\":37,\"ds_count\":34,\"gt_count\":27,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"unmatched\"],\"rows\":[[0,2,3],[1,21,7],[1,2,0]],\"precision\":[0.0,0.7241379310344828,0.0],\"recall\":[0.0,0.84,0.0],\"accuracy\":[0.0,0.6363636363636364,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.5675675675675675,\"precision\":0.6176470588235294,\"recall\":0.7777777777777778},\"annotation_components\":{\"shape\":{\"valid_count\":24,\"missing_count\":3,\"extra_count\":10,\"total_count\":37,\"ds_count\":34,\"gt_count\":27,\"mean_iou\":0.5859886547819836,\"accuracy\":0.6486486486486487},\"label\":{\"valid_count\":21,\"invalid_count\":3,\"total_count\":24,\"accuracy\":0.875}},\"conflict_count\":31,\"warning_count\":15,\"error_count\":16,\"conflicts_by_type\":{\"low_overlap\":6,\"missing_annotation\":3,\"extra_annotation\":10,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":130,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":128,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":124,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":125,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":127,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":129,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"unmatched\"],\"rows\":[[0,0,0],[0,0,0],[0,6,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"mean_iou\":0.0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":6,\"warning_count\":0,\"error_count\":6,\"conflicts_by_type\":{\"missing_annotation\":6}},\"2\":{\"conflicts\":[],\"annotations\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"unmatched\"],\"rows\":[[0,0,0],[0,0,0],[0,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"mean_iou\":0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}}}}"
+  }
+},
+{
+  "model": "quality_control.qualityreport",
+  "pk": 2,
+  "fields": {
+    "job": 27,
+    "task": null,
+    "parent": 1,
+    "created_date": "2023-05-26T16:25:36.616Z",
+    "target_last_updated": "2023-05-26T16:11:24.294Z",
+    "gt_last_updated": "2023-05-26T16:16:50.630Z",
+    "data": "{\"parameters\":{\"included_annotation_types\":[\"bbox\",\"points\",\"mask\",\"polygon\",\"polyline\",\"skeleton\"],\"compare_attributes\":true,\"ignored_attributes\":[],\"iou_threshold\":0.4,\"low_overlap_threshold\":0.8,\"oks_sigma\":0.09,\"line_thickness\":0.01,\"compare_line_orientation\":true,\"line_orientation_threshold\":0.1,\"compare_groups\":true,\"group_match_threshold\":0.5,\"check_covered_annotations\":true,\"object_visibility_threshold\":0.05,\"panoptic_comparison\":true},\"comparison_summary\":{\"frame_share\":0.2727272727272727,\"frames\":[0,1,2],\"conflict_count\":37,\"warning_count\":15,\"error_count\":22,\"conflicts_by_type\":{\"low_overlap\":6,\"missing_annotation\":9,\"extra_annotation\":10,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6},\"annotations\":{\"valid_count\":21,\"missing_count\":9,\"extra_count\":10,\"total_count\":43,\"ds_count\":34,\"gt_count\":33,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"unmatched\"],\"rows\":[[0,2,3],[1,21,7],[1,8,0]],\"precision\":[0.0,0.7241379310344828,0.0],\"recall\":[0.0,0.6774193548387096,0.0],\"accuracy\":[0.0,0.5384615384615384,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.4883720930232558,\"precision\":0.6176470588235294,\"recall\":0.6363636363636364},\"annotation_components\":{\"shape\":{\"valid_count\":24,\"missing_count\":9,\"extra_count\":10,\"total_count\":43,\"ds_count\":34,\"gt_count\":33,\"mean_iou\":0.19532955159399454,\"accuracy\":0.5581395348837209},\"label\":{\"valid_count\":21,\"invalid_count\":3,\"total_count\":24,\"accuracy\":0.875}},\"frame_count\":3,\"mean_conflict_count\":12.333333333333334},\"frame_results\":{\"0\":{\"conflicts\":[{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":91,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":118,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":88,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":102,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":68,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"},{\"obj_id\":98,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"low_overlap\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":107,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":121,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":122,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":70,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":76,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":93,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":74,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":95,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":73,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":96,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":64,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":66,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"extra_annotation\",\"annotation_ids\":[{\"obj_id\":94,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":89,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":123,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":92,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"points\"},{\"obj_id\":119,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_label\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"},{\"obj_id\":97,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":0,\"type\":\"mismatching_direction\",\"annotation_ids\":[{\"obj_id\":67,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"polyline\"},{\"obj_id\":99,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"covered_annotation\",\"annotation_ids\":[{\"obj_id\":69,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_attributes\",\"annotation_ids\":[{\"obj_id\":65,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":101,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":82,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":103,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":81,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":104,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":83,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":105,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":87,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":106,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":80,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":111,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"},{\"frame_id\":0,\"type\":\"mismatching_groups\",\"annotation_ids\":[{\"obj_id\":77,\"job_id\":27,\"type\":\"shape\",\"shape_type\":\"rectangle\"},{\"obj_id\":114,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"warning\"}],\"annotations\":{\"valid_count\":21,\"missing_count\":3,\"extra_count\":10,\"total_count\":37,\"ds_count\":34,\"gt_count\":27,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"unmatched\"],\"rows\":[[0,2,3],[1,21,7],[1,2,0]],\"precision\":[0.0,0.7241379310344828,0.0],\"recall\":[0.0,0.84,0.0],\"accuracy\":[0.0,0.6363636363636364,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.5675675675675675,\"precision\":0.6176470588235294,\"recall\":0.7777777777777778},\"annotation_components\":{\"shape\":{\"valid_count\":24,\"missing_count\":3,\"extra_count\":10,\"total_count\":37,\"ds_count\":34,\"gt_count\":27,\"mean_iou\":0.5859886547819836,\"accuracy\":0.6486486486486487},\"label\":{\"valid_count\":21,\"invalid_count\":3,\"total_count\":24,\"accuracy\":0.875}},\"conflict_count\":31,\"warning_count\":15,\"error_count\":16,\"conflicts_by_type\":{\"low_overlap\":6,\"missing_annotation\":3,\"extra_annotation\":10,\"mismatching_label\":3,\"mismatching_direction\":1,\"covered_annotation\":1,\"mismatching_attributes\":1,\"mismatching_groups\":6}},\"1\":{\"conflicts\":[{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":130,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"rectangle\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":128,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"points\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":124,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polygon\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":125,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"ellipse\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":127,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"mask\"}],\"severity\":\"error\"},{\"frame_id\":1,\"type\":\"missing_annotation\",\"annotation_ids\":[{\"obj_id\":129,\"job_id\":28,\"type\":\"shape\",\"shape_type\":\"polyline\"}],\"severity\":\"error\"}],\"annotations\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"unmatched\"],\"rows\":[[0,0,0],[0,0,0],[0,6,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":6,\"extra_count\":0,\"total_count\":6,\"ds_count\":0,\"gt_count\":6,\"mean_iou\":0.0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":6,\"warning_count\":0,\"error_count\":6,\"conflicts_by_type\":{\"missing_annotation\":6}},\"2\":{\"conflicts\":[],\"annotations\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"confusion_matrix\":{\"labels\":[\"dog\",\"cat\",\"unmatched\"],\"rows\":[[0,0,0],[0,0,0],[0,0,0]],\"precision\":[0.0,0.0,0.0],\"recall\":[0.0,0.0,0.0],\"accuracy\":[0.0,0.0,0.0],\"axes\":{\"cols\":\"gt\",\"rows\":\"ds\"}},\"accuracy\":0.0,\"precision\":0.0,\"recall\":0.0},\"annotation_components\":{\"shape\":{\"valid_count\":0,\"missing_count\":0,\"extra_count\":0,\"total_count\":0,\"ds_count\":0,\"gt_count\":0,\"mean_iou\":0,\"accuracy\":0.0},\"label\":{\"valid_count\":0,\"invalid_count\":0,\"total_count\":0,\"accuracy\":0.0}},\"conflict_count\":0,\"warning_count\":0,\"error_count\":0,\"conflicts_by_type\":{}}}}"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 1,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 2,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 3,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 4,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 5,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 6,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "low_overlap",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 7,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 8,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 9,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 10,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 11,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 12,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 13,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 14,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 15,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 16,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 17,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 18,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 19,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "extra_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 20,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_label",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 21,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_label",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 22,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_label",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 23,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_direction",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 24,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "covered_annotation",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 25,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_attributes",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 26,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 27,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 28,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 29,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 30,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 31,
+  "fields": {
+    "report": 2,
+    "frame": 0,
+    "type": "mismatching_groups",
+    "severity": "warning"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 32,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 33,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 34,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 35,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 36,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationconflict",
+  "pk": 37,
+  "fields": {
+    "report": 2,
+    "frame": 1,
+    "type": "missing_annotation",
+    "severity": "error"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 1,
+  "fields": {
+    "conflict": 1,
+    "obj_id": 65,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 2,
+  "fields": {
+    "conflict": 1,
+    "obj_id": 101,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 3,
+  "fields": {
+    "conflict": 2,
+    "obj_id": 91,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 4,
+  "fields": {
+    "conflict": 2,
+    "obj_id": 118,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 5,
+  "fields": {
+    "conflict": 3,
+    "obj_id": 88,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 6,
+  "fields": {
+    "conflict": 3,
+    "obj_id": 102,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 7,
+  "fields": {
+    "conflict": 4,
+    "obj_id": 68,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 8,
+  "fields": {
+    "conflict": 4,
+    "obj_id": 98,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 9,
+  "fields": {
+    "conflict": 5,
+    "obj_id": 67,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 10,
+  "fields": {
+    "conflict": 5,
+    "obj_id": 99,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 11,
+  "fields": {
+    "conflict": 6,
+    "obj_id": 92,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 12,
+  "fields": {
+    "conflict": 6,
+    "obj_id": 119,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 13,
+  "fields": {
+    "conflict": 7,
+    "obj_id": 107,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 14,
+  "fields": {
+    "conflict": 8,
+    "obj_id": 121,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 15,
+  "fields": {
+    "conflict": 9,
+    "obj_id": 122,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 16,
+  "fields": {
+    "conflict": 10,
+    "obj_id": 70,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 17,
+  "fields": {
+    "conflict": 11,
+    "obj_id": 76,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 18,
+  "fields": {
+    "conflict": 12,
+    "obj_id": 93,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 19,
+  "fields": {
+    "conflict": 13,
+    "obj_id": 74,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 20,
+  "fields": {
+    "conflict": 14,
+    "obj_id": 95,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 21,
+  "fields": {
+    "conflict": 15,
+    "obj_id": 73,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 22,
+  "fields": {
+    "conflict": 16,
+    "obj_id": 96,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 23,
+  "fields": {
+    "conflict": 17,
+    "obj_id": 64,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 24,
+  "fields": {
+    "conflict": 18,
+    "obj_id": 66,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 25,
+  "fields": {
+    "conflict": 19,
+    "obj_id": 94,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 26,
+  "fields": {
+    "conflict": 20,
+    "obj_id": 89,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 27,
+  "fields": {
+    "conflict": 20,
+    "obj_id": 123,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 28,
+  "fields": {
+    "conflict": 21,
+    "obj_id": 92,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 29,
+  "fields": {
+    "conflict": 21,
+    "obj_id": 119,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 30,
+  "fields": {
+    "conflict": 22,
+    "obj_id": 69,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 31,
+  "fields": {
+    "conflict": 22,
+    "obj_id": 97,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 32,
+  "fields": {
+    "conflict": 23,
+    "obj_id": 67,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 33,
+  "fields": {
+    "conflict": 23,
+    "obj_id": 99,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 34,
+  "fields": {
+    "conflict": 24,
+    "obj_id": 69,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 35,
+  "fields": {
+    "conflict": 25,
+    "obj_id": 65,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 36,
+  "fields": {
+    "conflict": 25,
+    "obj_id": 101,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 37,
+  "fields": {
+    "conflict": 26,
+    "obj_id": 82,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 38,
+  "fields": {
+    "conflict": 26,
+    "obj_id": 103,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 39,
+  "fields": {
+    "conflict": 27,
+    "obj_id": 81,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 40,
+  "fields": {
+    "conflict": 27,
+    "obj_id": 104,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 41,
+  "fields": {
+    "conflict": 28,
+    "obj_id": 83,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 42,
+  "fields": {
+    "conflict": 28,
+    "obj_id": 105,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 43,
+  "fields": {
+    "conflict": 29,
+    "obj_id": 87,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 44,
+  "fields": {
+    "conflict": 29,
+    "obj_id": 106,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 45,
+  "fields": {
+    "conflict": 30,
+    "obj_id": 80,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 46,
+  "fields": {
+    "conflict": 30,
+    "obj_id": 111,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 47,
+  "fields": {
+    "conflict": 31,
+    "obj_id": 77,
+    "job_id": 27,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 48,
+  "fields": {
+    "conflict": 31,
+    "obj_id": 114,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 49,
+  "fields": {
+    "conflict": 32,
+    "obj_id": 130,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "rectangle"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 50,
+  "fields": {
+    "conflict": 33,
+    "obj_id": 128,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "points"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 51,
+  "fields": {
+    "conflict": 34,
+    "obj_id": 124,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polygon"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 52,
+  "fields": {
+    "conflict": 35,
+    "obj_id": 125,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "ellipse"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 53,
+  "fields": {
+    "conflict": 36,
+    "obj_id": 127,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "mask"
+  }
+},
+{
+  "model": "quality_control.annotationid",
+  "pk": 54,
+  "fields": {
+    "conflict": 37,
+    "obj_id": 129,
+    "job_id": 28,
+    "type": "shape",
+    "shape_type": "polyline"
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 1,
+  "fields": {
+    "task": 2,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 2,
+  "fields": {
+    "task": 5,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 3,
+  "fields": {
+    "task": 6,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 4,
+  "fields": {
+    "task": 7,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 5,
+  "fields": {
+    "task": 8,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 6,
+  "fields": {
+    "task": 9,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 7,
+  "fields": {
+    "task": 11,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 8,
+  "fields": {
+    "task": 12,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 9,
+  "fields": {
+    "task": 13,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 10,
+  "fields": {
+    "task": 14,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 11,
+  "fields": {
+    "task": 15,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 12,
+  "fields": {
+    "task": 17,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 13,
+  "fields": {
+    "task": 18,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 14,
+  "fields": {
+    "task": 19,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 15,
+  "fields": {
+    "task": 20,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 16,
+  "fields": {
+    "task": 21,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
+  }
+},
+{
+  "model": "quality_control.qualitysettings",
+  "pk": 17,
+  "fields": {
+    "task": 22,
+    "iou_threshold": 0.4,
+    "oks_sigma": 0.09,
+    "line_thickness": 0.01,
+    "low_overlap_threshold": 0.8,
+    "compare_line_orientation": true,
+    "line_orientation_threshold": 0.1,
+    "compare_groups": true,
+    "group_match_threshold": 0.5,
+    "check_covered_annotations": true,
+    "object_visibility_threshold": 0.05,
+    "panoptic_comparison": true,
+    "compare_attributes": true
   }
 },
 {

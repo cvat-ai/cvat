@@ -5,6 +5,8 @@ weight: 14
 
 # [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)
 
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/icdar_dataset)
+
 ## ICDAR13/15 export
 
 Downloaded file: a zip archive of the following structure:

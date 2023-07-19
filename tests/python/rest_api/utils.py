@@ -140,12 +140,28 @@ def wait_until_task_is_created(api: apis.TasksApi, task_id: int) -> models.RqSta
     raise Exception("Cannot create task")
 
 
-def _test_create_task(username, spec, data, content_type, **kwargs):
+def create_task(username, spec, data, content_type="application/json", **kwargs):
     with make_api_client(username) as api_client:
         (task, response_) = api_client.tasks_api.create(spec, **kwargs)
         assert response_.status == HTTPStatus.CREATED
 
+        sent_upload_start = False
+
+        data_kwargs = (kwargs or {}).copy()
+        data_kwargs.pop("org", None)
+        data_kwargs.pop("org_id", None)
+
         if data.get("client_files") and "json" in content_type:
+            (_, response) = api_client.tasks_api.create_data(
+                task.id,
+                data_request=models.DataRequest(image_quality=data["image_quality"]),
+                upload_start=True,
+                _content_type=content_type,
+                **data_kwargs,
+            )
+            assert response.status == HTTPStatus.ACCEPTED
+            sent_upload_start = True
+
             # Can't encode binary files in json
             (_, response) = api_client.tasks_api.create_data(
                 task.id,
@@ -155,19 +171,45 @@ def _test_create_task(username, spec, data, content_type, **kwargs):
                 ),
                 upload_multiple=True,
                 _content_type="multipart/form-data",
-                **kwargs,
+                **data_kwargs,
             )
             assert response.status == HTTPStatus.OK
 
             data = data.copy()
             del data["client_files"]
 
+        last_kwargs = {}
+        if sent_upload_start:
+            last_kwargs["upload_finish"] = True
+
         (_, response) = api_client.tasks_api.create_data(
-            task.id, data_request=deepcopy(data), _content_type=content_type
+            task.id,
+            data_request=deepcopy(data),
+            _content_type=content_type,
+            **data_kwargs,
+            **last_kwargs,
         )
         assert response.status == HTTPStatus.ACCEPTED
 
         status = wait_until_task_is_created(api_client.tasks_api, task.id)
-        assert status.state.value == "Finished"
+        assert status.state.value == "Finished", status.message
 
     return task.id, response_.headers.get("X-Request-Id")
+
+
+def compare_annotations(a, b):
+    def _exclude_cb(obj, path):
+        return path.endswith("['elements']") and not obj
+
+    return DeepDiff(
+        a,
+        b,
+        ignore_order=True,
+        exclude_obj_callback=_exclude_cb,
+        exclude_regex_paths=[
+            r"root\['version|updated_date'\]",
+            r"root(\['\w+'\]\[\d+\])+\['id'\]",
+            r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+            r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+        ],
+    )

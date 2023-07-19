@@ -6,6 +6,7 @@
 from copy import copy, deepcopy
 
 import math
+from typing import Optional, Sequence
 import numpy as np
 from itertools import chain
 from scipy.optimize import linear_sum_assignment
@@ -13,6 +14,7 @@ from shapely import geometry
 
 from cvat.apps.engine.models import ShapeType, DimensionType
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.dataset_manager.util import deepcopy_simple
 
 
 class AnnotationIR:
@@ -160,11 +162,24 @@ class AnnotationManager:
         tracks = TrackManager(self.data.tracks, dimension)
         tracks.merge(data.tracks, start_frame, overlap, dimension)
 
-    def to_shapes(self, end_frame, dimension):
+    def to_shapes(self,
+        end_frame: int,
+        dimension: DimensionType,
+        *,
+        included_frames: Optional[Sequence[int]] = None,
+        include_outside: bool = False,
+        use_server_track_ids: bool = False
+    ) -> list:
         shapes = self.data.shapes
         tracks = TrackManager(self.data.tracks, dimension)
 
-        return shapes + tracks.to_shapes(end_frame)
+        if included_frames is not None:
+            shapes = [s for s in shapes if s["frame"] in included_frames]
+
+        return shapes + tracks.to_shapes(end_frame,
+            included_frames=included_frames, include_outside=include_outside,
+            use_server_track_ids=use_server_track_ids
+        )
 
     def to_tracks(self):
         tracks = self.data.tracks
@@ -200,7 +215,7 @@ class ObjectManager:
     def _unite_objects(obj0, obj1):
         raise NotImplementedError()
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         raise NotImplementedError()
 
     def merge(self, objects, start_frame, overlap, dimension):
@@ -224,7 +239,7 @@ class ObjectManager:
         if not old_objects_by_frame or not int_objects_by_frame:
             for frame in old_objects_by_frame:
                 for old_obj in old_objects_by_frame[frame]:
-                    self._modify_unmached_object(old_obj, start_frame + overlap)
+                    self._modify_unmatched_object(old_obj, start_frame + overlap)
             self.objects.extend(int_objects)
             return
 
@@ -265,7 +280,7 @@ class ObjectManager:
                 # (e.g. generate a shape with outside=True at the end).
                 for j in old_objects_indexes:
                     if j != -1:
-                        self._modify_unmached_object(old_objects[j],
+                        self._modify_unmatched_object(old_objects[j],
                             start_frame + overlap)
             else:
                 # We don't have old objects on the frame. Let's add all new ones.
@@ -286,7 +301,7 @@ class TagManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         pass
 
 def pairwise(iterable):
@@ -400,7 +415,7 @@ class ShapeManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         pass
 
 class TrackManager(ObjectManager):
@@ -408,39 +423,58 @@ class TrackManager(ObjectManager):
         self._dimension = dimension
         super().__init__(objects)
 
-    def to_shapes(self, end_frame, end_skeleton_frame=None):
+    def to_shapes(self, end_frame: int, *,
+        included_frames: Optional[Sequence[int]] = None,
+        include_outside: bool = False,
+        use_server_track_ids: bool = False
+    ) -> list:
         shapes = []
         for idx, track in enumerate(self.objects):
+            track_id = track["id"] if use_server_track_ids else idx
             track_shapes = {}
+
             for shape in TrackManager.get_interpolated_shapes(
                 track,
                 0,
                 end_frame,
                 self._dimension,
-                include_outside_frames=end_skeleton_frame is not None,
+                include_outside=include_outside,
+                included_frames=included_frames,
             ):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
-                shape["track_id"] = idx
+                shape["track_id"] = track_id
+                shape["source"] = track["source"]
                 shape["attributes"] += track["attributes"]
                 shape["elements"] = []
-                track_shapes[shape["frame"]] = shape
-            last_frame = shape["frame"]
 
-            while end_skeleton_frame and shape["frame"] < end_skeleton_frame:
-                shape = deepcopy(shape)
-                shape["frame"] += 1
                 track_shapes[shape["frame"]] = shape
 
-            if len(track.get("elements", [])):
+            if not track_shapes:
+                # This track has no elements on the included frames
+                continue
+
+            if track.get("elements"):
                 track_elements = TrackManager(track["elements"], self._dimension)
                 element_shapes = track_elements.to_shapes(end_frame,
-                    end_skeleton_frame=last_frame)
+                    included_frames=set(track_shapes.keys()).intersection(included_frames or []),
+                    include_outside=True, # elements are controlled by the parent shape
+                    use_server_track_ids=use_server_track_ids
+                )
 
                 for shape in element_shapes:
                     track_shapes[shape["frame"]]["elements"].append(shape)
 
-            shapes.extend(list(track_shapes.values()))
+                # The whole shape can be filtered out, if all its elements are outside,
+                # and outside shapes are not requested.
+                if not include_outside:
+                    track_shapes = {
+                        frame_number: shape for frame_number, shape in track_shapes.items()
+                        if not shape["elements"]
+                        or not all(elem["outside"] for elem in shape["elements"])
+                    }
+
+            shapes.extend(track_shapes.values())
         return shapes
 
     @staticmethod
@@ -448,6 +482,9 @@ class TrackManager(ObjectManager):
         # Just for unification. All tracks are assigned on the same frame
         objects_by_frame = {0: []}
         for obj in objects:
+            if not obj["shapes"]:
+                continue
+
             shape = obj["shapes"][-1] # optimization for old tracks
             if shape["frame"] >= start_frame or not shape["outside"]:
                 objects_by_frame[0].append(obj)
@@ -470,9 +507,11 @@ class TrackManager(ObjectManager):
             end_frame = start_frame + overlap
             obj0_shapes = TrackManager.get_interpolated_shapes(obj0, start_frame, end_frame, dimension)
             obj1_shapes = TrackManager.get_interpolated_shapes(obj1, start_frame, end_frame, dimension)
+            if not obj0_shapes or not obj1_shapes:
+                return 0
+
             obj0_shapes_by_frame = {shape["frame"]:shape for shape in obj0_shapes}
             obj1_shapes_by_frame = {shape["frame"]:shape for shape in obj1_shapes}
-            assert obj0_shapes_by_frame and obj1_shapes_by_frame
 
             count, error = 0, 0
             for frame in range(start_frame, end_frame):
@@ -488,11 +527,11 @@ class TrackManager(ObjectManager):
                     error += 1
                     count += 1
 
-            return 1 - error / count
+            return 1 - error / (count or 1)
         else:
             return 0
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         shape = obj["shapes"][-1]
         if not shape["outside"]:
             shape = deepcopy(shape)
@@ -501,20 +540,34 @@ class TrackManager(ObjectManager):
             obj["shapes"].append(shape)
 
             for element in obj.get("elements", []):
-                self._modify_unmached_object(element, end_frame)
+                self._modify_unmatched_object(element, end_frame)
 
     @staticmethod
     def get_interpolated_shapes(
-        track, start_frame, end_frame, dimension, *, include_outside_frames=False
+        track, start_frame, end_frame, dimension, *,
+        included_frames: Optional[Sequence[int]] = None,
+        include_outside: bool = False,
     ):
         def copy_shape(source, frame, points=None, rotation=None):
-            copied = deepcopy(source)
+            copied = source.copy()
+            copied["attributes"] = deepcopy_simple(source["attributes"])
+
             copied["keyframe"] = False
             copied["frame"] = frame
             if rotation is not None:
                 copied["rotation"] = rotation
+
+            if points is None:
+                points = copied["points"]
+
+            if isinstance(points, np.ndarray):
+                points = points.tolist()
+            else:
+                points = points.copy()
+
             if points is not None:
                 copied["points"] = points
+
             return copied
 
         def find_angle_diff(right_angle, left_angle):
@@ -522,7 +575,7 @@ class TrackManager(ObjectManager):
             angle_diff = ((angle_diff + 180) % 360) - 180
             if abs(angle_diff) >= 180:
                 # if the main arc is bigger than 180, go another arc
-                # to find it, just substract absolute value from 360 and inverse sign
+                # to find it, just subtract absolute value from 360 and inverse sign
                 angle_diff = 360 - abs(angle_diff) * -1 if angle_diff > 0 else 1
 
             return angle_diff
@@ -539,7 +592,8 @@ class TrackManager(ObjectManager):
                 ) * offset + 360) % 360
                 points = shape0["points"] + diff * offset
 
-                shapes.append(copy_shape(shape0, frame, points.tolist(), rotation))
+                if included_frames is None or frame in included_frames:
+                    shapes.append(copy_shape(shape0, frame, points, rotation))
 
             return shapes
 
@@ -566,7 +620,8 @@ class TrackManager(ObjectManager):
             else:
                 shapes = []
                 for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                    shapes.append(copy_shape(shape0, frame))
+                    if included_frames is None or frame in included_frames:
+                        shapes.append(copy_shape(shape0, frame))
 
             return shapes
 
@@ -618,7 +673,7 @@ class TrackManager(ObjectManager):
             def match_right_left(left_curve, right_curve, left_right_matching):
                 matched_right_points = list(chain.from_iterable(left_right_matching.values()))
                 unmatched_right_points = filter(lambda x: x not in matched_right_points, range(len(right_curve)))
-                updated_matching = deepcopy(left_right_matching)
+                updated_matching = deepcopy_simple(left_right_matching)
 
                 for right_point in unmatched_right_points:
                     left_point = find_nearest_pair(right_curve[right_point], left_curve)
@@ -770,17 +825,22 @@ class TrackManager(ObjectManager):
             shapes = []
             is_polygon = shape0["type"] == ShapeType.POLYGON
             if is_polygon:
-                shape0["points"].extend(shape0["points"][:2])
-                shape1["points"].extend(shape1["points"][:2])
+                # Make the polygon closed for computations
+                shape0 = shape0.copy()
+                shape1 = shape1.copy()
+                shape0["points"] = shape0["points"] + shape0["points"][:2]
+                shape1["points"] = shape1["points"] + shape1["points"][:2]
 
             distance = shape1["frame"] - shape0["frame"]
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
                 points = interpolate_position(shape0, shape1, offset)
 
-                shapes.append(copy_shape(shape0, frame, points))
+                if included_frames is None or frame in included_frames:
+                    shapes.append(copy_shape(shape0, frame, points))
 
             if is_polygon:
+                # Remove the extra point added
                 shape0["points"] = shape0["points"][:-2]
                 shape1["points"] = shape1["points"][:-2]
                 for shape in shapes:
@@ -815,38 +875,75 @@ class TrackManager(ObjectManager):
 
             return shapes
 
+        def propagate(shape, end_frame, *, included_frames=None):
+            return [
+                copy_shape(shape, i)
+                for i in range(shape["frame"] + 1, end_frame)
+                if included_frames is None or i in included_frames
+            ]
+
         shapes = []
-        prev_shape = {}
+        prev_shape = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
-            if end_frame <= curr_frame:
-                # if we exceed endframe, we still need to interpolate using the next keyframe
-                # but we keep the results only up to end_frame
-                interpolated = interpolate(prev_shape, deepcopy(shape))
+            if prev_shape and end_frame <= curr_frame:
+                # If we exceed the end_frame and there was a previous shape,
+                # we still need to interpolate up to the next keyframe,
+                # but keep the results only up to the end_frame:
+                #        vvvvvvv
+                # ---- | ------- | ----- | ----->
+                #     prev      end   cur kf
+                interpolated = interpolate(prev_shape, shape)
+                interpolated.append(shape)
+
                 for shape in sorted(interpolated, key=lambda shape: shape["frame"]):
                     if shape["frame"] < end_frame:
                         shapes.append(shape)
                     else:
                         break
-                return shapes
+
+                # Update the last added shape
+                shape["keyframe"] = True
+                prev_shape = shape
+
+                break # The track finishes here
 
             if prev_shape:
-                assert shape["frame"] > prev_shape["frame"]
+                assert curr_frame > prev_shape["frame"] # Catch invalid tracks
+
+                # Propagate attributes
                 for attr in prev_shape["attributes"]:
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
-                        shape["attributes"].append(deepcopy(attr))
-                if not prev_shape["outside"] or include_outside_frames:
+                        shape["attributes"].append(deepcopy_simple(attr))
+
+                if not prev_shape["outside"] or include_outside:
                     shapes.extend(interpolate(prev_shape, shape))
 
             shape["keyframe"] = True
             shapes.append(shape)
             prev_shape = shape
 
-        if not prev_shape["outside"]:
-            # valid when the latest keyframe of a track less than end_frame and it is not outside, so, need to propagate
-            shape = deepcopy(prev_shape)
-            shape["frame"] = end_frame
-            shapes.extend(interpolate(prev_shape, shape))
+        if prev_shape and (not prev_shape["outside"] or include_outside):
+            # When the latest keyframe of a track is less than the end_frame
+            # and it is not outside, need to propagate
+            shapes.extend(propagate(prev_shape, end_frame, included_frames=included_frames))
+
+        shapes = [
+            shape for shape in shapes
+
+            # After interpolation there can be a finishing frame
+            # outside of the task boundaries. Filter it out to avoid errors.
+            # https://github.com/openvinotoolkit/cvat/issues/2827
+            if track["frame"] <= shape["frame"] < end_frame
+
+            # Exclude outside shapes.
+            # Keyframes should be included regardless the outside value
+            # If really needed, they can be excluded on the later stages,
+            # but here they represent a finishing shape in a visible sequence
+            if shape["keyframe"] or not shape["outside"] or include_outside
+
+            if included_frames is None or shape["frame"] in included_frames
+        ]
 
         return shapes
 

@@ -59,7 +59,7 @@ class EventsSerializer(serializers.Serializer):
 
 
 class WebhookReadSerializer(serializers.ModelSerializer):
-    owner = BasicUserSerializer(read_only=True, required=False)
+    owner = BasicUserSerializer(read_only=True, required=False, allow_null=True)
 
     events = EventTypesSerializer(read_only=True)
 
