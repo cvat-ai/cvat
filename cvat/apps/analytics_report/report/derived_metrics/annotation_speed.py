@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 
 from dateutil import parser
 
+from cvat.apps.analytics_report.models import BinaryOperatorType, TransformOperationType
 from cvat.apps.analytics_report.report.primary_metrics import JobAnnotationSpeed
-from cvat.apps.analytics_report.models import TransformOperationType, BinaryOperatorType
 
 from .base import DerivedMetricBase
 

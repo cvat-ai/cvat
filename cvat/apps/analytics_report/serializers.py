@@ -5,16 +5,24 @@
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
-from cvat.apps.analytics_report.models import GranularityChoice, TargetChoice, ViewChoice, BinaryOperatorType
+from cvat.apps.analytics_report.models import (
+    BinaryOperatorType,
+    GranularityChoice,
+    TargetChoice,
+    ViewChoice,
+)
+
 
 class BinaryOperationSerializer(serializers.Serializer):
     left = serializers.CharField(required=False, allow_null=True)
     operator = serializers.ChoiceField(choices=BinaryOperatorType.choices())
     right = serializers.CharField(required=False, allow_null=True)
 
+
 class TransformationSerializer(serializers.Serializer):
     name = serializers.CharField()
     binary = BinaryOperationSerializer(required=False, allow_null=True)
+
 
 class MetricSerializer(serializers.Serializer):
     name = serializers.CharField()

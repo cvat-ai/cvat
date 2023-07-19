@@ -49,6 +49,7 @@ def get_empty_report():
     db_report = AnalyticsReport(statistics=statistics, created_date=datetime.now(timezone.utc))
     return db_report
 
+
 class AnalyticsReportUpdateManager:
     _QUEUE_JOB_PREFIX_TASK = "update-analytics-report-task-"
     _QUEUE_JOB_PREFIX_PROJECT = "update-analytics-report-project-"
@@ -429,18 +430,40 @@ class AnalyticsReportUpdateManager:
         # recalculate the report if there is no report or the existing one is outdated
         if db_report.created_date is None or db_report.created_date < db_task.updated_date:
             derived_metrics = [
-                TaskObjects(db_task, [self._get_metric_by_key(JobObjects.key(), jr.statistics) for jr in job_reports]),
+                TaskObjects(
+                    db_task,
+                    [
+                        self._get_metric_by_key(JobObjects.key(), jr.statistics)
+                        for jr in job_reports
+                    ],
+                ),
                 TaskAnnotationSpeed(
-                    db_task, [self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics) for jr in job_reports]
+                    db_task,
+                    [
+                        self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
+                        for jr in job_reports
+                    ],
                 ),
                 TaskAnnotationTime(
-                    db_task, [self._get_metric_by_key(JobAnnotationTime.key(), jr.statistics) for jr in job_reports]
+                    db_task,
+                    [
+                        self._get_metric_by_key(JobAnnotationTime.key(), jr.statistics)
+                        for jr in job_reports
+                    ],
                 ),
                 TaskTotalObjectCount(
-                    db_task, [self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics) for jr in job_reports]
+                    db_task,
+                    [
+                        self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
+                        for jr in job_reports
+                    ],
                 ),
                 TaskTotalAnnotationSpeed(
-                    db_task, [self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics) for jr in job_reports]
+                    db_task,
+                    [
+                        self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
+                        for jr in job_reports
+                    ],
                 ),
             ]
 
@@ -462,18 +485,40 @@ class AnalyticsReportUpdateManager:
         # recalculate the report if there is no report or the existing one is outdated
         if db_report.created_date is None or db_report.created_date < db_project.updated_date:
             derived_metrics = [
-                ProjectObjects(db_project, [self._get_metric_by_key(JobObjects.key(), jr.statistics) for jr in job_reports]),
+                ProjectObjects(
+                    db_project,
+                    [
+                        self._get_metric_by_key(JobObjects.key(), jr.statistics)
+                        for jr in job_reports
+                    ],
+                ),
                 ProjectAnnotationSpeed(
-                    db_project, [self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics) for jr in job_reports]
+                    db_project,
+                    [
+                        self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
+                        for jr in job_reports
+                    ],
                 ),
                 ProjectAnnotationTime(
-                    db_project, [self._get_metric_by_key(JobAnnotationTime.key(), jr.statistics) for jr in job_reports]
+                    db_project,
+                    [
+                        self._get_metric_by_key(JobAnnotationTime.key(), jr.statistics)
+                        for jr in job_reports
+                    ],
                 ),
                 ProjectTotalObjectCount(
-                    db_project, [self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics) for jr in job_reports]
+                    db_project,
+                    [
+                        self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
+                        for jr in job_reports
+                    ],
                 ),
                 ProjectTotalAnnotationSpeed(
-                    db_project, [self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics) for jr in job_reports]
+                    db_project,
+                    [
+                        self._get_metric_by_key(JobAnnotationSpeed.key(), jr.statistics)
+                        for jr in job_reports
+                    ],
                 ),
             ]
 

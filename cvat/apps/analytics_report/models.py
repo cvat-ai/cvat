@@ -58,6 +58,7 @@ class ViewChoice(str, Enum):
     def __str__(self):
         return self.value
 
+
 class TransformOperationType(str, Enum):
     BINARY = "binary"
 
@@ -71,6 +72,7 @@ class TransformOperationType(str, Enum):
 
     def __str__(self):
         return self.value
+
 
 class BinaryOperatorType(str, Enum):
     ADDITION = "+"
@@ -88,6 +90,7 @@ class BinaryOperatorType(str, Enum):
 
     def __str__(self):
         return self.value
+
 
 class AnalyticsReport(models.Model):
     job = models.OneToOneField(

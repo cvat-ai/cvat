@@ -5,9 +5,14 @@
 from dateutil import parser
 
 import cvat.apps.dataset_manager as dm
-from cvat.apps.engine.models import SourceType
-from cvat.apps.analytics_report.models import GranularityChoice, ViewChoice, TransformOperationType, BinaryOperatorType
+from cvat.apps.analytics_report.models import (
+    BinaryOperatorType,
+    GranularityChoice,
+    TransformOperationType,
+    ViewChoice,
+)
 from cvat.apps.analytics_report.report.primary_metrics.base import PrimaryMetricBase
+from cvat.apps.engine.models import SourceType
 
 
 class JobAnnotationSpeed(PrimaryMetricBase):
@@ -73,7 +78,9 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         if report is None:
             statistics = get_default()
         else:
-            statistics = next(filter(lambda s: s["name"] == "annotation_speed", report.statistics), get_default())
+            statistics = next(
+                filter(lambda s: s["name"] == "annotation_speed", report.statistics), get_default()
+            )
 
         dataseries = statistics["dataseries"]
 
