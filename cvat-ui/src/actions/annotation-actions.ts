@@ -13,7 +13,7 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, DimensionType, JobType, Job, QualityConflict,
+    getCore, MLModel, JobType, Job, QualityConflict,
 } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -942,10 +942,11 @@ export function getJobAsync(
                 if (report) conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
             }
 
-            // navigate to correct first frame according to setup
-            const frameNumber = (await job.frames.search(
-                { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
-            )) || job.startFrame;
+            // frame query parameter does not work for GT job
+            const frameNumber = Number.isInteger(initialFrame) && groundTruthJobId !== job.id ?
+                initialFrame : (await job.frames.search(
+                    { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
+                )) || job.startFrame;
 
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
@@ -992,11 +993,6 @@ export function getJobAsync(
                     maxZ,
                 },
             });
-
-            if (job.dimension === DimensionType.DIMENSION_3D) {
-                const workspace = Workspace.STANDARD3D;
-                dispatch(changeWorkspace(workspace));
-            }
 
             dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {

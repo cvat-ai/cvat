@@ -10,7 +10,8 @@ import torch
 import torch.utils.data
 from typing_extensions import TypedDict
 
-from cvat_sdk.pytorch.common import Target, UnsupportedDatasetError
+from cvat_sdk.datasets.common import UnsupportedDatasetError
+from cvat_sdk.pytorch.common import Target
 
 
 @attrs.frozen
