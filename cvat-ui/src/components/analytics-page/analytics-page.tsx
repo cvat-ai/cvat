@@ -4,6 +4,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router';
+import { Link } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
@@ -53,7 +54,7 @@ function AnalyticsPage(): JSX.Element {
     }
 
     const [fetching, setFetching] = useState(true);
-    const [instance, setInstance] = useState<Project | Task | null>(null);
+    const [instance, setInstance] = useState<Project | Task | Job | null>(null);
     const [analyticsReportInstance, setAnalyticsReportInstance] = useState<AnalyticsReport | null>(null);
     const isMounted = useIsMounted();
 
@@ -71,7 +72,7 @@ function AnalyticsPage(): JSX.Element {
             break;
         }
         case 'job': {
-            instanceID = +useParams<{ tid: string }>().tid;
+            instanceID = +useParams<{ jid: string }>().jid;
             reportRequestID = +useParams<{ jid: string }>().jid;
             break;
         }
@@ -87,10 +88,13 @@ function AnalyticsPage(): JSX.Element {
                 instanceRequest = core.projects.get({ id: instanceID });
                 break;
             }
-            case 'task':
+            case 'task': {
+                instanceRequest = core.tasks.get({ id: instanceID });
+                break;
+            }
             case 'job':
             {
-                instanceRequest = core.tasks.get({ id: instanceID });
+                instanceRequest = core.jobs.get({ jobID: instanceID });
                 break;
             }
             default: {
@@ -100,7 +104,7 @@ function AnalyticsPage(): JSX.Element {
 
         if (Number.isInteger(instanceID)) {
             instanceRequest
-                .then(([_instance]: Task[] | Project[]) => {
+                .then(([_instance]: Task[] | Project[] | Job[]) => {
                     if (isMounted() && _instance) {
                         setInstance(_instance);
                     }
@@ -222,11 +226,10 @@ function AnalyticsPage(): JSX.Element {
                 title = (
                     <Col className='cvat-project-analytics-title'>
                         <Title level={4} className='cvat-text-color'>
-                            {instance.name}
+                            Analytics for
+                            {' '}
+                            <Link to={`/projects/${instance.id}`}>{`Project #${instance.id}`}</Link>
                         </Title>
-                        <Text type='secondary'>
-                            {`#${instance.id}`}
-                        </Text>
                     </Col>
                 );
                 tabs = (
@@ -257,11 +260,10 @@ function AnalyticsPage(): JSX.Element {
                 title = (
                     <Col className='cvat-task-analytics-title'>
                         <Title level={4} className='cvat-text-color'>
-                            {instance.name}
+                            Analytics for
+                            {' '}
+                            <Link to={`/tasks/${instance.id}`}>{`Task #${instance.id}`}</Link>
                         </Title>
-                        <Text type='secondary'>
-                            {`#${instance.id}`}
-                        </Text>
                     </Col>
                 );
                 tabs = (
@@ -301,15 +303,11 @@ function AnalyticsPage(): JSX.Element {
                     </Col>
                 );
                 title = (
-                    <Col className='cvat-task-analytics-title'>
+                    <Col className='cvat-job-analytics-title'>
                         <Title level={4} className='cvat-text-color'>
-                            Job
+                            Analytics for
                             {' '}
-                            {`#${instance.id}`}
-                            {' '}
-                            of
-                            {' '}
-                            {instance.name}
+                            <Link to={`/tasks/${instance.taskId}/jobs/${instance.id}`}>{`Job #${instance.id}`}</Link>
                         </Title>
                     </Col>
                 );
