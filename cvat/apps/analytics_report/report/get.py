@@ -16,7 +16,7 @@ from cvat.apps.engine.models import Job, Project, Task
 
 
 def _filter_statistics_by_date(statistics, start_date, end_date):
-    for _, st_entry in statistics.items():
+    for st_entry in statistics:
         dataseries = st_entry.get("dataseries", {})
         if st_entry.get("is_filterable_by_date", False):
             for ds_name, ds_entry in dataseries.items():
@@ -30,7 +30,7 @@ def _filter_statistics_by_date(statistics, start_date, end_date):
 
 
 def _convert_datetime_to_date(statistics):
-    for st_entry in statistics.values():
+    for st_entry in statistics:
         dataseries = st_entry.get("dataseries", {})
         for ds_entry in dataseries.values():
             for df in ds_entry:

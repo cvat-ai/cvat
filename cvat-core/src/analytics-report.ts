@@ -21,6 +21,7 @@ export interface SerializedTransformationEntry {
 }
 
 export interface SerializedAnalyticsEntry {
+    name?: string;
     title?: string;
     description?: string;
     granularity?: string;
@@ -33,7 +34,7 @@ export interface SerializedAnalyticsReport {
     id?: number;
     target?: string;
     created_date?: string;
-    statistics?: Record<string, SerializedAnalyticsEntry>
+    statistics?: SerializedAnalyticsEntry[];
 }
 
 export enum AnalyticsReportTarget {
@@ -48,6 +49,7 @@ export enum AnalyticsEntryViewType {
 }
 
 export class AnalyticsEntry {
+    #name: string;
     #title: string;
     #description: string;
     #granularity: string;
@@ -56,12 +58,17 @@ export class AnalyticsEntry {
     #transformations: SerializedTransformationEntry[];
 
     constructor(initialData: SerializedAnalyticsEntry) {
+        this.#name = initialData.name;
         this.#title = initialData.title;
         this.#description = initialData.description;
         this.#granularity = initialData.granularity;
         this.#defaultView = initialData.default_view as AnalyticsEntryViewType;
         this.#transformations = initialData.transformations;
         this.#dataseries = this.applyTransformations(initialData.dataseries);
+    }
+
+    get name(): string {
+        return this.#name;
     }
 
     get title(): string {
@@ -146,15 +153,15 @@ export default class AnalyticsReport {
     #id: number;
     #target: AnalyticsReportTarget;
     #createdDate: string;
-    #statistics: Record<string, AnalyticsEntry>;
+    #statistics: AnalyticsEntry[];
 
     constructor(initialData: SerializedAnalyticsReport) {
         this.#id = initialData.id;
         this.#target = initialData.target as AnalyticsReportTarget;
         this.#createdDate = initialData.created_date;
-        this.#statistics = {};
-        for (const [key, analyticsEntry] of Object.entries(initialData.statistics)) {
-            this.#statistics[key] = new AnalyticsEntry(analyticsEntry);
+        this.#statistics = [];
+        for (const analyticsEntry of initialData.statistics) {
+            this.#statistics.push(new AnalyticsEntry(analyticsEntry));
         }
     }
 
@@ -170,7 +177,7 @@ export default class AnalyticsReport {
         return this.#createdDate;
     }
 
-    get statistics(): Record<string, AnalyticsEntry> {
+    get statistics(): AnalyticsEntry[] {
         return this.#statistics;
     }
 }

@@ -17,6 +17,7 @@ class TransformationSerializer(serializers.Serializer):
     binary = BinaryOperationSerializer(required=False, allow_null=True)
 
 class MetricSerializer(serializers.Serializer):
+    name = serializers.CharField()
     title = serializers.CharField()
     description = serializers.CharField(allow_blank=True)
     granularity = serializers.ChoiceField(
@@ -34,7 +35,7 @@ class AnalyticsReportSerializer(serializers.Serializer):
     job_id = serializers.IntegerField(required=False)
     task_id = serializers.IntegerField(required=False)
     project_id = serializers.IntegerField(required=False)
-    statistics = serializers.DictField(child=MetricSerializer())
+    statistics = serializers.ListField(child=MetricSerializer())
 
 
 class AnalyticsReportCreateSerializer(serializers.Serializer):

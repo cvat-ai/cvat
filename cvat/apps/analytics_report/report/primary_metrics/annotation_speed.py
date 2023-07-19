@@ -73,7 +73,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         if report is None:
             statistics = get_default()
         else:
-            statistics = report.statistics.get("annotation_speed", get_default())
+            statistics = next(filter(lambda s: s["name"] == "annotation_speed", report.statistics), get_default())
 
         dataseries = statistics["dataseries"]
 

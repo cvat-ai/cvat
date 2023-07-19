@@ -45,7 +45,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
     let histogramCount = 0;
     let numericCount = 0;
     const views: any = [];
-    Object.entries(report.statistics).forEach(([name, entry]) => {
+    report.statistics.forEach((entry) => {
         const tooltip = (
             <div className='cvat-analytics-tooltip-inner'>
                 <Text>
@@ -56,7 +56,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
         switch (entry.defaultView) {
             case AnalyticsEntryViewType.NUMERIC: {
                 layout.push({
-                    i: name,
+                    i: entry.name,
                     w: 2,
                     h: 1,
                     x: 2,
@@ -71,10 +71,10 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                             title={entry.title}
                             tooltip={tooltip}
                             value={typeof value === 'number' ? value.toFixed(1) : 0}
-                            key={name}
+                            key={entry.name}
                         />
                     ),
-                    key: name,
+                    key: entry.name,
                 });
                 break;
             }
@@ -110,7 +110,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                     };
                 });
                 layout.push({
-                    i: name,
+                    i: entry.name,
                     h: 1,
                     w: 2,
                     x: 0,
@@ -123,10 +123,10 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                             datasets={datasets}
                             labels={dateLabels}
                             title={entry.title}
-                            key={name}
+                            key={entry.name}
                         />
                     ),
-                    key: name,
+                    key: entry.name,
                 });
                 break;
             }

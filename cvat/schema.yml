@@ -5931,8 +5931,8 @@ components:
         project_id:
           type: integer
         statistics:
-          type: object
-          additionalProperties:
+          type: array
+          items:
             $ref: '#/components/schemas/Metric'
       required:
       - created_date
@@ -7761,6 +7761,8 @@ components:
     Metric:
       type: object
       properties:
+        name:
+          type: string
         title:
           type: string
         description:
@@ -7783,6 +7785,7 @@ components:
       - dataseries
       - default_view
       - description
+      - name
       - title
       - transformations
     NullEnum:
