@@ -274,6 +274,12 @@ export default class LabelForm extends React.Component<Props> {
                                 >
                                     <Tag
                                         visible
+                                        onMouseEnter={() => {
+                                            const parent = window.document.getElementsByClassName('cvat-attribute-values-input')[0];
+                                            if (parent) {
+                                                parent.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+                                            }
+                                        }}
                                         color={isDefault ? 'blue' : undefined}
                                         onClose={() => {
                                             if (isDefault) {
