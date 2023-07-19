@@ -38,8 +38,9 @@ def _convert_datetime_to_date(statistics):
                 del df["datetime"]
     return statistics
 
+
 def _clamp_working_time(statistics):
-    affected_metrics = ("annotation_speed")
+    affected_metrics = "annotation_speed"
     for metric in statistics:
         if metric["name"] not in affected_metrics:
             continue
@@ -49,6 +50,7 @@ def _clamp_working_time(statistics):
                 df["value"] = max(df["value"], 1)
 
     return statistics
+
 
 def _get_object_report(obj_model, pk, start_date, end_date):
     try:
