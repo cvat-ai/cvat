@@ -212,29 +212,21 @@ class UserSerializer(serializers.ModelSerializer):
             'last_login': { 'allow_null': True }
         }
 
+class DelimitedStringListField(serializers.ListField):
+    def to_representation(self, value):
+        return super().to_representation(value.split('\n'))
+
+    def to_internal_value(self, data):
+        return '\n'.join(super().to_internal_value(data))
+
 class AttributeSerializer(serializers.ModelSerializer):
-    values = serializers.ListField(allow_empty=True,
+    values = DelimitedStringListField(allow_empty=True,
         child=serializers.CharField(allow_blank=True, max_length=200),
     )
 
     class Meta:
         model = models.AttributeSpec
         fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
-
-    # pylint: disable=no-self-use
-    def to_internal_value(self, data):
-        attribute = data.copy()
-        attribute['values'] = '\n'.join(data.get('values', []))
-        return attribute
-
-    def to_representation(self, instance):
-        if instance:
-            rep = super().to_representation(instance)
-            rep['values'] = instance.values.split('\n')
-        else:
-            rep = instance
-
-        return rep
 
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)

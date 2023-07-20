@@ -18,3 +18,9 @@ QUALITY_CHECK_JOB_DELAY = 10000
 ANALYTICS_CHECK_JOB_DELAY = 10000
 
 IMPORT_CACHE_CLEAN_DELAY = timedelta(seconds=30)
+
+# The tests should not fail due to high disk utilization of CI infrastructure that we have no control over
+# But let's keep this check enabled
+HEALTH_CHECK = {
+    'DISK_USAGE_MAX': 100,  # percent
+}
