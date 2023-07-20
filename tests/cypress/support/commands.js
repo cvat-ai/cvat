@@ -493,8 +493,8 @@ Cypress.Commands.add('createEllipse', (createEllipseParams) => {
         cy.contains('button', createEllipseParams.type).click();
     });
     cy.get('.cvat-canvas-container')
-        .click(createEllipseParams.cx, createEllipseParams.cy)
-        .click(createEllipseParams.rightX, createEllipseParams.topY);
+        .click(createEllipseParams.firstX, createEllipseParams.firstY)
+        .click(createEllipseParams.secondX, createEllipseParams.secondY);
     cy.checkPopoverHidden('draw-ellipse');
     cy.checkObjectParameters(createEllipseParams, 'ELLIPSE');
 });
@@ -930,6 +930,60 @@ Cypress.Commands.add('addNewLabel', ({ name, color }, additionalAttrs) => {
     cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-constructor-viewer').should('be.visible');
     cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${name}$`)).should('exist');
+});
+
+Cypress.Commands.add('addNewSkeletonLabel', ({ name, points }) => {
+    cy.get('.cvat-constructor-viewer-new-skeleton-item').click();
+    cy.get('.cvat-skeleton-configurator').should('exist').and('be.visible');
+
+    cy.get('.cvat-label-constructor-creator').within(() => {
+        cy.get('#name').type(name);
+        cy.get('.ant-radio-button-checked').within(() => {
+            cy.get('.ant-radio-button-input').should('have.attr', 'value', 'point');
+        });
+    });
+
+    cy.get('.cvat-skeleton-configurator-svg').then(($canvas) => {
+        const canvas = $canvas[0];
+        canvas.scrollIntoView();
+        const rect = canvas.getBoundingClientRect();
+        const { width, height } = rect;
+        points.forEach(({ x: xOffset, y: yOffset }) => {
+            canvas.dispatchEvent(new MouseEvent('mousedown', {
+                clientX: rect.x + width * xOffset,
+                clientY: rect.y + height * yOffset,
+                button: 0,
+                bubbles: true,
+            }));
+        });
+
+        cy.get('.ant-radio-button-wrapper:nth-child(3)').click().within(() => {
+            cy.get('.ant-radio-button-input').should('have.attr', 'value', 'join');
+        });
+
+        cy.get('.cvat-skeleton-configurator-svg').within(() => {
+            cy.get('circle').then(($circles) => {
+                expect($circles.length).to.be.equal(5);
+                $circles.each(function (i) {
+                    const circle1 = this;
+                    $circles.each(function (j) {
+                        const circle2 = this;
+                        if (i === j) return;
+                        circle1.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+                        circle1.dispatchEvent(new MouseEvent('click', { button: 0, bubbles: true }));
+                        circle1.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+
+                        circle2.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+                        circle2.dispatchEvent(new MouseEvent('click', { button: 0, bubbles: true }));
+                        circle2.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+                    });
+                });
+            });
+        });
+
+        cy.contains('Continue').scrollIntoView().click();
+        cy.contains('Continue').scrollIntoView().click();
+    });
 });
 
 Cypress.Commands.add('checkCanvasSidebarColorEqualness', (id) => {
