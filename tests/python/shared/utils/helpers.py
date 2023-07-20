@@ -56,6 +56,7 @@ def make_skeleton_label_payload(*, name: Optional[str] = None) -> Dict[str, Any]
         'stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-id="104"></circle>',
     }
 
+
 def generate_manifest(path: str) -> None:
     command = [
         "docker",

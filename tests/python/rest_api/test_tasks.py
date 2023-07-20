@@ -38,7 +38,11 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
-from shared.utils.helpers import (generate_image_files, make_skeleton_label_payload, generate_manifest)
+from shared.utils.helpers import (
+    generate_image_files,
+    generate_manifest,
+    make_skeleton_label_payload,
+)
 
 from .utils import (
     CollectionSimpleFilterTestBase,
