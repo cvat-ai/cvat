@@ -1956,6 +1956,7 @@ export class SkeletonShape extends Shape {
             group: this.group,
             z_order: this.zOrder,
             rotation: 0,
+            elements: undefined,
         }));
 
         const result: RawShapeData = {
@@ -2891,7 +2892,24 @@ export class SkeletonTrack extends Track {
     // Method is used to export data to the server
     public toJSON(): RawTrackData {
         const result: RawTrackData = Track.prototype.toJSON.call(this);
-        result.elements = this.elements.map((el) => el.toJSON());
+        result.elements = this.elements.map((el) => ({
+            ...el.toJSON(),
+            elements: undefined,
+            source: this.source,
+            group: this.group,
+        }));
+        result.elements.forEach((element) => {
+            element.shapes.forEach((shape) => {
+                shape.rotation = 0;
+                const { frame } = shape;
+                const skeletonShape = result.shapes
+                    .find((_skeletonShape) => _skeletonShape.frame === frame);
+                if (skeletonShape) {
+                    shape.z_order = skeletonShape.z_order;
+                }
+            });
+        });
+
         return result;
     }
 
