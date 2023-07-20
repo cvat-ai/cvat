@@ -1,5 +1,8 @@
 cvat:
   backend:
+    defaultStorage:
+      accessModes:
+      - ReadWriteOnce
     server:
       additionalVolumeMounts:
       - mountPath: /home/django/share
@@ -22,7 +25,6 @@ cvat:
     imagePullPolicy: Never
   frontend:
     imagePullPolicy: Never
-
 traefik:
   logs:
     general:
