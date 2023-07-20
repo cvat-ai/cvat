@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed SAM plugin (403 code for workers in organizations) (<https://github.com/opencv/cvat/pull/6514>)
 - Using initial frame from query parameter to open specific frame in a job
  (<https://github.com/opencv/cvat/pull/6506>)
+- Server-side validation for attribute specifications
+  (<https://github.com/opencv/cvat/pull/6447>)
 
 ### Security
 - TDB
