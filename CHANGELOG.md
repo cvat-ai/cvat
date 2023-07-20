@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  (<https://github.com/opencv/cvat/pull/6474>)
 - \[SDK\] `cvat_sdk.datasets`, a framework-agnostic equivalent of `cvat_sdk.pytorch`
   (<https://github.com/opencv/cvat/pull/6428>)
+- Analytics for Jobs, Tasks and Projects (<https://github.com/opencv/cvat/pull/6371>)
 
 ### Changed
 - TDB
