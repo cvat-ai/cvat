@@ -99,31 +99,22 @@ class TestTaskAutoAnnotation:
     def test_detection_rectangle(self):
         spec = cvataa.DetectionFunctionSpec(
             labels=[
-                models.PatchedLabelRequest(
-                    name="car",
-                    id=123,
-                ),
-                models.PatchedLabelRequest(
-                    name="bicycle (should be ignored)",
-                    id=456,
-                ),
+                cvataa.label_spec("car", 123),
+                cvataa.label_spec("bicycle (should be ignored)", 456),
             ],
         )
 
         def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
             assert image.width == image.height == 333
             return [
-                models.LabeledShapeRequest(
-                    frame=0,
-                    type="rectangle",
-                    label_id=123,  # car
+                cvataa.rectangle(
+                    123,  # car
                     # produce different coordinates for different images
-                    points=[*image.getpixel((0, 0)), 300],
+                    [*image.getpixel((0, 0)), 300],
                 ),
-                models.LabeledShapeRequest(
-                    frame=0,
+                cvataa.shape(
+                    456,  # ignored
                     type="points",
-                    label_id=456,  # ignored
                     points=[1, 1],
                 ),
             ]
@@ -147,14 +138,13 @@ class TestTaskAutoAnnotation:
     def test_detection_skeleton(self):
         spec = cvataa.DetectionFunctionSpec(
             labels=[
-                models.PatchedLabelRequest(
-                    name="cat",
-                    type="skeleton",
-                    id=123,
-                    sublabels=[
-                        models.SublabelRequest(name="head", id=10),
-                        models.SublabelRequest(name="torso (should be ignored)", id=20),
-                        models.SublabelRequest(name="tail", id=30),
+                cvataa.skeleton_label_spec(
+                    "cat",
+                    123,
+                    [
+                        cvataa.keypoint_spec("head", 10),
+                        cvataa.keypoint_spec("torso (should be ignored)", 20),
+                        cvataa.keypoint_spec("tail", 30),
                     ],
                 ),
             ],
@@ -163,29 +153,15 @@ class TestTaskAutoAnnotation:
         def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
             assert image.width == image.height == 333
             return [
-                models.LabeledShapeRequest(
-                    frame=0,
-                    type="skeleton",
-                    label_id=123,  # cat
-                    elements=[
-                        models.SubLabeledShapeRequest(
-                            frame=0,
-                            type="points",
-                            label_id=20,  # ignored
-                            points=[20, 20],
-                        ),
-                        models.SubLabeledShapeRequest(
-                            frame=0,
-                            type="points",
-                            label_id=30,  # tail
-                            points=[30, 30],
-                        ),
-                        models.SubLabeledShapeRequest(
-                            frame=0,
-                            type="points",
-                            label_id=10,  # head
-                            points=[10, 10],
-                        ),
+                cvataa.skeleton(
+                    123,  # cat
+                    [
+                        # ignored
+                        cvataa.keypoint(20, [20, 20]),
+                        # tail
+                        cvataa.keypoint(30, [30, 30]),
+                        # head
+                        cvataa.keypoint(10, [10, 10]),
                     ],
                 ),
             ]

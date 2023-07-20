@@ -10,8 +10,8 @@ import PIL.Image
 
 spec = cvataa.DetectionFunctionSpec(
     labels=[
-        models.PatchedLabelRequest(name="car", id=0),
-    ]
+        cvataa.label_spec("car", 0),
+    ],
 )
 
 
@@ -19,5 +19,5 @@ def detect(
     context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
 ) -> List[models.LabeledShapeRequest]:
     return [
-        models.LabeledShapeRequest(type="rectangle", frame=0, label_id=0, points=[1, 2, 3, 4]),
+        cvataa.rectangle(0, [1, 2, 3, 4]),
     ]
