@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[SDK\] Ability to create attributes with blank default values
   (<https://github.com/opencv/cvat/pull/6454>)
 - \[SDK\] SDK should not change input data in models (<https://github.com/opencv/cvat/pull/6455>)
+- Export hash for shapes and tags in a corner case (<https://github.com/opencv/cvat/pull/6517>)
 - 3D job can not be opened in validation mode (<https://github.com/opencv/cvat/pull/6507>)
 - Fixed SAM plugin (403 code for workers in organizations) (<https://github.com/opencv/cvat/pull/6514>)
 - Using initial frame from query parameter to open specific frame in a job
