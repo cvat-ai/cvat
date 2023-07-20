@@ -5,8 +5,10 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import json
-from typing import Dict, List, Sequence, Tuple
+from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client, models
@@ -143,6 +145,20 @@ class CLI:
             pbar=DeferredTqdmProgressReporter(),
         )
 
-    def tasks_auto_annotate(self, task_id: int, function_module: str) -> None:
-        function = importlib.import_module(function_module)
+    def tasks_auto_annotate(
+        self,
+        task_id: int,
+        *,
+        function_module: Optional[str] = None,
+        function_file: Optional[Path] = None,
+    ) -> None:
+        if function_module is not None:
+            function = importlib.import_module(function_module)
+        elif function_file is not None:
+            module_spec = importlib.util.spec_from_file_location("__cvat_function__", function_file)
+            function = importlib.util.module_from_spec(module_spec)
+            module_spec.loader.exec_module(function)
+        else:
+            assert False, "function identification arguments missing"
+
         cvataa.annotate_task(self.client, task_id, function)

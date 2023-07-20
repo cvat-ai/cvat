@@ -10,6 +10,7 @@ import logging
 import os
 import textwrap
 from distutils.util import strtobool
+from pathlib import Path
 
 from cvat_sdk.core.proxies.tasks import ResourceType
 
@@ -377,12 +378,20 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         description="Automatically annotate a CVAT task by running a function on the local machine.",
     )
     auto_annotate_task_parser.add_argument("task_id", type=int, help="task ID")
-    auto_annotate_task_parser.add_argument(
-        "--function",
-        help="name of module to use as the function",
+
+    function_group = auto_annotate_task_parser.add_mutually_exclusive_group(required=True)
+
+    function_group.add_argument(
+        "--function-module",
         metavar="MODULE",
-        required=True,
-        dest="function_module",
+        help="qualified name of a module to use as the function",
+    )
+
+    function_group.add_argument(
+        "--function-file",
+        metavar="PATH",
+        type=Path,
+        help="path to a Python source file to use as the function",
     )
 
     return parser
