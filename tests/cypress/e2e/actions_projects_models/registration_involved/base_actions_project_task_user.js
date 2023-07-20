@@ -65,10 +65,9 @@ context('Base actions on the project', () => {
 
     describe('Testing "Base actions on the project"', () => {
         it('Add some labels to project.', () => {
-            cy.addNewLabel(newLabelName1);
-            cy.addNewLabel(newLabelName2);
-            cy.addNewLabel(newLabelName3);
-            cy.addNewLabel(newLabelName4);
+            [newLabelName1, newLabelName2, newLabelName3, newLabelName4].forEach((name) => {
+                cy.addNewLabel({ name });
+            });
         });
         it('Create a first task for the project. Project field is completed with proper project name and labels editor is not accessible.', () => {
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);

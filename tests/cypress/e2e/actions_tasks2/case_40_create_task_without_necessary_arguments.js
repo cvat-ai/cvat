@@ -49,7 +49,7 @@ context('Try to create a task without necessary arguments.', () => {
         });
 
         it('Input task labels. A task is not created.', () => {
-            cy.addNewLabel(labelName);
+            cy.addNewLabel({ name: labelName });
             cy.contains('button', 'Submit & Continue').click();
             cy.get('.cvat-notification-create-task-fail').should('exist');
             cy.closeNotification('.cvat-notification-create-task-fail');

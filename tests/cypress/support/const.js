@@ -28,9 +28,9 @@ export const advancedConfigurationParams = {
     frameStep: 2,
 };
 export const multiAttrParams = {
-    additionalAttrName: 'Attr 2',
-    additionalValue: 'Attr value 2',
-    typeAttribute: 'Text',
+    name: 'Attr 2',
+    values: 'Attr value 2',
+    type: 'Text',
 };
 
 it('Prepare to testing', () => {

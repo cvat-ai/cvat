@@ -18,7 +18,7 @@ context('Canvas 3D functionality. Make a copy.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(secondLabel);
+        cy.addNewLabel({ name: secondLabel });
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);

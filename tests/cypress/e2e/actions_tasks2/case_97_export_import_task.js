@@ -47,7 +47,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             const [link] = url.split('?');
             taskId = Number(link.split('/').slice(-1)[0]);
         });
-        cy.addNewLabel(newLabelName);
+        cy.addNewLabel({ name: newLabelName });
         cy.openJob();
         cy.createRectangle(createRectangleShape2Points).then(() => {
             Cypress.config('scrollBehavior', false);

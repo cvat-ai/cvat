@@ -74,7 +74,7 @@ context('Actions on points.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(newLabelName);
+        cy.addNewLabel({ name: newLabelName });
         cy.openJob();
     });
 

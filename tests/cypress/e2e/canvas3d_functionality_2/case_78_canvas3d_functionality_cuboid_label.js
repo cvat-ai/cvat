@@ -21,7 +21,7 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(secondLabel, secondLabelAdditionalAttrs, secondLabelColorRed);
+        cy.addNewLabel({ name: secondLabel, color: secondLabelColorRed }, secondLabelAdditionalAttrs);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
         cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_before_all');

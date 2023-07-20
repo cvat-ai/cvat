@@ -9,46 +9,16 @@ context('Connected file share.', () => {
     const caseId = '107';
     const taskName = `Case ${caseId}`;
     const labelName = taskName;
-    const expectedTopLevel = [
-        { name: 'images', type: 'DIR', mime_type: 'DIR' },
-    ];
-
-    const expectedImagesList = [
-        { name: 'image_1.jpg', type: 'REG', mime_type: 'image' },
-        { name: 'image_2.jpg', type: 'REG', mime_type: 'image' },
-        { name: 'image_3.jpg', type: 'REG', mime_type: 'image' },
-    ];
+    const imageFiles = {
+        images: ['image_1.jpg', 'image_2.jpg', 'image_3.jpg'],
+    };
 
     function createOpenTaskWithShare() {
         cy.get('.cvat-create-task-dropdown').click();
         cy.get('.cvat-create-task-button').should('be.visible').click();
         cy.get('#name').type(taskName);
-        cy.addNewLabel(labelName);
-        cy.intercept('GET', '/api/server/share?**').as('shareRequest');
-        cy.contains('[role="tab"]', 'Connected file share').click();
-        cy.wait('@shareRequest').then((interception) => {
-            for (const item of expectedTopLevel) {
-                const responseEl = interception.response.body.find((el) => el.name === item.name);
-                expect(responseEl).to.deep.equal(item);
-            }
-        });
-        cy.get('.cvat-remote-browser-table-wrapper')
-            .should('exist')
-            .within(() => {
-                cy.get('button').contains('images').click();
-                cy.wait('@shareRequest').then((interception) => {
-                    expect(interception.response.body
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .filter((el) => el.mime_type === 'image'))
-                        .to.deep.equal(expectedImagesList);
-                });
-                expectedImagesList.forEach((el) => {
-                    const { name } = el;
-                    cy.get('.ant-table-cell').contains(name).parent().within(() => {
-                        cy.get('.ant-checkbox-input').click();
-                    });
-                });
-            });
+        cy.addNewLabel({ name: labelName });
+        cy.selectFilesFromShare(imageFiles);
         cy.contains('button', 'Submit & Open').click();
         cy.get('.cvat-task-details').should('exist');
     }
@@ -68,9 +38,8 @@ context('Connected file share.', () => {
             createOpenTaskWithShare();
             cy.openJob();
             cy.get('.cvat-player-filename-wrapper').then((playerFilenameWrapper) => {
-                for (let frame = 0; frame < expectedImagesList.length; frame++) {
-                    const { name } = expectedImagesList[frame];
-                    cy.get(playerFilenameWrapper).should('have.text', `${expectedTopLevel[0].name}/${name}`);
+                for (let frame = 0; frame < imageFiles.images.length; frame++) {
+                    cy.get(playerFilenameWrapper).should('have.text', `images/${imageFiles.images[frame]}`);
                     cy.checkFrameNum(frame);
                     cy.get('.cvat-player-next-button').click().trigger('mouseout');
                 }

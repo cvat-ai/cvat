@@ -58,7 +58,7 @@ context('Actions on ellipse.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(newLabelName);
+        cy.addNewLabel({ name: newLabelName });
         cy.openJob();
     });
 

@@ -37,7 +37,7 @@ context('Create and delete a annotation task. Color collision.', () => {
 
         it('Add a label. Check labels color.', () => {
             cy.openTask(taskName);
-            cy.addNewLabel(newLabelName);
+            cy.addNewLabel({ name: newLabelName });
             cy.get('.cvat-constructor-viewer-item').first().then((firstLabel) => {
                 cy.get('.cvat-constructor-viewer-item').last().then((secondLabel) => {
                     expect(firstLabel.attr('style')).not.equal(secondLabel.attr('style'));

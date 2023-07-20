@@ -26,7 +26,7 @@ context('Save filtered object in AAM.', () => {
             // Getting list of labels and create a label if neccessary
             const labelsList = Array.from(doc.querySelectorAll('.cvat-constructor-viewer-item'));
             if (labelsList.length < 2) {
-                cy.addNewLabel(newLabelName);
+                cy.addNewLabel({ name: newLabelName });
             }
         });
         cy.document().then((doc) => {

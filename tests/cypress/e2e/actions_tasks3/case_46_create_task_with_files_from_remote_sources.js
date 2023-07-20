@@ -27,7 +27,7 @@ context('Create a task with files from remote sources.', () => {
     describe(`Testing "${labelName}"`, () => {
         it('Try to create a task with wrong remote file. The task is not created.', () => {
             cy.get('[id="name"]').type(taskName);
-            cy.addNewLabel(labelName);
+            cy.addNewLabel({ name: labelName });
             cy.contains('Remote sources').click();
             cy.get('.cvat-file-selector-remote').type(wrongUrl);
             cy.contains('button', 'Submit & Continue').click();

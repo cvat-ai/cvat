@@ -9,9 +9,9 @@ export const labelName = `Base label for ${projectName}`;
 export const attrName = `Attr for ${labelName}`;
 export const textDefaultValue = 'Some default value for type Text';
 export const multiAttrParams = {
-    additionalAttrName: 'Attr 2',
-    additionalValue: 'Attr value 2',
-    typeAttribute: 'Text',
+    name: 'Attr 2',
+    values: 'Attr value 2',
+    type: 'Text',
 };
 
 it('Prepare to testing', () => {

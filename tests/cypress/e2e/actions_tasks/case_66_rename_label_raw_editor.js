@@ -43,7 +43,7 @@ context('Rename a label via raw editor.', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
-        cy.addNewLabel(labelName);
+        cy.addNewLabel({ name: labelName });
     });
 
     after(() => {

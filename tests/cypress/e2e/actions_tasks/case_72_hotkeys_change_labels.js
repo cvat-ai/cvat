@@ -24,9 +24,9 @@ context('Hotkeys to change labels feature.', () => {
     const directoryToArchive = imagesFolder;
     const secondLabel = `Case ${caseId} second`;
     const additionalAttrsSecondLabel = [{
-        additionalAttrName: attrName,
-        additionalValue: '0;3;1',
-        typeAttribute: 'Number',
+        name: attrName,
+        values: '0;3;1',
+        type: 'Number',
         mutable: false,
     }];
     let firstLabelCurrentVal = '';
@@ -54,7 +54,7 @@ context('Hotkeys to change labels feature.', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
-        cy.addNewLabel(secondLabel, additionalAttrsSecondLabel);
+        cy.addNewLabel({ name: secondLabel }, additionalAttrsSecondLabel);
         cy.openJob();
     });
 

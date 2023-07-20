@@ -29,7 +29,7 @@ context('Check if the new label reflects in the options', () => {
             cy.url().should('include', '/tasks').and('not.contain', '/jobs');
         });
         it('Add new label', () => {
-            cy.addNewLabel(newLabelName);
+            cy.addNewLabel({ name: newLabelName });
         });
         it('Open the job again', () => {
             cy.openJob();
