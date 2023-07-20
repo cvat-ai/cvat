@@ -38,10 +38,10 @@
 /components/    @azhavoro
 
 # Component: Tests
-/tests/         @yasakova-anastasia
+/tests/         @kirill-sizov
 
 # Component: Serverless functions
-/serverless/    @yasakova-anastasia
+/serverless/    @kirill-sizov
 
 # Infrastructure
 Dockerfile*     @azhavoro

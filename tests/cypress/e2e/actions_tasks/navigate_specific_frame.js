@@ -6,7 +6,7 @@
 
 context('Paste labels from one task to another.', { browser: '!firefox' }, () => {
     const task = {
-        name: 'Test "Continue frame N"',
+        name: 'Test "Continue/open frame N"',
         label: 'Test label',
         attrName: 'Test attribute',
         attrValue: 'Test attribute value',
@@ -53,6 +53,16 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
         it('Pressing continue button should navigate to the latest opened frame', () => {
             cy.get('.cvat-notification-continue-job-button').click();
             cy.checkFrameNum(2);
+        });
+
+        it('Trying to open a frame using query parameter', () => {
+            cy.url().then(($url) => {
+                cy.visit('/projects');
+                cy.get('.cvat-projects-page').should('exist');
+                cy.visit($url, { qs: { frame: 2 } });
+                cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+                cy.checkFrameNum(2);
+            });
         });
     });
 });

@@ -7,12 +7,10 @@ import itertools
 import os
 from logging import Logger
 from pathlib import Path
-from typing import Container, Tuple
-from urllib.parse import urlparse
+from typing import Tuple
 
 import pytest
 from cvat_sdk import Client, models
-from cvat_sdk.api_client.rest import RESTClientObject
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 try:
@@ -30,6 +28,8 @@ except ModuleNotFoundError as e:
 
 from shared.utils.helpers import generate_image_files
 
+from .util import restrict_api_requests
+
 
 @pytest.fixture(autouse=True)
 def _common_setup(
@@ -45,20 +45,6 @@ def _common_setup(
     api_client = client.api_client
     for k in api_client.configuration.logger:
         api_client.configuration.logger[k] = logger
-
-
-def _restrict_api_requests(
-    monkeypatch: pytest.MonkeyPatch, allow_paths: Container[str] = ()
-) -> None:
-    original_request = RESTClientObject.request
-
-    def restricted_request(self, method, url, *args, **kwargs):
-        parsed_url = urlparse(url)
-        if parsed_url.path in allow_paths:
-            return original_request(self, method, url, *args, **kwargs)
-        raise RuntimeError("Disallowed!")
-
-    monkeypatch.setattr(RESTClientObject, "request", restricted_request)
 
 
 @pytest.mark.skipif(cvatpt is None, reason="PyTorch dependencies are not installed")
@@ -254,7 +240,7 @@ class TestTaskVisionDataset:
 
         fresh_samples = list(dataset)
 
-        _restrict_api_requests(monkeypatch)
+        restrict_api_requests(monkeypatch)
 
         dataset = cvatpt.TaskVisionDataset(
             self.client,
@@ -273,7 +259,7 @@ class TestTaskVisionDataset:
         )
 
         # Recreating the dataset should only result in minimal requests.
-        _restrict_api_requests(
+        restrict_api_requests(
             monkeypatch, allow_paths={f"/api/tasks/{self.task.id}", "/api/labels"}
         )
 
@@ -447,7 +433,7 @@ class TestProjectVisionDataset:
 
         fresh_samples = list(dataset)
 
-        _restrict_api_requests(monkeypatch)
+        restrict_api_requests(monkeypatch)
 
         dataset = cvatpt.ProjectVisionDataset(
             self.client,
