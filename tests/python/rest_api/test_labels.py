@@ -106,9 +106,12 @@ class _TestLabelsPermissionsBase:
 
         user_id = self.users_by_name[user]["id"]
         source_obj = next(
-            filter(lambda s: is_source_staff(user_id, s["id"]) == is_staff, sources_with_labels)
+            s
+            for s in sources_with_labels
+            if is_source_staff(user_id, s["id"]) == is_staff
+            if any(l for l in labels_by_source[s["id"]] if not l["parent_id"])
         )
-        label = labels_by_source[source_obj["id"]][0]
+        label = next(l for l in labels_by_source[source_obj["id"]] if not l["parent_id"])
 
         yield SimpleNamespace(label=label, user=user, source=source, is_staff=is_staff)
 
@@ -128,9 +131,12 @@ class _TestLabelsPermissionsBase:
 
         user_id = self.users_by_name[user]["id"]
         source_obj = next(
-            filter(lambda s: is_source_staff(user_id, s["id"]) == is_staff, sources_with_labels)
+            s
+            for s in sources_with_labels
+            if is_source_staff(user_id, s["id"]) == is_staff
+            if any(l for l in labels_by_source[s["id"]] if not l["parent_id"])
         )
-        label = labels_by_source[source_obj["id"]][0]
+        label = next(l for l in labels_by_source[source_obj["id"]] if not l["parent_id"])
 
         yield SimpleNamespace(
             label=label, user=user, source=source, org_id=org_id, is_staff=is_staff
@@ -150,8 +156,13 @@ class _TestLabelsPermissionsBase:
             s for s in sources if s["owner"]["id"] in users and s["organization"] is None
         ]
         labels_by_source = self._labels_by_source(self.labels, source_key=label_source_key)
-        source_obj = next(s for s in regular_users_sources if labels_by_source.get(s["id"]))
-        label = labels_by_source[source_obj["id"]][0]
+        source_obj = next(
+            s
+            for s in regular_users_sources
+            if labels_by_source.get(s["id"])
+            if any(l for l in labels_by_source[s["id"]] if not l["parent_id"])
+        )
+        label = next(l for l in labels_by_source[source_obj["id"]] if not l["parent_id"])
         user = next(u for u in users.values() if (u["id"] == source_obj["owner"]["id"]) == is_staff)
 
         yield SimpleNamespace(label=label, user=user, is_staff=is_staff)
@@ -179,7 +190,12 @@ class _TestLabelsPermissionsBase:
                     self.users_by_name[m["user"]["username"]]
                 )
 
-        for source_obj in (s for s in sources if labels_by_source.get(s["id"])):
+        for source_obj in (
+            s
+            for s in sources
+            if labels_by_source.get(s["id"])
+            if any(l for l in labels_by_source[s["id"]] if not l["parent_id"])
+        ):
             user = next(
                 (
                     u
@@ -195,7 +211,7 @@ class _TestLabelsPermissionsBase:
                 break
         assert user
 
-        label = labels_by_source[source_obj["id"]][0]
+        label = next(l for l in labels_by_source[source_obj["id"]] if not l["parent_id"])
 
         yield SimpleNamespace(
             label=label,

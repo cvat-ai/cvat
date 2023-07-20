@@ -2241,11 +2241,9 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def perform_update(self, serializer):
         if serializer.instance.parent is not None:
-            # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
                 "Sublabels cannot be modified this way. "
-                "Please send a PATCH request to the parent task or project "
-                "with updated parent label data instead.",
+                "Please update the parent label instead.",
                 code=status.HTTP_400_BAD_REQUEST)
 
         if (
@@ -2253,10 +2251,10 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             (serializer.validated_data.get('svg') or serializer.validated_data.get('sublabels'))
         ):
             # NOTE: this can be relaxed when skeleton updates are implemented properly
+            # TODO: add validation for svg and sublabel descriptions
             raise ValidationError(
-                "Sublabels cannot be modified this way. "
-                "Please send a PATCH request to the parent task or project "
-                "with updated label data instead.",
+                "Skeleton sublabels cannot be modified this way. "
+                "Please update the label instead.",
                 code=status.HTTP_400_BAD_REQUEST)
 
         return super().perform_update(serializer)
