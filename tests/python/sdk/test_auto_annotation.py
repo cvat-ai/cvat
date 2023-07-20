@@ -57,7 +57,7 @@ class TestTaskAutoAnnotation:
 
         self.task = self.client.tasks.create_from_data(
             models.TaskWriteRequest(
-                "Dataset layer test task",
+                "Auto-annotation test task",
                 labels=[
                     models.PatchedLabelRequest(name="person"),
                     models.PatchedLabelRequest(name="car"),
@@ -73,7 +73,6 @@ class TestTaskAutoAnnotation:
             ),
             resource_type=ResourceType.LOCAL,
             resources=image_paths,
-            data_params={"chunk_size": 3},
         )
 
         task_labels = self.task.get_labels()
