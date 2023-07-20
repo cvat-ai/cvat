@@ -41,11 +41,9 @@ class JobObjects(PrimaryMetricBase):
             for date in sorted(dates):
                 objects_statistics[action].append(
                     {
-                        "value": {
-                            "tracks": statistics[action]["tracks"].get(date, 0),
-                            "shapes": statistics[action]["shapes"].get(date, 0),
-                            "tags": statistics[action]["tags"].get(date, 0),
-                        },
+                        "value": sum(
+                            statistics[action][t].get(date, 0) for t in ["tracks", "shapes", "tags"]
+                        ),
                         "datetime": date.isoformat() + "Z",
                     }
                 )

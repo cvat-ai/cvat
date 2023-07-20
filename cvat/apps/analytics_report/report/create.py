@@ -522,7 +522,7 @@ class AnalyticsReportUpdateManager:
                 ),
             ]
 
-            statistics = [self._get_empty_statistics_entry(dm) for dm in derived_metrics]
+            statistics = [self._get_statistics_entry(dm) for dm in derived_metrics]
             db_report.statistics = statistics
 
         return db_report, task_reports, job_reports

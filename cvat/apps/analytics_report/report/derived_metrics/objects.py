@@ -26,15 +26,14 @@ class TaskObjects(DerivedMetricBase, JobObjects):
                 entry = combined_statistics.setdefault(
                     parser.parse(c_entry["datetime"]).date(),
                     {
-                        "created": {"tags": 0, "shapes": 0, "tracks": 0},
-                        "updated": {"tags": 0, "shapes": 0, "tracks": 0},
-                        "deleted": {"tags": 0, "shapes": 0, "tracks": 0},
+                        "created": 0,
+                        "updated": 0,
+                        "deleted": 0,
                     },
                 )
-                for t in ("tags", "shapes", "tracks"):
-                    entry["created"][t] += c_entry["value"][t]
-                    entry["updated"][t] += u_entry["value"][t]
-                    entry["deleted"][t] += d_entry["value"][t]
+                entry["created"] += c_entry["value"]
+                entry["updated"] += u_entry["value"]
+                entry["deleted"] += d_entry["value"]
 
         combined_data_series = {
             "created": [],
@@ -50,11 +49,7 @@ class TaskObjects(DerivedMetricBase, JobObjects):
             for action in ("created", "updated", "deleted"):
                 combined_data_series[action].append(
                     {
-                        "value": {
-                            "tracks": combined_statistics[key][action]["tracks"],
-                            "shapes": combined_statistics[key][action]["shapes"],
-                            "tags": combined_statistics[key][action]["tags"],
-                        },
+                        "value": combined_statistics[key][action],
                         "datetime": timestamp_str,
                     }
                 )

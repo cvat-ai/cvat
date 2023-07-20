@@ -14,14 +14,30 @@ from cvat.apps.analytics_report.models import (
 
 
 class BinaryOperationSerializer(serializers.Serializer):
-    left = serializers.CharField(required=False, allow_null=True)
+    left = serializers.CharField(
+        required=False,
+        allow_null=True,
+        help_text="The name of the data series used as the left (first) operand of the binary operation.",
+    )
     operator = serializers.ChoiceField(choices=BinaryOperatorType.choices())
-    right = serializers.CharField(required=False, allow_null=True)
+    right = serializers.CharField(
+        required=False,
+        allow_null=True,
+        help_text="The name of the data series used as the right (second) operand of the binary operation.",
+    )
 
 
 class TransformationSerializer(serializers.Serializer):
     name = serializers.CharField()
-    binary = BinaryOperationSerializer(required=False, allow_null=True)
+    binary = BinaryOperationSerializer(
+        required=False,
+        allow_null=True,
+    )
+
+
+class DataFrameSerializer(serializers.Serializer):
+    value = serializers.FloatField()
+    date = serializers.DateField()
 
 
 class MetricSerializer(serializers.Serializer):
@@ -32,7 +48,7 @@ class MetricSerializer(serializers.Serializer):
         choices=GranularityChoice.choices(), required=False, allow_null=True
     )
     default_view = serializers.ChoiceField(choices=ViewChoice.choices())
-    data_series = serializers.DictField()
+    data_series = serializers.DictField(child=DataFrameSerializer(many=True))
     transformations = serializers.ListField(child=TransformationSerializer())
 
 

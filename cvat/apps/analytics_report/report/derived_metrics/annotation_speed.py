@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 
 from dateutil import parser
 
-from cvat.apps.analytics_report.models import BinaryOperatorType, TransformOperationType
 from cvat.apps.analytics_report.report.primary_metrics import JobAnnotationSpeed
 
 from .base import DerivedMetricBase
@@ -15,15 +14,6 @@ from .base import DerivedMetricBase
 class TaskAnnotationSpeed(DerivedMetricBase, JobAnnotationSpeed):
     _description = "Metric shows the annotation speed in objects per hour for the Task."
     _query = None
-    _transformations = [
-        {
-            "name": "annotation_speed",
-            "type": TransformOperationType.BINARY,
-            "left": "object_count",
-            "operator": BinaryOperatorType.DIVISION,
-            "right": "working_time",
-        },
-    ]
 
     def calculate(self):
         combined_statistics = {}

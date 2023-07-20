@@ -6226,11 +6226,15 @@ components:
         left:
           type: string
           nullable: true
+          description: The name of the data series used as the left (first) operand
+            of the binary operation.
         operator:
           $ref: '#/components/schemas/OperatorEnum'
         right:
           type: string
           nullable: true
+          description: The name of the data series used as the right (second) operand
+            of the binary operation.
       required:
       - operator
     ChunkType:
@@ -6440,6 +6444,18 @@ components:
         * `KEY_FILE_PATH` - KEY_FILE_PATH
         * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
         * `CONNECTION_STRING` - CONNECTION_STRING
+    DataFrame:
+      type: object
+      properties:
+        value:
+          type: number
+          format: double
+        date:
+          type: string
+          format: date
+      required:
+      - date
+      - value
     DataMetaRead:
       type: object
       properties:
@@ -7776,7 +7792,10 @@ components:
           $ref: '#/components/schemas/DefaultViewEnum'
         data_series:
           type: object
-          additionalProperties: {}
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/DataFrame'
         transformations:
           type: array
           items:
