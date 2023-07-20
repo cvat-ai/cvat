@@ -106,8 +106,10 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           volumeMounts:
+        {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
           - mountPath: /home/django/data/cache
             name: cvat-worker-import-backend-cache
+        {{- end }}
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -137,8 +139,10 @@ spec:
           {{- end }}
           volumeMounts:
           {{- if .Values.cvat.backend.defaultStorage.enabled }}
+          {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
           - mountPath: /home/django/data/cache
             name: cvat-worker-import-backend-cache
+          {{- end }}
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
