@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,7 +40,7 @@ context('Create a task with set an issue tracker.', () => {
     describe(`Testing "${labelName}"`, () => {
         it('Creating a task with incorrect issue tracker URL. The error notification is shown.', () => {
             cy.get('[id="name"]').type(taskName);
-            cy.addNewLabel(labelName);
+            cy.addNewLabel({ name: labelName });
             cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
             cy.contains('Advanced configuration').click();
             cy.get('#bugTracker').type(incorrectBugTrackerUrl);
