@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,9 +24,9 @@ context('Hotkeys to change labels feature.', () => {
     const directoryToArchive = imagesFolder;
     const secondLabel = `Case ${caseId} second`;
     const additionalAttrsSecondLabel = [{
-        additionalAttrName: attrName,
-        additionalValue: '0;3;1',
-        typeAttribute: 'Number',
+        name: attrName,
+        values: '0;3;1',
+        type: 'Number',
         mutable: false,
     }];
     let firstLabelCurrentVal = '';
@@ -54,7 +54,7 @@ context('Hotkeys to change labels feature.', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
-        cy.addNewLabel(secondLabel, additionalAttrsSecondLabel);
+        cy.addNewLabel({ name: secondLabel }, additionalAttrsSecondLabel);
         cy.openJob();
     });
 

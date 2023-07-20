@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-//
+// Copyright (C) 2023 CVAT.ai Corporation
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
@@ -74,7 +74,7 @@ context('Actions on polylines.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(newLabelName);
+        cy.addNewLabel({ name: newLabelName });
         cy.openJob();
     });
 

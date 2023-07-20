@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,7 +27,7 @@ context('Save filtered object in AAM.', () => {
             // Getting list of labels and create a label if neccessary
             const labelsList = Array.from(doc.querySelectorAll('.cvat-constructor-viewer-item'));
             if (labelsList.length < 2) {
-                cy.addNewLabel(newLabelName);
+                cy.addNewLabel({ name: newLabelName });
             }
         });
         cy.document().then((doc) => {

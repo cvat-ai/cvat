@@ -10,34 +10,25 @@ context('Create mutli tasks.', () => {
     const labelName = taskName;
     const sharePath = 'mounted_file_share';
 
-    const expectedTopLevel = [
-        { name: 'images', type: 'DIR', mime_type: 'DIR' },
-        { name: 'videos', type: 'DIR', mime_type: 'DIR' },
-    ];
+    const imageFiles = {
+        images: ['image_1.jpg', 'image_2.jpg', 'image_3.jpg'],
+    };
 
-    const expectedImagesList = [
-        { name: 'image_1.jpg', type: 'REG', mime_type: 'image' },
-        { name: 'image_2.jpg', type: 'REG', mime_type: 'image' },
-        { name: 'image_3.jpg', type: 'REG', mime_type: 'image' },
-    ];
-
-    const expectedVideosList = [
-        { name: 'video_1.mp4', type: 'REG', mime_type: 'video' },
-        { name: 'video_2.mp4', type: 'REG', mime_type: 'video' },
-        { name: 'video_3.mp4', type: 'REG', mime_type: 'video' },
-    ];
+    const videoFiles = {
+        videos: ['video_1.mp4', 'video_2.mp4', 'video_3.mp4'],
+    };
 
     function submitTask() {
         cy.get('.cvat-create-task-content-alert').should('not.exist');
         cy.get('.cvat-create-task-content-footer [type="submit"]')
             .should('not.be.disabled')
-            .contains(`Submit ${expectedVideosList.length} tasks`)
+            .contains(`Submit ${videoFiles.videos.length} tasks`)
             .click();
     }
 
     function checkCreatedTasks() {
         cy.get('.cvat-create-multi-tasks-progress', { timeout: 50000 }).should('exist')
-            .contains(`Total: ${expectedVideosList.length}`);
+            .contains(`Total: ${videoFiles.videos.length}`);
         cy.contains('button', 'Cancel');
         cy.get('.cvat-create-multi-tasks-state').should('exist')
             .contains('Finished');
@@ -46,8 +37,8 @@ context('Create mutli tasks.', () => {
         });
         cy.contains('button', 'Retry failed tasks').should('be.disabled');
         cy.contains('button', 'Ok').click();
-        expectedVideosList.forEach((video) => {
-            cy.contains('strong', video.name).should('exist');
+        videoFiles.videos.forEach((video) => {
+            cy.contains('strong', video).should('exist');
         });
     }
 
@@ -59,7 +50,7 @@ context('Create mutli tasks.', () => {
     beforeEach(() => {
         cy.get('.cvat-create-task-dropdown').click();
         cy.get('.cvat-create-multi-tasks-button').should('be.visible').click();
-        cy.addNewLabel(labelName);
+        cy.addNewLabel({ name: labelName });
     });
 
     afterEach(() => {
@@ -73,10 +64,7 @@ context('Create mutli tasks.', () => {
 
         it('Trying to create a tasks with local images', () => {
             cy.contains('[role="tab"]', 'My computer').click();
-
-            const imageNames = expectedImagesList.map((image) => image.name);
-            const imagePaths = imageNames.map((name) => `${sharePath}/images/${name}`);
-
+            const imagePaths = imageFiles.images.map((name) => `${sharePath}/images/${name}`);
             cy.get('input[type="file"]')
                 .selectFile(imagePaths, { action: 'drag-drop', force: true });
 
@@ -86,32 +74,7 @@ context('Create mutli tasks.', () => {
         });
 
         it('Trying to create a tasks with images from the shared storage', () => {
-            cy.intercept('GET', '/api/server/share?**').as('shareRequest');
-            cy.contains('[role="tab"]', 'Connected file share').click();
-            cy.wait('@shareRequest').then((interception) => {
-                for (const item of expectedTopLevel) {
-                    const responseEl = interception.response.body.find((el) => el.name === item.name);
-                    expect(responseEl).to.deep.equal(item);
-                }
-            });
-            cy.get('.cvat-remote-browser-table-wrapper')
-                .should('exist')
-                .within(() => {
-                    cy.get('button').contains('images').click();
-                    cy.wait('@shareRequest').then((interception) => {
-                        expect(interception.response.body
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .filter((el) => el.mime_type === 'image'))
-                            .to.deep.equal(expectedImagesList);
-                    });
-                    expectedImagesList.forEach((el) => {
-                        const { name } = el;
-                        cy.get('.ant-table-cell').contains(name).parent().within(() => {
-                            cy.get('.ant-checkbox-input').click();
-                        });
-                    });
-                });
-
+            cy.selectFilesFromShare(imageFiles);
             cy.get('.cvat-create-task-content-alert').should('be.visible');
             cy.get('.cvat-create-task-content-footer [type="submit"]').should('be.disabled');
         });
@@ -129,10 +92,7 @@ context('Create mutli tasks.', () => {
 
         it('Trying to create a tasks with local videos', () => {
             cy.contains('[role="tab"]', 'My computer').click();
-
-            const videoNames = expectedVideosList.map((video) => video.name);
-            const videoPaths = videoNames.map((name) => `${sharePath}/videos/${name}`);
-
+            const videoPaths = videoFiles.videos.map((name) => `${sharePath}/videos/${name}`);
             cy.get('input[type="file"]')
                 .selectFile(videoPaths, { action: 'drag-drop', force: true });
 
@@ -143,31 +103,7 @@ context('Create mutli tasks.', () => {
         });
 
         it('Trying to create a tasks with videos from the shared storage', () => {
-            cy.intercept('GET', '/api/server/share?**').as('shareRequest');
-            cy.contains('[role="tab"]', 'Connected file share').click();
-            cy.wait('@shareRequest').then((interception) => {
-                for (const item of expectedTopLevel) {
-                    const responseEl = interception.response.body.find((el) => el.name === item.name);
-                    expect(responseEl).to.deep.equal(item);
-                }
-            });
-            cy.get('.cvat-remote-browser-table-wrapper')
-                .should('exist')
-                .within(() => {
-                    cy.get('button').contains('videos').click();
-                    cy.wait('@shareRequest').then((interception) => {
-                        expect(interception.response.body
-                            .sort((a, b) => a.name.localeCompare(b.name)))
-                            .to.deep.equal(expectedVideosList);
-                    });
-                    expectedVideosList.forEach((el) => {
-                        const { name } = el;
-                        cy.get('.ant-table-cell').contains(name).parent().within(() => {
-                            cy.get('.ant-checkbox-input').click();
-                        });
-                    });
-                });
-
+            cy.selectFilesFromShare(videoFiles);
             submitTask();
             checkCreatedTasks();
         });
@@ -178,8 +114,8 @@ context('Create mutli tasks.', () => {
             const folder = 'tests/mounted_file_share';
             cy.contains('[role="tab"]', 'Remote sources').click();
 
-            expectedVideosList.forEach((video) => {
-                const URL = `${baseUrl}/${revision}/${folder}/${expectedTopLevel[1].name}/${video.name}`;
+            videoFiles.videos.forEach((video) => {
+                const URL = `${baseUrl}/${revision}/${folder}/videos/${video}`;
                 cy.get('.cvat-file-selector-remote').type(URL).type('{enter}');
             });
 
@@ -191,7 +127,7 @@ context('Create mutli tasks.', () => {
     after(() => {
         cy.logout();
         cy.getAuthKey().then((authKey) => {
-            cy.deleteTasks(authKey, expectedVideosList.map((video) => video.name));
+            cy.deleteTasks(authKey, videoFiles.videos);
         });
     });
 });

@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,7 +26,7 @@ context('Canvas 3D functionality. Filters.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(secondLabel);
+        cy.addNewLabel({ name: secondLabel });
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(firstCuboidCreationParams);
