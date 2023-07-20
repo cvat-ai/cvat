@@ -3,24 +3,26 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import OrderedDict
-from enum import Enum
 import os
+from collections import OrderedDict
+from copy import deepcopy
+from enum import Enum
 from tempfile import TemporaryDirectory
+from datumaro.components.errors import DatasetError, DatasetImportError, DatasetNotFoundError
 
 from django.db import transaction
 from django.db.models.query import Prefetch
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.profiler import silk_profile
 
-from .annotation import AnnotationIR, AnnotationManager
-from .bindings import TaskData, JobData
-from .formats.registry import make_exporter, make_importer
-from .util import bulk_create
-
+from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
+from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportError
+from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
+from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
 
 class dotdict(OrderedDict):
     """dot.notation access to dictionary attributes"""
@@ -71,18 +73,45 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
     return list(merged_rows.values())
 
 class JobAnnotation:
-    def __init__(self, pk, is_prefetched=False):
-        if is_prefetched:
-            self.db_job = models.Job.objects.select_related('segment__task') \
-                .select_for_update().get(id=pk)
-        else:
-            self.db_job = models.Job.objects.prefetch_related(
-                'segment',
-                'segment__task',
-                Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+    @classmethod
+    def add_prefetch_info(cls, queryset):
+        assert issubclass(queryset.model, models.Job)
+
+        label_qs = add_prefetch_fields(models.Label.objects.all(), [
+            'skeleton',
+            'parent',
+            'attributespec_set',
+        ])
+        label_qs = JobData.add_prefetch_info(label_qs)
+
+        return queryset.select_related(
+            'segment',
+            'segment__task',
+        ).prefetch_related(
+            'segment__task__owner',
+            'segment__task__assignee',
+            'segment__task__project__owner',
+            'segment__task__project__assignee',
+
+            Prefetch('segment__task__data',
+                queryset=models.Data.objects.select_related('video').prefetch_related(
                     Prefetch('images', queryset=models.Image.objects.order_by('frame'))
-                ))
-            ).get(pk=pk)
+            )),
+
+            Prefetch('segment__task__label_set', queryset=label_qs),
+            Prefetch('segment__task__project__label_set', queryset=label_qs),
+        )
+
+    def __init__(self, pk, *, is_prefetched=False, queryset=None):
+        if queryset is None:
+            queryset = self.add_prefetch_info(models.Job.objects)
+
+        if is_prefetched:
+            self.db_job: models.Job = queryset.select_related(
+                'segment__task'
+            ).select_for_update().get(id=pk)
+        else:
+            self.db_job: models.Job = get_cached(queryset, pk=int(pk))
 
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
@@ -115,52 +144,112 @@ class JobAnnotation:
     def reset(self):
         self.ir_data.reset()
 
+    def _validate_attribute_for_existence(self, db_attr_val, label_id, attr_type):
+        if db_attr_val.spec_id not in self.db_attributes[label_id][attr_type]:
+            raise ValidationError("spec_id `{}` is invalid".format(db_attr_val.spec_id))
+
+    def _validate_label_for_existence(self, label_id):
+        if label_id not in self.db_labels:
+            raise ValidationError("label_id `{}` is invalid".format(label_id))
+
+    def _add_missing_shape(self, track, first_shape):
+        if first_shape["type"] == "skeleton":
+            # in case with skeleton track we always expect to see one shape in track
+            first_shape["frame"] = track["frame"]
+        else:
+            missing_shape = deepcopy(first_shape)
+            missing_shape["frame"] = track["frame"]
+            missing_shape["outside"] = True
+            track["shapes"].append(missing_shape)
+
+    def _correct_frame_of_tracked_shapes(self, track):
+        shapes = sorted(track["shapes"], key=lambda a: a["frame"])
+        first_shape = shapes[0] if shapes else None
+
+        if first_shape and track["frame"] < first_shape["frame"]:
+            self._add_missing_shape(track, first_shape)
+        elif first_shape and first_shape["frame"] < track["frame"]:
+            track["frame"] = first_shape["frame"]
+
+    def _sync_frames(self, tracks, parent_track):
+        if not tracks:
+            return
+
+        min_frame = tracks[0]["frame"]
+
+        for track in tracks:
+            if parent_track and parent_track.frame < track["frame"]:
+                track["frame"] = parent_track.frame
+
+            # track and its first shape must have the same frame
+            self._correct_frame_of_tracked_shapes(track)
+
+            if track["frame"] < min_frame:
+                min_frame = track["frame"]
+
+        if not parent_track:
+            return
+
+        if min_frame < parent_track.frame:
+            # parent track cannot have a frame greater than the frame of the child track
+            parent_tracked_shape = parent_track.trackedshape_set.first()
+            parent_track.frame = min_frame
+            parent_tracked_shape.frame = min_frame
+
+            parent_tracked_shape.save()
+            parent_track.save()
+
+            for track in tracks:
+                if parent_track.frame < track["frame"]:
+                    track["frame"] = parent_track.frame
+
+                    self._correct_frame_of_tracked_shapes(track)
+
     def _save_tracks_to_db(self, tracks):
 
         def create_tracks(tracks, parent_track=None):
             db_tracks = []
-            db_track_attrvals = []
+            db_track_attr_vals = []
             db_shapes = []
-            db_shape_attrvals = []
+            db_shape_attr_vals = []
+
+            self._sync_frames(tracks, parent_track)
 
             for track in tracks:
                 track_attributes = track.pop("attributes", [])
                 shapes = track.pop("shapes")
                 elements = track.pop("elements", [])
                 db_track = models.LabeledTrack(job=self.db_job, parent=parent_track, **track)
-                if db_track.label_id not in self.db_labels:
-                    raise AttributeError("label_id `{}` is invalid".format(db_track.label_id))
+
+                self._validate_label_for_existence(db_track.label_id)
 
                 for attr in track_attributes:
-                    db_attrval = models.LabeledTrackAttributeVal(**attr)
-                    if db_attrval.spec_id not in self.db_attributes[db_track.label_id]["immutable"]:
-                        raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
-                    db_attrval.track_id = len(db_tracks)
-                    db_track_attrvals.append(db_attrval)
+                    db_attr_val = models.LabeledTrackAttributeVal(**attr, track_id=len(db_tracks))
 
-                for shape in shapes:
+                    self._validate_attribute_for_existence(db_attr_val, db_track.label_id, "immutable")
+
+                    db_track_attr_vals.append(db_attr_val)
+
+                for shape_idx, shape in enumerate(shapes):
                     shape_attributes = shape.pop("attributes", [])
-                    shape_elements = shape.pop("elements", [])
-                    # FIXME: need to clamp points (be sure that all of them inside the image)
-                    # Should we check here or implement a validator?
-                    db_shape = models.TrackedShape(**shape)
-                    db_shape.track_id = len(db_tracks)
+                    db_shape = models.TrackedShape(**shape, track_id=len(db_tracks))
 
                     for attr in shape_attributes:
-                        db_attrval = models.TrackedShapeAttributeVal(**attr)
-                        if db_attrval.spec_id not in self.db_attributes[db_track.label_id]["mutable"]:
-                            raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
-                        db_attrval.shape_id = len(db_shapes)
-                        db_shape_attrvals.append(db_attrval)
+                        db_attr_val = models.TrackedShapeAttributeVal(**attr, shape_id=len(db_shapes))
+
+                        self._validate_attribute_for_existence(db_attr_val, db_track.label_id, "mutable")
+
+                        db_shape_attr_vals.append(db_attr_val)
 
                     db_shapes.append(db_shape)
                     shape["attributes"] = shape_attributes
-                    shape["elements"] = shape_elements
 
                 db_tracks.append(db_track)
+
                 track["attributes"] = track_attributes
                 track["shapes"] = shapes
-                track["elements"] = elements
+                if elements or parent_track is None:
+                    track["elements"] = elements
 
             db_tracks = bulk_create(
                 db_model=models.LabeledTrack,
@@ -168,11 +257,12 @@ class JobAnnotation:
                 flt_param={"job_id": self.db_job.id}
             )
 
-            for db_attrval in db_track_attrvals:
-                db_attrval.track_id = db_tracks[db_attrval.track_id].id
+            for db_attr_val in db_track_attr_vals:
+                db_attr_val.track_id = db_tracks[db_attr_val.track_id].id
+
             bulk_create(
                 db_model=models.LabeledTrackAttributeVal,
-                objects=db_track_attrvals,
+                objects=db_track_attr_vals,
                 flt_param={}
             )
 
@@ -185,12 +275,12 @@ class JobAnnotation:
                 flt_param={"track__job_id": self.db_job.id}
             )
 
-            for db_attrval in db_shape_attrvals:
-                db_attrval.shape_id = db_shapes[db_attrval.shape_id].id
+            for db_attr_val in db_shape_attr_vals:
+                db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
             bulk_create(
                 db_model=models.TrackedShapeAttributeVal,
-                objects=db_shape_attrvals,
+                objects=db_shape_attr_vals,
                 flt_param={}
             )
 
@@ -200,7 +290,7 @@ class JobAnnotation:
                 for shape in track["shapes"]:
                     shape["id"] = db_shapes[shape_idx].id
                     shape_idx += 1
-                create_tracks(track["elements"], db_track)
+                create_tracks(track.get("elements", []), db_track)
 
         create_tracks(tracks)
 
@@ -209,7 +299,7 @@ class JobAnnotation:
     def _save_shapes_to_db(self, shapes):
         def create_shapes(shapes, parent_shape=None):
             db_shapes = []
-            db_attrvals = []
+            db_attr_vals = []
 
             for shape in shapes:
                 attributes = shape.pop("attributes", [])
@@ -217,20 +307,20 @@ class JobAnnotation:
                 # FIXME: need to clamp points (be sure that all of them inside the image)
                 # Should we check here or implement a validator?
                 db_shape = models.LabeledShape(job=self.db_job, parent=parent_shape, **shape)
-                if db_shape.label_id not in self.db_labels:
-                    raise AttributeError("label_id `{}` is invalid".format(db_shape.label_id))
+
+                self._validate_label_for_existence(db_shape.label_id)
 
                 for attr in attributes:
-                    db_attrval = models.LabeledShapeAttributeVal(**attr)
-                    if db_attrval.spec_id not in self.db_attributes[db_shape.label_id]["all"]:
-                        raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
+                    db_attr_val = models.LabeledShapeAttributeVal(**attr, shape_id=len(db_shapes))
 
-                    db_attrval.shape_id = len(db_shapes)
-                    db_attrvals.append(db_attrval)
+                    self._validate_attribute_for_existence(db_attr_val, db_shape.label_id, "all")
+
+                    db_attr_vals.append(db_attr_val)
 
                 db_shapes.append(db_shape)
                 shape["attributes"] = attributes
-                shape["elements"] = shape_elements
+                if shape_elements or parent_shape is None:
+                    shape["elements"] = shape_elements
 
             db_shapes = bulk_create(
                 db_model=models.LabeledShape,
@@ -238,18 +328,18 @@ class JobAnnotation:
                 flt_param={"job_id": self.db_job.id}
             )
 
-            for db_attrval in db_attrvals:
-                db_attrval.shape_id = db_shapes[db_attrval.shape_id].id
+            for db_attr_val in db_attr_vals:
+                db_attr_val.shape_id = db_shapes[db_attr_val.shape_id].id
 
             bulk_create(
                 db_model=models.LabeledShapeAttributeVal,
-                objects=db_attrvals,
+                objects=db_attr_vals,
                 flt_param={}
             )
 
             for shape, db_shape in zip(shapes, db_shapes):
                 shape["id"] = db_shape.id
-                create_shapes(shape["elements"], db_shape)
+                create_shapes(shape.get("elements", []), db_shape)
 
         create_shapes(shapes)
 
@@ -257,20 +347,21 @@ class JobAnnotation:
 
     def _save_tags_to_db(self, tags):
         db_tags = []
-        db_attrvals = []
+        db_attr_vals = []
 
         for tag in tags:
             attributes = tag.pop("attributes", [])
             db_tag = models.LabeledImage(job=self.db_job, **tag)
-            if db_tag.label_id not in self.db_labels:
-                raise AttributeError("label_id `{}` is invalid".format(db_tag.label_id))
+
+            self._validate_label_for_existence(db_tag.label_id)
 
             for attr in attributes:
-                db_attrval = models.LabeledImageAttributeVal(**attr)
-                if db_attrval.spec_id not in self.db_attributes[db_tag.label_id]["all"]:
-                    raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
-                db_attrval.tag_id = len(db_tags)
-                db_attrvals.append(db_attrval)
+                db_attr_val = models.LabeledImageAttributeVal(**attr)
+
+                self._validate_attribute_for_existence(db_attr_val, db_tag.label_id, "all")
+
+                db_attr_val.tag_id = len(db_tags)
+                db_attr_vals.append(db_attr_val)
 
             db_tags.append(db_tag)
             tag["attributes"] = attributes
@@ -281,12 +372,12 @@ class JobAnnotation:
             flt_param={"job_id": self.db_job.id}
         )
 
-        for db_attrval in db_attrvals:
-            db_attrval.image_id = db_tags[db_attrval.tag_id].id
+        for db_attr_val in db_attr_vals:
+            db_attr_val.image_id = db_tags[db_attr_val.tag_id].id
 
         bulk_create(
             db_model=models.LabeledImageAttributeVal,
-            objects=db_attrvals,
+            objects=db_attr_vals,
             flt_param={}
         )
 
@@ -399,7 +490,7 @@ class JobAnnotation:
             self._extend_attributes(db_tag.labeledimageattributeval_set,
                 self.db_attributes[db_tag.label_id]["all"].values())
 
-        serializer = serializers.LabeledImageSerializer(db_tags, many=True)
+        serializer = serializers.LabeledImageSerializerFromDB(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
@@ -453,7 +544,7 @@ class JobAnnotation:
         for shape_id, shape_elements in elements.items():
             shapes[shape_id].elements = shape_elements
 
-        serializer = serializers.LabeledShapeSerializer(list(shapes.values()), many=True)
+        serializer = serializers.LabeledShapeSerializerFromDB(list(shapes.values()), many=True)
         self.ir_data.shapes = serializer.data
 
     def _init_tracks_from_db(self):
@@ -546,7 +637,7 @@ class JobAnnotation:
         for track_id, track_elements in elements.items():
             tracks[track_id].elements = track_elements
 
-        serializer = serializers.LabeledTrackSerializer(list(tracks.values()), many=True)
+        serializer = serializers.LabeledTrackSerializerFromDB(list(tracks.values()), many=True)
         self.ir_data.tracks = serializer.data
 
     def _init_version_from_db(self):
@@ -596,7 +687,9 @@ class TaskAnnotation:
         ).get(id=pk)
 
         # Postgres doesn't guarantee an order by default without explicit order_by
-        self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk).order_by('id')
+        self.db_jobs = models.Job.objects.select_related("segment").filter(
+            segment__task_id=pk, type=models.JobType.ANNOTATION.value,
+        ).order_by('id')
         self.ir_data = AnnotationIR(self.db_task.dimension)
 
     def reset(self):
@@ -647,6 +740,9 @@ class TaskAnnotation:
         self.reset()
 
         for db_job in self.db_jobs:
+            if db_job.type != models.JobType.ANNOTATION:
+                continue
+
             annotation = JobAnnotation(db_job.id, is_prefetched=True)
             annotation.init_from_db()
             if annotation.ir_data.version > self.ir_data.version:
@@ -789,19 +885,25 @@ def export_task(task_id, dst_file, format_name, server_url=None, save_images=Fal
         task.export(f, exporter, host=server_url, save_images=save_images)
 
 @transaction.atomic
-def import_task_annotations(task_id, src_file, format_name, conv_mask_to_poly):
+def import_task_annotations(src_file, task_id, format_name, conv_mask_to_poly):
     task = TaskAnnotation(task_id)
     task.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        try:
+            task.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
+            raise CvatImportError(str(ex))
 
 @transaction.atomic
-def import_job_annotations(job_id, src_file, format_name, conv_mask_to_poly):
+def import_job_annotations(src_file, job_id, format_name, conv_mask_to_poly):
     job = JobAnnotation(job_id)
     job.init_from_db()
 
     importer = make_importer(format_name)
     with open(src_file, 'rb') as f:
-        job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        try:
+            job.import_annotations(f, importer, conv_mask_to_poly=conv_mask_to_poly)
+        except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
+            raise CvatImportError(str(ex))

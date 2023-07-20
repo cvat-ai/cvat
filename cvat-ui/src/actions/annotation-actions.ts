@@ -12,7 +12,9 @@ import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
-import { getCore, MLModel, DimensionType } from 'cvat-core-wrapper';
+import {
+    getCore, MLModel, JobType, Job, QualityConflict,
+} from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
@@ -196,6 +198,7 @@ export enum AnnotationActionTypes {
     RESTORE_FRAME_SUCCESS = 'RESTORE_FRAME_SUCCESS',
     RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
     UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
+    HIGHLIGHT_CONFLICT = 'HIGHLIGHT_CONFCLICT',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -247,6 +250,15 @@ export function switchZLayer(cur: number): AnyAction {
         type: AnnotationActionTypes.SWITCH_Z_LAYER,
         payload: {
             cur,
+        },
+    };
+}
+
+export function highlightConflict(conflict: QualityConflict | null): AnyAction {
+    return {
+        type: AnnotationActionTypes.HIGHLIGHT_CONFLICT,
+        payload: {
+            conflict,
         },
     };
 }
@@ -593,6 +605,7 @@ export function changeFrameAsync(
                 visible: statisticsVisible,
             },
         } = state.annotation;
+
         const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
         try {
@@ -877,6 +890,7 @@ export function getJobAsync(
         try {
             const state = getState();
             const filters = initialFilters;
+
             const {
                 settings: {
                     workspace: { showAllInterpolationTracks },
@@ -905,15 +919,34 @@ export function getJobAsync(
             );
 
             const [job] = await cvat.jobs.get({ jobID: jid });
-            // navigate to correct first frame according to setup
-            let frameNumber;
-            if (initialFrame === null && !showDeletedFrames) {
-                frameNumber = (await job.frames.search(
-                    { notDeleted: true }, job.startFrame, job.stopFrame,
-                )) || job.startFrame;
-            } else {
-                frameNumber = Math.max(Math.min(job.stopFrame, initialFrame || 0), job.startFrame);
+            let gtJob = null;
+            if (job.type === JobType.ANNOTATION) {
+                try {
+                    const [task] = await cvat.tasks.get({ id: tid });
+                    [gtJob] = task.jobs.filter((_job: Job) => _job.type === JobType.GROUND_TRUTH);
+                    // gtJob is not available for workers
+                    // eslint-disable-next-line no-empty
+                } catch (e) { }
             }
+
+            const groundTruthJobId = gtJob ? gtJob.id : null;
+
+            let groundTruthJobFramesMeta = null;
+            if (groundTruthJobId) {
+                groundTruthJobFramesMeta = await cvat.frames.getMeta('job', groundTruthJobId);
+            }
+
+            let conflicts: QualityConflict[] = [];
+            if (groundTruthJobId) {
+                const [report] = await cvat.analytics.quality.reports({ jobId: job.id, target: 'job' });
+                if (report) conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
+            }
+
+            // frame query parameter does not work for GT job
+            const frameNumber = Number.isInteger(initialFrame) && groundTruthJobId !== job.id ?
+                initialFrame : (await job.frames.search(
+                    { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
+                )) || job.startFrame;
 
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
@@ -928,7 +961,11 @@ export function getJobAsync(
                     },
                 });
             }
-            const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
+
+            const states = await job.annotations.get(
+                frameNumber, showAllInterpolationTracks, filters, groundTruthJobId,
+            );
+
             const issues = await job.issues();
             const [minZ, maxZ] = computeZRange(states);
             const colors = [...cvat.enums.colors];
@@ -941,8 +978,11 @@ export function getJobAsync(
                 payload: {
                     openTime,
                     job,
+                    groundTruthJobId,
+                    groundTruthJobFramesMeta,
                     issues,
                     states,
+                    conflicts,
                     frameNumber,
                     frameFilename: frameData.filename,
                     relatedFiles: frameData.relatedFiles,
@@ -953,11 +993,6 @@ export function getJobAsync(
                     maxZ,
                 },
             });
-
-            if (job.dimension === DimensionType.DIMENSION_3D) {
-                const workspace = Workspace.STANDARD3D;
-                dispatch(changeWorkspace(workspace));
-            }
 
             dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {
@@ -1563,18 +1598,16 @@ export function deleteFrameAsync(frame: number): ThunkAction {
                 },
             });
 
-            if (!showDeletedFrames) {
-                let notDeletedFrame = await jobInstance.frames.search(
-                    { notDeleted: true }, frame, jobInstance.stopFrame,
+            let notDeletedFrame = await jobInstance.frames.search(
+                { notDeleted: !showDeletedFrames }, frame, jobInstance.stopFrame,
+            );
+            if (notDeletedFrame === null && jobInstance.startFrame !== frame) {
+                notDeletedFrame = await jobInstance.frames.search(
+                    { notDeleted: !showDeletedFrames }, frame, jobInstance.startFrame,
                 );
-                if (notDeletedFrame === null && jobInstance.startFrame !== frame) {
-                    notDeletedFrame = await jobInstance.frames.search(
-                        { notDeleted: true }, frame, jobInstance.startFrame,
-                    );
-                }
-                if (notDeletedFrame !== null) {
-                    dispatch(changeFrameAsync(notDeletedFrame));
-                }
+            }
+            if (notDeletedFrame !== null) {
+                dispatch(changeFrameAsync(notDeletedFrame));
             }
         } catch (error) {
             dispatch({

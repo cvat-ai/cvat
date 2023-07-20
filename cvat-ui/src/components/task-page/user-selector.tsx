@@ -9,14 +9,9 @@ import Autocomplete from 'antd/lib/auto-complete';
 import Input from 'antd/lib/input';
 import debounce from 'lodash/debounce';
 
-import { getCore } from 'cvat-core-wrapper';
+import { User, getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
-
-export interface User {
-    id: number;
-    username: string;
-}
 
 interface Props {
     value: User | null;

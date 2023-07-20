@@ -8,10 +8,11 @@ from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, DestroyModelMixin, CreateModelMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from .models import Invitation, Membership, Organization
 
 from .serializers import (
@@ -56,7 +57,7 @@ class OrganizationViewSet(viewsets.GenericViewSet,
                    mixins.DestroyModelMixin,
                    PartialUpdateModelMixin,
     ):
-    queryset = Organization.objects.all()
+    queryset = Organization.objects.select_related('owner').all()
     search_fields = ('name', 'owner')
     filter_fields = list(search_fields) + ['id', 'slug']
     simple_filters = list(search_fields) + ['slug']
@@ -112,9 +113,9 @@ class OrganizationViewSet(viewsets.GenericViewSet,
             '204': OpenApiResponse(description='The membership has been deleted'),
         })
 )
-class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
+class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, PartialUpdateModelMixin, viewsets.GenericViewSet):
-    queryset = Membership.objects.all()
+    queryset = Membership.objects.select_related('invitation', 'user').all()
     ordering = '-id'
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
     search_fields = ('user', 'role')
@@ -133,8 +134,11 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        permission = MembershipPermission.create_scope_list(self.request)
-        return permission.filter(queryset)
+        if self.action == 'list':
+            permission = MembershipPermission.create_scope_list(self.request)
+            queryset = permission.filter(queryset)
+
+        return queryset
 
 @extend_schema(tags=['invitations'])
 @extend_schema_view(
@@ -157,6 +161,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
     create=extend_schema(
         summary='Method creates an invitation',
         request=InvitationWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': InvitationReadSerializer, # check InvitationWriteSerializer.to_representation
         }),
@@ -170,8 +175,8 @@ class InvitationViewSet(viewsets.GenericViewSet,
                    mixins.RetrieveModelMixin,
                    mixins.ListModelMixin,
                    PartialUpdateModelMixin,
-                   CreateModelMixin,
-                   DestroyModelMixin,
+                   mixins.CreateModelMixin,
+                   mixins.DestroyModelMixin,
     ):
     queryset = Invitation.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
@@ -196,13 +201,12 @@ class InvitationViewSet(viewsets.GenericViewSet,
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
-    def perform_create(self, serializer, **kwargs):
-        extra_kwargs = {
-            'owner': self.request.user,
-            'key': get_random_string(length=64),
-            'organization': self.request.iam_context['organization']
-        }
-        super().perform_create(serializer, **extra_kwargs)
+    def perform_create(self, serializer):
+        serializer.save(
+            owner=self.request.user,
+            key=get_random_string(length=64),
+            organization=self.request.iam_context['organization']
+        )
 
     def perform_update(self, serializer):
         if 'accepted' in self.request.query_params:

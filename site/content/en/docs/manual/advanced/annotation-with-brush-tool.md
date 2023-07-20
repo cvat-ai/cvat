@@ -47,10 +47,7 @@ It has the following elements:
 
 ## Annotation with brush
 
-Prerequisites: [Create task](/docs/manual/basics/creating_an_annotation_task/), upload the image, add labels,
-and open the workspace.
-
-Do the following:
+To annotate with brush, do the following:
 
 1. From the [controls sidebar](/docs/manual/basics/controls-sidebar/), select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**. <br>The **Brush**![Brush](/images/brushing_tools_icon.png) tool will be selected by default.
@@ -73,9 +70,7 @@ To save the job with all added objects, on the top menu click **Save** ![Save](/
 
 ## Annotation with polygon-to-mask
 
-Prerequisites: [Create task](/docs/manual/basics/creating_an_annotation_task/), upload the image, <br>add labels, and open the workspace.
-
-Do the following:
+To annotat with polygon-to-mask, do the following:
 
 1. From the [controls sidebar](/docs/manual/basics/controls-sidebar/), select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**.

@@ -6,6 +6,7 @@ weight: 15
 # [Open Images](https://storage.googleapis.com/openimages/web/index.html)
 
 - [Format specification](https://storage.googleapis.com/openimages/web/download.html)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/open_images_dataset)
 
 - Supported annotations:
 

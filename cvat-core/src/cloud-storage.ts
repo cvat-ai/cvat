@@ -3,12 +3,14 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import { CloudStorageCredentialsType, CloudStorageProviderType, CloudStorageStatus } from './enums';
 import User from './user';
 import { decodePreview } from './frames';
+import { SerializedRemoteFile } from './server-response-types';
 
 function validateNotEmptyString(value: string): void {
     if (typeof value !== 'string') {
@@ -164,7 +166,6 @@ export default class CloudStorage {
                 manifestPath: {
                     get: () => data.manifest_path,
                     set: (value) => {
-                        validateNotEmptyString(value);
                         data.manifest_path = value;
                     },
                 },
@@ -245,8 +246,11 @@ export default class CloudStorage {
         return result;
     }
 
-    public async getContent(): Promise<any> {
-        const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getContent);
+    public async getContent(path: string, nextToken?: string): Promise<{
+        next: string | null,
+        content: (Omit<SerializedRemoteFile, 'mime_type'> & { mimeType: string })[],
+    }> {
+        const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getContent, path, nextToken);
         return result;
     }
 
@@ -361,9 +365,12 @@ Object.defineProperties(CloudStorage.prototype.getContent, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<any> {
-            const result = await serverProxy.cloudStorages.getContent(this.id, this.manifestPath);
-            return result;
+        value: async function implementation(path: string, nextToken?: string): ReturnType<CloudStorage['getContent']> {
+            const result = await serverProxy.cloudStorages.getContent(this.id, path, nextToken, this.manifestPath);
+            return {
+                next: result.next,
+                content: result.content.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type })),
+            };
         },
     },
 });
@@ -376,7 +383,7 @@ Object.defineProperties(CloudStorage.prototype.getPreview, {
             return new Promise((resolve, reject) => {
                 serverProxy.cloudStorages
                     .getPreview(this.id)
-                    .then((result) => decodePreview(result))
+                    .then((result) => ((result) ? decodePreview(result) : Promise.resolve(result)))
                     .then((decoded) => resolve(decoded))
                     .catch((error) => {
                         reject(error);

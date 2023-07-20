@@ -32,6 +32,7 @@ import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
+
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -59,6 +60,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const [updatingProject, setUpdatingProject] = useState(false);
     const mounted = useRef(false);
 
+    const ribbonPlugins = useSelector((state: CombinedState) => state.plugins.components.taskItem.ribbon);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
     const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
@@ -151,6 +153,7 @@ export default function ProjectPageComponent(): JSX.Element {
                         .map((task: Task) => (
                             <TaskItem
                                 key={task.id}
+                                ribbonPlugins={ribbonPlugins}
                                 deleted={task.id in taskDeletes ? taskDeletes[task.id] : false}
                                 hidden={false}
                                 activeInference={tasksActiveInferences[task.id] || null}

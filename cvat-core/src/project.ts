@@ -12,6 +12,7 @@ import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
+import AnnotationGuide from './guide';
 
 export default class Project {
     public readonly id: number;
@@ -19,6 +20,7 @@ export default class Project {
     public assignee: User;
     public bugTracker: string;
     public readonly status: ProjectStatus;
+    public readonly guideId: number | null;
     public readonly organization: string | null;
     public readonly owner: User;
     public readonly createdDate: string;
@@ -39,6 +41,7 @@ export default class Project {
             name: undefined,
             status: undefined,
             assignee: undefined,
+            guide_id: undefined,
             organization: undefined,
             owner: undefined,
             bug_tracker: undefined,
@@ -97,6 +100,9 @@ export default class Project {
                 },
                 owner: {
                     get: () => data.owner,
+                },
+                guideId: {
+                    get: () => data.guide_id,
                 },
                 organization: {
                     get: () => data.organization,
@@ -228,6 +234,11 @@ export default class Project {
 
     static async restore(storage: Storage, file: File | string) {
         const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file);
+        return result;
+    }
+
+    async guide(): Promise<AnnotationGuide | null> {
+        const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.guide);
         return result;
     }
 }

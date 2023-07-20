@@ -14,6 +14,7 @@ import ObjectItemContainer from 'containers/annotation-page/standard-workspace/o
 import { ShapeType, Workspace } from 'reducers';
 import { rotatePoint } from 'utils/math';
 import config from 'config';
+import { AnnotationConflict, ObjectState, QualityConflict } from 'cvat-core-wrapper';
 
 interface Props {
     readonly: boolean;
@@ -21,18 +22,22 @@ interface Props {
     contextMenuParentID: number | null;
     contextMenuClientID: number | null;
     objectStates: any[];
+    frameConflicts: QualityConflict[];
     visible: boolean;
     left: number;
     top: number;
     latestComments: string[];
     onStartIssue(position: number[]): void;
     openIssue(position: number[], message: string): void;
+    onCopyObject(objectState: ObjectState): void;
 }
 
 interface ReviewContextMenuProps {
     top: number;
     left: number;
     latestComments: string[];
+    conflict?: QualityConflict;
+    copyObject: ObjectState | null;
     onClick: (param: MenuInfo) => void;
 }
 
@@ -41,16 +46,26 @@ enum ReviewContextMenuKeys {
     QUICK_ISSUE_POSITION = 'quick_issue_position',
     QUICK_ISSUE_ATTRIBUTE = 'quick_issue_attribute',
     QUICK_ISSUE_FROM_LATEST = 'quick_issue_from_latest',
+    QUICK_ISSUE_FROM_CONFLICT = 'quick_issue_from_conflict',
+    COPY_OBJECT = 'copy_object',
 }
 
 function ReviewContextMenu({
-    top, left, latestComments, onClick,
+    top, left, latestComments, conflict, copyObject, onClick,
 }: ReviewContextMenuProps): JSX.Element {
     return (
         <Menu onClick={onClick} selectable={false} className='cvat-canvas-context-menu' style={{ top, left }}>
             <Menu.Item className='cvat-context-menu-item' key={ReviewContextMenuKeys.OPEN_ISSUE}>
                 Open an issue ...
             </Menu.Item>
+            {conflict ? (
+                <Menu.Item
+                    className='cvat-context-menu-item cvat-quick-issue-from-conflict'
+                    key={ReviewContextMenuKeys.QUICK_ISSUE_FROM_CONFLICT}
+                >
+                    {`Quick issue: ${conflict.description}`}
+                </Menu.Item>
+            ) : null}
             <Menu.Item className='cvat-context-menu-item' key={ReviewContextMenuKeys.QUICK_ISSUE_POSITION}>
                 Quick issue: incorrect position
             </Menu.Item>
@@ -75,6 +90,14 @@ function ReviewContextMenu({
                     )}
                 </Menu.SubMenu>
             ) : null}
+            {copyObject ? (
+                <Menu.Item
+                    className='cvat-context-menu-item cvat-quick-copy-object'
+                    key={ReviewContextMenuKeys.COPY_OBJECT}
+                >
+                    Copy annotation
+                </Menu.Item>
+            ) : null}
         </Menu>
     );
 }
@@ -84,6 +107,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         contextMenuClientID,
         contextMenuParentID,
         objectStates,
+        frameConflicts,
         visible,
         left,
         top,
@@ -92,11 +116,19 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         latestComments,
         onStartIssue,
         openIssue,
+        onCopyObject,
     } = props;
 
     if (!visible || contextMenuClientID === null) {
         return null;
     }
+
+    const state = objectStates.find((_state: any): boolean => _state.clientID === contextMenuClientID);
+    const conflict = frameConflicts.find((qualityConflict: QualityConflict) => qualityConflict.annotationConflicts.some(
+        (annotationConflict: AnnotationConflict) => annotationConflict.clientID === state.clientID,
+    ));
+
+    const copyObject = state?.isGroundTruth ? state : null;
 
     if (workspace === Workspace.REVIEW_WORKSPACE) {
         return ReactDOM.createPortal(
@@ -104,9 +136,10 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                 key={contextMenuClientID}
                 top={top}
                 left={left}
+                conflict={conflict}
+                copyObject={copyObject}
                 latestComments={latestComments}
                 onClick={(param: MenuInfo) => {
-                    const state = objectStates.find((_state: any): boolean => _state.clientID === contextMenuClientID);
                     if (state) {
                         let { points } = state;
                         if ([ShapeType.ELLIPSE, ShapeType.RECTANGLE].includes(state.shapeType)) {
@@ -144,6 +177,10 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                             openIssue(points, config.QUICK_ISSUE_INCORRECT_POSITION_TEXT);
                         } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_ATTRIBUTE) {
                             openIssue(points, config.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT);
+                        } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_FROM_CONFLICT) {
+                            if (conflict) openIssue(points, conflict.description);
+                        } else if (param.key === ReviewContextMenuKeys.COPY_OBJECT) {
+                            if (copyObject) onCopyObject(copyObject);
                         } else if (
                             param.keyPath.length === 2 &&
                             param.keyPath[1] === ReviewContextMenuKeys.QUICK_ISSUE_FROM_LATEST

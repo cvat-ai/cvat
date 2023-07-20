@@ -5,6 +5,8 @@ weight: 13
 
 # [Market-1501](https://www.aitribune.com/dataset/2018051063)
 
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/market1501_dataset)
+
 ## Market-1501 export
 
 Downloaded file: a zip archive of the following structure:

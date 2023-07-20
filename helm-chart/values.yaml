@@ -63,6 +63,16 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+      qualityreports:
+        replicas: 1
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
     utils:
       replicas: 1
       labels: {}
@@ -372,9 +382,9 @@ ingress:
   #   secretName: ingress-tls-cvat
 
 traefik:
-  logs:
-    general:
-      level: INFO
   service:
     externalIPs:
       # - "192.168.49.2"
+
+smokescreen:
+  opts: ''

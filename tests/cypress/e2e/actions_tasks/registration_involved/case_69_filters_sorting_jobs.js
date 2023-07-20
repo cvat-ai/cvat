@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,22 +37,22 @@ context('Filtering, sorting jobs.', () => {
 
     function checkJobsTableRowCount(expectedCount) {
         if (expectedCount !== 0) {
-            cy.get('.cvat-task-jobs-table-row').then(($jobsTableRows) => {
+            cy.get('.cvat-job-item').then(($jobsTableRows) => {
                 expect($jobsTableRows.length).to.be.equal(expectedCount);
             });
         } else {
-            cy.get('.cvat-task-jobs-table-row').should('not.exist');
+            cy.get('.cvat-job-item').should('not.exist');
         }
     }
 
     function checkContentsRow(index, stage, state, assignee) {
         cy.getJobNum(index).then(($job) => {
-            cy.get('.cvat-task-jobs-table')
+            cy.get('.cvat-task-job-list')
                 .contains('a', `Job #${$job}`)
-                .parents('.cvat-task-jobs-table-row').within(() => {
+                .parents('.cvat-job-item').within(() => {
                     cy.get('.cvat-job-item-stage .ant-select-selection-item').should('have.text', stage);
                     cy.get('.cvat-job-item-state').should('have.text', state);
-                    cy.get('.cvat-job-item-assignee')
+                    cy.get('.cvat-job-assignee-selector')
                         .find('input')
                         .invoke('val')
                         .should('equal', assignee);
@@ -60,26 +61,33 @@ context('Filtering, sorting jobs.', () => {
     }
 
     function testSetJobFilter({ column, menuItem, reset }) {
-        cy.get(`.cvat-job-item-${column}`).find('[role="button"]').click();
-        cy.get('.ant-dropdown')
-            .should('be.visible')
-            .not('.ant-dropdown-hidden')
-            .should('not.have.class', 'ant-dropdown-hidden')
-            .should('not.have.class', 'ant-slide-up')
-            .within(() => {
-                if (!reset) {
-                    cy.contains('[role="menuitem"]', menuItem)
-                        .find('[type="checkbox"]')
-                        .should('not.be.checked')
-                        .check()
-                        .should('be.checked');
-                    cy.get('[type="button"]').contains('OK').should('be.visible').click();
-                } else {
-                    cy.get('[type="button"]').contains('Reset').should('be.visible').click();
-                    cy.get('[type="button"]').contains('OK').should('be.visible').click();
-                }
+        if (reset) {
+            cy.contains('.cvat-clear-filters-button', 'Clear filters').click();
+        } else {
+            cy.contains('.cvat-switch-filters-constructor-button', 'Filter').click();
+            cy.get('.cvat-resource-page-filters-builder').within(() => {
+                cy.contains('button', 'Add rule').click();
+                cy.contains('.ant-select-selector', 'Select field').get('input').last().type(`${column}{enter}`);
+                cy.get('.ant-select-selector').last().get('input').last().type(`${menuItem}{enter}`);
+                cy.contains('button', 'Apply').click();
             });
-        cy.get('.ant-dropdown').should('be.hidden').and('have.class', 'ant-dropdown-hidden');
+        }
+    }
+
+    function testSetJobSorting({ column, reset }) {
+        if (reset) {
+            cy.contains('.cvat-switch-sort-constructor-button', 'Sort by').click();
+            cy.contains('label', column).trigger('mousedown');
+            cy.get('.cvat-resource-page-sorting-list').trigger('mousemove', 'bottom');
+            cy.get('.cvat-resource-page-sorting-list').trigger('mouseup', 'bottom');
+            cy.get('.cvat-jobs-list-filters-wrapper').click();
+        } else {
+            cy.contains('.cvat-switch-sort-constructor-button', 'Sort by').click();
+            cy.contains('label', column).trigger('mousedown');
+            cy.get('.cvat-resource-page-sorting-list').trigger('mousemove', 'top');
+            cy.get('.cvat-resource-page-sorting-list').trigger('mouseup', 'top');
+            cy.get('.cvat-jobs-list-filters-wrapper').click();
+        }
     }
 
     before(() => {
@@ -110,13 +118,13 @@ context('Filtering, sorting jobs.', () => {
         cy.assignJobToUser(0, secondUserName);
         cy.assignJobToUser(1, secondUserName);
 
+        // The first job - stage "validation"
+        cy.setJobStage(0, 'validation');
+
         // The second job - status "completed"
         cy.openJob(1);
         cy.setJobState('completed');
         cy.interactMenu('Open the task');
-
-        // The first job - stage "validation"
-        cy.setJobStage(0, 'validation');
     });
 
     after(() => {
@@ -130,78 +138,81 @@ context('Filtering, sorting jobs.', () => {
     describe(`Testing "${labelName}".`, () => {
         it('Check all statuses.', () => {
             checkJobsTableRowCount(3);
-            checkContentsRow(0, 'validation', 'new', secondUserName); // The 1st job
-            checkContentsRow(1, 'annotation', 'completed', secondUserName); // The 2nd job
-            checkContentsRow(2, 'annotation', 'new', ''); // The 3th job
+            checkContentsRow(0, 'validation', 'New', secondUserName); // The 1st job
+            checkContentsRow(1, 'annotation', 'Completed', secondUserName); // The 2nd job
+            checkContentsRow(2, 'annotation', 'New', ''); // The 3th job
         });
 
         it('Filtering jobs by stage (annotation, validation, acceptance).', () => {
-            testSetJobFilter({ column: 'stage', menuItem: 'annotation' });
+            testSetJobFilter({ column: 'Stage', menuItem: 'annotation' });
             checkJobsTableRowCount(2);
-            testSetJobFilter({ column: 'stage', reset: true });
-            testSetJobFilter({ column: 'stage', menuItem: 'validation' });
+            testSetJobFilter({ reset: true });
+            testSetJobFilter({ column: 'Stage', menuItem: 'validation' });
             checkJobsTableRowCount(1);
-            testSetJobFilter({ column: 'stage', reset: true });
-            testSetJobFilter({ column: 'stage', menuItem: 'acceptance' });
+            testSetJobFilter({ reset: true });
+            testSetJobFilter({ column: 'Stage', menuItem: 'acceptance' });
             checkJobsTableRowCount(0);
-            testSetJobFilter({ column: 'stage', reset: true });
+            testSetJobFilter({ reset: true });
         });
 
         it('Filtering jobs by assignee.', () => {
-            testSetJobFilter({ column: 'assignee', menuItem: secondUserName });
+            testSetJobFilter({ column: 'Assignee', menuItem: secondUserName });
             checkJobsTableRowCount(2);
-            testSetJobFilter({ column: 'assignee', reset: true });
+            testSetJobFilter({ reset: true });
             checkJobsTableRowCount(3);
         });
 
         it('Filtering jobs by state (in progress, rejected, completed, new)', () => {
-            testSetJobFilter({ column: 'state', menuItem: 'in progress' });
+            testSetJobFilter({ column: 'State', menuItem: 'in progress' });
             checkJobsTableRowCount(0);
-            testSetJobFilter({ column: 'state', menuItem: 'rejected' });
+            testSetJobFilter({ reset: true });
+            testSetJobFilter({ column: 'State', menuItem: 'rejected' });
             checkJobsTableRowCount(0);
-            testSetJobFilter({ column: 'state', menuItem: 'completed' });
+            testSetJobFilter({ reset: true });
+            testSetJobFilter({ column: 'State', menuItem: 'completed' });
             checkJobsTableRowCount(1);
-            testSetJobFilter({ column: 'state', menuItem: 'new' });
-            checkJobsTableRowCount(3);
-            testSetJobFilter({ column: 'state', reset: true });
+            testSetJobFilter({ reset: true });
+            testSetJobFilter({ column: 'State', menuItem: 'new' });
+            checkJobsTableRowCount(2);
+            testSetJobFilter({ reset: true });
         });
 
         it('Filtering jobs by validation, new, assignee to user.', () => {
-            testSetJobFilter({ column: 'stage', menuItem: 'validation' });
-            testSetJobFilter({ column: 'state', menuItem: 'new' });
-            testSetJobFilter({ column: 'assignee', menuItem: secondUserName });
+            testSetJobFilter({ column: 'Stage', menuItem: 'validation' });
+            testSetJobFilter({ column: 'State', menuItem: 'new' });
+            testSetJobFilter({ column: 'Assignee', menuItem: secondUserName });
             checkJobsTableRowCount(1);
-            checkContentsRow(0, 'validation', 'new', secondUserName);
-            testSetJobFilter({ column: 'stage', reset: true });
-            testSetJobFilter({ column: 'state', reset: true });
-            testSetJobFilter({ column: 'assignee', reset: true });
+            checkContentsRow(0, 'validation', 'New', secondUserName);
+            testSetJobFilter({ reset: true });
             checkJobsTableRowCount(3);
         });
 
         it('Sorting jobs by stage.', () => {
             const sortStage = [];
-            cy.contains('.cvat-job-item-stage', 'Stage').click().trigger('mouseout');
+            testSetJobSorting({ column: 'Stage' });
             cy.get('.cvat-job-item-stage').each((element) => {
                 sortStage.push(element.text());
             }).then(() => {
-                expect(sortStage).to.deep.equal(['Stage', 'annotation', 'annotation', 'validation']);
+                expect(sortStage).to.deep.equal(['annotation', 'annotation', 'validation']);
             });
+            testSetJobSorting({ column: 'Stage', reset: true });
         });
 
         it('Sorting jobs by state.', () => {
             const sortState = [];
-            cy.contains('.cvat-job-item-state', 'State').click().trigger('mouseout');
+            testSetJobSorting({ column: 'State' });
             cy.get('.cvat-job-item-state').each((element) => {
                 sortState.push(element.text());
             }).then(() => {
-                expect(sortState).to.deep.equal(['State', 'completed', 'new', 'new']);
+                expect(sortState).to.deep.equal(['Completed', 'New', 'New']);
             });
+            testSetJobSorting({ column: 'State', reset: true });
         });
 
         it('Sorting jobs by assignee.', () => {
             const sortAssignee = [];
-            cy.contains('.cvat-job-item-assignee', 'Assignee').click().trigger('mouseout');
-            cy.get('.cvat-job-item-assignee').find('input').each((element) => {
+            testSetJobSorting({ column: 'Assignee' });
+            cy.get('.cvat-job-assignee-selector').find('input').each((element) => {
                 sortAssignee.push(element.val());
             }).then(() => {
                 expect(sortAssignee).to.deep.equal([secondUserName, secondUserName, '']);

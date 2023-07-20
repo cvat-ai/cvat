@@ -5,27 +5,31 @@
 
 import io
 import json
+import os
 import os.path as osp
-import subprocess
+import zipfile
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
 from itertools import chain, product
+from math import ceil
 from pathlib import Path
-from tempfile import TemporaryDirectory
-from typing import List
+from tempfile import NamedTemporaryFile, TemporaryDirectory
+from time import sleep, time
+from typing import List, Optional
 
 import pytest
-from cvat_sdk import Client, Config
+from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
 from PIL import Image
 
 import shared.utils.s3 as s3
-from shared.fixtures.init import get_server_image_tag
+from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
 from shared.utils.config import (
     BASE_URL,
     USER_PASS,
@@ -34,22 +38,28 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
-from shared.utils.helpers import generate_image_files, make_skeleton_label_payload
+from shared.utils.helpers import (generate_image_files, make_skeleton_label_payload, generate_manifest)
 
 from .utils import (
     CollectionSimpleFilterTestBase,
-    _test_create_task,
+    compare_annotations,
+    create_task,
     export_dataset,
     wait_until_task_is_created,
 )
 
 
-def get_cloud_storage_content(username, cloud_storage_id, manifest):
+def get_cloud_storage_content(
+    api_version: int, username: str, cloud_storage_id: int, manifest: Optional[str] = None
+):
     with make_api_client(username) as api_client:
-        (data, _) = api_client.cloudstorages_api.retrieve_content(
-            cloud_storage_id, manifest_path=manifest
-        )
-        return data
+        kwargs = {"manifest_path": manifest} if manifest else {}
+
+        if api_version == 1:
+            (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id, **kwargs)
+            return data
+        (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
+        return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -161,6 +171,53 @@ class TestGetTasks:
 
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org["slug"])
 
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_get_job_validation_summary(self, admin_user, tasks, jobs):
+        task = next(t for t in tasks if t["jobs"]["count"] > 0 if t["jobs"]["validation"] == 0)
+        job = next(j for j in jobs if j["task_id"] == task["id"])
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(stage="validation"),
+            )
+
+            (server_task, _) = api_client.tasks_api.retrieve(task["id"])
+
+        assert server_task.jobs.validation == 1
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_get_job_completed_summary(self, admin_user, tasks, jobs):
+        task = next(t for t in tasks if t["jobs"]["count"] > 0 if t["jobs"]["completed"] == 0)
+        job = next(j for j in jobs if j["task_id"] == task["id"])
+
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request=models.PatchedJobWriteRequest(
+                    state="completed", stage="acceptance"
+                ),
+            )
+
+            (server_task, _) = api_client.tasks_api.retrieve(task["id"])
+
+        assert server_task.jobs.completed == 1
+
+    def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, tasks):
+        # test for API schema regressions
+        source_task = next(
+            t for t in tasks if t.get("owner") and t["owner"]["username"] != admin_user
+        ).copy()
+
+        with make_api_client(admin_user) as api_client:
+            api_client.users_api.destroy(source_task["owner"]["id"])
+
+            (_, response) = api_client.tasks_api.retrieve(source_task["id"])
+            fetched_task = json.loads(response.data)
+
+        source_task["owner"] = None
+        assert DeepDiff(source_task, fetched_task, ignore_order=True) == {}
+
 
 class TestListTasksFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
@@ -202,12 +259,16 @@ class TestPostTasks:
             (_, response) = api_client.tasks_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
+        return response
+
     def _test_create_task_403(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.tasks_api.create(
                 spec, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
+
+        return response
 
     def _test_users_to_create_task_in_project(
         self, project_id, users, is_staff, is_allow, is_project_staff, **kwargs
@@ -262,8 +323,20 @@ class TestPostTasks:
             project_id, users, is_staff, is_allow, is_project_staff, org=org["slug"]
         )
 
-    def test_can_create_task_with_skeleton(self):
-        username = "admin1"
+    def test_create_response_matches_get(self, admin_user):
+        username = admin_user
+
+        spec = {"name": "test create task", "labels": [{"name": "a"}]}
+
+        response = self._test_create_task_201(username, spec)
+        task = json.loads(response.data)
+
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.tasks_api.retrieve(task["id"])
+            assert DeepDiff(task, json.loads(response.data), ignore_order=True) == {}
+
+    def test_can_create_task_with_skeleton(self, admin_user):
+        username = admin_user
 
         spec = {
             "name": f"test admin1 to create a task with skeleton",
@@ -343,7 +416,7 @@ class TestPatchTaskAnnotations:
     def _test_check_response(self, is_allow, response, data=None):
         if is_allow:
             assert response.status == HTTPStatus.OK
-            assert DeepDiff(data, json.loads(response.data), exclude_paths="root['version']") == {}
+            assert compare_annotations(data, json.loads(response.data)) == {}
         else:
             assert response.status == HTTPStatus.FORBIDDEN
 
@@ -351,7 +424,10 @@ class TestPatchTaskAnnotations:
     def request_data(self, annotations):
         def get_data(tid):
             data = deepcopy(annotations["task"][str(tid)])
-            data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+            if data["shapes"][0]["type"] == "skeleton":
+                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
+            else:
+                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
             data["version"] += 1
             return data
 
@@ -386,14 +462,13 @@ class TestPatchTaskAnnotations:
         users = find_users(privilege=privilege)
         tasks = tasks_by_org[org]
         filtered_tasks = filter_tasks_with_shapes(tasks)
-        username, tid = find_task_staff_user(filtered_tasks, users, task_staff)
+        username, tid = find_task_staff_user(filtered_tasks, users, task_staff, [21])
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
             (_, response) = api_client.tasks_api.partial_update_annotations(
                 id=tid,
                 action="update",
-                org=org,
                 patched_labeled_data_request=deepcopy(data),
                 _parse_response=False,
                 _check_status=False,
@@ -428,13 +503,12 @@ class TestPatchTaskAnnotations:
     ):
         users = find_users(role=role, org=org)
         tasks = tasks_by_org[org]
-        username, tid = find_task_staff_user(tasks, users, task_staff, [12, 14, 18])
+        username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
             (_, response) = api_client.tasks_api.partial_update_annotations(
                 id=tid,
-                org_id=org,
                 action="update",
                 patched_labeled_data_request=deepcopy(data),
                 _parse_response=False,
@@ -454,6 +528,112 @@ class TestGetTaskDataset:
         task = tasks_with_shapes[0]
         response = self._test_export_task(admin_user, task["id"], format="CVAT for images 1.1")
         assert response.data
+
+    @pytest.mark.parametrize("tid", [21])
+    @pytest.mark.parametrize(
+        "format_name", ["CVAT for images 1.1", "CVAT for video 1.1", "COCO Keypoints 1.0"]
+    )
+    def test_can_export_task_with_several_jobs(self, admin_user, tid, format_name):
+        response = self._test_export_task(admin_user, tid, format=format_name)
+        assert response.data
+
+    @pytest.mark.parametrize("tid", [8])
+    def test_can_export_task_to_coco_format(self, admin_user, tid):
+        # these annotations contains incorrect frame numbers
+        # in order to check that server handle such cases
+        annotations = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": [
+                {
+                    "label_id": 63,
+                    "frame": 1,
+                    "group": 0,
+                    "source": "manual",
+                    "shapes": [
+                        {
+                            "type": "skeleton",
+                            "frame": 1,
+                            "occluded": False,
+                            "outside": False,
+                            "z_order": 0,
+                            "rotation": 0,
+                            "points": [],
+                            "attributes": [],
+                        }
+                    ],
+                    "attributes": [],
+                    "elements": [
+                        {
+                            "label_id": 64,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 1,
+                                    "occluded": False,
+                                    "outside": True,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [74.14935096036425, 79.09960455479086],
+                                    "attributes": [],
+                                },
+                                {
+                                    "type": "points",
+                                    "frame": 7,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [74.14935096036425, 79.09960455479086],
+                                    "attributes": [],
+                                },
+                            ],
+                            "attributes": [],
+                        },
+                        {
+                            "label_id": 65,
+                            "frame": 0,
+                            "group": 0,
+                            "source": "manual",
+                            "shapes": [
+                                {
+                                    "type": "points",
+                                    "frame": 0,
+                                    "occluded": False,
+                                    "outside": False,
+                                    "z_order": 0,
+                                    "rotation": 0,
+                                    "points": [285.07319976630424, 353.51583641966175],
+                                    "attributes": [],
+                                }
+                            ],
+                            "attributes": [],
+                        },
+                    ],
+                }
+            ],
+        }
+        response = patch_method(
+            admin_user, f"tasks/{tid}/annotations", annotations, action="update"
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        # check that we can export task
+        response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
+        assert response.status == HTTPStatus.OK
+
+        # check that server saved track annotations correctly
+        response = get_method(admin_user, f"tasks/{tid}/annotations")
+        assert response.status_code == HTTPStatus.OK
+
+        annotations = response.json()
+        assert annotations["tracks"][0]["frame"] == 0
+        assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
+        assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -503,23 +683,52 @@ class TestPostTaskData:
             "client_files": generate_image_files(7),
         }
 
-        task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
-        )
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         # check task size
         with make_api_client(self._USERNAME) as api_client:
             (task, _) = api_client.tasks_api.retrieve(task_id)
             assert task.size == 4
 
-    def test_can_create_task_with_sorting_method(self):
+    def test_can_create_task_with_exif_rotated_images(self):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with exif rotated images",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        image_files = ["images/exif_rotated/left.jpg", "images/exif_rotated/right.jpg"]
+        task_data = {
+            "server_files": image_files,
+            "image_quality": 70,
+            "segment_size": 500,
+            "use_cache": True,
+            "sorting_method": "natural",
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check that the frames have correct width and height
+        with make_api_client(self._USERNAME) as api_client:
+            _, response = api_client.tasks_api.retrieve_data(
+                task_id, number=0, type="chunk", quality="original"
+            )
+            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                for name in zip_file.namelist():
+                    with zip_file.open(name) as zipped_img:
+                        im = Image.open(zipped_img)
+                        # original is 480x640 with 90/-90 degrees rotation
+                        assert im.height == 640 and im.width == 480
+
+    def test_can_create_task_with_sorting_method_natural(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with a custom sorting method",
             "labels": [
                 {
                     "name": "car",
-                    "color": "#ff00ff",
-                    "attributes": [],
                 }
             ],
         }
@@ -532,11 +741,7 @@ class TestPostTaskData:
             "sorting_method": "natural",
         }
 
-        # Besides testing that the sorting method is applied, this also checks for
-        # regressions of <https://github.com/opencv/cvat/issues/4962>.
-        task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, task_data, content_type="multipart/form-data"
-        )
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         # check that the frames were sorted again
         with make_api_client(self._USERNAME) as api_client:
@@ -545,6 +750,48 @@ class TestPostTaskData:
             # generate_image_files produces files that are already naturally sorted
             for image_file, frame in zip(image_files, data_meta.frames):
                 assert image_file.name == frame.name
+
+    @pytest.mark.parametrize("data_source", ["client_files", "server_files"])
+    def test_can_create_task_with_sorting_method_predefined(self, data_source):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with a custom sorting method",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        if data_source == "client_files":
+            image_files = generate_image_files(15)
+
+            # shuffle to check for occasional sorting, e.g. in the DB
+            image_files = image_files[7:] + image_files[5:7] + image_files[:5]
+        elif data_source == "server_files":
+            # Files from the test file share
+            image_files = ["images/image_3.jpg", "images/image_1.jpg", "images/image_2.jpg"]
+        else:
+            assert False
+
+        task_data = {
+            data_source: image_files,
+            "image_quality": 70,
+            "sorting_method": "predefined",
+        }
+
+        (task_id, _) = create_task(self._USERNAME, task_spec, task_data)
+
+        # check that the frames were sorted again
+        with make_api_client(self._USERNAME) as api_client:
+            (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+
+            for image_file, frame in zip(image_files, data_meta.frames):
+                if isinstance(image_file, str):
+                    image_name = image_file
+                else:
+                    image_name = image_file.name
+
+                assert image_name == frame.name
 
     def test_can_get_annotations_from_new_task_with_skeletons(self):
         spec = {
@@ -574,9 +821,7 @@ class TestPostTaskData:
             "client_files": generate_image_files(3),
         }
 
-        task_id, _ = _test_create_task(
-            self._USERNAME, spec, task_data, content_type="multipart/form-data"
-        )
+        task_id, _ = create_task(self._USERNAME, spec, task_data)
 
         response = get_method(self._USERNAME, "labels", task_id=f"{task_id}")
         label_ids = {}
@@ -703,22 +948,36 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, use_bucket_content, org",
+        "use_cache, cloud_storage_id, manifest, use_bucket_content, content_api_version, org",
         [
-            (1, "manifest.jsonl", False, ""),  # public bucket
-            (2, "sub/manifest.jsonl", True, "org2"),  # private bucket
+            (True, 1, "manifest.jsonl", False, None, ""),  # public bucket
+            (True, 2, "sub/manifest.jsonl", True, 1, "org2"),  # private bucket
+            (True, 2, "sub/manifest.jsonl", True, 2, "org2"),  # private bucket
+            (True, 1, None, False, None, ""),
+            (True, 2, None, True, 1, "org2"),
+            (True, 2, None, True, 2, "org2"),
+            (False, 1, None, False, None, ""),
+            (False, 2, None, True, 1, "org2"),
+            (False, 2, None, True, 2, "org2"),
         ],
     )
     def test_create_task_with_cloud_storage_files(
-        self, cloud_storage_id, manifest, use_bucket_content, org
+        self,
+        use_cache: bool,
+        cloud_storage_id: int,
+        manifest: str,
+        use_bucket_content: bool,
+        content_api_version: Optional[int],
+        org: str,
     ):
         if use_bucket_content:
             cloud_storage_content = get_cloud_storage_content(
-                self._USERNAME, cloud_storage_id, manifest
+                content_api_version, self._USERNAME, cloud_storage_id, manifest
             )
         else:
             cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
-        cloud_storage_content.append(manifest)
+        if manifest:
+            cloud_storage_content.append(manifest)
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
@@ -731,14 +990,177 @@ class TestPostTaskData:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "server_files": cloud_storage_content,
         }
 
-        _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-        )
+        kwargs = {"org": org} if org else {}
+        create_task(self._USERNAME, task_spec, data_spec, **kwargs)
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize(
+        "use_cache, use_manifest, server_files, server_files_exclude, task_size",
+        [
+            (True, False, ["test/"], None, 6),
+            (True, False, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (True, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (True, True, ["test/"], None, 6),
+            (True, True, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (True, True, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (False, False, ["test/"], None, 6),
+            (False, False, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (False, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+        ],
+    )
+    @pytest.mark.parametrize("org", [""])
+    def test_create_task_with_cloud_storage_directories_and_excluded_files(
+        self,
+        cloud_storage_id: int,
+        use_cache: bool,
+        use_manifest: bool,
+        server_files: List[str],
+        server_files_exclude: Optional[List[str]],
+        task_size: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        s3_client = s3.make_client()
+        images = generate_image_files(3, prefixes=["img_"] * 3)
+
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        for image in images:
+            for i in range(2):
+                image.seek(0)
+                s3_client.create_file(
+                    data=image,
+                    bucket=cloud_storage["resource"],
+                    filename=f"test/sub_{i}/{image.name}",
+                )
+                request.addfinalizer(
+                    partial(
+                        s3_client.remove_file,
+                        bucket=cloud_storage["resource"],
+                        filename=f"test/sub_{i}/{image.name}",
+                    )
+                )
+
+        if use_manifest:
+            with TemporaryDirectory() as tmp_dir:
+                manifest_root_path = f"{tmp_dir}/test/"
+                for i in range(2):
+                    path_with_sub_folders = f"{tmp_dir}/test/sub_{i}/"
+                    os.makedirs(path_with_sub_folders)
+                    for image in images:
+                        with open(osp.join(path_with_sub_folders, image.name), "wb") as f:
+                            f.write(image.getvalue())
+
+                generate_manifest(manifest_root_path)
+
+                with open(osp.join(manifest_root_path, "manifest.jsonl"), mode="rb") as m_file:
+                    s3_client.create_file(
+                        data=m_file.read(),
+                        bucket=cloud_storage["resource"],
+                        filename="test/manifest.jsonl",
+                    )
+                    request.addfinalizer(
+                        partial(
+                            s3_client.remove_file,
+                            bucket=cloud_storage["resource"],
+                            filename="test/manifest.jsonl",
+                        )
+                    )
+                server_files.append("test/manifest.jsonl")
+
+        task_spec = {
+            "name": f"Task created from directories from cloud storage {cloud_storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": use_cache,
+            "cloud_storage_id": cloud_storage_id,
+            "server_files": server_files,
+        }
+        if server_files_exclude:
+            data_spec["server_files_exclude"] = server_files_exclude
+
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec, org=org)
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, response) = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
+            assert task.size == task_size
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "storage_id, manifest",
+        [
+            (1, "manifest.jsonl"),  # public bucket
+            (2, "sub/manifest.jsonl"),  # private bucket
+        ],
+    )
+    @pytest.mark.parametrize(
+        "spec, field",
+        [
+            ("spec", "source_storage"),
+            ("spec", "target_storage"),
+            ("data", "cloud_storage_id"),
+        ],
+    )
+    def test_user_cannot_create_task_with_cloud_storage_without_access(
+        self, storage_id, spec, field, manifest, regular_lonely_user
+    ):
+        user = regular_lonely_user
+
+        task_spec = {
+            "name": f"Task with files from foreign cloud storage {storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+        }
+
+        if spec == "spec":
+            task_spec.update(
+                {
+                    field: {
+                        "location": "cloud_storage",
+                        "cloud_storage_id": storage_id,
+                    }
+                }
+            )
+            data_spec["server_files"] = ["images/image_1.jpg"]
+
+        elif spec == "data":
+            data_spec.update(
+                {
+                    field: storage_id,
+                    "filename_pattern": "*",
+                    "server_files": [manifest],
+                }
+            )
+        else:
+            assert False
+
+        with pytest.raises(exceptions.ApiException) as capture:
+            create_task(user, task_spec, data_spec)
+
+        assert capture.value.status == HTTPStatus.FORBIDDEN
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [1])
@@ -753,9 +1175,16 @@ class TestPostTaskData:
             ("abc_manifest.jsonl", "[a-c]*.jpeg", False, 2),
             ("abc_manifest.jsonl", "[d]*.jpeg", False, 1),
             ("abc_manifest.jsonl", "[e-z]*.jpeg", False, 0),
+            (None, "*", True, 5),
+            (None, "test/*", True, 3),
+            (None, "test/sub*1.jpeg", True, 1),
+            (None, "*image*.jpeg", True, 3),
+            (None, "wrong_pattern", True, 0),
+            (None, "[a-c]*.jpeg", False, 2),
+            (None, "[d]*.jpeg", False, 1),
+            (None, "[e-z]*.jpeg", False, 0),
         ],
     )
-    @pytest.mark.parametrize("org", [""])
     def test_create_task_with_file_pattern(
         self,
         cloud_storage_id,
@@ -763,7 +1192,6 @@ class TestPostTaskData:
         filename_pattern,
         sub_dir,
         task_size,
-        org,
         cloud_storages,
         request,
     ):
@@ -788,42 +1216,27 @@ class TestPostTaskData:
                 )
             )
 
-        with TemporaryDirectory() as tmp_dir:
-            for image in images:
-                with open(osp.join(tmp_dir, image.name), "wb") as f:
-                    f.write(image.getvalue())
+        if manifest:
+            with TemporaryDirectory() as tmp_dir:
+                for image in images:
+                    with open(osp.join(tmp_dir, image.name), "wb") as f:
+                        f.write(image.getvalue())
 
-            command = [
-                "docker",
-                "run",
-                "--rm",
-                "-u",
-                "root:root",
-                "-v",
-                f"{tmp_dir}:/local",
-                "--entrypoint",
-                "python3",
-                get_server_image_tag(),
-                "utils/dataset_manifest/create.py",
-                "--output-dir",
-                "/local",
-                "/local",
-            ]
-            subprocess.check_output(command)
+                generate_manifest(tmp_dir)
 
-            with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
-                s3_client.create_file(
-                    data=m_file.read(),
-                    bucket=cloud_storage["resource"],
-                    filename=f"test/sub/{manifest}" if sub_dir else manifest,
-                )
-                request.addfinalizer(
-                    partial(
-                        s3_client.remove_file,
+                with open(osp.join(tmp_dir, "manifest.jsonl"), mode="rb") as m_file:
+                    s3_client.create_file(
+                        data=m_file.read(),
                         bucket=cloud_storage["resource"],
                         filename=f"test/sub/{manifest}" if sub_dir else manifest,
                     )
-                )
+                    request.addfinalizer(
+                        partial(
+                            s3_client.remove_file,
+                            bucket=cloud_storage["resource"],
+                            filename=f"test/sub/{manifest}" if sub_dir else manifest,
+                        )
+                    )
 
         task_spec = {
             "name": f"Task with files from cloud storage {cloud_storage_id}",
@@ -838,17 +1251,16 @@ class TestPostTaskData:
             "image_quality": 75,
             "use_cache": True,
             "cloud_storage_id": cloud_storage_id,
-            "server_files": [f"test/sub/{manifest}" if sub_dir else manifest],
             "filename_pattern": filename_pattern,
         }
+        if manifest:
+            data_spec["server_files"] = [f"test/sub/{manifest}" if sub_dir else manifest]
 
         if task_size:
-            task_id, _ = _test_create_task(
-                self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-            )
+            task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
 
             with make_api_client(self._USERNAME) as api_client:
-                (task, response) = api_client.tasks_api.retrieve(task_id, org=org)
+                (task, response) = api_client.tasks_api.retrieve(task_id)
                 assert response.status == HTTPStatus.OK
                 assert task.size == task_size
         else:
@@ -875,7 +1287,7 @@ class TestPostTaskData:
             "job_file_mapping": expected_segments,
         }
 
-        task_id, _ = _test_create_task(
+        task_id, _ = create_task(
             self._USERNAME, task_spec, data_spec, content_type="application/json"
         )
 
@@ -903,10 +1315,10 @@ class TestPostTaskData:
             "name": "test cannot create task with same labels",
             "labels": [{"name": "l1"}, {"name": "l1"}],
         }
-        response = post_method(self._USERNAME, "/tasks", task_spec)
+        response = post_method(self._USERNAME, "tasks", task_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(self._USERNAME, "/tasks")
+        response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
     def test_cannot_create_task_with_same_skeleton_sublabels(self):
@@ -916,10 +1328,10 @@ class TestPostTaskData:
                 {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
             ],
         }
-        response = post_method(self._USERNAME, "/tasks", task_spec)
+        response = post_method(self._USERNAME, "tasks", task_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(self._USERNAME, "/tasks")
+        response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
 
@@ -937,8 +1349,8 @@ class TestPatchTaskLabel:
         label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
-        assert response.status_code == HTTPStatus.OK
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
+        assert response.status_code == HTTPStatus.OK, response.content
         assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
 
     def test_can_add_skeleton_label(self, tasks, admin_user):
@@ -966,7 +1378,7 @@ class TestPatchTaskLabel:
         task_labels.remove(label)
         label_payload = {"id": label["id"], "deleted": True}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
 
@@ -978,7 +1390,7 @@ class TestPatchTaskLabel:
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": "new name"})
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [task_labels[0]]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [task_labels[0]]})
         assert response.status_code == HTTPStatus.OK
 
         resulting_labels = self._get_task_labels(task["id"], admin_user)
@@ -991,7 +1403,7 @@ class TestPatchTaskLabel:
 
         label_payload = {"id": task_labels[0]["id"], "name": task_labels[0]["name"]}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "All label names must be unique" in response.text
 
@@ -1006,7 +1418,7 @@ class TestPatchTaskLabel:
             ][0]
         )
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
@@ -1014,7 +1426,7 @@ class TestPatchTaskLabel:
         task = [t for t in tasks if t["project_id"] is None][0]
         new_label = {"name": "new name"}
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
@@ -1040,9 +1452,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
@@ -1069,9 +1480,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -1094,9 +1504,8 @@ class TestPatchTaskLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/tasks/{task["id"]}',
+            f'tasks/{task["id"]}',
             {"labels": [new_label]},
-            org_id=task["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
@@ -1104,7 +1513,7 @@ class TestPatchTaskLabel:
     def test_admin_can_add_skeleton(self, tasks, admin_user):
         task = [t for t in tasks if t["project_id"] is None][0]
         new_skeleton = {
-            "name": "skeleton1",
+            "name": "new skeleton",
             "type": "skeleton",
             "sublabels": [
                 {
@@ -1117,7 +1526,7 @@ class TestPatchTaskLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [new_skeleton]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_skeleton]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 
@@ -1129,11 +1538,11 @@ class TestWorkWithTask:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "cloud_storage_id, manifest, org",
-        [(1, "manifest.jsonl", "")],  # public bucket
+        "cloud_storage_id, manifest",
+        [(1, "manifest.jsonl")],  # public bucket
     )
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, org, cloud_storages, request
+        self, cloud_storage_id, manifest, cloud_storages, request
     ):
         image_name = "image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
@@ -1150,9 +1559,7 @@ class TestWorkWithTask:
             "server_files": cloud_storage_content,
         }
 
-        task_id, _ = _test_create_task(
-            self._USERNAME, task_spec, data_spec, content_type="application/json", org=org
-        )
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
 
         # save image from the "public" bucket and remove it temporary
 
@@ -1176,6 +1583,219 @@ class TestWorkWithTask:
             except Exception as ex:
                 assert ex.status == HTTPStatus.NOT_FOUND
                 assert image_name in ex.body
+
+
+class TestTaskBackups:
+    def _make_client(self) -> Client:
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, restore_cvat_data, tmp_path: Path, admin_user: str):
+        self.tmp_dir = tmp_path
+
+        self.client = self._make_client()
+        self.user = admin_user
+
+        with self.client:
+            self.client.login((self.user, USER_PASS))
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_export_backup(self, tasks, mode):
+        task_id = next(t for t in tasks if t["mode"] == mode)["id"]
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        assert filename.is_file()
+        assert filename.stat().st_size > 0
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_import_backup(self, tasks, mode):
+        task_json = next(t for t in tasks if t["mode"] == mode)
+        self._test_can_restore_backup_task(task_json["id"])
+
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_can_import_backup_for_task_in_nondefault_state(self, tasks, mode):
+        # Reproduces the problem with empty 'mode' in a restored task,
+        # described in the reproduction steps https://github.com/opencv/cvat/issues/5668
+
+        task_json = next(t for t in tasks if t["mode"] == mode and t["jobs"]["count"])
+
+        task = self.client.tasks.retrieve(task_json["id"])
+        jobs = task.get_jobs()
+        for j in jobs:
+            j.update({"stage": "validation"})
+
+        self._test_can_restore_backup_task(task_json["id"])
+
+    def _test_can_restore_backup_task(self, task_id: int):
+        task = self.client.tasks.retrieve(task_id)
+        (_, response) = self.client.api_client.tasks_api.retrieve(task_id)
+        task_json = json.loads(response.data)
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        restored_task = self.client.tasks.create_from_backup(filename)
+
+        old_jobs = task.get_jobs()
+        new_jobs = restored_task.get_jobs()
+        assert len(old_jobs) == len(new_jobs)
+
+        for old_job, new_job in zip(old_jobs, new_jobs):
+            assert old_job.status == new_job.status
+            assert old_job.start_frame == new_job.start_frame
+            assert old_job.stop_frame == new_job.stop_frame
+
+        (_, response) = self.client.api_client.tasks_api.retrieve(restored_task.id)
+        restored_task_json = json.loads(response.data)
+
+        assert restored_task_json["assignee"] is None
+        assert restored_task_json["owner"]["username"] == self.user
+        assert restored_task_json["id"] != task_json["id"]
+        assert restored_task_json["data"] != task_json["data"]
+        assert restored_task_json["organization"] is None
+        assert restored_task_json["data_compressed_chunk_type"] in ["imageset", "video"]
+        if task_json["jobs"]["count"] == 1:
+            assert restored_task_json["overlap"] == 0
+        else:
+            assert restored_task_json["overlap"] == task_json["overlap"]
+        assert restored_task_json["jobs"]["completed"] == 0
+        assert restored_task_json["jobs"]["validation"] == 0
+        assert restored_task_json["source_storage"] is None
+        assert restored_task_json["target_storage"] is None
+        assert restored_task_json["project_id"] is None
+
+        assert (
+            DeepDiff(
+                task_json,
+                restored_task_json,
+                ignore_order=True,
+                exclude_regex_paths=[
+                    r"root\['id'\]",  # id, must be different
+                    r"root\['created_date'\]",  # must be different
+                    r"root\['updated_date'\]",  # must be different
+                    r"root\['assignee'\]",  # id, depends on the situation
+                    r"root\['owner'\]",  # id, depends on the situation
+                    r"root\['data'\]",  # id, must be different
+                    r"root\['organization'\]",  # depends on the task setup
+                    r"root\['project_id'\]",  # should be dropped
+                    r"root(\['.*'\])*\['url'\]",  # depends on the task id
+                    r"root\['data_compressed_chunk_type'\]",  # depends on the server configuration
+                    r"root\['source_storage'\]",  # should be dropped
+                    r"root\['target_storage'\]",  # should be dropped
+                    r"root\['jobs'\]\['completed'\]",  # job statuses should be renewed
+                    r"root\['jobs'\]\['validation'\]",  # job statuses should be renewed
+                    # depends on the actual job configuration,
+                    # unlike to what is obtained from the regular task creation,
+                    # where the requested number is recorded
+                    r"root\['overlap'\]",
+                ],
+            )
+            == {}
+        )
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWorkWithGtJobs:
+    def test_normal_and_gt_job_annotations_are_not_merged(
+        self, tmp_path, admin_user, tasks, jobs, annotations
+    ):
+        gt_job = next(j for j in jobs if j["type"] == "ground_truth")
+        task = tasks[gt_job["task_id"]]
+        task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+
+        gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
+        assert (
+            gt_job_source_annotations["tags"]
+            or gt_job_source_annotations["shapes"]
+            or gt_job_source_annotations["tracks"]
+        )
+
+        with Client(BASE_URL) as client:
+            client.config.status_check_period = 0.01
+            client.login((admin_user, USER_PASS))
+
+            for j in task_jobs:
+                if j["type"] != "ground_truth":
+                    client.jobs.retrieve(j["id"]).remove_annotations()
+
+            task_obj = client.tasks.retrieve(task["id"])
+            task_raw_annotations = task_obj.get_annotations()
+
+            # It's quite hard to parse the dataset files, just import the data back instead
+            dataset_format = "CVAT for images 1.1"
+
+            dataset_file = tmp_path / "dataset.zip"
+            task_obj.export_dataset(dataset_format, dataset_file, include_images=True)
+            task_obj.import_annotations("CVAT 1.1", dataset_file)
+            task_dataset_file_annotations = task_obj.get_annotations()
+
+            annotations_file = tmp_path / "annotations.zip"
+            task_obj.export_dataset(dataset_format, annotations_file, include_images=False)
+            task_obj.import_annotations("CVAT 1.1", annotations_file)
+            task_annotations_file_annotations = task_obj.get_annotations()
+
+        for annotation_source in [
+            task_raw_annotations,
+            task_dataset_file_annotations,
+            task_annotations_file_annotations,
+        ]:
+            assert not annotation_source.tags
+            assert not annotation_source.shapes
+            assert not annotation_source.tracks
+
+    def test_can_backup_task_with_gt_jobs(self, tmp_path, admin_user, tasks, jobs, annotations):
+        gt_job = next(
+            j
+            for j in jobs
+            if j["type"] == "ground_truth" and tasks[j["task_id"]]["jobs"]["count"] == 2
+        )
+        task = tasks[gt_job["task_id"]]
+        annotation_job = next(
+            j for j in jobs if j["task_id"] == task["id"] and j["type"] == "annotation"
+        )
+
+        gt_job_source_annotations = annotations["job"][str(gt_job["id"])]
+        assert (
+            gt_job_source_annotations["tags"]
+            or gt_job_source_annotations["shapes"]
+            or gt_job_source_annotations["tracks"]
+        )
+
+        annotation_job_source_annotations = annotations["job"][str(annotation_job["id"])]
+
+        with Client(BASE_URL) as client:
+            client.config.status_check_period = 0.01
+            client.login((admin_user, USER_PASS))
+
+            backup_file: Path = tmp_path / "dataset.zip"
+            client.tasks.retrieve(task["id"]).download_backup(backup_file)
+
+            new_task = client.tasks.create_from_backup(backup_file)
+            updated_job_annotations = {
+                j.type: json.loads(j.api.retrieve_annotations(j.id)[1].data)
+                for j in new_task.get_jobs()
+            }
+
+        for job_type, source_annotations in {
+            gt_job["type"]: gt_job_source_annotations,
+            annotation_job["type"]: annotation_job_source_annotations,
+        }.items():
+            assert (
+                DeepDiff(
+                    source_annotations,
+                    updated_job_annotations[job_type],
+                    ignore_order=True,
+                    exclude_regex_paths=[
+                        r"root(\['\w+'\]\[\d+\])+\['id'\]",
+                        r"root(\['\w+'\]\[\d+\])+\['label_id'\]",
+                        r"root(\['\w+'\]\[\d+\])+\['attributes'\]\[\d+\]\['spec_id'\]",
+                    ],
+                )
+                == {}
+            )
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1229,7 +1849,7 @@ class TestGetTaskPreview:
         tasks = list(filter(lambda x: x["project_id"] == project_id and x["assignee"], tasks))
         assert len(tasks)
 
-        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff, org=org["slug"])
+        self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff)
 
     @pytest.mark.parametrize("project_id, groups", [(1, "user")])
     def test_task_unassigned_cannot_see_task_preview(
@@ -1387,3 +2007,329 @@ class TestPatchTask:
             )
             == {}
         )
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "storage_id",
+        [
+            1,  # public bucket
+            2,  # private bucket
+        ],
+    )
+    @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
+    def test_user_cannot_update_task_with_cloud_storage_without_access(
+        self, storage_id, field, regular_lonely_user
+    ):
+        user = regular_lonely_user
+
+        task_spec = {
+            "name": f"Task with files from foreign cloud storage {storage_id}",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "server_files": ["images/image_1.jpg"],
+        }
+        (task_id, _) = create_task(user, task_spec, data_spec)
+
+        updated_fields = {
+            field: {
+                "location": "cloud_storage",
+                "cloud_storage_id": storage_id,
+            }
+        }
+
+        with make_api_client(user) as api_client:
+            (_, response) = api_client.tasks_api.partial_update(
+                task_id,
+                patched_task_write_request=updated_fields,
+                _parse_response=False,
+                _check_status=False,
+            )
+        assert response.status == HTTPStatus.FORBIDDEN
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
+    # Reproduces https://github.com/opencv/cvat/issues/6098
+    task = next(
+        t
+        for t in tasks
+        if t["jobs"]["count"] > 1 and t["jobs"]["completed"] == 0 and t["labels"]["count"] > 1
+    )
+    task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+
+    with make_api_client(admin_user) as api_client:
+        api_client.jobs_api.partial_update(
+            task_jobs[0]["id"],
+            patched_job_write_request=dict(stage="acceptance", state="completed"),
+        )
+
+        task, _ = api_client.tasks_api.retrieve(task["id"])
+        assert task.jobs.completed == 1
+
+
+class TestImportTaskAnnotations:
+    def _make_client(self) -> Client:
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
+        self.tmp_dir = tmp_path
+        self.client = self._make_client()
+        self.user = admin_user
+        self.format = "COCO 1.0"
+
+        with self.client:
+            self.client.login((self.user, USER_PASS))
+
+    def _check_annotations(self, task_id):
+        with make_api_client(self.user) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_annotations(id=task_id)
+            assert response.status == HTTPStatus.OK
+            annotations = json.loads(response.data)["shapes"]
+            assert len(annotations) > 0
+
+    def _delete_annotations(self, task_id):
+        with make_api_client(self.user) as api_client:
+            (_, response) = api_client.tasks_api.destroy_annotations(id=task_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+    @pytest.mark.skip("Fails sometimes, needs to be fixed")
+    @pytest.mark.timeout(70)
+    @pytest.mark.parametrize("successful_upload", [True, False])
+    def test_can_import_annotations_after_previous_unclear_import(
+        self, successful_upload: bool, tasks_with_shapes
+    ):
+        task_id = tasks_with_shapes[0]["id"]
+        self._check_annotations(task_id)
+
+        with NamedTemporaryFile() as f:
+            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
+
+        task = self.client.tasks.retrieve(task_id)
+        task.export_dataset(self.format, filename, include_images=False)
+
+        self._delete_annotations(task_id)
+
+        params = {"format": self.format, "filename": filename.name}
+        url = self.client.api_map.make_endpoint_url(
+            self.client.api_client.tasks_api.create_annotations_endpoint.path
+        ).format(id=task_id)
+        uploader = Uploader(self.client)
+
+        if successful_upload:
+            # define time required to upload file with annotations
+            start_time = time()
+            task.import_annotations(self.format, filename)
+            required_time = ceil(time() - start_time) * 2
+            self._delete_annotations(task_id)
+
+            response = uploader.upload_file(
+                url, filename, meta=params, query_params=params, logger=self.client.logger.debug
+            )
+            rq_id = json.loads(response.data)["rq_id"]
+            assert rq_id
+        else:
+            required_time = 60
+            uploader._tus_start_upload(url, query_params=params)
+            uploader._upload_file_data_with_tus(
+                url, filename, meta=params, logger=self.client.logger.debug
+            )
+
+        sleep(required_time)
+        if successful_upload:
+            self._check_annotations(task_id)
+            self._delete_annotations(task_id)
+        task.import_annotations(self.format, filename)
+        self._check_annotations(task_id)
+
+    @pytest.mark.skip("Fails sometimes, needs to be fixed")
+    @pytest.mark.timeout(70)
+    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
+        task_id = tasks_with_shapes[0]["id"]
+        with NamedTemporaryFile() as f:
+            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
+        task = self.client.tasks.retrieve(task_id)
+        task.export_dataset(self.format, filename, include_images=False)
+
+        params = {"format": self.format, "filename": filename.name}
+        url = self.client.api_map.make_endpoint_url(
+            self.client.api_client.tasks_api.create_annotations_endpoint.path
+        ).format(id=task_id)
+
+        uploader = Uploader(self.client)
+        uploader._tus_start_upload(url, query_params=params)
+        uploader._upload_file_data_with_tus(
+            url, filename, meta=params, logger=self.client.logger.debug
+        )
+        number_of_files = 1
+        sleep(30)  # wait when the cleaning job from rq worker will be started
+        command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
+        platform = request.config.getoption("--platform")
+        assert platform in ("kube", "local")
+        func = docker_exec_cvat if platform == "local" else kube_exec_cvat
+        for _ in range(12):
+            sleep(2)
+            result, _ = func(command)
+            number_of_files = int(result)
+            if not number_of_files:
+                break
+        assert not number_of_files
+
+
+class TestImportWithComplexFilenames:
+    @staticmethod
+    def _make_client() -> Client:
+        return Client(BASE_URL, config=Config(status_check_period=0.01))
+
+    @pytest.fixture(
+        autouse=True,
+        scope="class",
+        # classmethod way may not work in some versions
+        # https://github.com/opencv/cvat/actions/runs/5336023573/jobs/9670573955?pr=6350
+        name="TestImportWithComplexFilenames.setup_class",
+    )
+    @classmethod
+    def setup_class(
+        cls, restore_db_per_class, tmp_path_factory: pytest.TempPathFactory, admin_user: str
+    ):
+        cls.tmp_dir = tmp_path_factory.mktemp(cls.__class__.__name__)
+        cls.client = cls._make_client()
+        cls.user = admin_user
+        cls.format_name = "PASCAL VOC 1.1"
+
+        with cls.client:
+            cls.client.login((cls.user, USER_PASS))
+
+        cls._init_tasks()
+
+    @classmethod
+    def _create_task_with_annotations(cls, filenames: List[str]):
+        images = generate_image_files(len(filenames), filenames=filenames)
+
+        source_archive_path = cls.tmp_dir / "source_data.zip"
+        with zipfile.ZipFile(source_archive_path, "w") as zip_file:
+            for image in images:
+                zip_file.writestr(image.name, image.getvalue())
+
+        task = cls.client.tasks.create_from_data(
+            {
+                "name": "test_images_with_dots",
+                "labels": [{"name": "cat"}, {"name": "dog"}],
+            },
+            resources=[source_archive_path],
+        )
+
+        labels = task.get_labels()
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        frame=frame_id,
+                        label_id=labels[0].id,
+                        type="rectangle",
+                        points=[1, 1, 2, 2],
+                    )
+                    for frame_id in range(len(filenames))
+                ],
+            )
+        )
+
+        return task
+
+    @classmethod
+    def _init_tasks(cls):
+        cls.flat_filenames = [
+            "filename0.jpg",
+            "file.name1.jpg",
+            "fi.le.na.me.2.jpg",
+            ".filename3.jpg",
+            "..filename..4.jpg",
+            "..filename..5.png..jpg",
+        ]
+
+        cls.nested_filenames = [
+            f"{prefix}/{fn}"
+            for prefix, fn in zip(
+                [
+                    "ab/cd",
+                    "ab/cd",
+                    "ab",
+                    "ab",
+                    "cd/ef",
+                    "cd/ef",
+                    "cd",
+                    "",
+                ],
+                cls.flat_filenames,
+            )
+        ]
+
+        cls.data = {}
+        for (kind, filenames), prefix in product(
+            [("flat", cls.flat_filenames), ("nested", cls.nested_filenames)], ["", "pre/fix"]
+        ):
+            key = kind
+            if prefix:
+                key += "_prefixed"
+
+            task = cls._create_task_with_annotations(
+                [f"{prefix}/{fn}" if prefix else fn for fn in filenames]
+            )
+
+            dataset_file = cls.tmp_dir / f"{key}_dataset.zip"
+            task.export_dataset(cls.format_name, dataset_file, include_images=False)
+
+            cls.data[key] = (task, dataset_file)
+
+    @pytest.mark.skip("Fails sometimes, needs to be fixed")
+    @pytest.mark.parametrize(
+        "task_kind, annotation_kind, expect_success",
+        [
+            ("flat", "flat", True),
+            ("flat", "flat_prefixed", False),
+            ("flat", "nested", False),
+            ("flat", "nested_prefixed", False),
+            ("flat_prefixed", "flat", True),  # allow this for better UX
+            ("flat_prefixed", "flat_prefixed", True),
+            ("flat_prefixed", "nested", False),
+            ("flat_prefixed", "nested_prefixed", False),
+            ("nested", "flat", False),
+            ("nested", "flat_prefixed", False),
+            ("nested", "nested", True),
+            ("nested", "nested_prefixed", False),
+            ("nested_prefixed", "flat", False),
+            ("nested_prefixed", "flat_prefixed", False),
+            ("nested_prefixed", "nested", True),  # allow this for better UX
+            ("nested_prefixed", "nested_prefixed", True),
+        ],
+    )
+    def test_import_annotations(self, task_kind, annotation_kind, expect_success):
+        # Tests for regressions about https://github.com/opencv/cvat/issues/6319
+        #
+        # X annotations must be importable to X prefixed cases
+        # with and without dots in filenames.
+        #
+        # Nested structures can potentially be matched to flat ones and vise-versa,
+        # but it's not supported now, as it may lead to some errors in matching.
+
+        task: Task = self.data[task_kind][0]
+        dataset_file = self.data[annotation_kind][1]
+
+        if expect_success:
+            task.import_annotations(self.format_name, dataset_file)
+
+            assert set(s.frame for s in task.get_annotations().shapes) == set(
+                range(len(self.flat_filenames))
+            )
+        else:
+            with pytest.raises(exceptions.ApiException) as capture:
+                task.import_annotations(self.format_name, dataset_file)
+
+            assert b"Could not match item id" in capture.value.body

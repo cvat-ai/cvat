@@ -25,6 +25,23 @@ const defaultState: PluginsState = {
         loginPage: {
             loginForm: [],
         },
+        projectActions: {
+            items: [],
+        },
+        taskActions: {
+            items: [],
+        },
+        taskItem: {
+            ribbon: [],
+        },
+        projectItem: {
+            ribbon: [],
+        },
+        annotationPage: {
+            header: {
+                player: [],
+            },
+        },
         router: [],
         loggedInModals: [],
     },
@@ -93,9 +110,9 @@ export default function (state: PluginsState = defaultState, action: PluginActio
             container.push({
                 component,
                 data: {
-                    weight: data.weight || Number.MAX_SAFE_INTEGER,
+                    weight: data?.weight || Number.MAX_SAFE_INTEGER,
                     shouldBeRendered: (componentProps: object = {}, componentState: object = {}) => {
-                        if (data.shouldBeRendered) {
+                        if (data?.shouldBeRendered) {
                             return data.shouldBeRendered(Object.freeze(componentProps), Object.freeze(componentState));
                         }
                         return true;

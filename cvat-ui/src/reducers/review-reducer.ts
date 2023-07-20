@@ -6,12 +6,17 @@ import config from 'config';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
+import {
+    AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
+} from 'cvat-core-wrapper';
 import { ReviewState } from '.';
 
 const defaultState: ReviewState = {
     issues: [],
     latestComments: [],
     frameIssues: [], // saved on the server and not saved on the server
+    conflicts: [],
+    frameConflicts: [],
     newIssuePosition: null,
     issuesHidden: false,
     issuesResolvedHidden: false,
@@ -26,14 +31,18 @@ export default function (state: ReviewState = defaultState, action: any): Review
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
                 issues,
+                conflicts,
                 frameData: { number: frame },
             } = action.payload;
             const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
+            const frameConflicts = conflicts.filter((conflict: QualityConflict): boolean => conflict.frame === frame);
 
             return {
                 ...state,
                 issues,
                 frameIssues,
+                conflicts,
+                frameConflicts,
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME: {
@@ -77,10 +86,77 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const { number: frame } = action.payload;
+            const { number: frame, states } = action.payload;
+
+            const mergedFrameConflicts = [];
+            if (state.conflicts.length) {
+                const serverIDMap: Record<string, number> = {};
+                states.forEach((_state: ObjectState) => {
+                    if (_state.serverID && _state.clientID) {
+                        serverIDMap[`${_state.serverID}${_state.objectType || ''}`] = _state.clientID;
+                    }
+                });
+
+                const conflictMap: Record<number, QualityConflict[]> = {};
+                const frameConflicts = state.conflicts
+                    .filter((conflict: QualityConflict): boolean => conflict.frame === frame);
+                frameConflicts.forEach((qualityConflict: QualityConflict) => {
+                    qualityConflict.annotationConflicts.forEach((annotationConflict: AnnotationConflict) => {
+                        const key = `${annotationConflict.serverID}${annotationConflict.type || ''}`;
+                        if (serverIDMap[key]) {
+                            annotationConflict.clientID = serverIDMap[key];
+                        }
+                    });
+                    const firstObjID = qualityConflict.annotationConflicts[0].clientID;
+                    if (conflictMap[firstObjID]) {
+                        conflictMap[firstObjID] = [...conflictMap[firstObjID], qualityConflict];
+                    } else {
+                        conflictMap[firstObjID] = [qualityConflict];
+                    }
+                });
+
+                for (const conflicts of Object.values(conflictMap)) {
+                    if (conflicts.length === 1) {
+                        mergedFrameConflicts.push(conflicts[0]);
+                    } else {
+                        const mainConflict = conflicts
+                            .find((conflict) => conflict.severity === ConflictSeverity.ERROR) || conflicts[0];
+                        const activeIDs = mainConflict.annotationConflicts.map((conflict) => conflict.clientID);
+                        const descriptionList: string[] = [];
+                        conflicts.forEach((conflict) => {
+                            descriptionList.push(conflict.description);
+                            conflict.annotationConflicts.forEach((annotationConflict) => {
+                                if (!activeIDs.includes(annotationConflict.clientID)) {
+                                    mainConflict.annotationConflicts.push(annotationConflict);
+                                }
+                            });
+                        });
+
+                        // decorate the original conflict to avoid changing it
+                        const description = descriptionList.join(', ');
+                        const visibleConflict = new Proxy(mainConflict, {
+                            get(target, prop) {
+                                if (prop === 'description') {
+                                    return description;
+                                }
+
+                                // By default, it looks like Reflect.get(target, prop, receiver)
+                                // which has a different value of `this`. It doesn't allow to
+                                // work with methods / properties that use private members.
+                                const val = Reflect.get(target, prop);
+                                return typeof val === 'function' ? (...args: any[]) => val.apply(target, args) : val;
+                            },
+                        });
+
+                        mergedFrameConflicts.push(visibleConflict);
+                    }
+                }
+            }
+
             return {
                 ...state,
                 frameIssues: state.issues.filter((issue: any): boolean => issue.frame === frame),
+                frameConflicts: mergedFrameConflicts,
             };
         }
         case ReviewActionTypes.START_ISSUE: {

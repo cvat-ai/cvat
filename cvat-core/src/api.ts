@@ -3,11 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-/**
- * External API which should be used by for development
- * @module API
- */
-
 import PluginRegistry from './plugins';
 import loggerStorage from './logger-storage';
 import { EventLogger } from './log';
@@ -25,6 +20,7 @@ import { FrameData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
+import AnnotationGuide from './guide';
 
 import * as enums from './enums';
 
@@ -147,9 +143,21 @@ function build() {
                 return result;
             },
         },
+        assets: {
+            async create(file: File, guideId: number) {
+                const result = await PluginRegistry.apiWrapper(cvat.assets.create, file, guideId);
+                return result;
+            },
+        },
         jobs: {
             async get(filter = {}) {
                 const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter);
+                return result;
+            },
+        },
+        frames: {
+            async getMeta(type, id) {
+                const result = await PluginRegistry.apiWrapper(cvat.frames.getMeta, type, id);
                 return result;
             },
         },
@@ -225,6 +233,12 @@ function build() {
             set removeUnderlyingMaskPixels(value: boolean) {
                 config.removeUnderlyingMaskPixels = value;
             },
+            get onOrganizationChange(): (orgId: number) => void {
+                return config.onOrganizationChange;
+            },
+            set onOrganizationChange(value: (orgId: number) => void) {
+                config.onOrganizationChange = value;
+            },
         },
         client: {
             version: `${pjson.version}`,
@@ -264,6 +278,24 @@ function build() {
                 return result;
             },
         },
+        analytics: {
+            quality: {
+                async reports(filter: any) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
+                    return result;
+                },
+                async conflicts(filter: any) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.conflicts, filter);
+                    return result;
+                },
+                settings: {
+                    async get(taskID: number) {
+                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, taskID);
+                        return result;
+                    },
+                },
+            },
+        },
         classes: {
             User,
             Project: implementProject(Project),
@@ -281,6 +313,7 @@ function build() {
             CloudStorage,
             Organization,
             Webhook,
+            AnnotationGuide,
         },
     };
 
@@ -295,6 +328,8 @@ function build() {
     cvat.enums = Object.freeze(cvat.enums);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
+    cvat.analytics = Object.freeze(cvat.analytics);
+    cvat.frames = Object.freeze(cvat.frames);
 
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;

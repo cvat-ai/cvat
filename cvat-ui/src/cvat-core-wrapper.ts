@@ -14,21 +14,30 @@ import {
 import { SerializedAttribute, SerializedLabel } from 'cvat-core/src/server-response-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
+import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
+import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
+import QualitySettings from 'cvat-core/src/quality-settings';
+import { FramesMetaData } from 'cvat-core/src/frames';
 import {
-    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType,
+    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
+    JobStage, JobState,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization from 'cvat-core/src/organization';
+import AnnotationGuide from 'cvat-core/src/guide';
 import { Dumper } from 'cvat-core/src/annotation-formats';
+import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 
 const cvat: any = _cvat;
 
 cvat.config.backendAPI = '/api';
 cvat.config.origin = window.location.origin;
-cvat.config.uploadChunkSize = 100;
+// Set the TUS chunk size to 2 MB. A small value works better in case of a slow internet connection.
+// A larger value may cause a server-side timeout errors in the current implementation.
+cvat.config.uploadChunkSize = 2;
 (globalThis as any).cvat = cvat;
 
 function getCore(): any {
@@ -42,6 +51,7 @@ export {
     Job,
     Task,
     Project,
+    AnnotationGuide,
     Attribute,
     ShapeType,
     LabelType,
@@ -57,6 +67,15 @@ export {
     ModelReturnType,
     DimensionType,
     Dumper,
+    JobType,
+    JobStage,
+    JobState,
+    QualityReport,
+    QualityConflict,
+    QualitySettings,
+    AnnotationConflict,
+    ConflictSeverity,
+    FramesMetaData,
 };
 
 export type {
@@ -64,4 +83,6 @@ export type {
     SerializedLabel,
     StorageData,
     ModelProvider,
+    APIWrapperEnterOptions,
+    QualitySummary,
 };

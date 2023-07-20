@@ -17,12 +17,12 @@ import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Select from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import Descriptions from 'antd/lib/descriptions';
 import Space from 'antd/lib/space';
 
 import { getCore, Task } from 'cvat-core-wrapper';
 import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
+import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference } from 'reducers';
@@ -208,35 +208,23 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         const { task: taskInstance, onUpdateTask } = this.props;
 
         return (
-            <Title
-                level={4}
-                editable={{
-                    onChange: (value: string): void => {
-                        this.setState({
-                            name: value,
-                        });
+            <Title level={4}>
+                <Text
+                    editable={{
+                        onChange: (value: string): void => {
+                            this.setState({
+                                name: value,
+                            });
 
-                        taskInstance.name = value;
-                        onUpdateTask(taskInstance);
-                    },
-                }}
-                className='cvat-text-color'
-            >
-                {name}
+                            taskInstance.name = value;
+                            onUpdateTask(taskInstance);
+                        },
+                    }}
+                    className='cvat-text-color'
+                >
+                    {name}
+                </Text>
             </Title>
-        );
-    }
-
-    private renderParameters(): JSX.Element {
-        const { task: taskInstance } = this.props;
-        const { overlap, segmentSize, imageQuality } = taskInstance;
-
-        return (
-            <Descriptions className='cvat-task-parameters' bordered layout='vertical' size='small'>
-                <Descriptions.Item label='Overlap size'>{overlap}</Descriptions.Item>
-                <Descriptions.Item label='Segment size'>{segmentSize}</Descriptions.Item>
-                <Descriptions.Item label='Image quality'>{imageQuality}</Descriptions.Item>
-            </Descriptions>
         );
     }
 
@@ -263,7 +251,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                         <Text type='secondary'>{`Task #${taskInstance.id} Created by ${owner} on ${created}`}</Text>
                     )}
                 </Col>
-                <Col span={10}>
+                <Col>
                     <Text type='secondary'>Assigned to</Text>
                     {assigneeSelect}
                 </Col>
@@ -386,7 +374,11 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
     private renderSubsetField(): JSX.Element {
         const { subset } = this.state;
-        const { task: taskInstance, projectSubsets, onUpdateTask } = this.props;
+        const {
+            task: taskInstance,
+            projectSubsets,
+            onUpdateTask,
+        } = this.props;
 
         return (
             <Row>
@@ -416,7 +408,10 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const {
-            activeInference, cancelAutoAnnotation, task: taskInstance, onUpdateTask,
+            activeInference,
+            task: taskInstance,
+            cancelAutoAnnotation,
+            onUpdateTask,
         } = this.props;
 
         return (
@@ -436,12 +431,10 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                 />
                             </Col>
                         </Row>
-                        <Row>
-                            <Col span={24}>{this.renderParameters()}</Col>
-                        </Row>
                     </Col>
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         {this.renderDescription()}
+                        { taskInstance.projectId === null && <MdGuideControl instanceType='task' id={taskInstance.id} /> }
                         <Row justify='space-between' align='middle'>
                             <Col span={12}>
                                 <BugTrackerEditor

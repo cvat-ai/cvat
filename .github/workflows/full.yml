@@ -155,10 +155,14 @@ jobs:
       - name: Running REST API and SDK tests
         id: run_tests
         run: |
-          pip3 install --user '/tmp/cvat_sdk/[pytorch]'
-          pip3 install --user cvat-cli/
-          pip3 install --user -r tests/python/requirements.txt
-          pytest tests/python/ -s -v
+          pip3 install -r cvat-sdk/gen/requirements.txt
+          ./cvat-sdk/gen/generate.sh
+
+          pip3 install -r ./tests/python/requirements.txt
+          pip3 install -e ./cvat-sdk
+          pip3 install -e ./cvat-cli
+
+          pytest tests/python/
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
@@ -212,7 +216,7 @@ jobs:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server cvat_db
 
           max_tries=12
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done

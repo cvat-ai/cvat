@@ -2,13 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from drf_spectacular.utils import (
-    OpenApiParameter,
-    OpenApiResponse,
-    OpenApiTypes,
-    extend_schema,
-    extend_schema_view,
-)
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   OpenApiTypes, extend_schema,
+                                   extend_schema_view)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS
@@ -16,15 +12,12 @@ from rest_framework.response import Response
 
 from cvat.apps.engine.view_utils import list_action, make_paginated_response
 from cvat.apps.iam.permissions import WebhookPermission
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 from .event_type import AllEvents, OrganizationEvents, ProjectEvents
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
-from .serializers import (
-    EventsSerializer,
-    WebhookDeliveryReadSerializer,
-    WebhookReadSerializer,
-    WebhookWriteSerializer,
-)
+from .serializers import (EventsSerializer, WebhookDeliveryReadSerializer,
+                          WebhookReadSerializer, WebhookWriteSerializer)
 from .signals import signal_ping, signal_redelivery
 
 
@@ -55,6 +48,7 @@ from .signals import signal_ping, signal_redelivery
     create=extend_schema(
         request=WebhookWriteSerializer,
         summary="Method creates a webhook",
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             "201": WebhookReadSerializer
         },  # check WebhookWriteSerializer.to_representation
@@ -77,10 +71,6 @@ class WebhookViewSet(viewsets.ModelViewSet):
     iam_organization_field = "organization"
 
     def get_serializer_class(self):
-        # Early exit for drf-spectacular compatibility
-        if getattr(self, "swagger_fake_view", False):
-            return WebhookReadSerializer
-
         if self.request.path.endswith("redelivery") or self.request.path.endswith(
             "ping"
         ):
@@ -185,9 +175,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     def redelivery(self, request, pk, delivery_id):
         delivery = WebhookDelivery.objects.get(webhook_id=pk, id=delivery_id)
         signal_redelivery.send(sender=self, data=delivery.request)
-
-        # Questionable: should we provide a body for this response?
-        return Response({})
+        return Response({}, status=status.HTTP_200_OK)
 
     @extend_schema(
         summary="Method send ping webhook",

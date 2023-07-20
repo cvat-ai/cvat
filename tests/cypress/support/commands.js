@@ -32,9 +32,9 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     });
 });
 
-Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
+Cypress.Commands.add('logout', () => {
     cy.get('.cvat-right-header').within(() => {
-        cy.get('.cvat-header-menu-user-dropdown-user').should('have.text', username).trigger('mouseover');
+        cy.get('.cvat-header-menu-user-dropdown-user').trigger('mouseover');
     });
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
@@ -248,9 +248,39 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
         }
 
         const result = await task.save();
-        cy.log(result);
         return cy.wrap({ taskID: result.id, jobID: result.jobs.map((job) => job.id) });
     });
+});
+
+Cypress.Commands.add('headlessCreateProject', (projectSpec) => {
+    cy.window().then(async ($win) => {
+        const project = new $win.cvat.classes.Project({
+            ...projectSpec,
+        });
+
+        const result = await project.save();
+        return cy.wrap({ projectID: result.id });
+    });
+});
+
+Cypress.Commands.add('headlessCreateUser', (userSpec) => {
+    cy.request({
+        method: 'POST',
+        url: '/api/auth/register',
+        body: {
+            confirmations: [],
+            password1: userSpec.password,
+            password2: userSpec.password,
+            email: userSpec.email,
+            first_name: userSpec.firstName,
+            last_name: userSpec.lastName,
+            username: userSpec.username,
+        },
+        headers: {
+            'Content-type': 'application/json',
+        },
+    });
+    return cy.wrap();
 });
 
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
@@ -273,9 +303,9 @@ Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob')
 Cypress.Commands.add('getJobNum', (jobID) => {
     const jobsKey = [];
     cy.document().then((doc) => {
-        const jobs = Array.from(doc.querySelectorAll('.cvat-task-jobs-table-row'));
+        const jobs = Array.from(doc.querySelectorAll('.cvat-job-item'));
         for (let i = 0; i < jobs.length; i++) {
-            jobsKey.push(jobs[i].getAttribute('data-row-key'));
+            jobsKey.push(jobs[i].getAttribute('data-row-id'));
         }
         const minKey = Math.min(...jobsKey);
         return minKey + jobID;
@@ -284,9 +314,8 @@ Cypress.Commands.add('getJobNum', (jobID) => {
 
 Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFail = false) => {
     cy.get('.cvat-task-job-list').should('exist');
-    cy.get('.cvat-task-jobs-table-row').should('exist');
     cy.getJobNum(jobID).then(($job) => {
-        cy.get('.cvat-task-jobs-table-row').contains('a', `Job #${$job}`).click();
+        cy.get('.cvat-job-item').contains('a', `Job #${$job}`).click();
     });
     cy.url().should('include', '/jobs');
     if (expectedFail) {
@@ -497,7 +526,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
 
 Cypress.Commands.add('openSettings', () => {
     cy.get('.cvat-right-header').find('.cvat-header-menu-user-dropdown').trigger('mouseover', { which: 1 });
-    cy.get('.anticon-setting').click();
+    cy.get('.anticon-setting').should('exist').and('be.visible').click();
     cy.get('.cvat-settings-modal').should('be.visible');
 });
 
@@ -955,9 +984,9 @@ Cypress.Commands.add('setJobState', (choice) => {
 
 Cypress.Commands.add('setJobStage', (jobID, stage) => {
     cy.getJobNum(jobID).then(($job) => {
-        cy.get('.cvat-task-jobs-table')
+        cy.get('.cvat-task-job-list')
             .contains('a', `Job #${$job}`)
-            .parents('.cvat-task-jobs-table-row')
+            .parents('.cvat-job-item')
             .find('.cvat-job-item-stage').click();
         cy.get('.ant-select-dropdown')
             .should('be.visible')

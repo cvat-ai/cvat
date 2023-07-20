@@ -1,7 +1,7 @@
 {{>partial_header}}
 
 from datetime import date, datetime  # noqa: F401
-from copy import deepcopy
+from copy import copy, deepcopy
 import inspect
 import io
 import os
@@ -1310,14 +1310,18 @@ def validate_and_convert_types(input_value, required_types_mixed, path_to_item,
     if inner_required_types is None:
         # for this type, there are not more inner variables left to look at
         return input_value
+
     if isinstance(input_value, list):
-        if input_value == []:
+        # avoid storing and changing the input value when the type is mutable collection
+        output_value = copy(input_value)
+
+        if output_value == []:
             # allow an empty list
-            return input_value
-        for index, inner_value in enumerate(input_value):
+            return output_value
+        for index, inner_value in enumerate(output_value):
             inner_path = list(path_to_item)
             inner_path.append(index)
-            input_value[index] = validate_and_convert_types(
+            output_value[index] = validate_and_convert_types(
                 inner_value,
                 inner_required_types,
                 inner_path,
@@ -1326,16 +1330,19 @@ def validate_and_convert_types(input_value, required_types_mixed, path_to_item,
                 configuration=configuration
             )
     elif isinstance(input_value, dict):
-        if input_value == {}:
+        # avoid storing and changing the input value when the type is mutable collection
+        output_value = copy(input_value)
+
+        if output_value == {}:
             # allow an empty dict
-            return input_value
-        for inner_key, inner_val in input_value.items():
+            return output_value
+        for inner_key, inner_val in output_value.items():
             inner_path = list(path_to_item)
             inner_path.append(inner_key)
             if get_simple_class(inner_key) != str:
                 raise get_type_error(inner_key, inner_path, valid_classes,
                                      key_type=True)
-            input_value[inner_key] = validate_and_convert_types(
+            output_value[inner_key] = validate_and_convert_types(
                 inner_val,
                 inner_required_types,
                 inner_path,
@@ -1343,7 +1350,10 @@ def validate_and_convert_types(input_value, required_types_mixed, path_to_item,
                 _check_type,
                 configuration=configuration
             )
-    return input_value
+    else:
+        output_value = input_value
+
+    return output_value
 
 
 def model_to_dict(model_instance, serialize=True):
@@ -1382,24 +1392,20 @@ def model_to_dict(model_instance, serialize=True):
                 except KeyError:
                     used_fallback_python_attribute_names.add(attr)
             if isinstance(value, list):
-                if not value:
-                    # empty list or None
-                    result[attr] = value
-                else:
-                    res = []
-                    for v in value:
-                        if isinstance(v, PRIMITIVE_TYPES) or v is None:
-                            res.append(v)
-                        elif isinstance(v, ModelSimple):
-                            res.append(v.value)
-                        elif isinstance(v, dict):
-                            res.append(dict(map(
-                                extract_item,
-                                v.items()
-                            )))
-                        else:
-                            res.append(model_to_dict(v, serialize=serialize))
-                    result[attr] = res
+                res = []
+                for v in value:
+                    if isinstance(v, PRIMITIVE_TYPES) or v is None:
+                        res.append(v)
+                    elif isinstance(v, ModelSimple):
+                        res.append(v.value)
+                    elif isinstance(v, dict):
+                        res.append(dict(map(
+                            extract_item,
+                            v.items()
+                        )))
+                    else:
+                        res.append(model_to_dict(v, serialize=serialize))
+                result[attr] = res
             elif isinstance(value, dict):
                 result[attr] = dict(map(
                     extract_item,

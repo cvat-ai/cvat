@@ -1,10 +1,8 @@
 ```python
-import time
-from {{{packageName}}} import Configuration, ApiClient, exceptions
-{{#imports}}
-{{.}}
-{{/imports}}
 from pprint import pprint
+
+from {{{packageName}}} import Configuration, ApiClient, exceptions
+from {{{packageName}}}.models import *
 
 # Set up an API client
 # Read Configuration class docs for more info about parameters and authentication methods
@@ -32,7 +30,7 @@ with ApiClient(configuration) as api_client:
 {{/optionalParams}}
 
     try:
-        {{#returnType}}(data, response) = {{/returnType}}%%%make_api_name!!!{{classname}}%%%.{{{operationId}}}({{#requiredParams}}
+        {{#returnType}}(data, response) = {{/returnType}}api_client.%%%make_api_name!!!{{classname}}%%%.{{>operation_name}}({{#requiredParams}}
             {{^defaultValue}}{{paramName}},{{/defaultValue}}{{/requiredParams}}{{#optionalParams}}
             {{paramName}}={{paramName}},{{#-last}}
         {{/-last}}{{/optionalParams}})
@@ -40,5 +38,5 @@ with ApiClient(configuration) as api_client:
         pprint(data)
 {{/returnType}}
     except exceptions.ApiException as e:
-        print("Exception when calling {{classname}}.{{operationId}}: %s\n" % e)
+        print("Exception when calling {{classname}}.{{>operation_name}}(): %s\n" % e)
 ```

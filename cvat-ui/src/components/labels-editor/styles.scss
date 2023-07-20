@@ -5,7 +5,7 @@
 @import '../../base.scss';
 
 textarea.ant-input.cvat-raw-labels-viewer {
-    border-color: $border-color-2;
+    border-color: $border-color-1;
     box-shadow: none;
     border-top: none;
     border-radius: 0 0 5px 5px;
@@ -13,18 +13,18 @@ textarea.ant-input.cvat-raw-labels-viewer {
     font-family: $monospaced-fonts-stack;
 
     &:focus {
-        border-color: $border-color-2;
+        border-color: $border-color-1;
         box-shadow: none;
     }
 
     &:hover {
-        border-color: $border-color-2;
+        border-color: $border-color-1;
         box-shadow: none;
     }
 }
 
 .cvat-constructor-viewer {
-    border: 1px solid $border-color-2;
+    border: 1px solid $border-color-1;
     box-shadow: none;
     border-top: none;
     border-radius: 0 0 $grid-unit-size $grid-unit-size;
@@ -45,7 +45,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin: 2px;
     margin-left: $grid-unit-size * 2;
     user-select: none;
-    border: 1px solid $border-color-2;
+    border: 1px solid $border-color-1;
     opacity: 0.6;
 
     > span {
@@ -134,7 +134,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
 .cvat-skeleton-configurator-canvas {
     width: 100%;
-    border: 1px solid $border-color-2;
+    border: 1px solid $border-color-1;
     border-radius: $grid-unit-size;
     height: auto;
 }
