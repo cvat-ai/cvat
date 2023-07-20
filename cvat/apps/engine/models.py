@@ -863,6 +863,10 @@ class Skeleton(models.Model):
 
     @classmethod
     def embed_label_name_to_svg(cls, svg: str, label_id: int, label_name: str) -> str:
+        return svg.replace(f'data-label-id="{label_id}"', f'data-label-name="{label_name}"')
+
+    @classmethod
+    def embed_label_id_to_svg(cls, svg: str, label_name: str, label_id: int) -> str:
         return svg.replace(f'data-label-name="{label_name}"', f'data-label-id="{label_id}"')
 
 class AttributeType(str, Enum):

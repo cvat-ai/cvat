@@ -1358,11 +1358,11 @@ class TestPatchTaskLabel:
         assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
 
     def test_can_add_skeleton_label(self, tasks, admin_user):
-        task = next(iter(tasks))
+        task = [t for t in tasks if t["project_id"] is None][0]
 
         label_payload = make_skeleton_label_payload(name="test_skeleton_label")
 
-        response = patch_method(admin_user, f'/tasks/{task["id"]}', {"labels": [label_payload]})
+        response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
 

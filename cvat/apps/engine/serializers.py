@@ -358,7 +358,7 @@ class LabelSerializer(SublabelSerializer):
 
             if db_label.type == str(models.LabelType.SKELETON):
                 for db_sublabel in list(db_label.sublabels.all()):
-                    svg = models.Skeleton.embed_label_name_to_svg(
+                    svg = models.Skeleton.embed_label_id_to_svg(
                         svg, label_id=db_sublabel.id, label_name=db_sublabel.name,
                     )
                 db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
@@ -442,7 +442,7 @@ class LabelSerializer(SublabelSerializer):
 
             if db_label.type == str(models.LabelType.SKELETON):
                 for db_sublabel in list(db_label.sublabels.all()):
-                    svg = models.Skeleton.embed_label_name_to_svg(
+                    svg = models.Skeleton.embed_label_id_to_svg(
                         svg, label_id=db_sublabel.id, label_name=db_sublabel.name,
                     )
                 db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)

@@ -731,7 +731,7 @@ class TestPatchProjectLabel:
         label_payload = make_skeleton_label_payload(name="test_skeleton_label")
 
         response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
+            admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
