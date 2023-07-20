@@ -699,3 +699,5 @@ ASSET_SUPPORTED_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/gif', '
 ASSET_MAX_COUNT_PER_GUIDE = 10
 
 SMOKESCREEN_ENABLED = True
+
+EXTRA_RULES_PATHS = []
