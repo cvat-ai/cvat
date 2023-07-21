@@ -133,13 +133,13 @@ function JobItem(props: Props): JSX.Element {
                         <Row className='cvat-job-item-dates-info'>
                             <Col>
                                 <Text>Created on </Text>
-                                <Text type='secondary'>{`${created.format('MMMM Do YYYY HH:MM')}`}</Text>
+                                <Text type='secondary'>{`${created.format('MMMM Do YYYY HH:mm')}`}</Text>
                             </Col>
                         </Row>
                         <Row>
                             <Col>
                                 <Text>Last updated </Text>
-                                <Text type='secondary'>{`${updated.format('MMMM Do YYYY HH:MM')}`}</Text>
+                                <Text type='secondary'>{`${updated.format('MMMM Do YYYY HH:mm')}`}</Text>
                             </Col>
                         </Row>
                     </Col>

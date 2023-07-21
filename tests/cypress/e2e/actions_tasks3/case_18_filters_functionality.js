@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,15 +11,15 @@ context('Filters functionality.', () => {
     const caseId = '18';
     const labelShape = 'shape 3 points';
     const additionalAttrsLabelShape = [
-        { additionalAttrName: 'type', additionalValue: 'shape', typeAttribute: 'Text' },
-        { additionalAttrName: 'count points', additionalValue: '3', typeAttribute: 'Text' },
-        { additionalAttrName: 'polygon', additionalValue: 'True', typeAttribute: 'Checkbox' },
+        { name: 'type', values: 'shape', type: 'Text' },
+        { name: 'count points', values: '3', type: 'Text' },
+        { name: 'polygon', values: 'True', type: 'Checkbox' },
     ];
     const labelTrack = 'track 4 points';
     const additionalAttrsLabelTrack = [
-        { additionalAttrName: 'type', additionalValue: 'track', typeAttribute: 'Text' },
-        { additionalAttrName: 'polygon', additionalValue: 'True', typeAttribute: 'Checkbox' },
-        { additionalAttrName: 'count points', additionalValue: '4', typeAttribute: 'Text' },
+        { name: 'type', values: 'track', type: 'Text' },
+        { name: 'polygon', values: 'True', type: 'Checkbox' },
+        { name: 'count points', values: '4', type: 'Text' },
     ];
 
     const createPolygonShape = {
@@ -93,8 +94,8 @@ context('Filters functionality.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(labelShape, additionalAttrsLabelShape);
-        cy.addNewLabel(labelTrack, additionalAttrsLabelTrack);
+        cy.addNewLabel({ name: labelShape }, additionalAttrsLabelShape);
+        cy.addNewLabel({ name: labelTrack }, additionalAttrsLabelTrack);
         cy.openJob();
     });
 

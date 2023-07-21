@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -59,9 +60,9 @@ context('Label constructor. Color label. Label name editing', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('To add multiple labels with a color change.', () => {
-            cy.addNewLabel(colorRed, labelAdditionalAttrs, labelColor.redHex);
-            cy.addNewLabel(colorGreen, labelAdditionalAttrs, labelColor.greenHex);
-            cy.addNewLabel(colorBlue, labelAdditionalAttrs, labelColor.blueHex);
+            cy.addNewLabel({ name: colorRed, color: labelColor.redHex }, labelAdditionalAttrs);
+            cy.addNewLabel({ name: colorGreen, color: labelColor.greenHex }, labelAdditionalAttrs);
+            cy.addNewLabel({ name: colorBlue, color: labelColor.blueHex }, labelAdditionalAttrs);
         });
 
         it('Check color for created labels.', () => {
@@ -130,7 +131,7 @@ context('Label constructor. Color label. Label name editing', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             // Adding a label without setting a color
-            cy.addNewLabel(`Case ${caseId}`);
+            cy.addNewLabel({ name: `Case ${caseId}` });
             cy.get('.cvat-constructor-viewer').should('be.visible');
             cy.contains('.cvat-constructor-viewer-item', `Case ${caseId}`)
                 .invoke('attr', 'style')
