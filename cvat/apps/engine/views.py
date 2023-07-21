@@ -42,7 +42,6 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
-from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
@@ -75,7 +74,7 @@ from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job,
     parse_exception_message, get_rq_job_meta, get_import_rq_id,
-    import_resource_with_clean_up_after
+    import_resource_with_clean_up_after, sendfile
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin

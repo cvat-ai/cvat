@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  (<https://github.com/opencv/cvat/pull/6506>)
 - Server-side validation for attribute specifications
   (<https://github.com/opencv/cvat/pull/6447>)
+- \[API\] File downloading failures for filenames with special characters l(<https://github.com/opencv/cvat/pull/6492>)
 
 ### Security
 - TDB
