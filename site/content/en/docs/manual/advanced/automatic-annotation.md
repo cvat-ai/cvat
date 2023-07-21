@@ -6,19 +6,21 @@ description: 'Automatic annotation of tasks'
 ---
 
 Automatic annotation in CVAT is a tool that you can use
-to automatically pre-annotate your data with pre-trained
-and pre-installed [Models](#models).
+to automatically pre-annotate your data with pre-trained models.
 
-You can also **add models** from popular platforms
-like **Hugging Face** or **Roboflow** to expand the
-range of available options.
+CVAT can use models from the following sources:
 
-> **Note**, that on self-hosted instances the automatic annotation feature is free,
-> but you have to add your own models. Integration with Hugging Face
-> and Roboflow is not supported for self-hosted solution.
-> <br>On CVAT Cloud Automatic annotation is a [paid CVAT feature](https://www.cvat.ai/pricing/cloud)
-> with several pre-installed models available by default,
-> also you can add models from Roboflow and Hugging Face.
+- [Pre-installed models](#models).
+- Models integrated from [Hugging Face and Roboflow](#adding-models-from-hugging-face-and-roboflow).
+- [Self-hosted models deployed with Nuclio](/docs/manual/advanced/serverless-tutorial/).
+
+The following table describes the available options:
+
+|                                             | Self-hosted            | Cloud                                            |
+| ------------------------------------------- | ---------------------- | ------------------------------------------------ |
+| **Price**                                   | Free                   | See [Pricing](https://www.cvat.ai/pricing/cloud) |
+| **Models**                                  | You have to add models | All models are pre-installed                     |
+| **Hugging Face & Roboflow <br>integration** | Not supported          | Supported                                        |
 
 See:
 
