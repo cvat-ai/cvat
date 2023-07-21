@@ -289,9 +289,9 @@ const samPlugin: SAMPlugin = {
 
 const SAMModelPlugin: ComponentBuilder = ({ core }) => {
     samPlugin.data.core = core;
+    core.plugins.register(samPlugin);
     InferenceSession.create(samPlugin.data.modelURL).then((session) => {
         samPlugin.data.session = session;
-        core.plugins.register(samPlugin);
     });
 
     return {

@@ -30,18 +30,18 @@ context('Annotations statistics.', () => {
     const createEllipseShape = {
         type: 'Shape',
         labelName,
-        cx: 400,
-        cy: 400,
-        rightX: 500,
-        topY: 350,
+        firstX: 400,
+        firstY: 400,
+        secondX: 500,
+        secondY: 350,
     };
     const createEllipseTrack = {
         type: 'Track',
         labelName,
-        cx: createEllipseShape.cx,
-        cy: createEllipseShape.cy - 150,
-        rightX: createEllipseShape.rightX,
-        topY: createEllipseShape.topY - 150,
+        firstX: createEllipseShape.firstX,
+        firstY: createEllipseShape.firstY - 150,
+        secondX: createEllipseShape.secondX,
+        secondY: createEllipseShape.secondY - 150,
     };
     const createCuboidShape2Points = {
         points: 'From rectangle',

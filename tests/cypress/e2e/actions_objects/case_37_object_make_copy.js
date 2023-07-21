@@ -59,10 +59,10 @@ context('Object make a copy.', () => {
     const createEllipseShape = {
         type: 'Shape',
         labelName,
-        cx: 550,
-        cy: 100,
-        rightX: 600,
-        topY: 150,
+        firstX: 550,
+        firstY: 100,
+        secondX: 600,
+        secondY: 150,
     };
     const countObject = 6;
 

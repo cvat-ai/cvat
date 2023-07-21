@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,34 +14,34 @@ context('Actions on ellipse.', () => {
     const createEllipseShape = {
         type: 'Shape',
         labelName,
-        cx: 250,
-        cy: 350,
-        rightX: 450,
-        topY: 280,
+        firstX: 250,
+        firstY: 350,
+        secondX: 450,
+        secondY: 280,
     };
     const createEllipseTrack = {
         type: 'Track',
         labelName,
-        cx: createEllipseShape.cx,
-        cy: createEllipseShape.cy - 150,
-        rightX: createEllipseShape.rightX,
-        topY: createEllipseShape.topY - 150,
+        firstX: createEllipseShape.firstX,
+        firstY: createEllipseShape.firstY - 150,
+        secondX: createEllipseShape.secondX,
+        secondY: createEllipseShape.secondY - 150,
     };
     const createEllipseShapeSwitchLabel = {
         type: 'Shape',
         labelName: newLabelName,
-        cx: createEllipseShape.cx + 250,
-        cy: createEllipseShape.cy,
-        rightX: createEllipseShape.rightX + 250,
-        topY: createEllipseShape.topY,
+        firstX: createEllipseShape.firstX + 250,
+        firstY: createEllipseShape.firstY,
+        secondX: createEllipseShape.secondX + 250,
+        secondY: createEllipseShape.secondY,
     };
     const createEllipseTrackSwitchLabel = {
         type: 'Track',
         labelName: newLabelName,
-        cx: createEllipseShape.cx + 250,
-        cy: createEllipseShape.cy - 150,
-        rightX: createEllipseShape.rightX + 250,
-        topY: createEllipseShape.topY - 150,
+        firstX: createEllipseShape.firstX + 250,
+        firstY: createEllipseShape.firstY - 150,
+        secondX: createEllipseShape.secondX + 250,
+        secondY: createEllipseShape.secondY - 150,
     };
 
     function testCompareRotate(shape, toFrame) {
@@ -58,7 +59,7 @@ context('Actions on ellipse.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(newLabelName);
+        cy.addNewLabel({ name: newLabelName });
         cy.openJob();
     });
 

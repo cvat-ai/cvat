@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,9 +11,9 @@ context('Changing a default value for an attribute.', () => {
     const caseId = '44';
     const additionalLabel = `Case ${caseId}`;
     const additionalAttrsLabel = [
-        { additionalAttrName: 'type', additionalValue: '', typeAttribute: 'Text' },
-        { additionalAttrName: 'count', additionalValue: '0;5;1', typeAttribute: 'Number' }, // Check issue 2968
-        { additionalAttrName: 'shape', additionalValue: 'False', typeAttribute: 'Checkbox' },
+        { name: 'type', values: '', type: 'Text' },
+        { name: 'count', values: '0;5;1', type: 'Number' }, // Check issue 2968
+        { name: 'shape', values: 'False', type: 'Checkbox' },
     ];
     const rectangleShape2Points = {
         points: 'By 2 Points',
@@ -34,7 +35,7 @@ context('Changing a default value for an attribute.', () => {
     describe(`Testing case "${caseId}", issue 2968`, () => {
         it('Add a label, add text (leave it’s value empty by default) & checkbox attributes.', () => {
             cy.intercept('PATCH', '/api/tasks/**').as('patchTask');
-            cy.addNewLabel(additionalLabel, additionalAttrsLabel);
+            cy.addNewLabel({ name: additionalLabel }, additionalAttrsLabel);
             cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
             cy.get('.cvat-constructor-viewer').should('exist').and('be.visible');
         });
@@ -76,9 +77,9 @@ context('Changing a default value for an attribute.', () => {
             cy.createRectangle(rectangleShape2Points);
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             [
-                [additionalAttrsLabel[0].additionalAttrName, newTextValue],
-                [additionalAttrsLabel[1].additionalAttrName, additionalAttrsLabel[1].additionalValue.split(';')[0]],
-                [additionalAttrsLabel[2].additionalAttrName, newCheckboxValue.toLowerCase()],
+                [additionalAttrsLabel[0].name, newTextValue],
+                [additionalAttrsLabel[1].name, additionalAttrsLabel[1].values.split(';')[0]],
+                [additionalAttrsLabel[2].name, newCheckboxValue.toLowerCase()],
             ].forEach(([attrName, attrValue]) => {
                 // eslint-disable-next-line security/detect-non-literal-regexp
                 cy.contains(new RegExp(`^${attrName}: ${attrValue}$`)).should('be.visible');

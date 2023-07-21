@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,7 +36,7 @@ context('Try to create a task with an incorrect dataset repository.', () => {
     describe(`Testing "${labelName}"`, () => {
         it('Try create task with incorrect dataset repo URL.', () => {
             cy.get('[id="name"]').type(taskName);
-            cy.addNewLabel(labelName);
+            cy.addNewLabel({ name: labelName });
             cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
             cy.contains('.cvat-title', 'Advanced configuration').click();
             cy.get('#repository').type(incorrectDatasetRepoUrl);
