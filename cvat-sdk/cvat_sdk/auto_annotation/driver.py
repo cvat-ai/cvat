@@ -9,6 +9,7 @@ import attrs
 
 import cvat_sdk.models as models
 from cvat_sdk.core import Client
+from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.datasets.task_dataset import TaskDataset
 
 from .interface import DetectionFunction, DetectionFunctionContext, DetectionFunctionSpec
@@ -204,7 +205,16 @@ class _AnnotationMapper:
         shapes[:] = new_shapes
 
 
-def annotate_task(client: Client, task_id: int, function: DetectionFunction) -> None:
+def annotate_task(
+    client: Client,
+    task_id: int,
+    function: DetectionFunction,
+    *,
+    pbar: Optional[ProgressReporter] = None,
+) -> None:
+    if pbar is None:
+        pbar = NullProgressReporter()
+
     dataset = TaskDataset(client, task_id)
 
     assert isinstance(function.spec, DetectionFunctionSpec)
@@ -215,10 +225,11 @@ def annotate_task(client: Client, task_id: int, function: DetectionFunction) -> 
 
     context = DetectionFunctionContext()
 
-    for sample in dataset.samples:
-        frame_shapes = function.detect(context, sample.media.load_image())
-        mapper.validate_and_remap(frame_shapes, sample.frame_index)
-        shapes.extend(frame_shapes)
+    with pbar.task(total=len(dataset.samples), unit="samples"):
+        for sample in pbar.iter(dataset.samples):
+            frame_shapes = function.detect(context, sample.media.load_image())
+            mapper.validate_and_remap(frame_shapes, sample.frame_index)
+            shapes.extend(frame_shapes)
 
     client.logger.info("Uploading annotations to task %d", task_id)
     client.tasks.api.update_annotations(

@@ -16,6 +16,8 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 
 from shared.utils.helpers import generate_image_file
 
+from .util import make_pbar
+
 
 @pytest.fixture(autouse=True)
 def _common_setup(
@@ -192,6 +194,23 @@ class TestTaskAutoAnnotation:
             assert elements[0].points == [10, 10]
             assert self.cat_sublabels_by_id[elements[1].label_id].name == "tail"
             assert elements[1].points == [30, 30]
+
+    def test_progress_reporting(self):
+        spec = cvataa.DetectionFunctionSpec(labels=[])
+
+        def detect(context, image):
+            return []
+
+        file = io.StringIO()
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            pbar=make_pbar(file),
+        )
+
+        assert "100%" in file.getvalue()
 
     def _test_bad_function_spec(self, spec: cvataa.DetectionFunctionSpec, exc_match: str) -> None:
         def detect(context, image):

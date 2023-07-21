@@ -161,4 +161,4 @@ class CLI:
         else:
             assert False, "function identification arguments missing"
 
-        cvataa.annotate_task(self.client, task_id, function)
+        cvataa.annotate_task(self.client, task_id, function, pbar=DeferredTqdmProgressReporter())

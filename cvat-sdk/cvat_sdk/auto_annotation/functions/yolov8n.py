@@ -33,4 +33,4 @@ def _yolo_to_cvat(results: List[Results]) -> Iterator[models.LabeledShapeRequest
 
 
 def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
-    return list(_yolo_to_cvat(_model.predict(source=image)))
+    return list(_yolo_to_cvat(_model.predict(source=image, verbose=False)))
