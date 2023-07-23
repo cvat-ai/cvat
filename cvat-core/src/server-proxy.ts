@@ -1401,7 +1401,7 @@ async function deleteJob(jobID: number): Promise<void> {
     }
 }
 
-async function getUsers(filter = { page_size: 'all' }) {
+async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1418,8 +1418,8 @@ async function getUsers(filter = { page_size: 'all' }) {
     return response.data.results;
 }
 
-function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages') {
-    return async function (id: number) {
+function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 'functions') {
+    return async function (id: number | string): Promise<Blob | null> {
         const { backendAPI } = config;
 
         let response = null;
@@ -1433,11 +1433,15 @@ function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages') {
             throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
         }
 
-        return (response.status === 200) ? response.data : '';
+        if (response.status === 404) {
+            return null;
+        }
+
+        return response.data;
     };
 }
 
-async function getImageContext(jid, frame) {
+async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1457,14 +1461,12 @@ async function getImageContext(jid, frame) {
     return response.data;
 }
 
-async function getData(tid, jid, chunk) {
+async function getData(jid: number, chunk: number): Promise<ArrayBuffer> {
     const { backendAPI } = config;
-
-    const url = jid === null ? `tasks/${tid}/data` : `jobs/${jid}/data`;
 
     let response = null;
     try {
-        response = await workerAxios.get(`${backendAPI}/${url}`, {
+        response = await workerAxios.get(`${backendAPI}/jobs/${jid}/data`, {
             params: {
                 ...enableOrganization(),
                 quality: 'compressed',
@@ -1557,23 +1559,6 @@ async function getFunctions(): Promise<FunctionsResponseBody> {
         }
         throw generateError(errorData);
     }
-}
-
-async function getFunctionPreview(modelID) {
-    const { backendAPI } = config;
-
-    let response = null;
-    try {
-        const url = `${backendAPI}/functions/${modelID}/preview`;
-        response = await Axios.get(url, {
-            responseType: 'blob',
-        });
-    } catch (errorData) {
-        const code = errorData.response ? errorData.response.status : errorData.code;
-        throw new ServerError(`Could not get preview for the model ${modelID} from the server`, code);
-    }
-
-    return response.data;
 }
 
 async function getFunctionProviders() {
@@ -2418,7 +2403,7 @@ export default Object.freeze({
         providers: getFunctionProviders,
         delete: deleteFunction,
         cancel: cancelFunctionRequest,
-        getPreview: getFunctionPreview,
+        getPreview: getPreview('functions'),
     }),
 
     issues: Object.freeze({

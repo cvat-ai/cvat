@@ -6,6 +6,7 @@
 import { ArgumentError } from './exceptions';
 import { HistoryActions, JobType } from './enums';
 import { Storage } from './storage';
+import { Task as TaskClass, Job as JobClass } from './session';
 import loggerStorage from './logger-storage';
 import serverProxy from './server-proxy';
 import {
@@ -166,14 +167,11 @@ export function implementJob(Job) {
         return rangesData;
     };
 
-    Job.prototype.frames.preview.implementation = async function () {
-        if (this.id === null || this.taskId === null) {
-            return '';
-        }
-
+    Job.prototype.frames.preview.implementation = async function (this: JobClass): Promise<string> {
+        if (this.id === null || this.taskId === null) return '';
         const preview = await serverProxy.jobs.getPreview(this.id);
-        const decoded = await decodePreview(preview);
-        return decoded;
+        if (!preview) return '';
+        return decodePreview(preview);
     };
 
     Job.prototype.frames.contextImage.implementation = async function (frameId) {
@@ -583,14 +581,11 @@ export function implementTask(Task) {
         return rangesData;
     };
 
-    Task.prototype.frames.preview.implementation = async function () {
-        if (this.id === null) {
-            return '';
-        }
-
+    Task.prototype.frames.preview.implementation = async function (this: TaskClass): Promise<string> {
+        if (this.id === null) return '';
         const preview = await serverProxy.tasks.getPreview(this.id);
-        const decoded = await decodePreview(preview);
-        return decoded;
+        if (!preview) return '';
+        return decodePreview(preview);
     };
 
     Task.prototype.frames.delete.implementation = async function (frame) {
