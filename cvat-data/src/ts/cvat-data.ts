@@ -77,16 +77,15 @@ export class FrameProvider {
     private blockType: BlockType;
 
     /*
-        ImageBitmap when decode zip chunks
-        ImageData when decode video chunks
+        ImageBitmap when decode zip or video chunks
         Blob when 3D dimension
         null when not decoded yet
     */
-    private frames: Record<string, ImageBitmap | ImageData | Blob | null>;
+    private frames: Record<string, ImageBitmap | Blob | null>;
     private requestedBlockToDecode: null | BlockToDecode;
     private blocksAreBeingDecoded: Record<string, BlockToDecode>;
     private promisedFrames: Record<string, {
-        resolve: (data: ImageBitmap | ImageData | Blob) => void;
+        resolve: (data: ImageBitmap | Blob) => void;
         reject: () => void;
     }>;
     private currentDecodingThreads: number;
@@ -97,10 +96,6 @@ export class FrameProvider {
     private workerThreadsLimit: number;
     private cachedEncodedBlocksLimit: number;
     private cachedDecodedBlocksLimit: number;
-
-    // used for video chunks to resize after decoding
-    private renderWidth: number;
-    private renderHeight: number;
 
     constructor(
         blockType: BlockType,
@@ -122,8 +117,6 @@ export class FrameProvider {
         this.workerThreadsLimit = maxWorkerThreadCount;
         this.dimension = dimension;
 
-        this.renderWidth = 1920;
-        this.renderHeight = 1080;
         this.blockSize = blockSize;
         this.blockType = blockType;
 
@@ -216,11 +209,6 @@ export class FrameProvider {
         }
     }
 
-    setRenderSize(width: number, height: number): void {
-        this.renderWidth = width;
-        this.renderHeight = height;
-    }
-
     /* Method returns frame from collection. Else method returns null */
     async frame(frameNumber: number): Promise<ImageBitmap | ImageData | Blob> {
         this.currentFrame = frameNumber;
@@ -246,44 +234,9 @@ export class FrameProvider {
         this._blocks[chunkNumber] = 'loading';
     }
 
-    static cropImage(
-        imageBuffer: ArrayBuffer,
-        imageWidth: number,
-        imageHeight: number,
-        xOffset: number,
-        yOffset: number,
-        width: number,
-        height: number,
-    ): ImageData {
-        if (xOffset === 0 && width === imageWidth && yOffset === 0 && height === imageHeight) {
-            return new ImageData(new Uint8ClampedArray(imageBuffer), width, height);
-        }
-        const source = new Uint32Array(imageBuffer);
-
-        const bufferSize = width * height * 4;
-        const buffer = new ArrayBuffer(bufferSize);
-        const rgbaInt32 = new Uint32Array(buffer);
-        const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
-
-        if (imageWidth === width) {
-            return new ImageData(new Uint8ClampedArray(imageBuffer, yOffset * 4, bufferSize), width, height);
-        }
-
-        let writeIdx = 0;
-        for (let row = yOffset; row < height; row++) {
-            const start = row * imageWidth + xOffset;
-            rgbaInt32.set(source.subarray(start, start + width), writeIdx);
-            writeIdx += width;
-        }
-
-        return new ImageData(rgbaInt8Clamped, width, height);
-    }
-
     async startDecode(): Promise<void> {
         const release = await this.mutex.acquire();
         try {
-            const height = this.renderHeight;
-            const width = this.renderWidth;
             const { start, end, block } = this.requestedBlockToDecode;
 
             this.blocksRanges.push(`${start}:${end}`);
@@ -307,34 +260,26 @@ export class FrameProvider {
                         // ignore initialization message
                         return;
                     }
+                    const keptIndex = index;
+                    createImageBitmap(new ImageData(new Uint8ClampedArray(e.data.buf), e.data.width)).then((bitmap) => {
+                        this.frames[keptIndex] = bitmap;
+                        const { resolveCallback } = this.blocksAreBeingDecoded[`${start}:${end}`];
+                        if (resolveCallback) {
+                            resolveCallback(keptIndex);
+                        }
 
-                    const scaleFactor = Math.ceil(height / e.data.height);
-                    this.frames[index] = FrameProvider.cropImage(
-                        e.data.buf,
-                        e.data.width,
-                        e.data.height,
-                        0,
-                        0,
-                        Math.floor(width / scaleFactor),
-                        Math.floor(height / scaleFactor),
-                    );
+                        if (keptIndex in this.promisedFrames) {
+                            const { resolve } = this.promisedFrames[keptIndex];
+                            delete this.promisedFrames[keptIndex];
+                            resolve(this.frames[keptIndex]);
+                        }
 
-                    const { resolveCallback } = this.blocksAreBeingDecoded[`${start}:${end}`];
-                    if (resolveCallback) {
-                        resolveCallback(index);
-                    }
-
-                    if (index in this.promisedFrames) {
-                        const { resolve } = this.promisedFrames[index];
-                        delete this.promisedFrames[index];
-                        resolve(this.frames[index]);
-                    }
-
-                    if (index === end) {
-                        worker.terminate();
-                        this.currentDecodingThreads--;
-                        delete this.blocksAreBeingDecoded[`${start}:${end}`];
-                    }
+                        if (keptIndex === end) {
+                            worker.terminate();
+                            this.currentDecodingThreads--;
+                            delete this.blocksAreBeingDecoded[`${start}:${end}`];
+                        }
+                    });
 
                     index++;
                 };
