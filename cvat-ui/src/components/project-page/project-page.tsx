@@ -289,6 +289,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                 />
                             </div>
                             <Dropdown
+                                destroyPopupOnHide
                                 trigger={['click']}
                                 overlay={(
                                     <CvatDropdownMenuPaper>

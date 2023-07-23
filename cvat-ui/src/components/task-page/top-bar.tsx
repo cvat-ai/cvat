@@ -51,12 +51,14 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                 )}
             </Col>
             <Col>
-                <Dropdown overlay={(
-                    <ActionsMenuContainer
-                        taskInstance={taskInstance}
-                        onViewAnalytics={onViewAnalytics}
-                    />
-                )}
+                <Dropdown
+                    destroyPopupOnHide
+                    overlay={(
+                        <ActionsMenuContainer
+                            taskInstance={taskInstance}
+                            onViewAnalytics={onViewAnalytics}
+                        />
+                    )}
                 >
                     <Button size='middle' className='cvat-task-page-actions-button'>
                         <Text className='cvat-text-color'>Actions</Text>

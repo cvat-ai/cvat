@@ -1102,6 +1102,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     </Col>
                     <Col span={2} className='cvat-interactors-tips-icon-container'>
                         <Dropdown
+                            destroyPopupOnHide
                             overlay={(
                                 <ToolsTooltips
                                     name={activeInteractor?.name}

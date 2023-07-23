@@ -119,32 +119,34 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 </Text>
                             </Col>
                             <Col>
-                                <Dropdown overlay={() => (
-                                    <Menu className='cvat-organization-actions-menu'>
-                                        <Menu.Item key={MenuActions.SET_WEBHOOKS}>
-                                            <a
-                                                href='/organization/webhooks'
-                                                onClick={(e: React.MouseEvent) => {
-                                                    e.preventDefault();
-                                                    history.push({
-                                                        pathname: '/organization/webhooks',
-                                                    });
-                                                    return false;
-                                                }}
-                                            >
-                                                Setup webhooks
-                                            </a>
-                                        </Menu.Item>
-                                        {owner && userID === owner.id ? (
-                                            <Menu.Item
-                                                key={MenuActions.REMOVE_ORGANIZATION}
-                                                onClick={onRemove}
-                                            >
-                                                Remove organization
+                                <Dropdown
+                                    destroyPopupOnHide
+                                    overlay={() => (
+                                        <Menu className='cvat-organization-actions-menu'>
+                                            <Menu.Item key={MenuActions.SET_WEBHOOKS}>
+                                                <a
+                                                    href='/organization/webhooks'
+                                                    onClick={(e: React.MouseEvent) => {
+                                                        e.preventDefault();
+                                                        history.push({
+                                                            pathname: '/organization/webhooks',
+                                                        });
+                                                        return false;
+                                                    }}
+                                                >
+                                                    Setup webhooks
+                                                </a>
                                             </Menu.Item>
-                                        ) : null}
-                                    </Menu>
-                                )}
+                                            {owner && userID === owner.id ? (
+                                                <Menu.Item
+                                                    key={MenuActions.REMOVE_ORGANIZATION}
+                                                    onClick={onRemove}
+                                                >
+                                                    Remove organization
+                                                </Menu.Item>
+                                            ) : null}
+                                        </Menu>
+                                    )}
                                 >
                                     <Button size='middle' className='cvat-organization-page-actions-button'>
                                         <Text className='cvat-text-color'>Actions</Text>

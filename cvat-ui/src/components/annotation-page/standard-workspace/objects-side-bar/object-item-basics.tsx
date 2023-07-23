@@ -127,6 +127,7 @@ function ItemTopComponent(props: Props): JSX.Element {
             { !isGroundTruth && (
                 <Col span={2}>
                     <Dropdown
+                        destroyPopupOnHide
                         visible={menuVisible}
                         onVisibleChange={changeMenuVisible}
                         placement='bottomLeft'
