@@ -148,41 +148,39 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                 </Row>
                 <Row justify='end'>
                     <Col>
-                        <Dropdown
-                            destroyPopupOnHide
-                            overlay={() => (
-                                <Menu>
-                                    <Menu.Item key='edit'>
-                                        <a
-                                            href={`/webhooks/update/${id}`}
-                                            onClick={(e: React.MouseEvent) => {
-                                                e.preventDefault();
-                                                history.push(`/webhooks/update/${id}`);
-                                                return false;
-                                            }}
-                                        >
-                                            Edit
-                                        </a>
-                                    </Menu.Item>
-                                    <Menu.Item
-                                        key='delete'
-                                        onClick={() => {
-                                            Modal.confirm({
-                                                title: 'Are you sure you want to remove the hook?',
-                                                content: 'It will stop notificating the specified URL about listed events',
-                                                className: 'cvat-modal-confirm-remove-webhook',
-                                                onOk: () => {
-                                                    dispatch(deleteWebhookAsync(webhookInstance)).then(() => {
-                                                        setIsRemoved(true);
-                                                    });
-                                                },
-                                            });
+                        <Dropdown overlay={() => (
+                            <Menu>
+                                <Menu.Item key='edit'>
+                                    <a
+                                        href={`/webhooks/update/${id}`}
+                                        onClick={(e: React.MouseEvent) => {
+                                            e.preventDefault();
+                                            history.push(`/webhooks/update/${id}`);
+                                            return false;
                                         }}
                                     >
-                                        Delete
-                                    </Menu.Item>
-                                </Menu>
-                            )}
+                                        Edit
+                                    </a>
+                                </Menu.Item>
+                                <Menu.Item
+                                    key='delete'
+                                    onClick={() => {
+                                        Modal.confirm({
+                                            title: 'Are you sure you want to remove the hook?',
+                                            content: 'It will stop notificating the specified URL about listed events',
+                                            className: 'cvat-modal-confirm-remove-webhook',
+                                            onOk: () => {
+                                                dispatch(deleteWebhookAsync(webhookInstance)).then(() => {
+                                                    setIsRemoved(true);
+                                                });
+                                            },
+                                        });
+                                    }}
+                                >
+                                    Delete
+                                </Menu.Item>
+                            </Menu>
+                        )}
                         >
                             <div className='cvat-webhooks-page-actions-button'>
                                 <Text className='cvat-text-color'>Actions</Text>

@@ -145,10 +145,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                             </Row>
                             {
                                 model.provider !== ModelProviders.CVAT && (
-                                    <Dropdown
-                                        destroyPopupOnHide
-                                        overlay={<ModelActionsMenuComponent model={model} onDelete={onDelete} />}
-                                    >
+                                    <Dropdown overlay={<ModelActionsMenuComponent model={model} onDelete={onDelete} />}>
                                         <Button className='cvat-deployed-model-details-button' type='link' size='large' icon={<MoreOutlined />} />
                                     </Dropdown>
                                 )

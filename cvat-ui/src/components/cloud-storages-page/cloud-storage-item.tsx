@@ -118,7 +118,6 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                         </Paragraph>
                         <Status cloudStorage={cloudStorage} />
                         <Dropdown
-                            destroyPopupOnHide
                             overlay={(
                                 <Menu className='cvat-project-actions-menu'>
                                     <Menu.Item onClick={onUpdate}>Update</Menu.Item>

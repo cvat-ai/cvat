@@ -90,7 +90,6 @@ function TopBarComponent(props: Props): JSX.Element {
                 </div>
                 <div>
                     <Dropdown
-                        destroyPopupOnHide
                         trigger={['click']}
                         overlay={(
                             <div className='cvat-projects-page-control-buttons-wrapper'>

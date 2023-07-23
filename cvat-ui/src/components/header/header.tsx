@@ -519,12 +519,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
-                <Dropdown
-                    destroyPopupOnHide
-                    placement='bottomRight'
-                    overlay={userMenu}
-                    className='cvat-header-menu-user-dropdown'
-                >
+                <Dropdown placement='bottomRight' overlay={userMenu} className='cvat-header-menu-user-dropdown'>
                     <span>
                         <UserOutlined className='cvat-header-dropdown-icon' />
                         <Row>
