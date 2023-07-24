@@ -26,7 +26,7 @@ interface StateToProps {
     contextMenuParentID: number | null;
     contextMenuClientID: number | null;
     canvasInstance: Canvas | null;
-    objectStates: any[];
+    objectStates: ObjectState[];
     frameConflicts: QualityConflict[];
     visible: boolean;
     top: number;
@@ -155,7 +155,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         };
     }
 
-    static getDerivedStateFromProps(props: Props, state: State): State | null {
+    static getDerivedStateFromProps(props: Readonly<Props>, state: State): State | null {
         if (props.left === state.latestLeft && props.top === state.latestTop) {
             return null;
         }

@@ -81,7 +81,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         };
     }
 
-    static getDerivedStateFromProps(props: Props, state: State): State | null {
+    static getDerivedStateFromProps(props: Readonly<Props>, state: State): State | null {
         if (props.objectStates === state.objectStates) {
             return null;
         }

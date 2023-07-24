@@ -1811,7 +1811,8 @@ class ProjectImportExportAPITestCase(ApiTestBase):
                             "name": "bool_attribute",
                             "mutable": True,
                             "input_type": AttributeType.CHECKBOX,
-                            "default_value": "true"
+                            "default_value": "true",
+                            "values": [],
                         }],
                     }, {
                         "name": "person",
@@ -2572,7 +2573,8 @@ class TaskCreateAPITestCase(ApiTestBase):
                     "name": "my_attribute",
                     "mutable": True,
                     "input_type": AttributeType.CHECKBOX,
-                    "default_value": "true"
+                    "default_value": "true",
+                    "values": [],
                 }]
             }]
         }
@@ -2895,7 +2897,8 @@ class TaskImportExportAPITestCase(ApiTestBase):
                         "name": "bool_attribute",
                         "mutable": True,
                         "input_type": AttributeType.CHECKBOX,
-                        "default_value": "true"
+                        "default_value": "true",
+                        "values": [],
                     }],
                     }, {
                         "name": "person",
@@ -2915,7 +2918,8 @@ class TaskImportExportAPITestCase(ApiTestBase):
                         "name": "bool_attribute",
                         "mutable": True,
                         "input_type": AttributeType.CHECKBOX,
-                        "default_value": "true"
+                        "default_value": "true",
+                        "values": [],
                     }],
                     }, {
                         "name": "person",
@@ -4649,7 +4653,8 @@ class JobAnnotationAPITestCase(ApiTestBase):
                             "name": "parked",
                             "mutable": True,
                             "input_type": "checkbox",
-                            "default_value": "false"
+                            "default_value": "false",
+                            "values": [],
                         },
                     ]
                 },

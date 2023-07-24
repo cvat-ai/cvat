@@ -18,7 +18,8 @@
             "name": "parked",
             "mutable": true,
             "input_type": "checkbox",
-            "default_value": false
+            "default_value": "false",
+            "values": []
           }
         ]
       },
@@ -47,7 +48,8 @@
             "name": "parked",
             "mutable": true,
             "input_type": "checkbox",
-            "default_value": false
+            "default_value": "false",
+            "values": []
           }
         ]
       },

@@ -26,6 +26,6 @@ def generate_images(dst_dir: Path, count: int) -> List[Path]:
     dst_dir.mkdir(parents=True, exist_ok=True)
     for i in range(count):
         filename = dst_dir / f"img_{i}.jpg"
-        filename.write_bytes(generate_image_file().getvalue())
+        filename.write_bytes(generate_image_file(filename.name).getvalue())
         filenames.append(filename)
     return filenames
