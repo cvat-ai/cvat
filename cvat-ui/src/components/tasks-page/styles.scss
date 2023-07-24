@@ -3,8 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
-@import '../../styles.scss';
+@import '../../base';
+@import '../../styles';
 
 .cvat-tasks-page {
     padding-top: $grid-unit-size * 2;
@@ -44,13 +44,13 @@
         padding-top: 10px;
     }
 
-    @media screen and (min-height: 900px) {
+    @media screen and (height >= 900px) {
         > div:nth-child(2) {
             height: 88%;
         }
     }
 
-    @media screen and (min-height: 1200px) {
+    @media screen and (height >= 1200px) {
         > div:nth-child(2) {
             height: 93%;
         }
