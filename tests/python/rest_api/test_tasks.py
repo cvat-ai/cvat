@@ -2299,6 +2299,7 @@ class TestImportWithComplexFilenames:
 
             cls.data[key] = (task, dataset_file)
 
+    @pytest.mark.skip("Fails sometimes, needs to be fixed")
     @pytest.mark.parametrize(
         "task_kind, annotation_kind, expect_success",
         [

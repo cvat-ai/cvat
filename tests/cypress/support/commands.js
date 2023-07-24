@@ -526,7 +526,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
 
 Cypress.Commands.add('openSettings', () => {
     cy.get('.cvat-right-header').find('.cvat-header-menu-user-dropdown').trigger('mouseover', { which: 1 });
-    cy.get('.anticon-setting').click();
+    cy.get('.anticon-setting').should('exist').and('be.visible').click();
     cy.get('.cvat-settings-modal').should('be.visible');
 });
 

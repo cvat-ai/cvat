@@ -12,7 +12,7 @@ import torchvision.datasets
 import cvat_sdk.core
 import cvat_sdk.core.exceptions
 import cvat_sdk.models as models
-from cvat_sdk.pytorch.caching import UpdatePolicy, make_cache_manager
+from cvat_sdk.datasets.caching import UpdatePolicy, make_cache_manager
 from cvat_sdk.pytorch.task_dataset import TaskVisionDataset
 
 
