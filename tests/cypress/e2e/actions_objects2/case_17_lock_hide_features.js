@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -95,10 +96,9 @@ context('Lock/hide features.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(newLabelName1);
-        cy.addNewLabel(newLabelName2);
-        cy.addNewLabel(newLabelName3);
-        cy.addNewLabel(newLabelName4);
+        [newLabelName1, newLabelName2, newLabelName3, newLabelName4].forEach((name) => {
+            cy.addNewLabel({ name });
+        });
         cy.openJob();
     });
 

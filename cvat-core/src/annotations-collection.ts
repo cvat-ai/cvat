@@ -814,6 +814,7 @@ export default class Collection {
                     frame: state.frame,
                     label_id: state.label.id,
                     group: 0,
+                    source: state.source,
                 });
             } else {
                 checkObjectType('state occluded', state.occluded, 'boolean', null);
@@ -839,6 +840,7 @@ export default class Collection {
                         frame: state.frame,
                         group: 0,
                         label_id: state.label.id,
+                        outside: state.outside || false,
                         occluded: state.occluded || false,
                         points: state.shapeType === 'mask' ? (() => {
                             const { width, height } = this.frameMeta[state.frame];
@@ -903,7 +905,7 @@ export default class Collection {
                                     frame: state.frame,
                                     type: element.shapeType,
                                     points: [...element.points],
-                                    zOrder: state.zOrder,
+                                    z_order: state.zOrder,
                                     outside: element.outside || false,
                                     occluded: element.occluded || false,
                                     rotation: element.rotation || 0,

@@ -655,6 +655,27 @@ class TestGetTaskDataset:
         assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
         assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
 
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_download_task_with_special_chars_in_name(self, admin_user):
+        # Control characters in filenames may conflict with the Content-Disposition header
+        # value restrictions, as it needs to include the downloaded file name.
+
+        task_spec = {
+            "name": "test_special_chars_{}_in_name".format("".join(chr(c) for c in range(1, 127))),
+            "labels": [{"name": "cat"}],
+        }
+
+        task_data = {
+            "image_quality": 75,
+            "client_files": generate_image_files(1),
+        }
+
+        task_id, _ = create_task(admin_user, task_spec, task_data)
+
+        response = self._test_export_task(admin_user, task_id, format="CVAT for images 1.1")
+        assert response.status == HTTPStatus.OK
+        assert zipfile.is_zipfile(io.BytesIO(response.data))
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
