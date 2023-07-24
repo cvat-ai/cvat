@@ -524,11 +524,7 @@ class TestPatchTaskAnnotations:
             {"type": "rectangle", "frame": 4, "points": [5, 6, 7, 8]},
         ]
 
-        annotations = {
-            "tracks": [
-                {"label_id": 13, "frame": 0, "shapes": shapes0}
-            ]
-        }
+        annotations = {"tracks": [{"label_id": 13, "frame": 0, "shapes": shapes0}]}
 
         response = patch_method("admin1", endpoint, annotations, action="create")
         assert response.status_code == HTTPStatus.OK, response.content
