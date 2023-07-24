@@ -47,14 +47,7 @@ ingress:
         - path : /
           pathType: "Prefix"
           service:
-              name: frontend-service
-              port: 80
-
+            name: frontend-service
+            port: 80
 traefik:
-    enabled: true
-    logs:
-        general:
-            level: INFO
-    service:
-        externalIPs:
-        # - "192.168.49.2"
+  enabled: true
