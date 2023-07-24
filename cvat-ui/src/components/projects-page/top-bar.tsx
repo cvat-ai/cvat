@@ -16,6 +16,7 @@ import { usePrevious } from 'utils/hooks';
 import { ProjectsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
+import dimensions from './dimensions';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './projects-filter-configuration';
@@ -49,7 +50,7 @@ function TopBarComponent(props: Props): JSX.Element {
 
     return (
         <Row className='cvat-projects-page-top-bar' justify='center' align='middle'>
-            <Col md={22} lg={18} xl={16} xxl={16}>
+            <Col {...dimensions}>
                 <div className='cvat-projects-page-filters-wrapper'>
                     <Input.Search
                         enterButton

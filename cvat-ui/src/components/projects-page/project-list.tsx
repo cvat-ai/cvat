@@ -10,6 +10,7 @@ import Pagination from 'antd/lib/pagination';
 
 import { getProjectsAsync } from 'actions/projects-actions';
 import { CombinedState, Project } from 'reducers';
+import dimensions from './dimensions';
 import ProjectItem from './project-item';
 
 export default function ProjectListComponent(): JSX.Element {
@@ -28,13 +29,6 @@ export default function ProjectListComponent(): JSX.Element {
             }, tasksQuery),
         );
     }, [gettingQuery]);
-
-    const dimensions = {
-        md: 22,
-        lg: 18,
-        xl: 16,
-        xxl: 16,
-    };
 
     return (
         <>
