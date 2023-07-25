@@ -17,9 +17,9 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 import { useSelector } from 'react-redux';
-import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
-import { toRepresentation } from '../../../utils/quality-common';
+import { getQualityColor } from '../utils/quality-color';
+import { toRepresentation } from '../utils/text-formatting';
 import { ConflictsTooltip } from './gt-conflicts';
 
 interface Props {

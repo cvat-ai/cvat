@@ -17,7 +17,8 @@ import moment from 'moment';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import AnalyticsOverview, { DateIntervals } from './analytics-performance';
-import TaskQualityComponent from './quality/task-quality-component';
+import TaskQualityComponent from './task-quality/task-quality-component';
+import ProjectQualityComponent from './project-quality/project-quality-component';
 
 const core = getCore();
 
@@ -246,6 +247,16 @@ function AnalyticsPage(): JSX.Element {
                                 report={analyticsReportInstance}
                                 onTimePeriodChange={onAnalyticsTimePeriodChange}
                             />
+                        </Tabs.TabPane>
+                        <Tabs.TabPane
+                            tab={(
+                                <span>
+                                    <Text>Quality</Text>
+                                </span>
+                            )}
+                            key='quality'
+                        >
+                            <ProjectQualityComponent project={instance} />
                         </Tabs.TabPane>
                     </Tabs>
                 );

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import '../styles.scss';
+import './styles.scss';
 
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
@@ -10,8 +10,8 @@ import moment from 'moment';
 import { QualityReport, getCore } from 'cvat-core-wrapper';
 import Button from 'antd/lib/button';
 import { DownloadOutlined, SettingOutlined } from '@ant-design/icons';
-import AnalyticsCard from './analytics-card';
-import { toRepresentation } from '../../../utils/quality-common';
+import AnalyticsCard from '../views/analytics-card';
+import { toRepresentation } from '../utils/text-formatting';
 
 interface Props {
     projectId: number;

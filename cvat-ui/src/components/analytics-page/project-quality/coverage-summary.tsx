@@ -2,15 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-import '../styles.scss';
+import './styles.scss';
 
 import React, { useEffect, useState } from 'react';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
 import { QualityReport, getCore } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
-import AnalyticsCard from './analytics-card';
-import { percent, clampValue } from '../../../utils/quality-common';
+import AnalyticsCard from '../views/analytics-card';
+import { percent, clampValue } from '../utils/text-formatting';
 
 interface Props {
     projectId: number;

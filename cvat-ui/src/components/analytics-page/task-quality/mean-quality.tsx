@@ -14,7 +14,7 @@ import Button from 'antd/lib/button';
 import { DownloadOutlined, SettingOutlined } from '@ant-design/icons';
 import { analyticsActions } from 'actions/analytics-actions';
 import AnalyticsCard from '../views/analytics-card';
-import { toRepresentation } from '../../../utils/quality-common';
+import { toRepresentation } from '../utils/text-formatting';
 
 interface Props {
     task: Task;

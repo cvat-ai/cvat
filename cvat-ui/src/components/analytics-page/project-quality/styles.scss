@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../styles';
 
 .cvat-analytics-inner {
     background: $background-color-1;
@@ -43,69 +43,8 @@
     }
 }
 
-.cvat-analytics-card-title {
-    font-size: 16px;
-}
-
-.cvat-analytics-card-value {
-    font-size: 28px;
-}
-
-.cvat-analytics-tooltip {
-    margin-left: $grid-unit-size;
-}
-
-.cvat-analytics-tooltip-inner {
-    span {
-        display: block;
-        color: white;
-    }
-}
-
-.cvat-analytics-settings-tooltip-inner {
-    @extend .cvat-analytics-tooltip-inner;
-
-    span:not(:last-child) {
-        margin-bottom: $grid-unit-size;
-    }
-}
-
-.cvat-analytics-tooltip-conflicts-inner {
-    @extend .cvat-analytics-tooltip-inner;
-
-    min-width: $grid-unit-size * 47;
-}
-
-.cvat-analytics-download-report-button {
-    padding-left: $grid-unit-size * 2;
-    padding-right: $grid-unit-size * 2;
-
-    a {
-        color: white;
-        margin-left: $grid-unit-size;
-
-        &:hover {
-            color: white;
-        }
-    }
-}
-
-.cvat-analytics-time-hint {
-    font-size: 10px;
-    position: absolute;
-    bottom: -$grid-unit-size * 3;
-    right: $grid-unit-size * 4;
-}
-
 .cvat-project-analytics-page {
     height: 100%;
-}
-
-.cvat-analytics-wrapper {
-    overflow-y: auto;
-    width: 100%;
-    height: 100%;
-    padding-bottom: $grid-unit-size * 2;
 }
 
 .cvat-project-analytics-title {
@@ -119,30 +58,6 @@
 
 .cvat-project-quality-reports-hint {
     margin-bottom: $grid-unit-size * 3;
-}
-
-.cvat-quality-settings-switch {
-    padding: 8px;
-    border: 1px solid lightgray;
-    margin-left: 8px;
-    border-radius: 2px;
-}
-
-.cvat-quality-settings-title {
-    margin-bottom: $grid-unit-size * 2;
-    align-items: center;
-}
-
-.cvat-modal-quality-settings {
-    top: $grid-unit-size * 3;
-
-    .ant-divider {
-        margin: $grid-unit-size 0;
-    }
-
-    .ant-form-item-control-input {
-        min-height: 0;
-    }
 }
 
 .cvat-task-list-item-conflicts {

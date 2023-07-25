@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
+
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -15,11 +17,11 @@ import notification from 'antd/lib/notification';
 import { Task, QualityReport, getCore } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { QualityQuery, TasksQuery } from 'reducers';
-import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
 import { useIsMounted } from 'utils/hooks';
+import { getQualityColor } from '../utils/quality-color';
 import { ConflictsTooltip } from './conflicts-summary';
-import { percent, toRepresentation } from '../../../utils/quality-common';
+import { percent, toRepresentation } from '../utils/text-formatting';
 
 interface Props {
     projectId: number;
