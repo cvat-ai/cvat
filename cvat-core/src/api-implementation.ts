@@ -32,6 +32,7 @@ import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import { FramesMetaData } from './frames';
+import AnalyticsReport from './analytics-report';
 
 function isPageSize(value: any) {
     return isInteger(value) || value === 'all';
@@ -454,6 +455,39 @@ export default function implementAPI(cvat) {
         }
 
         return defaults;
+    };
+
+    cvat.analytics.performance.reports.implementation = async (filter) => {
+        checkFilter(filter, {
+            jobID: isInteger,
+            taskID: isInteger,
+            projectID: isInteger,
+            startDate: isString,
+            endDate: isString,
+        });
+
+        checkExclusiveFields(filter, ['jobID', 'taskID', 'projectID'], ['startDate', 'endDate']);
+
+        const updatedParams: Record<string, string> = {};
+
+        if ('taskID' in filter) {
+            updatedParams.task_id = filter.taskID;
+        }
+        if ('jobID' in filter) {
+            updatedParams.job_id = filter.jobID;
+        }
+        if ('projectID' in filter) {
+            updatedParams.project_id = filter.projectID;
+        }
+        if ('startDate' in filter) {
+            updatedParams.start_date = filter.startDate;
+        }
+        if ('endDate' in filter) {
+            updatedParams.end_date = filter.endDate;
+        }
+
+        const reportData = await serverProxy.analytics.performance.reports(updatedParams);
+        return new AnalyticsReport(reportData);
     };
 
     cvat.frames.getMeta.implementation = async (type, id) => {

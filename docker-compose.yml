@@ -202,6 +202,29 @@ services:
     networks:
       - cvat
 
+  cvat_worker_analytics_reports:
+    container_name: cvat_worker_analytics_reports
+    image: cvat/server:${CVAT_VERSION:-dev}
+    restart: always
+    depends_on:
+      - cvat_redis
+      - cvat_db
+    environment:
+      CVAT_REDIS_HOST: 'cvat_redis'
+      CVAT_POSTGRES_HOST: 'cvat_db'
+      DJANGO_LOG_SERVER_HOST: vector
+      DJANGO_LOG_SERVER_PORT: 80
+      CLICKHOUSE_HOST: clickhouse
+      no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
+      NUMPROCS: 2
+    command: -c supervisord/worker.analytics_reports.conf
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+    networks:
+      - cvat
+
   cvat_ui:
     container_name: cvat_ui
     image: cvat/ui:${CVAT_VERSION:-dev}

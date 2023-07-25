@@ -27,10 +27,19 @@ interface SAMPlugin {
                 ) => Promise<any>;
             };
         };
+        jobs: {
+            get: {
+                leave: (
+                    plugin: SAMPlugin,
+                    results: any[],
+                    query: { jobID?: number }
+                ) => Promise<any>;
+            };
+        };
     };
     data: {
         core: any;
-        task: any;
+        jobs: Record<number, any>;
         modelID: string;
         modelURL: string;
         embeddings: LRUCache<string, Tensor>;
@@ -122,9 +131,23 @@ function modelData(
 }
 
 const samPlugin: SAMPlugin = {
-    name: 'Segmeny Anything',
+    name: 'Segment Anything',
     description: 'Plugin handles non-default SAM serverless function output',
     cvat: {
+        jobs: {
+            get: {
+                async leave(
+                    plugin: SAMPlugin,
+                    results: any[],
+                    query: { jobID?: number },
+                ): Promise<any> {
+                    if (typeof query.jobID === 'number') {
+                        [plugin.data.jobs[query.jobID]] = results;
+                    }
+                    return results;
+                },
+            },
+        },
         lambda: {
             call: {
                 async enter(
@@ -159,14 +182,18 @@ const samPlugin: SAMPlugin = {
                         mask: number[][];
                         bounds: [number, number, number, number];
                     }> {
-                    if (!plugin.data.task || plugin.data.task.id !== taskID) {
-                        [plugin.data.task] = await plugin.data.core.tasks.get({ id: taskID });
-                    }
-                    const { height: imHeight, width: imWidth } = await plugin.data.task.frames.get(frame);
-                    const key = `${taskID}_${frame}`;
                     if (model.id !== plugin.data.modelID) {
                         return result;
                     }
+
+                    const job = Object.values(plugin.data.jobs)
+                        .find((_job) => _job.taskId === taskID);
+                    if (!job) {
+                        throw new Error('Could not find a job corresponding to the request');
+                    }
+
+                    const { height: imHeight, width: imWidth } = await job.frames.get(frame);
+                    const key = `${taskID}_${frame}`;
 
                     if (result) {
                         const bin = window.atob(result.blob);
@@ -238,7 +265,7 @@ const samPlugin: SAMPlugin = {
     },
     data: {
         core: null,
-        task: null,
+        jobs: {},
         modelID: 'pth-facebookresearch-sam-vit-h',
         modelURL: '/api/lambda/sam_detector.onnx',
         embeddings: new LRUCache({
@@ -262,9 +289,9 @@ const samPlugin: SAMPlugin = {
 
 const SAMModelPlugin: ComponentBuilder = ({ core }) => {
     samPlugin.data.core = core;
+    core.plugins.register(samPlugin);
     InferenceSession.create(samPlugin.data.modelURL).then((session) => {
         samPlugin.data.session = session;
-        core.plugins.register(samPlugin);
     });
 
     return {

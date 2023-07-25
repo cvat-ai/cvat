@@ -95,3 +95,7 @@ class PatchedDiscoverRunner(DiscoverRunner):
             config["ASYNC"] = False
 
         super().__init__(*args, **kwargs)
+
+# No need to profile unit tests
+INSTALLED_APPS.remove('silk')
+MIDDLEWARE.remove('silk.middleware.SilkyMiddleware')

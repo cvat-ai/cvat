@@ -279,6 +279,12 @@ function build() {
             },
         },
         analytics: {
+            performance: {
+                async reports(filter = {}) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.performance.reports, filter);
+                    return result;
+                },
+            },
             quality: {
                 async reports(filter: any) {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
