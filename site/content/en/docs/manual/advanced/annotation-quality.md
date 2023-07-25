@@ -5,9 +5,7 @@ weight: 14
 description: 'How to check the quality of annotation in CVAT'
 ---
 
-
 In CVAT, it's possible to evaluate the quality of annotation through the creation of a **Ground truth** job, referred to as a Honeypot. CVAT compares all other jobs in the specified tasks against the established **Ground truth** job and calculates annotation quality based on this comparison.
-
 
 See:
 
@@ -21,7 +19,6 @@ See:
   - [Annotation quality settings](#annotation-quality-settings)
   - [GT conflicts in the CVAT interface](#gt-conflicts-in-the-cvat-interface)
 - [Annotation quality \& Honeypot video tutorial](#annotation-quality--honeypot-video-tutorial)
-
 
 ## Ground truth job
 
@@ -110,8 +107,7 @@ CVAT will begin the quality comparison between the annotated task and the **Grou
 > Note, that the process of quality calculation may take up to several hours, depending on
 > the amount of data and labeled objects.
 
-To view results go to the **Task** > **Actions** >  **View analytics**.
-
+To view results go to the **Task** > **Actions** > **View analytics**.
 
 ![Add new job](/images/honeypot05.jpg)
 
@@ -121,14 +117,14 @@ The Analytics page has the following fields:
 
 <!--lint disable maximum-line-length-->
 
-|Field| Description|
-|---|---|
-|Mean annotation quality| Displays the average quality of annotations, which includes: the count of accurate annotations, total task annotations, ground truth annotations, accuracy rate, precision rate, and recall rate.|
-|GT Conflicts| Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset.|
-|Issues|Number of [opened issues](/docs/manual/advanced/review/). If no issues were reported, will show 0.|
-|Quality report| Quality report in JSON format.|
-|Ground truth job data|"Information about ground truth job, including date, time, and number of issues.|
-|List of jobs|List of all the jobs in the task|
+| Field                   | Description                                                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mean annotation quality | Displays the average quality of annotations, which includes: the count of accurate annotations, total task annotations, ground truth annotations, accuracy rate, precision rate, and recall rate. |
+| GT Conflicts            | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset.                                 |
+| Issues                  | Number of [opened issues](/docs/manual/advanced/review/). If no issues were reported, will show 0.                                                                                                |
+| Quality report          | Quality report in JSON format.                                                                                                                                                                    |
+| Ground truth job data   | "Information about ground truth job, including date, time, and number of issues.                                                                                                                  |
+| List of jobs            | List of all the jobs in the task                                                                                                                                                                  |
 
 <!--lint enable maximum-line-length-->
 
@@ -142,12 +138,9 @@ The following window will open:
 
 ![Add new job](/images/honeypot08.jpg)
 
-|Field| Description|
-|---|---|
-
 Hover over the **?** marks to understand what each field represents.
 
-###  GT conflicts in the CVAT interface
+### GT conflicts in the CVAT interface
 
 To see GT Conflicts in the CVAT interface, go to **Review** >
 **Issues** > **Show ground truth annotations and conflicts**.
@@ -167,14 +160,8 @@ menu select the type of issue you want to create.
 
 ![GT conflict](/images/honeypot07.jpg)
 
-##  Annotation quality & Honeypot video tutorial
+## Annotation quality & Honeypot video tutorial
 
 This video demonstrates the process:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/0HtBnr_CZAM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-
-
-
-
-
