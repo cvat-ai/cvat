@@ -151,6 +151,7 @@ class CLI:
         *,
         function_module: Optional[str] = None,
         function_file: Optional[Path] = None,
+        clear_existing: bool = False,
     ) -> None:
         if function_module is not None:
             function = importlib.import_module(function_module)
@@ -161,4 +162,10 @@ class CLI:
         else:
             assert False, "function identification arguments missing"
 
-        cvataa.annotate_task(self.client, task_id, function, pbar=DeferredTqdmProgressReporter())
+        cvataa.annotate_task(
+            self.client,
+            task_id,
+            function,
+            pbar=DeferredTqdmProgressReporter(),
+            clear_existing=clear_existing,
+        )

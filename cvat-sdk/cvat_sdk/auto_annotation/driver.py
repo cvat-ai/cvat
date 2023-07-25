@@ -211,6 +211,7 @@ def annotate_task(
     function: DetectionFunction,
     *,
     pbar: Optional[ProgressReporter] = None,
+    clear_existing: bool = False,
 ) -> None:
     if pbar is None:
         pbar = NullProgressReporter()
@@ -232,6 +233,14 @@ def annotate_task(
             shapes.extend(frame_shapes)
 
     client.logger.info("Uploading annotations to task %d", task_id)
-    client.tasks.api.update_annotations(
-        task_id, task_annotations_update_request=models.LabeledDataRequest(shapes=shapes)
-    )
+
+    if clear_existing:
+        client.tasks.api.update_annotations(
+            task_id, task_annotations_update_request=models.LabeledDataRequest(shapes=shapes)
+        )
+    else:
+        client.tasks.api.partial_update_annotations(
+            "create",
+            task_id,
+            patched_labeled_data_request=models.PatchedLabeledDataRequest(shapes=shapes),
+        )

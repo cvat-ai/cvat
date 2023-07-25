@@ -394,6 +394,10 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         help="path to a Python source file to use as the function",
     )
 
+    auto_annotate_task_parser.add_argument(
+        "--clear-existing", action="store_true", help="Remove existing annotations from the task"
+    )
+
     return parser
 
 

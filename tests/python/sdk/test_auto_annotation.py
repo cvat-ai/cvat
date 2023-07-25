@@ -121,7 +121,9 @@ class TestTaskAutoAnnotation:
                 ),
             ]
 
-        cvataa.annotate_task(self.client, self.task.id, namespace(spec=spec, detect=detect))
+        cvataa.annotate_task(
+            self.client, self.task.id, namespace(spec=spec, detect=detect), clear_existing=True
+        )
 
         annotations = self.task.get_annotations()
 
@@ -168,7 +170,9 @@ class TestTaskAutoAnnotation:
                 ),
             ]
 
-        cvataa.annotate_task(self.client, self.task.id, namespace(spec=spec, detect=detect))
+        cvataa.annotate_task(
+            self.client, self.task.id, namespace(spec=spec, detect=detect), clear_existing=True
+        )
 
         annotations = self.task.get_annotations()
 
@@ -211,6 +215,39 @@ class TestTaskAutoAnnotation:
         )
 
         assert "100%" in file.getvalue()
+
+    def test_detection_without_clearing(self):
+        spec = cvataa.DetectionFunctionSpec(
+            labels=[
+                cvataa.label_spec("car", 123),
+            ],
+        )
+
+        def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+            return [
+                cvataa.rectangle(
+                    123,  # car
+                    [5, 6, 7, 8],
+                    rotation=10,
+                ),
+            ]
+
+        cvataa.annotate_task(
+            self.client, self.task.id, namespace(spec=spec, detect=detect), clear_existing=False
+        )
+
+        annotations = self.task.get_annotations()
+
+        shapes = sorted(annotations.shapes, key=lambda shape: (shape.frame, shape.rotation))
+
+        # original annotation
+        assert shapes[0].points == [1, 2, 3, 4]
+        assert shapes[0].rotation == 0
+
+        # new annotations
+        for i in (1, 2):
+            assert shapes[i].points == [5, 6, 7, 8]
+            assert shapes[i].rotation == 10
 
     def _test_bad_function_spec(self, spec: cvataa.DetectionFunctionSpec, exc_match: str) -> None:
         def detect(context, image):
