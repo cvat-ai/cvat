@@ -160,6 +160,7 @@ class JobAnnotation:
             missing_shape = deepcopy(first_shape)
             missing_shape["frame"] = track["frame"]
             missing_shape["outside"] = True
+            missing_shape.pop("id")
             track["shapes"].append(missing_shape)
 
     def _correct_frame_of_tracked_shapes(self, track):

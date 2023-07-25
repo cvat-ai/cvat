@@ -62,7 +62,7 @@ def get_organization(request, obj):
         except AttributeError as exc:
             # Skip initialization of organization for those objects that don't related with organization
             view = request.parser_context.get('view')
-            if view and view.basename in ('user', 'function', 'request',):
+            if view and view.basename in ('user', 'function', 'request', 'server'):
                 return request.iam_context['organization']
 
             raise exc

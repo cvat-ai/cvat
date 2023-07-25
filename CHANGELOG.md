@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased\]
 ### Added
-- Helm: Added configurable default storage option to chart(<https://github.com/opencv/cvat/pull/6137>)
 - Multi-line text attributes supported (<https://github.com/opencv/cvat/pull/6458>)
 - Now you can configure default attribute value for SELECT, RADIO types on UI
  (<https://github.com/opencv/cvat/pull/6474>)
@@ -15,13 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6428>)
 
 ### Changed
-- Helm: Added configurable default storage option to chart(<https://github.com/opencv/cvat/pull/6137>)
+- \[Helm\] Added configurable default storage option to chart (<https://github.com/opencv/cvat/pull/6137>)
 
 ### Deprecated
 - TDB
 
 ### Removed
-- Helm: Removed hardcoded mandatory traefik ingress usage(<https://github.com/opencv/cvat/pull/6137>)
+- \[Helm\] Removed hardcoded mandatory traefik ingress usage(<https://github.com/opencv/cvat/pull/6137>)
 
 ### Fixed
 - Calculating number of objects on annotation view when frames are deleted
@@ -34,10 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed SAM plugin (403 code for workers in organizations) (<https://github.com/opencv/cvat/pull/6514>)
 - Using initial frame from query parameter to open specific frame in a job
  (<https://github.com/opencv/cvat/pull/6506>)
-- Helm: fixed issue with multiple caches in same RWX volume, which prevents db migration to start(<https://github.com/opencv/cvat/pull/6137>)
+- Problem with first keyframe removing (<https://github.com/opencv/cvat/pull/6494>)
 - Server-side validation for attribute specifications
   (<https://github.com/opencv/cvat/pull/6447>)
 - \[API\] File downloading failures for filenames with special characters l(<https://github.com/opencv/cvat/pull/6492>)
+- \[Helm\] fixed issue with multiple caches in same RWX volume, which prevents db migration to start (<https://github.com/opencv/cvat/pull/6137>)
 
 ### Security
 - TDB
