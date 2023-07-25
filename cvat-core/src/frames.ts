@@ -745,6 +745,9 @@ export async function getFrame(
             activeChunkRequest: null,
             nextChunkRequest: null,
         };
+
+        const frameMeta = getFrameMeta(jobID, frame);
+        frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     }
 
     return frameDataCache[jobID].frameBuffer.require(frame, jobID, isPlaying, step);

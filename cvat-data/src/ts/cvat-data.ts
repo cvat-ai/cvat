@@ -97,6 +97,10 @@ export class FrameProvider {
     private cachedEncodedBlocksLimit: number;
     private cachedDecodedBlocksLimit: number;
 
+    // used for video chunks to get correct side after decoding
+    private renderWidth: number;
+    private renderHeight: number;
+
     constructor(
         blockType: BlockType,
         blockSize: number,
@@ -117,6 +121,8 @@ export class FrameProvider {
         this.workerThreadsLimit = maxWorkerThreadCount;
         this.dimension = dimension;
 
+        this.renderWidth = 1920;
+        this.renderHeight = 1080;
         this.blockSize = blockSize;
         this.blockType = blockType;
 
@@ -209,6 +215,11 @@ export class FrameProvider {
         }
     }
 
+    setRenderSize(width: number, height: number): void {
+        this.renderWidth = width;
+        this.renderHeight = height;
+    }
+
     /* Method returns frame from collection. Else method returns null */
     async frame(frameNumber: number): Promise<ImageBitmap | ImageData | Blob> {
         this.currentFrame = frameNumber;
@@ -261,7 +272,15 @@ export class FrameProvider {
                         return;
                     }
                     const keptIndex = index;
-                    createImageBitmap(new ImageData(new Uint8ClampedArray(e.data.buf), e.data.width)).then((bitmap) => {
+
+                    // do not use e.data.height and e.data.width because they might be not correct
+                    // instead, try to understand real height and width of decoded image via scale factor
+                    const scaleFactor = Math.ceil(this.renderHeight / e.data.height);
+                    const height = Math.round(this.renderHeight / scaleFactor);
+                    const width = Math.round(this.renderWidth / scaleFactor);
+
+                    const array = new Uint8ClampedArray(e.data.buf.slice(0, width * height * 4));
+                    createImageBitmap(new ImageData(array, width)).then((bitmap) => {
                         this.frames[keptIndex] = bitmap;
                         const { resolveCallback } = this.blocksAreBeingDecoded[`${start}:${end}`];
                         if (resolveCallback) {
