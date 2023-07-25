@@ -106,13 +106,16 @@ class TestTaskAutoAnnotation:
             ],
         )
 
-        def detect(context, image: PIL.Image.Image) -> List[models.LabeledShapeRequest]:
+        def detect(
+            context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
+        ) -> List[models.LabeledShapeRequest]:
+            assert context.frame_name in {"1.png", "2.png"}
             assert image.width == image.height == 333
             return [
                 cvataa.rectangle(
                     123,  # car
                     # produce different coordinates for different images
-                    [*image.getpixel((0, 0)), 300],
+                    [*image.getpixel((0, 0)), 300 + int(context.frame_name[0])],
                 ),
                 cvataa.shape(
                     456,  # ignored
@@ -139,9 +142,10 @@ class TestTaskAutoAnnotation:
             assert shape.frame == i
             assert shape.type.value == "rectangle"
             assert self.task_labels_by_id[shape.label_id].name == "car"
-            assert shape.points[3] == 300
+            assert shape.points[3] in {301, 302}
 
         assert shapes[0].points[0] != shapes[1].points[0]
+        assert shapes[0].points[3] != shapes[1].points[3]
 
     def test_detection_skeleton(self):
         spec = cvataa.DetectionFunctionSpec(

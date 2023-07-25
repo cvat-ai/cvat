@@ -216,6 +216,11 @@ class _AnnotationMapper:
         shapes[:] = new_shapes
 
 
+@attrs.frozen
+class _DetectionFunctionContextImpl(DetectionFunctionContext):
+    frame_name: str
+
+
 def annotate_task(
     client: Client,
     task_id: int,
@@ -241,11 +246,11 @@ def annotate_task(
 
     shapes = []
 
-    context = DetectionFunctionContext()
-
     with pbar.task(total=len(dataset.samples), unit="samples"):
         for sample in pbar.iter(dataset.samples):
-            frame_shapes = function.detect(context, sample.media.load_image())
+            frame_shapes = function.detect(
+                _DetectionFunctionContextImpl(sample.frame_name), sample.media.load_image()
+            )
             mapper.validate_and_remap(frame_shapes, sample.frame_index)
             shapes.extend(frame_shapes)
 

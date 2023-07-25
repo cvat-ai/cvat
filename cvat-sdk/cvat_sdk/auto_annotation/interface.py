@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import abc
 from typing import List, Sequence
 
 import attrs
@@ -16,10 +17,11 @@ class DetectionFunctionSpec:
     labels: Sequence[models.PatchedLabelRequest]
 
 
-class DetectionFunctionContext:
-    # This class exists so that the SDK can provide additional information
-    # to the function in a backwards-compatible way. There's nothing here for now.
-    pass
+class DetectionFunctionContext(metaclass=abc.ABCMeta):
+    @property
+    @abc.abstractmethod
+    def frame_name(self) -> str:
+        ...
 
 
 class DetectionFunction(Protocol):
