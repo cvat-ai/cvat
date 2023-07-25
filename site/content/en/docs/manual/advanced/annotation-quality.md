@@ -138,11 +138,11 @@ To open **Annotation Quality Settings**, find
 **Quality report** and on the right side of it, click on
 three dots.
 
-The following window will open:
+The following window will open.
+Hover over the **?** marks to understand what each field represents.
 
 ![Add new job](/images/honeypot08.jpg)
 
-Hover over the **?** marks to understand what each field represents.
 
 ### GT conflicts in the CVAT interface
 
