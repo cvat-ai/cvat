@@ -15,13 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Analytics for Jobs, Tasks and Projects (<https://github.com/opencv/cvat/pull/6371>)
 
 ### Changed
-- TDB
+- \[Helm\] Added configurable default storage option to chart (<https://github.com/opencv/cvat/pull/6137>)
 
 ### Deprecated
 - TDB
 
 ### Removed
-- TDB
+- \[Helm\] Removed hardcoded mandatory traefik ingress usage(<https://github.com/opencv/cvat/pull/6137>)
 
 ### Fixed
 - Calculating number of objects on annotation view when frames are deleted
@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Server-side validation for attribute specifications
   (<https://github.com/opencv/cvat/pull/6447>)
 - \[API\] File downloading failures for filenames with special characters l(<https://github.com/opencv/cvat/pull/6492>)
+- \[Helm\] fixed issue with multiple caches in same RWX volume, which prevents db migration to start (<https://github.com/opencv/cvat/pull/6137>)
 
 ### Security
 - TDB
