@@ -104,23 +104,6 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
     ), 40]);
 
     menuItems.push([(
-        <Menu.Item key='open-analytics'>
-            <a
-                href={`/projects/${projectInstance.id}/analytics`}
-                onClick={(e: React.MouseEvent) => {
-                    e.preventDefault();
-                    history.push({
-                        pathname: `/projects/${projectInstance.id}/analytics`,
-                    });
-                    return false;
-                }}
-            >
-                View Analytics
-            </a>
-        </Menu.Item>
-    ), 40]);
-
-    menuItems.push([(
         <React.Fragment key='delete'>
             <Menu.Divider />
             <Menu.Item key='delete' onClick={onDeleteProject}>
