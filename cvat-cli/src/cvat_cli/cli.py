@@ -152,6 +152,7 @@ class CLI:
         function_module: Optional[str] = None,
         function_file: Optional[Path] = None,
         clear_existing: bool = False,
+        allow_unmatched_labels: bool = False,
     ) -> None:
         if function_module is not None:
             function = importlib.import_module(function_module)
@@ -168,4 +169,5 @@ class CLI:
             function,
             pbar=DeferredTqdmProgressReporter(),
             clear_existing=clear_existing,
+            allow_unmatched_labels=allow_unmatched_labels,
         )

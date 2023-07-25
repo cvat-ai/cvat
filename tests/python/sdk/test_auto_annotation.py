@@ -122,7 +122,11 @@ class TestTaskAutoAnnotation:
             ]
 
         cvataa.annotate_task(
-            self.client, self.task.id, namespace(spec=spec, detect=detect), clear_existing=True
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            clear_existing=True,
+            allow_unmatched_labels=True,
         )
 
         annotations = self.task.get_annotations()
@@ -171,7 +175,11 @@ class TestTaskAutoAnnotation:
             ]
 
         cvataa.annotate_task(
-            self.client, self.task.id, namespace(spec=spec, detect=detect), clear_existing=True
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            clear_existing=True,
+            allow_unmatched_labels=True,
         )
 
         annotations = self.task.get_annotations()
@@ -233,7 +241,10 @@ class TestTaskAutoAnnotation:
             ]
 
         cvataa.annotate_task(
-            self.client, self.task.id, namespace(spec=spec, detect=detect), clear_existing=False
+            self.client,
+            self.task.id,
+            namespace(spec=spec, detect=detect),
+            clear_existing=False,
         )
 
         annotations = self.task.get_annotations()
@@ -276,6 +287,14 @@ class TestTaskAutoAnnotation:
                 ],
             ),
             "currently not supported",
+        )
+
+    def test_label_not_in_dataset(self):
+        self._test_bad_function_spec(
+            cvataa.DetectionFunctionSpec(
+                labels=[cvataa.label_spec("dog", 123)],
+            ),
+            "not in dataset",
         )
 
     def test_label_without_id(self):
@@ -334,16 +353,26 @@ class TestTaskAutoAnnotation:
             cvataa.DetectionFunctionSpec(
                 labels=[
                     cvataa.skeleton_label_spec(
-                        "car",
+                        "cat",
                         123,
                         [
-                            cvataa.keypoint_spec("wheel", 1),
-                            cvataa.keypoint_spec("exhaust pipe", 1),
+                            cvataa.keypoint_spec("head", 1),
+                            cvataa.keypoint_spec("tail", 1),
                         ],
                     ),
                 ],
             ),
             "same ID as another sublabel",
+        )
+
+    def test_sublabel_not_in_dataset(self):
+        self._test_bad_function_spec(
+            cvataa.DetectionFunctionSpec(
+                labels=[
+                    cvataa.skeleton_label_spec("cat", 123, [cvataa.keypoint_spec("nose", 1)]),
+                ],
+            ),
+            "not in dataset",
         )
 
     def _test_bad_function_detect(self, detect, exc_match: str) -> None:

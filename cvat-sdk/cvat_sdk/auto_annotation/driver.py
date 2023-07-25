@@ -36,6 +36,9 @@ class _AnnotationMapper:
 
         ds_label = ds_labels_by_name.get(fun_label.name)
         if ds_label is None:
+            if not self._allow_unmatched_labels:
+                raise BadFunctionError(f"label {fun_label.name!r} is not in dataset")
+
             self._logger.info(
                 "label %r is not in dataset; any annotations using it will be ignored",
                 fun_label.name,
@@ -66,6 +69,11 @@ class _AnnotationMapper:
 
                 ds_sl = ds_sublabels_by_name.get(fun_sl.name)
                 if not ds_sl:
+                    if not self._allow_unmatched_labels:
+                        raise BadFunctionError(
+                            f"sublabel {fun_sl.name!r} of label {fun_label.name!r} is not in dataset"
+                        )
+
                     self._logger.info(
                         "sublabel %r of label %r is not in dataset; any annotations using it will be ignored",
                         fun_sl.name,
@@ -85,8 +93,11 @@ class _AnnotationMapper:
         logger: logging.Logger,
         fun_labels: Sequence[models.ILabel],
         ds_labels: Sequence[models.ILabel],
+        *,
+        allow_unmatched_labels: bool,
     ) -> None:
         self._logger = logger
+        self._allow_unmatched_labels = allow_unmatched_labels
 
         ds_labels_by_name = {ds_label.name: ds_label for ds_label in ds_labels}
 
@@ -212,6 +223,7 @@ def annotate_task(
     *,
     pbar: Optional[ProgressReporter] = None,
     clear_existing: bool = False,
+    allow_unmatched_labels: bool = False,
 ) -> None:
     if pbar is None:
         pbar = NullProgressReporter()
@@ -220,7 +232,12 @@ def annotate_task(
 
     assert isinstance(function.spec, DetectionFunctionSpec)
 
-    mapper = _AnnotationMapper(client.logger, function.spec.labels, dataset.labels)
+    mapper = _AnnotationMapper(
+        client.logger,
+        function.spec.labels,
+        dataset.labels,
+        allow_unmatched_labels=allow_unmatched_labels,
+    )
 
     shapes = []
 

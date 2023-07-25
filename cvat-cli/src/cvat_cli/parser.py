@@ -398,6 +398,12 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         "--clear-existing", action="store_true", help="Remove existing annotations from the task"
     )
 
+    auto_annotate_task_parser.add_argument(
+        "--allow-unmatched-labels",
+        action="store_true",
+        help="Allow the function to declare labels not configured in the task",
+    )
+
     return parser
 
 
