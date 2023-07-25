@@ -3,13 +3,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-projects-page {
     padding-top: $grid-unit-size * 2;
     padding-bottom: $grid-unit-size;
     height: 100%;
     width: 100%;
+    overflow: auto;
 
     .cvat-projects-page-top-bar {
         > div:nth-child(1) {
@@ -106,7 +107,7 @@
 }
 
 .ant-menu.cvat-project-actions-menu {
-    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 17px rgba(0, 0, 0, 20%);
 
     > li:hover {
         background-color: $hover-menu-color;
