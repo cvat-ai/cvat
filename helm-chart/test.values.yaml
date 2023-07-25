@@ -1,5 +1,9 @@
 cvat:
   backend:
+    defaultStorage:
+      accessModes:
+      - ReadWriteOnce
+    disableDistinctCachePerService: true
     server:
       additionalVolumeMounts:
       - mountPath: /home/django/share

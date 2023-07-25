@@ -10,7 +10,6 @@ import json
 import os
 import textwrap
 import glob
-from django_sendfile import sendfile
 from copy import deepcopy
 from enum import Enum
 from functools import wraps
@@ -39,6 +38,7 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
 )
+from cvat.apps.engine.utils import sendfile
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS

@@ -365,7 +365,12 @@ class TestTaskUsecases:
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        assert (self.tmp_path / "frame-0.jpg").is_file()
+        if quality == "original":
+            expected_frame_ext = "png"
+        else:
+            expected_frame_ext = "jpg"
+
+        assert (self.tmp_path / f"frame-0.{expected_frame_ext}").is_file()
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))

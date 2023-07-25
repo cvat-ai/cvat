@@ -42,7 +42,6 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
-from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
@@ -75,7 +74,7 @@ from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job,
     parse_exception_message, get_rq_job_meta, get_import_rq_id,
-    import_resource_with_clean_up_after
+    import_resource_with_clean_up_after, sendfile
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -88,7 +87,6 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     TaskPermission, UserPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.events.handlers import handle_annotations_patch
 from cvat.apps.engine.view_utils import tus_chunk_action
 
 
@@ -195,13 +193,13 @@ class ServerViewSet(viewsets.ViewSet):
         })
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
     def plugins(request):
-        response = {
+        data = {
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
             'PREDICT': False, # FIXME: it is unused anymore (for UI only)
         }
-        return Response(response)
+        return Response(PluginsSerializer(data).data)
 
 @extend_schema(tags=['projects'])
 @extend_schema_view(
@@ -1801,7 +1799,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     data = dm.task.patch_job_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
-                handle_annotations_patch(instance=self._object, annotations=data, action=action)
                 return Response(data)
 
 

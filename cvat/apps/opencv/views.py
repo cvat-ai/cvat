@@ -1,7 +1,7 @@
 import os
 import glob
 from django.conf import settings
-from django_sendfile import sendfile
+from cvat.apps.engine.utils import sendfile
 
 def OpenCVLibrary(request):
     dirname = os.path.join(settings.STATIC_ROOT, 'opencv', 'js')

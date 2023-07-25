@@ -12,6 +12,96 @@ info:
     name: MIT License
     url: https://en.wikipedia.org/wiki/MIT_License
 paths:
+  /api/analytics/reports:
+    get:
+      operationId: analytics_get_reports
+      description: Receive analytics report
+      summary: Method returns analytics report
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date-time
+        description: Specify the end date for filtering report data.
+      - in: query
+        name: job_id
+        schema:
+          type: integer
+        description: Specify job ID
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: Specify project ID
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date-time
+        description: Specify a start date for filtering report data.
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: Specify task ID
+      tags:
+      - analytics
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsReport'
+          description: ''
+        '404':
+          description: Not found
+    post:
+      operationId: analytics_create_report
+      summary: Creates a analytics report asynchronously and allows to check request
+        status
+      parameters:
+      - in: query
+        name: rq_id
+        schema:
+          type: string
+        description: |
+          The report creation request id. Can be specified to check the report
+          creation status.
+      tags:
+      - analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyticsReportCreateRequest'
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          description: A analytics report request has been computed
+        '202':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/RqId'
+          description: |
+            A analytics report request has been enqueued, the request id is returned.
+            The request status can be checked at this endpoint by passing the rq_id
+            as the query parameter. If the request id is specified, this response
+            means the analytics report request is queued or is being processed.
+        '400':
+          description: Invalid or failed request, check the response data for details
   /api/assets:
     post:
       operationId: assets_create
@@ -5826,6 +5916,47 @@ components:
       - description
       - name
       - version
+    AnalyticsReport:
+      type: object
+      properties:
+        created_date:
+          type: string
+          format: date-time
+        target:
+          $ref: '#/components/schemas/AnalyticsReportTargetEnum'
+        job_id:
+          type: integer
+        task_id:
+          type: integer
+        project_id:
+          type: integer
+        statistics:
+          type: array
+          items:
+            $ref: '#/components/schemas/Metric'
+      required:
+      - created_date
+      - statistics
+      - target
+    AnalyticsReportCreateRequest:
+      type: object
+      properties:
+        job_id:
+          type: integer
+        task_id:
+          type: integer
+        project_id:
+          type: integer
+    AnalyticsReportTargetEnum:
+      enum:
+      - job
+      - task
+      - project
+      type: string
+      description: |-
+        * `job` - JOB
+        * `task` - TASK
+        * `project` - PROJECT
     AnnotationConflict:
       type: object
       properties:
@@ -6089,6 +6220,23 @@ components:
           maxLength: 150
       required:
       - username
+    BinaryOperation:
+      type: object
+      properties:
+        left:
+          type: string
+          nullable: true
+          description: The name of the data series used as the left (first) operand
+            of the binary operation.
+        operator:
+          $ref: '#/components/schemas/OperatorEnum'
+        right:
+          type: string
+          nullable: true
+          description: The name of the data series used as the right (second) operand
+            of the binary operation.
+      required:
+      - operator
     ChunkType:
       enum:
       - video
@@ -6296,6 +6444,18 @@ components:
         * `KEY_FILE_PATH` - KEY_FILE_PATH
         * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
         * `CONNECTION_STRING` - CONNECTION_STRING
+    DataFrame:
+      type: object
+      properties:
+        value:
+          type: number
+          format: double
+        date:
+          type: string
+          format: date
+      required:
+      - date
+      - value
     DataMetaRead:
       type: object
       properties:
@@ -6559,6 +6719,14 @@ components:
       oneOf:
       - $ref: '#/components/schemas/DatasetFileRequest'
       nullable: true
+    DefaultViewEnum:
+      enum:
+      - numeric
+      - histogram
+      type: string
+      description: |-
+        * `numeric` - NUMERIC
+        * `histogram` - HISTOGRAM
     Event:
       type: object
       properties:
@@ -6891,6 +7059,16 @@ components:
       required:
       - function
       - task
+    GranularityEnum:
+      enum:
+      - day
+      - week
+      - month
+      type: string
+      description: |-
+        * `day` - DAY
+        * `week` - WEEK
+        * `month` - MONTH
     InputTypeEnum:
       enum:
       - checkbox
@@ -7596,6 +7774,39 @@ components:
       anyOf:
       - $ref: '#/components/schemas/User'
       - $ref: '#/components/schemas/BasicUser'
+    Metric:
+      type: object
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        granularity:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GranularityEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        default_view:
+          $ref: '#/components/schemas/DefaultViewEnum'
+        data_series:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/DataFrame'
+        transformations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transformation'
+      required:
+      - data_series
+      - default_view
+      - description
+      - name
+      - title
+      - transformations
     NullEnum:
       enum:
       - null
@@ -7618,6 +7829,18 @@ components:
         * `in progress` - IN_PROGRESS
         * `completed` - COMPLETED
         * `rejected` - REJECTED
+    OperatorEnum:
+      enum:
+      - +
+      - '-'
+      - '*'
+      - /
+      type: string
+      description: |-
+        * `+` - ADDITION
+        * `-` - SUBTRACTION
+        * `*` - MULTIPLICATION
+        * `/` - DIVISION
     OrganizationRead:
       type: object
       properties:
@@ -9408,6 +9631,17 @@ components:
       required:
       - frame
       - type
+    Transformation:
+      type: object
+      properties:
+        name:
+          type: string
+        binary:
+          allOf:
+          - $ref: '#/components/schemas/BinaryOperation'
+          nullable: true
+      required:
+      - name
     User:
       type: object
       properties:
