@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-analytics-inner {
     background: $background-color-1;
@@ -97,7 +97,7 @@
     right: $grid-unit-size * 4;
 }
 
-.cvat-task-analytics-page {
+.cvat-analytics-page {
     height: 100%;
 }
 
@@ -108,7 +108,25 @@
     padding-bottom: $grid-unit-size * 2;
 }
 
+.cvat-project-analytics-title {
+    margin-bottom: $grid-unit-size;
+
+    h4 {
+        display: inline;
+        margin-right: $grid-unit-size;
+    }
+}
+
 .cvat-task-analytics-title {
+    margin-bottom: $grid-unit-size;
+
+    h4 {
+        display: inline;
+        margin-right: $grid-unit-size;
+    }
+}
+
+.cvat-job-analytics-title {
     margin-bottom: $grid-unit-size;
 
     h4 {

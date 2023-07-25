@@ -76,8 +76,8 @@ import EmailVerificationSentPage from './email-confirmation-pages/email-verifica
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateModelPage from './create-model-page/create-model-page';
 import CreateJobPage from './create-job-page/create-job-page';
-import TaskAnalyticsPage from './task-analytics-page/task-analytics-page';
 import OrganizationWatcher from './watchers/organization-watcher';
+import AnalyticsPage from './analytics-page/analytics-page';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -463,13 +463,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             <Route exact path='/projects/:id' component={ProjectPageComponent} />
                                             <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
                                             <Route exact path='/projects/:id/guide' component={GuidePage} />
+                                            <Route exact path='/projects/:pid/analytics' component={AnalyticsPage} />
                                             <Route exact path='/tasks' component={TasksPageContainer} />
                                             <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                             <Route exact path='/tasks/:id' component={TaskPageComponent} />
-                                            <Route exact path='/tasks/:id/analytics' component={TaskAnalyticsPage} />
+                                            <Route exact path='/tasks/:tid/analytics' component={AnalyticsPage} />
                                             <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
                                             <Route exact path='/tasks/:id/guide' component={GuidePage} />
                                             <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
+                                            <Route exact path='/tasks/:tid/jobs/:jid/analytics' component={AnalyticsPage} />
                                             <Route exact path='/jobs' component={JobsPageComponent} />
                                             <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
                                             <Route
