@@ -5960,7 +5960,7 @@ components:
           type: string
           format: date-time
         target:
-          $ref: '#/components/schemas/AnalyticsReportTargetEnum'
+          $ref: '#/components/schemas/AnalyticsReportTarget'
         job_id:
           type: integer
         task_id:
@@ -5984,7 +5984,7 @@ components:
           type: integer
         project_id:
           type: integer
-    AnalyticsReportTargetEnum:
+    AnalyticsReportTarget:
       enum:
       - job
       - task
@@ -8876,7 +8876,7 @@ components:
           readOnly: true
           nullable: true
         target:
-          $ref: '#/components/schemas/QualityReportTarget'
+          $ref: '#/components/schemas/AnalyticsReportTarget'
         summary:
           $ref: '#/components/schemas/QualityReportSummary'
         created_date:
@@ -8944,16 +8944,6 @@ components:
       - total_frames
       - valid_count
       - warning_count
-    QualityReportTarget:
-      enum:
-      - job
-      - task
-      - project
-      type: string
-      description: |-
-        * `job` - JOB
-        * `task` - TASK
-        * `project` - PROJECT
     QualitySettings:
       type: object
       properties:
