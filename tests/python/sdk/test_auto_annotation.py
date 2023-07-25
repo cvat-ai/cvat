@@ -260,9 +260,9 @@ class TestTaskAutoAnnotation:
         self._test_bad_function_spec(
             cvataa.DetectionFunctionSpec(
                 labels=[
-                    models.PatchedLabelRequest(
-                        name="car",
-                        id=123,
+                    cvataa.label_spec(
+                        "car",
+                        123,
                         attributes=[
                             models.AttributeRequest(
                                 "age",
@@ -294,14 +294,8 @@ class TestTaskAutoAnnotation:
         self._test_bad_function_spec(
             cvataa.DetectionFunctionSpec(
                 labels=[
-                    models.PatchedLabelRequest(
-                        name="car",
-                        id=123,
-                    ),
-                    models.PatchedLabelRequest(
-                        name="bicycle",
-                        id=123,
-                    ),
+                    cvataa.label_spec("car", 123),
+                    cvataa.label_spec("bicycle", 123),
                 ],
             ),
             "same ID as another label",
@@ -311,9 +305,9 @@ class TestTaskAutoAnnotation:
         self._test_bad_function_spec(
             cvataa.DetectionFunctionSpec(
                 labels=[
-                    models.PatchedLabelRequest(
-                        name="car",
-                        id=123,
+                    cvataa.label_spec(
+                        "car",
+                        123,
                         sublabels=[models.SublabelRequest("wheel", id=1)],
                     ),
                 ],
@@ -325,11 +319,10 @@ class TestTaskAutoAnnotation:
         self._test_bad_function_spec(
             cvataa.DetectionFunctionSpec(
                 labels=[
-                    models.PatchedLabelRequest(
-                        name="car",
-                        id=123,
-                        type="skeleton",
-                        sublabels=[models.SublabelRequest("wheel")],
+                    cvataa.skeleton_label_spec(
+                        "car",
+                        123,
+                        [models.SublabelRequest("wheel")],
                     ),
                 ],
             ),
@@ -340,13 +333,12 @@ class TestTaskAutoAnnotation:
         self._test_bad_function_spec(
             cvataa.DetectionFunctionSpec(
                 labels=[
-                    models.PatchedLabelRequest(
-                        name="car",
-                        id=123,
-                        type="skeleton",
-                        sublabels=[
-                            models.SublabelRequest("wheel", id=1),
-                            models.SublabelRequest("exhaust pipe", id=1),
+                    cvataa.skeleton_label_spec(
+                        "car",
+                        123,
+                        [
+                            cvataa.keypoint_spec("wheel", 1),
+                            cvataa.keypoint_spec("exhaust pipe", 1),
                         ],
                     ),
                 ],
@@ -357,17 +349,13 @@ class TestTaskAutoAnnotation:
     def _test_bad_function_detect(self, detect, exc_match: str) -> None:
         spec = cvataa.DetectionFunctionSpec(
             labels=[
-                models.PatchedLabelRequest(
-                    name="car",
-                    id=123,
-                ),
-                models.PatchedLabelRequest(
-                    name="cat",
-                    id=456,
-                    type="skeleton",
-                    sublabels=[
-                        models.SublabelRequest(name="head", id=12),
-                        models.SublabelRequest(name="tail", id=34),
+                cvataa.label_spec("car", 123),
+                cvataa.skeleton_label_spec(
+                    "cat",
+                    456,
+                    [
+                        cvataa.keypoint_spec("head", 12),
+                        cvataa.keypoint_spec("tail", 34),
                     ],
                 ),
             ],
@@ -412,12 +400,7 @@ class TestTaskAutoAnnotation:
     def test_unknown_label_id(self):
         self._test_bad_function_detect(
             lambda context, image: [
-                models.LabeledShapeRequest(
-                    type="rectangle",
-                    frame=0,
-                    label_id=111,
-                    points=[1, 2, 3, 4],
-                ),
+                cvataa.rectangle(111, [1, 2, 3, 4]),
             ],
             "unknown label ID",
         )
@@ -425,14 +408,12 @@ class TestTaskAutoAnnotation:
     def test_shape_with_attributes(self):
         self._test_bad_function_detect(
             lambda context, image: [
-                models.LabeledShapeRequest(
-                    type="rectangle",
-                    frame=0,
-                    label_id=123,
+                cvataa.rectangle(
+                    123,
+                    [1, 2, 3, 4],
                     attributes=[
                         models.AttributeValRequest(spec_id=1, value="asdf"),
                     ],
-                    points=[1, 2, 3, 4],
                 ),
             ],
             "shape with attributes",
@@ -441,11 +422,9 @@ class TestTaskAutoAnnotation:
     def test_preset_element_id(self):
         self._test_bad_function_detect(
             lambda context, image: [
-                models.LabeledShapeRequest(
-                    type="skeleton",
-                    frame=0,
-                    label_id=456,
-                    elements=[
+                cvataa.skeleton(
+                    456,
+                    [
                         models.SubLabeledShapeRequest(
                             type="points", frame=0, label_id=12, id=1111, points=[1, 2]
                         ),
@@ -458,11 +437,9 @@ class TestTaskAutoAnnotation:
     def test_preset_element_source(self):
         self._test_bad_function_detect(
             lambda context, image: [
-                models.LabeledShapeRequest(
-                    type="skeleton",
-                    frame=0,
-                    label_id=456,
-                    elements=[
+                cvataa.skeleton(
+                    456,
+                    [
                         models.SubLabeledShapeRequest(
                             type="points", frame=0, label_id=12, source="manual", points=[1, 2]
                         ),
@@ -475,11 +452,9 @@ class TestTaskAutoAnnotation:
     def test_bad_element_frame_number(self):
         self._test_bad_function_detect(
             lambda context, image: [
-                models.LabeledShapeRequest(
-                    type="skeleton",
-                    frame=0,
-                    label_id=456,
-                    elements=[
+                cvataa.skeleton(
+                    456,
+                    [
                         models.SubLabeledShapeRequest(
                             type="points", frame=1, label_id=12, points=[1, 2]
                         ),
@@ -492,11 +467,9 @@ class TestTaskAutoAnnotation:
     def test_non_points_element(self):
         self._test_bad_function_detect(
             lambda context, image: [
-                models.LabeledShapeRequest(
-                    type="skeleton",
-                    frame=0,
-                    label_id=456,
-                    elements=[
+                cvataa.skeleton(
+                    456,
+                    [
                         models.SubLabeledShapeRequest(
                             type="rectangle", frame=0, label_id=12, points=[1, 2, 3, 4]
                         ),
@@ -509,16 +482,7 @@ class TestTaskAutoAnnotation:
     def test_unknown_sublabel_id(self):
         self._test_bad_function_detect(
             lambda context, image: [
-                models.LabeledShapeRequest(
-                    type="skeleton",
-                    frame=0,
-                    label_id=456,
-                    elements=[
-                        models.SubLabeledShapeRequest(
-                            type="points", frame=0, label_id=56, points=[1, 2]
-                        ),
-                    ],
-                ),
+                cvataa.skeleton(456, [cvataa.keypoint(56, [1, 2])]),
             ],
             "unknown sublabel ID",
         )
@@ -526,17 +490,11 @@ class TestTaskAutoAnnotation:
     def test_multiple_elements_with_same_sublabel(self):
         self._test_bad_function_detect(
             lambda context, image: [
-                models.LabeledShapeRequest(
-                    type="skeleton",
-                    frame=0,
-                    label_id=456,
-                    elements=[
-                        models.SubLabeledShapeRequest(
-                            type="points", frame=0, label_id=12, points=[1, 2]
-                        ),
-                        models.SubLabeledShapeRequest(
-                            type="points", frame=0, label_id=12, points=[1, 2]
-                        ),
+                cvataa.skeleton(
+                    456,
+                    [
+                        cvataa.keypoint(12, [1, 2]),
+                        cvataa.keypoint(12, [3, 4]),
                     ],
                 ),
             ],
@@ -546,16 +504,7 @@ class TestTaskAutoAnnotation:
     def test_not_enough_elements(self):
         self._test_bad_function_detect(
             lambda context, image: [
-                models.LabeledShapeRequest(
-                    type="skeleton",
-                    frame=0,
-                    label_id=456,
-                    elements=[
-                        models.SubLabeledShapeRequest(
-                            type="points", frame=0, label_id=12, points=[1, 2]
-                        ),
-                    ],
-                ),
+                cvataa.skeleton(456, [cvataa.keypoint(12, [1, 2])]),
             ],
             "with fewer elements than expected",
         )
@@ -563,15 +512,10 @@ class TestTaskAutoAnnotation:
     def test_non_skeleton_with_elements(self):
         self._test_bad_function_detect(
             lambda context, image: [
-                models.LabeledShapeRequest(
+                cvataa.shape(
+                    456,
                     type="rectangle",
-                    frame=0,
-                    label_id=456,
-                    elements=[
-                        models.SubLabeledShapeRequest(
-                            type="points", frame=0, label_id=12, points=[1, 2]
-                        ),
-                    ],
+                    elements=[cvataa.keypoint(12, [1, 2])],
                 ),
             ],
             "non-skeleton shape with elements",
