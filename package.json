@@ -54,6 +54,7 @@
     "micromatch": "^4.0.2",
     "nodemon": "^2.0.7",
     "nyc": "^15.1.0",
+    "postcss": "8",
     "postcss-loader": "^7.3.3",
     "postcss-preset-env": "^9.0.0",
     "react-svg-loader": "^3.0.3",
