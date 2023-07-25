@@ -57,6 +57,8 @@ function JobActionsMenu(props: Props): JSX.Element {
                 dispatch(importActions.openImportDatasetModal(job));
             } else if (action.key === 'export_job') {
                 dispatch(exportActions.openExportDatasetModal(job));
+            } else if (action.key === 'view_analytics') {
+                history.push(`/tasks/${job.taskId}/jobs/${job.id}/analytics`);
             } else if (action.key === 'renew_job') {
                 job.state = core.enums.JobState.NEW;
                 job.stage = JobStage.ANNOTATION;
@@ -81,6 +83,7 @@ function JobActionsMenu(props: Props): JSX.Element {
             <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
             <Menu.Item key='import_job'>Import annotations</Menu.Item>
             <Menu.Item key='export_job'>Export annotations</Menu.Item>
+            <Menu.Item key='view_analytics'>View analytics</Menu.Item>
             {[JobStage.ANNOTATION, JobStage.VALIDATION].includes(job.stage) ?
                 <Menu.Item key='finish_job'>Finish the job</Menu.Item> : null}
             {job.stage === JobStage.ACCEPTANCE ?

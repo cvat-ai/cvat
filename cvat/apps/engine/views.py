@@ -87,7 +87,6 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     TaskPermission, UserPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.events.handlers import handle_annotations_patch
 from cvat.apps.engine.view_utils import tus_chunk_action
 
 
@@ -1800,7 +1799,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     data = dm.task.patch_job_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
-                handle_annotations_patch(instance=self._object, annotations=data, action=action)
                 return Response(data)
 
 

@@ -15,6 +15,7 @@ PASSWORD_HASHERS = [
 # Note that DB initialization triggers server signals,
 # so quality report updates are scheduled for applicable jobs.
 QUALITY_CHECK_JOB_DELAY = 10000
+ANALYTICS_CHECK_JOB_DELAY = 10000
 
 IMPORT_CACHE_CLEAN_DELAY = timedelta(seconds=30)
 

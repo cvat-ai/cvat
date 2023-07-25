@@ -17,6 +17,7 @@ from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.plugins import plugin_decorator
+from cvat.apps.events.handlers import handle_annotations_change
 from cvat.apps.profiler import silk_profile
 
 from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager
@@ -407,18 +408,26 @@ class JobAnnotation:
 
     def create(self, data):
         self._create(data)
+        handle_annotations_change(self.db_job, self.data, "create")
 
     def put(self, data):
-        self._delete()
+        deleted_data = self._delete()
+        handle_annotations_change(self.db_job, deleted_data, "delete")
         self._create(data)
+        handle_annotations_change(self.db_job, self.data, "create")
+
 
     def update(self, data):
         self._delete(data)
         self._create(data)
+        handle_annotations_change(self.db_job, self.data, "update")
 
     def _delete(self, data=None):
         deleted_shapes = 0
+        deleted_data = {}
         if data is None:
+            self.init_from_db()
+            deleted_data = self.data
             deleted_shapes += self.db_job.labeledimage_set.all().delete()[0]
             deleted_shapes += self.db_job.labeledshape_set.all().delete()[0]
             deleted_shapes += self.db_job.labeledtrack_set.all().delete()[0]
@@ -444,11 +453,20 @@ class JobAnnotation:
             deleted_shapes += labeledshape_set.delete()[0]
             deleted_shapes += labeledtrack_set.delete()[0]
 
+            deleted_data = {
+                "tags": data["tags"],
+                "shapes": data["shapes"],
+                "tracks": data["tracks"],
+            }
+
         if deleted_shapes:
             self._set_updated_date()
 
+        return deleted_data
+
     def delete(self, data=None):
-        self._delete(data)
+        deleted_data = self._delete(data)
+        handle_annotations_change(self.db_job, deleted_data, "delete")
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):

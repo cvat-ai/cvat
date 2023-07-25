@@ -1,5 +1,5 @@
 {
-  "extends": "stylelint-config-standard",
+  "extends": "stylelint-config-standard-scss",
   "rules": {
     "indentation": 4,
     "value-keyword-case": null,
@@ -16,7 +16,9 @@
       {
         "ignoreTypes": ["first-child"]
       }
-    ]
+    ],
+    "scss/comment-no-empty": null,
+    "scss/at-extend-no-missing-placeholder": null
   },
   "ignoreFiles": ["**/*.js", "**/*.ts", "**/*.py"]
 }
