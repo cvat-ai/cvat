@@ -517,6 +517,22 @@ class TestPatchTaskAnnotations:
 
         self._test_check_response(is_allow, response, data)
 
+    def test_remove_first_keyframe(self):
+        endpoint = "tasks/8/annotations"
+        shapes0 = [
+            {"type": "rectangle", "frame": 1, "points": [1, 2, 3, 4]},
+            {"type": "rectangle", "frame": 4, "points": [5, 6, 7, 8]},
+        ]
+
+        annotations = {"tracks": [{"label_id": 13, "frame": 0, "shapes": shapes0}]}
+
+        response = patch_method("admin1", endpoint, annotations, action="create")
+        assert response.status_code == HTTPStatus.OK, response.content
+
+        annotations["tracks"][0]["shapes"] = shapes0[1:]
+        response = patch_method("admin1", endpoint, annotations, action="update")
+        assert response.status_code == HTTPStatus.OK
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskDataset:
@@ -634,6 +650,27 @@ class TestGetTaskDataset:
         assert annotations["tracks"][0]["frame"] == 0
         assert annotations["tracks"][0]["shapes"][0]["frame"] == 0
         assert annotations["tracks"][0]["elements"][0]["shapes"][0]["frame"] == 0
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    def test_can_download_task_with_special_chars_in_name(self, admin_user):
+        # Control characters in filenames may conflict with the Content-Disposition header
+        # value restrictions, as it needs to include the downloaded file name.
+
+        task_spec = {
+            "name": "test_special_chars_{}_in_name".format("".join(chr(c) for c in range(1, 127))),
+            "labels": [{"name": "cat"}],
+        }
+
+        task_data = {
+            "image_quality": 75,
+            "client_files": generate_image_files(1),
+        }
+
+        task_id, _ = create_task(admin_user, task_spec, task_data)
+
+        response = self._test_export_task(admin_user, task_id, format="CVAT for images 1.1")
+        assert response.status == HTTPStatus.OK
+        assert zipfile.is_zipfile(io.BytesIO(response.data))
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

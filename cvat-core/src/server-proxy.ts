@@ -15,6 +15,7 @@ import {
 } from 'server-response-types';
 import { SerializedQualityReportData } from 'quality-report';
 import { SerializedQualitySettingsData } from 'quality-settings';
+import { SerializedAnalyticsReport } from './analytics-report';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
@@ -2317,6 +2318,22 @@ async function getQualityReports(filter): Promise<SerializedQualityReportData[]>
     }
 }
 
+async function getAnalyticsReports(filter): Promise<SerializedAnalyticsReport> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/analytics/reports`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2474,6 +2491,9 @@ export default Object.freeze({
     }),
 
     analytics: Object.freeze({
+        performance: Object.freeze({
+            reports: getAnalyticsReports,
+        }),
         quality: Object.freeze({
             reports: getQualityReports,
             conflicts: getQualityConflicts,

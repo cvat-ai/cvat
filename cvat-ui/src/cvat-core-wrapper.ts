@@ -28,6 +28,7 @@ import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
+import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 
@@ -76,6 +77,9 @@ export {
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,
+    AnalyticsReport,
+    AnalyticsEntry,
+    AnalyticsEntryViewType,
 };
 
 export type {

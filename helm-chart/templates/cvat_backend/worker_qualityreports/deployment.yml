@@ -25,13 +25,13 @@ spec:
       {{- with .Values.cvat.backend.worker.qualityreports.labels }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
-      app: cvat-app-worker-qualityreports
+      app: cvat-app
       tier: backend
       component: worker-qualityreports
   template:
     metadata:
       labels:
-        app: cvat-app-worker-qualityreports
+        app: cvat-app
         tier: backend
         component: worker-qualityreports
         {{- include "cvat.labels" . | nindent 8 }}

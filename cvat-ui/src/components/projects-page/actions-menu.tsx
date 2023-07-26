@@ -70,6 +70,23 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
     ), 20]);
 
     menuItems.push([(
+        <Menu.Item key='view-analytics'>
+            <a
+                href={`/projects/${projectInstance.id}/analytics`}
+                onClick={(e: React.MouseEvent) => {
+                    e.preventDefault();
+                    history.push({
+                        pathname: `/projects/${projectInstance.id}/analytics`,
+                    });
+                    return false;
+                }}
+            >
+                View analytics
+            </a>
+        </Menu.Item>
+    ), 30]);
+
+    menuItems.push([(
         <Menu.Item key='set-webhooks'>
             <a
                 href={`/projects/${projectInstance.id}/webhooks`}
@@ -84,7 +101,7 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
                 Setup webhooks
             </a>
         </Menu.Item>
-    ), 30]);
+    ), 40]);
 
     menuItems.push([(
         <React.Fragment key='delete'>
@@ -93,7 +110,7 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
                 Delete
             </Menu.Item>
         </React.Fragment>
-    ), 40]);
+    ), 50]);
 
     menuItems.push(
         ...plugins.map(({ component: Component, weight }, index) => {

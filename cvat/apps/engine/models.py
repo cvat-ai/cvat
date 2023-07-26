@@ -922,6 +922,7 @@ class SourceType(str, Enum):
     AUTO = 'auto'
     SEMI_AUTO = 'semi-auto'
     MANUAL = 'manual'
+    FILE = 'file'
 
     @classmethod
     def choices(cls):

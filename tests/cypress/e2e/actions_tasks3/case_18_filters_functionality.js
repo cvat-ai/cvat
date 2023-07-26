@@ -71,10 +71,10 @@ context('Filters functionality.', () => {
     const createEllipseTrack = {
         type: 'Track',
         labelName: labelTrack,
-        cx: 250,
-        cy: 350,
-        rightX: 450,
-        topY: 280,
+        firstX: 250,
+        firstY: 350,
+        secondX: 450,
+        secondY: 280,
     };
 
     const cvatCanvasShapeList = [];

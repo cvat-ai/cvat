@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import '../styles.scss';
-
 import React from 'react';
 import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
