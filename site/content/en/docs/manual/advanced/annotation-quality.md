@@ -92,6 +92,9 @@ If you want to import the **Ground truth** job, do the following.
 4. Select import format, and select file.
 5. Click **OK**.
 
+Note that if there are imported annotations for the frames that exist in the task, but not included in the Ground Truth job, thy will be silently ignored. This way, you don't need to worry about "cleaning up" your Ground Truth annotations for the whole dataset before importing them. Importing annotations for the frames
+that are not known in the task still raise errors.
+
 ### Export
 
 To export the **Ground truth** job, do the following.
