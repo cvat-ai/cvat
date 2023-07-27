@@ -15,7 +15,7 @@ based on this comparison.
 > 2d tasks. It supports all the annotation types except 2d cuboids.
 
 > **Note** that tracks are considered separate shapes
-> and compared on the per-frame basis with other tracks and shapes.
+> and compared on a per-frame basis with other tracks and shapes.
 
 See:
 
@@ -44,17 +44,17 @@ the data shows the quality of annotation for
 the whole dataset.
 
 For the quality assurance to function correctly, the **Ground truth** job must
-have a small portion of the task frames, and the frames must be chosen randomly.
+have a small portion of the task frames and the frames must be chosen randomly.
 Depending on the dataset size and task complexity,
 **5-15% of the data is typically good enough** for quality estimation,
-while keeps extra annotation overhead acceptable.
+while keeping extra annotation overhead acceptable.
 
 For example, in a typical **task with 2000 frames**, selecting **just 5%**,
 which is 100 frames extra frames to annotate, **is enough** to estimate the
 annotation quality. If the task contains** only 30 frames**, it's advisable to
 select **8-10 frames**, which is **about 30%**.
 
-It is more than 15%, but in the case of smaller datasets,
+It is more than 15% but in the case of smaller datasets,
 we need more samples to estimate quality reliably.
 
 To create a **Ground truth** job, do the following:
@@ -111,10 +111,10 @@ If you want to import the **Ground truth** job, do the following.
 5. Click **OK**.
 
 > **Note** that if there are imported annotations for the frames that exist in the task,
-> but not included in the **Ground truth** job, they will be ignored.
+> but are not included in the **Ground truth** job, they will be ignored.
 > This way, you don't need to worry about "cleaning up" your **Ground truth**
 > annotations for the whole dataset before importing them.
-> Importing annotations for the frames that are not known in the task still raise errors.
+> Importing annotations for the frames that are not known in the task still raises errors.
 
 ### Export
 
@@ -142,7 +142,7 @@ CVAT will begin the quality comparison between the annotated task and the
 > **Note** that the process of quality calculation may take up to several hours, depending on
 > the amount of data and labeled objects, and is **not updated immediately** after task updates.
 
-To view results go to the **Task** > **Actions** > **View analytics**> **Performance** tab..
+To view results go to the **Task** > **Actions** > **View analytics**> **Performance** tab.
 
 ![Add new job](/images/honeypot05.jpg)
 
@@ -180,17 +180,17 @@ Annotation quality settings have the following parameters:
 
 | Field                                                                              | Description                                                                                                                                                    |
 | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Min overlap threshold                                                              | Min overlap threshold(IoU) is used for distinction between matched / unmatched shapes.                                                                         |
-| Low overlap threshold                                                              | Low overlap threshold is used for distinction between strong / weak (low overlap) matches.                                                                     |
-| OKS Sigma                                                                          | IoU threshold for points. The percent of the bbox area, used as the radius of the circle around the GT point, where the checked point is expected to be.       |
+| Min overlap threshold                                                              | Min overlap threshold(IoU) is used for the distinction between matched / unmatched shapes.                                                                     |
+| Low overlap threshold                                                              | Low overlap threshold is used for the distinction between strong/weak (low overlap) matches.                                                                   |
+| OKS Sigma                                                                          | IoU threshold for points. The percent of the box area, used as the radius of the circle around the GT point, where the checked point is expected to be.        |
 | Relative thickness (frame side %)                                                  | Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be. |
 | Check orientation                                                                  | Indicates that polylines have direction.                                                                                                                       |
 | Min similarity gain (%)                                                            | The minimal gain in the GT IoU between the given and reversed line directions to consider the line inverted. Only useful with the Check orientation parameter. |
 | Compare groups                                                                     | Enables or disables annotation group checks.                                                                                                                   |
-| Min group match threshold                                                          | Minimal IoU for groups to be considered matching, used when the Compare groups is enabled.                                                                     |
+| Min group match threshold                                                          | Minimal IoU for groups to be considered matching, used when the Compare groups are enabled.                                                                    |
 | Check object visibility                                                            | Check for partially-covered annotations. Masks and polygons will be compared to each other.                                                                    |
 | Min visibility threshold                                                           | Minimal visible area percent of the spatial annotations (polygons, masks)                                                                                      |
-| for reporting covered annotations, useful with the Check object visibility option. |
+| For reporting covered annotations, useful with the Check object visibility option. |
 | Match only visible parts                                                           | Use only the visible part of the masks and polygons in comparisons.                                                                                            |
 
 <!--lint enable maximum-line-length-->
