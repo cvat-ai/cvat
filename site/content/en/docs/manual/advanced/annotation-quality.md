@@ -175,6 +175,10 @@ Annotation quality settings have the following parameters:
 
 ### GT conflicts in the CVAT interface
 
+Once you know the quality summary, you may want to investigate 
+the problems found in more detail. You can actually check and take action 
+on the quality problems in jobs using the job "Review" mode. 
+
 To see GT Conflicts in the CVAT interface, go to **Review** >
 **Issues** > **Show ground truth annotations and conflicts**.
 
