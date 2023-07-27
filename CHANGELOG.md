@@ -45,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented server-side validation for attribute specifications
   (<https://github.com/opencv/cvat/pull/6447>)
 - \[API\] Fixed API issue related to file downloading failures for filenames with special characters (<https://github.com/opencv/cvat/pull/6492>)
-- \[Helm\] In Helm, we've resolved an issue with multiple caches in the same RWX volume, which was preventing db migration from starting (<https://github.com/opencv/cvat/pull/6137>)
+- \[Helm\] In Helm, we've resolved an issue with multiple caches
+   in the same RWX volume, which was preventing db migration from starting (<https://github.com/opencv/cvat/pull/6137>)
 
 ### Security
 
