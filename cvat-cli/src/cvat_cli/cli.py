@@ -8,7 +8,7 @@ import json
 from typing import Dict, List, Sequence, Tuple
 
 from cvat_sdk import Client, models
-from cvat_sdk.core.helpers import TqdmProgressReporter2
+from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 
@@ -66,7 +66,7 @@ class CLI:
             status_check_period=status_check_period,
             dataset_repository_url=dataset_repository_url,
             use_lfs=lfs,
-            pbar=TqdmProgressReporter2(),
+            pbar=DeferredTqdmProgressReporter(),
         )
         print("Created task id", task.id)
 
@@ -108,7 +108,7 @@ class CLI:
         self.client.tasks.retrieve(obj_id=task_id).export_dataset(
             format_name=fileformat,
             filename=filename,
-            pbar=TqdmProgressReporter2(),
+            pbar=DeferredTqdmProgressReporter(),
             status_check_period=status_check_period,
             include_images=include_images,
         )
@@ -122,17 +122,21 @@ class CLI:
             format_name=fileformat,
             filename=filename,
             status_check_period=status_check_period,
-            pbar=TqdmProgressReporter2(),
+            pbar=DeferredTqdmProgressReporter(),
         )
 
     def tasks_export(self, task_id: str, filename: str, *, status_check_period: int = 2) -> None:
         """Download a task backup"""
         self.client.tasks.retrieve(obj_id=task_id).download_backup(
-            filename=filename, status_check_period=status_check_period, pbar=TqdmProgressReporter2()
+            filename=filename,
+            status_check_period=status_check_period,
+            pbar=DeferredTqdmProgressReporter(),
         )
 
     def tasks_import(self, filename: str, *, status_check_period: int = 2) -> None:
         """Import a task from a backup file"""
         self.client.tasks.create_from_backup(
-            filename=filename, status_check_period=status_check_period, pbar=TqdmProgressReporter2()
+            filename=filename,
+            status_check_period=status_check_period,
+            pbar=DeferredTqdmProgressReporter(),
         )

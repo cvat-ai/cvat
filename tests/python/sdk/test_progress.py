@@ -7,7 +7,7 @@ import warnings
 from typing import Optional
 
 import tqdm
-from cvat_sdk.core.helpers import TqdmProgressReporter, TqdmProgressReporter2
+from cvat_sdk.core.helpers import DeferredTqdmProgressReporter, TqdmProgressReporter
 from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 
 
@@ -43,10 +43,10 @@ def test_tqdm_reporter():
     # so there won't be any parrots in the output.
 
 
-def test_tqdm_reporter_2():
+def test_deferred_tqdm_reporter():
     f = io.StringIO()
 
-    _exercise_reporter(TqdmProgressReporter2({"file": f}))
+    _exercise_reporter(DeferredTqdmProgressReporter({"file": f}))
 
     output = f.getvalue()
 

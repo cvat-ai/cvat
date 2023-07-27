@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[Unreleased]
 ### Added
 
-- \[SDK\] A `TqdmProgressReporter2` class was added, which doesn't have glitchy output
+- \[SDK\] A `DeferredTqdmProgressReporter` class, which doesn't have glitchy output
   like `TqdmProgressReporter` in certain circumstances
   (<https://github.com/opencv/cvat/pull/6556>)
 

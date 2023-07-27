@@ -62,7 +62,7 @@ class _BaseTqdmProgressReporter(BaseProgressReporter):
 class TqdmProgressReporter(_BaseTqdmProgressReporter):
     def __init__(self, instance: tqdm.tqdm) -> None:
         super().__init__()
-        warnings.warn(f"use {TqdmProgressReporter2.__name__} instead", DeprecationWarning)
+        warnings.warn(f"use {DeferredTqdmProgressReporter.__name__} instead", DeprecationWarning)
 
         self.tqdm = instance
 
@@ -77,7 +77,7 @@ class TqdmProgressReporter(_BaseTqdmProgressReporter):
         super().finish()
 
 
-class TqdmProgressReporter2(_BaseTqdmProgressReporter):
+class DeferredTqdmProgressReporter(_BaseTqdmProgressReporter):
     def __init__(self, tqdm_args: Optional[dict] = None) -> None:
         super().__init__()
         self.tqdm_args = tqdm_args or {}
