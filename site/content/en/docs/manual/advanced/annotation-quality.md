@@ -71,12 +71,12 @@ To create a **Ground truth** job, do the following:
    - **Job type**: Use the default parameter **Ground truth**.
    - **Frame selection method**: Use the default parameter **Random**.
    - **Quantity %**: Set the desired percentage of frames for the **Ground truth** job.
-     <br>**Note**, that when you use **Quantity %**, the **Frames** field will be autofilled.
+     <br>**Note** that when you use **Quantity %**, the **Frames** field will be autofilled.
    - **Frame count**: Set the desired number of frames for the "ground truth" job.
-     <br>**Note**, that when you use **Frames**, the **Quantity %** field will be will be autofilled.
+     <br>**Note** that when you use **Frames**, the **Quantity %** field will be will be autofilled.
    - **Seed**: (Optional) If you need to make the random selection reproducible, specify this number.
      It can be any integer number, the same value will yield the same random selection (given that the
-     frame number is unchanged). <br> **Note**, that if you want to use a
+     frame number is unchanged). <br> **Note** that if you want to use a
      custom frame sequence, you can do this using the server API instead,
      see [Jobs API #create](https://opencv.github.io/cvat/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 
@@ -139,7 +139,7 @@ Once you've established the **Ground truth** job, proceed to annotate the datase
 CVAT will begin the quality comparison between the annotated task and the
 **Ground truth** job in this task once it is finished (on the `acceptance` stage and in the `completed` state).
 
-> Note, that the process of quality calculation may take up to several hours, depending on
+> **Note** that the process of quality calculation may take up to several hours, depending on
 > the amount of data and labeled objects, and is **not updated immediately** after task updates.
 
 To view results go to the **Task** > **Actions** > **View analytics**> **Performance** tab..
