@@ -7,7 +7,7 @@ description: 'How to check the quality of annotation in CVAT'
 
 In CVAT, it's possible to evaluate the quality of annotation through
 the creation of a **Ground truth** job, referred to as a Honeypot.
-CVAT compares all other jobs in the specified tasks against the
+To estimate the task quality, CVAT compares all other jobs in the task against the
 established **Ground truth** job and calculates annotation quality
 based on this comparison.
 
