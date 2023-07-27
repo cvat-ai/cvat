@@ -61,7 +61,7 @@ To create a **Ground truth** job, do the following:
    - **Frame count**: Set the desired number of frames for the "ground truth" job. <br>Note, that upon using **Frames**, the **Quantity %** field will be automatically populated.
 
    - **Seed**: (Optional) TBD
-
+  > **Note** if you want to use a custom frame sequence, you can do this using the server API instead. Read more [here](https://opencv.github.io/cvat/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 4. Click **Submit**.
 5. Annotate frames, save your work.
 6. Change the status of the job to **Completed**.
