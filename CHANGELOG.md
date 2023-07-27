@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- TDB
+- Increased default guide assets limitations (30 assets, up to 10Mb each)
 
 ### Deprecated
 
