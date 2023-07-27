@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[Unreleased\]
+## \[2.5.2\] - 2023-07-27
 
 ### Added
 
@@ -19,10 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - \[Helm\] In Helm, we've added a configurable default storage option to the chart (<https://github.com/opencv/cvat/pull/6137>)
-
-### Deprecated
-
-- TDB
 
 ### Removed
 
@@ -47,10 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[API\] Fixed API issue related to file downloading failures for filenames with special characters (<https://github.com/opencv/cvat/pull/6492>)
 - \[Helm\] In Helm, we've resolved an issue with multiple caches
    in the same RWX volume, which was preventing db migration from starting (<https://github.com/opencv/cvat/pull/6137>)
-
-### Security
-
-- TDB
 
 ## \[2.5.1\] - 2023-07-19
 
