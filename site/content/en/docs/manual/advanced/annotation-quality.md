@@ -118,7 +118,7 @@ Once you've established the **Ground truth** job, proceed to annotate the datase
 CVAT will begin the quality comparison between the annotated task and the **Ground truth** job in this task once it is finished (on the `acceptance` stage and in the `completed` state).
 
 > Note, that the process of quality calculation may take up to several hours, depending on
-> the amount of data and labeled objects.
+> the amount of data and labeled objects, and is **not updated immediately** after task updates.
 
 To view results go to the **Task** > **Actions** > **View analytics**.
 
