@@ -165,10 +165,14 @@ The Analytics page has the following fields:
 
 ### Annotation quality settings
 
-If you need to tweak some aspects of comparisons, you can do this via 
-the Quality Settings menu. Here you can, for instance, configure, which overlap
-should be considered low, or how annotations should be compared.
-The updated settings will take effect on the next quality update.
+If you need to tweak some aspects of comparisons, you can do this from
+the **Annotation Quality Settings** menu.
+
+You can configure what overlap
+should be considered low or how annotations must be compared.
+
+The updated settings will take effect
+on the next quality update.
 
 To open **Annotation Quality Settings**, find
 **Quality report** and on the right side of it, click on
