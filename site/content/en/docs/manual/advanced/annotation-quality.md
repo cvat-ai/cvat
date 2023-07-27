@@ -118,7 +118,7 @@ If you want to import annotations into the **Ground truth** job, do the followin
 
 ### Export
 
-To export the **Ground truth** job, do the following.
+To export annotations from the **Ground truth** job, do the following.
 
 1. Open the task, and find a job in the jobs list.
 2. Click on three dots to open the menu.
