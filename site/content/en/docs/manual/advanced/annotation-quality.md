@@ -122,7 +122,7 @@ To export the **Ground truth** job, do the following.
 
 1. Open the task, and find a job in the jobs list.
 2. Click on three dots to open the menu.
-3. From the menu, select **Export job**.
+3. From the menu, select **Export annotations**.
 
 ### Delete
 
