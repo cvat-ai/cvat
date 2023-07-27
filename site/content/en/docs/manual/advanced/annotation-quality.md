@@ -106,7 +106,7 @@ If you want to import annotations into the **Ground truth** job, do the followin
 
 1. Open the task, and find the **Ground truth** job in the jobs list.
 2. Click on three dots to open the menu.
-3. From the menu, select **Import job**.
+3. From the menu, select **Import annotations**.
 4. Select import format, and select file.
 5. Click **OK**.
 
