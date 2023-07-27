@@ -11,9 +11,11 @@ To estimate the task quality, CVAT compares all other jobs in the task against t
 established **Ground truth** job and calculates annotation quality
 based on this comparison.
 
-> **Note** that quality estimation only supports 2d tasks. It supports all the annotation types except 2d cuboids. 
+> **Note** that quality estimation only supports
+> 2d tasks. It supports all the annotation types except 2d cuboids.
 
-> Tracks are considered separate shapes and compared on the per-frame basis with other tracks and shapes.
+> **Note** that tracks are considered separate shapes
+> and compared on the per-frame basis with other tracks and shapes.
 
 See:
 
@@ -30,19 +32,30 @@ See:
 
 ## Ground truth job
 
-A Ground Truth job is a way to tell CVAT where to store and get the "correct" 
-annotations for task quality estimation. To estimate task quality, you need to 
-create a Ground Truth job in the task, and annotate it. You don’t need to 
-annotate the whole dataset twice, the annotation quality of a small part of
-the data shows the quality of annotation for the whole dataset.
+A **Ground truth** job is a way to tell CVAT where to store
+and get the "correct" annotations for task quality estimation.
 
-For the quality assurance to function correctly, the Ground Truth job must have
-a small portion of the task frames, and the frames must be chosen randomly.
-Depending on the dataset size and task complexity, **5-15% of the data is typically good enough** for quality estimation, while keeps extra annotation 
-overhead acceptable. 
+To estimate task quality, you need to
+create a **Ground truth** job in the task,
+and annotate it. You don’t need to
+annotate the whole dataset twice,
+the annotation quality of a small part of
+the data shows the quality of annotation for
+the whole dataset.
 
-For example, in a typical task with 2000 frames, selecting just 5%, which is 100 frames extra frames to annotate, can be enough to estimate the annotation quality. If the task  contains only 30 frames, it's advisable to select **8-10 frames**, which is about 30%. It is more than 15%, but in the case of smaller datasets, we need more samples to estimate quality reliably.
+For the quality assurance to function correctly, the **Ground truth** job must
+have a small portion of the task frames, and the frames must be chosen randomly.
+Depending on the dataset size and task complexity,
+**5-15% of the data is typically good enough** for quality estimation,
+while keeps extra annotation overhead acceptable.
 
+For example, in a typical **task with 2000 frames**, selecting **just 5%**,
+which is 100 frames extra frames to annotate, **is enough** to estimate the
+annotation quality. If the task contains** only 30 frames**, it's advisable to
+select **8-10 frames**, which is **about 30%**.
+
+It is more than 15%, but in the case of smaller datasets,
+we need more samples to estimate quality reliably.
 
 To create a **Ground truth** job, do the following:
 
@@ -57,11 +70,16 @@ To create a **Ground truth** job, do the following:
 
    - **Job type**: Use the default parameter **Ground truth**.
    - **Frame selection method**: Use the default parameter **Random**.
-   - **Quantity %**: Set the desired percentage of frames for the "ground truth" job. <br>Note, that upon using **Quantity %**, the **Frames** field will be automatically populated.
-   - **Frame count**: Set the desired number of frames for the "ground truth" job. <br>Note, that upon using **Frames**, the **Quantity %** field will be automatically populated.
+   - **Quantity %**: Set the desired percentage of frames for the **Ground truth** job.
+     <br>**Note**, that when you use **Quantity %**, the **Frames** field will be autofilled.
+   - **Frame count**: Set the desired number of frames for the "ground truth" job.
+     <br>**Note**, that when you use **Frames**, the **Quantity %** field will be will be autofilled.
+   - **Seed**: (Optional) If you need to make the random selection reproducible, specify this number.
+     It can be any integer number, the same value will yield the same random selection (given that the
+     frame number is unchanged). <br> **Note**, that if you want to use a
+     custom frame sequence, you can do this using the server API instead,
+     see [Jobs API #create](https://opencv.github.io/cvat/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 
-   - **Seed**: (Optional) If you need to make the random selection reproducible, specify this number. It can be any integer number, the same value will yield the same random selection (given that the frame number is unchanged).
-  > **Note** if you want to use a custom frame sequence, you can do this using the server API instead. Read more [here](https://opencv.github.io/cvat/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 4. Click **Submit**.
 5. Annotate frames, save your work.
 6. Change the status of the job to **Completed**.
@@ -92,8 +110,11 @@ If you want to import the **Ground truth** job, do the following.
 4. Select import format, and select file.
 5. Click **OK**.
 
-Note that if there are imported annotations for the frames that exist in the task, but not included in the Ground Truth job, thy will be silently ignored. This way, you don't need to worry about "cleaning up" your Ground Truth annotations for the whole dataset before importing them. Importing annotations for the frames
-that are not known in the task still raise errors.
+> **Note** that if there are imported annotations for the frames that exist in the task,
+> but not included in the **Ground truth** job, they will be ignored.
+> This way, you don't need to worry about "cleaning up" your **Ground truth**
+> annotations for the whole dataset before importing them.
+> Importing annotations for the frames that are not known in the task still raise errors.
 
 ### Export
 
@@ -115,12 +136,13 @@ To delete the **Ground truth** job, do the following.
 
 Once you've established the **Ground truth** job, proceed to annotate the dataset.
 
-CVAT will begin the quality comparison between the annotated task and the **Ground truth** job in this task once it is finished (on the `acceptance` stage and in the `completed` state).
+CVAT will begin the quality comparison between the annotated task and the
+**Ground truth** job in this task once it is finished (on the `acceptance` stage and in the `completed` state).
 
 > Note, that the process of quality calculation may take up to several hours, depending on
 > the amount of data and labeled objects, and is **not updated immediately** after task updates.
 
-To view results go to the **Task** > **Actions** > **View analytics**.
+To view results go to the **Task** > **Actions** > **View analytics**> **Performance** tab..
 
 ![Add new job](/images/honeypot05.jpg)
 
@@ -156,8 +178,8 @@ Annotation quality settings have the following parameters:
 
 <!--lint disable maximum-line-length-->
 
-| Field                                                                              | Description                                                                                                                                                   |
-| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Field                                                                              | Description                                                                                                                                                    |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Min overlap threshold                                                              | Min overlap threshold(IoU) is used for distinction between matched / unmatched shapes.                                                                         |
 | Low overlap threshold                                                              | Low overlap threshold is used for distinction between strong / weak (low overlap) matches.                                                                     |
 | OKS Sigma                                                                          | IoU threshold for points. The percent of the bbox area, used as the radius of the circle around the GT point, where the checked point is expected to be.       |
@@ -166,7 +188,7 @@ Annotation quality settings have the following parameters:
 | Min similarity gain (%)                                                            | The minimal gain in the GT IoU between the given and reversed line directions to consider the line inverted. Only useful with the Check orientation parameter. |
 | Compare groups                                                                     | Enables or disables annotation group checks.                                                                                                                   |
 | Min group match threshold                                                          | Minimal IoU for groups to be considered matching, used when the Compare groups is enabled.                                                                     |
-| Check object visibility                                                            | Check for partially-covered annotations. Masks and polygons will be compared to each other.                                                                                                                      |
+| Check object visibility                                                            | Check for partially-covered annotations. Masks and polygons will be compared to each other.                                                                    |
 | Min visibility threshold                                                           | Minimal visible area percent of the spatial annotations (polygons, masks)                                                                                      |
 | for reporting covered annotations, useful with the Check object visibility option. |
 | Match only visible parts                                                           | Use only the visible part of the masks and polygons in comparisons.                                                                                            |
@@ -175,16 +197,13 @@ Annotation quality settings have the following parameters:
 
 ### GT conflicts in the CVAT interface
 
-Once you know the quality summary, you may want to investigate 
-the problems found in more detail. You can actually check and take action 
-on the quality problems in jobs using the job "Review" mode. 
-
 To see GT Conflicts in the CVAT interface, go to **Review** >
 **Issues** > **Show ground truth annotations and conflicts**.
 
 ![GT conflict](/images/honeypot06.gif)
 
-The ground truth (GT) annotation is depicted as a dotted-line box with an associated label.
+The ground truth (GT) annotation is depicted as
+a dotted-line box with an associated label.
 
 Upon hovering over an issue on the right-side panel with your mouse,
 the corresponding GT Annotation gets highlighted.
