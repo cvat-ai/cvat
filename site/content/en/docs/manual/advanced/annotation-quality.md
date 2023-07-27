@@ -51,7 +51,7 @@ while keeping extra annotation overhead acceptable.
 
 For example, in a typical **task with 2000 frames**, selecting **just 5%**,
 which is 100 frames extra frames to annotate, **is enough** to estimate the
-annotation quality. If the task contains** only 30 frames**, it's advisable to
+annotation quality. If the task contains **only 30 frames**, it's advisable to
 select **8-10 frames**, which is **about 30%**.
 
 It is more than 15% but in the case of smaller datasets,
