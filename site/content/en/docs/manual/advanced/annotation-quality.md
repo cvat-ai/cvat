@@ -102,7 +102,7 @@ job's menu.
 
 ### Import
 
-If you want to import the **Ground truth** job, do the following.
+If you want to import annotations into the **Ground truth** job, do the following.
 
 1. Open the task, and find the **Ground truth** job in the jobs list.
 2. Click on three dots to open the menu.
