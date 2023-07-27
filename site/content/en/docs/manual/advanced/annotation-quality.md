@@ -30,17 +30,19 @@ See:
 
 ## Ground truth job
 
-You don’t need to annotate the whole dataset twice, the annotation quality of a small part of
-the data will show the quality of annotation for the whole dataset.
+A Ground Truth job is a way to tell CVAT where to store and get the "correct" 
+annotations for task quality estimation. To estimate task quality, you need to 
+create a Ground Truth job in the task, and annotate it. You don’t need to 
+annotate the whole dataset twice, the annotation quality of a small part of
+the data shows the quality of annotation for the whole dataset.
 
-You need to select several frames from the whole
-dataset depending on the size of the task.
+For the quality assurance to function correctly, the Ground Truth job must have
+a small portion of the task frames, and the frames must be chosen randomly.
+Depending on the dataset size and task complexity, **5-15% of the data is typically good enough** for quality estimation, while keeps extra annotation 
+overhead acceptable. 
 
-For the quality assurance to function properly, each job should contain at
-least a few overlapping frames. For example, for **task that contains only
-30 frames** to obtain adequate data, it's advisable to select **8-10 frames**.
+For example, in a typical task with 2000 frames, selecting just 5%, which is 100 frames extra frames to annotate, can be enough to estimate the annotation quality. If the task  contains only 30 frames, it's advisable to select **8-10 frames**, which is about 30%. It is more than 15%, but in the case of smaller datasets, we need more samples to estimate quality reliably.
 
-Depending on the dataset size, **5-15% of the data is good enough** for quality estimation.
 
 To create a **Ground truth** job, do the following:
 
