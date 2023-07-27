@@ -60,7 +60,7 @@ To create a **Ground truth** job, do the following:
    - **Quantity %**: Set the desired percentage of frames for the "ground truth" job. <br>Note, that upon using **Quantity %**, the **Frames** field will be automatically populated.
    - **Frame count**: Set the desired number of frames for the "ground truth" job. <br>Note, that upon using **Frames**, the **Quantity %** field will be automatically populated.
 
-   - **Seed**: (Optional) TBD
+   - **Seed**: (Optional) If you need to make the random selection reproducible, specify this number. It can be any integer number, the same value will yield the same random selection (given that the frame number is unchanged).
   > **Note** if you want to use a custom frame sequence, you can do this using the server API instead. Read more [here](https://opencv.github.io/cvat/docs/api_sdk/sdk/reference/apis/jobs-api/#create).
 4. Click **Submit**.
 5. Annotate frames, save your work.
