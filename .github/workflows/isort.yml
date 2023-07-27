@@ -13,6 +13,7 @@ jobs:
               cvat-cli/**/*.py
               tests/python/**/*.py
               cvat/apps/quality_control/**/*.py
+              cvat/apps/analytics_report/**/*.py
           dir_names: true
 
       - name: Run checks
@@ -29,23 +30,15 @@ jobs:
             . .env/bin/activate
             pip install -U pip wheel setuptools
             pip install $(egrep "isort.*" ./cvat-cli/requirements/development.txt)
-            mkdir -p isort_report
 
             echo "isort version: $(isort --version-number)"
             echo "The dirs will be checked: $UPDATED_DIRS"
             EXIT_CODE=0
             for DIR in $UPDATED_DIRS; do
-              isort --check $DIR >> ./isort_report/isort_checks.txt || EXIT_CODE=$(($? | $EXIT_CODE)) || true
+              isort --check $DIR || EXIT_CODE=$(($? | $EXIT_CODE)) || true
             done
             deactivate
             exit $EXIT_CODE
           else
             echo "No files with the \"py\" extension found"
           fi
-
-      - name: Upload artifacts
-        if: failure()
-        uses: actions/upload-artifact@v3.1.1
-        with:
-          name: isort_report
-          path: isort_report

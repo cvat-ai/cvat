@@ -62,7 +62,7 @@ def get_organization(request, obj):
         except AttributeError as exc:
             # Skip initialization of organization for those objects that don't related with organization
             view = request.parser_context.get('view')
-            if view and view.basename in ('user', 'function', 'request',):
+            if view and view.basename in ('user', 'function', 'request', 'server'):
                 return request.iam_context['organization']
 
             raise exc
@@ -1260,6 +1260,14 @@ class JobPermission(OpenPolicyAgentPermission):
             raise ValidationError(str(ex))
         return cls(**iam_context, obj=obj, scope='view:data')
 
+    @classmethod
+    def create_scope_view(cls, iam_context, job_id):
+        try:
+            obj = Job.objects.get(id=job_id)
+        except Job.DoesNotExist as ex:
+            raise ValidationError(str(ex))
+        return cls(**iam_context, obj=obj, scope=__class__.Scopes.VIEW)
+
     def __init__(self, **kwargs):
         self.task_id = kwargs.pop('task_id', None)
         super().__init__(**kwargs)
@@ -2018,3 +2026,74 @@ class PolicyEnforcer(BasePermission):
     def is_metadata_request(request, view):
         return request.method == 'OPTIONS' \
             or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
+
+class AnalyticsReportPermission(OpenPolicyAgentPermission):
+    class Scopes(StrEnum):
+        LIST = 'list'
+        CREATE = 'create'
+
+    @classmethod
+    def create(cls, request, view, obj, iam_context):
+        Scopes = __class__.Scopes
+        permissions = []
+        if view.basename == 'analytics_reports':
+            scopes = cls.get_scopes(request, view, obj)
+            for scope in scopes:
+                self = cls.create_base_perm(request, view, scope, iam_context, obj)
+                permissions.append(self)
+
+            if view.action == Scopes.LIST:
+                job_id = request.query_params.get('job_id', None)
+                task_id = request.query_params.get('task_id', None)
+                project_id = request.query_params.get('project_id', None)
+            else:
+                job_id = request.data.get('job_id', None)
+                task_id = request.data.get('task_id', None)
+                project_id = request.data.get('project_id', None)
+
+            if job_id:
+                try:
+                    job = Job.objects.get(id=job_id)
+                except Job.DoesNotExist as ex:
+                    raise ValidationError(str(ex))
+
+                iam_context = get_iam_context(request, job)
+                perm = JobPermission.create_scope_view(iam_context, int(job_id))
+                permissions.append(perm)
+
+            if task_id:
+                try:
+                    task = Task.objects.get(id=task_id)
+                except Task.DoesNotExist as ex:
+                    raise ValidationError(str(ex))
+
+                iam_context = get_iam_context(request, task)
+                perm = TaskPermission.create_scope_view(request, int(task_id), iam_context)
+                permissions.append(perm)
+
+            if project_id:
+                try:
+                    project = Project.objects.get(id=project_id)
+                except Project.DoesNotExist as ex:
+                    raise ValidationError(str(ex))
+
+                iam_context = get_iam_context(request, project)
+                perm = ProjectPermission.create_scope_view(iam_context, int(project_id))
+                permissions.append(perm)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/analytics_reports/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        Scopes = __class__.Scopes
+        return [{
+            'list': Scopes.LIST,
+            'create': Scopes.CREATE,
+        }.get(view.action, None)]
+
+    def get_resource(self):
+        return None

@@ -881,8 +881,8 @@ class AttributeSpec(models.Model):
     mutable = models.BooleanField()
     input_type = models.CharField(max_length=16,
         choices=AttributeType.choices())
-    default_value = models.CharField(max_length=128)
-    values = models.CharField(max_length=4096)
+    default_value = models.CharField(blank=True, max_length=128)
+    values = models.CharField(blank=True, max_length=4096)
 
     class Meta:
         default_permissions = ()
@@ -922,6 +922,7 @@ class SourceType(str, Enum):
     AUTO = 'auto'
     SEMI_AUTO = 'semi-auto'
     MANUAL = 'manual'
+    FILE = 'file'
 
     @classmethod
     def choices(cls):

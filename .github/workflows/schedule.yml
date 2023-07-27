@@ -88,19 +88,12 @@ jobs:
       - name: CVAT server. Build and push
         uses: docker/build-push-action@v3
         with:
-          build-args: |
-              "COVERAGE_PROCESS_START=.coveragerc"
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
           push: true
           tags: ${{ steps.meta-server.outputs.tags }}
           labels: ${{ steps.meta-server.outputs.labels }}
-
-      - name: Instrumentation of the code then rebuilding the CVAT UI
-        run: |
-          yarn --frozen-lockfile
-          yarn run coverage
 
       - name: CVAT UI. Build and push
         uses: docker/build-push-action@v3
@@ -165,8 +158,6 @@ jobs:
           ./opa test cvat/apps/iam/rules
 
       - name: REST API and SDK tests
-        env:
-          COVERAGE_PROCESS_START: ".coveragerc"
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
@@ -175,7 +166,7 @@ jobs:
           pip3 install -e ./cvat-sdk
           pip3 install -e ./cvat-cli
 
-          pytest tests/python/ --cov --cov-report xml
+          pytest tests/python/
           pytest tests/python/ --stop-services
 
       - name: Unit tests
@@ -188,17 +179,12 @@ jobs:
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}'
+            -c 'python manage.py test cvat/apps -v 2'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
+            -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml down -v
-
-      - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
 
   e2e_testing:
     needs: build
@@ -304,18 +290,15 @@ jobs:
             npx cypress run \
               --headed \
               --browser chrome \
+              --env coverage=false \
               --config-file cypress_canvas3d.config.js \
               --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
+              --env coverage=false \
               --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
-
-      - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Creating a log file from "cvat" container logs
         if: failure()

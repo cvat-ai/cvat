@@ -10,7 +10,6 @@ import Collapse from 'antd/lib/collapse';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { ObjectType, ShapeType, ColorBy } from 'reducers';
-import { ObjectState } from 'cvat-core-wrapper';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
@@ -25,7 +24,7 @@ interface Props {
     labelID: number;
     isGroundTruth: boolean;
     locked: boolean;
-    elements: any[];
+    elements: number[];
     color: string;
     colorBy: ColorBy;
     labels: any[];
@@ -141,29 +140,27 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     />
                 )}
                 {!!elements.length && (
-                    <>
-                        <Collapse className='cvat-objects-sidebar-state-item-elements-collapse'>
-                            <Collapse.Panel
-                                header={(
-                                    <>
-                                        <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>
-                                        <br />
-                                    </>
-                                )}
-                                key='elements'
-                            >
-                                {elements.map((element: ObjectState) => (
-                                    <ObjectItemElementComponent
-                                        key={element.clientID as number}
-                                        readonly={readonly}
-                                        parentID={clientID}
-                                        clientID={element.clientID as number}
-                                        onMouseLeave={activateState}
-                                    />
-                                ))}
-                            </Collapse.Panel>
-                        </Collapse>
-                    </>
+                    <Collapse className='cvat-objects-sidebar-state-item-elements-collapse'>
+                        <Collapse.Panel
+                            header={(
+                                <>
+                                    <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>
+                                    <br />
+                                </>
+                            )}
+                            key='elements'
+                        >
+                            {elements.map((element: number) => (
+                                <ObjectItemElementComponent
+                                    key={element}
+                                    readonly={readonly}
+                                    parentID={clientID}
+                                    clientID={element}
+                                    onMouseLeave={activateState}
+                                />
+                            ))}
+                        </Collapse.Panel>
+                    </Collapse>
                 )}
             </div>
         </div>

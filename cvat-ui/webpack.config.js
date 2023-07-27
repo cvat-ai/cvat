@@ -128,7 +128,13 @@ module.exports = (env) => {
                         {
                             loader: 'postcss-loader',
                             options: {
-                                plugins: [require('postcss-preset-env')],
+                                postcssOptions: {
+                                    plugins: [
+                                        [
+                                            'postcss-preset-env', {},
+                                        ],
+                                    ],
+                                },
                             },
                         },
                         'sass-loader',
