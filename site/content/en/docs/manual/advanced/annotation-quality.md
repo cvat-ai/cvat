@@ -77,7 +77,7 @@ Annotations from **Ground truth** jobs are not included in the dataset export,
 they also cannot be imported during task annotations import
 or with automatic annotation for the task.
 
-Import, export, and delete options are available from
+Import, export, and delete options are available from the
 job's menu.
 
 ![Add new job](/images/honeypot04.jpg)
