@@ -13,17 +13,8 @@ jobs:
         run: |
           yarn install --frozen-lockfile
           (cd tests && yarn install --frozen-lockfile)
-          yarn add eslint-detailed-reporter -D -W
 
       - name: Run checks
         run: |
           echo "ESLint version: "$(yarn run -s eslint --version)
-          mkdir -p eslint_report
-          yarn run eslint . -f node_modules/eslint-detailed-reporter/lib/detailed.js -o ./eslint_report/eslint_checks.html
-
-      - name: Upload artifacts
-        if: failure()
-        uses: actions/upload-artifact@v3.1.1
-        with:
-          name: eslint_report
-          path: eslint_report
+          yarn run eslint .
