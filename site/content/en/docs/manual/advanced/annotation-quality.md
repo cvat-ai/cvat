@@ -11,7 +11,9 @@ CVAT compares all other jobs in the specified tasks against the
 established **Ground truth** job and calculates annotation quality
 based on this comparison.
 
-> **Note** that Honeypot does not work with cubooids.
+> **Note** that quality estimation only supports 2d tasks. It supports all the annotation types except 2d cuboids. 
+
+> Tracks are considered separate shapes and compared on the per-frame basis with other tracks and shapes.
 
 See:
 
