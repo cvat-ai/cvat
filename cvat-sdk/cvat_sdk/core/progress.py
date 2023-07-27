@@ -48,13 +48,25 @@ class ProgressReporter:
         """
         raise NotImplementedError
 
-    def start2(self, **kwargs) -> None:
+    def start2(
+        self,
+        total: int,
+        *,
+        desc: Optional[str] = None,
+        unit: str = "it",
+        unit_scale: bool = False,
+        unit_divisor: int = 1000,
+        **kwargs,
+    ) -> None:
         """
         Initializes the progress bar.
 
-        kwargs must contain tqdm-compatible arguments.
+        total, desc, unit, unit_scale, unit_divisor have the same meaning as in tqdm.
+
+        kwargs is included for future extension; implementations of this method
+        must ignore it.
         """
-        self.start(total=kwargs.get("total"), desc=kwargs.get("desc"))
+        self.start(total=total, desc=desc)
 
     def report_status(self, progress: int):
         """Updates the progress bar"""
@@ -91,7 +103,16 @@ class BaseProgressReporter(ProgressReporter):
     def __init__(self) -> None:
         self._in_progress = False
 
-    def start2(self, **kwargs) -> None:
+    def start2(
+        self,
+        total: int,
+        *,
+        desc: Optional[str] = None,
+        unit: str = "it",
+        unit_scale: bool = False,
+        unit_divisor: int = 1000,
+        **kwargs,
+    ) -> None:
         assert not self._in_progress
         self._in_progress = True
 

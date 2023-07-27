@@ -66,11 +66,11 @@ class TqdmProgressReporter(_BaseTqdmProgressReporter):
 
         self.tqdm = instance
 
-    def start2(self, **kwargs) -> None:
-        super().start2(**kwargs)
+    def start2(self, total: int, *, desc: Optional[str] = None, **kwargs) -> None:
+        super().start2(total=total, desc=desc, **kwargs)
 
-        self.tqdm.reset(kwargs.get("total"))
-        self.tqdm.set_description_str(kwargs.get("desc"))
+        self.tqdm.reset(total)
+        self.tqdm.set_description_str(desc)
 
     def finish(self):
         self.tqdm.refresh()
@@ -83,11 +83,34 @@ class TqdmProgressReporter2(_BaseTqdmProgressReporter):
         self.tqdm_args = tqdm_args or {}
         self.tqdm = None
 
-    def start2(self, **kwargs) -> None:
-        super().start2(**kwargs)
+    def start2(
+        self,
+        total: int,
+        *,
+        desc: Optional[str] = None,
+        unit: str = "it",
+        unit_scale: bool = False,
+        unit_divisor: int = 1000,
+        **kwargs,
+    ) -> None:
+        super().start2(
+            total=total,
+            desc=desc,
+            unit=unit,
+            unit_scale=unit_scale,
+            unit_divisor=unit_divisor,
+            **kwargs,
+        )
         assert not self.tqdm
 
-        self.tqdm = tqdm.tqdm(**self.tqdm_args, **kwargs)
+        self.tqdm = tqdm.tqdm(
+            **self.tqdm_args,
+            total=total,
+            desc=desc,
+            unit=unit,
+            unit_scale=unit_scale,
+            unit_divisor=unit_divisor,
+        )
 
     def finish(self):
         self.tqdm.close()
