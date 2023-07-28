@@ -254,8 +254,8 @@ export default class CloudStorage {
         return result;
     }
 
-    public async getPreview(): Promise<string | ArrayBuffer> {
-        const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getPreview);
+    public async preview(): Promise<string | ArrayBuffer> {
+        const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.preview);
         return result;
     }
 
@@ -375,20 +375,14 @@ Object.defineProperties(CloudStorage.prototype.getContent, {
     },
 });
 
-Object.defineProperties(CloudStorage.prototype.getPreview, {
+Object.defineProperties(CloudStorage.prototype.preview, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<string | ArrayBuffer> {
-            return new Promise((resolve, reject) => {
-                serverProxy.cloudStorages
-                    .getPreview(this.id)
-                    .then((result) => ((result) ? decodePreview(result) : Promise.resolve(result)))
-                    .then((decoded) => resolve(decoded))
-                    .catch((error) => {
-                        reject(error);
-                    });
-            });
+        value: async function implementation(this: CloudStorage): Promise<string> {
+            const preview = await serverProxy.cloudStorages.getPreview(this.id);
+            if (!preview) return '';
+            return decodePreview(preview);
         },
     },
 });

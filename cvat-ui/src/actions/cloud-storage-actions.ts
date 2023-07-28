@@ -198,7 +198,7 @@ export function getCloudStoragePreviewAsync(cloudStorage: CloudStorage): ThunkAc
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(cloudStoragesActions.getCloudStoragePreview(cloudStorage.id));
         try {
-            const result = await cloudStorage.getPreview();
+            const result = await cloudStorage.preview();
             dispatch(cloudStoragesActions.getCloudStoragePreviewSuccess(cloudStorage.id, result));
         } catch (error) {
             dispatch(cloudStoragesActions.getCloudStoragePreviewFailed(cloudStorage.id, error));

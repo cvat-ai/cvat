@@ -228,7 +228,7 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
             const taskDataCache = frameDataCache[this.jid];
             const activeChunk = taskDataCache.activeChunkRequest;
             activeChunk.request = serverProxy.frames
-                .getData(null, this.jid, activeChunk.chunkNumber)
+                .getData(this.jid, activeChunk.chunkNumber)
                 .then((chunk) => {
                     frameDataCache[this.jid].activeChunkRequest.completed = true;
                     if (!taskDataCache.nextChunkRequest) {
@@ -666,12 +666,7 @@ async function getImageContext(jobID, frame) {
         serverProxy.frames
             .getImageContext(jobID, frame)
             .then((result) => {
-                if (isNode) {
-                    // eslint-disable-next-line no-undef
-                    resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                } else if (isBrowser) {
-                    resolve(result);
-                }
+                resolve(result);
             })
             .catch((error) => {
                 reject(error);
@@ -690,18 +685,14 @@ export async function getContextImage(jobID, frame) {
 
 export function decodePreview(preview: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
-        if (isNode) {
-            resolve(global.Buffer.from(preview, 'binary').toString('base64'));
-        } else if (isBrowser) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                resolve(reader.result as string);
-            };
-            reader.onerror = (error) => {
-                reject(error);
-            };
-            reader.readAsDataURL(preview);
-        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            resolve(reader.result as string);
+        };
+        reader.onerror = (error) => {
+            reject(error);
+        };
+        reader.readAsDataURL(preview);
     });
 }
 

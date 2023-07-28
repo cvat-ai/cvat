@@ -77,16 +77,15 @@ export class FrameProvider {
     private blockType: BlockType;
 
     /*
-        ImageBitmap when decode zip chunks
-        ImageData when decode video chunks
+        ImageBitmap when decode zip or video chunks
         Blob when 3D dimension
         null when not decoded yet
     */
-    private frames: Record<string, ImageBitmap | ImageData | Blob | null>;
+    private frames: Record<string, ImageBitmap | Blob | null>;
     private requestedBlockToDecode: null | BlockToDecode;
     private blocksAreBeingDecoded: Record<string, BlockToDecode>;
     private promisedFrames: Record<string, {
-        resolve: (data: ImageBitmap | ImageData | Blob) => void;
+        resolve: (data: ImageBitmap | Blob) => void;
         reject: () => void;
     }>;
     private currentDecodingThreads: number;
@@ -98,7 +97,7 @@ export class FrameProvider {
     private cachedEncodedBlocksLimit: number;
     private cachedDecodedBlocksLimit: number;
 
-    // used for video chunks to resize after decoding
+    // used for video chunks to get correct side after decoding
     private renderWidth: number;
     private renderHeight: number;
 
@@ -246,44 +245,9 @@ export class FrameProvider {
         this._blocks[chunkNumber] = 'loading';
     }
 
-    static cropImage(
-        imageBuffer: ArrayBuffer,
-        imageWidth: number,
-        imageHeight: number,
-        xOffset: number,
-        yOffset: number,
-        width: number,
-        height: number,
-    ): ImageData {
-        if (xOffset === 0 && width === imageWidth && yOffset === 0 && height === imageHeight) {
-            return new ImageData(new Uint8ClampedArray(imageBuffer), width, height);
-        }
-        const source = new Uint32Array(imageBuffer);
-
-        const bufferSize = width * height * 4;
-        const buffer = new ArrayBuffer(bufferSize);
-        const rgbaInt32 = new Uint32Array(buffer);
-        const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
-
-        if (imageWidth === width) {
-            return new ImageData(new Uint8ClampedArray(imageBuffer, yOffset * 4, bufferSize), width, height);
-        }
-
-        let writeIdx = 0;
-        for (let row = yOffset; row < height; row++) {
-            const start = row * imageWidth + xOffset;
-            rgbaInt32.set(source.subarray(start, start + width), writeIdx);
-            writeIdx += width;
-        }
-
-        return new ImageData(rgbaInt8Clamped, width, height);
-    }
-
     async startDecode(): Promise<void> {
         const release = await this.mutex.acquire();
         try {
-            const height = this.renderHeight;
-            const width = this.renderWidth;
             const { start, end, block } = this.requestedBlockToDecode;
 
             this.blocksRanges.push(`${start}:${end}`);
@@ -307,34 +271,34 @@ export class FrameProvider {
                         // ignore initialization message
                         return;
                     }
+                    const keptIndex = index;
 
-                    const scaleFactor = Math.ceil(height / e.data.height);
-                    this.frames[index] = FrameProvider.cropImage(
-                        e.data.buf,
-                        e.data.width,
-                        e.data.height,
-                        0,
-                        0,
-                        Math.floor(width / scaleFactor),
-                        Math.floor(height / scaleFactor),
-                    );
+                    // do not use e.data.height and e.data.width because they might be not correct
+                    // instead, try to understand real height and width of decoded image via scale factor
+                    const scaleFactor = Math.ceil(this.renderHeight / e.data.height);
+                    const height = Math.round(this.renderHeight / scaleFactor);
+                    const width = Math.round(this.renderWidth / scaleFactor);
 
-                    const { resolveCallback } = this.blocksAreBeingDecoded[`${start}:${end}`];
-                    if (resolveCallback) {
-                        resolveCallback(index);
-                    }
+                    const array = new Uint8ClampedArray(e.data.buf.slice(0, width * height * 4));
+                    createImageBitmap(new ImageData(array, width)).then((bitmap) => {
+                        this.frames[keptIndex] = bitmap;
+                        const { resolveCallback } = this.blocksAreBeingDecoded[`${start}:${end}`];
+                        if (resolveCallback) {
+                            resolveCallback(keptIndex);
+                        }
 
-                    if (index in this.promisedFrames) {
-                        const { resolve } = this.promisedFrames[index];
-                        delete this.promisedFrames[index];
-                        resolve(this.frames[index]);
-                    }
+                        if (keptIndex in this.promisedFrames) {
+                            const { resolve } = this.promisedFrames[keptIndex];
+                            delete this.promisedFrames[keptIndex];
+                            resolve(this.frames[keptIndex]);
+                        }
 
-                    if (index === end) {
-                        worker.terminate();
-                        this.currentDecodingThreads--;
-                        delete this.blocksAreBeingDecoded[`${start}:${end}`];
-                    }
+                        if (keptIndex === end) {
+                            worker.terminate();
+                            this.currentDecodingThreads--;
+                            delete this.blocksAreBeingDecoded[`${start}:${end}`];
+                        }
+                    });
 
                     index++;
                 };

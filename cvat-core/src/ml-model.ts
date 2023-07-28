@@ -3,9 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { isBrowser, isNode } from 'browser-or-node';
 import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
+import { decodePreview } from './frames';
 import { ModelProviders, ModelKind, ModelReturnType } from './enums';
 import {
     SerializedModel, ModelAttribute, ModelParams, ModelTip,
@@ -117,8 +117,8 @@ export default class MLModel {
         return result;
     }
 
-    public async getPreview(): Promise<string> {
-        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.getPreview);
+    public async preview(): Promise<string> {
+        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.preview);
         return result;
     }
 }
@@ -127,7 +127,7 @@ Object.defineProperties(MLModel.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<MLModel> {
+        value: async function implementation(this: MLModel): Promise<MLModel> {
             const modelData = {
                 provider: this.provider,
                 url: this.serialized.url,
@@ -144,7 +144,7 @@ Object.defineProperties(MLModel.prototype.delete, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<void> {
+        value: async function implementation(this: MLModel): Promise<void> {
             if (this.isDeletable) {
                 await serverProxy.functions.delete(this.id);
             }
@@ -152,32 +152,15 @@ Object.defineProperties(MLModel.prototype.delete, {
     },
 });
 
-Object.defineProperties(MLModel.prototype.getPreview, {
+Object.defineProperties(MLModel.prototype.preview, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<string | ArrayBuffer> {
-            if (this.provider === ModelProviders.CVAT) {
-                return '';
-            }
-            return new Promise((resolve, reject) => {
-                serverProxy.functions
-                    .getPreview(this.id)
-                    .then((result) => {
-                        if (isNode) {
-                            resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                        } else if (isBrowser) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                                resolve(reader.result);
-                            };
-                            reader.readAsDataURL(result);
-                        }
-                    })
-                    .catch((error) => {
-                        reject(error);
-                    });
-            });
+        value: async function implementation(this: MLModel): Promise<string> {
+            if (this.provider === ModelProviders.CVAT) return '';
+            const preview = await serverProxy.functions.getPreview(this.id);
+            if (!preview) return '';
+            return decodePreview(preview);
         },
     },
 });
