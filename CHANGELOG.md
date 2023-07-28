@@ -8,11 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[Unreleased]
 ### Added
 
-- TDB
+- \[SDK\] A `DeferredTqdmProgressReporter` class, which doesn't have glitchy output
+  like `TqdmProgressReporter` in certain circumstances
+  (<https://github.com/opencv/cvat/pull/6556>)
 
 ### Changed
 
-- TDB
+- \[SDK\] Custom `ProgressReporter` implementations should now override `start2` instead of `start`
+  (<https://github.com/opencv/cvat/pull/6556>)
 
 ### Deprecated
 
