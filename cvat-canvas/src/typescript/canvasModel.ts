@@ -14,7 +14,7 @@ export interface Size {
 export interface Image {
     renderWidth: number;
     renderHeight: number;
-    imageData: ImageData | CanvasImageSource;
+    imageData: ImageBitmap;
 }
 
 export interface Position {
