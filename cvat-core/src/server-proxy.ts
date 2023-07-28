@@ -22,8 +22,8 @@ import { isEmail, isResourceURL } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
-import { FunctionsResponseBody } from './server-response-types';
-import { SerializedQualityConflictData } from './quality-conflict';
+import { FunctionsResponseBody, ListPage } from './server-response-types';
+import { ApiQualityConflictsFilter, ApiQualityReportsFilter, SerializedQualityConflictData } from './quality-conflict';
 
 type Params = {
     org: number | string,
@@ -2312,7 +2312,9 @@ async function createQualitySettings(
     }
 }
 
-async function getQualityConflicts(filter): Promise<SerializedQualityConflictData[]> {
+async function getQualityConflicts(
+    filter: ApiQualityConflictsFilter,
+): Promise<ListPage<SerializedQualityConflictData>> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -2322,13 +2324,17 @@ async function getQualityConflicts(filter): Promise<SerializedQualityConflictDat
             ...filter,
         });
 
+        response.data.results.count = response.data.count;
+
         return response.results;
     } catch (errorData) {
         throw generateError(errorData);
     }
 }
 
-async function getQualityReports(filter): Promise<SerializedQualityReportData[]> {
+async function getQualityReports(
+    filter: ApiQualityReportsFilter,
+): Promise<ListPage<SerializedQualityReportData>> {
     const { backendAPI } = config;
 
     try {
@@ -2391,6 +2397,7 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
+        apiScheme: getApiScheme,
     }),
 
     projects: Object.freeze({
@@ -2542,9 +2549,5 @@ export default Object.freeze({
                 create: createQualitySettings,
             }),
         }),
-    }),
-
-    scheme: Object.freeze({
-        get: getApiScheme,
     }),
 });

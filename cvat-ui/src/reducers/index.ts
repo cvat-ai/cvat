@@ -53,7 +53,7 @@ export interface ProjectsState {
         [index: number]: Preview;
     };
     gettingQuery: ProjectsQuery;
-    tasksGettingQuery: TasksQuery & { ordering: string };
+    tasksGettingQuery: TasksQuery;
     activities: {
         creates: {
             id: null | number;

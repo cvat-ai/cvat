@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { snakeCase } from 'lodash';
 import { ArgumentError } from './exceptions';
 
 export function isBoolean(value): boolean {
@@ -144,4 +145,18 @@ export function filterFieldsToSnakeCase(filter: Record<string, string>, keysToSn
 
 export function isResourceURL(url: string): boolean {
     return /\/([0-9]+)$/.test(url);
+}
+
+export function isPageSize(value: unknown): boolean {
+    return isInteger(value) || value === 'all';
+}
+
+export function fieldsToSnakeCase(
+    params: Record<string, any>, out?: Record<string, any>,
+): Record<string, any> {
+    const result = (out !== undefined) ? out : {};
+    for (const [k, v] of Object.entries(params)) {
+        result[snakeCase(k)] = v;
+    }
+    return result;
 }

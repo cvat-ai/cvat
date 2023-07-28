@@ -8,6 +8,7 @@ import {
     ShareFileType, TaskMode, TaskStatus,
 } from 'enums';
 import { SerializedModel } from 'core-types';
+import { Camelized } from 'type-utils';
 
 export interface SerializedAnnotationImporter {
     name: string;
@@ -24,18 +25,25 @@ export interface SerializedAnnotationFormats {
     exporters: SerializedAnnotationExporter[];
 }
 
+export interface ApiCommonFilterParams {
+    page?: number;
+    page_size?: number | 'all';
+    filter?: string;
+    sort?: string;
+    org_id?: number;
+    org?: string;
+    search?: string;
+}
+
+export type CommonFilterParams = Camelized<ApiCommonFilterParams>;
+
 export interface FunctionsResponseBody {
     results: SerializedModel[];
     count: number;
 }
 
-export interface ProjectsFilter {
-    page?: number;
-    pageSize?: number | 'all';
+export interface ProjectsFilter extends CommonFilterParams {
     id?: number;
-    sort?: string;
-    search?: string;
-    filter?: string;
 }
 
 export interface SerializedUser {
@@ -72,9 +80,7 @@ export interface SerializedProject {
     status: ProjectStatus;
 }
 
-export type TasksFilter = ProjectsFilter & {
-    ordering?: string;
-};
+export type TasksFilter = ProjectsFilter;
 export type JobsFilter = ProjectsFilter & {
     task_id?: number;
 };
@@ -201,3 +207,8 @@ export interface SerializedAsset {
     created_date: string;
     owner: SerializedUser;
 }
+
+/**
+ * A list with the full collection size info in the 'count' field.
+ */
+export type ListPage<T> = Array<T> & { count: number };

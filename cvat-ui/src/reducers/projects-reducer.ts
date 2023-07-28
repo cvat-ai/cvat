@@ -28,9 +28,8 @@ const defaultState: ProjectsState = {
         id: null,
         search: null,
         filter: null,
-        sort: null,
+        sort: 'subset',
         projectId: null,
-        ordering: 'subset',
     },
     activities: {
         deletes: {},

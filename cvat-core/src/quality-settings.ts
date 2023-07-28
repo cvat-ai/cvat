@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ApiCommonFilterParams } from 'server-response-types';
+import { Camelized } from 'type-utils';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 
@@ -219,3 +221,10 @@ Object.defineProperties(
         }),
     }),
 );
+
+export interface ApiQualitySettingsFilter extends ApiCommonFilterParams {
+    task_id?: number;
+    project_id?: number;
+}
+
+export type QualitySettingsFilter = Camelized<ApiQualitySettingsFilter>;

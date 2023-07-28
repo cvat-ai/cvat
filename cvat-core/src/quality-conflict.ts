@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ApiCommonFilterParams } from 'server-response-types';
+import { Camelized } from 'type-utils';
+
 export enum QualityConflictType {
     EXTRA = 'extra_annotation',
     MISMATCHING = 'mismatching_label',
@@ -145,3 +148,23 @@ export default class QualityConflict {
         this.#description = newDescription;
     }
 }
+
+export interface ApiQualityReportsFilter extends ApiCommonFilterParams {
+    job_id?: number;
+    task_id?: number;
+    project_id?: number;
+    target?: string;
+    parent_id?: number;
+}
+
+export interface ApiQualityConflictsFilter extends ApiCommonFilterParams {
+    frame?: number;
+    report_id?: number;
+    job_id?: number;
+    task_id?: number;
+    type?: string;
+    severity?: string;
+}
+
+export type QualityConflictsFilter = Camelized<ApiQualityConflictsFilter>;
+export type QualityReportsFilter = Camelized<ApiQualityReportsFilter>;

@@ -3,6 +3,10 @@
 //
 // SPDX-License-Identifier: MIT
 
+import QualityConflict, { QualityConflictsFilter, QualityReportsFilter, SerializedQualityConflictData } from './quality-conflict';
+import QualitySettings, { QualitySettingsFilter, SerializedQualitySettingsData } from './quality-settings';
+import { ListPage } from './server-response-types';
+import QualityReport from './quality-report';
 import PluginRegistry from './plugins';
 import loggerStorage from './logger-storage';
 import { EventLogger } from './log';
@@ -125,6 +129,9 @@ function build() {
             async installedApps() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
                 return result;
+            },
+            async apiScheme() {
+                return PluginRegistry.apiWrapper(cvat.server.apiScheme);
             },
         },
         projects: {
@@ -286,37 +293,32 @@ function build() {
                 },
             },
             quality: {
-                async reports(filter: any) {
+                async reports(filter: QualityReportsFilter = {}): Promise<ListPage<QualityReport>> {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
                     return result;
                 },
-                async conflicts(filter: any) {
+                async conflicts(filter: QualityConflictsFilter = {}): Promise<ListPage<QualityConflict>> {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.conflicts, filter);
                     return result;
                 },
                 settings: {
-                    async get(filter: any) {
+                    async get(filter: { id?: number } & QualitySettingsFilter = {}): Promise<QualitySettings> {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, filter);
                         return result;
                     },
-                    async update(values: any) {
+                    async update(values: SerializedQualityConflictData): Promise<QualitySettings> {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.update, values);
                         return result;
                     },
-                    async create(values: any) {
+                    async create(values: SerializedQualityConflictData): Promise<QualitySettings> {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.create, values);
                         return result;
                     },
-                    async defaults() {
+                    async defaults(): Promise<Partial<SerializedQualitySettingsData>> {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.defaults);
                         return result;
                     },
                 },
-            },
-        },
-        scheme: {
-            async get() {
-                return PluginRegistry.apiWrapper(cvat.scheme.get);
             },
         },
         classes: {

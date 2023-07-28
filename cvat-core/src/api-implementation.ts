@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { omit } from 'lodash';
+import QualitySettings, { QualitySettingsFilter, SerializedQualitySettingsData } from './quality-settings';
 import config from './config';
 
 import PluginRegistry from './plugins';
@@ -13,10 +14,12 @@ import {
     isBoolean,
     isInteger,
     isString,
+    isPageSize,
     checkFilter,
     checkExclusiveFields,
     checkObjectType,
     filterFieldsToSnakeCase,
+    fieldsToSnakeCase,
 } from './common';
 
 import User from './user';
@@ -27,16 +30,11 @@ import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
-import { SerializedAsset } from './server-response-types';
+import { ListPage, SerializedAsset } from './server-response-types';
 import QualityReport from './quality-report';
-import QualityConflict from './quality-conflict';
-import QualitySettings from './quality-settings';
+import QualityConflict, { QualityConflictsFilter, QualityReportsFilter, SerializedQualityConflictData } from './quality-conflict';
 import { FramesMetaData } from './frames';
 import AnalyticsReport from './analytics-report';
-
-function isPageSize(value: any) {
-    return isInteger(value) || value === 'all';
-}
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -145,6 +143,8 @@ export default function implementAPI(cvat) {
         return result;
     };
 
+    cvat.server.apiScheme.implementation = async () => serverProxy.server.apiScheme();
+
     cvat.assets.create.implementation = async (file: File, guideId: number): Promise<SerializedAsset> => {
         if (!(file instanceof File)) {
             throw new ArgumentError('Assets expect a file');
@@ -225,13 +225,12 @@ export default function implementAPI(cvat) {
             sort: isString,
             search: isString,
             filter: isString,
-            ordering: isString,
         });
 
         checkExclusiveFields(filter, ['id'], ['page']);
         const searchParams = {};
         for (const key of Object.keys(filter)) {
-            if (['page', 'pageSize', 'id', 'sort', 'search', 'filter', 'ordering'].includes(key)) {
+            if (['page', 'pageSize', 'id', 'sort', 'search', 'filter'].includes(key)) {
                 searchParams[key] = filter[key];
             }
         }
@@ -367,89 +366,84 @@ export default function implementAPI(cvat) {
         return webhooks;
     };
 
-    cvat.analytics.quality.reports.implementation = async (filter) => {
-        const updatedParams: Record<string, string> = {};
-        if ('parentId' in filter) {
-            updatedParams.parent_id = filter.parentId;
-        }
-        if ('projectId' in filter) {
-            updatedParams.project_id = filter.projectId;
-        }
-        if ('taskId' in filter) {
-            updatedParams.task_id = filter.taskId;
-        }
-        if ('jobId' in filter) {
-            updatedParams.job_id = filter.jobId;
-        }
-        if ('target' in filter) {
-            updatedParams.target = filter.target;
-        }
-        if ('pageSize' in filter) {
-            updatedParams.page_size = filter.pageSize;
-        }
-        if (!updatedParams?.sort) {
-            updatedParams.sort = '-created_date';
-        }
+    cvat.analytics.quality.reports.implementation = async (
+        filter: QualityReportsFilter,
+    ): Promise<ListPage<QualityReport>> => {
+        checkFilter(filter, {
+            page: isInteger,
+            pageSize: isPageSize,
+            parentId: isInteger,
+            projectId: isInteger,
+            taskId: isInteger,
+            jobId: isInteger,
+            target: isString,
+            filter: isString,
+            search: isString,
+            sort: isString,
+        });
 
-        const reportsData = await serverProxy.analytics.quality.reports(updatedParams);
-        const reports = reportsData.map((report) => new QualityReport({ ...report }));
-        reports.count = reportsData.count;
+        const params = fieldsToSnakeCase(filter, { sort: '-created_date' });
+
+        const reportsData = await serverProxy.analytics.quality.reports(params);
+        const reports = Object.assign(
+            reportsData.map((report) => new QualityReport({ ...report })),
+            { count: reportsData.count },
+        );
         return reports;
     };
 
-    cvat.analytics.quality.conflicts.implementation = async (filter) => {
-        let updatedParams: Record<string, string> = {};
-        if ('reportId' in filter) {
-            updatedParams = {
-                report_id: filter.reportId,
-            };
-        }
+    cvat.analytics.quality.conflicts.implementation = async (
+        filter: QualityConflictsFilter,
+    ): Promise<ListPage<QualityConflict>> => {
+        checkFilter(filter, {
+            page: isInteger,
+            pageSize: isPageSize,
+            reportId: isInteger,
+            filter: isString,
+            search: isString,
+            sort: isString,
+        });
 
-        const conflictsData = await serverProxy.analytics.quality.conflicts(updatedParams);
-        const conflicts = conflictsData.map((conflict) => new QualityConflict({ ...conflict }));
-        conflicts.count = conflictsData.count;
+        const params = fieldsToSnakeCase(filter);
+
+        const conflictsData = await serverProxy.analytics.quality.conflicts(params);
+        const conflicts = Object.assign(
+            conflictsData.map((conflict) => new QualityConflict({ ...conflict })),
+            { count: conflictsData.count },
+        );
         return conflicts;
     };
 
-    cvat.analytics.quality.settings.get.implementation = async (filter: any) => {
-        interface FilterParams {
-            id?: number, taskId?: number, projectId?: number
-        }
-        const { id, taskId, projectId }: FilterParams = filter;
-
+    cvat.analytics.quality.settings.get.implementation = async (
+        filter: { id?: number } & QualitySettingsFilter,
+    ): Promise<QualitySettings> => {
+        const { id, taskId, projectId } = filter;
         const settings = await serverProxy.analytics.quality.settings.get(id, taskId, projectId);
-        if (settings) {
-            return new QualitySettings({ ...settings });
-        }
-        return null;
+        return new QualitySettings({ ...settings });
     };
 
-    cvat.analytics.quality.settings.update.implementation = async (settingsId: number, values: any) => {
+    cvat.analytics.quality.settings.update.implementation = async (
+        settingsId: number, values: SerializedQualitySettingsData,
+    ): Promise<QualitySettings> => {
         const settings = await serverProxy.analytics.quality.settings.update(settingsId, values);
-
-        if (settings) {
-            return new QualitySettings({ ...settings });
-        }
-        return null;
+        return new QualitySettings({ ...settings });
     };
 
-    cvat.analytics.quality.settings.create.implementation = async (values: any) => {
+    cvat.analytics.quality.settings.create.implementation = async (
+        values: SerializedQualityConflictData,
+    ): Promise<QualitySettings> => {
         const settings = await serverProxy.analytics.quality.settings.create(values);
-
-        if (settings) {
-            return new QualitySettings({ ...settings });
-        }
-        return null;
+        return new QualitySettings({ ...settings });
     };
 
-    cvat.analytics.quality.settings.defaults.implementation = async () => {
-        const scheme = await cvat.scheme.get();
+    cvat.analytics.quality.settings.defaults.implementation = async (
+    ): Promise<Partial<SerializedQualitySettingsData>> => {
+        const scheme = await serverProxy.server.apiScheme();
 
-        const defaults = {};
+        const defaults: Partial<SerializedQualitySettingsData> = {};
         const requestParams = scheme.components.schemas.QualitySettingsRequest.properties;
         for (const key of Object.keys(requestParams)) {
             if ('default' in requestParams[key]) {
-                // constructor uses the api names, in snake case
                 defaults[key] = requestParams[key].default;
             }
         }
@@ -468,25 +462,8 @@ export default function implementAPI(cvat) {
 
         checkExclusiveFields(filter, ['jobID', 'taskID', 'projectID'], ['startDate', 'endDate']);
 
-        const updatedParams: Record<string, string> = {};
-
-        if ('taskID' in filter) {
-            updatedParams.task_id = filter.taskID;
-        }
-        if ('jobID' in filter) {
-            updatedParams.job_id = filter.jobID;
-        }
-        if ('projectID' in filter) {
-            updatedParams.project_id = filter.projectID;
-        }
-        if ('startDate' in filter) {
-            updatedParams.start_date = filter.startDate;
-        }
-        if ('endDate' in filter) {
-            updatedParams.end_date = filter.endDate;
-        }
-
-        const reportData = await serverProxy.analytics.performance.reports(updatedParams);
+        const params = fieldsToSnakeCase(filter);
+        const reportData = await serverProxy.analytics.performance.reports(params);
         return new AnalyticsReport(reportData);
     };
 
@@ -494,8 +471,6 @@ export default function implementAPI(cvat) {
         const result = await serverProxy.frames.getMeta(type, id);
         return new FramesMetaData({ ...result });
     };
-
-    cvat.scheme.get.implementation = async () => serverProxy.scheme.get();
 
     return cvat;
 }
