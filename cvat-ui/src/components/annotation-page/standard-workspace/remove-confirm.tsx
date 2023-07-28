@@ -9,7 +9,7 @@ import { CombinedState, ObjectType } from 'reducers';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 
-import consts from 'consts';
+import config from 'config';
 import { removeObjectAsync, removeObject as removeObjectAction } from 'actions/annotation-actions';
 
 export default function RemoveConfirmComponent(): JSX.Element | null {
@@ -48,7 +48,7 @@ export default function RemoveConfirmComponent(): JSX.Element | null {
                     </Text>
                     <div className='cvat-remove-object-confirm-wrapper'>
                         {/* eslint-disable-next-line */}
-                        <img src={consts.OUTSIDE_PIC_URL} />
+                        <img src={config.OUTSIDE_PIC_URL} />
                     </div>
                 </>
             );

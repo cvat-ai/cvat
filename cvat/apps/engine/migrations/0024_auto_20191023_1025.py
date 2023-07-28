@@ -4,7 +4,6 @@ import os
 import re
 import shutil
 import glob
-import logging
 import sys
 import traceback
 import itertools
@@ -19,17 +18,18 @@ from cvat.apps.engine.media_extractors import (VideoReader, ArchiveReader, ZipRe
     PdfReader , ImageListReader, Mpeg4ChunkWriter,
     ZipChunkWriter, ZipCompressedChunkWriter, get_mime)
 from cvat.apps.engine.models import DataChoice
+from cvat.apps.engine.log import get_migration_logger
 
 MIGRATION_THREAD_COUNT = 2
 
 def fix_path(path):
-        ind = path.find('.upload')
-        if ind != -1:
-            path = path[ind + len('.upload') + 1:]
-        return path
+    ind = path.find('.upload')
+    if ind != -1:
+        path = path[ind + len('.upload') + 1:]
+    return path
 
 def get_frame_step(frame_filter):
-    match = re.search("step\s*=\s*([1-9]\d*)", frame_filter)
+    match = re.search(r"step\s*=\s*([1-9]\d*)", frame_filter)
     return int(match.group(1)) if match else 1
 
 def get_task_on_disk():
@@ -235,126 +235,110 @@ def migrate_task_schema(db_task, Data, log):
 
 def create_data_objects(apps, schema_editor):
     migration_name = os.path.splitext(os.path.basename(__file__))[0]
-    migration_log_file = '{}.log'.format(migration_name)
-    stdout = sys.stdout
-    stderr = sys.stderr
-    # redirect all stdout to the file
-    log_file_object = open(os.path.join(settings.MIGRATIONS_LOGS_ROOT, migration_log_file), 'w')
-    sys.stdout = log_file_object
-    sys.stderr = log_file_object
+    with get_migration_logger(migration_name) as log:
+        disk_tasks = get_task_on_disk()
 
-    log = logging.getLogger(migration_name)
-    log.addHandler(logging.StreamHandler(stdout))
-    log.addHandler(logging.StreamHandler(log_file_object))
-    log.setLevel(logging.INFO)
+        Task = apps.get_model('engine', 'Task')
+        Data = apps.get_model('engine', 'Data')
 
-    disk_tasks = get_task_on_disk()
+        db_tasks = Task.objects
+        task_count = db_tasks.count()
+        log.info('\nStart schema migration...')
+        migrated_db_tasks = []
+        for counter, db_task in enumerate(db_tasks.all().iterator()):
+            res = migrate_task_schema(db_task, Data, log)
+            log.info('Schema migration for the task {} completed. Progress {}/{}'.format(db_task.id, counter+1, task_count))
+            if res:
+                migrated_db_tasks.append(res)
 
-    Task = apps.get_model('engine', 'Task')
-    Data = apps.get_model('engine', 'Data')
+        log.info('\nSchema migration is finished...')
+        log.info('\nStart data migration...')
 
-    db_tasks = Task.objects
-    task_count = db_tasks.count()
-    log.info('\nStart schema migration...')
-    migrated_db_tasks = []
-    for counter, db_task in enumerate(db_tasks.all().iterator()):
-        res = migrate_task_schema(db_task, Data, log)
-        log.info('Schema migration for the task {} completed. Progress {}/{}'.format(db_task.id, counter+1, task_count))
-        if res:
-            migrated_db_tasks.append(res)
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
 
-    log.info('\nSchema migration is finished...')
-    log.info('\nStart data migration...')
+        def create_process(db_task_id, db_data_id):
+            db_data = Data.objects.get(pk=db_data_id)
+            db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data_id))
+            new_raw_dir = os.path.join(db_data_dir, 'raw')
 
-    manager = multiprocessing.Manager()
-    return_dict = manager.dict()
+            original_video = None
+            original_images = None
+            if hasattr(db_data, 'video'):
+                original_video = os.path.join(new_raw_dir, db_data.video.path)
+            else:
+                original_images = [os.path.realpath(os.path.join(new_raw_dir, db_image.path)) for db_image in db_data.images.all()]
 
-    def create_process(db_task_id, db_data_id):
-        db_data = Data.objects.get(pk=db_data_id)
-        db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data_id))
-        new_raw_dir = os.path.join(db_data_dir, 'raw')
+            args = (db_task_id, db_data_id, original_video, original_images, db_data.size,
+                db_data.start_frame, db_data.stop_frame, db_data.frame_filter, db_data.image_quality, db_data.chunk_size, return_dict)
 
-        original_video = None
-        original_images = None
-        if hasattr(db_data, 'video'):
-            original_video = os.path.join(new_raw_dir, db_data.video.path)
-        else:
-            original_images = [os.path.realpath(os.path.join(new_raw_dir, db_image.path)) for db_image in db_data.images.all()]
+            return multiprocessing.Process(target=migrate_task_data, args=args)
 
-        args = (db_task_id, db_data_id, original_video, original_images, db_data.size,
-            db_data.start_frame, db_data.stop_frame, db_data.frame_filter, db_data.image_quality, db_data.chunk_size, return_dict)
-
-        return multiprocessing.Process(target=migrate_task_data, args=args)
-
-    results = {}
-    task_idx = 0
-    while True:
-        for res_idx in list(results.keys()):
-            res = results[res_idx]
-            if not res.is_alive():
-                del results[res_idx]
-                if res.exitcode == 0:
-                    ret_code, message = return_dict[res_idx]
-                    if ret_code:
-                        counter = (task_idx - len(results))
-                        progress = (100 * counter) / task_count
-                        log.info('Data migration for the task {} completed. Progress: {:.02f}% | {}/{}.'.format(res_idx, progress, counter, task_count))
+        results = {}
+        task_idx = 0
+        while True:
+            for res_idx in list(results.keys()):
+                res = results[res_idx]
+                if not res.is_alive():
+                    del results[res_idx]
+                    if res.exitcode == 0:
+                        ret_code, message = return_dict[res_idx]
+                        if ret_code:
+                            counter = (task_idx - len(results))
+                            progress = (100 * counter) / task_count
+                            log.info('Data migration for the task {} completed. Progress: {:.02f}% | {}/{}.'.format(res_idx, progress, counter, task_count))
+                        else:
+                            log.error('Cannot migrate data for the task: {}'.format(res_idx))
+                            log.error(str(message))
+                        if res_idx in disk_tasks:
+                            disk_tasks.remove(res_idx)
                     else:
-                        log.error('Cannot migrate data for the task: {}'.format(res_idx))
-                        log.error(str(message))
-                    if res_idx in disk_tasks:
-                        disk_tasks.remove(res_idx)
-                else:
-                    log.error('#Cannot migrate data for the task: {}'.format(res_idx))
+                        log.error('#Cannot migrate data for the task: {}'.format(res_idx))
 
-        while task_idx < len(migrated_db_tasks) and len(results) < MIGRATION_THREAD_COUNT:
-            log.info('Start data migration for the task {}, data ID {}'.format(migrated_db_tasks[task_idx][0], migrated_db_tasks[task_idx][1]))
-            results[migrated_db_tasks[task_idx][0]] = create_process(*migrated_db_tasks[task_idx])
-            results[migrated_db_tasks[task_idx][0]].start()
-            task_idx += 1
+            while task_idx < len(migrated_db_tasks) and len(results) < MIGRATION_THREAD_COUNT:
+                log.info('Start data migration for the task {}, data ID {}'.format(migrated_db_tasks[task_idx][0], migrated_db_tasks[task_idx][1]))
+                results[migrated_db_tasks[task_idx][0]] = create_process(*migrated_db_tasks[task_idx])
+                results[migrated_db_tasks[task_idx][0]].start()
+                task_idx += 1
 
-        if len(results) == 0:
-            break
+            if len(results) == 0:
+                break
 
-        time.sleep(5)
+            time.sleep(5)
 
-    if disk_tasks:
-        suspicious_tasks_dir = os.path.join(settings.DATA_ROOT, 'suspicious_tasks')
-        os.makedirs(suspicious_tasks_dir, exist_ok=True)
-        for tid in disk_tasks:
-            suspicious_task_path = os.path.join(settings.DATA_ROOT, str(tid))
-            try:
-                shutil.move(suspicious_task_path, suspicious_tasks_dir)
-            except Exception as e:
-                log.error('Cannot move data for the suspicious task {}, \
-                    that is not represented in the database.'.format(suspicious_task_path))
-                log.error(str(e))
+        if disk_tasks:
+            suspicious_tasks_dir = os.path.join(settings.DATA_ROOT, 'suspicious_tasks')
+            os.makedirs(suspicious_tasks_dir, exist_ok=True)
+            for tid in disk_tasks:
+                suspicious_task_path = os.path.join(settings.DATA_ROOT, str(tid))
+                try:
+                    shutil.move(suspicious_task_path, suspicious_tasks_dir)
+                except Exception as e:
+                    log.error('Cannot move data for the suspicious task {}, \
+                        that is not represented in the database.'.format(suspicious_task_path))
+                    log.error(str(e))
 
-    # DL models migration
-    if apps.is_installed('auto_annotation'):
-        DLModel = apps.get_model('auto_annotation', 'AnnotationModel')
+        # DL models migration
+        if apps.is_installed('auto_annotation'):
+            DLModel = apps.get_model('auto_annotation', 'AnnotationModel')
 
-        for db_model in DLModel.objects.all():
-            try:
-                old_location = os.path.join(settings.BASE_DIR, 'models', str(db_model.id))
-                new_location = os.path.join(settings.BASE_DIR, 'data', 'models', str(db_model.id))
+            for db_model in DLModel.objects.all():
+                try:
+                    old_location = os.path.join(settings.BASE_DIR, 'models', str(db_model.id))
+                    new_location = os.path.join(settings.BASE_DIR, 'data', 'models', str(db_model.id))
 
-                if os.path.isdir(old_location):
-                    shutil.move(old_location, new_location)
+                    if os.path.isdir(old_location):
+                        shutil.move(old_location, new_location)
 
-                    db_model.model_file.name = db_model.model_file.name.replace(old_location, new_location)
-                    db_model.weights_file.name = db_model.weights_file.name.replace(old_location, new_location)
-                    db_model.labelmap_file.name = db_model.labelmap_file.name.replace(old_location, new_location)
-                    db_model.interpretation_file.name = db_model.interpretation_file.name.replace(old_location, new_location)
+                        db_model.model_file.name = db_model.model_file.name.replace(old_location, new_location)
+                        db_model.weights_file.name = db_model.weights_file.name.replace(old_location, new_location)
+                        db_model.labelmap_file.name = db_model.labelmap_file.name.replace(old_location, new_location)
+                        db_model.interpretation_file.name = db_model.interpretation_file.name.replace(old_location, new_location)
 
-                    db_model.save()
-            except Exception as e:
-                log.error('Cannot migrate data for the DL model: {}'.format(db_model.id))
-                log.error(str(e))
-
-    log_file_object.close()
-    sys.stdout = stdout
-    sys.stderr = stderr
+                        db_model.save()
+                except Exception as e:
+                    log.error('Cannot migrate data for the DL model: {}'.format(db_model.id))
+                    log.error(str(e))
 
 class Migration(migrations.Migration):
 

@@ -4,9 +4,13 @@
 
 import logging
 import sys
+import os.path as osp
 from typing import Dict
+from contextlib import contextmanager
 
 from attr import define, field
+from django.conf import settings
+
 from cvat.settings.base import LOGGING
 from .models import Job, Task, Project, CloudStorage
 
@@ -118,44 +122,12 @@ class CloudSourceLoggerStorage(IndexedLogManager):
 
         return logger
 
-class ProjectClientLoggerStorage(IndexedLogManager):
-    def _create_logger(self, pid):
-        project = _get_project(pid)
-        logger = logging.getLogger('cvat.client.project_{}'.format(pid))
-        client_file = logging.FileHandler(filename=project.get_client_log_path())
-        logger.addHandler(client_file)
-
-        return logger
-
-class TaskClientLoggerStorage(IndexedLogManager):
-    def _create_logger(self, tid):
-        task = _get_task(tid)
-        logger = logging.getLogger('cvat.client.task_{}'.format(tid))
-        client_file = logging.FileHandler(filename=task.get_client_log_path())
-        logger.addHandler(client_file)
-
-        return logger
-
-class JobClientLoggerStorage(IndexedLogManager):
-    def _create_logger(self, jid):
-        job = _get_job(jid)
-        return clogger.task[job.segment.task.id]
-
 @define(slots=False)
 class _AggregateLogManager(LogManager):
     def close(self):
         for logger in vars(self).values(): # vars is incompatible with slots
             if hasattr(logger, 'close'):
                 logger.close()
-
-@define(slots=False)
-class ClientLogManager(_AggregateLogManager):
-    project = field(factory=ProjectClientLoggerStorage)
-    task = field(factory=TaskClientLoggerStorage)
-    job = field(factory=JobClientLoggerStorage)
-    glob = field(factory=lambda: logging.getLogger('cvat.client'))
-
-clogger = ClientLogManager()
 
 @define(slots=False)
 class ServerLogManager(_AggregateLogManager):
@@ -167,11 +139,36 @@ class ServerLogManager(_AggregateLogManager):
 
 slogger = ServerLogManager()
 
+vlogger = logging.getLogger('vector')
+
 def close_all():
     """Closes all opened loggers"""
 
-    clogger.close()
     slogger.close()
 
     for logger in _opened_loggers.values():
         _close_logger(logger)
+
+    _close_logger(vlogger)
+
+@contextmanager
+def get_migration_logger(migration_name):
+    migration_log_file = '{}.log'.format(migration_name)
+    stdout = sys.stdout
+    stderr = sys.stderr
+    # redirect all stdout to the file
+    log_file_object = open(osp.join(settings.MIGRATIONS_LOGS_ROOT, migration_log_file), 'w')
+    sys.stdout = log_file_object
+    sys.stderr = log_file_object
+
+    log = logging.getLogger(migration_name)
+    log.addHandler(logging.StreamHandler(stdout))
+    log.addHandler(logging.StreamHandler(log_file_object))
+    log.setLevel(logging.INFO)
+
+    try:
+        yield log
+    finally:
+        log_file_object.close()
+        sys.stdout = stdout
+        sys.stderr = stderr

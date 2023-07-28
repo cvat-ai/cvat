@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,8 +11,6 @@ import Text from 'antd/lib/typography/Text';
 
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { Label } from 'cvat-core-wrapper';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { LogType } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
@@ -24,7 +22,6 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ThunkDispatch } from 'utils/redux';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
-import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import { CombinedState, ObjectType } from 'reducers';
 import AttributeEditor from './attribute-editor';
 import AttributeSwitcher from './attribute-switcher';
@@ -39,7 +36,6 @@ interface StateToProps {
     jobInstance: any;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    canvasInstance: Canvas | Canvas3d;
     canvasIsReady: boolean;
     curZLayer: number;
 }
@@ -64,7 +60,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 zLayer: { cur },
             },
             job: { instance: jobInstance, labels },
-            canvas: { instance: canvasInstance, ready: canvasIsReady },
+            canvas: { ready: canvasIsReady },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
@@ -77,7 +73,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         states,
         keyMap,
         normalizedKeyMap,
-        canvasInstance,
         canvasIsReady,
         curZLayer: cur,
     };
@@ -109,7 +104,6 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
         activateObject,
         keyMap,
         normalizedKeyMap,
-        canvasInstance,
         canvasIsReady,
         curZLayer,
     } = props;
@@ -129,8 +123,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
 
         const listener = (event: TransitionEvent): void => {
             if (event.target && event.propertyName === 'width' && event.target === collapser) {
-                canvasInstance.fitCanvas();
-                canvasInstance.fit();
+                window.dispatchEvent(new Event('resize'));
                 (collapser as HTMLElement).removeEventListener('transitionend', listener as any);
             }
         };
@@ -139,7 +132,6 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
             (collapser as HTMLElement).addEventListener('transitionend', listener as any);
         }
 
-        adjustContextImagePosition(!sidebarCollapsed);
         setSidebarCollapsed(!sidebarCollapsed);
     };
 

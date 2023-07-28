@@ -5,11 +5,14 @@
 
 const config = {
     backendAPI: '/api',
-    proxy: false,
-    organizationID: null,
+    organization: {
+        organizationID: null,
+        organizationSlug: null,
+    },
     origin: '',
     uploadChunkSize: 100,
     removeUnderlyingMaskPixels: false,
+    onOrganizationChange: null,
 };
 
 export default config;

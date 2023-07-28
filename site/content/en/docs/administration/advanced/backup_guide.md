@@ -32,10 +32,10 @@ Docker volumes are used to store all CVAT data:
 All CVAT containers should be stopped before backup:
 
 ```shell
-docker-compose stop
+docker compose stop
 ```
 
-Please don't forget to include all the compose config files that were used in the docker-compose command
+Please don't forget to include all the compose config files that were used in the `docker compose` command
 using the `-f` parameter.
 
 Backup data:
@@ -66,7 +66,7 @@ Note: CVAT containers must exist (if no, please follow the [installation guide](
 Stop all CVAT containers:
 
 ```shell
-docker-compose stop
+docker compose stop
 ```
 
 Restore data:
@@ -82,7 +82,7 @@ docker run --rm --name temp_backup --volumes-from cvat_elasticsearch -v $(pwd):/
 After that run CVAT as usual:
 
 ```shell
-docker-compose up -d
+docker compose up -d
 ```
 
 ## Additional resources

@@ -9,7 +9,7 @@ import { checkObjectType, clamp } from './common';
 import { DataError, ArgumentError, ScriptingError } from './exceptions';
 import { Label } from './labels';
 import {
-    colors, Source, ShapeType, ObjectType, HistoryActions,
+    colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
 import {
@@ -31,8 +31,16 @@ function copyShape(state: TrackedShape, data: Partial<TrackedShape> = {}): Track
     };
 }
 
-interface AnnotationInjection {
-    labels: Label[];
+function computeNewSource(currentSource: Source): Source {
+    if ([Source.AUTO, Source.SEMI_AUTO].includes(currentSource)) {
+        return Source.SEMI_AUTO;
+    }
+
+    return Source.MANUAL;
+}
+
+export interface BasicInjection {
+    labels: Record<number, Label>;
     groups: { max: number };
     frameMeta: {
         deleted_frames: Record<number, boolean>;
@@ -41,27 +49,36 @@ interface AnnotationInjection {
     groupColors: Record<number, string>;
     parentID?: number;
     readOnlyFields?: string[];
+    dimension: DimensionType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
 }
 
+type AnnotationInjection = BasicInjection & {
+    parentID?: number;
+    readOnlyFields?: string[];
+};
+
 class Annotation {
     public clientID: number;
-    protected taskLabels: Label[];
+    protected taskLabels: Record<number, Label>;
     protected history: any;
     protected groupColors: Record<number, string>;
-    protected serverID: number | null;
+    public serverID: number | null;
+    public jobID: number;
     protected parentID: number | null;
-    protected group: number;
+    protected dimension: DimensionType;
+    public group: number;
     public label: Label;
-    protected frame: number;
+    public frame: number;
     private _removed: boolean;
+    protected isGroundTruth: boolean;
     public lock: boolean;
     protected readOnlyFields: string[];
     protected color: string;
     protected source: Source;
     public updated: number;
-    protected attributes: Record<number, string>;
+    public attributes: Record<number, string>;
     protected groupObject: {
         color: string;
         readonly id: number;
@@ -73,11 +90,14 @@ class Annotation {
         this.groupColors = injection.groupColors;
         this.clientID = clientID;
         this.serverID = data.id || null;
+        this.jobID = data.job_id;
         this.parentID = injection.parentID || null;
+        this.dimension = injection.dimension;
         this.group = data.group;
         this.label = this.taskLabels[data.label_id];
         this.frame = data.frame;
         this._removed = false;
+        this.isGroundTruth = data.is_gt || false;
         this.lock = false;
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
@@ -366,7 +386,7 @@ class Drawn extends Annotation {
     protected descriptions: string[];
     public hidden: boolean;
     protected pinned: boolean;
-    protected shapeType: ShapeType;
+    public shapeType: ShapeType;
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
@@ -472,7 +492,7 @@ class Drawn extends Annotation {
     }
 }
 
-interface RawShapeData {
+export interface RawShapeData {
     id?: number;
     clientID?: number;
     label_id: number;
@@ -501,8 +521,8 @@ export class Shape extends Drawn {
     public points: number[];
     public occluded: boolean;
     public outside: boolean;
-    protected rotation: number;
-    protected zOrder: number;
+    public rotation: number;
+    public zOrder: number;
 
     constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
@@ -558,6 +578,7 @@ export class Shape extends Drawn {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
+            jobID: this.jobID,
             parentID: this.parentID,
             occluded: this.occluded,
             lock: this.lock,
@@ -572,6 +593,7 @@ export class Shape extends Drawn {
             hidden: this.hidden,
             updated: this.updated,
             pinned: this.pinned,
+            isGroundTruth: this.isGroundTruth,
             frame,
             source: this.source,
             ...this.withContext(frame),
@@ -588,7 +610,7 @@ export class Shape extends Drawn {
         const undoRotation = this.rotation;
         const redoRotation = rotation;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
             HistoryActions.CHANGED_ROTATION,
@@ -614,7 +636,7 @@ export class Shape extends Drawn {
         const undoPoints = this.points;
         const redoPoints = points;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
             HistoryActions.CHANGED_POINTS,
@@ -640,7 +662,7 @@ export class Shape extends Drawn {
         const undoOccluded = this.occluded;
         const redoOccluded = occluded;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
             HistoryActions.CHANGED_OCCLUDED,
@@ -666,7 +688,7 @@ export class Shape extends Drawn {
         const undoOutside = this.outside;
         const redoOutside = outside;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
             HistoryActions.CHANGED_OCCLUDED,
@@ -692,7 +714,7 @@ export class Shape extends Drawn {
         const undoZOrder = this.zOrder;
         const redoZOrder = zOrder;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
             HistoryActions.CHANGED_ZORDER,
@@ -787,7 +809,7 @@ export class Shape extends Drawn {
     }
 }
 
-interface RawTrackData {
+export interface RawTrackData {
     id?: number;
     clientID?: number;
     label_id: number;
@@ -923,6 +945,7 @@ export class Track extends Drawn {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
+            jobID: this.jobID,
             parentID: this.parentID,
             lock: this.lock,
             color: this.color,
@@ -938,6 +961,7 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
+            isGroundTruth: this.isGroundTruth,
             ...this.withContext(frame),
         };
     }
@@ -1094,7 +1118,7 @@ export class Track extends Drawn {
                     this.shapes[frame].attributes[attrID] !== attributes[attrID];
             }
         }
-        let redoShape;
+        let redoShape: TrackedShape | undefined;
         if (mutableAttributesUpdated) {
             if (wasKeyframe) {
                 redoShape = {
@@ -1104,14 +1128,7 @@ export class Track extends Drawn {
                     },
                 };
             } else {
-                redoShape = {
-                    frame,
-                    zOrder: current.zOrder,
-                    points: current.points,
-                    outside: current.outside,
-                    occluded: current.occluded,
-                    attributes: {},
-                };
+                redoShape = copyShape(current);
             }
         }
 
@@ -1178,7 +1195,7 @@ export class Track extends Drawn {
     protected saveRotation(rotation: number, frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], rotation } : copyShape(this.get(frame), { rotation });
@@ -1198,7 +1215,7 @@ export class Track extends Drawn {
     protected savePoints(points: number[], frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], points } : copyShape(this.get(frame), { points });
@@ -1218,7 +1235,7 @@ export class Track extends Drawn {
     protected saveOutside(frame: number, outside: boolean): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], outside } :
@@ -1239,7 +1256,7 @@ export class Track extends Drawn {
     protected saveOccluded(occluded: boolean, frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], occluded } :
@@ -1260,7 +1277,7 @@ export class Track extends Drawn {
     protected saveZOrder(zOrder: number, frame: number): void {
         const wasKeyframe = frame in this.shapes;
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = wasKeyframe ?
             { ...this.shapes[frame], zOrder } :
@@ -1286,7 +1303,7 @@ export class Track extends Drawn {
         }
 
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
         const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
         const redoShape = keyframe ? copyShape(this.get(frame)) : undefined;
 
@@ -1415,7 +1432,7 @@ export class Track extends Drawn {
     }
 }
 
-interface RawTagData {
+export interface RawTagData {
     id?: number;
     clientID?: number;
     label_id: number;
@@ -1464,6 +1481,7 @@ export class Tag extends Annotation {
             objectType: ObjectType.TAG,
             clientID: this.clientID,
             serverID: this.serverID,
+            jobID: this.jobID,
             lock: this.lock,
             attributes: { ...this.attributes },
             label: this.label,
@@ -1472,6 +1490,7 @@ export class Tag extends Annotation {
             updated: this.updated,
             frame,
             source: this.source,
+            isGroundTruth: this.isGroundTruth,
             ...this.withContext(frame),
         };
     }
@@ -1867,7 +1886,7 @@ export class CuboidShape extends Shape {
 }
 
 export class SkeletonShape extends Shape {
-    private elements: Shape[];
+    public elements: Shape[];
 
     constructor(data: RawShapeData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
@@ -1937,6 +1956,7 @@ export class SkeletonShape extends Shape {
             group: this.group,
             z_order: this.zOrder,
             rotation: 0,
+            elements: undefined,
         }));
 
         const result: RawShapeData = {
@@ -1987,9 +2007,11 @@ export class SkeletonShape extends Shape {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
+            jobID: this.jobID,
             points: this.points,
             zOrder: this.zOrder,
             rotation: 0,
+            isGroundTruth: this.isGroundTruth,
             attributes: { ...this.attributes },
             descriptions: [...this.descriptions],
             elements,
@@ -2026,7 +2048,7 @@ export class SkeletonShape extends Shape {
     protected saveRotation(rotation, frame): void {
         const undoSkeletonPoints = this.elements.map((element) => element.points);
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         const bbox = computeWrappingBox(undoSkeletonPoints.flat());
         const [cx, cy] = [bbox.x + bbox.width / 2, bbox.y + bbox.height / 2];
@@ -2074,7 +2096,7 @@ export class SkeletonShape extends Shape {
         const updateElements = (affectedElements, action, property: 'points' | 'occluded' | 'hidden' | 'lock') => {
             const undoSkeletonProperties = this.elements.map((element) => element[property]);
             const undoSource = this.source;
-            const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+            const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
             try {
                 this.history.freeze(true);
@@ -2186,7 +2208,7 @@ export class MaskShape extends Shape {
         return [];
     }
 
-    protected removeUnderlyingPixels(frame: number): void {
+    public removeUnderlyingPixels(frame: number): void {
         if (frame !== this.frame) {
             throw new ArgumentError(
                 `Wrong "frame" attribute: is not equal to the shape frame (${frame} vs ${this.frame})`,
@@ -2245,7 +2267,7 @@ export class MaskShape extends Shape {
         const points = mask2Rle(maskPoints);
 
         const redoPoints = points;
-        const redoSource = Source.MANUAL;
+        const redoSource = computeNewSource(this.source);
 
         const undo = (): void => {
             this.points = undoPoints;
@@ -2714,19 +2736,53 @@ export class CuboidTrack extends Track {
 
     protected interpolatePosition(leftPosition, rightPosition, offset): InterpolatedPosition {
         const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
-
-        return {
+        const result = {
             points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
             rotation: leftPosition.rotation,
             occluded: leftPosition.occluded,
             outside: leftPosition.outside,
             zOrder: leftPosition.zOrder,
         };
+
+        if (this.dimension === DimensionType.DIMENSION_3D) {
+            // for 3D cuboids angle for different axies stored as a part of points array
+            // we need to apply interpolation using the shortest arc for each angle
+
+            const [
+                angleX, angleY, angleZ,
+            ] = leftPosition.points.slice(3, 6).concat(rightPosition.points.slice(3, 6))
+                .map((_angle: number) => {
+                    if (_angle < 0) {
+                        return _angle + Math.PI * 2;
+                    }
+
+                    return _angle;
+                })
+                .map((_angle) => _angle * (180 / Math.PI))
+                .reduce((acc: number[], angleBefore: number, index: number, arr: number[]) => {
+                    if (index < 3) {
+                        const angleAfter = arr[index + 3];
+                        let angle = (angleBefore + findAngleDiff(angleAfter, angleBefore) * offset) * (Math.PI / 180);
+                        if (angle > Math.PI) {
+                            angle -= Math.PI * 2;
+                        }
+                        acc.push(angle);
+                    }
+
+                    return acc;
+                }, []);
+
+            result.points[3] = angleX;
+            result.points[4] = angleY;
+            result.points[5] = angleZ;
+        }
+
+        return result;
     }
 }
 
 export class SkeletonTrack extends Track {
-    private elements: Track[];
+    public elements: Track[];
 
     constructor(data: RawTrackData, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
@@ -2772,7 +2828,7 @@ export class SkeletonTrack extends Track {
     protected saveRotation(rotation: number, frame: number): void {
         const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
         const undoSource = this.source;
-        const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+        const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         const elementsData = this.elements.map((element) => element.get(frame));
         const skeletonPoints = elementsData.map((data) => data.points);
@@ -2836,7 +2892,24 @@ export class SkeletonTrack extends Track {
     // Method is used to export data to the server
     public toJSON(): RawTrackData {
         const result: RawTrackData = Track.prototype.toJSON.call(this);
-        result.elements = this.elements.map((el) => el.toJSON());
+        result.elements = this.elements.map((el) => ({
+            ...el.toJSON(),
+            elements: undefined,
+            source: this.source,
+            group: this.group,
+        }));
+        result.elements.forEach((element) => {
+            element.shapes.forEach((shape) => {
+                shape.rotation = 0;
+                const { frame } = shape;
+                const skeletonShape = result.shapes
+                    .find((_skeletonShape) => _skeletonShape.frame === frame);
+                if (skeletonShape) {
+                    shape.z_order = skeletonShape.z_order;
+                }
+            });
+        });
+
         return result;
     }
 
@@ -2861,6 +2934,8 @@ export class SkeletonTrack extends Track {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
+            jobID: this.jobID,
+            isGroundTruth: this.isGroundTruth,
             color: this.color,
             updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
             label: this.label,
@@ -2917,7 +2992,7 @@ export class SkeletonTrack extends Track {
             const undoSkeletonProperties = this.elements.map((element) => element[property] || null);
             const undoSkeletonShapes = this.elements.map((element) => element.shapes[frame]);
             const undoSource = this.source;
-            const redoSource = this.readOnlyFields.includes('source') ? this.source : Source.MANUAL;
+            const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
             const errors = [];
             try {
@@ -2972,7 +3047,7 @@ export class SkeletonTrack extends Track {
             );
 
             if (errors.length) {
-                throw new Error(`Several errors occured during saving skeleton:\n ${errors.join(';\n')}`);
+                throw new Error(`Several errors occurred during saving skeleton:\n ${errors.join(';\n')}`);
             }
         };
 
@@ -3069,7 +3144,7 @@ Object.defineProperty(EllipseTrack, 'distance', { value: EllipseShape.distance }
 Object.defineProperty(CuboidTrack, 'distance', { value: CuboidShape.distance });
 Object.defineProperty(SkeletonTrack, 'distance', { value: SkeletonShape.distance });
 
-export function shapeFactory(data: RawShapeData, clientID: number, injection: AnnotationInjection): Annotation {
+export function shapeFactory(data: RawShapeData, clientID: number, injection: AnnotationInjection): Shape {
     const { type } = data;
     const color = colors[clientID % colors.length];
 
@@ -3106,7 +3181,7 @@ export function shapeFactory(data: RawShapeData, clientID: number, injection: An
     return shapeModel;
 }
 
-export function trackFactory(trackData: RawTrackData, clientID: number, injection: AnnotationInjection): Annotation {
+export function trackFactory(trackData: RawTrackData, clientID: number, injection: AnnotationInjection): Track {
     if (trackData.shapes.length) {
         const { type } = trackData.shapes[0];
         const color = colors[clientID % colors.length];

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +7,6 @@ $grid-unit-size: 8px;
 
 $header-height: $grid-unit-size * 6;
 
-$layout-sm-grid-size: $grid-unit-size * 0.5;
 $layout-lg-grid-size: $grid-unit-size * 2;
 $layout-sm-grid-color: rgba(0, 0, 0, 0.15);
 $layout-lg-grid-color: rgba(0, 0, 0, 0.15);
@@ -18,9 +18,7 @@ $hover-menu-color: rgba(24, 144, 255, 0.05);
 $completed-progress-color: #61c200;
 $inprogress-progress-color: #1890ff;
 $pending-progress-color: #c1c1c1;
-$border-color-1: #c3c3c3;
-$border-color-2: rgb(240, 240, 240);
-$border-color-3: #242424;
+$border-color-1: #d9d9d9;
 $border-color-hover: #40a9ff;
 $background-color-1: white;
 $background-color-2: #f1f1f1;
@@ -43,3 +41,29 @@ $box-shadow-base: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0,
 
 $monospaced-fonts-stack: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono,
     Courier New, monospace;
+
+.cvat-base-preview {
+    .ant-spin {
+        position: inherit;
+    }
+
+    font-size: $grid-unit-size * 15;
+    text-align: center;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    svg {
+        width: 65%;
+        height: 65%;
+    }
+
+    .anticon {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}

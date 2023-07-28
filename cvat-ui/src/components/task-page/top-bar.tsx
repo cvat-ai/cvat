@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import { LeftOutlined, MoreOutlined } from '@ant-design/icons';
@@ -21,11 +21,16 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
 
     const history = useHistory();
 
+    const onViewAnalytics = useCallback(() => {
+        history.push(`/tasks/${taskInstance.id}/analytics`);
+    }, [history]);
+
     return (
         <Row className='cvat-task-top-bar' justify='space-between' align='middle'>
             <Col>
                 {taskInstance.projectId ? (
                     <Button
+                        className='cvat-back-to-project-button'
                         onClick={() => history.push(`/projects/${taskInstance.projectId}`)}
                         type='link'
                         size='large'
@@ -34,14 +39,25 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         Back to project
                     </Button>
                 ) : (
-                    <Button onClick={() => history.push('/tasks')} type='link' size='large'>
+                    <Button
+                        className='cvat-back-to-tasks-button'
+                        onClick={() => history.push('/tasks')}
+                        type='link'
+                        size='large'
+                    >
                         <LeftOutlined />
                         Back to tasks
                     </Button>
                 )}
             </Col>
             <Col>
-                <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
+                <Dropdown overlay={(
+                    <ActionsMenuContainer
+                        taskInstance={taskInstance}
+                        onViewAnalytics={onViewAnalytics}
+                    />
+                )}
+                >
                     <Button size='middle' className='cvat-task-page-actions-button'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <MoreOutlined className='cvat-menu-icon' />

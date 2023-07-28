@@ -5,7 +5,7 @@ weight: 2
 description: 'A CVAT installation guide to create a superuser.'
 ---
 
-This section is for users who whant to be a bit more flexible with CVAT use.
+This section is for users who want to be a bit more flexible with CVAT use.
 
 The user you register by default does not have full permissions on the instance,
 so you must create a superuser.

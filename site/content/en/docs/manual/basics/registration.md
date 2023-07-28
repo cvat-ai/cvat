@@ -8,7 +8,7 @@ description: 'App CVAT user registration and account access.'
 To start to annotate in CVAT, you need to
 create an account or log in to the existing account.
 
-This section describes [App CVAT](https://app.cvat.ai/), that is sutable
+This section describes [App CVAT](https://app.cvat.ai/), that is suitable
 for small personal projects, that do not require user management.
 It is also ok to use if you just want to try what is CVAT.
 
@@ -46,7 +46,7 @@ To register as a non-admin user, do the following:
 
 ![Usernname generation](/images/filling_email.gif)
 
-To register with Google or Github, click the button with the name of the service, and folow instructions on the screen.
+To register with Google or GitHub, click the button with the name of the service, and follow instructions on the screen.
 
 ### Account access
 
@@ -56,4 +56,4 @@ To access your account, do the following:
 2. Enter username or email. The password field will appear.
 3. Enter the password and click **Next**.
 
-To log in with Google or Github, click the button with the name of the service.
+To log in with Google or GitHub, click the button with the name of the service.

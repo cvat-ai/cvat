@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-export function getFileContentTypeByMimeType(mime_type: string): string {
-    return mime_type.split('/')[0];
+export function getFileContentTypeByMimeType(mimeType: string): string {
+    return mimeType.split('/')[0];
 }
 
 export function getFileContentType(file: File): string {
@@ -40,12 +40,12 @@ const VIDEO_EXTENSIONS = ['3g2', '3ga', '3gp', '3gp2', '3gpp', '3gpp2', 'amv', '
 ];
 
 export function getContentTypeRemoteFile(url: string): 'image' | 'video' | 'unknown' {
-    const extention = getUrlExtension(url);
-    if (IMAGE_EXTENSIONS.includes(extention)) {
+    const extension = getUrlExtension(url);
+    if (IMAGE_EXTENSIONS.includes(extension)) {
         return 'image';
     }
 
-    if (VIDEO_EXTENSIONS.includes(extention)) {
+    if (VIDEO_EXTENSIONS.includes(extension)) {
         return 'video';
     }
 

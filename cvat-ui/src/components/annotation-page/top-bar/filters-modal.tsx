@@ -265,13 +265,28 @@ function FiltersModalComponent(): JSX.Element {
             centered
             onCancel={() => dispatch(showFilters(false))}
             footer={[
-                <Button key='clear' disabled={!activeFilters.length} onClick={() => applyFilters([])}>
+                <Button
+                    key='clear'
+                    disabled={!activeFilters.length}
+                    onClick={() => applyFilters([])}
+                    className='cvat-filters-modal-clear-button'
+                >
                     Clear filters
                 </Button>,
-                <Button key='cancel' onClick={() => dispatch(showFilters(false))}>
+                <Button
+                    key='cancel'
+                    onClick={() => dispatch(showFilters(false))}
+                    className='cvat-filters-modal-cancel-button'
+                >
                     Cancel
                 </Button>,
-                <Button key='submit' type='primary' disabled={!isModalConfirmable()} onClick={confirmModal}>
+                <Button
+                    key='submit'
+                    type='primary'
+                    disabled={!isModalConfirmable()}
+                    onClick={confirmModal}
+                    className='cvat-filters-modal-submit-button'
+                >
                     Submit
                 </Button>,
             ]}
@@ -282,7 +297,10 @@ function FiltersModalComponent(): JSX.Element {
                 style={{ display: filters.length ? 'inline-block' : 'none' }}
             >
                 <Dropdown overlay={menu}>
-                    <Button type='text'>
+                    <Button
+                        type='text'
+                        className='cvat-filters-modal-recently-used-button'
+                    >
                         Recently used
                         {' '}
                         <DownOutlined />

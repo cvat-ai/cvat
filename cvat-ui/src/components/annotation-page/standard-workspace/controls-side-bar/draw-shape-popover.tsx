@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,11 +11,11 @@ import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Text from 'antd/lib/typography/Text';
 import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 
-import { DimensionType, ShapeType } from 'reducers';
+import { ShapeType } from 'reducers';
 import { clamp } from 'utils/math';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { Label } from 'cvat-core-wrapper';
+import { Label, DimensionType } from 'cvat-core-wrapper';
 
 interface Props {
     shapeType: ShapeType;
@@ -54,7 +54,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         jobInstance,
     } = props;
 
-    const is2D = jobInstance.dimension === DimensionType.DIM_2D;
+    const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
     return (
         <div className='cvat-draw-shape-popover-content'>
             <Row justify='start'>
@@ -152,13 +152,18 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
             <Row justify='space-around'>
                 <Col span={12}>
                     <CVATTooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                        <Button onClick={onDrawShape}>Shape</Button>
+                        <Button className={`cvat-draw-${shapeType}-shape-button`} onClick={onDrawShape}>Shape</Button>
                     </CVATTooltip>
                 </Col>
-                {is2D && shapeType !== ShapeType.MASK && (
+                {shapeType !== ShapeType.MASK && (
                     <Col span={12}>
                         <CVATTooltip title={`Press ${repeatShapeShortcut} to draw again`}>
-                            <Button onClick={onDrawTrack}>Track</Button>
+                            <Button
+                                className={`cvat-draw-${shapeType}-track-button`}
+                                onClick={onDrawTrack}
+                            >
+                                Track
+                            </Button>
                         </CVATTooltip>
                     </Col>
                 )}

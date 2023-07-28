@@ -1,19 +1,18 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Storage } from './storage';
-
-const serverProxy = require('./server-proxy').default;
-const Collection = require('./annotations-collection');
-const AnnotationsSaver = require('./annotations-saver');
-const AnnotationsHistory = require('./annotations-history').default;
-const { checkObjectType } = require('./common');
-const Project = require('./project').default;
-const { Task, Job } = require('./session');
-const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
-const { getDeletedFrames } = require('./frames');
+import serverProxy from './server-proxy';
+import Collection from './annotations-collection';
+import AnnotationsSaver from './annotations-saver';
+import AnnotationsHistory from './annotations-history';
+import { checkObjectType } from './common';
+import Project from './project';
+import { Task, Job } from './session';
+import { ScriptingError, DataError, ArgumentError } from './exceptions';
+import { getDeletedFrames } from './frames';
 
 const jobCache = new WeakMap();
 const taskCache = new WeakMap();
@@ -30,12 +29,48 @@ function getCache(sessionType) {
     throw new ScriptingError(`Unknown session type was received ${sessionType}`);
 }
 
-async function getAnnotationsFromServer(session) {
+function processGroundTruthAnnotations(rawAnnotations, groundTruthAnnotations) {
+    const annotations = [].concat(
+        groundTruthAnnotations.shapes,
+        groundTruthAnnotations.tracks,
+        groundTruthAnnotations.tags,
+    );
+    annotations.forEach((annotation) => { annotation.is_gt = true; });
+    const result = {
+        shapes: rawAnnotations.shapes.slice(0).concat(groundTruthAnnotations.shapes.slice(0)),
+        tracks: rawAnnotations.tracks.slice(0).concat(groundTruthAnnotations.tracks.slice(0)),
+        tags: rawAnnotations.tags.slice(0).concat(groundTruthAnnotations.tags.slice(0)),
+    };
+    return result;
+}
+
+function addJobId(rawAnnotations, jobID) {
+    const annotations = [].concat(
+        rawAnnotations.shapes,
+        rawAnnotations.tracks,
+        rawAnnotations.tags,
+    );
+    annotations.forEach((annotation) => { annotation.job_id = jobID; });
+    const result = {
+        shapes: rawAnnotations.shapes.slice(0),
+        tracks: rawAnnotations.tracks.slice(0),
+        tags: rawAnnotations.tags.slice(0),
+    };
+    return result;
+}
+
+async function getAnnotationsFromServer(session, groundTruthJobId) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
     if (!cache.has(session)) {
-        const rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
+        let rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
+        rawAnnotations = addJobId(rawAnnotations, session.id);
+        if (groundTruthJobId) {
+            let gtAnnotations = await serverProxy.annotations.getAnnotations(sessionType, groundTruthJobId);
+            gtAnnotations = addJobId(gtAnnotations, groundTruthJobId);
+            rawAnnotations = processGroundTruthAnnotations(rawAnnotations, gtAnnotations);
+        }
 
         // Get meta information about frames
         const startFrame = sessionType === 'job' ? session.startFrame : 0;
@@ -50,9 +85,9 @@ async function getAnnotationsFromServer(session) {
         const collection = new Collection({
             labels: session.labels || session.task.labels,
             history,
-            startFrame,
             stopFrame,
             frameMeta,
+            dimension: session.dimension,
         });
 
         // eslint-disable-next-line no-unsanitized/method
@@ -71,7 +106,7 @@ export async function clearCache(session) {
     }
 }
 
-export async function getAnnotations(session, frame, allTracks, filters) {
+export async function getAnnotations(session, frame, allTracks, filters, groundTruthJobId) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
@@ -79,7 +114,7 @@ export async function getAnnotations(session, frame, allTracks, filters) {
         return cache.get(session).collection.get(frame, allTracks, filters);
     }
 
-    await getAnnotationsFromServer(session);
+    await getAnnotationsFromServer(session, groundTruthJobId);
     return cache.get(session).collection.get(frame, allTracks, filters);
 }
 
@@ -190,6 +225,9 @@ export function annotationsStatistics(session) {
     const cache = getCache(sessionType);
 
     if (cache.has(session)) {
+        if (sessionType === 'job') {
+            return cache.get(session).collection.statistics({ jobID: session.id });
+        }
         return cache.get(session).collection.statistics();
     }
 

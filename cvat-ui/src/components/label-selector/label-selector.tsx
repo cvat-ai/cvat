@@ -18,7 +18,7 @@ export default function LabelSelector(props: Props): JSX.Element {
     const {
         labels, value, onChange, onEnterPress, ...rest
     } = props;
-    const dinamicProps = value ?
+    const dynamicProps = value ?
         {
             value: typeof value === 'number' ? value : value.id,
         } :
@@ -37,7 +37,7 @@ export default function LabelSelector(props: Props): JSX.Element {
         <Select
             virtual={false}
             {...rest}
-            {...dinamicProps}
+            {...dynamicProps}
             showSearch
             filterOption={(input: string, option?: OptionData | OptionGroupData) => {
                 if (option) {

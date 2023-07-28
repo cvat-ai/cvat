@@ -1,4 +1,3 @@
-version: '3.3'
 services:
   nuclio:
     container_name: nuclio
@@ -29,6 +28,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  cvat_worker_low:
+  cvat_worker_annotation:
     extra_hosts:
       - "host.docker.internal:host-gateway"

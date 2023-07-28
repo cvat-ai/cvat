@@ -28,12 +28,6 @@ yarn run build
 yarn run build --mode=development     # without a minification
 ```
 
-- Building the documentation in the `docs` directory:
-
-```bash
-yarn run docs
-```
-
 - Running of tests:
 
 ```bash

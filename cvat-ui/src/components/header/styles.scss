@@ -30,9 +30,7 @@
     }
 
     .anticon.cvat-logo-icon {
-        > svg {
-            transform: scale(0.7);
-        }
+        margin: 0 $grid-unit-size * 2;
     }
 
     width: 50%;

@@ -25,7 +25,7 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ low",
+            "name": "REST API tests: Attach to RQ annotation worker",
             "type": "python",
             "request": "attach",
             "connect": {
@@ -45,12 +45,72 @@
             "justMyCode": false,
         },
         {
-            "name": "REST API tests: Attach to RQ default",
+            "name": "REST API tests: Attach to RQ export worker",
             "type": "python",
             "request": "attach",
             "connect": {
                 "host": "127.0.0.1",
                 "port": 9092
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/home/django/"
+                },
+                {
+                    "localRoot": "${workspaceFolder}/.env",
+                    "remoteRoot": "/opt/venv",
+                }
+            ],
+            "justMyCode": false,
+        },
+        {
+            "name": "REST API tests: Attach to RQ import worker",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 9093
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/home/django/"
+                },
+                {
+                    "localRoot": "${workspaceFolder}/.env",
+                    "remoteRoot": "/opt/venv",
+                }
+            ],
+            "justMyCode": false,
+        },
+        {
+            "name": "REST API tests: Attach to RQ quality reports worker",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 9094
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/home/django/"
+                },
+                {
+                    "localRoot": "${workspaceFolder}/.env",
+                    "remoteRoot": "/opt/venv",
+                }
+            ],
+            "justMyCode": false,
+        },
+        {
+            "name": "REST API tests: Attach to RQ analytics reports worker",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "127.0.0.1",
+                "port": 9095
             },
             "pathMappings": [
                 {
@@ -107,7 +167,9 @@
             "env": {
                 "CVAT_SERVERLESS": "1",
                 "ALLOWED_HOSTS": "*",
-                "IAM_OPA_BUNDLE": "1"
+                "IAM_OPA_BUNDLE": "1",
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
             },
             "args": [
                 "runserver",
@@ -133,7 +195,7 @@
             }
         },
         {
-            "name": "server: RQ - default",
+            "name": "server: RQ - import",
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
@@ -142,13 +204,82 @@
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqworker",
-                "default",
+                "import",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: RQ - export",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "export",
                 "--worker-class",
                 "cvat.rqworker.SimpleWorker",
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {},
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: RQ - quality reports",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "quality_reports",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker",
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: RQ - analytics reports",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "analytics_reports",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker",
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
             "console": "internalConsole"
         },
         {
@@ -158,17 +289,20 @@
             "stopOnEntry": false,
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
-            "args": [
-                "rqscheduler",
-            ],
+            "program": "${workspaceRoot}/rqscheduler.py",
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {},
+            "args": [
+                "-i", "1"
+            ],
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
             "console": "internalConsole"
         },
         {
-            "name": "server: RQ - low",
+            "name": "server: RQ - annotation",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -177,7 +311,7 @@
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqworker",
-                "low",
+                "annotation",
                 "--worker-class",
                 "cvat.rqworker.SimpleWorker",
             ],
@@ -219,6 +353,28 @@
             "django": true,
             "cwd": "${workspaceFolder}",
             "env": {},
+            "console": "internalConsole"
+        },
+        {
+            "name": "server: RQ - cleaning",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "cleaning",
+                "--worker-class",
+                "cvat.rqworker.SimpleWorker"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "DJANGO_LOG_SERVER_HOST": "localhost",
+                "DJANGO_LOG_SERVER_PORT": "8282"
+            },
             "console": "internalConsole"
         },
         {
@@ -308,7 +464,7 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/cvat-sdk/gen/postprocess.py",
             "args": [
-                "--schema", "${workspaceFolder}/cvat-sdk/schema/schema.yml",
+                "--schema", "${workspaceFolder}/cvat/schema.yml",
                 "--input-path", "${workspaceFolder}/cvat-sdk/cvat_sdk/"
             ],
             "cwd": "${workspaceFolder}",
@@ -340,7 +496,7 @@
             "args": [
                 "spectacular",
                 "--file",
-                "schema.yml"
+                "${workspaceFolder}/cvat/schema.yml"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
@@ -379,10 +535,14 @@
             "name": "server: debug",
             "configurations": [
                 "server: django",
-                "server: RQ - default",
-                "server: RQ - low",
+                "server: RQ - import",
+                "server: RQ - export",
+                "server: RQ - annotation",
                 "server: RQ - webhooks",
                 "server: RQ - scheduler",
+                "server: RQ - quality reports",
+                "server: RQ - analytics reports",
+                "server: RQ - cleaning",
                 "server: git",
             ]
         }

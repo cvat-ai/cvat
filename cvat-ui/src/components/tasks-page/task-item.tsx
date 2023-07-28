@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,29 +12,35 @@ import Button from 'antd/lib/button';
 import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
+import Badge from 'antd/lib/badge';
 import moment from 'moment';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
-import { ActiveInference } from 'reducers';
+import Preview from 'components/common/preview';
+import { ActiveInference, PluginComponent } from 'reducers';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 
 export interface TaskItemProps {
     taskInstance: any;
-    previewImage: string;
     deleted: boolean;
     hidden: boolean;
     activeInference: ActiveInference | null;
+    ribbonPlugins: PluginComponent[];
     cancelAutoAnnotation(): void;
 }
 
 class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps> {
     private renderPreview(): JSX.Element {
-        const { previewImage } = this.props;
+        const { taskInstance } = this.props;
         return (
             <Col span={4}>
-                <div className='cvat-task-item-preview-wrapper'>
-                    <img alt='Preview' className='cvat-task-item-preview' src={previewImage} />
-                </div>
+                <Preview
+                    task={taskInstance}
+                    loadingClassName='cvat-task-item-loading-preview'
+                    emptyPreviewClassName='cvat-task-item-empty-preview'
+                    previewWrapperClassName='cvat-task-item-preview-wrapper'
+                    previewClassName='cvat-task-item-preview'
+                />
             </Col>
         );
     }
@@ -70,8 +77,8 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     private renderProgress(): JSX.Element {
         const { taskInstance, activeInference, cancelAutoAnnotation } = this.props;
         // Count number of jobs and performed jobs
-        const numOfJobs = taskInstance.jobs.length;
-        const numOfCompleted = taskInstance.jobs.filter((job: any): boolean => job.stage === 'acceptance').length;
+        const numOfJobs = taskInstance.progress.totalJobs;
+        const numOfCompleted = taskInstance.progress.completedJobs;
 
         // Progress appearance depends on number of jobs
         let progressColor = null;
@@ -100,7 +107,6 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         }
 
         const jobsProgress = numOfCompleted / numOfJobs;
-
         return (
             <Col span={6}>
                 <Row justify='space-between' align='top'>
@@ -138,6 +144,10 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { taskInstance, history } = this.props;
         const { id } = taskInstance;
 
+        const onViewAnalytics = (): void => {
+            history.push(`/tasks/${taskInstance.id}/analytics`);
+        };
+
         return (
             <Col span={4}>
                 <Row justify='end'>
@@ -158,7 +168,13 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </Col>
                 </Row>
                 <Row justify='end'>
-                    <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
+                    <Dropdown overlay={(
+                        <ActionsMenuContainer
+                            taskInstance={taskInstance}
+                            onViewAnalytics={onViewAnalytics}
+                        />
+                    )}
+                    >
                         <Col className='cvat-item-open-task-actions'>
                             <Text className='cvat-text-color'>Actions</Text>
                             <MoreOutlined className='cvat-menu-icon' />
@@ -170,7 +186,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     public render(): JSX.Element {
-        const { deleted, hidden } = this.props;
+        const { deleted, hidden, ribbonPlugins } = this.props;
         const style = {};
         if (deleted) {
             (style as any).pointerEvents = 'none';
@@ -181,13 +197,31 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
             (style as any).display = 'none';
         }
 
+        const ribbonItems = ribbonPlugins
+            .filter((plugin) => plugin.data.shouldBeRendered(this.props, this.state))
+            .map((plugin) => ({ component: plugin.component, weight: plugin.data.weight }));
+
         return (
-            <Row className='cvat-tasks-list-item' justify='center' align='top' style={{ ...style }}>
-                {this.renderPreview()}
-                {this.renderDescription()}
-                {this.renderProgress()}
-                {this.renderNavigation()}
-            </Row>
+            <Badge.Ribbon
+                style={{ visibility: ribbonItems.length ? 'visible' : 'hidden' }}
+                className='cvat-task-item-ribbon'
+                placement='start'
+                text={(
+                    <div>
+                        {ribbonItems.sort((item1, item2) => item1.weight - item2.weight)
+                            .map((item) => item.component).map((Component, index) => (
+                                <Component key={index} targetProps={this.props} targetState={this.state} />
+                            ))}
+                    </div>
+                )}
+            >
+                <Row className='cvat-tasks-list-item' justify='center' align='top' style={{ ...style }}>
+                    {this.renderPreview()}
+                    {this.renderDescription()}
+                    {this.renderProgress()}
+                    {this.renderNavigation()}
+                </Row>
+            </Badge.Ribbon>
         );
     }
 }

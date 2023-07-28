@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,8 +20,8 @@ import moment from 'moment';
 import { CloudStorage, CombinedState } from 'reducers';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import Preview from 'components/common/preview';
 import Status from './cloud-storage-status';
-import Preview from './cloud-storage-preview';
 
 interface Props {
     cloudStorage: CloudStorage;
@@ -74,7 +75,12 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
         <Card
             cover={(
                 <>
-                    <Preview cloudStorage={cloudStorage} />
+                    <Preview
+                        cloudStorage={cloudStorage}
+                        loadingClassName='cvat-cloud-storage-item-loading-preview'
+                        emptyPreviewClassName='cvat-cloud-storage-item-empty-preview'
+                        previewClassName='cvat-cloud-storage-item-preview'
+                    />
                     {description ? (
                         <CVATTooltip overlay={description}>
                             <QuestionCircleOutlined className='cvat-cloud-storage-description-icon' />

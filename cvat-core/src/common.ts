@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023s CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -51,10 +51,10 @@ export function checkExclusiveFields(obj, exclusive, ignore): void {
         exclusive: [],
         other: [],
     };
-    for (const field in Object.keys(obj)) {
-        if (!(field in ignore)) {
-            if (field in exclusive) {
-                if (fields.other.length) {
+    for (const field in obj) {
+        if (!(ignore.includes(field))) {
+            if (exclusive.includes(field)) {
+                if (fields.other.length || fields.exclusive.length) {
                     throw new ArgumentError(`Do not use the filter field "${field}" with others`);
                 }
                 fields.exclusive.push(field);
@@ -92,36 +92,56 @@ export function checkObjectType(name, value, type, instance?): boolean {
 }
 
 export class FieldUpdateTrigger {
-    constructor() {
-        let updatedFlags = {};
+    #updatedFlags: Record<string, boolean> = {};
 
-        Object.defineProperties(
-            this,
-            Object.freeze({
-                reset: {
-                    value: () => {
-                        updatedFlags = {};
-                    },
-                },
-                update: {
-                    value: (name) => {
-                        updatedFlags[name] = true;
-                    },
-                },
-                getUpdated: {
-                    value: (data, propMap = {}) => {
-                        const result = {};
-                        for (const updatedField of Object.keys(updatedFlags)) {
-                            result[propMap[updatedField] || updatedField] = data[updatedField];
-                        }
-                        return result;
-                    },
-                },
-            }),
-        );
+    reset(): void {
+        this.#updatedFlags = {};
+    }
+
+    update(name: string): void {
+        this.#updatedFlags[name] = true;
+    }
+
+    getUpdated(data: object, propMap: Record<string, string> = {}): Record<string, unknown> {
+        const result = {};
+        for (const updatedField of Object.keys(this.#updatedFlags)) {
+            result[propMap[updatedField] || updatedField] = data[updatedField];
+        }
+        return result;
     }
 }
 
 export function clamp(value: number, min: number, max: number): number {
     return Math.min(Math.max(value, min), max);
+}
+
+export function camelToSnakeCase(str: string): string {
+    return str.replace(/[A-Z]/g, (letter: string) => `_${letter.toLowerCase()}`);
+}
+
+export function filterFieldsToSnakeCase(filter: Record<string, string>, keysToSnake: string[]): Record<string, string> {
+    const searchParams:Record<string, string> = {};
+    for (const key of Object.keys(filter)) {
+        if (!keysToSnake.includes(key)) {
+            searchParams[key] = filter[key];
+        }
+    }
+    const filtersGroup = [];
+    for (const key of keysToSnake) {
+        if (filter[key]) {
+            filtersGroup.push({ '==': [{ var: camelToSnakeCase(key) }, filter[key]] });
+        }
+    }
+
+    if (searchParams.filter) {
+        const parsed = JSON.parse(searchParams.filter);
+        searchParams.filter = JSON.stringify({ and: [parsed, ...filtersGroup] });
+    } else if (filtersGroup.length) {
+        searchParams.filter = JSON.stringify({ and: [...filtersGroup] });
+    }
+    return searchParams;
+}
+
+export function isResourceURL(url: string): boolean {
+    return /\/([0-9]+)$/.test(url);
 }

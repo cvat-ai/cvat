@@ -1,43 +1,47 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
 import os
 import os.path as osp
+from types import SimpleNamespace
+from typing import Optional
 import pytz
-import shutil
 import traceback
+import textwrap
+from copy import copy
 from datetime import datetime
 from distutils.util import strtobool
-from tempfile import mkstemp, NamedTemporaryFile
+from tempfile import NamedTemporaryFile
+from typing import Any, Dict, List, cast
 
-import cv2
-from django.db.models.query import Prefetch
-from django.shortcuts import get_object_or_404
 import django_rq
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Q
+from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
+from http import HTTPStatus
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
-    extend_schema_view, extend_schema, inline_serializer
+    extend_schema_view, extend_schema
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS
-from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from django_sendfile import sendfile
+from rest_framework.settings import api_settings
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
@@ -45,39 +49,48 @@ from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.media_extractors import ImageListReader
-from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
-    Job, Task, Project, Issue, Data,
-    Comment, StorageMethodChoice, StorageChoice, Image,
-    CloudProviderChoice, Location
-)
-from cvat.apps.engine.models import CloudStorage as CloudStorageModel
+    ClientFile, Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
+    Comment, StorageMethodChoice, StorageChoice,
+    CloudProviderChoice, Location, CloudStorage as CloudStorageModel,
+    Asset, AnnotationGuide)
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
-    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectReadSerializer, ProjectWriteSerializer, ProjectSearchSerializer,
-    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
+    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer,
+    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabelSerializer,
+    LabeledDataSerializer,
+    ProjectReadSerializer, ProjectWriteSerializer,
+    RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
+    UserSerializer, PluginsSerializer, IssueReadSerializer,
+    AnnotationGuideReadSerializer, AnnotationGuideWriteSerializer,
+    AssetReadSerializer, AssetWriteSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
-    CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer,
-    ProjectFileSerializer, TaskFileSerializer)
+    CloudStorageReadSerializer, DatasetFileSerializer,
+    ProjectFileSerializer, TaskFileSerializer, RqIdSerializer, CloudStorageContentSerializer)
+from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, parse_exception_message
+    av_scan_paths, process_failed_job, configure_dependent_job,
+    parse_exception_message, get_rq_job_meta, get_import_rq_id,
+    import_resource_with_clean_up_after, sendfile
 )
 from cvat.apps.engine import backup
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin, DestroyModelMixin, CreateModelMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
-from .log import clogger, slogger
+from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
-    CommentPermission, IssuePermission, JobPermission, ProjectPermission,
+    CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.engine.cache import MediaCache
+from cvat.apps.engine.view_utils import tus_chunk_action
 
+
+_UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
@@ -115,56 +128,6 @@ class ServerViewSet(viewsets.ViewSet):
             return Response(data=serializer.data)
 
     @staticmethod
-    @extend_schema(summary='Method saves an exception from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=ExceptionSerializer, responses={
-            '201': ExceptionSerializer,
-        })
-    @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
-    def exception(request):
-        serializer = ExceptionSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            additional_info = {
-                "username": request.user.username,
-                "name": "Send exception",
-            }
-            message = JSONRenderer().render({**serializer.data, **additional_info}).decode('UTF-8')
-            jid = serializer.data.get("job_id")
-            tid = serializer.data.get("task_id")
-            if jid:
-                clogger.job[jid].error(message)
-            elif tid:
-                clogger.task[tid].error(message)
-            else:
-                clogger.glob.error(message)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @staticmethod
-    @extend_schema(summary='Method saves logs from a client on the server',
-        description='Sends logs to the ELK if it is connected',
-        request=LogEventSerializer(many=True),
-        responses={
-            '201': LogEventSerializer(many=True),
-        })
-    @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
-    def logs(request):
-        serializer = LogEventSerializer(many=True, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = { "username": request.user.username }
-            for event in serializer.data:
-                message = JSONRenderer().render({**event, **user}).decode('UTF-8')
-                jid = event.get("job_id")
-                tid = event.get("task_id")
-                if jid:
-                    clogger.job[jid].info(message)
-                elif tid:
-                    clogger.task[tid].info(message)
-                else:
-                    clogger.glob.info(message)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @staticmethod
     @extend_schema(
         summary='Returns all files and folders that are on the server along specified path',
         parameters=[
@@ -190,6 +153,8 @@ class ServerViewSet(viewsets.ViewSet):
                 if entry.is_file():
                     entry_type = "REG"
                     entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
+                    if entry_mime_type == 'zip':
+                        entry_mime_type = 'archive'
                 elif entry.is_dir():
                     entry_type = "DIR"
                     entry_mime_type = "DIR"
@@ -201,7 +166,8 @@ class ServerViewSet(viewsets.ViewSet):
                         "mime_type": entry_mime_type,
                     })
 
-            serializer = FileInfoSerializer(many=True, data=data)
+            # return directories at the top of the list
+            serializer = FileInfoSerializer(many=True, data=sorted(data, key=lambda x: (x['type'], x['name'])))
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         else:
@@ -227,60 +193,25 @@ class ServerViewSet(viewsets.ViewSet):
         })
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
     def plugins(request):
-        response = {
+        data = {
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
             'PREDICT': False, # FIXME: it is unused anymore (for UI only)
         }
-        return Response(response)
-
-    @staticmethod
-    @extend_schema(
-        summary='Method provides a list with advanced integrated authentication methods (e.g. social accounts)',
-        responses={
-            '200': OpenApiResponse(response=inline_serializer(
-                name='AdvancedAuthentication',
-                fields={
-                    'GOOGLE_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
-                    'GITHUB_ACCOUNT_AUTHENTICATION': serializers.BooleanField(),
-                }
-            )),
-        }
-    )
-    @action(detail=False, methods=['GET'], url_path='advanced-auth', permission_classes=[])
-    def advanced_authentication(request):
-        use_social_auth = settings.USE_ALLAUTH_SOCIAL_ACCOUNTS
-        integrated_auth_providers = settings.SOCIALACCOUNT_PROVIDERS.keys() if use_social_auth else []
-        google_auth_is_enabled = (
-            'google' in integrated_auth_providers
-            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_ID
-            and settings.SOCIAL_AUTH_GOOGLE_CLIENT_SECRET
-        )
-        github_auth_is_enabled = (
-            'github' in integrated_auth_providers
-            and settings.SOCIAL_AUTH_GITHUB_CLIENT_ID
-            and settings.SOCIAL_AUTH_GITHUB_CLIENT_SECRET
-        )
-        response = {
-            'GOOGLE_ACCOUNT_AUTHENTICATION': google_auth_is_enabled,
-            'GITHUB_ACCOUNT_AUTHENTICATION': github_auth_is_enabled,
-        }
-        return Response(response)
+        return Response(PluginsSerializer(data).data)
 
 @extend_schema(tags=['projects'])
 @extend_schema_view(
     list=extend_schema(
-        summary='Returns a paginated list of projects according to query parameters (12 projects per page)',
+        summary='Returns a paginated list of projects',
         responses={
-            '200': PolymorphicProxySerializer(component_name='PolymorphicProject',
-                serializers=[
-                    ProjectReadSerializer, ProjectSearchSerializer,
-                ], resource_type_field_name=None, many=True),
+            '200': ProjectReadSerializer(many=True),
         }),
     create=extend_schema(
         summary='Method creates a new project',
-        # request=ProjectWriteSerializer,
+        request=ProjectWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         }),
@@ -296,76 +227,69 @@ class ServerViewSet(viewsets.ViewSet):
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a project',
-        # request=ProjectWriteSerializer,
+        request=ProjectWriteSerializer(partial=True),
         responses={
             '200': ProjectReadSerializer, # check ProjectWriteSerializer.to_representation
         })
 )
 class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
-    queryset = models.Project.objects.select_related('assignee', 'owner',
-        'target_storage', 'source_storage').prefetch_related(
+    queryset = models.Project.objects.select_related(
+        'assignee', 'owner', 'target_storage', 'source_storage', 'annotation_guide',
+    ).prefetch_related(
         'tasks', 'label_set__sublabels__attributespec_set',
-        'label_set__attributespec_set')
+        'label_set__attributespec_set'
+    ).annotate(
+        proj_labels_count=Count('label',
+            filter=Q(label__parent__isnull=True), distinct=True)
+    ).all()
 
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
     search_fields = ('name', 'owner', 'assignee', 'status')
     filter_fields = list(search_fields) + ['id', 'updated_date']
-    ordering_fields = filter_fields
+    simple_filters = list(search_fields)
+    ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
+    IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('project', {}, 'dataset', {})
 
     def get_serializer_class(self):
-        # TODO: fix separation into read and write serializers for requests and responses
-        # probably with drf-rw-serializers
-        if self.request.path.endswith('tasks'):
-            return TaskReadSerializer
+        if self.request.method in SAFE_METHODS:
+            return ProjectReadSerializer
         else:
-            if self.request.method in SAFE_METHODS:
-                return ProjectReadSerializer
-            else:
-                return ProjectWriteSerializer
+            return ProjectWriteSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = ProjectPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
         return queryset
 
+    @transaction.atomic
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(
-            serializer,
+        serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
 
-    @extend_schema(
-        summary='Method returns information of the tasks of the project with the selected id',
-        responses={
-            '200': TaskReadSerializer(many=True),
-        })
-    @action(detail=True, methods=['GET'], serializer_class=TaskReadSerializer)
-    def tasks(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        queryset = Task.objects.filter(project_id=pk).order_by('-id')
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True,
-                context={"request": request})
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True,
-            context={"request": request})
-        return Response(serializer.data)
-
+        # Required for the extra summary information added in the queryset
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
     @extend_schema(methods=['GET'], summary='Export project as a dataset in a specific format',
+        description=textwrap.dedent("""
+            To check the status of the process of importing a project dataset from a file:
+
+            After initiating the dataset upload, you will receive an rq_id parameter.
+            Make sure to include this parameter as a query parameter in your subsequent
+            GET /api/projects/id/dataset requests to track the status of the dataset import.
+            Also you should specify action parameter: action=import_status.
+        """),
         parameters=[
             OpenApiParameter('format', description='Desired output format name\n'
                 'You can get the list of supported formats at:\n/server/annotation/formats',
@@ -382,6 +306,8 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('use_default_location', description='Use the location that was configured in project to import dataset',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
+            OpenApiParameter('rq_id', description='rq id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
@@ -389,7 +315,13 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['POST'], summary='Import dataset in specific format as a project',
+    @extend_schema(methods=['POST'],
+        summary='Import dataset in specific format as a project or check status of dataset import process',
+        description=textwrap.dedent("""
+            The request POST /api/projects/id/dataset will initiate file upload and will create
+            the rq job on the server in which the process of dataset import from a file
+            will be carried out. Please, use the GET /api/projects/id/dataset endpoint for checking status of the process.
+        """),
         parameters=[
             OpenApiParameter('format', description='Desired dataset format name\n'
                 'You can get the list of supported formats at:\n/server/annotation/formats',
@@ -406,38 +338,46 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=PolymorphicProxySerializer('DatasetWrite',
+            # TODO: refactor to use required=False when possible
             serializers=[DatasetFileSerializer, OpenApiTypes.NONE],
             resource_type_field_name=None
         ),
         responses={
-            '202': OpenApiResponse(description='Exporting has been started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Importing has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @action(detail=True, methods=['GET', 'POST', 'OPTIONS'], serializer_class=None,
-        url_path=r'dataset/?$')
+        url_path=r'dataset/?$', parser_classes=_UPLOAD_PARSER_CLASSES)
     def dataset(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
 
         if request.method in {'POST', 'OPTIONS'}:
             return self.import_annotations(
                 request=request,
-                pk=pk,
                 db_obj=self._object,
                 import_func=_import_project_dataset,
                 rq_func=dm.project.import_dataset_as_project,
-                rq_id=f"/api/project/{pk}/dataset_import",
+                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
             )
         else:
             action = request.query_params.get("action", "").lower()
             if action in ("import_status",):
-                queue = django_rq.get_queue("default")
-                rq_job = queue.fetch_job(f"/api/project/{pk}/dataset_import")
+                queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+                rq_id = request.query_params.get('rq_id')
+                if not rq_id:
+                    return Response('The rq_id param should be specified in the query parameters', status=status.HTTP_400_BAD_REQUEST)
+
+                # check that the user has access to the current rq_job
+                # We should not return any status of job including "404 not found" for user that has no access for this rq_job
+
+                if self.IMPORT_RQ_ID_TEMPLATE.format(pk, request.user) != rq_id:
+                    return Response(status=status.HTTP_403_FORBIDDEN)
+
+                rq_job = queue.fetch_job(rq_id)
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
-                    if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-                    os.remove(rq_job.meta['tmp_file'])
                     if rq_job.dependency:
                         rq_job.dependency.delete()
                     rq_job.delete()
@@ -452,29 +392,21 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     )
                 else:
                     return Response(
-                        data=self._get_rq_response('default', f'/api/project/{pk}/dataset_import'),
+                        data=self._get_rq_response(
+                            settings.CVAT_QUEUES.IMPORT_DATA.value,
+                            rq_id,
+                        ),
                         status=status.HTTP_202_ACCEPTED
                     )
             else:
                 return self.export_annotations(
                     request=request,
-                    pk=pk,
                     db_obj=self._object,
                     export_func=_export_annotations,
                     callback=dm.views.export_project_as_dataset
                 )
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='projects_partial_update_dataset_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
+    @tus_chunk_action(detail=True, suffix_base="dataset")
     def append_dataset_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -498,9 +430,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return _import_project_dataset(
                 request=request,
                 filename=uploaded_file,
-                rq_id=f"/api/project/{self._object.pk}/dataset_import",
+                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
                 rq_func=dm.project.import_dataset_as_project,
-                pk=self._object.pk,
+                db_obj=self._object,
                 format_name=format_name,
                 conv_mask_to_poly=conv_mask_to_poly
             )
@@ -510,10 +442,14 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 tmp_dir = backup.get_backup_dirname()
                 backup_file = os.path.join(tmp_dir, filename)
                 if os.path.isfile(backup_file):
-                    return backup.import_project(request, filename=backup_file)
+                    return backup.import_project(
+                        request,
+                        settings.CVAT_QUEUES.IMPORT_DATA.value,
+                        filename=backup_file,
+                    )
                 return Response(data='No such file were uploaded',
                         status=status.HTTP_400_BAD_REQUEST)
-            return backup.import_project(request)
+            return backup.import_project(request, settings.CVAT_QUEUES.IMPORT_DATA.value)
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -549,10 +485,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         return self.export_annotations(
             request=request,
-            pk=pk,
             db_obj=self._object,
             export_func=_export_annotations,
             callback=dm.views.export_project_annotations,
@@ -584,8 +519,21 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def export_backup(self, request, pk=None):
         return self.serialize(request, backup.export)
 
-    @extend_schema(summary='Methods create a project from a backup',
+    @extend_schema(methods=['POST'], summary='Methods create a project from a backup',
+        description=textwrap.dedent("""
+            The backup import process is as follows:
+
+            The first request POST /api/projects/backup will initiate file upload and will create
+            the rq job on the server in which the process of a project creating from an uploaded backup
+            will be carried out.
+
+            After initiating the backup upload, you will receive an rq_id parameter.
+            Make sure to include this parameter as a query parameter in your subsequent requests
+            to track the status of the project creation.
+            Once the project has been successfully created, the server will return the id of the newly created project.
+        """),
         parameters=[
+            *ORGANIZATION_OPEN_API_PARAMETERS,
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list(), default=Location.LOCAL),
@@ -593,34 +541,55 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('rq_id', description='rq id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=PolymorphicProxySerializer('BackupWrite',
+            # TODO: refactor to use required=False when possible
             serializers=[ProjectFileSerializer, OpenApiTypes.NONE],
             resource_type_field_name=None
         ),
+        # TODO: for some reason the code generated by the openapi generator from schema with different serializers
+        # contains only one serializer, need to fix that.
+        # https://github.com/OpenAPITools/openapi-generator/issues/6126
         responses={
-            '201': OpenApiResponse(description='The project has been imported'), # or better specify {id: project_id}
-            '202': OpenApiResponse(description='Importing a backup file has been started'),
+            # 201: OpenApiResponse(inline_serializer("ImportedProjectIdSerializer", fields={"id": serializers.IntegerField(required=True)})
+            '201': OpenApiResponse(description='The project has been imported'),
+            '202': OpenApiResponse(RqIdSerializer, description='Importing a backup file has been started'),
         })
     @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
-        serializer_class=ProjectFileSerializer(required=False))
+        serializer_class=None,
+        parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_project)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='projects_partial_update_backup_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex,
-        serializer_class=None)
+    @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
+
+    @extend_schema(summary='Method returns a preview image for the project',
+        responses={
+            '200': OpenApiResponse(description='Project image preview'),
+            '404': OpenApiResponse(description='Project image preview not found'),
+
+        })
+    @action(detail=True, methods=['GET'], url_path='preview')
+    def preview(self, request, pk):
+        self._object = self.get_object() # call check_object_permissions as well
+
+        first_task = self._object.tasks.order_by('-id').first()
+        if not first_task:
+            return HttpResponseNotFound('Project image preview not found')
+
+        data_getter = DataChunkGetter(
+            data_type='preview',
+            data_quality='compressed',
+            data_num=first_task.data.start_frame,
+            task_dim=first_task.dimension
+        )
+
+        return data_getter(request, first_task.data.start_frame,
+           first_task.data.stop_frame, first_task.data)
 
     @staticmethod
     def _get_rq_response(queue, job_id):
@@ -640,7 +609,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return response
 
-
 class DataChunkGetter:
     def __init__(self, data_type, data_num, data_quality, task_dim):
         possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
@@ -648,23 +616,33 @@ class DataChunkGetter:
 
         if not data_type or data_type not in possible_data_type_values:
             raise ValidationError('Data type not specified or has wrong value')
-        elif data_type == 'chunk' or data_type == 'frame':
-            if not data_num:
+        elif data_type == 'chunk' or data_type == 'frame' or data_type == 'preview':
+            if data_num is None:
                 raise ValidationError('Number is not specified')
             elif data_quality not in possible_quality_values:
                 raise ValidationError('Wrong quality value')
 
         self.type = data_type
-        self.number = int(data_num) if data_num else None
+        self.number = int(data_num) if data_num is not None else None
         self.quality = FrameProvider.Quality.COMPRESSED \
             if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
 
         self.dimension = task_dim
 
+    def _check_frame_range(self, frame: int):
+        frame_range = range(self._start, self._stop + 1, self._db_data.get_frame_step())
+        if frame not in frame_range:
+            raise ValidationError(
+                f'The frame number should be in the [{self._start}, {self._stop}] range'
+            )
 
-    def __call__(self, request, start, stop, db_data, db_object):
+    def __call__(self, request, start: int, stop: int, db_data: Optional[Data]):
         if not db_data:
             raise NotFound(detail='Cannot find requested data')
+
+        self._start = start
+        self._stop = stop
+        self._db_data = db_data
 
         frame_provider = FrameProvider(db_data, self.dimension)
 
@@ -674,7 +652,7 @@ class DataChunkGetter:
                 stop_chunk = frame_provider.get_chunk_number(stop)
                 # pylint: disable=superfluous-parens
                 if not (start_chunk <= self.number <= stop_chunk):
-                    raise ValidationError('The chunk number should be in ' +
+                    raise ValidationError('The chunk number should be in  the ' +
                         f'[{start_chunk}, {stop_chunk}] range')
 
                 # TODO: av.FFmpegError processing
@@ -686,33 +664,25 @@ class DataChunkGetter:
                 # mimetype detection inside sendfile will work incorrectly.
                 path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
                 return sendfile(request, path)
+            elif self.type == 'frame' or self.type == 'preview':
+                self._check_frame_range(self.number)
 
-            elif self.type == 'frame':
-                if not (start <= self.number <= stop):
-                    raise ValidationError('The frame number should be in ' +
-                        f'[{start}, {stop}] range')
+                if self.type == 'preview':
+                    cache = MediaCache(self.dimension)
+                    buf, mime = cache.get_local_preview_with_mime(self.number, db_data)
+                else:
+                    buf, mime = frame_provider.get_frame(self.number, self.quality)
 
-                buf, mime = frame_provider.get_frame(self.number, self.quality)
                 return HttpResponse(buf.getvalue(), content_type=mime)
 
-            elif self.type == 'preview':
-                return sendfile(request, db_object.get_preview_path())
-
             elif self.type == 'context_image':
-                if not (start <= self.number <= stop):
-                    raise ValidationError('The frame number should be in ' +
-                        f'[{start}, {stop}] range')
+                self._check_frame_range(self.number)
 
-                image = Image.objects.get(data_id=db_data.id, frame=self.number)
-                for i in image.related_files.all():
-                    path = os.path.realpath(str(i.path))
-                    image = cv2.imread(path)
-                    success, result = cv2.imencode('.JPEG', image)
-                    if not success:
-                        raise Exception('Failed to encode image to ".jpeg" format')
-                    return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
-                return Response(data='No context image related to the frame',
-                    status=status.HTTP_404_NOT_FOUND)
+                cache = MediaCache(self.dimension)
+                buff, mime = cache.get_frame_context_images(db_data, self.number)
+                if not buff:
+                    return HttpResponseNotFound()
+                return HttpResponse(io.BytesIO(buff), content_type=mime)
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
@@ -721,16 +691,56 @@ class DataChunkGetter:
                 '\n'.join([str(d) for d in ex.detail])
             return Response(data=msg, status=ex.status_code)
 
+
+class JobDataGetter(DataChunkGetter):
+    def __init__(self, job: Job, data_type, data_num, data_quality):
+        super().__init__(data_type, data_num, data_quality, task_dim=job.segment.task.dimension)
+        self.job = job
+
+    def _check_frame_range(self, frame: int):
+        frame_range = self.job.segment.frame_set
+        if frame not in frame_range:
+            raise ValidationError("The frame number doesn't belong to the job")
+
+    def __call__(self, request, start, stop, db_data):
+        if self.type == 'chunk' and self.job.segment.type == SegmentType.SPECIFIC_FRAMES:
+            frame_provider = FrameProvider(db_data, self.dimension)
+
+            start_chunk = frame_provider.get_chunk_number(start)
+            stop_chunk = frame_provider.get_chunk_number(stop)
+            # pylint: disable=superfluous-parens
+            if not (start_chunk <= self.number <= stop_chunk):
+                raise ValidationError('The chunk number should be in the ' +
+                    f'[{start_chunk}, {stop_chunk}] range')
+
+            cache = MediaCache()
+
+            if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
+                buf, mime = cache.get_selective_job_chunk_data_with_mime(
+                    chunk_number=self.number, quality=self.quality, job=self.job
+                )
+            else:
+                buf, mime = cache.prepare_selective_job_chunk(
+                    chunk_number=self.number, quality=self.quality, db_job=self.job
+                )
+
+            return HttpResponse(buf.getvalue(), content_type=mime)
+
+        else:
+            return super().__call__(request, start, stop, db_data)
+
+
 @extend_schema(tags=['tasks'])
 @extend_schema_view(
     list=extend_schema(
-        summary='Returns a paginated list of tasks according to query parameters (10 tasks per page)',
+        summary='Returns a paginated list of tasks',
         responses={
             '200': TaskReadSerializer(many=True),
         }),
     create=extend_schema(
         summary='Method creates a new task in a database without any attached images and videos',
         request=TaskWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': TaskReadSerializer, # check TaskWriteSerializer.to_representation
         }),
@@ -752,21 +762,33 @@ class DataChunkGetter:
         })
 )
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 ):
-    queryset = Task.objects.all().select_related('data', 'assignee', 'owner',
-        'target_storage', 'source_storage').prefetch_related(
-        'segment_set__job_set__assignee', 'label_set__attributespec_set',
-        'project__label_set__attributespec_set',
-        'label_set__sublabels__attributespec_set',
-        'project__label_set__sublabels__attributespec_set')
-    lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
-    search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
+    queryset = Task.objects.select_related(
+        'data', 'assignee', 'owner',
+        'target_storage', 'source_storage', 'annotation_guide',
+    ).prefetch_related(
+        'segment_set__job_set',
+        'segment_set__job_set__assignee',
+    ).with_label_summary().with_job_summary().all()
+
+    lookup_fields = {
+        'project_name': 'project__name',
+        'owner': 'owner__username',
+        'assignee': 'assignee__username',
+        'tracker_link': 'bug_tracker',
+    }
+    search_fields = (
+        'project_name', 'name', 'owner', 'status', 'assignee',
+        'subset', 'mode', 'dimension', 'tracker_link'
+    )
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
-    ordering_fields = filter_fields
+    simple_filters = list(search_fields) + ['project_id']
+    ordering_fields = list(filter_fields)
     ordering = "-id"
     iam_organization_field = 'organization'
+    IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('task', {}, 'annotations', {})
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -776,6 +798,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -783,7 +806,20 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return queryset
 
     @extend_schema(summary='Method recreates a task from an attached task backup file',
+        description=textwrap.dedent("""
+            The backup import process is as follows:
+
+            The first request POST /api/tasks/backup will initiate file upload and will create
+            the rq job on the server in which the process of a task creating from an uploaded backup
+            will be carried out.
+
+            After initiating the backup upload, you will receive an rq_id parameter.
+            Make sure to include this parameter as a query parameter in your subsequent requests
+            to track the status of the task creation.
+            Once the task has been successfully created, the server will return the id of the newly created task.
+        """),
         parameters=[
+            *ORGANIZATION_OPEN_API_PARAMETERS,
             OpenApiParameter('location', description='Where to import the backup file from',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list(), default=Location.LOCAL),
@@ -791,27 +827,26 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('rq_id', description='rq id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=TaskFileSerializer(required=False),
+        # TODO: for some reason the code generated by the openapi generator from schema with different serializers
+        # contains only one serializer, need to fix that.
+        # https://github.com/OpenAPITools/openapi-generator/issues/6126
         responses={
-            '201': OpenApiResponse(description='The task has been imported'), # or better specify {id: task_id}
-            '202': OpenApiResponse(description='Importing a backup file has been started'),
+            # 201: OpenApiResponse(inline_serializer("ImportedTaskIdSerializer", fields={"id": serializers.IntegerField(required=True)})
+            '201': OpenApiResponse(description='The task has been imported'),
+            '202': OpenApiResponse(RqIdSerializer, description='Importing a backup file has been started'),
         })
-    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$', serializer_class=TaskFileSerializer(required=False))
+
+    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$',
+        serializer_class=None,
+        parser_classes=_UPLOAD_PARSER_CLASSES)
     def import_backup(self, request, pk=None):
         return self.deserialize(request, backup.import_task)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_backup_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
+    @tus_chunk_action(detail=False, suffix_base="backup")
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
 
@@ -840,6 +875,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def export_backup(self, request, pk=None):
         return self.serialize(request, backup.export)
 
+    @transaction.atomic
     def perform_update(self, serializer):
         instance = serializer.instance
 
@@ -852,54 +888,102 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if updated_instance.project:
             updated_instance.project.save()
 
+    @transaction.atomic
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(
-            serializer,
+        serializer.save(
             owner=self.request.user,
             organization=self.request.iam_context['organization']
         )
+
         if serializer.instance.project:
             db_project = serializer.instance.project
             db_project.save()
             assert serializer.instance.organization == db_project.organization
 
-    def perform_destroy(self, instance):
-        task_dirname = instance.get_dirname()
-        super().perform_destroy(instance)
-        shutil.rmtree(task_dirname, ignore_errors=True)
-        if instance.data and not instance.data.tasks.all():
-            shutil.rmtree(instance.data.get_data_dirname(), ignore_errors=True)
-            instance.data.delete()
-        if instance.project:
-            db_project = instance.project
-            db_project.save()
+        # Required for the extra summary information added in the queryset
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
-
-    @extend_schema(summary='Method returns a list of jobs for a specific task',
-        responses=JobReadSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer(many=True),
-        # Remove regular list() parameters from swagger schema
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
-    def jobs(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        queryset = Job.objects.filter(segment__task_id=pk)
-        serializer = JobReadSerializer(queryset, many=True,
-            context={"request": request})
-
-        return Response(serializer.data)
+    def _is_data_uploading(self) -> bool:
+        return 'data' in self.action
 
     # UploadMixin method
     def get_upload_dir(self):
         if 'annotations' in self.action:
             return self._object.get_tmp_dirname()
-        elif 'data' in self.action:
+        elif self._is_data_uploading():
             return self._object.data.get_upload_dirname()
         elif 'backup' in self.action:
             return backup.get_backup_dirname()
         return ""
 
+    def _prepare_upload_info_entry(self, filename: str) -> str:
+        filename = osp.normpath(filename)
+        upload_dir = self.get_upload_dir()
+        return osp.join(upload_dir, filename)
+
+    def _maybe_append_upload_info_entry(self, filename: str):
+        task_data = cast(Data, self._object.data)
+
+        filename = self._prepare_upload_info_entry(filename)
+        task_data.client_files.get_or_create(file=filename)
+
+    def _append_upload_info_entries(self, client_files: List[Dict[str, Any]]):
+        # batch version without optional insertion
+        task_data = cast(Data, self._object.data)
+        task_data.client_files.bulk_create([
+            ClientFile(**cf, data=task_data) for cf in client_files
+        ])
+
+    def _sort_uploaded_files(self, uploaded_files: List[str], ordering: List[str]) -> List[str]:
+        """
+        Applies file ordering for the "predefined" file sorting method of the task creation.
+
+        Read more: https://github.com/opencv/cvat/issues/5061
+        """
+
+        expected_files = ordering
+
+        uploaded_file_names = set(uploaded_files)
+        mismatching_files = list(uploaded_file_names.symmetric_difference(expected_files))
+        if mismatching_files:
+            DISPLAY_ENTRIES_COUNT = 5
+            mismatching_display = [
+                fn + (" (extra)" if fn in uploaded_file_names else " (missing)")
+                for fn in mismatching_files[:DISPLAY_ENTRIES_COUNT]
+            ]
+            remaining_count = len(mismatching_files) - DISPLAY_ENTRIES_COUNT
+            raise ValidationError(
+                "Uploaded files do not match the '{}' field contents. "
+                "Please check the uploaded data and the list of uploaded files. "
+                "Mismatching files: {}{}"
+                .format(
+                    self._UPLOAD_FILE_ORDER_FIELD,
+                    ", ".join(mismatching_display),
+                    f" (and {remaining_count} more). " if 0 < remaining_count else ""
+                )
+            )
+
+        return list(expected_files)
+
     # UploadMixin method
+    def init_tus_upload(self, request):
+        response = super().init_tus_upload(request)
+
+        if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
+            self._maybe_append_upload_info_entry(response['Upload-Filename'])
+
+        return response
+
+    # UploadMixin method
+    def append_files(self, request):
+        client_files = self._get_request_client_files(request)
+        if self._is_data_uploading() and client_files:
+            self._append_upload_info_entries(client_files)
+
+        return super().append_files(request)
+
+    # UploadMixin method
+    @transaction.atomic
     def upload_finished(self, request):
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
@@ -911,9 +995,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return _import_annotations(
                         request=request,
                         filename=annotation_file,
-                        rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, self._object.pk),
+                        rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
                         rq_func=dm.task.import_task_annotations,
-                        pk=self._object.pk,
+                        db_obj=self._object,
                         format_name=format_name,
                         conv_mask_to_poly=conv_mask_to_poly,
                     )
@@ -924,19 +1008,41 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             task_data = self._object.data
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
-            data = dict(serializer.validated_data.items())
-            uploaded_files = task_data.get_uploaded_files()
-            uploaded_files.extend(data.get('client_files'))
-            serializer.validated_data.update({'client_files': uploaded_files})
 
+            # Append new files to the previous ones
+            if uploaded_files := serializer.validated_data.get('client_files', None):
+                self._append_upload_info_entries(uploaded_files)
+                serializer.validated_data['client_files'] = [] # avoid file info duplication
+
+            # Refresh the db value with the updated file list and other request parameters
             db_data = serializer.save()
             self._object.data = db_data
             self._object.save()
-            data = {k: v for k, v in serializer.data.items()}
+
+            # Create a temporary copy of the parameters we will try to create the task with
+            data = copy(serializer.data)
+
+            for optional_field in ['job_file_mapping', 'server_files_exclude']:
+                if optional_field in serializer.validated_data:
+                    data[optional_field] = serializer.validated_data[optional_field]
+
+            if (
+                data['sorting_method'] == models.SortingMethod.PREDEFINED
+                and (uploaded_files := data['client_files'])
+                and (
+                    uploaded_file_order := serializer.validated_data[self._UPLOAD_FILE_ORDER_FIELD]
+                )
+            ):
+                # In the case of predefined sorting and custom file ordering,
+                # the requested order must be applied
+                data['client_files'] = self._sort_uploaded_files(
+                    uploaded_files, uploaded_file_order
+                )
 
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
             data['copy_data'] = serializer.validated_data['copy_data']
+
             if data['use_cache']:
                 self._object.data.storage_method = StorageMethodChoice.CACHE
                 self._object.data.save(update_fields=['storage_method'])
@@ -946,11 +1052,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if db_data.cloud_storage:
                 self._object.data.storage = StorageChoice.CLOUD_STORAGE
                 self._object.data.save(update_fields=['storage'])
+            if 'stop_frame' not in serializer.validated_data:
                 # if the value of stop_frame is 0, then inside the function we cannot know
                 # the value specified by the user or it's default value from the database
-            if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
-            task.create(self._object.id, data)
+            task.create(self._object, data, request)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         elif self.action == 'import_backup':
             filename = request.query_params.get("filename", "")
@@ -958,19 +1064,80 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 tmp_dir = backup.get_backup_dirname()
                 backup_file = os.path.join(tmp_dir, filename)
                 if os.path.isfile(backup_file):
-                    return backup.import_task(request, filename=backup_file)
+                    return backup.import_task(
+                        request,
+                        settings.CVAT_QUEUES.IMPORT_DATA.value,
+                        filename=backup_file,
+                    )
                 return Response(data='No such file were uploaded',
                         status=status.HTTP_400_BAD_REQUEST)
-            return backup.import_task(request)
+            return backup.import_task(request, settings.CVAT_QUEUES.IMPORT_DATA.value)
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
+    _UPLOAD_FILE_ORDER_FIELD = 'upload_file_order'
+    assert _UPLOAD_FILE_ORDER_FIELD in DataSerializer().fields
+
     @extend_schema(methods=['POST'],
-        summary='Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/',
-        request=DataSerializer,
+        summary="Method permanently attaches data (images, video, etc.) to a task",
+        description=textwrap.dedent("""\
+            Allows to upload data to a task.
+            Supports the TUS open file uploading protocol (https://tus.io/).
+
+            Supports the following protocols:
+
+            1. A single Data request
+
+            and
+
+            2.1. An Upload-Start request
+            2.2.a. Regular TUS protocol requests (Upload-Length + Chunks)
+            2.2.b. Upload-Multiple requests
+            2.3. An Upload-Finish request
+
+            Requests:
+            - Data - POST, no extra headers or 'Upload-Start' + 'Upload-Finish' headers.
+              Contains data in the body.
+            - Upload-Start - POST, has an 'Upload-Start' header. No body is expected.
+            - Upload-Length - POST, has an 'Upload-Length' header (see the TUS specification)
+            - Chunk - HEAD/PATCH (see the TUS specification). Sent to /data/<file id> endpoints.
+            - Upload-Finish - POST, has an 'Upload-Finish' header. Can contain data in the body.
+            - Upload-Multiple - POST, has an 'Upload-Multiple' header. Contains data in the body.
+
+            The 'Upload-Finish' request allows to specify the uploaded files should be ordered.
+            This may be needed if the files can be sent unordered. To state that the input files
+            are sent ordered, pass an empty list of files in the '{upload_file_order_field}' field.
+            If the files are sent unordered, the ordered file list is expected
+            in the '{upload_file_order_field}' field. It must be a list of string file paths,
+            relative to the dataset root.
+
+            Example:
+            files = [
+                "cats/cat_1.jpg",
+                "dogs/dog2.jpg",
+                "image_3.png",
+                ...
+            ]
+
+            Independently of the file declaration field used
+            ('client_files', 'server_files', etc.), when the 'predefined'
+            sorting method is selected, the uploaded files will be ordered according
+            to the '.jsonl' manifest file, if it is found in the list of files.
+            For archives (e.g. '.zip'), a manifest file ('*.jsonl') is required when using
+            the 'predefined' file ordering. Such file must be provided next to the archive
+            in the list of files. Read more about manifest files here:
+            https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/
+
+            After all data is sent, the operation status can be retrieved via
+            the /status endpoint.
+        """.format_map(
+            {'upload_file_order_field': _UPLOAD_FILE_ORDER_FIELD}
+        )),
+        # TODO: add a tutorial on this endpoint in the REST API docs
+        request=DataSerializer(required=False),
         parameters=[
             OpenApiParameter('Upload-Start', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
-                description='Initializes data upload. No data should be sent with this header'),
+                description='Initializes data upload. Optionally, can include upload metadata in the request body.'),
             OpenApiParameter('Upload-Multiple', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
                 description='Indicates that data with this request are single or multiple files that should be attached to a task'),
             OpenApiParameter('Upload-Finish', location=OpenApiParameter.HEADER, type=OpenApiTypes.BOOL,
@@ -979,21 +1146,23 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '202': OpenApiResponse(description=''),
         })
-    @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
+    @extend_schema(methods=['GET'],
+        summary='Method returns data for a specific task',
         parameters=[
             OpenApiParameter('type', location=OpenApiParameter.QUERY, required=False,
-                type=OpenApiTypes.STR, enum=['chunk', 'frame', 'preview', 'context_image'],
+                type=OpenApiTypes.STR, enum=['chunk', 'frame', 'context_image'],
                 description='Specifies the type of the requested data'),
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
-                description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
+                description="Specifies the quality level of the requested data"),
             OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
-                description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
+                description="A unique number value identifying chunk or frame"),
         ],
         responses={
             '200': OpenApiResponse(description='Data of a specific type'),
         })
-    @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$')
+    @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$',
+        parser_classes=_UPLOAD_PARSER_CLASSES)
     def data(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
@@ -1017,19 +1186,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 self._object.dimension)
 
             return data_getter(request, self._object.data.start_frame,
-                self._object.data.stop_frame, self._object.data, self._object.data)
+                self._object.data.stop_frame, self._object.data)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_data_file',
-        summary="Allows to upload a file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex)
+    @tus_chunk_action(detail=True, suffix_base="data")
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1063,12 +1222,22 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '400': OpenApiResponse(description='Exporting without data is not allowed'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['PUT'], summary='Method allows to upload task annotations',
+    @extend_schema(methods=['PUT'], summary='Method allows to upload task annotations or edit existing annotations',
+        description=textwrap.dedent("""
+            To check the status of the process of uploading a task annotations from a file:
+
+            After initiating the annotations upload, you will receive an rq_id parameter.
+            Make sure to include this parameter as a query parameter in your subsequent
+            PUT /api/tasks/id/annotations requests to track the status of the annotations upload.
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
+            OpenApiParameter('rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description='rq id'),
         ],
         request=PolymorphicProxySerializer('TaskAnnotationsUpdate',
+            # TODO: refactor to use required=False when possible
             serializers=[LabeledDataSerializer, AnnotationFileSerializer, OpenApiTypes.NONE],
             resource_type_field_name=None
         ),
@@ -1078,7 +1247,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['POST'],
-        summary="Method allows to upload task annotations from a local file or a cloud storage",
+        summary="Method allows to initialize the  process of upload task annotations from a local or a cloud storage file",
+        description=textwrap.dedent("""
+            The request POST /api/tasks/id/annotations will initiate file upload and will create
+            the rq job on the server in which the process of annotations uploading from file
+            will be carried out. Please, use the PUT /api/tasks/id/annotations endpoint for checking status of the process.
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
@@ -1094,12 +1268,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
         request=PolymorphicProxySerializer('TaskAnnotationsWrite',
+            # TODO: refactor to use required=False when possible
             serializers=[AnnotationFileSerializer, OpenApiTypes.NONE],
             resource_type_field_name=None
         ),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
-            '202': OpenApiResponse(description='Uploading has been started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
     @extend_schema(methods=['PATCH'], summary='Method performs a partial update of annotations in a specific task',
@@ -1116,14 +1291,13 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=None)
+        serializer_class=None, parser_classes=_UPLOAD_PARSER_CLASSES)
     def annotations(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
             if self._object.data:
                 return self.export_annotations(
                     request=request,
-                    pk=pk,
                     db_obj=self._object,
                     export_func=_export_annotations,
                     callback=dm.views.export_task_annotations,
@@ -1133,17 +1307,19 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data="Exporting annotations from a task without data is not allowed",
                     status=status.HTTP_400_BAD_REQUEST)
         elif request.method == 'POST' or request.method == 'OPTIONS':
+            # NOTE: initialization process of annotations import
+            format_name = request.query_params.get('format', '')
             return self.import_annotations(
                 request=request,
-                pk=pk,
                 db_obj=self._object,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_task_annotations,
-                rq_id = "{}@/api/tasks/{}/annotations/upload".format(request.user, pk)
+                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
             )
         elif request.method == 'PUT':
-            format_name = request.query_params.get('format')
+            format_name = request.query_params.get('format', '')
             if format_name:
+                # NOTE: continue process of import annotations
                 use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
                 conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
                 obj = self._object if use_settings else request.query_params
@@ -1152,9 +1328,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 )
                 return _import_annotations(
                     request=request,
-                    rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, pk),
+                    rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
                     rq_func=dm.task.import_task_annotations,
-                    pk=pk,
+                    db_obj=self._object,
                     format_name=format_name,
                     location_conf=location_conf,
                     conv_mask_to_poly=conv_mask_to_poly
@@ -1180,18 +1356,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='tasks_partial_update_annotations_file',
-        summary="Allows to upload an annotation file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        operation_id='tasks_annotations_file_retrieve_status',
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
+    @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1203,8 +1368,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
-        self.get_object() # force to call check_object_permissions
-        response = self._get_rq_response(queue="default", job_id=f"/api/tasks/{pk}")
+        self.get_object() # force call of check_object_permissions()
+        response = self._get_rq_response(
+            queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
+            job_id=f"create:task.id{pk}-by-{request.user}"
+        )
         serializer = RqStatusSerializer(data=response)
 
         if serializer.is_valid(raise_exception=True):
@@ -1266,7 +1434,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
         db_data = db_task.data
@@ -1304,12 +1472,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset')
     def dataset_export(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
 
         if self._object.data:
             return self.export_annotations(
                 request=request,
-                pk=pk,
                 db_obj=self._object,
                 export_func=_export_annotations,
                 callback=dm.views.export_task_as_dataset)
@@ -1317,39 +1484,84 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(data="Exporting a dataset from a task without data is not allowed",
                 status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(summary='Method returns a preview image for the task',
+        responses={
+            '200': OpenApiResponse(description='Task image preview'),
+            '404': OpenApiResponse(description='Task image preview not found'),
+        })
+    @action(detail=True, methods=['GET'], url_path='preview')
+    def preview(self, request, pk):
+        self._object = self.get_object() # call check_object_permissions as well
+
+        if not self._object.data:
+            return HttpResponseNotFound('Task image preview not found')
+
+        data_getter = DataChunkGetter(
+            data_type='preview',
+            data_quality='compressed',
+            data_num=self._object.data.start_frame,
+            task_dim=self._object.dimension
+        )
+
+        return data_getter(request, self._object.data.start_frame,
+            self._object.data.stop_frame, self._object.data)
+
+
 @extend_schema(tags=['jobs'])
 @extend_schema_view(
+    create=extend_schema(
+        summary='Method creates a new job in the task',
+        request=JobWriteSerializer,
+        responses={
+            '201': JobReadSerializer, # check JobWriteSerializer.to_representation
+        }),
     retrieve=extend_schema(
         summary='Method returns details of a job',
         responses={
             '200': JobReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of jobs according to query parameters',
+        summary='Method returns a paginated list of jobs',
         responses={
             '200': JobReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a job',
-        request=JobWriteSerializer,
+        request=JobWriteSerializer(partial=True),
         responses={
             '200': JobReadSerializer, # check JobWriteSerializer.to_representation
-        })
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a job and its related annotations',
+        description=textwrap.dedent("""\
+            Please note, that not every job can be removed. Currently,
+            it is only available for Ground Truth jobs.
+            """),
+        responses={
+            '204': OpenApiResponse(description='The job has been deleted'),
+        }),
 )
-
-class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, PartialUpdateModelMixin, UploadMixin, AnnotationMixin
+class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin,
+    UploadMixin, AnnotationMixin
 ):
-    queryset = Job.objects.all().select_related('segment__task__data').prefetch_related(
-        'segment__task__label_set', 'segment__task__project__label_set',
-        'segment__task__label_set__sublabels__attributespec_set',
-        'segment__task__project__label_set__sublabels__attributespec_set',
-        'segment__task__label_set__attributespec_set',
-        'segment__task__project__label_set__attributespec_set')
+    queryset = Job.objects.select_related('assignee', 'segment__task__data',
+        'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
+    ).annotate(
+        Count('issues', distinct=True),
+        task_labels_count=Count('segment__task__label',
+            filter=Q(segment__task__label__parent__isnull=True), distinct=True),
+        proj_labels_count=Count('segment__task__project__label',
+            filter=Q(segment__task__project__label__parent__isnull=True), distinct=True)
+    ).all()
+
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
-    filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date']
-    ordering_fields = filter_fields
+    filter_fields = list(search_fields) + [
+        'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type'
+    ]
+    simple_filters = list(set(filter_fields) - {'id', 'updated_date'})
+    ordering_fields = list(filter_fields)
     ordering = "-id"
     lookup_fields = {
         'dimension': 'segment__task__dimension',
@@ -1359,6 +1571,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'project_name': 'segment__task__project__name',
         'assignee': 'assignee__username'
     }
+    IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('job', {}, 'annotations', {})
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1375,27 +1588,38 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return JobWriteSerializer
 
+    @transaction.atomic
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+
+        # Required for the extra summary information added in the queryset
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
+
+    def perform_destroy(self, instance):
+        if instance.type != JobType.GROUND_TRUTH:
+            raise ValidationError("Only ground truth jobs can be removed")
+
+        return super().perform_destroy(instance)
+
     # UploadMixin method
     def get_upload_dir(self):
-        task = self._object.segment.task
-        return task.get_tmp_dirname()
+        return self._object.get_tmp_dirname()
 
     # UploadMixin method
     def upload_finished(self, request):
-        task = self._object.segment.task
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
-            tmp_dir = task.get_tmp_dirname()
+            tmp_dir = self.get_upload_dir()
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
                 return _import_annotations(
                         request=request,
                         filename=annotation_file,
-                        rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, self._object.pk),
+                        rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
                         rq_func=dm.task.import_job_annotations,
-                        pk=self._object.pk,
+                        db_obj=self._object,
                         format_name=format_name,
                         conv_mask_to_poly=conv_mask_to_poly,
                     )
@@ -1436,7 +1660,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['POST'], summary='Method allows to upload job annotations',
+    @extend_schema(methods=['POST'],
+        summary='Method allows to initialize the process of the job annotation upload from a local file or a cloud storage',
+        description=textwrap.dedent("""
+            The request POST /api/jobs/id/annotations will initiate file upload and will create
+            the rq job on the server in which the process of annotations uploading from file
+            will be carried out. Please, use the PUT /api/jobs/id/annotations endpoint for checking status of the process.
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
@@ -1451,20 +1681,41 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             OpenApiParameter('filename', description='Annotation file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
         ],
-        request=AnnotationFileSerializer,
+        request=AnnotationFileSerializer(required=False),
         responses={
             '201': OpenApiResponse(description='Uploading has finished'),
-            '202': OpenApiResponse(description='Uploading has been started'),
+            '202': OpenApiResponse(RqIdSerializer, description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @extend_schema(methods=['PUT'], summary='Method performs an update of all annotations in a specific job',
+    @extend_schema(methods=['PUT'],
+                   summary='Method performs an update of all annotations in a specific job '
+                            'or used for uploading annotations from a file',
+        description=textwrap.dedent("""
+            To check the status of the process of uploading a job annotations from a file:
+
+            After initiating the annotations upload, you will receive an rq_id parameter.
+            Make sure to include this parameter as a query parameter in your subsequent
+            PUT /api/jobs/id/annotations requests to track the status of the annotations upload.
+        """),
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 description='Input format name\nYou can get the list of supported formats at:\n/server/annotation/formats'),
+            OpenApiParameter('location', description='where to import the annotation from',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                enum=Location.list()),
+            OpenApiParameter('cloud_storage_id', description='Storage id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+            OpenApiParameter('use_default_location', description='Use the location that was configured in the task to import annotation',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
+                default=True),
+            OpenApiParameter('filename', description='Annotation file name',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+            OpenApiParameter('rq_id', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
+                description='rq id'),
         ],
         request=PolymorphicProxySerializer(
             component_name='JobAnnotationsUpdate',
-            serializers=[LabeledDataSerializer, AnnotationFileSerializer],
+            serializers=[LabeledDataSerializer, AnnotationFileSerializer(required=False)],
             resource_type_field_name=None
         ),
         responses={
@@ -1486,13 +1737,12 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '204': OpenApiResponse(description='The annotation has been deleted'),
         })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
-        serializer_class=LabeledDataSerializer)
+        serializer_class=LabeledDataSerializer, parser_classes=_UPLOAD_PARSER_CLASSES)
     def annotations(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
         if request.method == 'GET':
             return self.export_annotations(
                 request=request,
-                pk=pk,
                 db_obj=self._object.segment.task,
                 export_func=_export_annotations,
                 callback=dm.views.export_job_annotations,
@@ -1500,13 +1750,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             )
 
         elif request.method == 'POST' or request.method == 'OPTIONS':
+            format_name = request.query_params.get('format', '')
             return self.import_annotations(
                 request=request,
-                pk=pk,
-                db_obj=self._object.segment.task,
+                db_obj=self._object,
                 import_func=_import_annotations,
                 rq_func=dm.task.import_job_annotations,
-                rq_id = "{}@/api/jobs/{}/annotations/upload".format(request.user, pk)
+                rq_id_template=self.IMPORT_RQ_ID_TEMPLATE
             )
 
         elif request.method == 'PUT':
@@ -1520,9 +1770,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 )
                 return _import_annotations(
                     request=request,
-                    rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, pk),
+                    rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
                     rq_func=dm.task.import_job_annotations,
-                    pk=pk,
+                    db_obj=self._object,
                     format_name=format_name,
                     location_conf=location_conf,
                     conv_mask_to_poly=conv_mask_to_poly
@@ -1552,17 +1802,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data)
 
 
-    @extend_schema(methods=['PATCH'],
-        operation_id='jobs_partial_update_annotations_file',
-        summary="Allows to upload an annotation file chunk. "
-            "Implements TUS file uploading protocol.",
-        request=OpenApiTypes.BINARY,
-        responses={}
-    )
-    @extend_schema(methods=['HEAD'],
-        summary="Implements TUS file uploading protocol."
-    )
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
+    @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
         return self.append_tus_chunk(request, file_id)
@@ -1596,57 +1836,42 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset')
     def dataset_export(self, request, pk):
-        self._object = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force call of check_object_permissions()
 
         return self.export_annotations(
             request=request,
-            pk=pk,
             db_obj=self._object.segment.task,
             export_func=_export_annotations,
             callback=dm.views.export_job_as_dataset
         )
 
-    @extend_schema(summary='Method returns list of issues for the job',
-        responses=IssueReadSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer(many=True),
-        # Remove regular list() parameters from swagger schema
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
-    def issues(self, request, pk):
-        db_job = self.get_object()
-        queryset = db_job.issues
-        serializer = IssueReadSerializer(queryset,
-            context={'request': request}, many=True)
-
-        return Response(serializer.data)
-
-
     @extend_schema(summary='Method returns data for a specific job',
         parameters=[
             OpenApiParameter('type', description='Specifies the type of the requested data',
                 location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.STR,
-                enum=['chunk', 'frame', 'preview', 'context_image']),
+                enum=['chunk', 'frame', 'context_image']),
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=False,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
-                description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
+                description="Specifies the quality level of the requested data"),
             OpenApiParameter('number', location=OpenApiParameter.QUERY, required=False, type=OpenApiTypes.INT,
-                description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
+                description="A unique number value identifying chunk or frame"),
             ],
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Data of a specific type'),
         })
-    @action(detail=True, methods=['GET'])
+    @action(detail=True, methods=['GET'],
+        simple_filters=[] # type query parameter conflicts with the filter
+    )
     def data(self, request, pk):
         db_job = self.get_object() # call check_object_permissions as well
         data_type = request.query_params.get('type', None)
         data_num = request.query_params.get('number', None)
         data_quality = request.query_params.get('quality', 'compressed')
 
-        data_getter = DataChunkGetter(data_type, data_num, data_quality,
-            db_job.segment.task.dimension)
+        data_getter = JobDataGetter(db_job, data_type, data_num, data_quality)
 
         return data_getter(request, db_job.segment.start_frame,
-            db_job.segment.stop_frame, db_job.segment.task.data, db_job)
+            db_job.segment.stop_frame, db_job.segment.task.data)
 
 
     @extend_schema(summary='Method provides a meta information about media files which are related with the job',
@@ -1661,7 +1886,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
     def metadata(self, request, pk):
-        self.get_object() #force to call check_object_permissions
+        self.get_object() # force call of check_object_permissions()
         db_job = models.Job.objects.prefetch_related(
             'segment',
             'segment__task',
@@ -1673,8 +1898,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         db_data = db_job.segment.task.data
         start_frame = db_job.segment.start_frame
         stop_frame = db_job.segment.stop_frame
-        data_start_frame = db_data.start_frame + start_frame * db_data.get_frame_step()
-        data_stop_frame = db_data.start_frame + stop_frame * db_data.get_frame_step()
+        frame_step = db_data.get_frame_step()
+        data_start_frame = db_data.start_frame + start_frame * frame_step
+        data_stop_frame = min(db_data.stop_frame, db_data.start_frame + stop_frame * frame_step)
+        frame_set = db_job.segment.frame_set
 
         if request.method == 'PATCH':
             serializer = DataMetaWriteSerializer(instance=db_data, data=request.data)
@@ -1694,10 +1921,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if hasattr(db_data, 'video'):
             media = [db_data.video]
         else:
-            media = list(db_data.images.filter(
-                frame__gte=data_start_frame,
-                frame__lte=data_stop_frame,
-            ).all())
+            media = [
+                # Insert placeholders if frames are skipped
+                # We could skip them here too, but UI can't decode chunks then
+                f if f.frame in frame_set else SimpleNamespace(
+                    path=f'placeholder.jpg', width=f.width, height=f.height
+                )
+                for f in db_data.images.filter(
+                    frame__gte=data_start_frame,
+                    frame__lte=data_stop_frame,
+                ).all()
+            ]
 
         # Filter data with segment size
         # Should data.size also be cropped by segment size?
@@ -1707,12 +1941,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         )
         db_data.start_frame = data_start_frame
         db_data.stop_frame = data_stop_frame
+        db_data.size = len(frame_set)
+        db_data.included_frames = db_job.segment.frames or None
 
         frame_meta = [{
             'width': item.width,
             'height': item.height,
             'name': item.path,
-            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+            'related_files': item.related_files.count() if hasattr(item, 'related_files') else 0
         } for item in media]
 
         db_data.frames = frame_meta
@@ -1720,22 +1956,24 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
-    @extend_schema(summary='The action returns the list of tracked changes for the job',
+    @extend_schema(summary='Method returns a preview image for the job',
         responses={
-            '200': JobCommitSerializer(many=True),
+            '200': OpenApiResponse(description='Job image preview'),
         })
-    @action(detail=True, methods=['GET'], serializer_class=None)
-    def commits(self, request, pk):
-        db_job = self.get_object()
-        queryset = db_job.commits.order_by('-id')
+    @action(detail=True, methods=['GET'], url_path='preview')
+    def preview(self, request, pk):
+        self._object = self.get_object() # call check_object_permissions as well
 
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = JobCommitSerializer(page, context={'request': request}, many=True)
-            return self.get_paginated_response(serializer.data)
+        data_getter = DataChunkGetter(
+            data_type='preview',
+            data_quality='compressed',
+            data_num=self._object.segment.start_frame,
+            task_dim=self._object.segment.task.dimension
+        )
 
-        serializer = JobCommitSerializer(queryset, context={'request': request}, many=True)
-        return Response(serializer.data)
+        return data_getter(request, self._object.segment.start_frame,
+           self._object.segment.stop_frame, self._object.segment.task.data)
+
 
 @extend_schema(tags=['issues'])
 @extend_schema_view(
@@ -1745,19 +1983,20 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': IssueReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of issues according to query parameters',
+        summary='Method returns a paginated list of issues',
         responses={
             '200': IssueReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an issue',
-        request=IssueWriteSerializer,
+        request=IssueWriteSerializer(partial=True),
         responses={
             '200': IssueReadSerializer, # check IssueWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates an issue',
         request=IssueWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': IssueReadSerializer, # check IssueWriteSerializer.to_representation
         }),
@@ -1768,24 +2007,30 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = Issue.objects.all().order_by('-id')
+    queryset = Issue.objects.prefetch_related(
+        'job__segment__task', 'owner', 'assignee', 'job'
+    ).all()
+
     iam_organization_field = 'job__segment__task__organization'
     search_fields = ('owner', 'assignee')
-    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved']
+    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved', 'frame_id']
+    simple_filters = list(search_fields) + ['job_id', 'task_id', 'resolved', 'frame_id']
+    ordering_fields = list(filter_fields)
     lookup_fields = {
         'owner': 'owner__username',
         'assignee': 'assignee__username',
-        'job_id': 'job__id',
+        'job_id': 'job',
         'task_id': 'job__segment__task__id',
+        'frame_id': 'frame',
     }
-    ordering_fields = filter_fields
     ordering = '-id'
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = IssuePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -1799,23 +2044,7 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return IssueWriteSerializer
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(serializer, owner=self.request.user)
-
-    @extend_schema(summary='The action returns all comments of a specific issue',
-        responses=CommentReadSerializer(many=True)) # Duplicate to still get 'list' op. name
-    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer(many=True),
-        # Remove regular list() parameters from swagger schema
-        # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        pagination_class=None, filter_fields=None, search_fields=None, ordering_fields=None)
-    def comments(self, request, pk):
-        # TODO: remove this endpoint? It is totally covered by issue body.
-
-        db_issue = self.get_object()
-        queryset = db_issue.comments
-        serializer = CommentReadSerializer(queryset,
-            context={'request': request}, many=True)
-
-        return Response(serializer.data)
+        serializer.save(owner=self.request.user)
 
 @extend_schema(tags=['comments'])
 @extend_schema_view(
@@ -1825,19 +2054,20 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': CommentReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of comments according to query parameters',
+        summary='Method returns a paginated list of comments',
         responses={
-            '200':CommentReadSerializer(many=True),
+            '200': CommentReadSerializer(many=True),
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a comment',
-        request=CommentWriteSerializer,
+        request=CommentWriteSerializer(partial=True),
         responses={
             '200': CommentReadSerializer, # check CommentWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates a comment',
         request=CommentWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': CommentReadSerializer, # check CommentWriteSerializer.to_representation
         }),
@@ -1848,19 +2078,29 @@ class IssueViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
 )
 class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, CreateModelMixin, DestroyModelMixin,
+    mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = Comment.objects.all().order_by('-id')
+    queryset = Comment.objects.prefetch_related(
+        'issue', 'issue__job', 'owner'
+    ).all()
+
     iam_organization_field = 'issue__job__segment__task__organization'
     search_fields = ('owner',)
-    filter_fields = list(search_fields) + ['id', 'issue_id']
-    ordering_fields = filter_fields
+    filter_fields = list(search_fields) + ['id', 'issue_id', 'frame_id', 'job_id']
+    simple_filters = list(search_fields) + ['issue_id', 'frame_id', 'job_id']
+    ordering_fields = list(filter_fields)
     ordering = '-id'
-    lookup_fields = {'owner': 'owner__username', 'issue_id': 'issue__id'}
+    lookup_fields = {
+        'owner': 'owner__username',
+        'issue_id': 'issue__id',
+        'job_id': 'issue__job__id',
+        'frame_id': 'issue__frame',
+    }
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = CommentPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -1874,33 +2114,187 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return CommentWriteSerializer
 
     def perform_create(self, serializer, **kwargs):
-        super().perform_create(serializer, owner=self.request.user)
+        serializer.save(owner=self.request.user)
+
+
+@extend_schema(tags=['labels'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of a label',
+        responses={
+            '200': LabelSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of labels',
+        parameters=[
+            # These filters are implemented differently from others
+            OpenApiParameter('job_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for job id'),
+            OpenApiParameter('task_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for task id'),
+            OpenApiParameter('project_id', type=OpenApiTypes.INT,
+                description='A simple equality filter for project id'),
+            *ORGANIZATION_OPEN_API_PARAMETERS
+        ],
+        responses={
+            '200': LabelSerializer(many=True),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in a label'
+        'To modify a sublabel, please use the PATCH method of the parent label',
+        request=LabelSerializer(partial=True),
+        responses={
+            '200': LabelSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a label. '
+        'To delete a sublabel, please use the PATCH method of the parent label',
+        responses={
+            '204': OpenApiResponse(description='The label has been deleted'),
+        })
+)
+class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
+    mixins.RetrieveModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
+):
+    queryset = Label.objects.prefetch_related(
+        'attributespec_set',
+        'sublabels__attributespec_set',
+        'task',
+        'task__owner',
+        'task__assignee',
+        'task__organization',
+        'project',
+        'project__owner',
+        'project__assignee',
+        'project__organization'
+    ).all()
+
+    iam_organization_field = ('task__organization', 'project__organization')
+
+    search_fields = ('name', 'parent')
+    filter_fields = list(search_fields) + ['id', 'type', 'color', 'parent_id']
+    simple_filters = list(set(filter_fields) - {'id'})
+    ordering_fields = list(filter_fields)
+    lookup_fields = {
+        'parent': 'parent__name',
+    }
+    ordering = 'id'
+    serializer_class = LabelSerializer
+
+    def get_queryset(self):
+        if self.action == 'list':
+            job_id = self.request.GET.get('job_id', None)
+            task_id = self.request.GET.get('task_id', None)
+            project_id = self.request.GET.get('project_id', None)
+            if sum(v is not None for v in [job_id, task_id, project_id]) > 1:
+                raise ValidationError(
+                    "job_id, task_id and project_id parameters cannot be used together",
+                    code=status.HTTP_400_BAD_REQUEST
+                )
+
+            if job_id:
+                # NOTE: This filter is too complex to be implemented by other means
+                # It requires the following filter query:
+                # (
+                #  project__task__segment__job__id = job_id
+                #  OR
+                #  task__segment__job__id = job_id
+                # )
+                job = Job.objects.get(id=job_id)
+                self.check_object_permissions(self.request, job)
+                queryset = job.get_labels()
+            elif task_id:
+                # NOTE: This filter is too complex to be implemented by other means
+                # It requires the following filter query:
+                # (
+                #  project__task__id = task_id
+                #  OR
+                #  task_id = task_id
+                # )
+                task = Task.objects.get(id=task_id)
+                self.check_object_permissions(self.request, task)
+                queryset = task.get_labels()
+            elif project_id:
+                # NOTE: this check is to make behavior consistent with other source filters
+                project = Project.objects.get(id=project_id)
+                self.check_object_permissions(self.request, project)
+                queryset = project.get_labels()
+            else:
+                # In other cases permissions are checked already
+                queryset = super().get_queryset()
+                perm = LabelPermission.create_scope_list(self.request)
+                queryset = perm.filter(queryset)
+
+            # Include only 1st level labels in list responses
+            queryset = queryset.filter(parent__isnull=True)
+        else:
+            queryset = super().get_queryset()
+
+        return queryset
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs['local'] = True
+        return super().get_serializer(*args, **kwargs)
+
+    def perform_update(self, serializer):
+        if serializer.instance.parent is not None:
+            # NOTE: this can be relaxed when skeleton updates are implemented properly
+            raise ValidationError(
+                "Sublabels cannot be modified this way. "
+                "Please send a PATCH request with updated parent label data instead.",
+                code=status.HTTP_400_BAD_REQUEST)
+
+        return super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        if instance.parent is not None:
+            # NOTE: this can be relaxed when skeleton updates are implemented properly
+            raise ValidationError(
+                "Sublabels cannot be deleted this way. "
+                "Please send a PATCH request with updated parent label data instead.",
+                code=status.HTTP_400_BAD_REQUEST)
+
+        return super().perform_destroy(instance)
+
 
 @extend_schema(tags=['users'])
 @extend_schema_view(
     list=extend_schema(
-        summary='Method provides a paginated list of users registered on the server',
+        summary='Method returns a paginated list of users',
         responses={
-            '200': PolymorphicProxySerializer(component_name='MetaUser',
+            '200': PolymorphicProxySerializer(
+                component_name='MetaUser',
                 serializers=[
-                    UserSerializer, BasicUserSerializer,
-                ], resource_type_field_name=None),
+                    UserSerializer,
+                    BasicUserSerializer,
+                ],
+                resource_type_field_name=None,
+                many=True, # https://github.com/tfranzel/drf-spectacular/issues/910
+            ),
         }),
     retrieve=extend_schema(
         summary='Method provides information of a specific user',
         responses={
-            '200': PolymorphicProxySerializer(component_name='MetaUser',
+            '200': PolymorphicProxySerializer(
+                component_name='MetaUser',
                 serializers=[
-                    UserSerializer, BasicUserSerializer,
-                ], resource_type_field_name=None),
+                    UserSerializer,
+                    BasicUserSerializer,
+                ],
+                resource_type_field_name=None,
+            ),
         }),
     partial_update=extend_schema(
         summary='Method updates chosen fields of a user',
         responses={
-            '200': PolymorphicProxySerializer(component_name='MetaUser',
+            '200': PolymorphicProxySerializer(
+                component_name='MetaUser',
                 serializers=[
-                    UserSerializer, BasicUserSerializer,
-                ], resource_type_field_name=None),
+                    UserSerializer(partial=True),
+                    BasicUserSerializer(partial=True),
+                ],
+                resource_type_field_name=None,
+            ),
         }),
     destroy=extend_schema(
         summary='Method deletes a specific user from the server',
@@ -1911,15 +2305,17 @@ class CommentViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, PartialUpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
-    search_fields = ('username', 'first_name', 'last_name')
     iam_organization_field = 'memberships__organization'
 
-    filter_fields = ('id', 'is_active', 'username')
-    ordering_fields = filter_fields
+    search_fields = ('username', 'first_name', 'last_name')
+    filter_fields = list(search_fields) + ['id', 'is_active']
+    simple_filters = list(search_fields) + ['is_active']
+    ordering_fields = list(filter_fields)
     ordering = "-id"
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = UserPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -1966,7 +2362,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': CloudStorageReadSerializer,
         }),
     list=extend_schema(
-        summary='Returns a paginated list of storages according to query parameters',
+        summary='Returns a paginated list of storages',
         responses={
             '200': CloudStorageReadSerializer(many=True),
         }),
@@ -1977,13 +2373,14 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a cloud storage instance',
-        request=CloudStorageWriteSerializer,
+        request=CloudStorageWriteSerializer(partial=True),
         responses={
             '200': CloudStorageReadSerializer, # check CloudStorageWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates a cloud storage with a specified characteristics',
         request=CloudStorageWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             '201': CloudStorageReadSerializer, # check CloudStorageWriteSerializer.to_representation
         })
@@ -1992,15 +2389,20 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin
 ):
-    queryset = CloudStorageModel.objects.all().prefetch_related('data')
+    queryset = CloudStorageModel.objects.prefetch_related('data').all()
 
-    search_fields = ('provider_type', 'display_name', 'resource',
+    search_fields = ('provider_type', 'name', 'resource',
                     'credentials_type', 'owner', 'description')
     filter_fields = list(search_fields) + ['id']
-    ordering_fields = filter_fields
+    simple_filters = list(set(search_fields) - {'description'})
+    ordering_fields = list(filter_fields)
     ordering = "-id"
-    lookup_fields = {'owner': 'owner__username'}
+    lookup_fields = {'owner': 'owner__username', 'name': 'display_name'}
     iam_organization_field = 'organization'
+
+    # Multipart support is necessary here, as CloudStorageWriteSerializer
+    # contains a file field (key_file).
+    parser_classes = _UPLOAD_PARSER_CLASSES
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH'):
@@ -2010,6 +2412,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = CloudStoragePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
@@ -2026,16 +2429,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             owner=self.request.user,
             organization=self.request.iam_context['organization'])
 
-    def perform_destroy(self, instance):
-        cloud_storage_dirname = instance.get_storage_dirname()
-        super().perform_destroy(instance)
-        shutil.rmtree(cloud_storage_dirname, ignore_errors=True)
-
     def create(self, request, *args, **kwargs):
         try:
             response = super().create(request, *args, **kwargs)
-        except IntegrityError:
-            response = HttpResponseBadRequest('Same storage already exists')
         except ValidationError as exceptions:
             msg_body = ""
             for ex in exceptions.args:
@@ -2056,7 +2452,11 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         responses={
             '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)), description='A manifest content'),
-        })
+        },
+        deprecated=True,
+        description="This method is deprecated and will be removed in version 2.6.0. "
+                    "Please use the new version of API: /cloudstorages/id/content-v2/",
+    )
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
         storage = None
@@ -2076,7 +2476,84 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # need to update index
             manifest.set_index()
             manifest_files = [os.path.join(manifest_prefix, f) for f in manifest.data]
-            return Response(data=manifest_files, content_type="text/plain")
+            return Response(
+                data=manifest_files,
+                content_type='text/plain',
+                headers={'Deprecation': 'true'}
+            )
+
+        except CloudStorageModel.DoesNotExist:
+            message = f"Storage {pk} does not exist"
+            slogger.glob.error(message)
+            return HttpResponseNotFound(message)
+        except (ValidationError, PermissionDenied, NotFound) as ex:
+            msg = str(ex) if not isinstance(ex, ValidationError) else \
+                '\n'.join([str(d) for d in ex.detail])
+            slogger.cloud_storage[pk].info(msg)
+            return Response(data=msg, status=ex.status_code)
+        except Exception as ex:
+            slogger.glob.error(str(ex))
+            return Response("An internal error has occurred",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @extend_schema(summary='Method returns the content of the cloud storage',
+        parameters=[
+            OpenApiParameter('manifest_path', description='Path to the manifest file in a cloud storage',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('prefix', description='Prefix to filter data',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('next_token', description='Used to continue listing files in the bucket',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('page_size', location=OpenApiParameter.QUERY, type=OpenApiTypes.INT),
+        ],
+        responses={
+            '200': OpenApiResponse(response=CloudStorageContentSerializer, description='A manifest content'),
+        },
+    )
+    @action(detail=True, methods=['GET'], url_path='content-v2')
+    def content_v2(self, request, pk):
+        storage = None
+        try:
+            db_storage = self.get_object()
+            storage = db_storage_to_storage_instance(db_storage)
+            prefix = request.query_params.get('prefix')
+            page_size = request.query_params.get('page_size', str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE))
+            if not page_size.isnumeric():
+                return HttpResponseBadRequest('Wrong value for page_size was found')
+            page_size = min(int(page_size), settings.BUCKET_CONTENT_MAX_PAGE_SIZE)
+
+            # make api identical to share api
+            if prefix and prefix.startswith('/'):
+                prefix = prefix[1:]
+            next_token = request.query_params.get('next_token')
+
+            if (manifest_path := request.query_params.get('manifest_path')):
+                manifest_prefix = os.path.dirname(manifest_path)
+
+                full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
+                if not os.path.exists(full_manifest_path) or \
+                        datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
+                    storage.download_file(manifest_path, full_manifest_path)
+                manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
+                # need to update index
+                manifest.set_index()
+                try:
+                    start_index = int(next_token or '0')
+                except ValueError:
+                    return HttpResponseBadRequest('Wrong value for the next_token parameter was found.')
+                content = manifest.emulate_hierarchical_structure(
+                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
+            else:
+                content = storage.list_files_on_one_page(prefix, next_token, page_size,_use_sort=True)
+            for i in content['content']:
+                mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
+                if mime_type == 'zip':
+                    mime_type = 'archive'
+                i['mime_type'] = mime_type
+            serializer = CloudStorageContentSerializer(data=content)
+            serializer.is_valid(raise_exception=True)
+            content = serializer.data
+            return Response(data=content)
 
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
@@ -2095,47 +2572,25 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(summary='Method returns a preview image from a cloud storage',
         responses={
             '200': OpenApiResponse(description='Cloud Storage preview'),
+            '400': OpenApiResponse(description='Failed to get cloud storage preview'),
+            '404': OpenApiResponse(description='Cloud Storage preview not found'),
         })
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
-        storage = None
         try:
             db_storage = self.get_object()
-            if not os.path.exists(db_storage.get_preview_path()):
-                storage = db_storage_to_storage_instance(db_storage)
-                if not db_storage.manifests.count():
-                    raise ValidationError('Cannot get the cloud storage preview. There is no manifest file')
-                preview_path = None
-                for manifest_model in db_storage.manifests.all():
-                    manifest_prefix = os.path.dirname(manifest_model.filename)
-                    full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_model.filename)
-                    if not os.path.exists(full_manifest_path) or \
-                            datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
-                        storage.download_file(manifest_model.filename, full_manifest_path)
-                    manifest = ImageManifestManager(
-                        os.path.join(db_storage.get_storage_dirname(), manifest_model.filename),
-                        db_storage.get_storage_dirname()
-                    )
-                    # need to update index
-                    manifest.set_index()
-                    if not len(manifest):
-                        continue
-                    preview_info = manifest[0]
-                    preview_filename = ''.join([preview_info['name'], preview_info['extension']])
-                    preview_path = os.path.join(manifest_prefix, preview_filename)
-                    break
-                if not preview_path:
-                    msg = 'Cloud storage {} does not contain any images'.format(pk)
-                    slogger.cloud_storage[pk].info(msg)
-                    return HttpResponseBadRequest(msg)
+            cache = MediaCache()
 
-                with NamedTemporaryFile() as temp_image:
-                    storage.download_file(preview_path, temp_image.name)
-                    reader = ImageListReader([temp_image.name])
-                    preview = reader.get_preview(frame=0)
-                    preview.save(db_storage.get_preview_path())
-            content_type = mimetypes.guess_type(db_storage.get_preview_path())[0]
-            return HttpResponse(open(db_storage.get_preview_path(), 'rb').read(), content_type)
+            # The idea is try to define real manifest preview only for the storages that have related manifests
+            # because otherwise it can lead to extra calls to a bucket, that are usually not free.
+            if not db_storage.has_at_least_one_manifest:
+                result = cache.get_cloud_preview_with_mime(db_storage)
+                if not result:
+                    return HttpResponse(status=HTTPStatus.NO_CONTENT)
+                return HttpResponse(result[0], result[1])
+
+            preview, mime = cache.get_or_set_cloud_preview_with_mime(db_storage)
+            return HttpResponse(preview, mime)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
@@ -2191,12 +2646,159 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             msg = str(ex)
             return HttpResponseBadRequest(msg)
 
-def rq_handler(job, exc_type, exc_value, tb):
-    job.exc_info = "".join(
+@extend_schema(tags=['assets'])
+@extend_schema_view(
+    create=extend_schema(
+        summary='Method saves new asset on the server and attaches it to a corresponding guide',
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'file': {
+                        'type': 'string',
+                        'format': 'binary'
+                    }
+                }
+            }
+        },
+        responses={
+            '201': AssetReadSerializer,
+        }),
+    retrieve=extend_schema(
+        summary='Method returns an asset file',
+        responses={
+            '200': OpenApiResponse(description='Asset file')
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a specific asset from the server',
+        responses={
+            '204': OpenApiResponse(description='The asset has been deleted'),
+        }),
+)
+class AssetsViewSet(
+    viewsets.GenericViewSet, mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin, mixins.DestroyModelMixin
+):
+    queryset = Asset.objects.select_related(
+        'owner', 'guide', 'guide__project', 'guide__task', 'guide__project__organization', 'guide__task__organization',
+    ).all()
+    parser_classes=_UPLOAD_PARSER_CLASSES
+    search_fields = ()
+    ordering = "uuid"
+
+    def check_object_permissions(self, request, obj):
+        super().check_object_permissions(request, obj.guide)
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return AssetReadSerializer
+        else:
+            return AssetWriteSerializer
+
+    def create(self, request, *args, **kwargs):
+        file = request.data.get('file', None)
+        if not file:
+            raise ValidationError('Asset file was not provided')
+
+        if file.size / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
+            raise ValidationError(f'Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB')
+
+        if file.content_type not in settings.ASSET_SUPPORTED_TYPES:
+            raise ValidationError(f'File is not supported as an asset. Supported are {settings.ASSET_SUPPORTED_TYPES}')
+
+        guide_id = request.data.get('guide_id')
+        db_guide = AnnotationGuide.objects.prefetch_related('assets').get(pk=guide_id)
+        if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
+            raise ValidationError(f'Maximum number of assets per guide reached')
+
+        serializer = self.get_serializer(data={
+            'filename': file.name,
+            'guide_id': guide_id,
+        })
+
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        path = os.path.join(settings.ASSETS_ROOT, str(serializer.instance.uuid))
+        os.makedirs(path)
+        with open(os.path.join(path, file.name), 'wb+') as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
+
+    def perform_destroy(self, instance):
+        full_path = os.path.join(instance.get_asset_dir(), instance.filename)
+        if os.path.exists(full_path):
+            os.remove(full_path)
+        instance.delete()
+
+
+@extend_schema(tags=['guides'])
+@extend_schema_view(
+    create=extend_schema(
+        summary='Method creates a new annotation guide binded to a project or to a task',
+        request=AnnotationGuideWriteSerializer,
+        responses={
+            '201': AnnotationGuideReadSerializer,
+        }),
+    retrieve=extend_schema(
+        summary='Method returns details of a specific annotation guide',
+        responses={
+            '200': AnnotationGuideReadSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a specific annotation guide and all attached assets',
+        responses={
+            '204': OpenApiResponse(description='The annotation guide has been deleted'),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in an annotation guide',
+        request=AnnotationGuideWriteSerializer(partial=True),
+        responses={
+            '200': AnnotationGuideReadSerializer, # check TaskWriteSerializer.to_representation
+        })
+)
+class AnnotationGuidesViewSet(
+    viewsets.GenericViewSet, mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin, mixins.DestroyModelMixin, PartialUpdateModelMixin
+):
+    queryset = AnnotationGuide.objects.order_by('-id').select_related(
+        'project', 'project__owner', 'project__organization', 'task', 'task__owner', 'task__organization'
+    ).prefetch_related('assets').all()
+    search_fields = ()
+    ordering = "-id"
+    iam_organization_field = None
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return AnnotationGuideReadSerializer
+        else:
+            return AnnotationGuideWriteSerializer
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        serializer.instance.target.save()
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        serializer.instance.target.save()
+
+    def perform_destroy(self, instance):
+        (instance.project or instance.task).save()
+        instance.delete()
+
+def rq_exception_handler(rq_job, exc_type, exc_value, tb):
+    rq_job.meta["formatted_exception"] = "".join(
         traceback.format_exception_only(exc_type, exc_value))
-    job.save()
-    if "tasks" in job.id.split("/"):
-        return task.rq_handler(job, exc_type, exc_value, tb)
+    rq_job.save_meta()
 
     return True
 
@@ -2207,8 +2809,9 @@ def _download_file_from_bucket(db_storage, filename, key):
     with open(filename, 'wb+') as f:
         f.write(data.getbuffer())
 
-def _import_annotations(request, rq_id, rq_func, pk, format_name,
+def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                         filename=None, location_conf=None, conv_mask_to_poly=True):
+
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -2217,14 +2820,29 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    queue = django_rq.get_queue("default")
+    rq_id = request.query_params.get('rq_id')
+    rq_id_should_be_checked = bool(rq_id)
+    if not rq_id:
+        rq_id = rq_id_template.format(db_obj.pk, request.user)
+
+    queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
+
+    if rq_id_should_be_checked and rq_id_template.format(db_obj.pk, request.user) != rq_id:
+        return Response(status=status.HTTP_403_FORBIDDEN)
+
+    if rq_job and request.method == 'POST':
+        # If there is a previous job that has not been deleted
+        if rq_job.is_finished or rq_job.is_failed:
+            rq_job.delete()
+            rq_job = queue.fetch_job(rq_id)
+        else:
+            return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
     if not rq_job:
         # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
         # Then we dont need to create temporary file
         # Or filename specify key in cloud storage so we need to download file
-        fd = None
         dependent_job = None
         location = location_conf.get('location') if location_conf else Location.LOCAL
 
@@ -2233,51 +2851,74 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name,
                 serializer = AnnotationFileSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     anno_file = serializer.validated_data['annotation_file']
-                    fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
-                    with open(filename, 'wb+') as f:
+                    with NamedTemporaryFile(
+                        prefix='cvat_{}'.format(db_obj.pk),
+                        dir=settings.TMP_FILES_ROOT,
+                        delete=False) as tf:
+                        filename = tf.name
                         for chunk in anno_file.chunks():
-                            f.write(chunk)
+                            tf.write(chunk)
             else:
-                assert filename, 'The filename was not spesified'
+                assert filename, 'The filename was not specified'
+
                 try:
                     storage_id = location_conf['storage_id']
                 except KeyError:
                     raise serializers.ValidationError(
-                        'Cloud storage location was selected for destination'
+                        'Cloud storage location was selected as the source,'
                         ' but cloud storage id was not specified')
-                db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+                db_storage = get_cloud_storage_for_import_or_export(
+                    storage_id=storage_id, request=request,
+                    is_default=location_conf['is_default'])
+
                 key = filename
-                fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
+                with NamedTemporaryFile(
+                    prefix='cvat_{}'.format(db_obj.pk),
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
+
                 dependent_job = configure_dependent_job(
-                    queue, rq_id, _download_file_from_bucket,
-                    db_storage, filename, key)
+                    queue=queue,
+                    rq_id=rq_id,
+                    rq_func=_download_file_from_bucket,
+                    db_storage=db_storage,
+                    filename=filename,
+                    key=key,
+                    request=request,
+                    result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                    failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+                )
 
         av_scan_paths(filename)
+        meta = {
+            'tmp_file': filename,
+        }
         rq_job = queue.enqueue_call(
-            func=rq_func,
-            args=(pk, filename, format_name, conv_mask_to_poly),
+            func=import_resource_with_clean_up_after,
+            args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
             job_id=rq_id,
-            depends_on=dependent_job
+            depends_on=dependent_job,
+            meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)},
+            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
         )
-        rq_job.meta['tmp_file'] = filename
-        rq_job.meta['tmp_file_descriptor'] = fd
-        rq_job.save_meta()
+        serializer = RqIdSerializer(data={'rq_id': rq_id})
+        serializer.is_valid(raise_exception=True)
+
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     else:
         if rq_job.is_finished:
-            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
-            os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \
                 rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
             exc_info = process_failed_job(rq_job)
-            # RQ adds a prefix with exception class name
-            import_error_prefix = '{}.{}'.format(
-                CvatImportError.__module__, CvatImportError.__name__)
-            if exc_info.startswith(import_error_prefix):
-                exc_info = exc_info.replace(import_error_prefix + ': ', '')
-                return Response(data=exc_info,
-                    status=status.HTTP_400_BAD_REQUEST)
+
+            import_error_prefix = f'{CvatImportError.__module__}.{CvatImportError.__name__}:'
+            if exc_info.startswith("Traceback") and import_error_prefix in exc_info:
+                exc_message = exc_info.split(import_error_prefix)[-1].strip()
+                return Response(data=exc_message, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response(data=exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -2298,7 +2939,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    queue = django_rq.get_queue("default")
+    queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
 
     if rq_job:
@@ -2306,7 +2947,8 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         if isinstance(db_instance, Project):
             tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
             last_instance_update_time = max(tasks_update + [last_instance_update_time])
-        request_time = rq_job.meta.get('request_time', None)
+        rq_request = rq_job.meta.get('request', None)
+        request_time = rq_request.get('timestamp', None) if rq_request else None
         if request_time is None or request_time < last_instance_update_time:
             rq_job.cancel()
             rq_job.delete()
@@ -2335,10 +2977,11 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                             storage_id = location_conf['storage_id']
                         except KeyError:
                             return HttpResponseBadRequest(
-                                'Cloud storage location was selected for destination'
+                                'Cloud storage location was selected as the destination,'
                                 ' but cloud storage id was not specified')
-
-                        db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+                        db_storage = get_cloud_storage_for_import_or_export(
+                            storage_id=storage_id, request=request,
+                            is_default=location_conf['is_default'])
                         storage = db_storage_to_storage_instance(db_storage)
 
                         try:
@@ -2354,7 +2997,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
                     if osp.exists(file_path):
                         return Response(status=status.HTTP_201_CREATED)
             elif rq_job.is_failed:
-                exc_info = str(rq_job.exc_info)
+                exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
                 rq_job.delete()
                 return Response(exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -2374,13 +3017,15 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         'job': dm.views.JOB_CACHE_TTL,
     }
     ttl = TTL_CONSTS[db_instance.__class__.__name__.lower()].total_seconds()
-    queue.enqueue_call(func=callback,
-        args=(db_instance.id, format_name, server_address), job_id=rq_id,
-        meta={ 'request_time': timezone.localtime() },
+    queue.enqueue_call(
+        func=callback,
+        args=(db_instance.id, format_name, server_address),
+        job_id=rq_id,
+        meta=get_rq_job_meta(request=request, db_obj=db_instance),
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
+def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -2389,47 +3034,78 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
     elif not format_desc.ENABLED:
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    queue = django_rq.get_queue("default")
+    rq_id = rq_id_template.format(db_obj.pk, request.user)
+
+    queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     rq_job = queue.fetch_job(rq_id)
 
-    if not rq_job:
-        fd = None
+    if not rq_job or rq_job.is_finished or rq_job.is_failed:
+        if rq_job and (rq_job.is_finished or rq_job.is_failed):
+            # for some reason the previous job has not been deleted
+            # (e.g the user closed the browser tab when job has been created
+            # but no one requests for checking status were not made)
+            rq_job.delete()
         dependent_job = None
         location = location_conf.get('location') if location_conf else None
         if not filename and location != Location.CLOUD_STORAGE:
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 dataset_file = serializer.validated_data['dataset_file']
-                fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
-                with open(filename, 'wb+') as f:
+                with NamedTemporaryFile(
+                    prefix='cvat_{}'.format(db_obj.pk),
+                    dir=settings.TMP_FILES_ROOT,
+                    delete=False) as tf:
+                    filename = tf.name
                     for chunk in dataset_file.chunks():
-                        f.write(chunk)
+                        tf.write(chunk)
+
         elif location == Location.CLOUD_STORAGE:
-            assert filename, 'The filename was not spesified'
+            assert filename, 'The filename was not specified'
             try:
                 storage_id = location_conf['storage_id']
             except KeyError:
                 raise serializers.ValidationError(
-                    'Cloud storage location was selected for destination'
+                    'Cloud storage location was selected as the source,'
                     ' but cloud storage id was not specified')
-            db_storage = get_object_or_404(CloudStorageModel, pk=storage_id)
+            db_storage = get_cloud_storage_for_import_or_export(
+                storage_id=storage_id, request=request,
+                is_default=location_conf['is_default'])
+
             key = filename
-            fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_FILES_ROOT)
+            with NamedTemporaryFile(
+                prefix='cvat_{}'.format(db_obj.pk),
+                dir=settings.TMP_FILES_ROOT,
+                delete=False) as tf:
+                filename = tf.name
+
             dependent_job = configure_dependent_job(
-                queue, rq_id, _download_file_from_bucket,
-                db_storage, filename, key)
+                queue=queue,
+                rq_id=rq_id,
+                rq_func=_download_file_from_bucket,
+                db_storage=db_storage,
+                filename=filename,
+                key=key,
+                request=request,
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+            )
 
         rq_job = queue.enqueue_call(
-            func=rq_func,
-            args=(pk, filename, format_name, conv_mask_to_poly),
+            func=import_resource_with_clean_up_after,
+            args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
-                'tmp_file_descriptor': fd,
+                **get_rq_job_meta(request=request, db_obj=db_obj),
             },
-            depends_on=dependent_job
+            depends_on=dependent_job,
+            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
         )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
-    return Response(status=status.HTTP_202_ACCEPTED)
+    serializer = RqIdSerializer(data={'rq_id': rq_id})
+    serializer.is_valid(raise_exception=True)
+
+    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)

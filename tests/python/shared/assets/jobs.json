@@ -1,36 +1,276 @@
 {
-  "count": 13,
+  "count": 21,
   "next": null,
   "previous": null,
   "results": [
     {
       "assignee": null,
-      "bug_tracker": "",
+      "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2023-05-26T16:11:23.946000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 3,
+      "id": 28,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=28"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=28"
+      },
+      "mode": "annotation",
+      "organization": 2,
+      "project_id": null,
+      "stage": "acceptance",
+      "start_frame": 0,
+      "state": "completed",
+      "status": "validation",
+      "stop_frame": 10,
+      "task_id": 22,
+      "type": "ground_truth",
+      "updated_date": "2023-05-26T16:16:50.630000Z",
+      "url": "http://localhost:8080/api/jobs/28"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2023-05-26T16:11:23.880000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 11,
+      "id": 27,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=27"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=27"
+      },
+      "mode": "annotation",
+      "organization": 2,
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "validation",
+      "stop_frame": 10,
+      "task_id": 22,
+      "type": "annotation",
+      "updated_date": "2023-05-26T16:11:24.294000Z",
+      "url": "http://localhost:8080/api/jobs/27"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2023-03-27T19:08:07.649000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 4,
+      "id": 26,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=26"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=26"
+      },
+      "mode": "annotation",
+      "organization": null,
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 6,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 9,
+      "task_id": 21,
+      "type": "annotation",
+      "updated_date": "2023-03-27T19:08:40.166000Z",
+      "url": "http://localhost:8080/api/jobs/26"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2023-03-27T19:08:07.649000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 6,
+      "id": 25,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=25"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=25"
+      },
+      "mode": "annotation",
+      "organization": null,
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 5,
+      "task_id": 21,
+      "type": "annotation",
+      "updated_date": "2023-03-27T19:08:27.216000Z",
+      "url": "http://localhost:8080/api/jobs/25"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "guide_id": null,
+      "created_date": "2023-03-10T11:57:31.614000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 2,
+      "id": 24,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=24"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=24"
+      },
+      "mode": "annotation",
+      "organization": null,
+      "project_id": 12,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 1,
+      "task_id": 20,
+      "type": "annotation",
+      "updated_date": "2023-03-10T11:57:49.019000Z",
+      "url": "http://localhost:8080/api/jobs/24"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2023-03-10T11:56:33.757000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 2,
+      "id": 23,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=23"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=23"
+      },
+      "mode": "annotation",
+      "organization": null,
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 1,
+      "task_id": 19,
+      "type": "annotation",
+      "updated_date": "2023-03-10T11:56:55.066000Z",
+      "url": "http://localhost:8080/api/jobs/23"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "guide_id": null,
+      "created_date": "2023-03-01T15:36:26.668000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 2,
+      "id": 22,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=22"
+      },
+      "labels": {
+        "count": 1,
+        "url": "http://localhost:8080/api/labels?job_id=22"
+      },
+      "mode": "annotation",
+      "organization": 2,
+      "project_id": 11,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 1,
+      "task_id": 18,
+      "type": "annotation",
+      "updated_date": "2023-03-01T15:36:38.114000Z",
+      "url": "http://localhost:8080/api/jobs/22"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2023-02-10T14:05:25.947000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 5,
+      "id": 21,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=21"
+      },
+      "labels": {
+        "count": 3,
+        "url": "http://localhost:8080/api/labels?job_id=21"
+      },
+      "mode": "annotation",
+      "organization": 2,
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 4,
+      "task_id": 17,
+      "type": "annotation",
+      "updated_date": "2023-02-10T14:05:26.022000Z",
+      "url": "http://localhost:8080/api/jobs/21"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "guide_id": null,
+      "created_date": "2022-12-01T12:53:10.425000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 25,
       "id": 19,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#2080c0",
-          "has_parent": false,
-          "id": 29,
-          "name": "car",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#c06060",
-          "has_parent": false,
-          "id": 30,
-          "name": "person",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=19"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=19"
+      },
       "mode": "interpolation",
+      "organization": null,
       "project_id": 8,
       "stage": "annotation",
       "start_frame": 0,
@@ -38,196 +278,30 @@
       "status": "annotation",
       "stop_frame": 24,
       "task_id": 15,
+      "type": "annotation",
       "updated_date": "2022-12-01T12:53:35.354000Z",
       "url": "http://localhost:8080/api/jobs/19"
     },
     {
       "assignee": null,
-      "bug_tracker": "",
+      "bug_tracker": "https://bugtracker.localhost/task/12345",
+      "guide_id": null,
+      "created_date": "2022-09-22T14:22:25.820000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 8,
       "id": 18,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#5c5eba",
-          "has_parent": false,
-          "id": 18,
-          "name": "s1",
-          "sublabels": [
-            {
-              "attributes": [],
-              "color": "#d12345",
-              "has_parent": true,
-              "id": 19,
-              "name": "1",
-              "type": "points"
-            },
-            {
-              "attributes": [],
-              "color": "#350dea",
-              "has_parent": true,
-              "id": 20,
-              "name": "2",
-              "type": "points"
-            },
-            {
-              "attributes": [],
-              "color": "#479ffe",
-              "has_parent": true,
-              "id": 21,
-              "name": "3",
-              "type": "points"
-            }
-          ],
-          "svg": "<line x1=\"36.37385177612305\" y1=\"50.334449768066406\" x2=\"70.15311431884766\" y2=\"21.237457275390625\" stroke=\"black\" data-type=\"edge\" data-node-from=\"2\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"29.517663955688477\" y1=\"15.050167083740234\" x2=\"36.37385177612305\" y2=\"50.334449768066406\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"2\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"29.517663955688477\" cy=\"15.050167083740234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"19\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"36.37385177612305\" cy=\"50.334449768066406\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"20\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"70.15311431884766\" cy=\"21.237457275390625\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"21\"></circle>",
-          "type": "skeleton"
-        },
-        {
-          "attributes": [],
-          "color": "#d12345",
-          "has_parent": true,
-          "id": 19,
-          "name": "1",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#350dea",
-          "has_parent": true,
-          "id": 20,
-          "name": "2",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#479ffe",
-          "has_parent": true,
-          "id": 21,
-          "name": "3",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [
-            {
-              "default_value": "white",
-              "id": 2,
-              "input_type": "select",
-              "mutable": false,
-              "name": "color",
-              "values": [
-                "white",
-                "black"
-              ]
-            }
-          ],
-          "color": "#0c81b5",
-          "has_parent": false,
-          "id": 22,
-          "name": "s2",
-          "sublabels": [
-            {
-              "attributes": [],
-              "color": "#d53957",
-              "has_parent": true,
-              "id": 23,
-              "name": "1",
-              "type": "points"
-            },
-            {
-              "attributes": [],
-              "color": "#4925ec",
-              "has_parent": true,
-              "id": 24,
-              "name": "2",
-              "type": "points"
-            },
-            {
-              "attributes": [
-                {
-                  "default_value": "val1",
-                  "id": 3,
-                  "input_type": "select",
-                  "mutable": false,
-                  "name": "attr",
-                  "values": [
-                    "val1",
-                    "val2"
-                  ]
-                }
-              ],
-              "color": "#59a8fe",
-              "has_parent": true,
-              "id": 25,
-              "name": "3",
-              "type": "points"
-            },
-            {
-              "attributes": [],
-              "color": "#4a649f",
-              "has_parent": true,
-              "id": 26,
-              "name": "4",
-              "type": "points"
-            }
-          ],
-          "svg": "<line x1=\"65.6380615234375\" y1=\"18.394649505615234\" x2=\"22.327028274536133\" y2=\"54.8494987487793\" stroke=\"black\" data-type=\"edge\" data-node-from=\"3\" stroke-width=\"0.5\" data-node-to=\"2\"></line><line x1=\"77.34375\" y1=\"55.18394470214844\" x2=\"65.6380615234375\" y2=\"18.394649505615234\" stroke=\"black\" data-type=\"edge\" data-node-from=\"4\" stroke-width=\"0.5\" data-node-to=\"3\"></line><line x1=\"4.434051036834717\" y1=\"27.257524490356445\" x2=\"77.34375\" y2=\"55.18394470214844\" stroke=\"black\" data-type=\"edge\" data-node-from=\"1\" stroke-width=\"0.5\" data-node-to=\"4\"></line><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"4.434051036834717\" cy=\"27.257524490356445\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"1\" data-node-id=\"1\" data-label-id=\"23\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"22.327028274536133\" cy=\"54.8494987487793\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"2\" data-node-id=\"2\" data-label-id=\"24\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"65.6380615234375\" cy=\"18.394649505615234\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"3\" data-node-id=\"3\" data-label-id=\"25\"></circle><circle r=\"1.5\" stroke=\"black\" fill=\"#b3b3b3\" cx=\"77.34375\" cy=\"55.18394470214844\" stroke-width=\"0.1\" data-type=\"element node\" data-element-id=\"4\" data-node-id=\"4\" data-label-id=\"26\"></circle>",
-          "type": "skeleton"
-        },
-        {
-          "attributes": [],
-          "color": "#d53957",
-          "has_parent": true,
-          "id": 23,
-          "name": "1",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#4925ec",
-          "has_parent": true,
-          "id": 24,
-          "name": "2",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [
-            {
-              "default_value": "val1",
-              "id": 3,
-              "input_type": "select",
-              "mutable": false,
-              "name": "attr",
-              "values": [
-                "val1",
-                "val2"
-              ]
-            }
-          ],
-          "color": "#59a8fe",
-          "has_parent": true,
-          "id": 25,
-          "name": "3",
-          "sublabels": [],
-          "type": "points"
-        },
-        {
-          "attributes": [],
-          "color": "#4a649f",
-          "has_parent": true,
-          "id": 26,
-          "name": "4",
-          "sublabels": [],
-          "type": "points"
-        }
-      ],
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=18"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=18"
+      },
       "mode": "annotation",
+      "organization": 2,
       "project_id": 5,
       "stage": "annotation",
       "start_frame": 0,
@@ -235,37 +309,30 @@
       "status": "annotation",
       "stop_frame": 7,
       "task_id": 14,
+      "type": "annotation",
       "updated_date": "2022-09-23T11:57:02.302000Z",
       "url": "http://localhost:8080/api/jobs/18"
     },
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
+      "created_date": "2022-06-08T08:33:06.505000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 5,
       "id": 17,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#6080c0",
-          "has_parent": false,
-          "id": 16,
-          "name": "cat",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#406040",
-          "has_parent": false,
-          "id": 17,
-          "name": "dog",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=17"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=17"
+      },
       "mode": "annotation",
+      "organization": 2,
       "project_id": 4,
       "stage": "annotation",
       "start_frame": 0,
@@ -273,6 +340,7 @@
       "status": "annotation",
       "stop_frame": 4,
       "task_id": 13,
+      "type": "annotation",
       "updated_date": "2022-12-05T07:47:01.633000Z",
       "url": "http://localhost:8080/api/jobs/17"
     },
@@ -285,31 +353,23 @@
         "username": "worker2"
       },
       "bug_tracker": "",
+      "guide_id": null,
+      "created_date": "2022-03-05T10:32:19.149000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 11,
       "id": 16,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#6080c0",
-          "has_parent": false,
-          "id": 7,
-          "name": "cat",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#406040",
-          "has_parent": false,
-          "id": 8,
-          "name": "dog",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 1,
+        "url": "http://localhost:8080/api/issues?job_id=16"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=16"
+      },
       "mode": "annotation",
+      "organization": 2,
       "project_id": 2,
       "stage": "annotation",
       "start_frame": 0,
@@ -317,50 +377,30 @@
       "status": "annotation",
       "stop_frame": 10,
       "task_id": 11,
+      "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/16"
     },
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
+      "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 5,
       "id": 14,
-      "labels": [
-        {
-          "attributes": [
-            {
-              "default_value": "mazda",
-              "id": 1,
-              "input_type": "select",
-              "mutable": false,
-              "name": "model",
-              "values": [
-                "mazda",
-                "volvo",
-                "bmw"
-              ]
-            }
-          ],
-          "color": "#2080c0",
-          "has_parent": false,
-          "id": 5,
-          "name": "car",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#c06060",
-          "has_parent": false,
-          "id": 6,
-          "name": "person",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=14"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=14"
+      },
       "mode": "annotation",
+      "organization": null,
       "project_id": 1,
       "stage": "annotation",
       "start_frame": 15,
@@ -368,50 +408,30 @@
       "status": "annotation",
       "stop_frame": 19,
       "task_id": 9,
+      "type": "annotation",
       "updated_date": "2022-11-03T13:57:26.346000Z",
       "url": "http://localhost:8080/api/jobs/14"
     },
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
+      "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 5,
       "id": 13,
-      "labels": [
-        {
-          "attributes": [
-            {
-              "default_value": "mazda",
-              "id": 1,
-              "input_type": "select",
-              "mutable": false,
-              "name": "model",
-              "values": [
-                "mazda",
-                "volvo",
-                "bmw"
-              ]
-            }
-          ],
-          "color": "#2080c0",
-          "has_parent": false,
-          "id": 5,
-          "name": "car",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#c06060",
-          "has_parent": false,
-          "id": 6,
-          "name": "person",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=13"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=13"
+      },
       "mode": "annotation",
+      "organization": null,
       "project_id": 1,
       "stage": "acceptance",
       "start_frame": 10,
@@ -419,50 +439,30 @@
       "status": "validation",
       "stop_frame": 14,
       "task_id": 9,
+      "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/13"
     },
     {
       "assignee": null,
       "bug_tracker": "",
+      "guide_id": null,
+      "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 5,
       "id": 12,
-      "labels": [
-        {
-          "attributes": [
-            {
-              "default_value": "mazda",
-              "id": 1,
-              "input_type": "select",
-              "mutable": false,
-              "name": "model",
-              "values": [
-                "mazda",
-                "volvo",
-                "bmw"
-              ]
-            }
-          ],
-          "color": "#2080c0",
-          "has_parent": false,
-          "id": 5,
-          "name": "car",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#c06060",
-          "has_parent": false,
-          "id": 6,
-          "name": "person",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=12"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=12"
+      },
       "mode": "annotation",
+      "organization": null,
       "project_id": 1,
       "stage": "validation",
       "start_frame": 5,
@@ -470,6 +470,7 @@
       "status": "validation",
       "stop_frame": 9,
       "task_id": 9,
+      "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/12"
     },
@@ -482,44 +483,23 @@
         "username": "worker4"
       },
       "bug_tracker": "",
+      "guide_id": null,
+      "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 5,
       "id": 11,
-      "labels": [
-        {
-          "attributes": [
-            {
-              "default_value": "mazda",
-              "id": 1,
-              "input_type": "select",
-              "mutable": false,
-              "name": "model",
-              "values": [
-                "mazda",
-                "volvo",
-                "bmw"
-              ]
-            }
-          ],
-          "color": "#2080c0",
-          "has_parent": false,
-          "id": 5,
-          "name": "car",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#c06060",
-          "has_parent": false,
-          "id": 6,
-          "name": "person",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 1,
+        "url": "http://localhost:8080/api/issues?job_id=11"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=11"
+      },
       "mode": "annotation",
+      "organization": null,
       "project_id": 1,
       "stage": "annotation",
       "start_frame": 0,
@@ -527,6 +507,7 @@
       "status": "annotation",
       "stop_frame": 4,
       "task_id": 9,
+      "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/11"
     },
@@ -539,31 +520,23 @@
         "username": "admin1"
       },
       "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2022-03-05T08:30:48.612000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 14,
       "id": 10,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#6080c0",
-          "has_parent": false,
-          "id": 13,
-          "name": "cat",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#406040",
-          "has_parent": false,
-          "id": 14,
-          "name": "dog",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 1,
+        "url": "http://localhost:8080/api/issues?job_id=10"
+      },
+      "labels": {
+        "count": 3,
+        "url": "http://localhost:8080/api/labels?job_id=10"
+      },
       "mode": "annotation",
+      "organization": null,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -571,37 +544,30 @@
       "status": "annotation",
       "stop_frame": 13,
       "task_id": 8,
+      "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/10"
     },
     {
       "assignee": null,
       "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2022-02-21T10:31:52.429000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 11,
       "id": 9,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#6080c0",
-          "has_parent": false,
-          "id": 11,
-          "name": "cat",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#406040",
-          "has_parent": false,
-          "id": 12,
-          "name": "dog",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 1,
+        "url": "http://localhost:8080/api/issues?job_id=9"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=9"
+      },
       "mode": "annotation",
+      "organization": 2,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -609,28 +575,30 @@
       "status": "annotation",
       "stop_frame": 10,
       "task_id": 7,
+      "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/9"
     },
     {
       "assignee": null,
       "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2022-02-16T06:26:54.631000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "3d",
+      "frame_count": 1,
       "id": 8,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#2080c0",
-          "has_parent": false,
-          "id": 10,
-          "name": "car",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=8"
+      },
+      "labels": {
+        "count": 1,
+        "url": "http://localhost:8080/api/labels?job_id=8"
+      },
       "mode": "annotation",
+      "organization": null,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -638,6 +606,7 @@
       "status": "annotation",
       "stop_frame": 0,
       "task_id": 6,
+      "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/8"
     },
@@ -650,22 +619,23 @@
         "username": "worker4"
       },
       "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2022-02-16T06:25:48.168000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 25,
       "id": 7,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#2080c0",
-          "has_parent": false,
-          "id": 9,
-          "name": "car",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 1,
+        "url": "http://localhost:8080/api/issues?job_id=7"
+      },
+      "labels": {
+        "count": 1,
+        "url": "http://localhost:8080/api/labels?job_id=7"
+      },
       "mode": "interpolation",
+      "organization": null,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -673,6 +643,7 @@
       "status": "annotation",
       "stop_frame": 24,
       "task_id": 5,
+      "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/7"
     },
@@ -685,31 +656,23 @@
         "username": "worker1"
       },
       "bug_tracker": null,
+      "guide_id": null,
+      "created_date": "2021-12-14T18:50:29.458000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
+      "frame_count": 23,
       "id": 2,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#2080c0",
-          "has_parent": false,
-          "id": 3,
-          "name": "car",
-          "sublabels": [],
-          "type": "any"
-        },
-        {
-          "attributes": [],
-          "color": "#c06060",
-          "has_parent": false,
-          "id": 4,
-          "name": "person",
-          "sublabels": [],
-          "type": "any"
-        }
-      ],
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=2"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=2"
+      },
       "mode": "annotation",
+      "organization": 1,
       "project_id": null,
       "stage": "annotation",
       "start_frame": 0,
@@ -717,6 +680,7 @@
       "status": "annotation",
       "stop_frame": 22,
       "task_id": 2,
+      "type": "annotation",
       "updated_date": "2022-06-22T09:18:45.296000Z",
       "url": "http://localhost:8080/api/jobs/2"
     }

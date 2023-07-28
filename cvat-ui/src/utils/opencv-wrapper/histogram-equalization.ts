@@ -76,7 +76,7 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
         }
     }
 
-    private hashedFrame(frameNumber: number): ImageData|null {
+    private hashedFrame(frameNumber: number): ImageData | null {
         const hashed = this.histHash.find((_hashed) => _hashed.frameNumber === frameNumber);
         if (hashed) {
             hashed.timestamp = Date.now();
@@ -84,7 +84,7 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
         return hashed?.frameData || null;
     }
 
-    private hashFrame(frameData:ImageData, frameNumber:number):void{
+    private hashFrame(frameData: ImageData, frameNumber: number): void {
         if (this.histHash.length >= this.bufferSize) {
             const leastRecentlyUsed = this.histHash[0];
             const currentTimestamp = Date.now();

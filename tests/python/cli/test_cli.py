@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,12 +6,13 @@ import io
 import json
 import os
 from pathlib import Path
+from typing import Optional
 
 import packaging.version as pv
 import pytest
 from cvat_cli.cli import CLI
 from cvat_sdk import Client, make_client
-from cvat_sdk.api_client import exceptions
+from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 
@@ -84,15 +85,21 @@ class TestCLI:
 
         return task
 
-    def run_cli(self, cmd: str, *args: str, expected_code: int = 0) -> str:
+    def run_cli(
+        self, cmd: str, *args: str, expected_code: int = 0, organization: Optional[str] = None
+    ) -> str:
+        common_args = [
+            f"--auth={self.user}:{self.password}",
+            f"--server-host={self.host}",
+            f"--server-port={self.port}",
+        ]
+
+        if organization is not None:
+            common_args.append(f"--organization={organization}")
+
         run_cli(
             self,
-            "--auth",
-            f"{self.user}:{self.password}",
-            "--server-host",
-            self.host,
-            "--server-port",
-            self.port,
+            *common_args,
             cmd,
             *args,
             expected_code=expected_code,
@@ -115,6 +122,39 @@ class TestCLI:
 
         task_id = int(stdout.split()[-1])
         assert self.client.tasks.retrieve(task_id).size == 5
+
+    def test_can_create_task_from_local_images_with_parameters(self):
+        # Checks for regressions of <https://github.com/opencv/cvat/issues/4962>
+
+        files = generate_images(self.tmp_path, 7)
+        files.sort(reverse=True)
+        frame_step = 3
+
+        stdout = self.run_cli(
+            "create",
+            "test_task",
+            ResourceType.LOCAL.name,
+            *map(os.fspath, files),
+            "--labels",
+            json.dumps([{"name": "car"}, {"name": "person"}]),
+            "--completion_verification_period",
+            "0.01",
+            "--sorting-method",
+            "predefined",
+            "--frame_step",
+            str(frame_step),
+            "--bug_tracker",
+            "http://localhost/bug",
+        )
+
+        task_id = int(stdout.split()[-1])
+        task = self.client.tasks.retrieve(task_id)
+        frames = task.get_frames_info()
+        assert [f.name for f in frames] == [
+            f.name for i, f in enumerate(files) if i % frame_step == 0
+        ]
+        assert task.get_meta().frame_filter == f"step={frame_step}"
+        assert task.bug_tracker == "http://localhost/bug"
 
     def test_can_list_tasks_in_simple_format(self, fxt_new_task: Task):
         output = self.run_cli("ls")
@@ -220,3 +260,45 @@ class TestCLI:
             self.run_cli(*(["--insecure"] if not verify else []), "ls")
 
         assert capture.value.args[0] == verify
+
+    def test_can_control_organization_context(self):
+        org = "cli-test-org"
+        self.client.organizations.create(models.OrganizationWriteRequest(org))
+
+        files = generate_images(self.tmp_path, 1)
+
+        stdout = self.run_cli(
+            "create",
+            "personal_task",
+            ResourceType.LOCAL.name,
+            *map(os.fspath, files),
+            "--labels=" + json.dumps([{"name": "person"}]),
+            "--completion_verification_period=0.01",
+            organization="",
+        )
+
+        personal_task_id = int(stdout.split()[-1])
+
+        stdout = self.run_cli(
+            "create",
+            "org_task",
+            ResourceType.LOCAL.name,
+            *map(os.fspath, files),
+            "--labels=" + json.dumps([{"name": "person"}]),
+            "--completion_verification_period=0.01",
+            organization=org,
+        )
+
+        org_task_id = int(stdout.split()[-1])
+
+        personal_task_ids = list(map(int, self.run_cli("ls", organization="").split()))
+        assert personal_task_id in personal_task_ids
+        assert org_task_id not in personal_task_ids
+
+        org_task_ids = list(map(int, self.run_cli("ls", organization=org).split()))
+        assert personal_task_id not in org_task_ids
+        assert org_task_id in org_task_ids
+
+        all_task_ids = list(map(int, self.run_cli("ls").split()))
+        assert personal_task_id in all_task_ids
+        assert org_task_id in all_task_ids

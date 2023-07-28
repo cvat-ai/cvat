@@ -6,7 +6,7 @@ import './styles.scss';
 import React from 'react';
 import Layout from 'antd/lib/layout';
 import { Col, Row } from 'antd/lib/grid';
-import { CVATMinimalisticLogo } from 'icons';
+import { CVATLogo } from 'icons';
 import Icon from '@ant-design/icons';
 import Title from 'antd/lib/typography/Title';
 import SVGSigningBackground from '../../assets/signing-background.svg';
@@ -73,7 +73,7 @@ function SignInLayout(props: SignInLayoutComponentProps): JSX.Element {
             <Header className='cvat-signing-header'>
                 <Row justify='center' align='middle'>
                     <Col {...logoSizes}>
-                        <Icon className='cvat-logo-icon' component={CVATMinimalisticLogo} />
+                        <Icon className='cvat-logo-icon' component={CVATLogo} />
                     </Col>
                 </Row>
             </Header>

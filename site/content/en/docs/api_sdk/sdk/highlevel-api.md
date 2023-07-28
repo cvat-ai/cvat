@@ -141,9 +141,41 @@ an error can be raised or suppressed (controlled by `config.allow_unsupported_se
 If the error is suppressed, some SDK functions may not work as expected with this server.
 By default, a warning is raised and the error is suppressed.
 
-> Please note that all `Client` operations rely on the server API and depend on the current user
+### Users and organizations
+
+All `Client` operations rely on the server API and depend on the current user
 rights. This affects the set of available APIs, objects and actions. For example, a regular user
 can only see and modify their tasks and jobs, while an admin user can see all the tasks etc.
+
+Operations are also affected by the current organization context,
+which can be set with the `organization_slug` property of `Client` instances.
+The organization context affects which entities are visible,
+and where new entities are created.
+
+Set `organization_slug` to an organization's slug (short name)
+to make subsequent operations work in the context of that organization:
+
+```python
+client.organization_slug = 'myorg'
+
+# create a task in the organization
+task = client.tasks.create_from_data(...)
+```
+
+You can also set `organization_slug` to an empty string
+to work in the context of the user's personal workspace.
+By default, it is set to `None`,
+which means that both personal and organizational entities are visible,
+while new entities are created in the personal workspace.
+
+To temporarily set the organization slug, use the `organization_context` function:
+
+```python
+with client.organization_context('myorg'):
+    task = client.tasks.create_from_data(...)
+
+# the slug is now reset to its previous value
+```
 
 ## Entities and Repositories
 

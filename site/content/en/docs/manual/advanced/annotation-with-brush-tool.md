@@ -36,7 +36,7 @@ It has the following elements:
 |![Brush](/images/brushing_tools_icon.png)| **Brush**  adds new mask/ new regions to the previously added mask).|
 |![Eraser](/images/brushing_tools_erase.png)|**Eraser** removes part of the mask.|
 |![Add poly](/images/brushing_tools_add_poly.png)|**Polygon**  selection tool. Selection will become a mask.|
-|![Remove poly](/images/brushing_tools_remove_poly.png)|**Remove polygon selection** substracts part of the polygon selection.|
+|![Remove poly](/images/brushing_tools_remove_poly.png)|**Remove polygon selection** subtracts part of the polygon selection.|
 |![Brush size](/images/brushing_tools_brush_size.png)|**Brush size** in pixels. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.|
 |![Brush shape](/images/brushing_tools_brush_shape.png)|**Brush shape** with two options: circle and square. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.|
 |![Pixel remove](/images/brushing_tools_pixels.png)|**Remove underlying pixels**. When you are drawing or editing a mask with this tool, <br>pixels on other masks that are located at the same positions as the pixels of the <br>current mask are deleted.|
@@ -47,10 +47,7 @@ It has the following elements:
 
 ## Annotation with brush
 
-Prerequisites: [Create task](/docs/manual/basics/creating_an_annotation_task/), upload the image, add labels,
-and open the workspace.
-
-Do the following:
+To annotate with brush, do the following:
 
 1. From the [controls sidebar](/docs/manual/basics/controls-sidebar/), select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**. <br>The **Brush**![Brush](/images/brushing_tools_icon.png) tool will be selected by default.
@@ -73,9 +70,7 @@ To save the job with all added objects, on the top menu click **Save** ![Save](/
 
 ## Annotation with polygon-to-mask
 
-Prerequisites: [Create task](/docs/manual/basics/creating_an_annotation_task/), upload the image, <br>add labels, and open the workspace.
-
-Do the following:
+To annotat with polygon-to-mask, do the following:
 
 1. From the [controls sidebar](/docs/manual/basics/controls-sidebar/), select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**.

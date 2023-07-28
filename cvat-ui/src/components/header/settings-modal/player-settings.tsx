@@ -17,7 +17,7 @@ import { CompactPicker } from 'react-color';
 import { clamp } from 'utils/math';
 import { BackJumpIcon, ForwardJumpIcon } from 'icons';
 import { FrameSpeed } from 'reducers';
-import consts from 'consts';
+import config from 'config';
 
 interface Props {
     frameStep: number;
@@ -134,7 +134,7 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                     <Popover
                         content={(
                             <CompactPicker
-                                colors={consts.CANVAS_BACKGROUND_COLORS}
+                                colors={config.CANVAS_BACKGROUND_COLORS}
                                 color={canvasBackgroundColor}
                                 onChange={(e) => onChangeCanvasBackgroundColor(e.hex)}
                             />
@@ -142,7 +142,12 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         overlayClassName='canvas-background-color-picker-popover'
                         trigger='click'
                     >
-                        <Button type='default'>Select canvas background color</Button>
+                        <Button
+                            className='cvat-select-canvas-background-color-button'
+                            type='default'
+                        >
+                            Select canvas background color
+                        </Button>
                     </Popover>
                 </Col>
             </Row>

@@ -7,19 +7,14 @@ from __future__ import annotations
 import json
 from typing import Dict, List, Sequence, Tuple
 
-import tqdm
 from cvat_sdk import Client, models
-from cvat_sdk.core.helpers import TqdmProgressReporter
+from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 
 class CLI:
     def __init__(self, client: Client, credentials: Tuple[str, str]):
         self.client = client
-
-        # allow arbitrary kwargs in models
-        # TODO: will silently ignore invalid args, so remove this ASAP
-        self.client.api_client.configuration.discard_unknown_keys = True
 
         self.client.login(credentials)
 
@@ -38,9 +33,9 @@ class CLI:
         self,
         name: str,
         labels: List[Dict[str, str]],
-        resource_type: ResourceType,
         resources: Sequence[str],
         *,
+        resource_type: ResourceType = ResourceType.LOCAL,
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
         status_check_period: int = 2,
@@ -51,17 +46,27 @@ class CLI:
         """
         Create a new task with the given name and labels JSON and add the files to it.
         """
+
+        task_params = {}
+        data_params = {}
+
+        for k, v in kwargs.items():
+            if k in models.DataRequest.attribute_map or k == "frame_step":
+                data_params[k] = v
+            else:
+                task_params[k] = v
+
         task = self.client.tasks.create_from_data(
-            spec=models.TaskWriteRequest(name=name, labels=labels, **kwargs),
+            spec=models.TaskWriteRequest(name=name, labels=labels, **task_params),
             resource_type=resource_type,
             resources=resources,
-            data_params=kwargs,
+            data_params=data_params,
             annotation_path=annotation_path,
             annotation_format=annotation_format,
             status_check_period=status_check_period,
             dataset_repository_url=dataset_repository_url,
             use_lfs=lfs,
-            pbar=self._make_pbar(),
+            pbar=DeferredTqdmProgressReporter(),
         )
         print("Created task id", task.id)
 
@@ -103,7 +108,7 @@ class CLI:
         self.client.tasks.retrieve(obj_id=task_id).export_dataset(
             format_name=fileformat,
             filename=filename,
-            pbar=self._make_pbar(),
+            pbar=DeferredTqdmProgressReporter(),
             status_check_period=status_check_period,
             include_images=include_images,
         )
@@ -117,22 +122,21 @@ class CLI:
             format_name=fileformat,
             filename=filename,
             status_check_period=status_check_period,
-            pbar=self._make_pbar(),
+            pbar=DeferredTqdmProgressReporter(),
         )
 
     def tasks_export(self, task_id: str, filename: str, *, status_check_period: int = 2) -> None:
         """Download a task backup"""
         self.client.tasks.retrieve(obj_id=task_id).download_backup(
-            filename=filename, status_check_period=status_check_period, pbar=self._make_pbar()
+            filename=filename,
+            status_check_period=status_check_period,
+            pbar=DeferredTqdmProgressReporter(),
         )
 
     def tasks_import(self, filename: str, *, status_check_period: int = 2) -> None:
         """Import a task from a backup file"""
         self.client.tasks.create_from_backup(
-            filename=filename, status_check_period=status_check_period, pbar=self._make_pbar()
-        )
-
-    def _make_pbar(self, title: str = None) -> TqdmProgressReporter:
-        return TqdmProgressReporter(
-            tqdm.tqdm(unit_scale=True, unit="B", unit_divisor=1024, desc=title)
+            filename=filename,
+            status_check_period=status_check_period,
+            pbar=DeferredTqdmProgressReporter(),
         )

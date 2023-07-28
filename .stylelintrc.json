@@ -1,22 +1,11 @@
 {
-  "extends": "stylelint-config-standard",
+  "extends": "stylelint-config-standard-scss",
   "rules": {
-    "indentation": 4,
+    "scss/comment-no-empty": null,
     "value-keyword-case": null,
-    "selector-combinator-space-after": null,
-    "no-descending-specificity": null,
-    "at-rule-no-unknown": [
-      true,
-      {
-        "ignoreAtRules": ["extend"]
-      }
-    ],
-    "selector-type-no-unknown": [
-      true,
-      {
-        "ignoreTypes": ["first-child"]
-      }
-    ]
+    "color-function-notation": ["legacy"],
+    "scss/at-extend-no-missing-placeholder": null,
+    "no-descending-specificity": null
   },
   "ignoreFiles": ["**/*.js", "**/*.ts", "**/*.py"]
 }

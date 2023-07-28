@@ -14,11 +14,6 @@ interface StorageJsonData {
     cloud_storage_id?: number;
 }
 
-/**
- * Class representing a storage for import and export resources
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
 export class Storage {
     public location: StorageLocation;
     public cloudStorageId: number;
@@ -32,23 +27,9 @@ export class Storage {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name location
-                 * @type {module:API.cvat.enums.StorageLocation}
-                 * @memberof module:API.cvat.classes.Storage
-                 * @instance
-                 * @readonly
-                 */
                 location: {
                     get: () => data.location,
                 },
-                /**
-                 * @name cloudStorageId
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Storage
-                 * @instance
-                 * @readonly
-                 */
                 cloudStorageId: {
                     get: () => data.cloudStorageId,
                 },

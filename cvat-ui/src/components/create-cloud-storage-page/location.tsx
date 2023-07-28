@@ -97,6 +97,7 @@ export default function Location(props: Props): JSX.Element {
                                 placeholder='name'
                             />
                             <Button
+                                className='cvat-cloud-storage-region-add-button'
                                 type='link'
                                 onClick={handleAddingRegion}
                             >

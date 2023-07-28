@@ -4,14 +4,16 @@
 
 import textwrap
 from pathlib import Path
-from typing import Tuple
+from typing import Container, Tuple
+from urllib.parse import urlparse
 
-from cvat_sdk.core.helpers import TqdmProgressReporter
-from tqdm import tqdm
+import pytest
+from cvat_sdk.api_client.rest import RESTClientObject
+from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 
 
 def make_pbar(file, **kwargs):
-    return TqdmProgressReporter(tqdm(file=file, mininterval=0, **kwargs))
+    return DeferredTqdmProgressReporter({"file": file, "mininterval": 0, **kwargs})
 
 
 def generate_coco_json(filename: Path, img_info: Tuple[Path, int, int]):
@@ -82,3 +84,17 @@ def generate_coco_anno(image_path: str, image_width: int, image_height: int) -> 
             "image_width": image_width,
         }
     )
+
+
+def restrict_api_requests(
+    monkeypatch: pytest.MonkeyPatch, allow_paths: Container[str] = ()
+) -> None:
+    original_request = RESTClientObject.request
+
+    def restricted_request(self, method, url, *args, **kwargs):
+        parsed_url = urlparse(url)
+        if parsed_url.path in allow_paths:
+            return original_request(self, method, url, *args, **kwargs)
+        raise RuntimeError("Disallowed!")
+
+    monkeypatch.setattr(RESTClientObject, "request", restricted_request)

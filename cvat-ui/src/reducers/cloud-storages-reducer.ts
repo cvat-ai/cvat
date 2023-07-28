@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2022 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -306,41 +307,46 @@ export default (
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW: {
             const { cloudStorageID } = action.payload;
             const { previews } = state;
-            previews[cloudStorageID] = {
-                preview: '',
-                fetching: true,
-                initialized: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [cloudStorageID]: {
+                        preview: '',
+                        fetching: true,
+                        initialized: false,
+                    },
+                },
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS: {
             const { cloudStorageID, preview } = action.payload;
             const { previews } = state;
-            previews[cloudStorageID] = {
-                ...previews[cloudStorageID],
-                preview,
-                initialized: true,
-                fetching: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [cloudStorageID]: {
+                        preview,
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED: {
             const { cloudStorageID } = action.payload;
             const { previews } = state;
-            previews[cloudStorageID] = {
-                ...previews[cloudStorageID],
-                initialized: true,
-                fetching: false,
-            };
             return {
                 ...state,
-                previews,
+                previews: {
+                    ...previews,
+                    [cloudStorageID]: {
+                        ...previews[cloudStorageID],
+                        fetching: false,
+                        initialized: true,
+                    },
+                },
             };
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {

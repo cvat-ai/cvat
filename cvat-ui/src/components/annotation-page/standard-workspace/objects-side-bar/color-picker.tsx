@@ -70,6 +70,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                         <Col span={9}>
                             {resetVisible !== false && (
                                 <Button
+                                    className='cvat-color-picker-reset-button'
                                     onClick={() => {
                                         if (typeof onChange === 'function') onChange('');
                                         changeVisible(false);
@@ -81,6 +82,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                         </Col>
                         <Col span={9}>
                             <Button
+                                className='cvat-color-picker-cancel-button'
                                 onClick={() => {
                                     changeVisible(false);
                                 }}
@@ -90,6 +92,7 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                         </Col>
                         <Col span={6}>
                             <Button
+                                className='cvat-color-picker-submit-button'
                                 type='primary'
                                 onClick={() => {
                                     if (typeof onChange === 'function') onChange(colorState || '');
@@ -108,8 +111,9 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
                         <Text strong>Select color</Text>
                     </Col>
                     <Col span={4}>
-                        <CVATTooltip title='Cancel'>
+                        <CVATTooltip title='Close'>
                             <Button
+                                className='cvat-color-picker-close-button'
                                 type='link'
                                 onClick={() => {
                                     changeVisible(false);

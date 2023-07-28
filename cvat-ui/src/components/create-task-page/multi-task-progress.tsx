@@ -125,28 +125,44 @@ export default function MultiTasksProgress(props: Props): JSX.Element {
                             (
                                 <>
                                     <Col>
-                                        <Button disabled={!countFailed} onClick={onRetryFailedTasks}>
+                                        <Button
+                                            className='cvat-create-multiple-tasks-retry-failed-button'
+                                            disabled={!countFailed}
+                                            onClick={onRetryFailedTasks}
+                                        >
                                             Retry failed tasks
                                         </Button>
                                     </Col>
                                     {
                                         countCancelled ? (
                                             <Col>
-                                                <Button disabled={!countCancelled} onClick={onRetryCancelledTasks}>
+                                                <Button
+                                                    className='cvat-create-multiple-tasks-retry-cancelled-button'
+                                                    disabled={!countCancelled}
+                                                    onClick={onRetryCancelledTasks}
+                                                >
                                                     Retry cancelled tasks
                                                 </Button>
                                             </Col>
                                         ) : null
                                     }
                                     <Col>
-                                        <Button type='primary' onClick={onOk}>
+                                        <Button
+                                            className='cvat-create-multiple-tasks-after-finish-button'
+                                            type='primary'
+                                            onClick={onOk}
+                                        >
                                             Ok
                                         </Button>
                                     </Col>
                                 </>
                             ) : (
                                 <Col>
-                                    <Button onClick={onCancel} disabled={!countPending}>
+                                    <Button
+                                        className='cvat-create-multiple-tasks-cancel-pending-button'
+                                        onClick={onCancel}
+                                        disabled={!countPending}
+                                    >
                                         Cancel pending tasks
                                     </Button>
                                 </Col>

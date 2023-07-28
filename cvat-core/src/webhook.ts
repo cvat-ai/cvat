@@ -7,6 +7,7 @@ import User from './user';
 import serverProxy from './server-proxy';
 import { WebhookSourceType, WebhookContentType } from './enums';
 import { isEnum } from './common';
+import { ArgumentError } from './exceptions';
 
 interface RawWebhookData {
     id?: number;
@@ -93,7 +94,7 @@ export default class Webhook {
                     get: () => data.target_url,
                     set: (value: string) => {
                         if (typeof value !== 'string') {
-                            throw ArgumentError(
+                            throw new ArgumentError(
                                 `targetURL property must be a string, tried to set ${typeof value}`,
                             );
                         }
@@ -104,13 +105,13 @@ export default class Webhook {
                     get: () => data.events,
                     set: (events: string[]) => {
                         if (!Array.isArray(events)) {
-                            throw ArgumentError(
+                            throw new ArgumentError(
                                 `Events must be an array, tried to set ${typeof events}`,
                             );
                         }
                         events.forEach((event: string) => {
                             if (typeof event !== 'string') {
-                                throw ArgumentError(
+                                throw new ArgumentError(
                                     `Event must be a string, tried to set ${typeof event}`,
                                 );
                             }
@@ -140,7 +141,7 @@ export default class Webhook {
                     get: () => data.description,
                     set: (value: string) => {
                         if (typeof value !== 'string') {
-                            throw ArgumentError(
+                            throw new ArgumentError(
                                 `Description property must be a string, tried to set ${typeof value}`,
                             );
                         }
@@ -151,7 +152,7 @@ export default class Webhook {
                     get: () => data.secret,
                     set: (value: string) => {
                         if (typeof value !== 'string') {
-                            throw ArgumentError(
+                            throw new ArgumentError(
                                 `Secret property must be a string, tried to set ${typeof value}`,
                             );
                         }
@@ -162,7 +163,7 @@ export default class Webhook {
                     get: () => data.is_active,
                     set: (value: boolean) => {
                         if (typeof value !== 'boolean') {
-                            throw ArgumentError(
+                            throw new ArgumentError(
                                 `isActive property must be a boolean, tried to set ${typeof value}`,
                             );
                         }
@@ -173,7 +174,7 @@ export default class Webhook {
                     get: () => data.enable_ssl,
                     set: (value: boolean) => {
                         if (typeof value !== 'boolean') {
-                            throw ArgumentError(
+                            throw new ArgumentError(
                                 `enableSSL property must be a boolean, tried to set ${typeof value}`,
                             );
                         }

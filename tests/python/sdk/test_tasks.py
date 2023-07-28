@@ -1,9 +1,10 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import io
 import json
+import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
@@ -58,7 +59,6 @@ class TestTaskUsecases:
                 "name": "test_task",
                 "labels": [{"name": "car"}, {"name": "person"}],
             },
-            resource_type=ResourceType.LOCAL,
             resources=[fxt_image_file],
             data_params={"image_quality": 80},
         )
@@ -66,13 +66,25 @@ class TestTaskUsecases:
         return task
 
     @pytest.fixture
+    def fxt_new_task_without_data(self):
+        task = self.client.tasks.create(
+            spec={
+                "name": "test_task",
+                "labels": [{"name": "car"}, {"name": "person"}],
+            },
+        )
+
+        return task
+
+    @pytest.fixture
     def fxt_task_with_shapes(self, fxt_new_task: Task):
+        labels = fxt_new_task.get_labels()
         fxt_new_task.set_annotations(
             models.LabeledDataRequest(
                 shapes=[
                     models.LabeledShapeRequest(
                         frame=0,
-                        label_id=fxt_new_task.labels[0].id,
+                        label_id=labels[0].id,
                         type="rectangle",
                         points=[1, 1, 2, 2],
                     ),
@@ -118,7 +130,6 @@ class TestTaskUsecases:
         task = self.client.tasks.create_from_data(
             spec=task_spec,
             data_params=data_params,
-            resource_type=ResourceType.LOCAL,
             resources=task_files,
             pbar=pbar,
         )
@@ -126,6 +137,27 @@ class TestTaskUsecases:
         assert task.size == 7
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
+
+    def test_can_create_task_with_local_data_and_predefined_sorting(
+        self, fxt_new_task_without_data: Task
+    ):
+        task = fxt_new_task_without_data
+
+        task_files = generate_image_files(6)
+        task_filenames = []
+        for f in task_files:
+            fname = self.tmp_path / osp.basename(f.name)
+            fname.write_bytes(f.getvalue())
+            task_filenames.append(fname)
+
+        task_filenames = [task_filenames[i] for i in [2, 4, 1, 5, 0, 3]]
+
+        task.upload_data(
+            resources=task_filenames,
+            params={"sorting_method": "predefined"},
+        )
+
+        assert [f.name for f in task.get_frames_info()] == [f.name for f in task_filenames]
 
     def test_can_create_task_with_remote_data(self):
         task = self.client.tasks.create_from_data(
@@ -168,6 +200,7 @@ class TestTaskUsecases:
         assert capture.match("No media data found")
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.with_external_services
     def test_can_create_task_with_git_repo(self, fxt_image_file: Path):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
@@ -200,6 +233,38 @@ class TestTaskUsecases:
         assert response_json["url"]["value"] == repository_url
         assert response_json["format"] == "CVAT for images 1.1"
         assert response_json["lfs"] is False
+
+    def test_can_upload_data_to_empty_task(self):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task = self.client.tasks.create(
+            {
+                "name": f"test task",
+                "labels": [{"name": "car"}],
+            }
+        )
+
+        data_params = {
+            "image_quality": 75,
+        }
+
+        task_files = generate_image_files(7)
+        for i, f in enumerate(task_files):
+            fname = self.tmp_path / f.name
+            fname.write_bytes(f.getvalue())
+            task_files[i] = fname
+
+        task.upload_data(
+            resources=task_files,
+            resource_type=ResourceType.LOCAL,
+            params=data_params,
+            pbar=pbar,
+        )
+
+        assert task.size == 7
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
 
     def test_can_retrieve_task(self, fxt_new_task: Task):
         task_id = fxt_new_task.id
@@ -278,15 +343,17 @@ class TestTaskUsecases:
 
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_preview()
+        (width, height) = Image.open(frame_encoded).size
 
-        assert Image.open(frame_encoded).size != 0
+        assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     def test_can_download_frame(self, fxt_new_task: Task, quality: str):
         frame_encoded = fxt_new_task.get_frame(0, quality=quality)
+        (width, height) = Image.open(frame_encoded).size
 
-        assert Image.open(frame_encoded).size != 0
+        assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
@@ -298,7 +365,12 @@ class TestTaskUsecases:
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        assert (self.tmp_path / "frame-0.jpg").is_file()
+        if quality == "original":
+            expected_frame_ext = "png"
+        else:
+            expected_frame_ext = "jpg"
+
+        assert (self.tmp_path / f"frame-0.{expected_frame_ext}").is_file()
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
@@ -332,7 +404,7 @@ class TestTaskUsecases:
         assert task.id
         assert task.id != fxt_new_task.id
         assert task.size == fxt_new_task.size
-        assert "imported sucessfully" in self.logger_stream.getvalue()
+        assert "imported successfully" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
@@ -359,6 +431,14 @@ class TestTaskUsecases:
         # make sure the upload was actually chunked
         assert num_requests > 1
 
+    def test_can_get_labels(self, fxt_new_task: Task):
+        expected_labels = {"car", "person"}
+
+        received_labels = fxt_new_task.get_labels()
+
+        assert {obj.name for obj in received_labels} == expected_labels
+        assert self.stdout.getvalue() == ""
+
     def test_can_get_jobs(self, fxt_new_task: Task):
         jobs = fxt_new_task.get_jobs()
 
@@ -370,11 +450,17 @@ class TestTaskUsecases:
 
         assert meta.image_quality == 80
         assert meta.size == 1
-        assert len(meta.frames) == meta.size
-        assert meta.frames[0].name == "img.png"
-        assert meta.frames[0].width == 5
-        assert meta.frames[0].height == 10
         assert not meta.deleted_frames
+        assert self.stdout.getvalue() == ""
+
+    def test_can_get_frame_info(self, fxt_new_task: Task):
+        meta = fxt_new_task.get_meta()
+        frames = fxt_new_task.get_frames_info()
+
+        assert len(frames) == meta.size
+        assert frames[0].name == "img.png"
+        assert frames[0].width == 5
+        assert frames[0].height == 10
         assert self.stdout.getvalue() == ""
 
     def test_can_remove_frames(self, fxt_new_task: Task):
@@ -392,9 +478,10 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_set_annotations(self, fxt_new_task: Task):
+        labels = fxt_new_task.get_labels()
         fxt_new_task.set_annotations(
             models.LabeledDataRequest(
-                tags=[models.LabeledImageRequest(frame=0, label_id=fxt_new_task.labels[0].id)],
+                tags=[models.LabeledImageRequest(frame=0, label_id=labels[0].id)],
             )
         )
 
@@ -413,18 +500,19 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_remove_annotations(self, fxt_new_task: Task):
+        labels = fxt_new_task.get_labels()
         fxt_new_task.set_annotations(
             models.LabeledDataRequest(
                 shapes=[
                     models.LabeledShapeRequest(
                         frame=0,
-                        label_id=fxt_new_task.labels[0].id,
+                        label_id=labels[0].id,
                         type="rectangle",
                         points=[1, 1, 2, 2],
                     ),
                     models.LabeledShapeRequest(
                         frame=0,
-                        label_id=fxt_new_task.labels[0].id,
+                        label_id=labels[0].id,
                         type="rectangle",
                         points=[2, 2, 3, 3],
                     ),
@@ -442,12 +530,13 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_update_annotations(self, fxt_task_with_shapes: Task):
+        labels = fxt_task_with_shapes.get_labels()
         fxt_task_with_shapes.update_annotations(
             models.PatchedLabeledDataRequest(
                 shapes=[
                     models.LabeledShapeRequest(
                         frame=0,
-                        label_id=fxt_task_with_shapes.labels[0].id,
+                        label_id=labels[0].id,
                         type="rectangle",
                         points=[0, 1, 2, 3],
                     ),
@@ -455,7 +544,7 @@ class TestTaskUsecases:
                 tracks=[
                     models.LabeledTrackRequest(
                         frame=0,
-                        label_id=fxt_task_with_shapes.labels[0].id,
+                        label_id=labels[0].id,
                         shapes=[
                             models.TrackedShapeRequest(
                                 frame=0, type="polygon", points=[3, 2, 2, 3, 3, 4]
@@ -463,9 +552,7 @@ class TestTaskUsecases:
                         ],
                     )
                 ],
-                tags=[
-                    models.LabeledImageRequest(frame=0, label_id=fxt_task_with_shapes.labels[0].id)
-                ],
+                tags=[models.LabeledImageRequest(frame=0, label_id=labels[0].id)],
             )
         )
 

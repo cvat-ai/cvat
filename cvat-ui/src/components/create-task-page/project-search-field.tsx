@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -79,6 +80,10 @@ export default function ProjectSearchField(props: Props): JSX.Element {
             setSearchPhrase('');
         }
     }, [value]);
+
+    useEffect(() => {
+        setProjects([]);
+    }, [filter]);
 
     return (
         <Autocomplete

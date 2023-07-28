@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,21 +8,40 @@ import Icon from '@ant-design/icons';
 
 import { MergeIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
 export interface Props {
-    canvasInstance: Canvas;
-    activeControl: ActiveControl;
-    switchMergeShortcut: string;
-    disabled?: boolean;
     mergeObjects(enabled: boolean): void;
+    canvasInstance: Canvas | Canvas3d;
+    activeControl: ActiveControl;
+    disabled?: boolean;
+    shortcuts: {
+        SWITCH_MERGE_MODE: {
+            details: KeyMapItem;
+            displayValue: string;
+        }
+    };
 }
 
 function MergeControl(props: Props): JSX.Element {
     const {
-        switchMergeShortcut, activeControl, canvasInstance, mergeObjects, disabled,
+        shortcuts, activeControl, canvasInstance, mergeObjects, disabled,
     } = props;
+
+    const shortcutHandlers = {
+        SWITCH_MERGE_MODE: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            const merging = activeControl === ActiveControl.MERGE;
+            if (!merging) {
+                canvasInstance.cancel();
+            }
+            canvasInstance.merge({ enabled: !merging });
+            mergeObjects(!merging);
+        },
+    };
 
     const dynamicIconProps =
         activeControl === ActiveControl.MERGE ?
@@ -44,9 +64,15 @@ function MergeControl(props: Props): JSX.Element {
     return disabled ? (
         <Icon className='cvat-merge-control cvat-disabled-canvas-control' component={MergeIcon} />
     ) : (
-        <CVATTooltip title={`Merge shapes/tracks ${switchMergeShortcut}`} placement='right'>
-            <Icon {...dynamicIconProps} component={MergeIcon} />
-        </CVATTooltip>
+        <>
+            <GlobalHotKeys
+                keyMap={{ SWITCH_MERGE_MODE: shortcuts.SWITCH_MERGE_MODE.details }}
+                handlers={shortcutHandlers}
+            />
+            <CVATTooltip title={`Merge shapes/tracks ${shortcuts.SWITCH_MERGE_MODE.displayValue}`} placement='right'>
+                <Icon {...dynamicIconProps} component={MergeIcon} />
+            </CVATTooltip>
+        </>
     );
 }
 

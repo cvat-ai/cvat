@@ -1,11 +1,11 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
 import zipfile
 from glob import glob
-from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
 
@@ -17,25 +17,23 @@ from .registry import dm_env, exporter, importer
 
 
 @exporter(name='ImageNet', ext='ZIP', version='1.0')
-def _export(dst_file, instance_data, save_images=False):
+def _export(dst_file, temp_dir, instance_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
-    with TemporaryDirectory() as temp_dir:
-        if save_images:
-            dataset.export(temp_dir, 'imagenet', save_images=save_images)
-        else:
-            dataset.export(temp_dir, 'imagenet_txt', save_images=save_images)
+    if save_images:
+        dataset.export(temp_dir, 'imagenet', save_images=save_images)
+    else:
+        dataset.export(temp_dir, 'imagenet_txt', save_images=save_images)
 
-        make_zip_archive(temp_dir, dst_file)
+    make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ImageNet', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None, **kwargs):
-    with TemporaryDirectory() as tmp_dir:
-        zipfile.ZipFile(src_file).extractall(tmp_dir)
-        if glob(osp.join(tmp_dir, '*.txt')):
-            dataset = Dataset.import_from(tmp_dir, 'imagenet_txt', env=dm_env)
-        else:
-            dataset = Dataset.import_from(tmp_dir, 'imagenet', env=dm_env)
-            if load_data_callback is not None:
-                load_data_callback(dataset, instance_data)
-        import_dm_annotations(dataset, instance_data)
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    zipfile.ZipFile(src_file).extractall(temp_dir)
+    if glob(osp.join(temp_dir, '*.txt')):
+        dataset = Dataset.import_from(temp_dir, 'imagenet_txt', env=dm_env)
+    else:
+        dataset = Dataset.import_from(temp_dir, 'imagenet', env=dm_env)
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
+    import_dm_annotations(dataset, instance_data)

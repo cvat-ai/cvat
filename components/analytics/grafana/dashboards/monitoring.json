@@ -1,0 +1,1178 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 3,
+        "x": 0,
+        "y": 0
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "builderOptions": {
+            "fields": [],
+            "filters": [],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "field": ""
+              }
+            ],
+            "mode": "aggregate",
+            "orderBy": [],
+            "table": "events"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "filters": [],
+              "limit": 100,
+              "metrics": [
+                {
+                  "aggregation": "count",
+                  "field": ""
+                }
+              ],
+              "mode": "aggregate",
+              "orderBy": [],
+              "table": "events"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n    uniqExact(user_id) as \"Active users (now)\"\r\nFROM\r\n    cvat.events\r\nWHERE\r\n    user_id IS NOT NULL AND\r\n    timestamp >= now() - INTERVAL 15 MINUTE",
+          "refId": "A"
+        }
+      ],
+      "title": "Active users (now)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "description": "Show active users calculated by 15 minutes time interval",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 21,
+        "x": 3,
+        "y": 0
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "limit": 100,
+              "mode": "list"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n    time,\r\n    uniqExact(user_id) Users\r\nFROM\r\n(\r\n    SELECT\r\n      user_id,\r\n      toStartOfInterval(timestamp, INTERVAL 15 minute) as time\r\n    FROM cvat.events\r\n    WHERE\r\n      user_id IS NOT NULL\r\n    GROUP BY\r\n      user_id,\r\n      time\r\n    ORDER BY time ASC WITH FILL STEP toIntervalMinute(15)\r\n)\r\nGROUP BY time\r\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Active users",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 7
+      },
+      "id": 2,
+      "options": {
+        "footer": {
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "builderOptions": {
+            "database": "cvat",
+            "fields": [
+              "scope as Scope"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "JSONHas",
+                "operator": "",
+                "type": "string",
+                "value": ""
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "$__timeFilter",
+                "operator": "",
+                "type": "datetime",
+                "value": ""
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "user_id",
+                "operator": "IN",
+                "type": "",
+                "value": [
+                  "users"
+                ]
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "1",
+                "operator": "IN",
+                "type": "",
+                "value": [
+                  "projects",
+                  "OR",
+                  "project_id",
+                  "IN",
+                  "projects"
+                ]
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "task_id",
+                "operator": "IN",
+                "type": "",
+                "value": [
+                  "tasks"
+                ]
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "job_id",
+                "operator": "IN",
+                "type": "",
+                "value": [
+                  "jobs"
+                ]
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "source",
+                "operator": "=",
+                "type": "string",
+                "value": [
+                  "client"
+                ]
+              }
+            ],
+            "groupBy": [
+              "user_id",
+              "project_id",
+              "task_id",
+              "job_id"
+            ],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "min",
+                "alias": "working_time",
+                "field": "JSONExtractUInt"
+              },
+              {
+                "aggregation": "count",
+                "alias": "Activity",
+                "field": "as"
+              }
+            ],
+            "mode": "aggregate",
+            "table": "events"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "database": "cvat",
+              "fields": [
+                "scope as Scope"
+              ],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "JSONHas",
+                  "operator": "",
+                  "type": "string",
+                  "value": ""
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "$__timeFilter",
+                  "operator": "",
+                  "type": "datetime",
+                  "value": ""
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "user_id",
+                  "operator": "IN",
+                  "type": "",
+                  "value": [
+                    "users"
+                  ]
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "1",
+                  "operator": "IN",
+                  "type": "",
+                  "value": [
+                    "projects",
+                    "OR",
+                    "project_id",
+                    "IN",
+                    "projects"
+                  ]
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "task_id",
+                  "operator": "IN",
+                  "type": "",
+                  "value": [
+                    "tasks"
+                  ]
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "job_id",
+                  "operator": "IN",
+                  "type": "",
+                  "value": [
+                    "jobs"
+                  ]
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "source",
+                  "operator": "=",
+                  "type": "string",
+                  "value": [
+                    "client"
+                  ]
+                }
+              ],
+              "groupBy": [
+                "user_id",
+                "project_id",
+                "task_id",
+                "job_id"
+              ],
+              "limit": 100,
+              "metrics": [
+                {
+                  "aggregation": "min",
+                  "alias": "working_time",
+                  "field": "JSONExtractUInt"
+                },
+                {
+                  "aggregation": "count",
+                  "alias": "Activity",
+                  "field": "as"
+                }
+              ],
+              "mode": "aggregate",
+              "table": "events"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n  scope as Scope,\r\n  source as Source,\r\n  avg(duration) as \"Average duration (ms)\",\r\n  min(duration) as \"Min duration (ms)\",\r\n  max(duration) as \"Max duration (ms)\"\r\nFROM events\r\nWHERE duration > 0\r\n  AND $__timeFilter(timestamp)\r\nGROUP BY scope, source",
+          "refId": "A"
+        }
+      ],
+      "title": "Duration of events",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "id": 4,
+      "options": {
+        "footer": {
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "limit": 100,
+              "mode": "list"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n  scope as Scope,\r\n  source as Source,\r\n  count() as Count\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY scope, source",
+          "refId": "A"
+        }
+      ],
+      "title": "Number of events",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "builderOptions": {
+            "fields": [],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "scope",
+                "operator": "=",
+                "type": "String",
+                "value": "send:exception"
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "timestamp",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "DateTime64(3, 'Etc/UTC')",
+                "value": "TODAY"
+              }
+            ],
+            "limit": 100,
+            "metrics": [
+              {
+                "aggregation": "count",
+                "field": "*"
+              }
+            ],
+            "mode": "trend",
+            "orderBy": [],
+            "table": "events",
+            "timeField": "timestamp",
+            "timeFieldType": "DateTime64(3, 'Etc/UTC')"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "fields": [],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "scope",
+                  "operator": "=",
+                  "type": "String",
+                  "value": "send:exception"
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "timestamp",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "type": "DateTime64(3, 'Etc/UTC')",
+                  "value": "TODAY"
+                }
+              ],
+              "limit": 100,
+              "metrics": [
+                {
+                  "aggregation": "count",
+                  "field": "*"
+                }
+              ],
+              "mode": "trend",
+              "orderBy": [],
+              "table": "events",
+              "timeField": "timestamp",
+              "timeFieldType": "DateTime64(3, 'Etc/UTC')"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n  $__timeInterval(timestamp) as time,\r\n  count(*)\r\nFROM events\r\nWHERE\r\n  $__timeFilter(timestamp)\r\n  AND ( scope = 'send:exception' )\r\n  AND ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND source IN (${sources})\r\n  AND (-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n  AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\nGROUP BY time\r\nORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Exceptions",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "PDEE91DDB90597936"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "filterable": true,
+            "inspect": true,
+            "minWidth": 80
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "user_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 28
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "source"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 68
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "project_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 61
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "task_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 75
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "job_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 55
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "user_name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 115
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "timestamp"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 153
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 452
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 17,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 8,
+      "options": {
+        "footer": {
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "builderOptions": {
+            "fields": [
+              "user_id",
+              "project_id",
+              "task_id",
+              "job_id",
+              "payload"
+            ],
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "timestamp",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "DateTime64(3, 'Etc/UTC')",
+                "value": "TODAY"
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "key": "scope",
+                "operator": "=",
+                "type": "String",
+                "value": "send:exception"
+              }
+            ],
+            "mode": "list",
+            "orderBy": [],
+            "table": "events",
+            "timeField": "timestamp",
+            "timeFieldType": "DateTime64(3, 'Etc/UTC')"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "PDEE91DDB90597936"
+          },
+          "format": 1,
+          "meta": {
+            "builderOptions": {
+              "fields": [
+                "user_id",
+                "project_id",
+                "task_id",
+                "job_id",
+                "payload"
+              ],
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "timestamp",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "type": "DateTime64(3, 'Etc/UTC')",
+                  "value": "TODAY"
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "key": "scope",
+                  "operator": "=",
+                  "type": "String",
+                  "value": "send:exception"
+                }
+              ],
+              "mode": "list",
+              "orderBy": [],
+              "table": "events",
+              "timeField": "timestamp",
+              "timeFieldType": "DateTime64(3, 'Etc/UTC')"
+            }
+          },
+          "queryType": "sql",
+          "rawSql": "SELECT\r\n  timestamp,\r\n  user_id,\r\n  user_name,\r\n  source,\r\n  project_id,\r\n  task_id,\r\n  job_id,\r\n  JSONExtractString(payload, 'message') as error,\r\n  JSONExtractString(payload, 'stack') as stack,\r\n  payload\r\nFROM events\r\nWHERE\r\n  ( timestamp  >= $__fromTime AND timestamp <= $__toTime )\r\n  AND scope = 'send:exception'\r\n  AND source IN (${sources})\r\n  AND (-1 IN (${users}) OR user_id IN (${users}))\r\n  AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n  AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\n  AND ('-1' IN (${errors}) OR error IN (${errors}))\r\nORDER BY timestamp DESC\r\nLIMIT 1000",
+          "refId": "A"
+        }
+      ],
+      "title": "Exceptions table",
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 37,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT DISTINCT source\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Source",
+        "multi": true,
+        "name": "sources",
+        "options": [],
+        "query": "SELECT DISTINCT source\nFROM events\nWHERE $__timeFilter(timestamp)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "User",
+        "multi": true,
+        "name": "users",
+        "options": [],
+        "query": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Project",
+        "multi": true,
+        "name": "projects",
+        "options": [],
+        "query": "SELECT DISTINCT project_id\nFROM events\nWHERE  $__timeFilter(timestamp)\n  AND project_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT DISTINCT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Task",
+        "multi": true,
+        "name": "tasks",
+        "options": [],
+        "query": "SELECT DISTINCT task_id\nFROM events\nWHERE $__timeFilter(timestamp) \n  AND task_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Job",
+        "multi": true,
+        "name": "jobs",
+        "options": [],
+        "query": "SELECT DISTINCT job_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND job_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "-1",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT DISTINCT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Organization",
+        "multi": true,
+        "name": "organizations",
+        "options": [],
+        "query": "SELECT DISTINCT org_id\nFROM events\nWHERE $__timeFilter(timestamp)\nAND org_id IS NOT NULL",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": "'-1'",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "PDEE91DDB90597936"
+        },
+        "definition": "SELECT\n  DISTINCT JSONExtractString(payload, 'message')\n  FROM cvat.events\nWHERE $__timeFilter(timestamp)\n  AND JSONHas(payload, 'message')\n  AND scope='send:exception'",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Error message",
+        "multi": true,
+        "name": "errors",
+        "options": [],
+        "query": "SELECT\n  DISTINCT JSONExtractString(payload, 'message')\n  FROM cvat.events\nWHERE $__timeFilter(timestamp)\n  AND JSONHas(payload, 'message')\n  AND scope='send:exception'",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Monitoring",
+  "uid": "WvDvWK04k",
+  "version": 3,
+  "weekStart": ""
+}

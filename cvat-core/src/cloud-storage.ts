@@ -1,14 +1,16 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { isBrowser, isNode } from 'browser-or-node';
+import { omit } from 'lodash';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import { CloudStorageCredentialsType, CloudStorageProviderType, CloudStorageStatus } from './enums';
 import User from './user';
+import { decodePreview } from './frames';
+import { SerializedRemoteFile } from './server-response-types';
 
 function validateNotEmptyString(value: string): void {
     if (typeof value !== 'string') {
@@ -30,6 +32,7 @@ interface RawCloudStorageData {
     secret_key?: string,
     session_token?: string,
     key_file?: File,
+    connection_string?: string,
     specific_attributes?: string,
     owner?: any,
     created_date?: string,
@@ -47,6 +50,7 @@ export default class CloudStorage {
     public secretKey: string;
     public token: string;
     public keyFile: File;
+    public connectionString: string;
     public resource: string;
     public manifestPath: string;
     public provider_type: CloudStorageProviderType;
@@ -70,6 +74,7 @@ export default class CloudStorage {
             secret_key: undefined,
             session_token: undefined,
             key_file: undefined,
+            connection_string: undefined,
             specific_attributes: undefined,
             owner: undefined,
             created_date: undefined,
@@ -144,6 +149,13 @@ export default class CloudStorage {
                         }
                     },
                 },
+                connectionString: {
+                    get: () => data.connection_string,
+                    set: (value) => {
+                        validateNotEmptyString(value);
+                        data.connection_string = value;
+                    },
+                },
                 resource: {
                     get: () => data.resource,
                     set: (value) => {
@@ -154,7 +166,6 @@ export default class CloudStorage {
                 manifestPath: {
                     get: () => data.manifest_path,
                     set: (value) => {
-                        validateNotEmptyString(value);
                         data.manifest_path = value;
                     },
                 },
@@ -235,13 +246,16 @@ export default class CloudStorage {
         return result;
     }
 
-    public async getContent(): Promise<any> {
-        const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getContent);
+    public async getContent(path: string, nextToken?: string): Promise<{
+        next: string | null,
+        content: (Omit<SerializedRemoteFile, 'mime_type'> & { mimeType: string })[],
+    }> {
+        const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getContent, path, nextToken);
         return result;
     }
 
-    public async getPreview(): Promise<string | ArrayBuffer> {
-        const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.getPreview);
+    public async preview(): Promise<string | ArrayBuffer> {
+        const result = await PluginRegistry.apiWrapper.call(this, CloudStorage.prototype.preview);
         return result;
     }
 
@@ -280,6 +294,10 @@ Object.defineProperties(CloudStorage.prototype.save, {
 
                 if (cloudStorageInstance.keyFile) {
                     data.key_file = cloudStorageInstance.keyFile;
+                }
+
+                if (cloudStorageInstance.connectionString) {
+                    data.connection_string = cloudStorageInstance.connectionString;
                 }
 
                 if (cloudStorageInstance.specificAttributes !== undefined) {
@@ -347,36 +365,24 @@ Object.defineProperties(CloudStorage.prototype.getContent, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<any> {
-            const result = await serverProxy.cloudStorages.getContent(this.id, this.manifestPath);
-            return result;
+        value: async function implementation(path: string, nextToken?: string): ReturnType<CloudStorage['getContent']> {
+            const result = await serverProxy.cloudStorages.getContent(this.id, path, nextToken, this.manifestPath);
+            return {
+                next: result.next,
+                content: result.content.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type })),
+            };
         },
     },
 });
 
-Object.defineProperties(CloudStorage.prototype.getPreview, {
+Object.defineProperties(CloudStorage.prototype.preview, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<string | ArrayBuffer> {
-            return new Promise((resolve, reject) => {
-                serverProxy.cloudStorages
-                    .getPreview(this.id)
-                    .then((result) => {
-                        if (isNode) {
-                            resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                        } else if (isBrowser) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                                resolve(reader.result);
-                            };
-                            reader.readAsDataURL(result);
-                        }
-                    })
-                    .catch((error) => {
-                        reject(error);
-                    });
-            });
+        value: async function implementation(this: CloudStorage): Promise<string> {
+            const preview = await serverProxy.cloudStorages.getPreview(this.id);
+            if (!preview) return '';
+            return decodePreview(preview);
         },
     },
 });

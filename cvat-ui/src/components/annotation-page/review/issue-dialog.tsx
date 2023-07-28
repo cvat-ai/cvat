@@ -1,12 +1,10 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useState,
-    useEffect,
-    useRef,
-    useCallback,
+    useState, useEffect, useRef, useCallback,
 } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
@@ -17,14 +15,15 @@ import Comment from 'antd/lib/comment';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import Button from 'antd/lib/button';
+import Spin from 'antd/lib/spin';
 import Input from 'antd/lib/input';
 import moment from 'moment';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { Issue, Comment as CommentModel } from 'cvat-core-wrapper';
 import { deleteIssueAsync } from 'actions/review-actions';
 
 interface Props {
-    id: number;
-    comments: any[];
+    issue: Issue;
     left: number;
     top: number;
     resolved: boolean;
@@ -44,8 +43,7 @@ export default function IssueDialog(props: Props): JSX.Element {
     const [currentText, setCurrentText] = useState<string>('');
     const dispatch = useDispatch();
     const {
-        comments,
-        id,
+        issue,
         left,
         top,
         scale,
@@ -59,6 +57,8 @@ export default function IssueDialog(props: Props): JSX.Element {
         highlight,
         blur,
     } = props;
+
+    const { id, comments } = issue;
 
     useEffect(() => {
         if (!resolved) {
@@ -85,7 +85,7 @@ export default function IssueDialog(props: Props): JSX.Element {
     }, []);
 
     const lines = comments.map(
-        (_comment: any): JSX.Element => {
+        (_comment: CommentModel): JSX.Element => {
             const created = _comment.createdDate ? moment(_comment.createdDate) : moment(moment.now());
             const diff = created.fromNow();
 
@@ -106,11 +106,11 @@ export default function IssueDialog(props: Props): JSX.Element {
     );
 
     const resolveButton = resolved ? (
-        <Button loading={isFetching} type='primary' onClick={reopen}>
+        <Button loading={isFetching} className='cvat-issue-dialog-reopen-button' type='primary' onClick={reopen}>
             Reopen
         </Button>
     ) : (
-        <Button loading={isFetching} type='primary' onClick={resolve}>
+        <Button loading={isFetching} className='cvat-issue-dialog-resolve-button' type='primary' onClick={resolve}>
             Resolve
         </Button>
     );
@@ -128,7 +128,9 @@ export default function IssueDialog(props: Props): JSX.Element {
                 </Col>
             </Row>
             <Row className='cvat-issue-dialog-chat' justify='start'>
-                <Col style={{ display: 'block' }}>{lines}</Col>
+                {
+                    lines.length > 0 ? <Col style={{ display: 'block' }}>{lines}</Col> : <Spin />
+                }
             </Row>
             <Row className='cvat-issue-dialog-input' justify='start'>
                 <Col span={24}>
@@ -149,13 +151,14 @@ export default function IssueDialog(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-issue-dialog-footer' justify='space-between'>
                 <Col>
-                    <Button type='link' danger onClick={onDeleteIssue}>
+                    <Button type='link' className='cvat-issue-dialog-remove-button' danger onClick={onDeleteIssue}>
                         Remove
                     </Button>
                 </Col>
                 <Col>
                     {currentText.length ? (
                         <Button
+                            className='cvat-issue-dialog-comment-button'
                             loading={isFetching}
                             type='primary'
                             disabled={!currentText.length}

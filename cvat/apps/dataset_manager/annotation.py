@@ -1,21 +1,26 @@
 # Copyright (C) 2019-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from copy import copy, deepcopy
 
+import math
+from typing import Optional, Sequence
 import numpy as np
 from itertools import chain
 from scipy.optimize import linear_sum_assignment
 from shapely import geometry
 
-from cvat.apps.engine.models import ShapeType
+from cvat.apps.engine.models import ShapeType, DimensionType
 from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.dataset_manager.util import deepcopy_simple
 
 
 class AnnotationIR:
-    def __init__(self, data=None):
+    def __init__(self, dimension, data=None):
         self.reset()
+        self.dimension = dimension
         if data:
             self.tags = getattr(data, 'tags', []) or data['tags']
             self.shapes = getattr(data, 'shapes', []) or data['shapes']
@@ -80,7 +85,7 @@ class AnnotationIR:
         return False
 
     @classmethod
-    def _slice_track(cls, track_, start, stop):
+    def _slice_track(cls, track_, start, stop, dimension):
         def filter_track_shapes(shapes):
             shapes = [s for s in shapes if cls._is_shape_inside(s, start, stop)]
             drop_count = 0
@@ -97,9 +102,9 @@ class AnnotationIR:
 
         if len(segment_shapes) < len(track['shapes']):
             for element in track.get('elements', []):
-                element = cls._slice_track(element, start, stop)
+                element = cls._slice_track(element, start, stop, dimension)
             interpolated_shapes = TrackManager.get_interpolated_shapes(
-                track, start, stop)
+                track, start, stop, dimension)
             scoped_shapes = filter_track_shapes(interpolated_shapes)
 
             if scoped_shapes:
@@ -121,8 +126,8 @@ class AnnotationIR:
         return track
 
     def slice(self, start, stop):
-        #makes a data copy from specified frame interval
-        splitted_data = AnnotationIR()
+        # makes a data copy from specified frame interval
+        splitted_data = AnnotationIR(self.dimension)
         splitted_data.tags = [deepcopy(t)
             for t in self.tags if self._is_shape_inside(t, start, stop)]
         splitted_data.shapes = [deepcopy(s)
@@ -130,7 +135,7 @@ class AnnotationIR:
         splitted_tracks = []
         for t in self.tracks:
             if self._is_track_inside(t, start, stop):
-                track = self._slice_track(t, start, stop)
+                track = self._slice_track(t, start, stop, self.dimension)
                 if 0 < len(track['shapes']):
                     splitted_tracks.append(track)
         splitted_data.tracks = splitted_tracks
@@ -147,21 +152,34 @@ class AnnotationManager:
     def __init__(self, data):
         self.data = data
 
-    def merge(self, data, start_frame, overlap):
+    def merge(self, data, start_frame, overlap, dimension):
         tags = TagManager(self.data.tags)
-        tags.merge(data.tags, start_frame, overlap)
+        tags.merge(data.tags, start_frame, overlap, dimension)
 
         shapes = ShapeManager(self.data.shapes)
-        shapes.merge(data.shapes, start_frame, overlap)
+        shapes.merge(data.shapes, start_frame, overlap, dimension)
 
-        tracks = TrackManager(self.data.tracks)
-        tracks.merge(data.tracks, start_frame, overlap)
+        tracks = TrackManager(self.data.tracks, dimension)
+        tracks.merge(data.tracks, start_frame, overlap, dimension)
 
-    def to_shapes(self, end_frame):
+    def to_shapes(self,
+        end_frame: int,
+        dimension: DimensionType,
+        *,
+        included_frames: Optional[Sequence[int]] = None,
+        include_outside: bool = False,
+        use_server_track_ids: bool = False
+    ) -> list:
         shapes = self.data.shapes
-        tracks = TrackManager(self.data.tracks)
+        tracks = TrackManager(self.data.tracks, dimension)
 
-        return shapes + tracks.to_shapes(end_frame)
+        if included_frames is not None:
+            shapes = [s for s in shapes if s["frame"] in included_frames]
+
+        return shapes + tracks.to_shapes(end_frame,
+            included_frames=included_frames, include_outside=include_outside,
+            use_server_track_ids=use_server_track_ids
+        )
 
     def to_tracks(self):
         tracks = self.data.tracks
@@ -190,17 +208,17 @@ class ObjectManager:
         raise NotImplementedError()
 
     @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
+    def _calc_objects_similarity(obj0, obj1, start_frame, overlap, dimension):
         raise NotImplementedError()
 
     @staticmethod
     def _unite_objects(obj0, obj1):
         raise NotImplementedError()
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         raise NotImplementedError()
 
-    def merge(self, objects, start_frame, overlap):
+    def merge(self, objects, start_frame, overlap, dimension):
         # 1. Split objects on two parts: new and which can be intersected
         # with existing objects.
         new_objects = [obj for obj in objects
@@ -221,7 +239,7 @@ class ObjectManager:
         if not old_objects_by_frame or not int_objects_by_frame:
             for frame in old_objects_by_frame:
                 for old_obj in old_objects_by_frame[frame]:
-                    self._modify_unmached_object(old_obj, start_frame + overlap)
+                    self._modify_unmatched_object(old_obj, start_frame + overlap)
             self.objects.extend(int_objects)
             return
 
@@ -239,7 +257,7 @@ class ObjectManager:
                 for i, int_obj in enumerate(int_objects):
                     for j, old_obj in enumerate(old_objects):
                         cost_matrix[i][j] = 1 - self._calc_objects_similarity(
-                            int_obj, old_obj, start_frame, overlap)
+                            int_obj, old_obj, start_frame, overlap, dimension)
 
                 # 6. Find optimal solution using Hungarian algorithm.
                 row_ind, col_ind = linear_sum_assignment(cost_matrix)
@@ -262,7 +280,7 @@ class ObjectManager:
                 # (e.g. generate a shape with outside=True at the end).
                 for j in old_objects_indexes:
                     if j != -1:
-                        self._modify_unmached_object(old_objects[j],
+                        self._modify_unmatched_object(old_objects[j],
                             start_frame + overlap)
             else:
                 # We don't have old objects on the frame. Let's add all new ones.
@@ -274,7 +292,7 @@ class TagManager(ObjectManager):
         return 0.25
 
     @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
+    def _calc_objects_similarity(obj0, obj1, start_frame, overlap, dimension):
         # TODO: improve the trivial implementation, compare attributes
         return 1 if obj0["label_id"] == obj1["label_id"] else 0
 
@@ -283,7 +301,7 @@ class TagManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         pass
 
 def pairwise(iterable):
@@ -320,7 +338,7 @@ class ShapeManager(ObjectManager):
         return 0.25
 
     @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
+    def _calc_objects_similarity(obj0, obj1, start_frame, overlap, dimension):
         def _calc_polygons_similarity(p0, p1):
             if p0.is_valid and p1.is_valid: # check validity of polygons
                 overlap_area = p0.intersection(p1).area
@@ -331,21 +349,65 @@ class ShapeManager(ObjectManager):
             else:
                 return 0 # if there's invalid polygon, assume similarity is 0
 
-        has_same_type  = obj0["type"] == obj1["type"]
+        has_same_type = obj0["type"] == obj1["type"]
         has_same_label = obj0.get("label_id") == obj1.get("label_id")
         if has_same_type and has_same_label:
             if obj0["type"] == ShapeType.RECTANGLE:
+                # FIXME: need to consider rotated boxes
                 p0 = geometry.box(*obj0["points"])
                 p1 = geometry.box(*obj1["points"])
 
                 return _calc_polygons_similarity(p0, p1)
+            elif obj0["type"] == ShapeType.CUBOID and dimension == DimensionType.DIM_3D:
+                [x_c0, y_c0, z_c0] = obj0["points"][0:3]
+                [x_c1, y_c1, z_c1] = obj1["points"][0:3]
+
+                [x_len0, y_len0, z_len0] = obj0["points"][6:9]
+                [x_len1, y_len1, z_len1] = obj1["points"][6:9]
+
+                top_view_0 = [
+                    x_c0 - x_len0 / 2,
+                    y_c0 - y_len0 / 2,
+                    x_c0 + x_len0 / 2,
+                    y_c0 + y_len0 / 2
+                ]
+
+                top_view_1 = [
+                    x_c1 - x_len1 / 2,
+                    y_c1 - y_len1 / 2,
+                    x_c1 + x_len1 / 2,
+                    y_c1 + y_len1 / 2
+                ]
+
+                p_top0 = geometry.box(*top_view_0)
+                p_top1 = geometry.box(*top_view_1)
+                top_similarity = _calc_polygons_similarity(p_top0, p_top1)
+
+                side_view_0 = [
+                    x_c0 - x_len0 / 2,
+                    z_c0 - z_len0 / 2,
+                    x_c0 + x_len0 / 2,
+                    z_c0 + z_len0 / 2
+                ]
+
+                side_view_1 = [
+                    x_c1 - x_len1 / 2,
+                    z_c1 - z_len1 / 2,
+                    x_c1 + x_len1 / 2,
+                    z_c1 + z_len1 / 2
+                ]
+                p_side0 = geometry.box(*side_view_0)
+                p_side1 = geometry.box(*side_view_1)
+                side_similarity = _calc_polygons_similarity(p_side0, p_side1)
+
+                return top_similarity * side_similarity
             elif obj0["type"] == ShapeType.POLYGON:
                 p0 = geometry.Polygon(pairwise(obj0["points"]))
                 p1 = geometry.Polygon(pairwise(obj1["points"]))
 
                 return _calc_polygons_similarity(p0, p1)
             else:
-                return 0 # FIXME: need some similarity for points and polylines
+                return 0 # FIXME: need some similarity for points, polylines, ellipses and 2D cuboids
         return 0
 
     @staticmethod
@@ -353,36 +415,66 @@ class ShapeManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         pass
 
 class TrackManager(ObjectManager):
-    def to_shapes(self, end_frame, end_skeleton_frame=None):
+    def __init__(self, objects, dimension):
+        self._dimension = dimension
+        super().__init__(objects)
+
+    def to_shapes(self, end_frame: int, *,
+        included_frames: Optional[Sequence[int]] = None,
+        include_outside: bool = False,
+        use_server_track_ids: bool = False
+    ) -> list:
         shapes = []
         for idx, track in enumerate(self.objects):
-            track_shapes = []
-            for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame):
+            track_id = track["id"] if use_server_track_ids else idx
+            track_shapes = {}
+
+            for shape in TrackManager.get_interpolated_shapes(
+                track,
+                0,
+                end_frame,
+                self._dimension,
+                include_outside=include_outside,
+                included_frames=included_frames,
+            ):
                 shape["label_id"] = track["label_id"]
                 shape["group"] = track["group"]
-                shape["track_id"] = idx
+                shape["track_id"] = track_id
+                shape["source"] = track["source"]
                 shape["attributes"] += track["attributes"]
                 shape["elements"] = []
-                track_shapes.append(shape)
 
-            while end_skeleton_frame and track_shapes[-1]["frame"] < end_skeleton_frame:
-                shape = deepcopy(track_shapes[-1])
-                shape["frame"] += 1
-                track_shapes.append(shape)
+                track_shapes[shape["frame"]] = shape
 
-            if len(track.get("elements", [])):
-                element_tracks = TrackManager(track["elements"])
-                element_shapes = element_tracks.to_shapes(end_frame, end_skeleton_frame=track_shapes[-1]["frame"])
+            if not track_shapes:
+                # This track has no elements on the included frames
+                continue
 
-                for i in range(len(element_shapes) // len(track_shapes)):
-                    for track_shape, element_shape in zip(track_shapes, element_shapes[len(track_shapes) * i : len(track_shapes) * (i + 1)]):
-                        track_shape["elements"].append(element_shape)
+            if track.get("elements"):
+                track_elements = TrackManager(track["elements"], self._dimension)
+                element_shapes = track_elements.to_shapes(end_frame,
+                    included_frames=set(track_shapes.keys()).intersection(included_frames or []),
+                    include_outside=True, # elements are controlled by the parent shape
+                    use_server_track_ids=use_server_track_ids
+                )
 
-            shapes.extend(track_shapes)
+                for shape in element_shapes:
+                    track_shapes[shape["frame"]]["elements"].append(shape)
+
+                # The whole shape can be filtered out, if all its elements are outside,
+                # and outside shapes are not requested.
+                if not include_outside:
+                    track_shapes = {
+                        frame_number: shape for frame_number, shape in track_shapes.items()
+                        if not shape["elements"]
+                        or not all(elem["outside"] for elem in shape["elements"])
+                    }
+
+            shapes.extend(track_shapes.values())
         return shapes
 
     @staticmethod
@@ -390,6 +482,9 @@ class TrackManager(ObjectManager):
         # Just for unification. All tracks are assigned on the same frame
         objects_by_frame = {0: []}
         for obj in objects:
+            if not obj["shapes"]:
+                continue
+
             shape = obj["shapes"][-1] # optimization for old tracks
             if shape["frame"] >= start_frame or not shape["outside"]:
                 objects_by_frame[0].append(obj)
@@ -404,17 +499,19 @@ class TrackManager(ObjectManager):
         return 0.5
 
     @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
+    def _calc_objects_similarity(obj0, obj1, start_frame, overlap, dimension):
         if obj0["label_id"] == obj1["label_id"]:
             # Here start_frame is the start frame of next segment
             # and stop_frame is the stop frame of current segment
             # end_frame == stop_frame + 1
             end_frame = start_frame + overlap
-            obj0_shapes = TrackManager.get_interpolated_shapes(obj0, start_frame, end_frame)
-            obj1_shapes = TrackManager.get_interpolated_shapes(obj1, start_frame, end_frame)
+            obj0_shapes = TrackManager.get_interpolated_shapes(obj0, start_frame, end_frame, dimension)
+            obj1_shapes = TrackManager.get_interpolated_shapes(obj1, start_frame, end_frame, dimension)
+            if not obj0_shapes or not obj1_shapes:
+                return 0
+
             obj0_shapes_by_frame = {shape["frame"]:shape for shape in obj0_shapes}
             obj1_shapes_by_frame = {shape["frame"]:shape for shape in obj1_shapes}
-            assert obj0_shapes_by_frame and obj1_shapes_by_frame
 
             count, error = 0, 0
             for frame in range(start_frame, end_frame):
@@ -424,17 +521,17 @@ class TrackManager(ObjectManager):
                     if shape0["outside"] != shape1["outside"]:
                         error += 1
                     else:
-                        error += 1 - ShapeManager._calc_objects_similarity(shape0, shape1, start_frame, overlap)
+                        error += 1 - ShapeManager._calc_objects_similarity(shape0, shape1, start_frame, overlap, dimension)
                     count += 1
                 elif shape0 or shape1:
                     error += 1
                     count += 1
 
-            return 1 - error / count
+            return 1 - error / (count or 1)
         else:
             return 0
 
-    def _modify_unmached_object(self, obj, end_frame):
+    def _modify_unmatched_object(self, obj, end_frame):
         shape = obj["shapes"][-1]
         if not shape["outside"]:
             shape = deepcopy(shape)
@@ -443,18 +540,34 @@ class TrackManager(ObjectManager):
             obj["shapes"].append(shape)
 
             for element in obj.get("elements", []):
-                self._modify_unmached_object(element, end_frame)
+                self._modify_unmatched_object(element, end_frame)
 
     @staticmethod
-    def get_interpolated_shapes(track, start_frame, end_frame):
+    def get_interpolated_shapes(
+        track, start_frame, end_frame, dimension, *,
+        included_frames: Optional[Sequence[int]] = None,
+        include_outside: bool = False,
+    ):
         def copy_shape(source, frame, points=None, rotation=None):
-            copied = deepcopy(source)
+            copied = source.copy()
+            copied["attributes"] = deepcopy_simple(source["attributes"])
+
             copied["keyframe"] = False
             copied["frame"] = frame
             if rotation is not None:
                 copied["rotation"] = rotation
+
+            if points is None:
+                points = copied["points"]
+
+            if isinstance(points, np.ndarray):
+                points = points.tolist()
+            else:
+                points = points.copy()
+
             if points is not None:
                 copied["points"] = points
+
             return copied
 
         def find_angle_diff(right_angle, left_angle):
@@ -462,7 +575,7 @@ class TrackManager(ObjectManager):
             angle_diff = ((angle_diff + 180) % 360) - 180
             if abs(angle_diff) >= 180:
                 # if the main arc is bigger than 180, go another arc
-                # to find it, just substract absolute value from 360 and inverse sign
+                # to find it, just subtract absolute value from 360 and inverse sign
                 angle_diff = 360 - abs(angle_diff) * -1 if angle_diff > 0 else 1
 
             return angle_diff
@@ -479,9 +592,27 @@ class TrackManager(ObjectManager):
                 ) * offset + 360) % 360
                 points = shape0["points"] + diff * offset
 
-                shapes.append(copy_shape(shape0, frame, points.tolist(), rotation))
+                if included_frames is None or frame in included_frames:
+                    shapes.append(copy_shape(shape0, frame, points, rotation))
 
             return shapes
+
+        def simple_3d_interpolation(shape0, shape1):
+            result = simple_interpolation(shape0, shape1)
+            angles = (shape0["points"][3:6] + shape1["points"][3:6])
+            distance = shape1["frame"] - shape0["frame"]
+
+            for shape in result:
+                offset = (shape["frame"] - shape0["frame"]) / distance
+                for i, angle0 in enumerate(angles):
+                    if i < 3:
+                        angle1 = angles[i + 3]
+                        angle0 = (angle0 if angle0 >= 0 else angle0 + math.pi * 2) * 180 / math.pi
+                        angle1 = (angle1 if angle1 >= 0 else angle1 + math.pi * 2) * 180 / math.pi
+                        angle = angle0 + find_angle_diff(angle1, angle0) * offset * math.pi / 180
+                        shape["points"][i + 3] = angle if angle <= math.pi else angle - math.pi * 2
+
+            return result
 
         def points_interpolation(shape0, shape1):
             if len(shape0["points"]) == 2 and len(shape1["points"]) == 2:
@@ -489,7 +620,8 @@ class TrackManager(ObjectManager):
             else:
                 shapes = []
                 for frame in range(shape0["frame"] + 1, shape1["frame"]):
-                    shapes.append(copy_shape(shape0, frame))
+                    if included_frames is None or frame in included_frames:
+                        shapes.append(copy_shape(shape0, frame))
 
             return shapes
 
@@ -541,7 +673,7 @@ class TrackManager(ObjectManager):
             def match_right_left(left_curve, right_curve, left_right_matching):
                 matched_right_points = list(chain.from_iterable(left_right_matching.values()))
                 unmatched_right_points = filter(lambda x: x not in matched_right_points, range(len(right_curve)))
-                updated_matching = deepcopy(left_right_matching)
+                updated_matching = deepcopy_simple(left_right_matching)
 
                 for right_point in unmatched_right_points:
                     left_point = find_nearest_pair(right_curve[right_point], left_curve)
@@ -693,17 +825,22 @@ class TrackManager(ObjectManager):
             shapes = []
             is_polygon = shape0["type"] == ShapeType.POLYGON
             if is_polygon:
-                shape0["points"].extend(shape0["points"][:2])
-                shape1["points"].extend(shape1["points"][:2])
+                # Make the polygon closed for computations
+                shape0 = shape0.copy()
+                shape1 = shape1.copy()
+                shape0["points"] = shape0["points"] + shape0["points"][:2]
+                shape1["points"] = shape1["points"] + shape1["points"][:2]
 
             distance = shape1["frame"] - shape0["frame"]
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
                 points = interpolate_position(shape0, shape1, offset)
 
-                shapes.append(copy_shape(shape0, frame, points))
+                if included_frames is None or frame in included_frames:
+                    shapes.append(copy_shape(shape0, frame, points))
 
             if is_polygon:
+                # Remove the extra point added
                 shape0["points"] = shape0["points"][:-2]
                 shape1["points"] = shape1["points"][:-2]
                 for shape in shapes:
@@ -725,6 +862,8 @@ class TrackManager(ObjectManager):
                 raise NotImplementedError()
 
             shapes = []
+            if dimension == DimensionType.DIM_3D:
+                shapes = simple_3d_interpolation(shape0, shape1)
             if is_rectangle or is_cuboid or is_ellipse or is_skeleton:
                 shapes = simple_interpolation(shape0, shape1)
             elif is_points:
@@ -736,33 +875,75 @@ class TrackManager(ObjectManager):
 
             return shapes
 
+        def propagate(shape, end_frame, *, included_frames=None):
+            return [
+                copy_shape(shape, i)
+                for i in range(shape["frame"] + 1, end_frame)
+                if included_frames is None or i in included_frames
+            ]
+
         shapes = []
-        prev_shape = {}
+        prev_shape = None
         for shape in sorted(track["shapes"], key=lambda shape: shape["frame"]):
             curr_frame = shape["frame"]
-            if end_frame <= curr_frame:
-                if not prev_shape:
-                    shape["keyframe"] = True
-                    shapes.append(shape)
-                    prev_shape = shape
-                break
+            if prev_shape and end_frame <= curr_frame:
+                # If we exceed the end_frame and there was a previous shape,
+                # we still need to interpolate up to the next keyframe,
+                # but keep the results only up to the end_frame:
+                #        vvvvvvv
+                # ---- | ------- | ----- | ----->
+                #     prev      end   cur kf
+                interpolated = interpolate(prev_shape, shape)
+                interpolated.append(shape)
+
+                for shape in sorted(interpolated, key=lambda shape: shape["frame"]):
+                    if shape["frame"] < end_frame:
+                        shapes.append(shape)
+                    else:
+                        break
+
+                # Update the last added shape
+                shape["keyframe"] = True
+                prev_shape = shape
+
+                break # The track finishes here
 
             if prev_shape:
-                assert shape["frame"] > prev_shape["frame"]
+                assert curr_frame > prev_shape["frame"] # Catch invalid tracks
+
+                # Propagate attributes
                 for attr in prev_shape["attributes"]:
                     if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
-                        shape["attributes"].append(deepcopy(attr))
-                if not prev_shape["outside"]:
+                        shape["attributes"].append(deepcopy_simple(attr))
+
+                if not prev_shape["outside"] or include_outside:
                     shapes.extend(interpolate(prev_shape, shape))
 
             shape["keyframe"] = True
             shapes.append(shape)
             prev_shape = shape
 
-        if not prev_shape["outside"]:
-            shape = deepcopy(prev_shape)
-            shape["frame"] = end_frame
-            shapes.extend(interpolate(prev_shape, shape))
+        if prev_shape and (not prev_shape["outside"] or include_outside):
+            # When the latest keyframe of a track is less than the end_frame
+            # and it is not outside, need to propagate
+            shapes.extend(propagate(prev_shape, end_frame, included_frames=included_frames))
+
+        shapes = [
+            shape for shape in shapes
+
+            # After interpolation there can be a finishing frame
+            # outside of the task boundaries. Filter it out to avoid errors.
+            # https://github.com/openvinotoolkit/cvat/issues/2827
+            if track["frame"] <= shape["frame"] < end_frame
+
+            # Exclude outside shapes.
+            # Keyframes should be included regardless the outside value
+            # If really needed, they can be excluded on the later stages,
+            # but here they represent a finishing shape in a visible sequence
+            if shape["keyframe"] or not shape["outside"] or include_outside
+
+            if included_frames is None or shape["frame"] in included_frames
+        ]
 
         return shapes
 
@@ -770,7 +951,7 @@ class TrackManager(ObjectManager):
     def _unite_objects(obj0, obj1):
         track = obj0 if obj0["frame"] < obj1["frame"] else obj1
         assert obj0["label_id"] == obj1["label_id"]
-        shapes = {shape["frame"]:shape for shape in obj0["shapes"]}
+        shapes = {shape["frame"]: shape for shape in obj0["shapes"]}
         for shape in obj1["shapes"]:
             frame = shape["frame"]
             if frame in shapes:

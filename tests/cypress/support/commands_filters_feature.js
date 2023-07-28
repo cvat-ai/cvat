@@ -57,7 +57,7 @@ Cypress.Commands.add('addFiltersRule', (groupIndex) => {
 Cypress.Commands.add('setGroupCondition', (groupIndex, condition) => {
     cy.checkFiltersModalOpened();
     cy.collectGroupID().then((groupIdIndex) => {
-        cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).within(() => {
+        cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`).first().within(() => {
             cy.get('.group--header').first().trigger('mouseover');
             cy.contains('button', condition).click({ force: true });
         });
@@ -74,6 +74,7 @@ Cypress.Commands.add(
             cy.collectRuleID().then((ruleIdIndex) => {
                 cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
                     .find(`[data-id="${ruleIdIndex[ruleIndex]}"]`)
+                    .first()
                     .within(() => {
                         cy.contains('button', 'Select field').click();
                     });
@@ -89,6 +90,7 @@ Cypress.Commands.add(
                 }
                 cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
                     .find(`[data-id="${ruleIdIndex[ruleIndex]}"]`)
+                    .first()
                     .within(() => {
                         cy.get('[type="search"]').first().click({ force: true });
                     });
@@ -96,6 +98,7 @@ Cypress.Commands.add(
                 if (valueSource) {
                     cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
                         .find(`[data-id="${ruleIdIndex[ruleIndex]}"]`)
+                        .first()
                         .within(() => {
                             cy.get('[aria-label="ellipsis"]').trigger('mouseover');
                         });
@@ -103,6 +106,7 @@ Cypress.Commands.add(
                 }
                 cy.get(`[data-id="${groupIdIndex[groupIndex]}"]`)
                     .find(`[data-id="${ruleIdIndex[ruleIndex]}"]`)
+                    .first()
                     .within(() => {
                         if (field === 'Attributes') {
                             cy.get('[placeholder="Enter string"]').last().type(`${value}{Enter}`);
@@ -120,7 +124,7 @@ Cypress.Commands.add(
                     cy.get('.ant-dropdown').not('.ant-dropdown-hidden').contains('[role="menuitem"]', value).click();
                 }
                 if (submit) {
-                    cy.get('.cvat-filters-modal-visible').within(() => {
+                    cy.get('.cvat-filters-modal-visible').first().within(() => {
                         cy.contains('button', 'Submit').click();
                     });
                     cy.get('.cvat-filters-modal-visible').should('not.exist');

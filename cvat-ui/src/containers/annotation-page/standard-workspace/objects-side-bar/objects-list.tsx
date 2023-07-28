@@ -19,11 +19,15 @@ import {
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
+import {
+    changeShowGroundTruth as changeShowGroundTruthAction,
+} from 'actions/settings-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
-    CombinedState, StatesOrdering, ObjectType, ColorBy,
+    CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace,
 } from 'reducers';
-import { ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { FramesMetaData, ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { filterAnnotations } from 'utils/filter-annotations';
 
 interface OwnProps {
     readonly: boolean;
@@ -46,6 +50,10 @@ interface StateToProps {
     maxZLayer: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
+    showGroundTruth: boolean;
+    statesSources: number[];
+    groundTruthJobFramesMeta: FramesMetaData | null;
+    workspace: Workspace;
 }
 
 interface DispatchToProps {
@@ -56,6 +64,7 @@ interface DispatchToProps {
     switchPropagateVisibility: (visible: boolean) => void;
     changeFrame(frame: number): void;
     changeGroupColor(group: number, color: string): void;
+    changeShowGroundTruth(value: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -69,15 +78,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
+                statesSources,
             },
-            job: { instance: jobInstance },
+            job: { instance: jobInstance, groundTruthJobFramesMeta },
             player: {
                 frame: { number: frameNumber },
             },
             colors,
+            workspace,
         },
         settings: {
-            shapes: { colorBy },
+            shapes: { colorBy, showGroundTruth },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
@@ -118,6 +129,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         maxZLayer,
         keyMap,
         normalizedKeyMap,
+        showGroundTruth,
+        statesSources,
+        groundTruthJobFramesMeta,
+        workspace,
     };
 }
 
@@ -144,6 +159,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
         },
+        changeShowGroundTruth(value: boolean): void {
+            dispatch(changeShowGroundTruthAction(value));
+        },
     };
 }
 
@@ -167,6 +185,7 @@ type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     statesOrdering: StatesOrdering;
     objectStates: ObjectState[];
+    filteredStates: ObjectState[];
     sortedStatesID: number[];
 }
 
@@ -184,27 +203,50 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.state = {
             statesOrdering: StatesOrdering.ID_ASCENT,
             objectStates: [],
+            filteredStates: [],
             sortedStatesID: [],
         };
     }
 
-    static getDerivedStateFromProps(props: Props, state: State): State | null {
-        if (props.objectStates === state.objectStates) {
-            return null;
-        }
+    public componentDidMount(): void {
+        this.updateObjects();
+    }
 
-        return {
-            ...state,
-            objectStates: props.objectStates,
-            sortedStatesID: sortAndMap(props.objectStates, state.statesOrdering),
-        };
+    public componentDidUpdate(prevProps: Props): void {
+        const {
+            statesSources, objectStates,
+        } = this.props;
+        const { objectStates: stateObjects } = this.state;
+        if (objectStates !== stateObjects ||
+            statesSources !== prevProps.statesSources
+        ) {
+            this.updateObjects();
+        }
+    }
+
+    private updateObjects = (): void => {
+        const {
+            statesSources, objectStates, frameNumber, groundTruthJobFramesMeta, workspace,
+        } = this.props;
+        const { statesOrdering } = this.state;
+        const filteredStates = filterAnnotations(objectStates, {
+            statesSources,
+            frame: frameNumber,
+            groundTruthJobFramesMeta,
+            workspace,
+        });
+        this.setState({
+            objectStates,
+            filteredStates,
+            sortedStatesID: sortAndMap(filteredStates, statesOrdering),
+        });
     }
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
-        const { objectStates } = this.props;
+        const { filteredStates } = this.state;
         this.setState({
             statesOrdering,
-            sortedStatesID: sortAndMap(objectStates, statesOrdering),
+            sortedStatesID: sortAndMap(filteredStates, statesOrdering),
         });
     };
 
@@ -232,34 +274,43 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.hideAllStates(false);
     };
 
+    private changeShowGroundTruth = (): void => {
+        const { showGroundTruth, changeShowGroundTruth } = this.props;
+
+        changeShowGroundTruth(!showGroundTruth);
+    };
+
     private lockAllStates(locked: boolean): void {
-        const { objectStates, updateAnnotations, readonly } = this.props;
+        const { updateAnnotations, readonly } = this.props;
+        const { filteredStates } = this.state;
 
         if (!readonly) {
-            for (const objectState of objectStates) {
+            for (const objectState of filteredStates) {
                 objectState.lock = locked;
             }
 
-            updateAnnotations(objectStates);
+            updateAnnotations(filteredStates);
         }
     }
 
     private hideAllStates(hidden: boolean): void {
-        const { objectStates, updateAnnotations, readonly } = this.props;
+        const { updateAnnotations, readonly } = this.props;
+        const { filteredStates } = this.state;
 
         if (!readonly) {
-            for (const objectState of objectStates) {
+            for (const objectState of filteredStates) {
                 objectState.hidden = hidden;
             }
 
-            updateAnnotations(objectStates);
+            updateAnnotations(filteredStates);
         }
     }
 
     private collapseAllStates(collapsed: boolean): void {
-        const { objectStates, collapseStates } = this.props;
+        const { collapseStates } = this.props;
+        const { filteredStates } = this.state;
 
-        collapseStates(objectStates, collapsed);
+        collapseStates(filteredStates, collapsed);
     }
 
     public render(): JSX.Element {
@@ -276,14 +327,18 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             colorBy,
             readonly,
             statesCollapsedAll,
+            showGroundTruth,
             updateAnnotations,
             changeGroupColor,
             removeObject,
             copyShape,
             switchPropagateVisibility,
             changeFrame,
+            workspace,
         } = this.props;
-        const { objectStates, sortedStatesID, statesOrdering } = this.state;
+        const {
+            objectStates, sortedStatesID, statesOrdering, filteredStates,
+        } = this.state;
 
         const subKeyMap = {
             SWITCH_ALL_LOCK: keyMap.SWITCH_ALL_LOCK,
@@ -481,9 +536,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesLocked={statesLocked}
                     statesCollapsedAll={statesCollapsedAll}
                     readonly={readonly || false}
+                    workspace={workspace}
                     statesOrdering={statesOrdering}
                     sortedStatesID={sortedStatesID}
-                    objectStates={objectStates}
+                    showGroundTruth={showGroundTruth}
+                    objectStates={filteredStates}
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
@@ -493,6 +550,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     expandAllStates={this.onExpandAllStates}
                     hideAllStates={this.onHideAllStates}
                     showAllStates={this.onShowAllStates}
+                    changeShowGroundTruth={this.changeShowGroundTruth}
                 />
             </>
         );

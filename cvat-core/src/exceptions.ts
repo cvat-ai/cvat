@@ -6,12 +6,6 @@
 import Platform from 'platform';
 import ErrorStackParser from 'error-stack-parser';
 
-/**
- * Base exception class
- * @memberof module:API.cvat.exceptions
- * @extends Error
- * @ignore
- */
 export class Exception extends Error {
     private readonly time: string;
     private readonly system: string;
@@ -21,9 +15,6 @@ export class Exception extends Error {
     private readonly line: number;
     private readonly column: number;
 
-    /**
-     * @param {string} message - Exception message
-     */
     constructor(message) {
         super(message);
         const time = new Date().toISOString();
@@ -73,43 +64,15 @@ export class Exception extends Error {
                     get: () => time,
                 },
                 // jobID: {
-                //     /**
-                //      * @name jobID
-                //      * @type {number}
-                //      * @memberof module:API.cvat.exceptions.Exception
-                //      * @readonly
-                //      * @instance
-                //      */
                 //     get: () => jobID,
                 // },
                 // taskID: {
-                //     /**
-                //      * @name taskID
-                //      * @type {number}
-                //      * @memberof module:API.cvat.exceptions.Exception
-                //      * @readonly
-                //      * @instance
-                //      */
                 //     get: () => taskID,
                 // },
                 // projID: {
-                //     /**
-                //      * @name projID
-                //      * @type {number}
-                //      * @memberof module:API.cvat.exceptions.Exception
-                //      * @readonly
-                //      * @instance
-                //      */
                 //     get: () => projID,
                 // },
                 // clientID: {
-                //     /**
-                //      * @name clientID
-                //      * @type {number}
-                //      * @memberof module:API.cvat.exceptions.Exception
-                //      * @readonly
-                //      * @instance
-                //      */
                 //     get: () => clientID,
                 // },
                 filename: {
@@ -146,14 +109,6 @@ export class Exception extends Error {
         );
     }
 
-    /**
-     * Save an exception on a server
-     * @name save
-     * @method
-     * @memberof Exception
-     * @instance
-     * @async
-     */
     async save(): Promise<void> {
         const exceptionObject = {
             system: this.system,
@@ -171,6 +126,7 @@ export class Exception extends Error {
         };
 
         try {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
             const serverProxy = require('./server-proxy').default;
             await serverProxy.server.exception(exceptionObject);
         } catch (exception) {
@@ -179,73 +135,21 @@ export class Exception extends Error {
     }
 }
 
-/**
- * Exceptions are referred with arguments data
- * @memberof module:API.cvat.exceptions
- * @extends module:API.cvat.exceptions.Exception
- */
-export class ArgumentError extends Exception {
-    /**
-     * @param {string} message - Exception message
-     */
-}
+export class ArgumentError extends Exception {}
 
-/**
- * Unexpected problems with data which are not connected with a user input
- * @memberof module:API.cvat.exceptions
- * @extends module:API.cvat.exceptions.Exception
- */
-export class DataError extends Exception {
-    /**
-     * @param {string} message - Exception message
-     */
-}
+export class DataError extends Exception {}
 
-/**
- * Unexpected situations in code
- * @memberof module:API.cvat.exceptions
- * @extends module:API.cvat.exceptions.Exception
- */
-export class ScriptingError extends Exception {
-    /**
-     * @param {string} message - Exception message
-     */
-}
+export class ScriptingError extends Exception {}
 
-/**
- * Plugin-referred exceptions
- * @memberof module:API.cvat.exceptions
- * @extends module:API.cvat.exceptions.Exception
- */
-export class PluginError extends Exception {
-    /**
-     * @param {string} message - Exception message
-     */
-}
+export class PluginError extends Exception {}
 
-/**
- * Exceptions in interaction with a server
- * @memberof module:API.cvat.exceptions
- * @extends module:API.cvat.exceptions.Exception
- */
 export class ServerError extends Exception {
-    /**
-     * @param {string} message - Exception message
-     * @param {(string|number)} code - Response code
-     */
     constructor(message, code) {
         super(message);
 
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name code
-                 * @type {(string|number)}
-                 * @memberof module:API.cvat.exceptions.ServerError
-                 * @readonly
-                 * @instance
-                 */
                 code: {
                     get: () => code,
                 },

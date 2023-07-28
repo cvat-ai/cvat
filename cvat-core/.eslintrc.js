@@ -7,7 +7,6 @@ module.exports = {
         '.eslintrc.js',
         'webpack.config.js',
         'jest.config.js',
-        'jsdoc.config.js',
         'src/3rdparty/**',
         'node_modules/**',
         'dist/**',

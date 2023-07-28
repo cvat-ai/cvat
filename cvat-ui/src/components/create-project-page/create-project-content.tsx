@@ -1,15 +1,13 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, {
-    RefObject, useContext, useRef, useState, useEffect,
+    RefObject, useRef, useState, useEffect,
 } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
-import Switch from 'antd/lib/switch';
-import Select from 'antd/lib/select';
 import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Form, { FormInstance } from 'antd/lib/form';
@@ -24,9 +22,6 @@ import patterns from 'utils/validation-patterns';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import SourceStorageField from 'components/storage/source-storage-field';
 import TargetStorageField from 'components/storage/target-storage-field';
-import CreateProjectContext from './create-project.context';
-
-const { Option } = Select;
 
 interface AdvancedConfiguration {
     sourceStorage: StorageData;
@@ -73,59 +68,6 @@ function NameConfigurationForm(
             >
                 <Input ref={inputRef} />
             </Form.Item>
-        </Form>
-    );
-}
-
-function AdaptiveAutoAnnotationForm({ formRef }: { formRef: RefObject<FormInstance> }): JSX.Element {
-    const { projectClass, trainingEnabled } = useContext(CreateProjectContext);
-    const projectClassesForTraining = ['OD'];
-    return (
-        <Form layout='vertical' ref={formRef}>
-            <Form.Item name='project_class' hasFeedback label='Class'>
-                <Select value={projectClass.value} onChange={(v) => projectClass.set?.(v)}>
-                    <Option value=''>--Not Selected--</Option>
-                    <Option value='OD'>Detection</Option>
-                </Select>
-            </Form.Item>
-
-            <Form.Item name='enabled' label='Adaptive auto annotation' initialValue={false}>
-                <Switch
-                    disabled={!projectClassesForTraining.includes(projectClass.value)}
-                    checked={trainingEnabled.value}
-                    onClick={() => trainingEnabled.set?.(!trainingEnabled.value)}
-                />
-            </Form.Item>
-
-            <Form.Item
-                name='host'
-                label='Host'
-                rules={[
-                    {
-                        validator: (_, value, callback): void => {
-                            if (value && !patterns.validateURL.pattern.test(value)) {
-                                callback('Training server host must be url.');
-                            } else {
-                                callback();
-                            }
-                        },
-                    },
-                ]}
-            >
-                <Input placeholder='https://example.host' disabled={!trainingEnabled.value} />
-            </Form.Item>
-            <Row gutter={16}>
-                <Col span={12}>
-                    <Form.Item name='username' label='Username'>
-                        <Input placeholder='UserName' disabled={!trainingEnabled.value} />
-                    </Form.Item>
-                </Col>
-                <Col span={12}>
-                    <Form.Item name='password' label='Password'>
-                        <Input.Password placeholder='Pa$$w0rd' disabled={!trainingEnabled.value} />
-                    </Form.Item>
-                </Col>
-            </Row>
         </Form>
     );
 }
@@ -187,12 +129,9 @@ export default function CreateProjectContent(): JSX.Element {
     const [targetStorageLocation, setTargetStorageLocation] = useState(StorageLocation.LOCAL);
     const nameFormRef = useRef<FormInstance>(null);
     const nameInputRef = useRef<Input>(null);
-    const adaptiveAutoAnnotationFormRef = useRef<FormInstance>(null);
     const advancedFormRef = useRef<FormInstance>(null);
     const dispatch = useDispatch();
     const history = useHistory();
-
-    const { isTrainingActive } = useContext(CreateProjectContext);
 
     const resetForm = (): void => {
         if (nameFormRef.current) nameFormRef.current.resetFields();
@@ -212,7 +151,6 @@ export default function CreateProjectContent(): JSX.Element {
             if (nameFormRef.current) {
                 const basicValues = await nameFormRef.current.validateFields();
                 const advancedValues = advancedFormRef.current ? await advancedFormRef.current.validateFields() : {};
-                const adaptiveAutoAnnotationValues = await adaptiveAutoAnnotationFormRef.current?.validateFields();
 
                 projectData = {
                     ...projectData,
@@ -225,10 +163,6 @@ export default function CreateProjectContent(): JSX.Element {
                         advancedValues.targetStorage || { location: StorageLocation.LOCAL },
                     ).toJSON(),
                 };
-
-                if (adaptiveAutoAnnotationValues) {
-                    projectData.training_project = { ...adaptiveAutoAnnotationValues };
-                }
             }
 
             projectData.labels = projectLabels;
@@ -268,11 +202,6 @@ export default function CreateProjectContent(): JSX.Element {
             <Col span={24}>
                 <NameConfigurationForm formRef={nameFormRef} inputRef={nameInputRef} />
             </Col>
-            {isTrainingActive.value && (
-                <Col span={24}>
-                    <AdaptiveAutoAnnotationForm formRef={adaptiveAutoAnnotationFormRef} />
-                </Col>
-            )}
             <Col span={24}>
                 <Text className='cvat-text-color'>Labels:</Text>
                 <LabelsEditor
@@ -298,12 +227,12 @@ export default function CreateProjectContent(): JSX.Element {
             <Col span={24}>
                 <Row justify='end' gutter={5}>
                     <Col>
-                        <Button type='primary' onClick={onSubmitAndOpen}>
+                        <Button className='cvat-submit-open-project-button' type='primary' onClick={onSubmitAndOpen}>
                             Submit & Open
                         </Button>
                     </Col>
                     <Col>
-                        <Button type='primary' onClick={onSubmitAndContinue}>
+                        <Button className='cvat-submit-continue-project-button' type='primary' onClick={onSubmitAndContinue}>
                             Submit & Continue
                         </Button>
                     </Col>

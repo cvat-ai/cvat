@@ -1,0 +1,40 @@
+name: Search Cache
+on:
+  workflow_call:
+    outputs:
+      sha:
+        value: ${{ jobs.search_cache.outputs.sha }}
+
+# if: |
+#   github.event.pull_request.draft == false &&
+#   !startsWith(github.event.pull_request.title, '[WIP]') &&
+#   !startsWith(github.event.pull_request.title, '[Dependent]')
+
+jobs:
+  search_cache:
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.get-sha.outputs.sha}}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Getting SHA with cache from the default branch
+        id: get-sha
+        run: |
+          DEFAULT_BRANCH=$(gh api /repos/$REPO | jq -r '.default_branch')
+          for sha in $(gh api "/repos/$REPO/commits?per_page=100&sha=$DEFAULT_BRANCH" | jq -r '.[].sha');
+          do
+            RUN_status=$(gh api /repos/${REPO}/actions/workflows/cache.yml/runs | \
+              jq -r ".workflow_runs[]? | select((.head_sha == \"${sha}\") and (.conclusion == \"success\")) | .status")
+
+            if [[ ${RUN_status} == "completed" ]]; then
+              SHA=$sha
+              break
+            fi
+          done
+
+          echo Default branch is ${DEFAULT_BRANCH}
+          echo Workflow will try to get cache from commit: ${SHA}
+
+          echo "sha=${SHA}" >> $GITHUB_OUTPUT

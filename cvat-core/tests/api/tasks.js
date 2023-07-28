@@ -104,8 +104,6 @@ describe('Feature: save a task', () => {
 
         result[0].bugTracker = 'newBugTracker';
         result[0].name = 'New Task Name';
-        result[0].projectId = 6;
-
         result[0].save();
 
         result = await window.cvat.tasks.get({
@@ -114,7 +112,6 @@ describe('Feature: save a task', () => {
 
         expect(result[0].bugTracker).toBe('newBugTracker');
         expect(result[0].name).toBe('New Task Name');
-        expect(result[0].projectId).toBe(6);
     });
 
     test('save some new labels in a task', async () => {
@@ -124,7 +121,7 @@ describe('Feature: save a task', () => {
 
         const labelsLength = result[0].labels.length;
         const newLabel = new window.cvat.classes.Label({
-            name: 'My boss\'s car',
+            name: "Another label",
             attributes: [
                 {
                     default_value: 'false',
@@ -137,14 +134,14 @@ describe('Feature: save a task', () => {
         });
 
         result[0].labels = [...result[0].labels, newLabel];
-        result[0].save();
+        await result[0].save();
 
         result = await window.cvat.tasks.get({
             id: 2,
         });
 
         expect(result[0].labels).toHaveLength(labelsLength + 1);
-        const appendedLabel = result[0].labels.filter((el) => el.name === 'My boss\'s car');
+        const appendedLabel = result[0].labels.filter((el) => el.name === "Another label");
         expect(appendedLabel).toHaveLength(1);
         expect(appendedLabel[0].attributes).toHaveLength(1);
         expect(appendedLabel[0].attributes[0].name).toBe('parked');
@@ -158,7 +155,7 @@ describe('Feature: save a task', () => {
             name: 'New Task',
             labels: [
                 {
-                    name: 'My boss\'s car',
+                    name: "My boss's car",
                     attributes: [
                         {
                             default_value: 'false',

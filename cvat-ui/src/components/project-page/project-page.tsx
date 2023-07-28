@@ -1,10 +1,10 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
 import Spin from 'antd/lib/spin';
@@ -14,14 +14,17 @@ import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
 import Title from 'antd/lib/typography/Title';
 import Pagination from 'antd/lib/pagination';
-import { MutliPlusIcon } from 'icons';
+import { MultiPlusIcon } from 'icons';
 import { PlusOutlined } from '@ant-design/icons';
 import Empty from 'antd/lib/empty';
 import Input from 'antd/lib/input';
+import notification from 'antd/lib/notification';
 
-import { CombinedState, Task, Indexable } from 'reducers';
-import { getProjectsAsync, getProjectTasksAsync } from 'actions/projects-actions';
+import { getCore, Project, Task } from 'cvat-core-wrapper';
+import { CombinedState, Indexable } from 'reducers';
+import { getProjectTasksAsync } from 'actions/projects-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
 import TaskItem from 'components/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
@@ -29,12 +32,15 @@ import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
 } from 'components/resource-sorting-filtering';
 import CvatDropdownMenuPaper from 'components/common/cvat-dropdown-menu-paper';
+
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './project-tasks-filter-configuration';
+
+const core = getCore();
 
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
@@ -48,8 +54,13 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const projects = useSelector((state: CombinedState) => state.projects.current).map((project) => project.instance);
-    const projectsFetching = useSelector((state: CombinedState) => state.projects.fetching);
+
+    const [projectInstance, setProjectInstance] = useState<Project | null>(null);
+    const [fechingProject, setFetchingProject] = useState(true);
+    const [updatingProject, setUpdatingProject] = useState(false);
+    const mounted = useRef(false);
+
+    const ribbonPlugins = useSelector((state: CombinedState) => state.plugins.components.taskItem.ribbon);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
     const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
@@ -57,7 +68,6 @@ export default function ProjectPageComponent(): JSX.Element {
     const tasksCount = useSelector((state: CombinedState) => state.tasks.count);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const tasksFetching = useSelector((state: CombinedState) => state.tasks.fetching);
-    const [isMounted, setIsMounted] = useState(false);
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     const queryParams = new URLSearchParams(history.location.search);
@@ -70,69 +80,87 @@ export default function ProjectPageComponent(): JSX.Element {
     }
 
     useEffect(() => {
-        dispatch(getProjectTasksAsync({ ...updatedQuery, projectId: id }));
-        setIsMounted(true);
-    }, []);
-
-    const [project] = projects.filter((_project) => _project.id === id);
-    const projectSubsets: Array<string> = [];
-    for (const task of tasks) {
-        if (!projectSubsets.includes(task.instance.subset)) projectSubsets.push(task.instance.subset);
-    }
-
-    useEffect(() => {
-        if (!project) {
-            dispatch(getProjectsAsync({ id }, updatedQuery));
-        }
-    }, []);
-
-    useEffect(() => {
-        if (isMounted) {
-            history.replace({
-                search: updateHistoryFromQuery(tasksQuery),
+        if (Number.isInteger(id)) {
+            core.projects.get({ id })
+                .then(([project]: Project[]) => {
+                    if (project && mounted.current) {
+                        dispatch(getProjectTasksAsync({ ...updatedQuery, projectId: id }));
+                        setProjectInstance(project);
+                    }
+                }).catch((error: Error) => {
+                    if (mounted.current) {
+                        notification.error({
+                            message: 'Could not receive the requested project from the server',
+                            description: error.toString(),
+                        });
+                    }
+                }).finally(() => {
+                    if (mounted.current) {
+                        setFetchingProject(false);
+                    }
+                });
+        } else {
+            notification.error({
+                message: 'Could not receive the requested project from the server',
+                description: `Requested project id "${id}" is not valid`,
             });
+            setFetchingProject(false);
         }
+
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        history.replace({
+            search: updateHistoryFromQuery(tasksQuery),
+        });
     }, [tasksQuery]);
 
     useEffect(() => {
-        if (project && id in deletes && deletes[id]) {
+        if (projectInstance && id in deletes && deletes[id]) {
             history.push('/projects');
         }
     }, [deletes]);
 
-    if (projectsFetching) {
+    if (fechingProject) {
         return <Spin size='large' className='cvat-spinner' />;
     }
 
-    if (!project) {
+    if (!projectInstance) {
         return (
             <Result
                 className='cvat-not-found'
                 status='404'
-                title='Sorry, but this project was not found'
-                subTitle='Please, be sure information you tried to get exist and you have access'
+                title='There was something wrong during getting the project'
+                subTitle='Please, be sure, that information you tried to get exist and you are eligible to access it'
             />
         );
     }
 
+    const subsets = Array.from(
+        new Set<string>(tasks.map((task: Task) => task.subset)),
+    );
     const content = tasksCount ? (
         <>
-            {projectSubsets.map((subset: string) => (
+            {subsets.map((subset: string) => (
                 <React.Fragment key={subset}>
                     {subset && <Title level={4}>{subset}</Title>}
                     {tasks
-                        .filter((task) => task.instance.projectId === project.id && task.instance.subset === subset)
+                        .filter((task) => task.projectId === projectInstance.id && task.subset === subset)
                         .map((task: Task) => (
                             <TaskItem
-                                key={task.instance.id}
-                                deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
+                                key={task.id}
+                                ribbonPlugins={ribbonPlugins}
+                                deleted={task.id in taskDeletes ? taskDeletes[task.id] : false}
                                 hidden={false}
-                                activeInference={tasksActiveInferences[task.instance.id] || null}
+                                activeInference={tasksActiveInferences[task.id] || null}
                                 cancelAutoAnnotation={() => {
-                                    dispatch(cancelInferenceAsync(task.instance.id));
+                                    dispatch(cancelInferenceAsync(task.id));
                                 }}
-                                previewImage={task.preview}
-                                taskInstance={task.instance}
+                                taskInstance={task}
                             />
                         ))}
                 </React.Fragment>
@@ -163,9 +191,41 @@ export default function ProjectPageComponent(): JSX.Element {
 
     return (
         <Row justify='center' align='top' className='cvat-project-page'>
-            <Col md={22} lg={18} xl={16} xxl={14}>
-                <ProjectTopBar projectInstance={project} />
-                <DetailsComponent project={project} />
+            { updatingProject ? <CVATLoadingSpinner size='large' /> : null }
+            <Col
+                md={22}
+                lg={18}
+                xl={16}
+                xxl={14}
+                style={updatingProject ? {
+                    pointerEvents: 'none',
+                    opacity: 0.7,
+                } : {}}
+            >
+                <ProjectTopBar projectInstance={projectInstance} />
+                <DetailsComponent
+                    onUpdateProject={(project: Project) => {
+                        setUpdatingProject(true);
+                        project.save().then((updatedProject: Project) => {
+                            if (mounted.current) {
+                                dispatch(getProjectTasksAsync({ ...updatedQuery, projectId: id }));
+                                setProjectInstance(updatedProject);
+                            }
+                        }).catch((error: Error) => {
+                            if (mounted.current) {
+                                notification.error({
+                                    message: 'Could not update the project',
+                                    description: error.toString(),
+                                });
+                            }
+                        }).finally(() => {
+                            if (mounted.current) {
+                                setUpdatingProject(false);
+                            }
+                        });
+                    }}
+                    project={projectInstance}
+                />
                 <Row justify='space-between' align='middle' className='cvat-project-page-tasks-bar'>
                     <Col span={24}>
                         <div className='cvat-project-page-tasks-filters-wrapper'>
@@ -242,7 +302,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                         </Button>
                                         <Button
                                             type='primary'
-                                            icon={<span className='anticon'><MutliPlusIcon /></span>}
+                                            icon={<span className='anticon'><MultiPlusIcon /></span>}
                                             className='cvat-create-multi-tasks-button'
                                             onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
                                         >

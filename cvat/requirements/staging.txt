@@ -1,2 +1,0 @@
--r production.txt
-django-silk==4.1.0

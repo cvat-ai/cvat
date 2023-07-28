@@ -1,10 +1,13 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { connect } from 'react-redux';
 
-import { TasksQuery, CombinedState, ActiveInference } from 'reducers';
+import {
+    TasksQuery, CombinedState, ActiveInference, PluginComponent,
+} from 'reducers';
 
 import TaskItemComponent from 'components/tasks-page/task-item';
 
@@ -14,9 +17,9 @@ import { cancelInferenceAsync } from 'actions/models-actions';
 interface StateToProps {
     deleted: boolean;
     hidden: boolean;
-    previewImage: string;
     taskInstance: any;
     activeInference: ActiveInference | null;
+    ribbonPlugins: PluginComponent[];
 }
 
 interface DispatchToProps {
@@ -35,11 +38,11 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const id = own.taskID;
 
     return {
-        hidden: state.tasks.hideEmpty && task.instance.jobs.length === 0,
+        hidden: state.tasks.hideEmpty && task.size === 0,
         deleted: id in deletes ? deletes[id] === true : false,
-        previewImage: task.preview,
-        taskInstance: task.instance,
+        taskInstance: task,
         activeInference: state.models.inferences[id] || null,
+        ribbonPlugins: state.plugins.components.taskItem.ribbon,
     };
 }
 

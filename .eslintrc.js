@@ -16,6 +16,7 @@ module.exports = {
     ignorePatterns: [
         '.eslintrc.js',
         'lint-staged.config.js',
+        'site/themes/**',
     ],
     plugins: ['@typescript-eslint', 'security', 'no-unsanitized', 'import'],
     extends: [
@@ -39,7 +40,7 @@ module.exports = {
         'func-names': 0,
         'valid-typeof': 0,
         'no-useless-constructor': 0, // sometimes constructor is necessary to generate right documentation in cvat-core
-        'quotes': ['error', 'single'],
+        'quotes': ['error', 'single', { "avoidEscape": true }],
         'lines-between-class-members': 0,
         'class-methods-use-this': 0,
         'no-underscore-dangle': ['error', { allowAfterThis: true }],

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +23,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         query: tasks.gettingQuery,
         count: state.tasks.count,
         countInvisible: tasks.hideEmpty ?
-            tasks.current.filter((task: Task): boolean => !task.instance.jobs.length).length :
+            tasks.current.filter((task: Task): boolean => task.size === 0).length :
             0,
         importing: state.import.tasks.backup.importing,
     };

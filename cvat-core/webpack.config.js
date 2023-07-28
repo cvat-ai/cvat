@@ -55,7 +55,7 @@ const webConfig = {
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: '[name].[contenthash].min.js',
-        library: 'cvat',
+        library: 'cvat-core.js',
         libraryTarget: 'window',
     },
     resolve: {

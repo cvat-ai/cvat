@@ -1,6 +1,11 @@
-from enum import Enum
+# Copyright (C) 2022-2023 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
 
-from cvat.apps.engine.models import Location
+from enum import Enum
+from typing import Any, Dict
+
+from cvat.apps.engine.models import Location, Job
 
 class StorageType(str, Enum):
     TARGET = 'target_storage'
@@ -9,10 +14,13 @@ class StorageType(str, Enum):
     def __str__(self):
         return self.value
 
-def get_location_configuration(obj, field_name, use_settings=False):
-    location_conf = dict()
+def get_location_configuration(obj, field_name: str, use_settings: bool = False) -> Dict[str, Any]:
+    location_conf = {
+        "is_default": use_settings
+    }
+
     if use_settings:
-        storage = getattr(obj, field_name)
+        storage = getattr(obj, field_name) if not isinstance(obj, Job) else getattr(obj.segment.task, field_name)
         if storage is None:
             location_conf['location'] = Location.LOCAL
         else:

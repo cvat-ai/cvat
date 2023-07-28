@@ -1,10 +1,9 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import zipfile
-from tempfile import TemporaryDirectory
 
 from datumaro.components.annotation import (AnnotationType, Caption, Label,
     LabelCategories)
@@ -78,64 +77,58 @@ class LabelToCaption(ItemTransform):
         return item.wrap(annotations=annotations)
 
 @exporter(name='ICDAR Recognition', ext='ZIP', version='1.0')
-def _export_recognition(dst_file, instance_data, save_images=False):
+def _export_recognition(dst_file, temp_dir, instance_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     dataset.transform(LabelToCaption)
-    with TemporaryDirectory() as temp_dir:
-        dataset.export(temp_dir, 'icdar_word_recognition', save_images=save_images)
-        make_zip_archive(temp_dir, dst_file)
+    dataset.export(temp_dir, 'icdar_word_recognition', save_images=save_images)
+    make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ICDAR Recognition', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None, **kwargs):
-    with TemporaryDirectory() as tmp_dir:
-        zipfile.ZipFile(src_file).extractall(tmp_dir)
-        dataset = Dataset.import_from(tmp_dir, 'icdar_word_recognition', env=dm_env)
-        dataset.transform(CaptionToLabel, label='icdar')
-        if load_data_callback is not None:
-            load_data_callback(dataset, instance_data)
-        import_dm_annotations(dataset, instance_data)
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    zipfile.ZipFile(src_file).extractall(temp_dir)
+    dataset = Dataset.import_from(temp_dir, 'icdar_word_recognition', env=dm_env)
+    dataset.transform(CaptionToLabel, label='icdar')
+    if load_data_callback is not None:
+        load_data_callback(dataset, instance_data)
+    import_dm_annotations(dataset, instance_data)
 
 
 @exporter(name='ICDAR Localization', ext='ZIP', version='1.0')
-def _export_localization(dst_file, instance_data, save_images=False):
+def _export_localization(dst_file, temp_dir, instance_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
-    with TemporaryDirectory() as temp_dir:
-        dataset.export(temp_dir, 'icdar_text_localization', save_images=save_images)
-        make_zip_archive(temp_dir, dst_file)
+    dataset.export(temp_dir, 'icdar_text_localization', save_images=save_images)
+    make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ICDAR Localization', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None, **kwargs):
-    with TemporaryDirectory() as tmp_dir:
-        zipfile.ZipFile(src_file).extractall(tmp_dir)
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    zipfile.ZipFile(src_file).extractall(temp_dir)
 
-        dataset = Dataset.import_from(tmp_dir, 'icdar_text_localization', env=dm_env)
-        dataset.transform(AddLabelToAnns, label='icdar')
-        if load_data_callback is not None:
-            load_data_callback(dataset, instance_data)
-        import_dm_annotations(dataset, instance_data)
+    dataset = Dataset.import_from(temp_dir, 'icdar_text_localization', env=dm_env)
+    dataset.transform(AddLabelToAnns, label='icdar')
+    if load_data_callback is not None:
+        load_data_callback(dataset, instance_data)
+    import_dm_annotations(dataset, instance_data)
 
 
 @exporter(name='ICDAR Segmentation', ext='ZIP', version='1.0')
-def _export_segmentation(dst_file, instance_data, save_images=False):
+def _export_segmentation(dst_file, temp_dir, instance_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
-    with TemporaryDirectory() as temp_dir:
-        dataset.transform(RotatedBoxesToPolygons)
-        dataset.transform('polygons_to_masks')
-        dataset.transform('boxes_to_masks')
-        dataset.transform('merge_instance_segments')
-        dataset.export(temp_dir, 'icdar_text_segmentation', save_images=save_images)
-        make_zip_archive(temp_dir, dst_file)
+    dataset.transform(RotatedBoxesToPolygons)
+    dataset.transform('polygons_to_masks')
+    dataset.transform('boxes_to_masks')
+    dataset.transform('merge_instance_segments')
+    dataset.export(temp_dir, 'icdar_text_segmentation', save_images=save_images)
+    make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ICDAR Segmentation', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None, **kwargs):
-    with TemporaryDirectory() as tmp_dir:
-        zipfile.ZipFile(src_file).extractall(tmp_dir)
-        dataset = Dataset.import_from(tmp_dir, 'icdar_text_segmentation', env=dm_env)
-        dataset.transform(AddLabelToAnns, label='icdar')
-        dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
-        if load_data_callback is not None:
-            load_data_callback(dataset, instance_data)
-        import_dm_annotations(dataset, instance_data)
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    zipfile.ZipFile(src_file).extractall(temp_dir)
+    dataset = Dataset.import_from(temp_dir, 'icdar_text_segmentation', env=dm_env)
+    dataset.transform(AddLabelToAnns, label='icdar')
+    dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
+    if load_data_callback is not None:
+        load_data_callback(dataset, instance_data)
+    import_dm_annotations(dataset, instance_data)

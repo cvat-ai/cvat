@@ -2,16 +2,17 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Select, { SelectValue } from 'antd/lib/select';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
 import Input from 'antd/lib/input';
+import { TextAreaRef } from 'antd/lib/input/TextArea';
+import InputNumber from 'antd/lib/input-number';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-
-import consts from 'consts';
+import config from 'config';
 
 interface InputElementParameters {
     clientID: number;
@@ -26,6 +27,17 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
     const {
         inputType, attrID, clientID, values, currentValue, onChange,
     } = parameters;
+
+    const ref = useRef<TextAreaRef>(null);
+    const [selectionStart, setSelectionStart] = useState<number>(currentValue.length);
+
+    useEffect(() => {
+        const textArea = ref?.current?.resizableTextArea?.textArea;
+        if (textArea instanceof HTMLTextAreaElement) {
+            textArea.selectionStart = selectionStart;
+            textArea.selectionEnd = selectionStart;
+        }
+    }, [currentValue]);
 
     const renderCheckbox = (): JSX.Element => (
         <>
@@ -51,7 +63,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                     {values.map(
                         (value: string): JSX.Element => (
                             <Select.Option key={value} value={value}>
-                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? consts.NO_BREAK_SPACE : value}
+                                {value === config.UNDEFINED_ATTRIBUTE_VALUE ? config.NO_BREAK_SPACE : value}
                             </Select.Option>
                         ),
                     )}
@@ -68,7 +80,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                     {values.map(
                         (value: string): JSX.Element => (
                             <Radio style={{ display: 'block' }} key={value} value={value}>
-                                {value === consts.UNDEFINED_ATTRIBUTE_VALUE ? consts.NO_BREAK_SPACE : value}
+                                {value === config.UNDEFINED_ATTRIBUTE_VALUE ? config.NO_BREAK_SPACE : value}
                             </Radio>
                         ),
                     )}
@@ -77,34 +89,55 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         </>
     );
 
-    const handleKeydown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    const handleKeydown = (event: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>): void => {
         if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Tab', 'Shift', 'Control'].includes(event.key)) {
             event.preventDefault();
+            event.stopPropagation();
             const copyEvent = new KeyboardEvent('keydown', event);
             window.document.dispatchEvent(copyEvent);
         }
     };
 
+    const renderNumber = (): JSX.Element => {
+        const [min, max, step] = values;
+        return (
+            <>
+                <Text strong>Number: </Text>
+                <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
+                    <InputNumber
+                        autoFocus
+                        min={+min}
+                        max={+max}
+                        step={+step}
+                        value={+currentValue}
+                        key={`${clientID}:${attrID}`}
+                        onChange={(value: number | null) => {
+                            if (typeof value === 'number') {
+                                onChange(`${value}`);
+                            }
+                        }}
+                        onKeyDown={handleKeydown}
+                    />
+                </div>
+            </>
+        );
+    };
+
     const renderText = (): JSX.Element => (
         <>
-            {inputType === 'number' ? <Text strong>Number: </Text> : <Text strong>Text: </Text>}
+            <Text strong>Text: </Text>
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
-                <Input
+                <Input.TextArea
                     autoFocus
+                    ref={ref}
                     key={`${clientID}:${attrID}`}
-                    defaultValue={currentValue}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    value={currentValue}
+                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
                         const { value } = event.target;
-                        if (inputType === 'number') {
-                            if (value !== '') {
-                                const numberValue = +value;
-                                if (!Number.isNaN(numberValue)) {
-                                    onChange(`${numberValue}`);
-                                }
-                            }
-                        } else {
-                            onChange(value);
+                        if (ref.current?.resizableTextArea?.textArea) {
+                            setSelectionStart(ref.current.resizableTextArea.textArea.selectionStart);
                         }
+                        onChange(value);
                     }}
                     onKeyDown={handleKeydown}
                 />
@@ -119,6 +152,8 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         element = renderSelect();
     } else if (inputType === 'radio') {
         element = renderRadio();
+    } else if (inputType === 'number') {
+        element = renderNumber();
     } else {
         element = renderText();
     }
@@ -185,7 +220,7 @@ function renderList(parameters: ListParameters): JSX.Element | null {
             [key: string]: (keyEvent?: KeyboardEvent) => void;
         } = {};
 
-        const filteredValues = values.filter((value: string): boolean => value !== consts.UNDEFINED_ATTRIBUTE_VALUE);
+        const filteredValues = values.filter((value: string): boolean => value !== config.UNDEFINED_ATTRIBUTE_VALUE);
         filteredValues.slice(0, 10).forEach((value: string, index: number): void => {
             const key = `SET_${index}_VALUE`;
             keyMap[key] = {

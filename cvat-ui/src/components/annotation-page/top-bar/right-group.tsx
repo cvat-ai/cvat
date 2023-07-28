@@ -1,35 +1,30 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { Col } from 'antd/lib/grid';
 import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
-import Text from 'antd/lib/typography/Text';
-import Tooltip from 'antd/lib/tooltip';
-import Moment from 'react-moment';
-
-import moment from 'moment';
-import { useSelector } from 'react-redux';
+import Modal from 'antd/lib/modal';
+import notification from 'antd/lib/notification';
 
 import {
-    FilterIcon, FullscreenIcon, InfoIcon, BrainIcon,
+    FilterIcon, FullscreenIcon, GuideIcon, InfoIcon,
 } from 'icons';
-import {
-    CombinedState, DimensionType, Workspace, PredictorState,
-} from 'reducers';
+import { DimensionType } from 'cvat-core-wrapper';
+import { CombinedState, Workspace } from 'reducers';
+
+import MDEditor from '@uiw/react-md-editor';
 
 interface Props {
     workspace: Workspace;
-    predictor: PredictorState;
-    isTrainingActive: boolean;
     showStatistics(): void;
-    switchPredictor(predictorEnabled: boolean): void;
     showFilters(): void;
     changeWorkspace(workspace: Workspace): void;
-
     jobInstance: any;
 }
 
@@ -37,111 +32,19 @@ function RightGroup(props: Props): JSX.Element {
     const {
         showStatistics,
         changeWorkspace,
-        switchPredictor,
         workspace,
-        predictor,
         jobInstance,
-        isTrainingActive,
         showFilters,
     } = props;
-    const annotationAmount = predictor.annotationAmount || 0;
-    const mediaAmount = predictor.mediaAmount || 0;
-    const formattedScore = `${(predictor.projectScore * 100).toFixed(0)}%`;
-    const predictorTooltip = (
-        <div className='cvat-predictor-tooltip'>
-            <span>Adaptive auto annotation is</span>
-            {predictor.enabled ? (
-                <Text type='success' strong>
-                    {' active'}
-                </Text>
-            ) : (
-                <Text type='warning' strong>
-                    {' inactive'}
-                </Text>
-            )}
-            <br />
-            <span>
-                Annotations amount:
-                {annotationAmount}
-            </span>
-            <br />
-            <span>
-                Media amount:
-                {mediaAmount}
-            </span>
-            <br />
-            {annotationAmount > 0 ? (
-                <span>
-                    Model mAP is
-                    {' '}
-                    {formattedScore}
-                    <br />
-                </span>
-            ) : null}
-            {predictor.error ? (
-                <Text type='danger'>
-                    {predictor.error.toString()}
-                    <br />
-                </Text>
-            ) : null}
-            {predictor.message ? (
-                <span>
-                    Status:
-                    {' '}
-                    {predictor.message}
-                    <br />
-                </span>
-            ) : null}
-            {predictor.timeRemaining > 0 ? (
-                <span>
-                    Time Remaining:
-                    {' '}
-                    <Moment date={moment().add(-predictor.timeRemaining, 's')} format='hh:mm:ss' trim durationFromNow />
-                    <br />
-                </span>
-            ) : null}
-            {predictor.progress > 0 ? (
-                <span>
-                    Progress:
-                    {predictor.progress.toFixed(1)}
-                    {' '}
-                    %
-                </span>
-            ) : null}
-        </div>
-    );
 
-    let predictorClassName = 'cvat-annotation-header-button cvat-predictor-button';
-    if (!!predictor.error || !predictor.projectScore) {
-        predictorClassName += ' cvat-predictor-disabled';
-    } else if (predictor.enabled) {
-        if (predictor.fetching) {
-            predictorClassName += ' cvat-predictor-fetching';
-        }
-        predictorClassName += ' cvat-predictor-inprogress';
-    }
-
-    const filters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
+    const annotationFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
+    const filters = annotationFilters.length;
 
     return (
         <Col className='cvat-annotation-header-right-group'>
-            {isTrainingActive && (
-                <Button
-                    type='link'
-                    className={predictorClassName}
-                    onClick={() => {
-                        switchPredictor(!predictor.enabled);
-                    }}
-                >
-                    <Tooltip title={predictorTooltip}>
-                        <Icon component={BrainIcon} />
-                    </Tooltip>
-                    {annotationAmount ? `mAP ${formattedScore}` : 'not trained'}
-                </Button>
-            )}
             <Button
                 type='link'
-                className='cvat-annotation-header-button'
+                className='cvat-annotation-header-fullscreen-button cvat-annotation-header-button'
                 onClick={(): void => {
                     if (window.document.fullscreenEnabled) {
                         if (window.document.fullscreenElement) {
@@ -155,13 +58,56 @@ function RightGroup(props: Props): JSX.Element {
                 <Icon component={FullscreenIcon} />
                 Fullscreen
             </Button>
-            <Button type='link' className='cvat-annotation-header-button' onClick={showStatistics}>
+            { jobInstance.guideId !== null && (
+                <Button
+                    type='link'
+                    className='cvat-annotation-header-guide-button cvat-annotation-header-button'
+                    onClick={async (): Promise<void> => {
+                        const PADDING = Math.min(window.screen.availHeight, window.screen.availWidth) * 0.4;
+                        try {
+                            const guide = await jobInstance.guide();
+                            Modal.info({
+                                icon: null,
+                                width: window.screen.availWidth - PADDING,
+                                className: 'cvat-annotation-view-markdown-guide-modal',
+                                content: (
+                                    <>
+                                        <MDEditor
+                                            visibleDragbar={false}
+                                            data-color-mode='light'
+                                            height={window.screen.availHeight - PADDING}
+                                            preview='preview'
+                                            hideToolbar
+                                            value={guide.markdown}
+                                        />
+                                    </>
+                                ),
+                            });
+                        } catch (error: any) {
+                            notification.error({
+                                message: 'Could not receive annotation guide',
+                                description: error.toString(),
+                            });
+                        }
+                    }}
+                >
+                    <Icon component={GuideIcon} />
+                    Guide
+                </Button>
+            )}
+            <Button
+                type='link'
+                className='cvat-annotation-header-info-button cvat-annotation-header-button'
+                onClick={showStatistics}
+            >
                 <Icon component={InfoIcon} />
                 Info
             </Button>
             <Button
                 type='link'
-                className={`cvat-annotation-header-button ${filters.length ? 'filters-armed' : ''}`}
+                className={`cvat-annotation-header-filters-button cvat-annotation-header-button ${filters ?
+                    'filters-armed' : ''
+                }`}
                 onClick={showFilters}
             >
                 <Icon component={FilterIcon} />
@@ -175,7 +121,7 @@ function RightGroup(props: Props): JSX.Element {
                     value={workspace}
                 >
                     {Object.values(Workspace).map((ws) => {
-                        if (jobInstance.dimension === DimensionType.DIM_3D) {
+                        if (jobInstance.dimension === DimensionType.DIMENSION_3D) {
                             if (ws === Workspace.STANDARD) {
                                 return null;
                             }

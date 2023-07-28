@@ -91,7 +91,7 @@ class TestIssuesUsecases:
         comment = self.client.comments.create(models.CommentWriteRequest(issue.id, message="hi!"))
         issue.fetch()
 
-        comment_ids = {c.id for c in issue.comments}
+        comment_ids = {c.id for c in issue.get_comments()}
 
         assert len(comment_ids) == 2
         assert comment.id in comment_ids
@@ -123,13 +123,14 @@ class TestIssuesUsecases:
                 message="hello",
             )
         )
+        comments = issue.get_comments()
 
         issue.remove()
 
         with pytest.raises(exceptions.NotFoundException):
             issue.fetch()
         with pytest.raises(exceptions.NotFoundException):
-            self.client.comments.retrieve(issue.comments[0].id)
+            self.client.comments.retrieve(comments[0].id)
         assert self.stdout.getvalue() == ""
 
 

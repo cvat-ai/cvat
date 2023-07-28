@@ -7,7 +7,7 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import consts from 'consts';
+import config from 'config';
 import { LabelOptColor } from './common';
 
 interface ConstructorViewerItemProps {
@@ -22,7 +22,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
         color, label, onUpdate, onDelete,
     } = props;
 
-    const backgroundColor = color || consts.NEW_LABEL_COLOR;
+    const backgroundColor = color || config.NEW_LABEL_COLOR;
     let textColor = '#ffffff';
     try {
         // convert color to grayscale and from the result get better text color

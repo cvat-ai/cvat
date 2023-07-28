@@ -245,7 +245,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     toolsBlockerState.algorithmsLocked ? 0 : threshold);
                 let points = [];
                 if (toolsBlockerState.algorithmsLocked && this.latestPoints.length > 2) {
-                    // disable approximation for lastest two points to disable fickering
+                    // disable approximation for latest two points to disable fickering
                     const [x, y] = this.latestPoints.slice(-2);
                     this.latestPoints.splice(this.latestPoints.length - 2, 2);
                     points = openCVWrapper.contours.approxPoly(
@@ -278,6 +278,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     frame,
                     objectType: ObjectType.SHAPE,
                     shapeType: ShapeType.POLYGON,
+                    source: core.enums.Source.SEMI_AUTO,
                     label: labels.filter((label: any) => label.id === activeLabelID)[0],
                     points: openCVWrapper.contours
                         .approxPoly(finalPoints, thresholdFromAccuracy(approxPolyAccuracy))
@@ -290,7 +291,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         } catch (error: any) {
             notification.error({
                 description: error.toString(),
-                message: 'OpenCV.js processing error occured',
+                message: 'OpenCV.js processing error occurred',
                 className: 'cvat-notification-notice-opencv-processing-error',
             });
         }
@@ -321,6 +322,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             const state = new core.classes.ObjectState({
                 shapeType: ShapeType.RECTANGLE,
                 objectType: ObjectType.TRACK,
+                source: core.enums.Source.SEMI_AUTO,
                 zOrder: curZOrder,
                 label,
                 points,
@@ -346,7 +348,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         } catch (error: any) {
             notification.error({
                 description: error.toString(),
-                message: 'Tracking error occured',
+                message: 'Tracking error occurred',
             });
         }
     };
@@ -401,7 +403,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         } catch (error: any) {
             notification.error({
                 description: error.toString(),
-                message: 'OpenCV.js processing error occured',
+                message: 'OpenCV.js processing error occurred',
                 className: 'cvat-notification-notice-opencv-processing-error',
             });
         } finally {
@@ -638,6 +640,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     <Col>
                         <CVATTooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
                             <Button
+                                className='cvat-opencv-scissors-tool-button'
                                 onClick={() => {
                                     this.setState({ mode: 'interaction' });
                                     this.activeTool = openCVWrapper.segmentation
@@ -665,7 +668,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 <Col>
                     <CVATTooltip title='Histogram equalization' className='cvat-opencv-image-tool'>
                         <Button
-                            className={this.imageModifier('histogram') ? 'cvat-opencv-image-tool-active' : ''}
+                            className={
+                                this.imageModifier('histogram') ?
+                                    'cvat-opencv-histogram-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-histogram-tool-button'
+                            }
                             onClick={(e: React.MouseEvent<HTMLElement>) => {
                                 const modifier = this.imageModifier('histogram');
                                 if (!modifier) {
@@ -836,7 +842,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             isActivated, canvasInstance, labels, frameData,
         } = this.props;
         const { libraryInitialized, approxPolyAccuracy, mode } = this.state;
-        const dynamcPopoverPros = isActivated ?
+        const dynamicPopoverProps = isActivated ?
             {
                 overlayStyle: {
                     display: 'none',
@@ -860,7 +866,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         ) : (
             <>
                 <CustomPopover
-                    {...dynamcPopoverPros}
+                    {...dynamicPopoverProps}
                     placement='right'
                     overlayClassName='cvat-opencv-control-popover'
                     content={this.renderContent()}

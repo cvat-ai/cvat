@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from io import BytesIO
+
 import boto3
 from botocore.exceptions import ClientError
 
@@ -39,6 +41,11 @@ class S3Client:
                 return False
             else:
                 raise
+
+    def download_fileobj(self, bucket: str, key: str) -> bytes:
+        with BytesIO() as data:
+            self.client.download_fileobj(Bucket=bucket, Key=key, Fileobj=data)
+            return data.getvalue()
 
 
 def make_client() -> S3Client:

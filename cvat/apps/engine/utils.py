@@ -9,14 +9,30 @@ import hashlib
 import importlib
 import sys
 import traceback
+from contextlib import suppress
+from typing import Any, Dict, Optional, Callable, Union
 import subprocess
 import os
 import urllib.parse
+import re
+import logging
+import platform
+
+from rq.job import Job
+from django_rq.queues import DjangoRQ
+from pathlib import Path
+
+from django.http.request import HttpRequest
+from django.utils import timezone
+from django.utils.http import urlencode
+from rest_framework.reverse import reverse as _reverse
 
 from av import VideoFrame
 from PIL import Image
+from multiprocessing import cpu_count
 
 from django.core.exceptions import ValidationError
+from django_sendfile import sendfile as _sendfile
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -123,19 +139,29 @@ def parse_exception_message(msg):
         pass
     return parsed_msg
 
-def process_failed_job(rq_job):
-    if rq_job.meta['tmp_file_descriptor']:
-        os.close(rq_job.meta['tmp_file_descriptor'])
-    if os.path.exists(rq_job.meta['tmp_file']):
-        os.remove(rq_job.meta['tmp_file'])
-    exc_info = str(rq_job.exc_info or rq_job.dependency.exc_info)
+def process_failed_job(rq_job: Job):
+    exc_info = str(rq_job.exc_info or getattr(rq_job.dependency, 'exc_info', None) or '')
     if rq_job.dependency:
         rq_job.dependency.delete()
     rq_job.delete()
 
-    return parse_exception_message(exc_info)
+    msg = parse_exception_message(exc_info)
+    log = logging.getLogger('cvat.server.engine')
+    log.error(msg)
+    return msg
 
-def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
+
+def configure_dependent_job(
+    queue: DjangoRQ,
+    rq_id: str,
+    rq_func: Callable[[Any, str, str], None],
+    db_storage: Any,
+    filename: str,
+    key: str,
+    request: HttpRequest,
+    result_ttl: float,
+    failure_ttl: float
+) -> Job:
     rq_job_id_download_file = rq_id + f'?action=download_{filename}'
     rq_job_download_file = queue.fetch_job(rq_job_id_download_file)
     if not rq_job_download_file:
@@ -143,6 +169,163 @@ def configure_dependent_job(queue, rq_id, rq_func, db_storage, filename, key):
         rq_job_download_file = queue.enqueue_call(
             func=rq_func,
             args=(db_storage, filename, key),
-            job_id=rq_job_id_download_file
+            job_id=rq_job_id_download_file,
+            meta=get_rq_job_meta(request=request, db_obj=db_storage),
+            result_ttl=result_ttl,
+            failure_ttl=failure_ttl
         )
     return rq_job_download_file
+
+def get_rq_job_meta(request, db_obj):
+    # to prevent circular import
+    from cvat.apps.webhooks.signals import project_id, organization_id
+    from cvat.apps.events.handlers import task_id, job_id, organization_slug
+
+    oid = organization_id(db_obj)
+    oslug = organization_slug(db_obj)
+    pid = project_id(db_obj)
+    tid = task_id(db_obj)
+    jid = job_id(db_obj)
+
+    return {
+        'user': {
+            'id': getattr(request.user, "id", None),
+            'username': getattr(request.user, "username", None),
+            'email': getattr(request.user, "email", None),
+        },
+        'request': {
+            "uuid": request.uuid,
+            "timestamp": timezone.localtime(),
+        },
+        'org_id': oid,
+        'org_slug': oslug,
+        'project_id': pid,
+        'task_id': tid,
+        'job_id': jid,
+    }
+
+def reverse(viewname, *, args=None, kwargs=None,
+    query_params: Optional[Dict[str, str]] = None,
+    request: Optional[HttpRequest] = None,
+) -> str:
+    """
+    The same as rest_framework's reverse(), but adds custom query params support.
+    The original request can be passed in the 'request' parameter to
+    return absolute URLs.
+    """
+
+    url = _reverse(viewname, args, kwargs, request)
+
+    if query_params:
+        return f'{url}?{urlencode(query_params)}'
+
+    return url
+
+def get_server_url(request: HttpRequest) -> str:
+    return request.build_absolute_uri('/')
+
+def build_field_filter_params(field: str, value: Any) -> Dict[str, str]:
+    """
+    Builds a collection filter query params for a single field and value.
+    """
+    return { field: value }
+
+def get_list_view_name(model):
+    # Implemented after
+    # rest_framework/utils/field_mapping.py.get_detail_view_name()
+    """
+    Given a model class, return the view name to use for URL relationships
+    that refer to instances of the model.
+    """
+    return '%(model_name)s-list' % {
+        'model_name': model._meta.object_name.lower()
+    }
+
+def get_import_rq_id(
+    resource_type: str,
+    resource_id: int,
+    subresource_type: str,
+    user: str,
+) -> str:
+    # import:<task|project|job>-<id|uuid>-<annotations|dataset|backup>-by-<user>
+    return f"import:{resource_type}-{resource_id}-{subresource_type}-by-{user}"
+
+def import_resource_with_clean_up_after(
+    func: Union[Callable[[str, int, int], int], Callable[[str, int, str, bool], None]],
+    filename: str,
+    *args,
+    **kwargs,
+) -> Any:
+    try:
+        result = func(filename, *args, **kwargs)
+    finally:
+        with suppress(FileNotFoundError):
+            os.remove(filename)
+    return result
+
+def get_cpu_number() -> int:
+    cpu_number = None
+    try:
+        if platform.system() == 'Linux':
+            # we cannot use just multiprocessing.cpu_count because when it runs
+            # inside a docker container, it will just return the number of CPU cores
+            # for the physical machine the container runs on
+            cfs_quota_us_path = Path("/sys/fs/cgroup/cpu/cpu.cfs_quota_us")
+            cfs_period_us_path = Path("/sys/fs/cgroup/cpu/cpu.cfs_period_us")
+
+            if cfs_quota_us_path.exists() and cfs_period_us_path.exists():
+                with open(cfs_quota_us_path) as fp:
+                    cfs_quota_us = int(fp.read())
+                with open(cfs_period_us_path) as fp:
+                    cfs_period_us = int(fp.read())
+                container_cpu_number = cfs_quota_us // cfs_period_us
+                # For physical machine, the `cfs_quota_us` could be '-1'
+                cpu_number = cpu_count() if container_cpu_number < 1 else container_cpu_number
+        cpu_number = cpu_number or cpu_count()
+    except NotImplementedError:
+        # the number of cpu cannot be determined
+        cpu_number = 1
+    return cpu_number
+
+def make_attachment_file_name(filename: str) -> str:
+    # Borrowed from sendfile() to minimize changes for users.
+    # Added whitespace conversion and squashing into a single space
+    # Added removal of control characters
+
+    filename = str(filename).replace("\\", "\\\\").replace('"', r"\"")
+    filename = re.sub(r"\s+", " ", filename)
+
+    # From https://github.com/encode/uvicorn/blob/cd18c3b14aa810a4a6ebb264b9a297d6f8afb9ac/uvicorn/protocols/http/httptools_impl.py#L51
+    filename = re.sub(r"[\x00-\x1F\x7F]", "", filename)
+
+    return filename
+
+def sendfile(
+    request, filename,
+    attachment=False, attachment_filename=None, mimetype=None, encoding=None
+):
+    """
+    Create a response to send file using backend configured in ``SENDFILE_BACKEND``
+
+    ``filename`` is the absolute path to the file to send.
+
+    If ``attachment`` is ``True`` the ``Content-Disposition`` header will be set accordingly.
+    This will typically prompt the user to download the file, rather
+    than view it. But even if ``False``, the user may still be prompted, depending
+    on the browser capabilities and configuration.
+
+    The ``Content-Disposition`` filename depends on the value of ``attachment_filename``:
+
+        ``None`` (default): Same as ``filename``
+        ``False``: No ``Content-Disposition`` filename
+        ``String``: Value used as filename
+
+    If neither ``mimetype`` or ``encoding`` are specified, then they will be guessed via the
+    filename (using the standard Python mimetypes module)
+    """
+    # A drop-in replacement for sendfile with extra filename cleaning
+
+    if attachment_filename:
+        attachment_filename = make_attachment_file_name(attachment_filename)
+
+    return _sendfile(request, filename, attachment, attachment_filename, mimetype, encoding)

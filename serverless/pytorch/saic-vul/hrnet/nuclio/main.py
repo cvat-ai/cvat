@@ -24,7 +24,7 @@ def handler(context, event):
     neg_points = data["neg_points"]
     threshold = data.get("threshold", 0.5)
     buf = io.BytesIO(base64.b64decode(data["image"]))
-    image = Image.open(buf)
+    image = Image.open(buf).convert('RGB')
 
     mask, polygon = context.user_data.model.handle(image, pos_points,
         neg_points, threshold)

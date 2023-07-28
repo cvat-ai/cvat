@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +18,7 @@ interface Props {
     sortingFields: string[];
     defaultFields: string[];
     visible: boolean;
+    disabled?: boolean;
     onVisibleChange(visible: boolean): void;
     onApplySorting(sorting: string | null): void;
 }
@@ -55,7 +57,7 @@ const SortableItem = SortableElement(
                 <Radio.Button disabled={valueIndex > anchorIndex}>{value}</Radio.Button>
                 <div>
                     <CVATTooltip overlay={appliedSorting[value]?.startsWith('-') ? 'Descending sort' : 'Ascending sort'}>
-                        <Button type='text' disabled={!isActiveField} onClick={onClick}>
+                        <Button className='cvat-switch-sort-order-button' type='text' disabled={!isActiveField} onClick={onClick}>
                             {
                                 isDescendingField ? (
                                     <SortDescendingOutlined />
@@ -97,7 +99,7 @@ const SortableList = SortableContainer(
 function SortingModalComponent(props: Props): JSX.Element {
     const {
         sortingFields: sortingFieldsProp,
-        defaultFields, visible, onApplySorting, onVisibleChange,
+        defaultFields, visible, onApplySorting, onVisibleChange, disabled,
     } = props;
     const [appliedSorting, setAppliedSorting] = useState<Record<string, string>>(
         defaultFields.reduce((acc: Record<string, string>, field: string) => {
@@ -174,6 +176,7 @@ function SortingModalComponent(props: Props): JSX.Element {
 
     return (
         <Dropdown
+            disabled={disabled}
             destroyPopupOnHide
             visible={visible}
             placement='bottomLeft'
@@ -193,7 +196,7 @@ function SortingModalComponent(props: Props): JSX.Element {
                 />
             )}
         >
-            <Button type='default' onClick={() => onVisibleChange(!visible)}>
+            <Button className='cvat-switch-sort-constructor-button' type='default' onClick={() => onVisibleChange(!visible)}>
                 Sort by
                 <OrderedListOutlined />
             </Button>

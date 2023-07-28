@@ -1,19 +1,32 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { PluginError } from './exceptions';
 
 const plugins = [];
+
+export interface APIWrapperEnterOptions {
+    preventMethodCall?: boolean;
+}
+
 export default class PluginRegistry {
     static async apiWrapper(wrappedFunc, ...args) {
-        // I have to optimize the wrapper
         const pluginList = await PluginRegistry.list();
+        const aggregatedOptions: APIWrapperEnterOptions = {
+            preventMethodCall: false,
+        };
+
         for (const plugin of pluginList) {
             const pluginDecorators = plugin.functions.filter((obj) => obj.callback === wrappedFunc)[0];
             if (pluginDecorators && pluginDecorators.enter) {
                 try {
-                    await pluginDecorators.enter.call(this, plugin, ...args);
+                    const options: APIWrapperEnterOptions | undefined = await pluginDecorators
+                        .enter.call(this, plugin, ...args);
+                    if (options?.preventMethodCall) {
+                        aggregatedOptions.preventMethodCall = true;
+                    }
                 } catch (exception) {
                     if (exception instanceof PluginError) {
                         throw exception;
@@ -24,7 +37,10 @@ export default class PluginRegistry {
             }
         }
 
-        let result = await wrappedFunc.implementation.call(this, ...args);
+        let result = null;
+        if (!aggregatedOptions.preventMethodCall) {
+            result = await wrappedFunc.implementation.call(this, ...args);
+        }
 
         for (const plugin of pluginList) {
             const pluginDecorators = plugin.functions.filter((obj) => obj.callback === wrappedFunc)[0];

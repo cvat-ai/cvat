@@ -20,6 +20,7 @@ import { importActions } from 'actions/import-actions';
 
 interface OwnProps {
     taskInstance: any;
+    onViewAnalytics: () => void;
 }
 
 interface StateToProps {
@@ -87,8 +88,8 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         deleteTask,
         openRunModelWindow,
         openMoveTaskToProjectWindow,
+        onViewAnalytics,
     } = props;
-
     const onClickMenu = (params: MenuInfo): void | JSX.Element => {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_TASK_DATASET) {
@@ -96,7 +97,6 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
         } else if (action === Actions.DELETE_TASK) {
             deleteTask(taskInstance);
         } else if (action === Actions.OPEN_BUG_TRACKER) {
-            /* eslint-disable-next-line security/detect-non-literal-fs-filename */
             window.open(`${taskInstance.bugTracker}`, '_blank');
         } else if (action === Actions.RUN_AUTO_ANNOTATION) {
             openRunModelWindow(taskInstance);
@@ -106,12 +106,15 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps):
             openMoveTaskToProjectWindow(taskInstance.id);
         } else if (action === Actions.LOAD_TASK_ANNO) {
             showImportModal(taskInstance);
+        } else if (action === Actions.VIEW_ANALYTICS) {
+            onViewAnalytics();
         }
     };
 
     return (
         <ActionsMenuComponent
             taskID={taskInstance.id}
+            projectID={taskInstance.projectId}
             taskMode={taskInstance.mode}
             bugTracker={taskInstance.bugTracker}
             loaders={loaders}

@@ -1,10 +1,10 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) 2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import glob
 import os.path as osp
-from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.plugins.open_images_format import OpenImagesPath
@@ -38,50 +38,48 @@ def find_item_ids(path):
                     yield row.split(',')[0]
 
 @exporter(name='Open Images V6', ext='ZIP', version='1.0')
-def _export(dst_file, task_data, save_images=False):
+def _export(dst_file, temp_dir, task_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         task_data, include_images=save_images), env=dm_env)
     dataset.transform(RotatedBoxesToPolygons)
     dataset.transform('polygons_to_masks')
     dataset.transform('merge_instance_segments')
 
-    with TemporaryDirectory() as temp_dir:
-        dataset.export(temp_dir, 'open_images', save_images=save_images)
+    dataset.export(temp_dir, 'open_images', save_images=save_images)
 
-        make_zip_archive(temp_dir, dst_file)
+    make_zip_archive(temp_dir, dst_file)
 
 @importer(name='Open Images V6', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None, **kwargs):
-    with TemporaryDirectory() as tmp_dir:
-        Archive(src_file.name).extractall(tmp_dir)
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    Archive(src_file.name).extractall(temp_dir)
 
-        image_meta_path = osp.join(tmp_dir, OpenImagesPath.ANNOTATIONS_DIR,
-            DEFAULT_IMAGE_META_FILE_NAME)
-        image_meta = None
+    image_meta_path = osp.join(temp_dir, OpenImagesPath.ANNOTATIONS_DIR,
+        DEFAULT_IMAGE_META_FILE_NAME)
+    image_meta = None
 
-        if not osp.isfile(image_meta_path):
-            image_meta = {}
-            item_ids = list(find_item_ids(tmp_dir))
+    if not osp.isfile(image_meta_path):
+        image_meta = {}
+        item_ids = list(find_item_ids(temp_dir))
 
-            root_hint = find_dataset_root(
-                [DatasetItem(id=item_id) for item_id in item_ids], instance_data)
+        root_hint = find_dataset_root(
+            [DatasetItem(id=item_id) for item_id in item_ids], instance_data)
 
-            for item_id in item_ids:
-                frame_info = None
-                try:
-                    frame_id = match_dm_item(DatasetItem(id=item_id),
-                        instance_data, root_hint)
-                    frame_info = instance_data.frame_info[frame_id]
-                except Exception: # nosec
-                    pass
-                if frame_info is not None:
-                    image_meta[item_id] = (frame_info['height'], frame_info['width'])
+        for item_id in item_ids:
+            frame_info = None
+            try:
+                frame_id = match_dm_item(DatasetItem(id=item_id),
+                    instance_data, root_hint)
+                frame_info = instance_data.frame_info[frame_id]
+            except Exception: # nosec
+                pass
+            if frame_info is not None:
+                image_meta[item_id] = (frame_info['height'], frame_info['width'])
 
-        dataset = Dataset.import_from(tmp_dir, 'open_images',
-            image_meta=image_meta, env=dm_env)
-        dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
-        if load_data_callback is not None:
-            load_data_callback(dataset, instance_data)
-        import_dm_annotations(dataset, instance_data)
+    dataset = Dataset.import_from(temp_dir, 'open_images',
+        image_meta=image_meta, env=dm_env)
+    dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
+    if load_data_callback is not None:
+        load_data_callback(dataset, instance_data)
+    import_dm_annotations(dataset, instance_data)
 
 

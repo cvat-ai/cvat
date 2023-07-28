@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -8,10 +8,11 @@ from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-from cvat.apps.engine.mixins import PartialUpdateModelMixin, DestroyModelMixin, CreateModelMixin
+from cvat.apps.engine.mixins import PartialUpdateModelMixin
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
+from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from .models import Invitation, Membership, Organization
 
 from .serializers import (
@@ -27,24 +28,21 @@ from .serializers import (
             '200': OrganizationReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of organizations according to query parameters',
+        summary='Method returns a paginated list of organizations',
         responses={
             '200': OrganizationReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates an organization by id',
-        responses={
-            '200': OrganizationWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an organization',
+        request=OrganizationWriteSerializer(partial=True),
         responses={
-            '200': OrganizationWriteSerializer,
+            '200': OrganizationReadSerializer, # check OrganizationWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates an organization',
+        request=OrganizationWriteSerializer,
         responses={
-            '201': OrganizationWriteSerializer,
+            '201': OrganizationReadSerializer, # check OrganizationWriteSerializer.to_representation
         }),
     destroy=extend_schema(
         summary='Method deletes an organization',
@@ -59,18 +57,19 @@ class OrganizationViewSet(viewsets.GenericViewSet,
                    mixins.DestroyModelMixin,
                    PartialUpdateModelMixin,
     ):
-    queryset = Organization.objects.all()
+    queryset = Organization.objects.select_related('owner').all()
     search_fields = ('name', 'owner')
     filter_fields = list(search_fields) + ['id', 'slug']
+    simple_filters = list(search_fields) + ['slug']
     lookup_fields = {'owner': 'owner__username'}
-    ordering_fields = filter_fields
+    ordering_fields = list(filter_fields)
     ordering = '-id'
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
-    pagination_class = None
     iam_organization_field = None
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         permission = OrganizationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
@@ -98,19 +97,15 @@ class OrganizationViewSet(viewsets.GenericViewSet,
             '200': MembershipReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of memberships according to query parameters',
+        summary='Method returns a paginated list of memberships',
         responses={
             '200': MembershipReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates a membership by id',
-        responses={
-            '200': MembershipWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in a membership',
+        request=MembershipWriteSerializer(partial=True),
         responses={
-            '200': MembershipWriteSerializer,
+            '200': MembershipReadSerializer, # check MembershipWriteSerializer.to_representation
         }),
     destroy=extend_schema(
         summary='Method deletes a membership',
@@ -118,15 +113,16 @@ class OrganizationViewSet(viewsets.GenericViewSet,
             '204': OpenApiResponse(description='The membership has been deleted'),
         })
 )
-class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
+class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, PartialUpdateModelMixin, viewsets.GenericViewSet):
-    queryset = Membership.objects.all()
+    queryset = Membership.objects.select_related('invitation', 'user').all()
     ordering = '-id'
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
-    search_fields = ('user_name', 'role')
-    filter_fields = list(search_fields) + ['id', 'user']
-    ordering_fields = filter_fields
-    lookup_fields = {'user': 'user__id', 'user_name': 'user__username'}
+    search_fields = ('user', 'role')
+    filter_fields = list(search_fields) + ['id']
+    simple_filters = list(search_fields)
+    ordering_fields = list(filter_fields)
+    lookup_fields = {'user': 'user__username'}
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
@@ -137,8 +133,12 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        permission = MembershipPermission.create_scope_list(self.request)
-        return permission.filter(queryset)
+
+        if self.action == 'list':
+            permission = MembershipPermission.create_scope_list(self.request)
+            queryset = permission.filter(queryset)
+
+        return queryset
 
 @extend_schema(tags=['invitations'])
 @extend_schema_view(
@@ -148,24 +148,22 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
             '200': InvitationReadSerializer,
         }),
     list=extend_schema(
-        summary='Method returns a paginated list of invitations according to query parameters',
+        summary='Method returns a paginated list of invitations',
         responses={
             '200': InvitationReadSerializer(many=True),
         }),
-    update=extend_schema(
-        summary='Method updates an invitation by id',
-        responses={
-            '200': InvitationWriteSerializer,
-        }),
     partial_update=extend_schema(
         summary='Methods does a partial update of chosen fields in an invitation',
+        request=InvitationWriteSerializer(partial=True),
         responses={
-            '200': InvitationWriteSerializer,
+            '200': InvitationReadSerializer, # check InvitationWriteSerializer.to_representation
         }),
     create=extend_schema(
         summary='Method creates an invitation',
+        request=InvitationWriteSerializer,
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
-            '201': InvitationWriteSerializer,
+            '201': InvitationReadSerializer, # check InvitationWriteSerializer.to_representation
         }),
     destroy=extend_schema(
         summary='Method deletes an invitation',
@@ -176,16 +174,17 @@ class MembershipViewSet(mixins.RetrieveModelMixin, DestroyModelMixin,
 class InvitationViewSet(viewsets.GenericViewSet,
                    mixins.RetrieveModelMixin,
                    mixins.ListModelMixin,
-                   mixins.UpdateModelMixin,
-                   CreateModelMixin,
-                   DestroyModelMixin,
+                   PartialUpdateModelMixin,
+                   mixins.CreateModelMixin,
+                   mixins.DestroyModelMixin,
     ):
     queryset = Invitation.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     iam_organization_field = 'membership__organization'
 
     search_fields = ('owner',)
-    filter_fields = search_fields
+    filter_fields = list(search_fields)
+    simple_filters = list(search_fields)
     ordering_fields = list(filter_fields) + ['created_date']
     ordering = '-created_date'
     lookup_fields = {'owner': 'owner__username'}
@@ -198,16 +197,16 @@ class InvitationViewSet(viewsets.GenericViewSet,
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
     def perform_create(self, serializer):
-        extra_kwargs = {
-            'owner': self.request.user,
-            'key': get_random_string(length=64),
-            'organization': self.request.iam_context['organization']
-        }
-        super().perform_create(serializer, **extra_kwargs)
+        serializer.save(
+            owner=self.request.user,
+            key=get_random_string(length=64),
+            organization=self.request.iam_context['organization']
+        )
 
     def perform_update(self, serializer):
         if 'accepted' in self.request.query_params:

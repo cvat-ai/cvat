@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,30 +7,41 @@ import React from 'react';
 import Icon from '@ant-design/icons';
 
 import { GroupIcon } from 'icons';
+import { DimensionType } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { ActiveControl, DimensionType } from 'reducers';
+import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
 export interface Props {
+    groupObjects(enabled: boolean): void;
+    resetGroup(): void;
     canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
-    switchGroupShortcut: string;
-    resetGroupShortcut: string;
     disabled?: boolean;
     jobInstance?: any;
-    groupObjects(enabled: boolean): void;
+    shortcuts: {
+        SWITCH_GROUP_MODE: {
+            details: KeyMapItem;
+            displayValue: string;
+        };
+        RESET_GROUP: {
+            details: KeyMapItem;
+            displayValue: string;
+        };
+    }
 }
 
 function GroupControl(props: Props): JSX.Element {
     const {
-        switchGroupShortcut,
-        resetGroupShortcut,
+        groupObjects,
+        resetGroup,
         activeControl,
         canvasInstance,
-        groupObjects,
         disabled,
         jobInstance,
+        shortcuts,
     } = props;
 
     const dynamicIconProps =
@@ -52,17 +64,48 @@ function GroupControl(props: Props): JSX.Element {
 
     const title = [
         `Group shapes${
-            jobInstance && jobInstance.dimension === DimensionType.DIM_3D ? '' : '/tracks'
-        } ${switchGroupShortcut}. `,
-        `Select and press ${resetGroupShortcut} to reset a group.`,
+            jobInstance && jobInstance.dimension === DimensionType.DIMENSION_3D ? '' : '/tracks'
+        } ${shortcuts.SWITCH_GROUP_MODE.displayValue}. `,
+        `Select and press ${shortcuts.RESET_GROUP.displayValue} to reset a group.`,
     ].join(' ');
+
+    const shortcutHandlers = {
+        SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            const grouping = activeControl === ActiveControl.GROUP;
+            if (!grouping) {
+                canvasInstance.cancel();
+            }
+            canvasInstance.group({ enabled: !grouping });
+            groupObjects(!grouping);
+        },
+        RESET_GROUP: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            const grouping = activeControl === ActiveControl.GROUP;
+            if (!grouping) {
+                return;
+            }
+            resetGroup();
+            canvasInstance.group({ enabled: false });
+            groupObjects(false);
+        },
+    };
 
     return disabled ? (
         <Icon className='cvat-group-control cvat-disabled-canvas-control' component={GroupIcon} />
     ) : (
-        <CVATTooltip title={title} placement='right'>
-            <Icon {...dynamicIconProps} component={GroupIcon} />
-        </CVATTooltip>
+        <>
+            <GlobalHotKeys
+                keyMap={{
+                    SWITCH_GROUP_MODE: shortcuts.SWITCH_GROUP_MODE.details,
+                    RESET_GROUP: shortcuts.RESET_GROUP.details,
+                }}
+                handlers={shortcutHandlers}
+            />
+            <CVATTooltip title={title} placement='right'>
+                <Icon {...dynamicIconProps} component={GroupIcon} />
+            </CVATTooltip>
+        </>
     );
 }
 

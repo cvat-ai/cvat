@@ -1,22 +1,102 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import * as cvatData from 'cvat-data';
 import { isBrowser, isNode } from 'browser-or-node';
+
+import * as cvatData from 'cvat-data';
+import { DimensionType } from 'enums';
 import PluginRegistry from './plugins';
-import serverProxy from './server-proxy';
-import { Exception, ArgumentError, DataError } from './exceptions';
+import serverProxy, { RawFramesMetaData } from './server-proxy';
+import {
+    Exception, ArgumentError, DataError, ServerError,
+} from './exceptions';
 
-// This is the frames storage
-const frameDataCache = {};
+// frame storage by job id
+const frameDataCache: Record<string, {
+    meta: RawFramesMetaData;
+    chunkSize: number;
+    mode: 'annotation' | 'interpolation';
+    startFrame: number;
+    stopFrame: number;
+    provider: cvatData.FrameProvider;
+    frameBuffer: FrameBuffer;
+    decodedBlocksCacheSize: number;
+    activeChunkRequest: null;
+    nextChunkRequest: null;
+}> = {};
 
-/**
- * Class provides meta information about specific frame and frame itself
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
+export class FramesMetaData {
+    public chunkSize: number;
+    public deletedFrames: number[];
+    public includedFrames: number[];
+    public frameFilter: string;
+    public frames: {
+        width: number;
+        height: number;
+        name: string;
+        related_files: number;
+    }[];
+    public imageQuality: number;
+    public size: number;
+    public startFrame: number;
+    public stopFrame: number;
+
+    constructor(initialData: RawFramesMetaData) {
+        const data: RawFramesMetaData = {
+            chunk_size: undefined,
+            deleted_frames: [],
+            included_frames: [],
+            frame_filter: undefined,
+            frames: [],
+            image_quality: undefined,
+            size: undefined,
+            start_frame: undefined,
+            stop_frame: undefined,
+        };
+
+        for (const property in data) {
+            if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
+                data[property] = initialData[property];
+            }
+        }
+
+        Object.defineProperties(
+            this,
+            Object.freeze({
+                chunkSize: {
+                    get: () => data.chunk_size,
+                },
+                deletedFrames: {
+                    get: () => data.deleted_frames,
+                },
+                includedFrames: {
+                    get: () => data.included_frames,
+                },
+                frameFilter: {
+                    get: () => data.frame_filter,
+                },
+                frames: {
+                    get: () => data.frames,
+                },
+                imageQuality: {
+                    get: () => data.image_quality,
+                },
+                size: {
+                    get: () => data.size,
+                },
+                startFrame: {
+                    get: () => data.start_frame,
+                },
+                stopFrame: {
+                    get: () => data.stop_frame,
+                },
+            }),
+        );
+    }
+}
+
 export class FrameData {
     constructor({
         width,
@@ -28,98 +108,39 @@ export class FrameData {
         stopFrame,
         decodeForward,
         deleted,
-        has_related_context: hasRelatedContext,
+        related_files: relatedFiles,
     }) {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name filename
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 filename: {
                     value: name,
                     writable: false,
                 },
-                /**
-                 * @name width
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 width: {
                     value: width,
                     writable: false,
                 },
-                /**
-                 * @name height
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 height: {
                     value: height,
                     writable: false,
                 },
-                /**
-                 * @name jid
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 jid: {
                     value: jobID,
                     writable: false,
                 },
-                /**
-                 * @name number
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 number: {
                     value: frameNumber,
                     writable: false,
                 },
-                /**
-                 * True if some context images are associated with this frame
-                 * @name hasRelatedContext
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
-                hasRelatedContext: {
-                    value: hasRelatedContext,
+                relatedFiles: {
+                    value: relatedFiles,
                     writable: false,
                 },
-                /**
-                 * Start frame of the frame in the job
-                 * @name startFrame
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 startFrame: {
                     value: startFrame,
                     writable: false,
                 },
-                /**
-                 * Stop frame of the frame in the job
-                 * @name stopFrame
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 stopFrame: {
                     value: stopFrame,
                     writable: false,
@@ -128,14 +149,6 @@ export class FrameData {
                     value: decodeForward,
                     writable: false,
                 },
-                /**
-                 * True if frame was deleted from the task data
-                 * @name deleted
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.FrameData
-                 * @readonly
-                 * @instance
-                 */
                 deleted: {
                     value: deleted,
                     writable: false,
@@ -144,18 +157,6 @@ export class FrameData {
         );
     }
 
-    /**
-     * Method returns URL encoded image which can be placed in the img tag
-     * @method data
-     * @returns {string}
-     * @memberof module:API.cvat.classes.FrameData
-     * @instance
-     * @async
-     * @param {function} [onServerRequest = () => {}]
-     * callback which will be called if data absences local
-     * @throws {module:API.cvat.exception.ServerError}
-     * @throws {module:API.cvat.exception.PluginError}
-     */
     async data(onServerRequest = () => {}) {
         const result = await PluginRegistry.apiWrapper.call(this, FrameData.prototype.data, onServerRequest);
         return result;
@@ -227,7 +228,7 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
             const taskDataCache = frameDataCache[this.jid];
             const activeChunk = taskDataCache.activeChunkRequest;
             activeChunk.request = serverProxy.frames
-                .getData(null, this.jid, activeChunk.chunkNumber)
+                .getData(this.jid, activeChunk.chunkNumber)
                 .then((chunk) => {
                     frameDataCache[this.jid].activeChunkRequest.completed = true;
                     if (!taskDataCache.nextChunkRequest) {
@@ -384,21 +385,22 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
     });
 };
 
-function getFrameMeta(jobID, frame) {
+function getFrameMeta(jobID, frame): RawFramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
-    let size = null;
-    if (mode === 'interpolation') {
-        [size] = meta.frames;
-    } else if (mode === 'annotation') {
-        if (frame >= meta.size) {
+    let frameMeta = null;
+    if (mode === 'interpolation' && meta.frames.length === 1) {
+        // video tasks have 1 frame info, but image tasks will have many infos
+        [frameMeta] = meta.frames;
+    } else if (mode === 'annotation' || (mode === 'interpolation' && meta.frames.length > 1)) {
+        if (frame > meta.stop_frame) {
             throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
-        } else {
-            size = meta.frames[frame - startFrame];
         }
+        frameMeta = meta.frames[frame - startFrame];
     } else {
         throw new DataError(`Invalid mode is specified ${mode}`);
     }
-    return size;
+
+    return frameMeta;
 }
 
 class FrameBuffer {
@@ -413,16 +415,46 @@ class FrameBuffer {
         this._jobID = jobID;
     }
 
-    isContextImageAvailable(frame) {
+    addContextImage(frame, data): void {
+        const promise = new Promise<void>((resolve, reject) => {
+            data.then((resolvedData) => {
+                const meta = getFrameMeta(this._jobID, frame);
+                return cvatData
+                    .decodeZip(resolvedData, 0, meta.related_files, cvatData.DimensionType.DIMENSION_2D);
+            }).then((decodedData) => {
+                this._contextImage[frame] = decodedData;
+                resolve();
+            }).catch((error: Error) => {
+                if (error instanceof ServerError && (error as any).code === 404) {
+                    this._contextImage[frame] = {};
+                    resolve();
+                } else {
+                    reject(error);
+                }
+            });
+        });
+
+        this._contextImage[frame] = promise;
+    }
+
+    isContextImageAvailable(frame): boolean {
         return frame in this._contextImage;
     }
 
-    getContextImage(frame) {
-        return this._contextImage[frame] || null;
-    }
-
-    addContextImage(frame, data) {
-        this._contextImage[frame] = data;
+    getContextImage(frame): Promise<ImageBitmap[]> {
+        return new Promise((resolve) => {
+            if (frame in this._contextImage) {
+                if (this._contextImage[frame] instanceof Promise) {
+                    this._contextImage[frame].then(() => {
+                        resolve(this.getContextImage(frame));
+                    });
+                } else {
+                    resolve({ ...this._contextImage[frame] });
+                }
+            } else {
+                resolve([]);
+            }
+        });
     }
 
     getFreeBufferSize() {
@@ -561,7 +593,7 @@ class FrameBuffer {
         }
     }
 
-    async require(frameNumber, jobID, fillBuffer, frameStep) {
+    async require(frameNumber: number, jobID: number, fillBuffer: boolean, frameStep: number): FrameData {
         for (const frame in this._buffer) {
             if (+frame < frameNumber || +frame >= frameNumber + this._size * frameStep) {
                 delete this._buffer[frame];
@@ -634,16 +666,7 @@ async function getImageContext(jobID, frame) {
         serverProxy.frames
             .getImageContext(jobID, frame)
             .then((result) => {
-                if (isNode) {
-                    // eslint-disable-next-line no-undef
-                    resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                } else if (isBrowser) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        resolve(reader.result);
-                    };
-                    reader.readAsDataURL(result);
-                }
+                resolve(result);
             })
             .catch((error) => {
                 reject(error);
@@ -656,44 +679,34 @@ export async function getContextImage(jobID, frame) {
         return frameDataCache[jobID].frameBuffer.getContextImage(frame);
     }
     const response = getImageContext(jobID, frame);
-    frameDataCache[jobID].frameBuffer.addContextImage(frame, response);
+    await frameDataCache[jobID].frameBuffer.addContextImage(frame, response);
     return frameDataCache[jobID].frameBuffer.getContextImage(frame);
 }
 
-export async function getPreview(taskID = null, jobID = null) {
+export function decodePreview(preview: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
-        // Just go to server and get preview (no any cache)
-        serverProxy.frames
-            .getPreview(taskID, jobID)
-            .then((result) => {
-                if (isNode) {
-                    // eslint-disable-next-line no-undef
-                    resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                } else if (isBrowser) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        resolve(reader.result);
-                    };
-                    reader.readAsDataURL(result);
-                }
-            })
-            .catch((error) => {
-                reject(error);
-            });
+        const reader = new FileReader();
+        reader.onload = () => {
+            resolve(reader.result as string);
+        };
+        reader.onerror = (error) => {
+            reject(error);
+        };
+        reader.readAsDataURL(preview);
     });
 }
 
 export async function getFrame(
-    jobID,
-    chunkSize,
-    chunkType,
-    mode,
-    frame,
-    startFrame,
-    stopFrame,
-    isPlaying,
-    step,
-    dimension,
+    jobID: number,
+    chunkSize: number,
+    chunkType: 'video' | 'imageset',
+    mode: 'interpolation' | 'annotation', // todo: obsolete, need to remove
+    frame: number,
+    startFrame: number,
+    stopFrame: number,
+    isPlaying: boolean,
+    step: number,
+    dimension: DimensionType,
 ) {
     if (!(jobID in frameDataCache)) {
         const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO : cvatData.BlockType.ARCHIVE;
@@ -732,8 +745,8 @@ export async function getFrame(
             activeChunkRequest: null,
             nextChunkRequest: null,
         };
+
         const frameMeta = getFrameMeta(jobID, frame);
-        // actual only for video chunks
         frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     }
 
@@ -786,20 +799,32 @@ export async function patchMeta(jobID) {
     frameDataCache[jobID].meta.deleted_frames = prevDeletedFrames;
 }
 
-export async function findNotDeletedFrame(jobID, frameFrom, frameTo, offset) {
+export async function findFrame(jobID, frameFrom, frameTo, filters) {
+    const offset = filters.offset || 1;
     let meta;
     if (!frameDataCache[jobID]) {
         meta = await serverProxy.frames.getMeta('job', jobID);
     } else {
         meta = frameDataCache[jobID].meta;
     }
+
     const sign = Math.sign(frameTo - frameFrom);
     const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
     const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
     let framesCounter = 0;
     let lastUndeletedFrame = null;
+    const check = (frame): boolean => {
+        if (meta.included_frames) {
+            return (meta.included_frames.includes(frame)) &&
+            (!filters.notDeleted || !(frame in meta.deleted_frames));
+        }
+        if (filters.notDeleted) {
+            return !(frame in meta.deleted_frames);
+        }
+        return true;
+    };
     for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
-        if (!(frame in meta.deleted_frames)) {
+        if (check(frame)) {
             lastUndeletedFrame = frame;
             framesCounter++;
             if (framesCounter === offset) {

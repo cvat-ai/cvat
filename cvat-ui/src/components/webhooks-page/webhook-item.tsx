@@ -32,13 +32,13 @@ interface WebhookStatus {
 function setUpWebhookStatus(status: number): WebhookStatus {
     if (status && status.toString().startsWith('2')) {
         return {
-            message: `Last delivery was succesful. Response: ${status}`,
+            message: `Last delivery was successful. Response: ${status}`,
             className: 'cvat-webhook-status-available',
         };
     }
     if (status && status.toString().startsWith('5')) {
         return {
-            message: `Last delivery was not succesful. Response: ${status}`,
+            message: `Last delivery was not successful. Response: ${status}`,
             className: 'cvat-webhook-status-failed',
         };
     }
@@ -84,7 +84,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                 }
 
             </Col>
-            <Col span={7}>
+            <Col span={6}>
                 <Paragraph ellipsis={{
                     tooltip: description,
                     rows: 2,
@@ -101,7 +101,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                 )}
                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
             </Col>
-            <Col span={7}>
+            <Col span={6} offset={1}>
                 <Paragraph ellipsis={{
                     tooltip: targetURL,
                     rows: 3,
@@ -111,7 +111,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                     {targetURL}
                 </Paragraph>
             </Col>
-            <Col span={6}>
+            <Col span={6} offset={1}>
                 <Paragraph ellipsis={{
                     tooltip: eventsList,
                     rows: 3,

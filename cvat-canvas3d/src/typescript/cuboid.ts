@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -193,7 +193,7 @@ export function removeCuboidEdges(instance: THREE.Mesh): void {
 }
 
 export function createResizeHelper(instance: THREE.Mesh): void {
-    const sphereGeometry = new THREE.SphereGeometry(0.1);
+    const sphereGeometry = new THREE.SphereGeometry(0.2);
     const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#ff0000', opacity: 1 });
     const cornerPoints = makeCornerPointsMatrix(0.5, 0.5, 0.5);
 
@@ -222,7 +222,7 @@ export function removeResizeHelper(instance: THREE.Mesh): void {
 export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): void {
     if ([ViewType.TOP, ViewType.SIDE, ViewType.FRONT].includes(viewType)) {
         // Create a temporary element to get correct position
-        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(0.1));
+        const tmpSphere = new THREE.Mesh(new THREE.SphereGeometry(0.2));
         instance.add(tmpSphere);
         if (viewType === ViewType.TOP) {
             tmpSphere.translateY(constants.ROTATION_HELPER_OFFSET);
@@ -233,7 +233,7 @@ export function createRotationHelper(instance: THREE.Mesh, viewType: ViewType): 
         instance.remove(tmpSphere);
 
         // Create rotation helper itself first
-        const sphereGeometry = new THREE.SphereGeometry(0.1);
+        const sphereGeometry = new THREE.SphereGeometry(0.2);
         const sphereMaterial = new THREE.MeshBasicMaterial({ color: '#33b864', opacity: 1 });
         const rotationHelper = new THREE.Mesh(sphereGeometry, sphereMaterial);
         rotationHelper.name = constants.ROTATION_HELPER_NAME;

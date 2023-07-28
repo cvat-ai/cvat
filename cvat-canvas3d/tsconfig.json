@@ -1,19 +1,23 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "emitDeclarationOnly": true,
-    "module": "es6",
-    "target": "es6",
-    "noImplicitAny": true,
-    "preserveConstEnums": true,
-    "declaration": true,
+    "target": "es2020",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "moduleResolution": "node",
+    "noEmit": true,
+    "declaration": true,
     "declarationDir": "dist/declaration",
     "paths": {
       "cvat-canvas.node": ["dist/cvat-canvas3d.node"]
-    }
+    },
+    "baseUrl": "."
   },
-  "include": ["src/typescript/*.ts"]
+  "include": ["src/typescript/canvas3d.ts"]
 }

@@ -2,7 +2,7 @@ package server
 import data.utils
 
 # input: {
-#     "scope": <"send:logs"|"send:exception"|"view"|"list:content"> or null,
+#     "scope": <"view"|"list:content"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -23,14 +23,6 @@ import data.utils
 default allow = false
 allow {
     input.scope == utils.VIEW
-}
-
-allow {
-    input.scope == utils.SEND_EXCEPTION
-}
-
-allow {
-    input.scope == utils.SEND_LOGS
 }
 
 allow {

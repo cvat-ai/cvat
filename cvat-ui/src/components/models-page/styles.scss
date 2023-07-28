@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,13 +8,13 @@
 .cvat-models-page {
     padding-top: $grid-unit-size * 2;
     padding-bottom: $grid-unit-size;
-    height: 90%;
     overflow: auto;
     position: fixed;
+    height: 100%;
     width: 100%;
 
-    > div:nth-child(1) {
-        margin-bottom: $grid-unit-size;
+    >div:nth-child(2) {
+        height: 80%;
     }
 }
 
@@ -25,11 +26,12 @@
 }
 
 .cvat-models-list {
-    height: 100%;
-    overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .cvat-models-list-item {
+    position: relative;
     width: 100%;
     height: auto;
     border: 1px solid $border-color-1;
@@ -58,4 +60,178 @@
         white-space: nowrap;
         overflow: hidden;
     }
+}
+
+.cvat-models-item-card-removed {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.cvat-models-page-top-bar {
+    margin: $grid-unit-size * 3 0;
+
+    > div {
+        display: flex;
+    }
+}
+
+.cvat-models-heading {
+    padding: $grid-unit-size * 2;
+}
+
+.cvat-models-page-filters-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    > div {
+        display: flex;
+        margin-right: $grid-unit-size * 4;
+
+        > button {
+            margin-right: $grid-unit-size;
+        }
+    }
+}
+
+.cvat-models-add-wrapper {
+    display: inline-block;
+}
+
+.cvat-model-delete {
+    position: absolute;
+    top: $grid-unit-size;
+    right: $grid-unit-size;
+    color: #8c8c8c;
+    font-size: 10px;
+
+    &:hover {
+        cursor: pointer;
+        color: #595959;
+    }
+}
+
+.cvat-models-item-card {
+    width: 25%;
+    border-width: 4px;
+    height: $grid-unit-size * 28;
+    overflow: hidden;
+
+    .ant-card-meta-title {
+        margin-bottom: 0 !important;
+    }
+}
+
+.cvat-model-item-loading-preview,
+.cvat-model-item-empty-preview {
+    @extend .cvat-base-preview;
+
+    height: $grid-unit-size * 18;
+
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+.cvat-model-item-loading-preview {
+    padding-top: $grid-unit-size * 3;
+}
+
+.cvat-models-item-card-preview-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: $grid-unit-size * 18;
+    overflow: hidden;
+
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+.cvat-model-item-provider {
+    position: absolute;
+    top: $grid-unit-size;
+    right: $grid-unit-size;
+}
+
+.cvat-model-item-provider-inner {
+    @extend .cvat-model-item-provider;
+
+    right: $grid-unit-size * 2;
+
+    svg {
+        width: $grid-unit-size * 4;
+        height: $grid-unit-size * 4;
+    }
+}
+
+.cvat-models-item-description {
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+
+    > div > span:nth-child(2) {
+        margin-left: $grid-unit-size;
+    }
+
+    button {
+        position: relative;
+        color: black;
+        margin-top: -$grid-unit-size * 2;
+        margin-right: -$grid-unit-size;
+    }
+
+    &:hover {
+        cursor: pointer;
+    }
+}
+
+.cvat-model-info-modal {
+    .ant-modal-body {
+        position: relative;
+        padding: 0;
+
+        >.cvat-model-info-container:not(:last-child) {
+            padding: 0 $grid-unit-size * 3;
+        }
+
+        >.cvat-model-info-container:last-child {
+            padding: 0 $grid-unit-size * 3 $grid-unit-size * 3 $grid-unit-size * 3;
+        }
+    }
+
+    h3 {
+        margin-top: $grid-unit-size * 2;
+    }
+}
+
+.cvat-model-info-modal-labels-title {
+    font-size: 16px;
+}
+
+.cvat-model-info-modal-labels-list {
+    margin-top: $grid-unit-size;
+    max-height: $grid-unit-size * 18;
+    overflow: auto;
+
+    .ant-tag {
+        margin-top: $grid-unit-size;
+    }
+}
+
+.cvat-models-item-title {
+    &:hover {
+        cursor: pointer !important;
+    }
+}
+
+.cvat-models-item-text-description {
+    max-width: 80%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    max-height: $grid-unit-size * 3;
+    display: inline;
 }

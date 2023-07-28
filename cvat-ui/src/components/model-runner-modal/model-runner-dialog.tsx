@@ -1,44 +1,53 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import Modal from 'antd/lib/modal';
+import notification from 'antd/lib/notification';
 
 import { ThunkDispatch } from 'utils/redux';
 import { modelsActions, startInferenceAsync } from 'actions/models-actions';
-import { Model, CombinedState } from 'reducers';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
+import { CombinedState } from 'reducers';
+import MLModel from 'cvat-core/src/ml-model';
+import { getCore, Task } from 'cvat-core-wrapper';
 import DetectorRunner from './detector-runner';
+
+const core = getCore();
 
 interface StateToProps {
     visible: boolean;
     task: any;
-    detectors: Model[];
-    reid: Model[];
+    detectors: MLModel[];
+    reid: MLModel[];
+    classifiers: MLModel[];
 }
 
 interface DispatchToProps {
-    runInference(task: any, model: Model, body: object): void;
+    runInference(task: any, model: MLModel, body: object): void;
     closeDialog(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
-    const { detectors, reid } = models;
+    const { detectors, reid, classifiers } = models;
 
     return {
         visible: models.modelRunnerIsVisible,
         task: models.modelRunnerTask,
         reid,
         detectors,
+        classifiers,
     };
 }
 
 function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
-        runInference(taskID: number, model: Model, body: object) {
+        runInference(taskID: number, model: MLModel, body: object) {
             dispatch(startInferenceAsync(taskID, model, body));
         },
         closeDialog() {
@@ -49,10 +58,23 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
 
 function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     const {
-        reid, detectors, task, visible, runInference, closeDialog,
+        reid, detectors, classifiers, task, visible, runInference, closeDialog,
     } = props;
 
-    const models = [...reid, ...detectors];
+    const models = [...reid, ...detectors, ...classifiers];
+    const [taskInstance, setTaskInstance] = useState<Task | null>(null);
+
+    useEffect(() => {
+        if (task) {
+            core.tasks.get({ id: task.id }).then(([_task]: Task[]) => {
+                if (_task) {
+                    setTaskInstance(_task);
+                }
+            }).catch((error: any) => {
+                notification.error({ message: 'Could not get task details', description: error.toString() });
+            });
+        }
+    }, [visible, task]);
 
     return (
         <Modal
@@ -63,18 +85,18 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
             maskClosable
             title='Automatic annotation'
         >
-            { task ? (
+            { taskInstance ? (
                 <DetectorRunner
                     withCleanup
                     models={models}
-                    labels={task.labels}
-                    dimension={task.dimension}
+                    labels={taskInstance.labels}
+                    dimension={taskInstance.dimension}
                     runInference={(...args) => {
                         closeDialog();
-                        runInference(task.id, ...args);
+                        runInference(taskInstance.id, ...args);
                     }}
                 />
-            ) : null }
+            ) : <CVATLoadingSpinner /> }
         </Modal>
     );
 }

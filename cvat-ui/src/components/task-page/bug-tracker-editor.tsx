@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -52,16 +53,13 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                     <Text strong className='cvat-text-color'>
                         Issue Tracker
                     </Text>
-                    <br />
                     <Text editable={{ onChange: onChangeValue }} className='cvat-issue-tracker-value'>
                         {bugTracker}
                     </Text>
+                    <br />
                     <Button
                         type='ghost'
-                        size='small'
                         onClick={(): void => {
-                            // false positive
-                            // eslint-disable-next-line
                             window.open(bugTracker, '_blank');
                         }}
                         className='cvat-open-bug-tracker-button'
@@ -79,16 +77,14 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                 <Text strong className='cvat-text-color'>
                     Issue Tracker
                 </Text>
-                <br />
                 <Text
+                    className='cvat-issue-tracker-value'
                     editable={{
                         editing: bugTrackerEditing,
                         onStart,
                         onChange: onChangeValue,
                     }}
-                >
-                    {bugTrackerEditing ? '' : 'Not specified'}
-                </Text>
+                />
             </Col>
         </Row>
     );

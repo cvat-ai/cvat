@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,9 +10,9 @@ export const labelName = `Base label for ${projectName}`;
 export const attrName = `Attr for ${labelName}`;
 export const textDefaultValue = 'Some default value for type Text';
 export const multiAttrParams = {
-    additionalAttrName: `Attr 2`,
-    additionalValue: `Attr value 2`,
-    typeAttribute: 'Text',
+    name: 'Attr 2',
+    values: 'Attr value 2',
+    type: 'Text',
 };
 
 it('Prepare to testing', () => {
@@ -19,7 +20,7 @@ it('Prepare to testing', () => {
     cy.login();
     cy.goToProjectsList();
     cy.get('.cvat-projects-page').should('exist');
-    let listItems = [];
+    const listItems = [];
     cy.document().then((doc) => {
         const collection = Array.from(doc.querySelectorAll('.cvat-projects-project-item-title'));
         for (let i = 0; i < collection.length; i++) {

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,12 +17,6 @@ const defaultState: AuthState = {
     showChangePasswordDialog: false,
     allowResetPassword: false,
     hasEmailVerificationBeenSent: false,
-    advancedAuthFetching: false,
-    advancedAuthInitialized: false,
-    advancedAuthList: {
-        GOOGLE_ACCOUNT_AUTHENTICATION: false,
-        GITHUB_ACCOUNT_AUTHENTICATION: false,
-    },
 };
 
 export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
@@ -160,29 +155,6 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
                 allowChangePassword: false,
                 allowResetPassword: false,
             };
-        case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION: {
-            return {
-                ...state,
-                advancedAuthFetching: true,
-                advancedAuthInitialized: false,
-            };
-        }
-        case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_SUCCESS: {
-            const { list } = action.payload;
-            return {
-                ...state,
-                advancedAuthFetching: false,
-                advancedAuthInitialized: true,
-                advancedAuthList: list,
-            };
-        }
-        case AuthActionTypes.LOAD_ADVANCED_AUTHENTICATION_FAILED: {
-            return {
-                ...state,
-                advancedAuthFetching: false,
-                advancedAuthInitialized: true,
-            };
-        }
         case BoundariesActionTypes.RESET_AFTER_ERROR: {
             return { ...defaultState };
         }

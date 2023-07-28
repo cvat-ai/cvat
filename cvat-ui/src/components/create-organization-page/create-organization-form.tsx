@@ -86,8 +86,8 @@ function CreateOrganizationForm(): JSX.Element {
             </Form.Item>
             <Form.Item>
                 <Space className='cvat-create-organization-form-buttons-block' align='end'>
-                    <Button onClick={() => history.goBack()}>Cancel</Button>
-                    <Button loading={creating} disabled={creating} htmlType='submit' type='primary'>
+                    <Button className='cvat-cancel-new-organization-button' onClick={() => history.goBack()}>Cancel</Button>
+                    <Button className='cvat-submit-new-organization-button' loading={creating} disabled={creating} htmlType='submit' type='primary'>
                         Submit
                     </Button>
                 </Space>

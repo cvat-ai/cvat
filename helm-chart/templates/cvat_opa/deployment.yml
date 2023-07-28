@@ -33,7 +33,7 @@ spec:
       containers:
         - name: cvat-opa-app-container
           image: {{ .Values.cvat.opa.image }}:{{ .Values.cvat.opa.tag }}
-          imagePullPolicy: {{ .Values.cvat.opa.imagepullpolicy }}
+          imagePullPolicy: {{ .Values.cvat.opa.imagePullPolicy }}
           args:
             - run
             - --server

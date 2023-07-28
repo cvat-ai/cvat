@@ -1,14 +1,17 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
 
 import pytest
+from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
 from shared.utils.config import get_method, patch_method
+
+from .utils import CollectionSimpleFilterTestBase
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -27,6 +30,13 @@ class TestGetMemberships:
     def test_admin_can_see_all_memberships(self, memberships):
         self._test_can_see_memberships("admin2", memberships.raw, page_size="all")
 
+    @pytest.mark.parametrize("field_value, query_value", [(1, 1), (None, "")])
+    def test_can_filter_by_org_id(self, field_value, query_value, memberships):
+        memberships = filter(lambda m: m["organization"] == field_value, memberships)
+        self._test_can_see_memberships(
+            "admin2", list(memberships), page_size="all", org_id=query_value
+        )
+
     def test_non_admin_can_see_only_self_memberships(self, memberships):
         non_admins = ["business1", "user1", "dummy1", "worker2"]
         for username in non_admins:
@@ -42,6 +52,27 @@ class TestGetMemberships:
         non_org1_users = ["user2", "worker3"]
         for user in non_org1_users:
             self._test_cannot_see_memberships(user, org_id=1)
+
+
+class TestMembershipsListFilters(CollectionSimpleFilterTestBase):
+    field_lookups = {
+        "user": ["user", "username"],
+    }
+
+    @pytest.fixture(autouse=True)
+    def setup(self, restore_db_per_class, admin_user, memberships):
+        self.user = admin_user
+        self.samples = memberships
+
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
+        return api_client.memberships_api.list_endpoint
+
+    @pytest.mark.parametrize(
+        "field",
+        ("role", "user"),
+    )
+    def test_can_use_simple_filter_for_object_list(self, field):
+        return super().test_can_use_simple_filter_for_object_list(field)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

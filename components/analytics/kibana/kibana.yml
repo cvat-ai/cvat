@@ -1,4 +1,0 @@
-server.host: 0.0.0.0
-elasticsearch.requestHeadersWhitelist: ['cookie', 'authorization', 'x-forwarded-user']
-kibana.defaultAppId: 'discover'
-server.basePath: /analytics

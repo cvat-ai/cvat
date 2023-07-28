@@ -11,12 +11,15 @@ import SkeletonConfigurator from './skeleton-configurator';
 
 interface Props {
     label: LabelOptColor;
+    labelNames: string[];
     onUpdate: (label: LabelOptColor) => void;
     onCancel: () => void;
 }
 
 function ConstructorUpdater(props: Props): JSX.Element {
-    const { label, onUpdate, onCancel } = props;
+    const {
+        label, labelNames, onUpdate, onCancel,
+    } = props;
     const { type } = label;
     const skeletonConfiguratorRef = useRef<SkeletonConfigurator>(null);
 
@@ -38,6 +41,7 @@ function ConstructorUpdater(props: Props): JSX.Element {
         <div className='cvat-label-constructor-updater'>
             <LabelForm
                 label={label}
+                labelNames={labelNames}
                 onSubmit={onUpdate}
                 resetSkeleton={type === 'skeleton' ? resetSkeleton : undefined}
                 onSkeletonSubmit={type === 'skeleton' ? onSkeletonSubmit : undefined}

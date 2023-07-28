@@ -1,8 +1,9 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import config from './config';
 
 import PluginRegistry from './plugins';
@@ -15,16 +16,23 @@ import {
     checkFilter,
     checkExclusiveFields,
     checkObjectType,
+    filterFieldsToSnakeCase,
 } from './common';
 
 import User from './user';
 import { AnnotationFormats } from './annotation-formats';
-import { ArgumentError } from './exceptions';
 import { Task, Job } from './session';
 import Project from './project';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
+import { ArgumentError } from './exceptions';
+import { SerializedAsset } from './server-response-types';
+import QualityReport from './quality-report';
+import QualityConflict from './quality-conflict';
+import QualitySettings from './quality-settings';
+import { FramesMetaData } from './frames';
+import AnalyticsReport from './analytics-report';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -36,6 +44,7 @@ export default function implementAPI(cvat) {
     cvat.lambda.cancel.implementation = lambdaManager.cancel.bind(lambdaManager);
     cvat.lambda.listen.implementation = lambdaManager.listen.bind(lambdaManager);
     cvat.lambda.requests.implementation = lambdaManager.requests.bind(lambdaManager);
+    cvat.lambda.providers.implementation = lambdaManager.providers.bind(lambdaManager);
 
     cvat.server.about.implementation = async () => {
         const result = await serverProxy.server.about();
@@ -44,7 +53,7 @@ export default function implementAPI(cvat) {
 
     cvat.server.share.implementation = async (directory) => {
         const result = await serverProxy.server.share(directory);
-        return result;
+        return result.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type }));
     };
 
     cvat.server.formats.implementation = async () => {
@@ -85,11 +94,6 @@ export default function implementAPI(cvat) {
         await serverProxy.server.logout();
     };
 
-    cvat.server.advancedAuthentication.implementation = async () => {
-        const result = await serverProxy.server.advancedAuthentication();
-        return result;
-    };
-
     cvat.server.changePassword.implementation = async (oldPassword, newPassword1, newPassword2) => {
         await serverProxy.server.changePassword(oldPassword, newPassword1, newPassword2);
     };
@@ -122,19 +126,27 @@ export default function implementAPI(cvat) {
         return result;
     };
 
+    cvat.server.setAuthData.implementation = async (response) => {
+        const result = await serverProxy.server.setAuthData(response);
+        return result;
+    };
+
+    cvat.server.removeAuthData.implementation = async () => {
+        const result = await serverProxy.server.removeAuthData();
+        return result;
+    };
+
     cvat.server.installedApps.implementation = async () => {
         const result = await serverProxy.server.installedApps();
         return result;
     };
 
-    cvat.server.loginWithSocialAccount.implementation = async (
-        provider: string,
-        code: string,
-        authParams?: string,
-        process?: string,
-        scope?: string,
-    ) => {
-        const result = await serverProxy.server.loginWithSocialAccount(provider, code, authParams, process, scope);
+    cvat.assets.create.implementation = async (file: File, guideId: number): Promise<SerializedAsset> => {
+        if (!(file instanceof File)) {
+            throw new ArgumentError('Assets expect a file');
+        }
+
+        const result = await serverProxy.assets.create(file, guideId);
         return result;
     };
 
@@ -165,40 +177,32 @@ export default function implementAPI(cvat) {
         return users;
     };
 
-    cvat.jobs.get.implementation = async (filter) => {
-        checkFilter(filter, {
+    cvat.jobs.get.implementation = async (query) => {
+        checkFilter(query, {
             page: isInteger,
             filter: isString,
             sort: isString,
             search: isString,
-            taskID: isInteger,
             jobID: isInteger,
         });
 
-        if ('taskID' in filter && 'jobID' in filter) {
-            throw new ArgumentError('Filter fields "taskID" and "jobID" are not permitted to be used at the same time');
-        }
-
-        if ('taskID' in filter) {
-            const [task] = await serverProxy.tasks.get({ id: filter.taskID });
-            if (task) {
-                return new Task(task).jobs;
+        checkExclusiveFields(query, ['jobID', 'filter', 'search'], ['page', 'sort']);
+        if ('jobID' in query) {
+            const { results } = await serverProxy.jobs.get({ id: query.jobID });
+            const [job] = results;
+            if (job) {
+                // When request job by ID we also need to add labels to work with them
+                const labels = await serverProxy.labels.get({ job_id: job.id });
+                return [new Job({ ...job, labels: labels.results })];
             }
 
             return [];
         }
 
-        if ('jobID' in filter) {
-            const job = await serverProxy.jobs.get({ id: filter.jobID });
-            if (job) {
-                return [new Job(job)];
-            }
-        }
-
         const searchParams = {};
-        for (const key of Object.keys(filter)) {
-            if (['page', 'sort', 'search', 'filter'].includes(key)) {
-                searchParams[key] = filter[key];
+        for (const key of Object.keys(query)) {
+            if (['page', 'sort', 'search', 'filter', 'task_id'].includes(key)) {
+                searchParams[key] = query[key];
             }
         }
 
@@ -219,7 +223,7 @@ export default function implementAPI(cvat) {
             ordering: isString,
         });
 
-        checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
+        checkExclusiveFields(filter, ['id'], ['page']);
         const searchParams = {};
         for (const key of Object.keys(filter)) {
             if (['page', 'id', 'sort', 'search', 'filter', 'ordering'].includes(key)) {
@@ -227,8 +231,7 @@ export default function implementAPI(cvat) {
             }
         }
 
-        let tasksData = null;
-        if (filter.projectId) {
+        if ('projectId' in filter) {
             if (searchParams.filter) {
                 const parsed = JSON.parse(searchParams.filter);
                 searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
@@ -237,8 +240,23 @@ export default function implementAPI(cvat) {
             }
         }
 
-        tasksData = await serverProxy.tasks.get(searchParams);
-        const tasks = tasksData.map((task) => new Task(task));
+        const tasksData = await serverProxy.tasks.get(searchParams);
+        const tasks = await Promise.all(tasksData.map(async (taskItem) => {
+            if ('id' in filter) {
+                // When request task by ID we also need to add labels and jobs to work with them
+                const labels = await serverProxy.labels.get({ task_id: taskItem.id });
+                const jobs = await serverProxy.jobs.get({ task_id: taskItem.id }, true);
+                return new Task({
+                    ...taskItem, progress: taskItem.jobs, jobs: jobs.results, labels: labels.results,
+                });
+            }
+
+            return new Task({
+                ...taskItem,
+                progress: taskItem.jobs,
+            });
+        }));
+
         tasks.count = tasksData.count;
         return tasks;
     };
@@ -255,19 +273,25 @@ export default function implementAPI(cvat) {
         checkExclusiveFields(filter, ['id'], ['page']);
         const searchParams = {};
         for (const key of Object.keys(filter)) {
-            if (['id', 'page', 'search', 'sort', 'page', 'filter'].includes(key)) {
+            if (['page', 'id', 'sort', 'search', 'filter'].includes(key)) {
                 searchParams[key] = filter[key];
             }
         }
 
         const projectsData = await serverProxy.projects.get(searchParams);
-        const projects = projectsData.map((project) => {
-            project.task_ids = project.tasks;
-            return project;
-        }).map((project) => new Project(project));
+        const projects = await Promise.all(projectsData.map(async (projectItem) => {
+            if ('id' in filter) {
+                // When request a project by ID we also need to add labels to work with them
+                const labels = await serverProxy.labels.get({ project_id: projectItem.id });
+                return new Project({ ...projectItem, labels: labels.results });
+            }
+
+            return new Project({
+                ...projectItem,
+            });
+        }));
 
         projects.count = projectsData.count;
-
         return projects;
     };
 
@@ -304,11 +328,17 @@ export default function implementAPI(cvat) {
 
     cvat.organizations.activate.implementation = (organization) => {
         checkObjectType('organization', organization, null, Organization);
-        config.organizationID = organization.slug;
+        config.organization = {
+            organizationID: organization.id,
+            organizationSlug: organization.slug,
+        };
     };
 
     cvat.organizations.deactivate.implementation = async () => {
-        config.organizationID = null;
+        config.organization = {
+            organizationID: null,
+            organizationSlug: null,
+        };
     };
 
     cvat.webhooks.get.implementation = async (filter) => {
@@ -322,26 +352,90 @@ export default function implementAPI(cvat) {
         });
 
         checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
-        const searchParams = {};
-        for (const key of Object.keys(filter)) {
-            if (['page', 'id', 'filter', 'search', 'sort'].includes(key)) {
-                searchParams[key] = filter[key];
-            }
-        }
 
-        if (filter.projectId) {
-            if (searchParams.filter) {
-                const parsed = JSON.parse(searchParams.filter);
-                searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
-            } else {
-                searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
-            }
-        }
+        const searchParams = filterFieldsToSnakeCase(filter, ['projectId']);
 
         const webhooksData = await serverProxy.webhooks.get(searchParams);
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
         webhooks.count = webhooksData.count;
         return webhooks;
+    };
+
+    cvat.analytics.quality.reports.implementation = async (filter) => {
+        let updatedParams: Record<string, string> = {};
+        if ('taskId' in filter) {
+            updatedParams = {
+                task_id: filter.taskId,
+                sort: '-created_date',
+                target: filter.target,
+            };
+        }
+        if ('jobId' in filter) {
+            updatedParams = {
+                job_id: filter.jobId,
+                sort: '-created_date',
+                target: filter.target,
+            };
+        }
+        const reportsData = await serverProxy.analytics.quality.reports(updatedParams);
+
+        return reportsData.map((report) => new QualityReport({ ...report }));
+    };
+
+    cvat.analytics.quality.conflicts.implementation = async (filter) => {
+        let updatedParams: Record<string, string> = {};
+        if ('reportId' in filter) {
+            updatedParams = {
+                report_id: filter.reportId,
+            };
+        }
+
+        const reportsData = await serverProxy.analytics.quality.conflicts(updatedParams);
+
+        return reportsData.map((conflict) => new QualityConflict({ ...conflict }));
+    };
+
+    cvat.analytics.quality.settings.get.implementation = async (taskID: number) => {
+        const settings = await serverProxy.analytics.quality.settings.get(taskID);
+        return new QualitySettings({ ...settings });
+    };
+
+    cvat.frames.getMeta.implementation = async (type, id) => {
+        const result = await serverProxy.frames.getMeta(type, id);
+        return new FramesMetaData({ ...result });
+    };
+
+    cvat.analytics.performance.reports.implementation = async (filter) => {
+        checkFilter(filter, {
+            jobID: isInteger,
+            taskID: isInteger,
+            projectID: isInteger,
+            startDate: isString,
+            endDate: isString,
+        });
+
+        checkExclusiveFields(filter, ['jobID', 'taskID', 'projectID'], ['startDate', 'endDate']);
+
+        const updatedParams: Record<string, string> = {};
+
+        if ('taskID' in filter) {
+            updatedParams.task_id = filter.taskID;
+        }
+        if ('jobID' in filter) {
+            updatedParams.job_id = filter.jobID;
+        }
+        if ('projectID' in filter) {
+            updatedParams.project_id = filter.projectID;
+        }
+        if ('startDate' in filter) {
+            updatedParams.start_date = filter.startDate;
+        }
+        if ('endDate' in filter) {
+            updatedParams.end_date = filter.endDate;
+        }
+
+        const reportData = await serverProxy.analytics.performance.reports(updatedParams);
+        return new AnalyticsReport(reportData);
     };
 
     return cvat;

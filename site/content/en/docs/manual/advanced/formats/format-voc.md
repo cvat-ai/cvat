@@ -6,12 +6,13 @@ weight: 6
 # [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
 
 - [Format specification](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/voc_dataset)
 
 - supported annotations:
 
-  - Rectangles (detection and layout tasks)
-  - Tags (action- and classification tasks)
-  - Polygons (segmentation task)
+  - Rectangles (`detection` and `layout` tasks)
+  - Tags (`action-` and `classification` tasks)
+  - Polygons (`segmentation` task)
 
 - supported attributes:
 

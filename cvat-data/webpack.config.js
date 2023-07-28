@@ -13,7 +13,7 @@ const cvatData = {
     target: 'web',
     mode: 'production',
     entry: {
-        'cvat-data': './src/js/cvat-data.ts',
+        'cvat-data': './src/ts/cvat-data.ts',
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
@@ -66,7 +66,7 @@ const cvatData = {
             },
         ],
     },
-    plugins: [new CopyPlugin({ patterns: ['./src/js/3rdparty/avc.wasm'] })],
+    plugins: [new CopyPlugin({ patterns: ['./src/ts/3rdparty/avc.wasm'] })],
 };
 
 module.exports = cvatData;

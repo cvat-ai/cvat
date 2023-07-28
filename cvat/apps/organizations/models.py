@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -56,7 +56,8 @@ class Invitation(models.Model):
     owner = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
     membership = models.OneToOneField(Membership, on_delete=models.CASCADE)
 
-    def get_organization_id(self):
+    @property
+    def organization_id(self):
         return self.membership.organization_id
 
     def send(self):

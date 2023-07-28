@@ -34,6 +34,9 @@ if apps.is_installed('cvat.apps.dataset_repo'):
 if apps.is_installed('cvat.apps.log_viewer'):
     urlpatterns.append(path('', include('cvat.apps.log_viewer.urls')))
 
+if apps.is_installed('cvat.apps.events'):
+    urlpatterns.append(path('api/', include('cvat.apps.events.urls')))
+
 if apps.is_installed('cvat.apps.lambda_manager'):
     urlpatterns.append(path('', include('cvat.apps.lambda_manager.urls')))
 
@@ -43,8 +46,14 @@ if apps.is_installed('cvat.apps.opencv'):
 if apps.is_installed('cvat.apps.webhooks'):
     urlpatterns.append(path('api/', include('cvat.apps.webhooks.urls')))
 
+if apps.is_installed('cvat.apps.quality_control'):
+    urlpatterns.append(path('api/', include('cvat.apps.quality_control.urls')))
+
 if apps.is_installed('silk'):
     urlpatterns.append(path('profiler/', include('silk.urls')))
 
 if apps.is_installed('health_check'):
     urlpatterns.append(path('api/server/health/', include('health_check.urls')))
+
+if apps.is_installed('cvat.apps.analytics_report'):
+    urlpatterns.append(path('api/', include('cvat.apps.analytics_report.urls')))

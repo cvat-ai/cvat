@@ -1,9 +1,7 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
-
-from tempfile import TemporaryDirectory
 
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import Dataset
@@ -95,7 +93,7 @@ def _import_to_task(dataset, instance_data):
         instance_data.add_track(track)
 
 @exporter(name='MOTS PNG', ext='ZIP', version='1.0')
-def _export(dst_file, instance_data, save_images=False):
+def _export(dst_file, temp_dir, instance_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     dataset.transform(KeepTracks) # can only export tracks
@@ -103,25 +101,24 @@ def _export(dst_file, instance_data, save_images=False):
     dataset.transform('polygons_to_masks')
     dataset.transform('boxes_to_masks')
     dataset.transform('merge_instance_segments')
-    with TemporaryDirectory() as temp_dir:
-        dataset.export(temp_dir, 'mots_png', save_images=save_images)
 
-        make_zip_archive(temp_dir, dst_file)
+    dataset.export(temp_dir, 'mots_png', save_images=save_images)
+
+    make_zip_archive(temp_dir, dst_file)
 
 @importer(name='MOTS PNG', ext='ZIP', version='1.0')
-def _import(src_file, instance_data, load_data_callback=None, **kwargs):
-    with TemporaryDirectory() as tmp_dir:
-        Archive(src_file.name).extractall(tmp_dir)
+def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
+    Archive(src_file.name).extractall(temp_dir)
 
-        dataset = Dataset.import_from(tmp_dir, 'mots', env=dm_env)
-        dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
-        if load_data_callback is not None:
-            load_data_callback(dataset, instance_data)
+    dataset = Dataset.import_from(temp_dir, 'mots', env=dm_env)
+    dataset = MaskToPolygonTransformation.convert_dataset(dataset, **kwargs)
+    if load_data_callback is not None:
+        load_data_callback(dataset, instance_data)
 
-        # Dirty way to determine instance type to avoid circular dependency
-        if hasattr(instance_data, '_db_project'):
-            for sub_dataset, task_data in instance_data.split_dataset(dataset):
-                _import_to_task(sub_dataset, task_data)
-        else:
-            _import_to_task(dataset, instance_data)
+    # Dirty way to determine instance type to avoid circular dependency
+    if hasattr(instance_data, '_db_project'):
+        for sub_dataset, task_data in instance_data.split_dataset(dataset):
+            _import_to_task(sub_dataset, task_data)
+    else:
+        _import_to_task(dataset, instance_data)
 

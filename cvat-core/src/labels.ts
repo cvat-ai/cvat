@@ -1,26 +1,14 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import {
+    AttrInputType, LabelType, SerializedAttribute, SerializedLabel,
+} from 'server-response-types';
 import { ShapeType, AttributeType } from './enums';
 import { ArgumentError } from './exceptions';
 
-type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
-
-export interface RawAttribute {
-    name: string;
-    mutable: boolean;
-    input_type: AttrInputType;
-    default_value: string;
-    values: string[];
-    id?: number;
-}
-
-/**
- * Class representing an attribute
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
 export class Attribute {
     public id?: number;
     public defaultValue: string;
@@ -29,7 +17,7 @@ export class Attribute {
     public name: string;
     public values: string[];
 
-    constructor(initialData: RawAttribute) {
+    constructor(initialData: SerializedAttribute) {
         const data = {
             id: undefined,
             default_value: undefined,
@@ -58,63 +46,21 @@ export class Attribute {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name id
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 id: {
                     get: () => data.id,
                 },
-                /**
-                 * @name defaultValue
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 defaultValue: {
                     get: () => data.default_value,
                 },
-                /**
-                 * @name inputType
-                 * @type {module:API.cvat.enums.AttributeType}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 inputType: {
                     get: () => data.input_type,
                 },
-                /**
-                 * @name mutable
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 mutable: {
                     get: () => data.mutable,
                 },
-                /**
-                 * @name name
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 name: {
                     get: () => data.name,
                 },
-                /**
-                 * @name values
-                 * @type {string[]}
-                 * @memberof module:API.cvat.classes.Attribute
-                 * @readonly
-                 * @instance
-                 */
                 values: {
                     get: () => [...data.values],
                 },
@@ -122,8 +68,8 @@ export class Attribute {
         );
     }
 
-    toJSON(): RawAttribute {
-        const object: RawAttribute = {
+    toJSON(): SerializedAttribute {
+        const object: SerializedAttribute = {
             name: this.name,
             mutable: this.mutable,
             input_type: this.inputType,
@@ -139,24 +85,6 @@ export class Attribute {
     }
 }
 
-type LabelType = 'rectangle' | 'polygon' | 'polyline' | 'points' | 'ellipse' | 'cuboid' | 'skeleton' | 'mask' | 'tag' | 'any';
-export interface RawLabel {
-    id?: number;
-    name: string;
-    color?: string;
-    type: LabelType;
-    svg?: string;
-    sublabels?: RawLabel[];
-    has_parent?: boolean;
-    deleted?: boolean;
-    attributes: RawAttribute[];
-}
-
-/**
- * Class representing a label
- * @memberof module:API.cvat.classes
- * @hideconstructor
- */
 export class Label {
     public name: string;
     public readonly id?: number;
@@ -168,9 +96,10 @@ export class Label {
         svg: string;
     } | null;
     public deleted: boolean;
+    public patched: boolean;
     public readonly hasParent?: boolean;
 
-    constructor(initialData: RawLabel) {
+    constructor(initialData: SerializedLabel) {
         const data = {
             id: undefined,
             name: undefined,
@@ -179,6 +108,7 @@ export class Label {
             structure: undefined,
             has_parent: false,
             deleted: false,
+            patched: false,
             svg: undefined,
             elements: undefined,
             sublabels: undefined,
@@ -209,22 +139,9 @@ export class Label {
         Object.defineProperties(
             this,
             Object.freeze({
-                /**
-                 * @name id
-                 * @type {number}
-                 * @memberof module:API.cvat.classes.Label
-                 * @readonly
-                 * @instance
-                 */
                 id: {
                     get: () => data.id,
                 },
-                /**
-                 * @name name
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Label
-                 * @instance
-                 */
                 name: {
                     get: () => data.name,
                     set: (name) => {
@@ -232,58 +149,30 @@ export class Label {
                             throw new ArgumentError(`Name must be a string, but ${typeof name} was given`);
                         }
                         data.name = name;
+                        if (Number.isInteger(data.id)) {
+                            data.patched = true;
+                        }
                     },
                 },
-                /**
-                 * @name color
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Label
-                 * @instance
-                 */
                 color: {
                     get: () => data.color,
                     set: (color) => {
                         if (typeof color === 'string' && color.match(/^#[0-9a-f]{6}$|^$/)) {
                             data.color = color;
+                            if (Number.isInteger(data.id)) {
+                                data.patched = true;
+                            }
                         } else {
                             throw new ArgumentError('Trying to set wrong color format');
                         }
                     },
                 },
-                /**
-                 * @name attributes
-                 * @type {module:API.cvat.classes.Attribute[]}
-                 * @memberof module:API.cvat.classes.Label
-                 * @readonly
-                 * @instance
-                 */
                 attributes: {
                     get: () => [...data.attributes],
                 },
-                /**
-                 * @typedef {Object} SkeletonStructure
-                 * @property {module:API.cvat.classes.Label[]} sublabels A list of labels the skeleton includes
-                 * @property {Object[]} svg An SVG representation of the skeleton
-                 * A type of a file
-                 * @global
-                 */
-                /**
-                 * @name type
-                 * @type {string | undefined}
-                 * @memberof module:API.cvat.classes.Label
-                 * @readonly
-                 * @instance
-                 */
                 type: {
                     get: () => data.type,
                 },
-                /**
-                 * @name type
-                 * @type {SkeletonStructure | undefined}
-                 * @memberof module:API.cvat.classes.Label
-                 * @readonly
-                 * @instance
-                 */
                 structure: {
                     get: () => {
                         if (data.type === ShapeType.SKELETON) {
@@ -296,25 +185,18 @@ export class Label {
                         return null;
                     },
                 },
-                /**
-                 * @name deleted
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Label
-                 * @instance
-                 */
                 deleted: {
                     get: () => data.deleted,
                     set: (value) => {
                         data.deleted = value;
                     },
                 },
-                /**
-                 * @name hasParent
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Label
-                 * @readonly
-                 * @instance
-                 */
+                patched: {
+                    get: () => data.patched,
+                    set: (value) => {
+                        data.patched = value;
+                    },
+                },
                 hasParent: {
                     get: () => data.has_parent,
                 },
@@ -322,8 +204,8 @@ export class Label {
         );
     }
 
-    toJSON(): RawLabel {
-        const object: RawLabel = {
+    toJSON(): SerializedLabel {
+        const object: SerializedLabel = {
             name: this.name,
             attributes: [...this.attributes.map((el) => el.toJSON())],
             type: this.type,
@@ -335,10 +217,6 @@ export class Label {
 
         if (typeof this.id !== 'undefined') {
             object.id = this.id;
-        }
-
-        if (this.deleted) {
-            object.deleted = this.deleted;
         }
 
         if (this.type) {
