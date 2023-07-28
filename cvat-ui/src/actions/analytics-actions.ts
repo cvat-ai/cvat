@@ -100,8 +100,9 @@ export const getTaskQualityReportsAsync = (task: Task, query: QualityQuery): Thu
 
         try {
             // reports are returned in order -created_date
-            const [taskReport] = await cvat.analytics.quality.reports({ taskId: task.id, target: 'task' });
-            const jobReports = await cvat.analytics.quality.reports({ taskId: task.id, target: 'job' });
+            const reports = await cvat.analytics.quality.reports({ taskId: task.id });
+            const taskReport = reports.find((report: QualityReport) => report.target === 'task');
+            const jobReports = reports.filter((report: QualityReport) => report.target === 'job');
             const jobIds = task.jobs.map((job) => job.id);
             const relevantReports: QualityReport[] = [];
             jobIds.forEach((jobId: number) => {

@@ -16,6 +16,7 @@ import notification from 'antd/lib/notification';
 
 import { Task, QualityReport, getCore } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
 import { QualityQuery, TasksQuery } from 'reducers';
 import Tag from 'antd/lib/tag';
 import { useIsMounted } from 'utils/hooks';
@@ -35,6 +36,8 @@ function TaskListComponent(props: Props): JSX.Element {
     const history = useHistory();
     const isMounted = useIsMounted();
 
+    const [fetching, setFetching] = useState<boolean>(true);
+
     const [tasks, setTasks] = useState<Task[]>([]);
     const [tasksMap, setTasksMap] = useState<Record<number, Task>>({});
     const [taskReportsMap, setTaskReportsMap] = useState<Record<number, QualityReport | null>>({});
@@ -46,8 +49,11 @@ function TaskListComponent(props: Props): JSX.Element {
     const [displayedTasks, setDisplayedTasks] = useState<Task[]>(tasks);
 
     useEffect(() => {
+        setFetching(true);
+
         if (!projectId || !projectReportId) {
             setTasks([]);
+            setFetching(false);
             return;
         }
 
@@ -108,6 +114,11 @@ function TaskListComponent(props: Props): JSX.Element {
                 setTaskReportsMap(tasksReportsMap);
 
                 setDisplayedTasks(fetchedTasks);
+            })
+            .finally(() => {
+                if (isMounted()) {
+                    setFetching(false);
+                }
             });
     }, [projectId, projectReportId, query]);
 
@@ -338,13 +349,19 @@ function TaskListComponent(props: Props): JSX.Element {
                     <Text className='cvat-text-color cvat-tasks-header'> Tasks </Text>
                 </Col>
             </Row>
-            <Table
-                className='cvat-project-tasks-table'
-                rowClassName={() => 'cvat-project-tasks-table-row'}
-                columns={columns}
-                dataSource={data}
-                size='small'
-            />
+            {
+                fetching ? (
+                    <CVATLoadingSpinner size='small' />
+                ) : (
+                    <Table
+                        className='cvat-project-tasks-table'
+                        rowClassName={() => 'cvat-project-tasks-table-row'}
+                        columns={columns}
+                        dataSource={data}
+                        size='small'
+                    />
+                )
+            }
         </div>
     );
 }

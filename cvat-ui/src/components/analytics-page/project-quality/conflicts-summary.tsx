@@ -85,7 +85,7 @@ function ConflictsSummary(props: Props): JSX.Element {
             const reportSummary = projectReport?.summary;
             setEpfValue(toRepresentation(reportSummary.errorCount / reportSummary.frameCount, false));
         }
-    }, [projectReport]);
+    }, [projectReport?.id]);
 
     const reportSummary = projectReport?.summary;
     const bottomElement = (
