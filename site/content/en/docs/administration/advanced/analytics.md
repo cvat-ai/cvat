@@ -1,5 +1,5 @@
 ---
-title: 'CVAT Analytics and monitoring'
+title: 'CVAT Analytics and monitoring for Self-Hosted solution'
 linkTitle: 'CVAT Analytics and monitoring'
 weight: 20
 description: 'Instructions for deployment and customization of analytics and monitoring.'
