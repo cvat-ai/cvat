@@ -394,7 +394,7 @@ export default function implementAPI(cvat) {
 
     cvat.analytics.quality.conflicts.implementation = async (
         filter: QualityConflictsFilter,
-    ): Promise<ListPage<QualityConflict>> => {
+    ): Promise<QualityConflict[]> => {
         checkFilter(filter, {
             page: isInteger,
             pageSize: isPageSize,
@@ -407,10 +407,7 @@ export default function implementAPI(cvat) {
         const params = fieldsToSnakeCase(filter);
 
         const conflictsData = await serverProxy.analytics.quality.conflicts(params);
-        const conflicts = Object.assign(
-            conflictsData.map((conflict) => new QualityConflict({ ...conflict })),
-            { count: conflictsData.count },
-        );
+        const conflicts = conflictsData.map((conflict) => new QualityConflict({ ...conflict }));
         return conflicts;
     };
 

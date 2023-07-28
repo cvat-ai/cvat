@@ -2299,7 +2299,7 @@ async function createQualitySettings(
 
 async function getQualityConflicts(
     filter: ApiQualityConflictsFilter,
-): Promise<ListPage<SerializedQualityConflictData>> {
+): Promise<SerializedQualityConflictData[]> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -2308,8 +2308,6 @@ async function getQualityConflicts(
             ...params,
             ...filter,
         });
-
-        response.data.results.count = response.data.count;
 
         return response.results;
     } catch (errorData) {

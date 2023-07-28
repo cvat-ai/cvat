@@ -297,7 +297,7 @@ function build() {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
                     return result;
                 },
-                async conflicts(filter: QualityConflictsFilter = {}): Promise<ListPage<QualityConflict>> {
+                async conflicts(filter: QualityConflictsFilter = {}): Promise<QualityConflict[]> {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.conflicts, filter);
                     return result;
                 },
