@@ -7,9 +7,8 @@ from __future__ import annotations
 import json
 from typing import Dict, List, Sequence, Tuple
 
-import tqdm
 from cvat_sdk import Client, models
-from cvat_sdk.core.helpers import TqdmProgressReporter
+from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 
@@ -67,7 +66,7 @@ class CLI:
             status_check_period=status_check_period,
             dataset_repository_url=dataset_repository_url,
             use_lfs=lfs,
-            pbar=self._make_pbar(),
+            pbar=DeferredTqdmProgressReporter(),
         )
         print("Created task id", task.id)
 
@@ -109,7 +108,7 @@ class CLI:
         self.client.tasks.retrieve(obj_id=task_id).export_dataset(
             format_name=fileformat,
             filename=filename,
-            pbar=self._make_pbar(),
+            pbar=DeferredTqdmProgressReporter(),
             status_check_period=status_check_period,
             include_images=include_images,
         )
@@ -123,22 +122,21 @@ class CLI:
             format_name=fileformat,
             filename=filename,
             status_check_period=status_check_period,
-            pbar=self._make_pbar(),
+            pbar=DeferredTqdmProgressReporter(),
         )
 
     def tasks_export(self, task_id: str, filename: str, *, status_check_period: int = 2) -> None:
         """Download a task backup"""
         self.client.tasks.retrieve(obj_id=task_id).download_backup(
-            filename=filename, status_check_period=status_check_period, pbar=self._make_pbar()
+            filename=filename,
+            status_check_period=status_check_period,
+            pbar=DeferredTqdmProgressReporter(),
         )
 
     def tasks_import(self, filename: str, *, status_check_period: int = 2) -> None:
         """Import a task from a backup file"""
         self.client.tasks.create_from_backup(
-            filename=filename, status_check_period=status_check_period, pbar=self._make_pbar()
-        )
-
-    def _make_pbar(self, title: str = None) -> TqdmProgressReporter:
-        return TqdmProgressReporter(
-            tqdm.tqdm(unit_scale=True, unit="B", unit_divisor=1024, desc=title)
+            filename=filename,
+            status_check_period=status_check_period,
+            pbar=DeferredTqdmProgressReporter(),
         )
