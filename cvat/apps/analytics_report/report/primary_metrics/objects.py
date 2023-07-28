@@ -25,12 +25,14 @@ class JobObjects(PrimaryMetricBase):
             for obj_type in obj_types:
                 statistics[action][obj_type] = {}
 
-        result = self._make_clickhouse_query({
-            "scopes": scopes,
-            "job_id": self._db_obj.id,
-        })
+        result = self._make_clickhouse_query(
+            {
+                "scopes": scopes,
+                "job_id": self._db_obj.id,
+            }
+        )
 
-        for (day, scope, count) in result.result_rows:
+        for day, scope, count in result.result_rows:
             action, obj_type = scope.split(":")
             statistics[action][obj_type][day] = count
 
@@ -45,9 +47,7 @@ class JobObjects(PrimaryMetricBase):
             for date in sorted(dates):
                 objects_statistics[f"{action}d"].append(
                     {
-                        "value": sum(
-                            statistics[action][t].get(date, 0) for t in obj_types
-                        ),
+                        "value": sum(statistics[action][t].get(date, 0) for t in obj_types),
                         "datetime": date.isoformat() + "Z",
                     }
                 )
