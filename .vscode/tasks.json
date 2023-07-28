@@ -33,6 +33,32 @@
                   "endsPattern": "Compiled"
                 }
             }
-        }
+      },
+      {
+        "type": "docker-run",
+        "label": "dokcer run cvat_opa",
+        "dockerRun": {
+          "network": "host",
+          "image": "openpolicyagent/opa:0.45.0-rootless",
+          "remove": true,
+          "ports": [
+            {
+              "containerPort": 8181,
+              "hostPort": 8181
+            }
+          ],
+          "containerName": "cvat_opa",
+          "portsPublishAll": false,
+          "command": [
+            "run",
+            "--server",
+            "--set=decision_logs.console=true",
+            "--set=services.cvat.url=http://localhost:7000",
+            "--set=bundles.cvat.service=cvat",
+            "--set=bundles.cvat.resource=/api/auth/rules"
+          ]
+        },
+        "problemMatcher": []
+      }
     ]
 }
