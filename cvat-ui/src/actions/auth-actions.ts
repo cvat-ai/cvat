@@ -143,6 +143,7 @@ export const authorizedAsync = (): ThunkAction => async (dispatch) => {
 
         if (result) {
             const userInstance = (await cvat.users.get({ self: true }))[0];
+            window.LogRocket.identify(userInstance.username);
             dispatch(authActions.authorizeSuccess(userInstance));
         } else {
             dispatch(authActions.authorizeSuccess(null));

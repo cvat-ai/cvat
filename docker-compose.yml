@@ -58,6 +58,7 @@ services:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
+      - cvat_share:/home/django/share:ro
     networks:
       cvat:
         aliases:
@@ -95,12 +96,13 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy:-}
-      NUMPROCS: 2
+      NUMPROCS: 6
     command: -c supervisord/worker.default.conf
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
+      - cvat_share:/home/django/share:ro
     networks:
       - cvat
 
@@ -148,7 +150,8 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-dev}
+    # image: cvat/ui:${CVAT_VERSION:-dev}
+    image: cvat_ui_noah
     restart: always
     depends_on:
       - cvat_server
@@ -208,6 +211,11 @@ volumes:
   cvat_data:
   cvat_keys:
   cvat_logs:
+  cvat_share:
+    driver_opts:
+      type: none
+      device: /home/ubuntu/cvat/sewerai_prod
+      o: bind
 
 networks:
   cvat:
