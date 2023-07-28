@@ -16,7 +16,10 @@ from .interface import DetectionFunction, DetectionFunctionContext, DetectionFun
 
 
 class BadFunctionError(Exception):
-    pass
+    """
+    An exception that signifies that an auto-detection function has violated some constraint
+    set by its interface.
+    """
 
 
 class _AnnotationMapper:
@@ -230,6 +233,38 @@ def annotate_task(
     clear_existing: bool = False,
     allow_unmatched_labels: bool = False,
 ) -> None:
+    """
+    Downloads data for the task with the given ID, applies the given function to it
+    and uploads the resulting annotations back to the task.
+
+    Only tasks with 2D image (not video) data are supported at the moment.
+
+    client is used to make all requests to the CVAT server.
+
+    Currently, the only type of auto-annotation function supported is the detection function.
+    A function of this type is applied independently to each image in the task.
+    The resulting annotations are then combined and modified as follows:
+
+    * The label IDs are replaced with the IDs of the corresponding labels in the task.
+    * The frame numbers are replaced with the frame number of the image.
+    * The sources are set to "auto".
+
+    See the documentation for DetectionFunction for more details.
+
+    If the function is found to violate any constraints set in its interface, BadFunctionError
+    is raised.
+
+    pbar, if supplied, is used to report progress information.
+
+    If clear_existing is true, any annotations already existing in the tesk are removed.
+    Otherwise, they are kept, and the new annotations are added to them.
+
+    The allow_unmatched_labels parameter controls the behavior in the case when a detection
+    function declares a label in its spec that has no corresponding label in the task.
+    If it's set to true, then such labels are allowed, and any annotations returned by the
+    function that refer to this label are ignored. Otherwise, BadFunctionError is raised.
+    """
+
     if pbar is None:
         pbar = NullProgressReporter()
 
