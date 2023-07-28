@@ -45,69 +45,71 @@ function handleTimePeriod(interval: DateIntervals): [string, string] {
 
 function AnalyticsPage(): JSX.Element {
     const location = useLocation();
-    let instanceType = '';
-    if (location.pathname.includes('projects')) {
-        instanceType = 'project';
-    } else if (location.pathname.includes('jobs')) {
-        instanceType = 'job';
-    } else {
-        instanceType = 'task';
-    }
 
-    const [fetching, setFetching] = useState(true);
+    const requestedInstanceType: string = (() => {
+        if (location.pathname.includes('projects')) {
+            return 'project';
+        } if (location.pathname.includes('jobs')) {
+            return 'job';
+        }
+        return 'task';
+    })();
+
+    const requestedInstanceID: number = (() => {
+        switch (requestedInstanceType) {
+            case 'project': {
+                return +useParams<{ pid: string }>().pid;
+            }
+            case 'task': {
+                return +useParams<{ tid: string }>().tid;
+            }
+            case 'job': {
+                return +useParams<{ jid: string }>().jid;
+            }
+            default: {
+                throw new Error(`Unsupported instance type ${requestedInstanceType}`);
+            }
+        }
+    })();
+
+    /*
+    Note that the loaded instance can be different from the page location instance.
+    It happens on page change within the same component,
+    e.g. moving from project quality report to task report
+    */
+    const [instanceType, setInstanceType] = useState<string | null>(null);
     const [instance, setInstance] = useState<Project | Task | Job | null>(null);
-    const [analyticsReportInstance, setAnalyticsReportInstance] = useState<AnalyticsReport | null>(null);
+    const [fetching, setFetching] = useState(true);
+    const [analyticsReport, setAnalyticsReport] = useState<AnalyticsReport | null>(null);
     const isMounted = useIsMounted();
 
-    let instanceID: number | null = null;
-    let reportRequestID: number | null = null;
-    switch (instanceType) {
-        case 'project': {
-            instanceID = +useParams<{ pid: string }>().pid;
-            reportRequestID = +useParams<{ pid: string }>().pid;
-            break;
-        }
-        case 'task': {
-            instanceID = +useParams<{ tid: string }>().tid;
-            reportRequestID = +useParams<{ tid: string }>().tid;
-            break;
-        }
-        case 'job': {
-            instanceID = +useParams<{ jid: string }>().jid;
-            reportRequestID = +useParams<{ jid: string }>().jid;
-            break;
-        }
-        default: {
-            throw new Error(`Unsupported instance type ${instanceType}`);
-        }
-    }
-
-    const receiveInstance = (): void => {
+    const receiveInstance = (_instanceType: string, _instanceID: number): void => {
         let instanceRequest = null;
-        switch (instanceType) {
+        switch (_instanceType) {
             case 'project': {
-                instanceRequest = core.projects.get({ id: instanceID });
+                instanceRequest = core.projects.get({ id: _instanceID });
                 break;
             }
             case 'task': {
-                instanceRequest = core.tasks.get({ id: instanceID });
+                instanceRequest = core.tasks.get({ id: _instanceID });
                 break;
             }
             case 'job':
             {
-                instanceRequest = core.jobs.get({ jobID: instanceID });
+                instanceRequest = core.jobs.get({ jobID: _instanceID });
                 break;
             }
             default: {
-                throw new Error(`Unsupported instance type ${instanceType}`);
+                throw new Error(`Unsupported instance type ${_instanceType}`);
             }
         }
 
-        if (Number.isInteger(instanceID)) {
+        if (_instanceID) {
             instanceRequest
                 .then(([_instance]: Task[] | Project[] | Job[]) => {
                     if (isMounted() && _instance) {
                         setInstance(_instance);
+                        setInstanceType(_instanceType);
                     }
                 }).catch((error: Error) => {
                     if (isMounted()) {
@@ -124,21 +126,23 @@ function AnalyticsPage(): JSX.Element {
         } else {
             notification.error({
                 message: 'Could not receive the requested task from the server',
-                description: `Requested "${instanceID}" is not valid`,
+                description: `Requested "${_instanceID}" is not valid`,
             });
             setFetching(false);
         }
     };
 
-    const receiveReport = (timeInterval: DateIntervals): void => {
-        if (Number.isInteger(instanceID) && Number.isInteger(reportRequestID)) {
+    const receiveReport = (
+        timeInterval: DateIntervals, _instanceType: string, _instanceID: number,
+    ): void => {
+        if (_instanceID) {
             let reportRequest = null;
             const [endDate, startDate] = handleTimePeriod(timeInterval);
 
-            switch (instanceType) {
+            switch (_instanceType) {
                 case 'project': {
                     reportRequest = core.analytics.performance.reports({
-                        projectID: reportRequestID,
+                        projectID: _instanceID,
                         endDate,
                         startDate,
                     });
@@ -146,7 +150,7 @@ function AnalyticsPage(): JSX.Element {
                 }
                 case 'task': {
                     reportRequest = core.analytics.performance.reports({
-                        taskID: reportRequestID,
+                        taskID: _instanceID,
                         endDate,
                         startDate,
                     });
@@ -154,21 +158,21 @@ function AnalyticsPage(): JSX.Element {
                 }
                 case 'job': {
                     reportRequest = core.analytics.performance.reports({
-                        jobID: reportRequestID,
+                        jobID: _instanceID,
                         endDate,
                         startDate,
                     });
                     break;
                 }
                 default: {
-                    throw new Error(`Unsupported instance type ${instanceType}`);
+                    throw new Error(`Unsupported instance type ${_instanceType}`);
                 }
             }
 
             reportRequest
                 .then((report: AnalyticsReport) => {
                     if (isMounted() && report) {
-                        setAnalyticsReportInstance(report);
+                        setAnalyticsReport(report);
                     }
                 }).catch((error: Error) => {
                     if (isMounted()) {
@@ -182,18 +186,24 @@ function AnalyticsPage(): JSX.Element {
     };
 
     useEffect((): void => {
-        Promise.all([receiveInstance(), receiveReport(DateIntervals.LAST_WEEK)]).finally(() => {
+        setFetching(true);
+
+        Promise.all([
+            receiveInstance(requestedInstanceType, requestedInstanceID),
+            receiveReport(DateIntervals.LAST_WEEK, requestedInstanceType, requestedInstanceID),
+        ]).finally(() => {
             if (isMounted()) {
                 setFetching(false);
             }
         });
-    }, []);
+    }, [requestedInstanceType, requestedInstanceID]);
 
     const onJobUpdate = useCallback((job: Job): void => {
         setFetching(true);
+
         job.save().then(() => {
-            if (isMounted()) {
-                receiveInstance();
+            if (isMounted() && instanceType && instance?.id) {
+                receiveInstance(instanceType, instance?.id);
             }
         }).catch((error: Error) => {
             if (isMounted()) {
@@ -207,16 +217,18 @@ function AnalyticsPage(): JSX.Element {
                 setFetching(false);
             }
         });
-    }, []);
+    }, [instanceType, instance?.id]);
 
     const onAnalyticsTimePeriodChange = useCallback((val: DateIntervals): void => {
-        receiveReport(val);
-    }, []);
+        if (isMounted() && instanceType && instance?.id) {
+            receiveReport(val, instanceType, instance?.id);
+        }
+    }, [instanceType, instance?.id]);
 
     let backNavigation: JSX.Element | null = null;
     let title: JSX.Element | null = null;
     let tabs: JSX.Element | null = null;
-    if (instance) {
+    if (instanceType && instance) {
         switch (instanceType) {
             case 'project': {
                 backNavigation = (
@@ -244,7 +256,7 @@ function AnalyticsPage(): JSX.Element {
                             key='Overview'
                         >
                             <AnalyticsOverview
-                                report={analyticsReportInstance}
+                                report={analyticsReport}
                                 onTimePeriodChange={onAnalyticsTimePeriodChange}
                             />
                         </Tabs.TabPane>
@@ -288,7 +300,7 @@ function AnalyticsPage(): JSX.Element {
                             key='overview'
                         >
                             <AnalyticsOverview
-                                report={analyticsReportInstance}
+                                report={analyticsReport}
                                 onTimePeriodChange={onAnalyticsTimePeriodChange}
                             />
                         </Tabs.TabPane>
@@ -333,7 +345,7 @@ function AnalyticsPage(): JSX.Element {
                             key='overview'
                         >
                             <AnalyticsOverview
-                                report={analyticsReportInstance}
+                                report={analyticsReport}
                                 onTimePeriodChange={onAnalyticsTimePeriodChange}
                             />
                         </Tabs.TabPane>
@@ -342,7 +354,7 @@ function AnalyticsPage(): JSX.Element {
                 break;
             }
             default: {
-                throw new Error(`Unsupported instance type ${instanceType}`);
+                throw new Error(`Unsupported instance type ${requestedInstanceType}`);
             }
         }
     }
