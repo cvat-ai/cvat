@@ -15,10 +15,10 @@ import clickhouse_connect
 
 from rest_framework import serializers, status
 from rest_framework.response import Response
-from django_sendfile import sendfile
 
 from cvat.apps.dataset_manager.views import clear_export_cache, log_exception
 from cvat.apps.engine.log import slogger
+from cvat.apps.engine.utils import sendfile
 
 DEFAULT_CACHE_TTL = timedelta(hours=1)
 

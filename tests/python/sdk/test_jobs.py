@@ -149,7 +149,12 @@ class TestJobUsecases:
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        assert (self.tmp_path / "frame-0.jpg").is_file()
+        if quality == "original":
+            expected_frame_ext = "png"
+        else:
+            expected_frame_ext = "jpg"
+
+        assert (self.tmp_path / f"frame-0.{expected_frame_ext}").is_file()
         assert self.stdout.getvalue() == ""
 
     def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):

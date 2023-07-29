@@ -13,7 +13,7 @@ import { CombinedState } from 'reducers';
 import Button from 'antd/lib/button';
 import { DownloadOutlined, MoreOutlined } from '@ant-design/icons';
 import { analyticsActions } from 'actions/analytics-actions';
-import AnalyticsCard from './analytics-card';
+import AnalyticsCard from '../views/analytics-card';
 import { toRepresentation } from './common';
 
 interface Props {

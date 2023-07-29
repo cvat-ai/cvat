@@ -13,6 +13,7 @@ jobs:
               cvat-cli/**/*.py
               tests/python/**/*.py
               cvat/apps/quality_control/**/*.py
+              cvat/apps/analytics_report/**/*.py
           dir_names: true
 
       - name: Run checks
@@ -32,23 +33,15 @@ jobs:
             . .env/bin/activate
             pip install -U pip wheel setuptools
             pip install $(egrep "black.*" ./cvat-cli/requirements/development.txt)
-            mkdir -p black_report
 
             echo "Black version: "$(black --version)
             echo "The dirs will be checked: $UPDATED_DIRS"
             EXIT_CODE=0
             for DIR in $UPDATED_DIRS; do
-              black --check --diff $DIR >> ./black_report/black_checks.txt || EXIT_CODE=$(($? | $EXIT_CODE)) || true
+              black --check --diff $DIR || EXIT_CODE=$(($? | $EXIT_CODE)) || true
             done
             deactivate
             exit $EXIT_CODE
           else
             echo "No files with the \"py\" extension found"
           fi
-
-      - name: Upload artifacts
-        if: failure()
-        uses: actions/upload-artifact@v3.1.1
-        with:
-          name: black_report
-          path: black_report

@@ -106,6 +106,10 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           volumeMounts:
+        {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
+          - mountPath: /home/django/data/cache
+            name: cvat-worker-export-backend-cache
+        {{- end }}
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -135,6 +139,10 @@ spec:
           {{- end }}
           volumeMounts:
           {{- if .Values.cvat.backend.defaultStorage.enabled }}
+        {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
+          - mountPath: /home/django/data/cache
+            name: cvat-worker-export-backend-cache
+        {{- end }}
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
@@ -165,6 +173,11 @@ spec:
         - name: cvat-backend-data
           persistentVolumeClaim:
             claimName: "{{ .Release.Name }}-backend-data"
+
+        {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
+        - name: cvat-worker-export-backend-cache
+          emptyDir: {}
+        {{- end }}
         {{- end }}
         {{- with .Values.cvat.backend.worker.export.additionalVolumes }}
         {{- toYaml . | nindent 8 }}

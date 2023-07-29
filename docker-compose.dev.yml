@@ -66,6 +66,19 @@ services:
     ports:
       - '9094:9094'
 
+  cvat_worker_analytics_reports:
+    environment:
+      CVAT_ANALYTICS_CHECK_JOB_DELAY: 5
+      # For debugging, make sure to set 1 process
+      # Due to the supervisord specifics, the extra processes will fail and
+      # after few attempts supervisord will give up restarting, leaving only 1 process
+      NUMPROCS: 1
+      CVAT_DEBUG_ENABLED: '${CVAT_DEBUG_ENABLED:-no}'
+      CVAT_DEBUG_PORT: '9095'
+      COVERAGE_PROCESS_START:
+    ports:
+      - '9095:9095'
+
   cvat_worker_annotation:
     environment:
       # For debugging, make sure to set 1 process

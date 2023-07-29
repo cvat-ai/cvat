@@ -259,7 +259,8 @@ class TaskExportTest(_DbTestBase):
                             "name": "parked",
                             "mutable": True,
                             "input_type": "checkbox",
-                            "default_value": False
+                            "default_value": "false",
+                            "values": [],
                         },
                     ]
                 },
@@ -561,7 +562,8 @@ class FrameMatchingTest(_DbTestBase):
                             "name": "parked",
                             "mutable": True,
                             "input_type": "checkbox",
-                            "default_value": False
+                            "default_value": "false",
+                            "values": [],
                         },
                     ]
                 },
@@ -723,7 +725,8 @@ class TaskAnnotationsImportTest(_DbTestBase):
                             "name": "parked",
                             "mutable": True,
                             "input_type": "checkbox",
-                            "default_value": False
+                            "default_value": "false",
+                            "values": [],
                         }
                     ]
                 },

@@ -1420,19 +1420,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.background.setAttribute('height', `${image.renderHeight}px`);
 
                 if (ctx) {
-                    if (image.imageData instanceof ImageData) {
-                        ctx.scale(
-                            image.renderWidth / image.imageData.width,
-                            image.renderHeight / image.imageData.height,
-                        );
-                        ctx.putImageData(image.imageData, 0, 0);
-                        // Transformation matrix must not affect the putImageData() method.
-                        // By this reason need to redraw the image to apply scale.
-                        // https://www.w3.org/TR/2dcontext/#dom-context-2d-putimagedata
-                        ctx.drawImage(this.background, 0, 0);
-                    } else {
-                        ctx.drawImage(image.imageData, 0, 0);
-                    }
+                    ctx.drawImage(image.imageData, 0, 0, image.renderWidth, image.renderHeight);
                 }
 
                 if (model.imageIsDeleted) {
