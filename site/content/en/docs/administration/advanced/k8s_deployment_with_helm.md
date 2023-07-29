@@ -326,20 +326,10 @@ cvat:
             claimName: my-claim-name
 
 ```
-### Im receiving service unavailable errors
-It is possible that the migrations did not run automatically, you may need to run them manually:
-```sh
-HELM_RELEASE_NAMESPACE="<desired_namespace>" &&\
-HELM_RELEASE_NAME="<release_name>" &&\
-BACKEND_POD_NAME=$(kubectl get pod --namespace $HELM_RELEASE_NAMESPACE -l tier=backend,app.kubernetes.io/instance=$HELM_RELEASE_NAME -o jsonpath='{.items[0].metadata.name}') &&\
-kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py migrate &&\
-kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py health_check
-```
 
 ### Im receiving service unavailable errors
 There could be multiple explanations for that, a hint can often be found by inspecting the logs of the running pods, some possible explanations are
-1. Server is down:
-  A. Pod multi attach errors:
+1. Pod multi attach errors:
 
   This can happen when running cvat using helm chart in a production environment. Pods can get scheduled to run on different nodes, however the same volume using ReadWriteOnce can only be accessed from one node at a time. You can either change the volume access mode from ReadWriteOnce to ReadWriteMany if your volume supports it, or add pod affinity rules to all the backend pods in the cvat values.yaml file to make sure they are all scheduled on the same node like so:
   ```yaml
@@ -354,7 +344,7 @@ There could be multiple explanations for that, a hint can often be found by insp
                 - backend
             topologyKey: "kubernetes.io/hostname"
   ```
-  B. your DB is not responding, ( database errors like health_check not found etc)
+  2. your DB is not responding, ( database errors like health_check not found etc)
 
   It is possible that the migrations did not run automatically, you may need to run them manually:
   ```sh
@@ -364,4 +354,4 @@ There could be multiple explanations for that, a hint can often be found by insp
   kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py migrate &&\
   kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py health_check
   ```
-
+  
