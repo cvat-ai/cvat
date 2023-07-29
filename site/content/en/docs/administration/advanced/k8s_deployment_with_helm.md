@@ -64,13 +64,13 @@ helm dependency update
      ```shell
      echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
      ```
-     
+
    Note for Microk8s use:
      The external ip should be the ip from the cluster you are running cvat from, you can obtain it using ```microk8s config```. Make sure to add it to the hosts file as mentioned above.
    ```sh
      echo "<your microk8s cluster ip> cvat.local" | sudo tee -a /etc/hosts
    ```
-     
+
 
 ## Configuration
 1. Create `values.override.yaml` file inside `helm-chart` directory.
@@ -335,17 +335,33 @@ BACKEND_POD_NAME=$(kubectl get pod --namespace $HELM_RELEASE_NAMESPACE -l tier=b
 kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py migrate &&\
 kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py health_check
 ```
-### Im getting multi attach volume errors when my backend pods run on different nodes
-This often happens when running cvat using helm chart in a production environment (not locally) you can either change the volume access mode from ReadWriteOnce to ReadWriteMany if your volume supports it, or more conveniently add pod affinity rules to all the backend pods in the cvat values.yaml file to make sure they are all scheduled on the same node. 
-```yaml
-affinity:
-    podAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchExpressions:
-            - key: tier
-              operator: In
-              values:
-              - backend
-          topologyKey: "kubernetes.io/hostname"
-```
+
+### Im receiving service unavailable errors
+There could be multiple explanations for that, a hint can often be found by inspecting the logs of the running pods, some possible explanations are
+1. Server is down:
+  A. Pod multi attach errors:
+
+  This can happen when running cvat using helm chart in a production environment. Pods can get scheduled to run on different nodes, however the same volume using ReadWriteOnce can only be accessed from one node at a time. You can either change the volume access mode from ReadWriteOnce to ReadWriteMany if your volume supports it, or add pod affinity rules to all the backend pods in the cvat values.yaml file to make sure they are all scheduled on the same node like so:
+  ```yaml
+  affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: tier
+                operator: In
+                values:
+                - backend
+            topologyKey: "kubernetes.io/hostname"
+  ```
+  B. your DB is not responding, ( database errors like health_check not found etc)
+
+  It is possible that the migrations did not run automatically, you may need to run them manually:
+  ```sh
+  HELM_RELEASE_NAMESPACE="<desired_namespace>" &&\
+  HELM_RELEASE_NAME="<release_name>" &&\
+  BACKEND_POD_NAME=$(kubectl get pod --namespace $HELM_RELEASE_NAMESPACE -l tier=backend,app.kubernetes.io/instance=$HELM_RELEASE_NAME -o jsonpath='{.items[0].metadata.name}') &&\
+  kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py migrate &&\
+  kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py health_check
+  ```
+
