@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import Icon from '@ant-design/icons';
 import { ClearIcon } from 'icons';
-import { Input } from 'antd';
+import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 
 interface SocialAccountLinkProps {

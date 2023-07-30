@@ -11,13 +11,14 @@ import Pagination from 'antd/lib/pagination';
 import Table from 'antd/lib/table';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
+import Empty from 'antd/lib/empty';
+import notification from 'antd/lib/notification';
 
 import config from 'config';
 import { CloudStorage, RemoteFileType } from 'reducers';
 import { useIsMounted } from 'utils/hooks';
 import { FileOutlined, FolderOutlined, RightOutlined } from '@ant-design/icons';
 import { getCore } from 'cvat-core-wrapper';
-import { Empty, notification } from 'antd';
 
 interface Node {
     children: Node[];
