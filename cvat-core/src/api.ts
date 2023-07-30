@@ -340,12 +340,10 @@ function build(): CVAT {
                     return result;
                 },
                 settings: {
-                    async get(filter = {}) {
-                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, filter);
-                        return result;
-                    },
-                    async defaults() {
-                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.defaults);
+                    async get(filter = {}, loadDefaults) {
+                        const result = await PluginRegistry.apiWrapper(
+                            cvat.analytics.quality.settings.get, filter, loadDefaults,
+                        );
                         return result;
                     },
                 },
