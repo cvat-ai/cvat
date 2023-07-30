@@ -35,8 +35,93 @@ import QualityReport from './quality-report';
 import QualityConflict, { QualityConflictsFilter, QualityReportsFilter, SerializedQualityConflictData } from './quality-conflict';
 import { FramesMetaData } from './frames';
 import AnalyticsReport from './analytics-report';
+import { ShareFileType } from './enums';
 
-export default function implementAPI(cvat) {
+interface CVATInterface {
+    plugins: {
+        list: typeof PluginRegistry.list;
+        register: typeof PluginRegistry.register;
+    };
+    lambda: {
+        list: typeof lambdaManager.list;
+        run: typeof lambdaManager.run;
+        call: typeof lambdaManager.call;
+        cancel: typeof lambdaManager.cancel;
+        listen: typeof lambdaManager.listen;
+        requests: typeof lambdaManager.requests;
+        providers: typeof lambdaManager.providers;
+    };
+    server: {
+        about: typeof serverProxy.server.about;
+        share: (dir: string) => Promise<{
+            mimeType: string;
+            name: string;
+            type: ShareFileType;
+        }[]>;
+        formats: () => Promise<AnnotationFormats>;
+        userAgreements: typeof serverProxy.server.userAgreements,
+        register: any; // TODO: add types later
+        login: any;
+        logout: any;
+        changePassword: any;
+        requestPasswordReset: any;
+        resetPassword: any;
+        authorized: any;
+        healthCheck: any;
+        request: any;
+        setAuthData: any;
+        removeAuthData: any;
+        installedApps: any;
+        apiScheme: any;
+    };
+    assets: {
+        create: any;
+    };
+    users: {
+        get: any;
+    };
+    jobs: {
+        get: any;
+    };
+    tasks: {
+        get: any;
+    }
+    projects: {
+        get: any;
+        searchNames: any;
+    };
+    cloudStorages: {
+        get: any;
+    };
+    organizations: {
+        get: any;
+        activate: any;
+        deactivate: any;
+    };
+    webhooks: {
+        get: any;
+    };
+    analytics: {
+        quality: {
+            reports: (filter: QualityReportsFilter) => Promise<ListPage<QualityReport>>;
+            conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
+            settings: {
+                get: (filter: QualitySettingsFilter & { id?: number }) => Promise<QualitySettings>;
+                update: (values: SerializedQualityConflictData) => Promise<QualitySettings>;
+                create: (values: SerializedQualityConflictData) => Promise<QualitySettings>;
+                defaults: () => Promise<Partial<SerializedQualitySettingsData>>;
+            };
+        };
+        performance: {
+            reports: any;
+        };
+    };
+    frames: {
+        getMeta: any;
+    };
+}
+
+export default function implementAPI(cvat): CVATInterface {
     cvat.plugins.list.implementation = PluginRegistry.list;
     cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
 
@@ -48,27 +133,24 @@ export default function implementAPI(cvat) {
     cvat.lambda.requests.implementation = lambdaManager.requests.bind(lambdaManager);
     cvat.lambda.providers.implementation = lambdaManager.providers.bind(lambdaManager);
 
-    cvat.server.about.implementation = async () => {
-        const result = await serverProxy.server.about();
-        return result;
-    };
+    cvat.server.about.implementation = (() => serverProxy.server.about()) as CVATInterface['server']['about'];
 
-    cvat.server.share.implementation = async (directory) => {
+    cvat.server.share.implementation = (async (directory) => {
         const result = await serverProxy.server.share(directory);
         return result.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type }));
-    };
+    }) as CVATInterface['server']['share'];
 
-    cvat.server.formats.implementation = async () => {
+    cvat.server.formats.implementation = (async () => {
         const result = await serverProxy.server.formats();
         return new AnnotationFormats(result);
-    };
+    }) as CVATInterface['server']['formats'];
 
-    cvat.server.userAgreements.implementation = async () => {
+    cvat.server.userAgreements.implementation = (async () => {
         const result = await serverProxy.server.userAgreements();
         return result;
-    };
+    }) as CVATInterface['server']['userAgreements'];
 
-    cvat.server.register.implementation = async (
+    cvat.server.register.implementation = (async (
         username,
         firstName,
         lastName,
@@ -86,34 +168,34 @@ export default function implementAPI(cvat) {
         );
 
         return new User(user);
-    };
+    }) as CVATInterface['server']['register'];
 
-    cvat.server.login.implementation = async (username, password) => {
+    cvat.server.login.implementation = (async (username, password) => {
         await serverProxy.server.login(username, password);
-    };
+    }) as CVATInterface['server']['login'];
 
-    cvat.server.logout.implementation = async () => {
+    cvat.server.logout.implementation = (async () => {
         await serverProxy.server.logout();
-    };
+    }) as CVATInterface['server']['logout'];
 
-    cvat.server.changePassword.implementation = async (oldPassword, newPassword1, newPassword2) => {
+    cvat.server.changePassword.implementation = (async (oldPassword, newPassword1, newPassword2) => {
         await serverProxy.server.changePassword(oldPassword, newPassword1, newPassword2);
-    };
+    }) as CVATInterface['server']['changePassword'];
 
-    cvat.server.requestPasswordReset.implementation = async (email) => {
+    cvat.server.requestPasswordReset.implementation = (async (email) => {
         await serverProxy.server.requestPasswordReset(email);
-    };
+    }) as CVATInterface['server']['requestPasswordReset'];
 
-    cvat.server.resetPassword.implementation = async (newPassword1, newPassword2, uid, token) => {
+    cvat.server.resetPassword.implementation = (async (newPassword1, newPassword2, uid, token) => {
         await serverProxy.server.resetPassword(newPassword1, newPassword2, uid, token);
-    };
+    }) as CVATInterface['server']['resetPassword'];
 
-    cvat.server.authorized.implementation = async () => {
+    cvat.server.authorized.implementation = (async () => {
         const result = await serverProxy.server.authorized();
         return result;
-    };
+    }) as CVATInterface['server']['authorized'];
 
-    cvat.server.healthCheck.implementation = async (
+    cvat.server.healthCheck.implementation = (async (
         maxRetries = 1,
         checkPeriod = 3000,
         requestTimeout = 5000,
@@ -121,40 +203,40 @@ export default function implementAPI(cvat) {
     ) => {
         const result = await serverProxy.server.healthCheck(maxRetries, checkPeriod, requestTimeout, progressCallback);
         return result;
-    };
+    }) as CVATInterface['server']['healthCheck'];
 
-    cvat.server.request.implementation = async (url, data) => {
+    cvat.server.request.implementation = (async (url, data) => {
         const result = await serverProxy.server.request(url, data);
         return result;
-    };
+    }) as CVATInterface['server']['request'];
 
-    cvat.server.setAuthData.implementation = async (response) => {
+    cvat.server.setAuthData.implementation = (async (response) => {
         const result = await serverProxy.server.setAuthData(response);
         return result;
-    };
+    }) as CVATInterface['server']['setAuthData'];
 
-    cvat.server.removeAuthData.implementation = async () => {
+    cvat.server.removeAuthData.implementation = (async () => {
         const result = await serverProxy.server.removeAuthData();
         return result;
-    };
+    }) as CVATInterface['server']['removeAuthData'];
 
-    cvat.server.installedApps.implementation = async () => {
+    cvat.server.installedApps.implementation = (async () => {
         const result = await serverProxy.server.installedApps();
         return result;
-    };
+    }) as CVATInterface['server']['installedApps'];
 
-    cvat.server.apiScheme.implementation = async () => serverProxy.server.apiScheme();
+    cvat.server.apiScheme.implementation = (async () => serverProxy.server.apiScheme()) as CVATInterface['server']['apiScheme'];
 
-    cvat.assets.create.implementation = async (file: File, guideId: number): Promise<SerializedAsset> => {
+    cvat.assets.create.implementation = (async (file: File, guideId: number): Promise<SerializedAsset> => {
         if (!(file instanceof File)) {
             throw new ArgumentError('Assets expect a file');
         }
 
         const result = await serverProxy.assets.create(file, guideId);
         return result;
-    };
+    }) as CVATInterface['assets']['create'];
 
-    cvat.users.get.implementation = async (filter) => {
+    cvat.users.get.implementation = (async (filter) => {
         checkFilter(filter, {
             id: isInteger,
             is_active: isBoolean,
@@ -179,9 +261,9 @@ export default function implementAPI(cvat) {
 
         users = users.map((user) => new User(user));
         return users;
-    };
+    }) as CVATInterface['users']['get'];
 
-    cvat.jobs.get.implementation = async (query) => {
+    cvat.jobs.get.implementation = (async (query) => {
         checkFilter(query, {
             page: isInteger,
             filter: isString,
@@ -214,9 +296,9 @@ export default function implementAPI(cvat) {
         const jobs = jobsData.results.map((jobData) => new Job(jobData));
         jobs.count = jobsData.count;
         return jobs;
-    };
+    }) as CVATInterface['jobs']['get'];
 
-    cvat.tasks.get.implementation = async (filter) => {
+    cvat.tasks.get.implementation = (async (filter) => {
         checkFilter(filter, {
             page: isInteger,
             pageSize: isPageSize,
@@ -263,9 +345,9 @@ export default function implementAPI(cvat) {
 
         tasks.count = tasksData.count;
         return tasks;
-    };
+    }) as CVATInterface['tasks']['get'];
 
-    cvat.projects.get.implementation = async (filter) => {
+    cvat.projects.get.implementation = (async (filter) => {
         checkFilter(filter, {
             id: isInteger,
             page: isInteger,
@@ -298,12 +380,14 @@ export default function implementAPI(cvat) {
 
         projects.count = projectsData.count;
         return projects;
-    };
+    }) as CVATInterface['projects']['get'];
 
     cvat.projects.searchNames
-        .implementation = async (search, limit) => serverProxy.projects.searchNames(search, limit);
+        .implementation = (
+            async (search, limit) => serverProxy.projects.searchNames(search, limit)
+        ) as CVATInterface['projects']['searchNames'];
 
-    cvat.cloudStorages.get.implementation = async (filter) => {
+    cvat.cloudStorages.get.implementation = (async (filter) => {
         checkFilter(filter, {
             page: isInteger,
             filter: isString,
@@ -323,30 +407,30 @@ export default function implementAPI(cvat) {
         const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
         cloudStorages.count = cloudStoragesData.count;
         return cloudStorages;
-    };
+    }) as CVATInterface['cloudStorages']['get'];
 
-    cvat.organizations.get.implementation = async () => {
+    cvat.organizations.get.implementation = (async () => {
         const organizationsData = await serverProxy.organizations.get();
         const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
         return organizations;
-    };
+    }) as CVATInterface['organizations']['get'];
 
-    cvat.organizations.activate.implementation = (organization) => {
+    cvat.organizations.activate.implementation = ((organization) => {
         checkObjectType('organization', organization, null, Organization);
         config.organization = {
             organizationID: organization.id,
             organizationSlug: organization.slug,
         };
-    };
+    }) as CVATInterface['organizations']['activate'];
 
-    cvat.organizations.deactivate.implementation = async () => {
+    cvat.organizations.deactivate.implementation = (async () => {
         config.organization = {
             organizationID: null,
             organizationSlug: null,
         };
-    };
+    }) as CVATInterface['organizations']['deactivate'];
 
-    cvat.webhooks.get.implementation = async (filter) => {
+    cvat.webhooks.get.implementation = (async (filter) => {
         checkFilter(filter, {
             page: isInteger,
             id: isInteger,
@@ -364,9 +448,9 @@ export default function implementAPI(cvat) {
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
         webhooks.count = webhooksData.count;
         return webhooks;
-    };
+    }) as CVATInterface['webhooks']['get'];
 
-    cvat.analytics.quality.reports.implementation = async (
+    cvat.analytics.quality.reports.implementation = (async (
         filter: QualityReportsFilter,
     ): Promise<ListPage<QualityReport>> => {
         checkFilter(filter, {
@@ -390,9 +474,9 @@ export default function implementAPI(cvat) {
             { count: reportsData.count },
         );
         return reports;
-    };
+    }) as CVATInterface['analytics']['quality']['reports'];
 
-    cvat.analytics.quality.conflicts.implementation = async (
+    cvat.analytics.quality.conflicts.implementation = (async (
         filter: QualityConflictsFilter,
     ): Promise<QualityConflict[]> => {
         checkFilter(filter, {
@@ -409,31 +493,31 @@ export default function implementAPI(cvat) {
         const conflictsData = await serverProxy.analytics.quality.conflicts(params);
         const conflicts = conflictsData.map((conflict) => new QualityConflict({ ...conflict }));
         return conflicts;
-    };
+    }) as CVATInterface['analytics']['quality']['conflicts'];
 
-    cvat.analytics.quality.settings.get.implementation = async (
+    cvat.analytics.quality.settings.get.implementation = (async (
         filter: { id?: number } & QualitySettingsFilter,
     ): Promise<QualitySettings> => {
         const { id, taskId, projectId } = filter;
         const settings = await serverProxy.analytics.quality.settings.get(id, taskId, projectId);
         return new QualitySettings({ ...settings });
-    };
+    }) as CVATInterface['analytics']['quality']['settings']['get'];
 
-    cvat.analytics.quality.settings.update.implementation = async (
+    cvat.analytics.quality.settings.update.implementation = (async (
         settingsId: number, values: SerializedQualitySettingsData,
     ): Promise<QualitySettings> => {
         const settings = await serverProxy.analytics.quality.settings.update(settingsId, values);
         return new QualitySettings({ ...settings });
-    };
+    }) as CVATInterface['analytics']['quality']['settings']['update'];
 
-    cvat.analytics.quality.settings.create.implementation = async (
+    cvat.analytics.quality.settings.create.implementation = (async (
         values: SerializedQualityConflictData,
     ): Promise<QualitySettings> => {
         const settings = await serverProxy.analytics.quality.settings.create(values);
         return new QualitySettings({ ...settings });
-    };
+    }) as CVATInterface['analytics']['quality']['settings']['create'];
 
-    cvat.analytics.quality.settings.defaults.implementation = async (
+    cvat.analytics.quality.settings.defaults.implementation = (async (
     ): Promise<Partial<SerializedQualitySettingsData>> => {
         const scheme = await serverProxy.server.apiScheme();
 
@@ -446,9 +530,9 @@ export default function implementAPI(cvat) {
         }
 
         return defaults;
-    };
+    }) as CVATInterface['analytics']['quality']['settings']['defaults'];
 
-    cvat.analytics.performance.reports.implementation = async (filter) => {
+    cvat.analytics.performance.reports.implementation = (async (filter) => {
         checkFilter(filter, {
             jobID: isInteger,
             taskID: isInteger,
@@ -462,12 +546,12 @@ export default function implementAPI(cvat) {
         const params = fieldsToSnakeCase(filter);
         const reportData = await serverProxy.analytics.performance.reports(params);
         return new AnalyticsReport(reportData);
-    };
+    }) as CVATInterface['analytics']['performance']['reports'];
 
-    cvat.frames.getMeta.implementation = async (type, id) => {
+    cvat.frames.getMeta.implementation = (async (type, id) => {
         const result = await serverProxy.frames.getMeta(type, id);
         return new FramesMetaData({ ...result });
-    };
+    }) as CVATInterface['frames']['getMeta'];
 
     return cvat;
 }

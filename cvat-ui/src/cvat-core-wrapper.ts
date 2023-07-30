@@ -33,7 +33,7 @@ import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-co
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 
-const cvat: any = _cvat;
+const cvat = _cvat;
 
 cvat.config.backendAPI = '/api';
 cvat.config.origin = window.location.origin;
@@ -42,7 +42,7 @@ cvat.config.origin = window.location.origin;
 cvat.config.uploadChunkSize = 2;
 (globalThis as any).cvat = cvat;
 
-function getCore(): any {
+function getCore(): typeof cvat {
     return cvat;
 }
 

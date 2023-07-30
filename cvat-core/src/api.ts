@@ -3,10 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import QualityConflict, { QualityConflictsFilter, QualityReportsFilter, SerializedQualityConflictData } from './quality-conflict';
-import QualitySettings, { QualitySettingsFilter, SerializedQualitySettingsData } from './quality-settings';
-import { ListPage } from './server-response-types';
-import QualityReport from './quality-report';
 import PluginRegistry from './plugins';
 import loggerStorage from './logger-storage';
 import { EventLogger } from './log';
@@ -38,7 +34,49 @@ import config from './config';
 
 import implementAPI from './api-implementation';
 
-function build() {
+type CVAT = ReturnType<typeof implementAPI> & {
+    logger: typeof loggerStorage;
+    config: {
+        backendAPI: typeof config.backendAPI;
+        origin: typeof config.origin;
+        uploadChunkSize: typeof config.uploadChunkSize;
+        removeUnderlyingMaskPixels: typeof config.removeUnderlyingMaskPixels;
+        onOrganizationChange: typeof config.onOrganizationChange;
+    },
+    client: {
+        version: string;
+    };
+    enums,
+    exceptions: {
+        Exception,
+        ArgumentError,
+        DataError,
+        ScriptingError,
+        PluginError,
+        ServerError,
+    },
+    classes: {
+        User: any;
+        Project: any;
+        Task: any;
+        Job: any;
+        EventLogger: any;
+        Attribute: any;
+        Label: any;
+        Statistics: any;
+        ObjectState: any;
+        MLModel: any;
+        Comment: any;
+        Issue: any;
+        FrameData: any;
+        CloudStorage: any;
+        Organization: any;
+        Webhook: any;
+        AnnotationGuide: any;
+    };
+};
+
+function build(): CVAT {
     const cvat = {
         server: {
             async about() {
@@ -293,28 +331,28 @@ function build() {
                 },
             },
             quality: {
-                async reports(filter: QualityReportsFilter = {}): Promise<ListPage<QualityReport>> {
+                async reports(filter = {}) {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
                     return result;
                 },
-                async conflicts(filter: QualityConflictsFilter = {}): Promise<QualityConflict[]> {
+                async conflicts(filter = {}) {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.conflicts, filter);
                     return result;
                 },
                 settings: {
-                    async get(filter: { id?: number } & QualitySettingsFilter = {}): Promise<QualitySettings> {
+                    async get(filter = {}) {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, filter);
                         return result;
                     },
-                    async update(values: SerializedQualityConflictData): Promise<QualitySettings> {
+                    async update(values) {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.update, values);
                         return result;
                     },
-                    async create(values: SerializedQualityConflictData): Promise<QualitySettings> {
+                    async create(values) {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.create, values);
                         return result;
                     },
-                    async defaults(): Promise<Partial<SerializedQualitySettingsData>> {
+                    async defaults() {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.defaults);
                         return result;
                     },
