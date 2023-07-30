@@ -344,14 +344,6 @@ function build(): CVAT {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, filter);
                         return result;
                     },
-                    async update(values) {
-                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.update, values);
-                        return result;
-                    },
-                    async create(values) {
-                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.create, values);
-                        return result;
-                    },
                     async defaults() {
                         const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.defaults);
                         return result;

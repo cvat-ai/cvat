@@ -193,11 +193,6 @@ export default class QualitySettings {
         const result = await PluginRegistry.apiWrapper.call(this, QualitySettings.prototype.save);
         return result;
     }
-
-    public async create(): Promise<QualitySettings> {
-        const result = await PluginRegistry.apiWrapper.call(this, QualitySettings.prototype.create);
-        return result;
-    }
 }
 
 Object.defineProperties(
@@ -207,16 +202,14 @@ Object.defineProperties(
             writable: false,
             enumerable: false,
             value: async function implementation() {
-                const result = await serverProxy.analytics.quality.settings.update(this.id, this.toJSON());
+                let result = null;
+                if (Number.isInteger(this.id)) {
+                    result = await serverProxy.analytics.quality.settings.update(this.id, this.toJSON());
+                } else {
+                    result = await serverProxy.analytics.quality.settings.create(this.toJSON());
+                }
+
                 return new QualitySettings(result);
-            },
-        }),
-        create: Object.freeze({
-            writable: false,
-            enumerable: false,
-            value: async function implementation() {
-                const result = await serverProxy.analytics.quality.settings.create(this.toJSON());
-                return result;
             },
         }),
     }),

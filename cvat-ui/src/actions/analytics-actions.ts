@@ -124,7 +124,7 @@ export const createQualitySettingsAsync = (qualitySettings: QualitySettings): Th
         dispatch(analyticsActions.createQualitySettings(qualitySettings));
 
         try {
-            const createdQualitySettings = await qualitySettings.create();
+            const createdQualitySettings = await qualitySettings.save();
             dispatch(analyticsActions.createQualitySettingsSuccess(createdQualitySettings));
         } catch (error) {
             dispatch(analyticsActions.createQualitySettingsFailed(error));

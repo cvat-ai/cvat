@@ -147,7 +147,7 @@ export function isResourceURL(url: string): boolean {
     return /\/([0-9]+)$/.test(url);
 }
 
-export function isPageSize(value: unknown): boolean {
+export function isPageSize(value: number | 'all'): boolean {
     return isInteger(value) || value === 'all';
 }
 

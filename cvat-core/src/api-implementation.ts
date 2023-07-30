@@ -32,7 +32,7 @@ import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import { ListPage, SerializedAsset } from './server-response-types';
 import QualityReport from './quality-report';
-import QualityConflict, { QualityConflictsFilter, QualityReportsFilter, SerializedQualityConflictData } from './quality-conflict';
+import QualityConflict, { QualityConflictsFilter, QualityReportsFilter } from './quality-conflict';
 import { FramesMetaData } from './frames';
 import AnalyticsReport from './analytics-report';
 import { ShareFileType } from './enums';
@@ -107,8 +107,6 @@ interface CVATInterface {
             conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
             settings: {
                 get: (filter: QualitySettingsFilter & { id?: number }) => Promise<QualitySettings>;
-                update: (values: SerializedQualityConflictData) => Promise<QualitySettings>;
-                create: (values: SerializedQualityConflictData) => Promise<QualitySettings>;
                 defaults: () => Promise<Partial<SerializedQualitySettingsData>>;
             };
         };
@@ -502,20 +500,6 @@ export default function implementAPI(cvat): CVATInterface {
         const settings = await serverProxy.analytics.quality.settings.get(id, taskId, projectId);
         return new QualitySettings({ ...settings });
     }) as CVATInterface['analytics']['quality']['settings']['get'];
-
-    cvat.analytics.quality.settings.update.implementation = (async (
-        settingsId: number, values: SerializedQualitySettingsData,
-    ): Promise<QualitySettings> => {
-        const settings = await serverProxy.analytics.quality.settings.update(settingsId, values);
-        return new QualitySettings({ ...settings });
-    }) as CVATInterface['analytics']['quality']['settings']['update'];
-
-    cvat.analytics.quality.settings.create.implementation = (async (
-        values: SerializedQualityConflictData,
-    ): Promise<QualitySettings> => {
-        const settings = await serverProxy.analytics.quality.settings.create(values);
-        return new QualitySettings({ ...settings });
-    }) as CVATInterface['analytics']['quality']['settings']['create'];
 
     cvat.analytics.quality.settings.defaults.implementation = (async (
     ): Promise<Partial<SerializedQualitySettingsData>> => {
