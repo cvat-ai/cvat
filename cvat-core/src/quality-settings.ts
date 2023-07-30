@@ -26,21 +26,21 @@ export interface SerializedQualitySettingsData {
 }
 
 export default class QualitySettings {
-    #id: number;
-    #task_id: number | null;
-    #project_id: number | null;
-    #iouThreshold: number;
-    #oksSigma: number;
-    #lineThickness: number;
-    #lowOverlapThreshold: number;
-    #orientedLines: boolean;
-    #lineOrientationThreshold: number;
-    #compareGroups: boolean;
-    #groupMatchThreshold: number;
-    #checkCoveredAnnotations: boolean;
-    #objectVisibilityThreshold: number;
-    #panopticComparison: boolean;
-    #compareAttributes: boolean;
+    #id: QualitySettings['id'];;
+    #task_id: QualitySettings['task'];
+    #project_id: QualitySettings['project'];
+    #iouThreshold: QualitySettings['iouThreshold'];
+    #oksSigma: QualitySettings['oksSigma'];
+    #lineThickness: QualitySettings['lineThickness'];
+    #lowOverlapThreshold: QualitySettings['lowOverlapThreshold'];
+    #orientedLines: QualitySettings['orientedLines'];
+    #lineOrientationThreshold: QualitySettings['lineOrientationThreshold'];
+    #compareGroups: QualitySettings['compareGroups'];
+    #groupMatchThreshold: QualitySettings['groupMatchThreshold'];
+    #checkCoveredAnnotations: QualitySettings['checkCoveredAnnotations'];
+    #objectVisibilityThreshold: QualitySettings['objectVisibilityThreshold'];
+    #panopticComparison: QualitySettings['panopticComparison'];
+    #compareAttributes: QualitySettings['compareAttributes'];
 
     constructor(initialData: SerializedQualitySettingsData) {
         this.#id = initialData.id;
@@ -60,19 +60,19 @@ export default class QualitySettings {
         this.#compareAttributes = initialData.compare_attributes;
     }
 
-    get id(): number {
+    get id(): number | undefined {
         return this.#id;
     }
 
-    get task(): number {
+    get task(): number | null {
         return this.#task_id;
     }
 
-    get project(): number {
+    get project(): number | null {
         return this.#project_id;
     }
 
-    get iouThreshold(): number {
+    get iouThreshold(): number | undefined {
         return this.#iouThreshold;
     }
 
@@ -80,7 +80,7 @@ export default class QualitySettings {
         this.#iouThreshold = newVal;
     }
 
-    get oksSigma(): number {
+    get oksSigma(): number | undefined {
         return this.#oksSigma;
     }
 
@@ -88,7 +88,7 @@ export default class QualitySettings {
         this.#oksSigma = newVal;
     }
 
-    get lineThickness(): number {
+    get lineThickness(): number | undefined {
         return this.#lineThickness;
     }
 
@@ -96,7 +96,7 @@ export default class QualitySettings {
         this.#lineThickness = newVal;
     }
 
-    get lowOverlapThreshold(): number {
+    get lowOverlapThreshold(): number | undefined {
         return this.#lowOverlapThreshold;
     }
 
@@ -104,7 +104,7 @@ export default class QualitySettings {
         this.#lowOverlapThreshold = newVal;
     }
 
-    get orientedLines(): boolean {
+    get orientedLines(): boolean | undefined {
         return this.#orientedLines;
     }
 
@@ -112,7 +112,7 @@ export default class QualitySettings {
         this.#orientedLines = newVal;
     }
 
-    get lineOrientationThreshold(): number {
+    get lineOrientationThreshold(): number | undefined {
         return this.#lineOrientationThreshold;
     }
 
@@ -120,7 +120,7 @@ export default class QualitySettings {
         this.#lineOrientationThreshold = newVal;
     }
 
-    get compareGroups(): boolean {
+    get compareGroups(): boolean | undefined {
         return this.#compareGroups;
     }
 
@@ -128,7 +128,7 @@ export default class QualitySettings {
         this.#compareGroups = newVal;
     }
 
-    get groupMatchThreshold(): number {
+    get groupMatchThreshold(): number | undefined {
         return this.#groupMatchThreshold;
     }
 
@@ -136,7 +136,7 @@ export default class QualitySettings {
         this.#groupMatchThreshold = newVal;
     }
 
-    get checkCoveredAnnotations(): boolean {
+    get checkCoveredAnnotations(): boolean | undefined {
         return this.#checkCoveredAnnotations;
     }
 
@@ -144,7 +144,7 @@ export default class QualitySettings {
         this.#checkCoveredAnnotations = newVal;
     }
 
-    get objectVisibilityThreshold(): number {
+    get objectVisibilityThreshold(): number | undefined {
         return this.#objectVisibilityThreshold;
     }
 
@@ -152,7 +152,7 @@ export default class QualitySettings {
         this.#objectVisibilityThreshold = newVal;
     }
 
-    get panopticComparison(): boolean {
+    get panopticComparison(): boolean | undefined {
         return this.#panopticComparison;
     }
 
@@ -160,7 +160,7 @@ export default class QualitySettings {
         this.#panopticComparison = newVal;
     }
 
-    get compareAttributes(): boolean {
+    get compareAttributes(): boolean | undefined {
         return this.#compareAttributes;
     }
 

@@ -142,8 +142,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
             <Row justify='space-between'>
                 <Col>
                     <Text type='secondary'>
-                        Created&nbsp;
-                        {report?.createdDate ? moment(report?.createdDate).fromNow() : ''}
+                        {`Created ${report?.createdDate ? moment(report?.createdDate).fromNow() : ''}`}
                     </Text>
                 </Col>
                 <Col>

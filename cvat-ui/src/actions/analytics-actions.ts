@@ -141,17 +141,7 @@ export const getQualitySettingsAsync = (
         dispatch(analyticsActions.getQualitySettings(query));
 
         try {
-            let qualitySettings = await cvat.analytics.quality.settings.get(query);
-
-            if (!qualitySettings && loadDefaults) {
-                const defaults = await cvat.analytics.quality.settings.defaults();
-                qualitySettings = new QualitySettings({
-                    ...defaults,
-                    ...(query.taskId ? { task_id: query.taskId } : {}),
-                    ...(query.projectId ? { task_id: query.projectId } : {}),
-                });
-            }
-
+            const qualitySettings = await cvat.analytics.quality.settings.get(query, loadDefaults);
             dispatch(analyticsActions.getQualitySettingsSuccess(qualitySettings));
         } catch (error) {
             dispatch(analyticsActions.getTaskQualityReportsFailed(error));

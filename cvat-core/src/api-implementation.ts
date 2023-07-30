@@ -106,7 +106,9 @@ interface CVATInterface {
             reports: (filter: QualityReportsFilter) => Promise<ListPage<QualityReport>>;
             conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
             settings: {
-                get: (filter: QualitySettingsFilter & { id?: number }) => Promise<QualitySettings>;
+                get: (
+                    filter: QualitySettingsFilter & { id?: number }, loadDefaults: boolean
+                ) => Promise<QualitySettings>;
                 defaults: () => Promise<Partial<SerializedQualitySettingsData>>;
             };
         };
@@ -493,16 +495,7 @@ export default function implementAPI(cvat): CVATInterface {
         return conflicts;
     }) as CVATInterface['analytics']['quality']['conflicts'];
 
-    cvat.analytics.quality.settings.get.implementation = (async (
-        filter: { id?: number } & QualitySettingsFilter,
-    ): Promise<QualitySettings> => {
-        const { id, taskId, projectId } = filter;
-        const settings = await serverProxy.analytics.quality.settings.get(id, taskId, projectId);
-        return new QualitySettings({ ...settings });
-    }) as CVATInterface['analytics']['quality']['settings']['get'];
-
-    cvat.analytics.quality.settings.defaults.implementation = (async (
-    ): Promise<Partial<SerializedQualitySettingsData>> => {
+    async function defaultQualitySettings(): Promise<Partial<SerializedQualitySettingsData>> {
         const scheme = await serverProxy.server.apiScheme();
 
         const defaults: Partial<SerializedQualitySettingsData> = {};
@@ -514,7 +507,26 @@ export default function implementAPI(cvat): CVATInterface {
         }
 
         return defaults;
-    }) as CVATInterface['analytics']['quality']['settings']['defaults'];
+    }
+
+    cvat.analytics.quality.settings.get.implementation = (async (
+        filter: { id?: number } & QualitySettingsFilter,
+        loadDefaults: boolean,
+    ): Promise<QualitySettings> => {
+        const { id, taskId, projectId } = filter;
+        const settings = await serverProxy.analytics.quality.settings.get(id, taskId, projectId);
+
+        if (!settings && loadDefaults) {
+            const defaults = await defaultQualitySettings();
+            return new QualitySettings({
+                ...defaults,
+                ...(taskId ? { task_id: taskId } : {}),
+                ...(projectId ? { task_id: projectId } : {}),
+            });
+        }
+
+        return new QualitySettings({ ...settings });
+    }) as CVATInterface['analytics']['quality']['settings']['get'];
 
     cvat.analytics.performance.reports.implementation = (async (filter) => {
         checkFilter(filter, {

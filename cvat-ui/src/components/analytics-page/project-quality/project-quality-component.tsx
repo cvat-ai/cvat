@@ -4,6 +4,7 @@
 
 import './styles.scss';
 
+import React, { useEffect, useState } from 'react';
 import { Row } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
@@ -11,7 +12,6 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import {
     Project, QualityReport, QualitySettings, getCore,
 } from 'cvat-core-wrapper';
-import React, { useEffect, useState } from 'react';
 import { useIsMounted } from 'utils/hooks';
 import ConflictsSummary from './conflicts-summary';
 import CoverageSummary from './coverage-summary';
@@ -19,18 +19,18 @@ import QualitySettingsModal from './quality-settings-modal';
 import QualitySummary from './quality-summary';
 import TaskList from './task-list';
 
+const core = getCore();
+
 interface Props {
     project: Project,
 }
 
 function ProjectQualityComponent(props: Props): JSX.Element {
     const { project } = props;
+
     const isMounted = useIsMounted();
-
     const [fetching, setFetching] = useState<boolean>(true);
-
     const [projectReport, setProjectReport] = useState<QualityReport | null>(null);
-
     const [qualitySettings, setQualitySettings] = useState<QualitySettings | null>(null);
     const [qualitySettingsFetching, setQualitySettingsFetching] = useState<boolean>(true);
     const [qualitySettingsVisible, setQualitySettingsVisible] = useState<boolean>(false);
@@ -38,63 +38,30 @@ function ProjectQualityComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         setFetching(true);
+        setQualitySettingsFetching(true);
 
-        const core = getCore();
+        const reportRequest = core.analytics.quality.reports({ projectId: project.id, target: 'project' });
+        const settingsRequest = core.analytics.quality.settings.get({ projectId: project.id }, true);
 
-        const reportRequest = core.analytics.quality.reports(
-            { projectId: project.id, target: 'project' },
-        ).then((results: QualityReport[]) => {
-            setProjectReport(results[0]);
-        })
-            .catch((_error: any) => {
-                if (isMounted()) {
-                    notification.error({
-                        description: _error.toString(),
-                        message: "Couldn't fetch reports",
-                        className: 'cvat-notification-notice-get-reports-error',
-                    });
-                }
-            });
-
-        const settingsRequest = core.analytics.quality.settings.get(
-            { projectId: project.id },
-        ).then((result: QualitySettings | null) => {
-            setQualitySettings(result);
-
-            if (!result) {
-                core.analytics.quality.settings.defaults().then((defaults: object) => {
-                    setQualitySettings(new QualitySettings({
-                        ...defaults,
-                        project_id: project.id,
-                    }));
-                    setQualitySettingsInitialized(false);
-                    setQualitySettingsFetching(false);
-                }).catch((_error: any) => {
-                    if (isMounted()) {
-                        notification.error({
-                            description: _error.toString(),
-                            message: "Couldn't fetch default settings",
-                            className: 'cvat-notification-notice-get-settings-error',
-                        });
-                    }
-                });
-            } else {
-                setQualitySettingsInitialized(true);
-                setQualitySettingsFetching(false);
-            }
-        })
-            .catch((_error: any) => {
-                if (isMounted()) {
-                    notification.error({
-                        description: _error.toString(),
-                        message: "Couldn't fetch settings",
-                        className: 'cvat-notification-notice-get-settings-error',
-                    });
-                }
-            });
-
-        Promise.all([reportRequest, settingsRequest]).finally(() => {
+        Promise.all([reportRequest, settingsRequest]).then(([[report], settings]) => {
             if (isMounted()) {
+                setQualitySettings(settings);
+                setQualitySettingsInitialized(!!settings.id);
+                if (report) {
+                    setProjectReport(report);
+                }
+            }
+        }).catch((error: Error) => {
+            if (isMounted()) {
+                notification.error({
+                    description: error.toString(),
+                    message: 'Could not initialize quality analytics page',
+                    className: 'cvat-notification-notice-get-settings-error',
+                });
+            }
+        }).finally(() => {
+            if (isMounted()) {
+                setQualitySettingsFetching(false);
                 setFetching(false);
             }
         });
