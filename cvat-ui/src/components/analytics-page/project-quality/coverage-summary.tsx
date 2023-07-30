@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
-
 import React, { useEffect, useState } from 'react';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
@@ -11,6 +9,8 @@ import { QualityReport, getCore } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
 import AnalyticsCard from '../views/analytics-card';
 import { percent, clampValue } from '../utils/text-formatting';
+
+const core = getCore();
 
 interface Props {
     projectId: number;
@@ -27,18 +27,16 @@ function CoverageSummary(props: Props): JSX.Element {
     const isMounted = useIsMounted();
 
     useEffect(() => {
-        const core = getCore();
-
         core.tasks.get({ projectId })
             .then((results: any) => {
-                setTaskCount(results.count);
-            })
-            .catch((_error: any) => {
+                if (isMounted()) {
+                    setTaskCount(results.count);
+                }
+            }).catch((error: any) => {
                 if (isMounted()) {
                     notification.error({
-                        description: _error.toString(),
-                        message: "Couldn't fetch tasks",
-                        className: 'cvat-notification-notice-get-tasks-error',
+                        description: error.toString(),
+                        message: "Couldn't fetch tasks count",
                     });
                 }
             });
@@ -49,15 +47,16 @@ function CoverageSummary(props: Props): JSX.Element {
             return;
         }
 
-        const core = getCore();
         core.analytics.quality.reports({ projectId, target: 'task', parentId: projectReport.id })
             .then((results: any) => {
-                setTaskReportsCount(results.count);
+                if (isMounted()) {
+                    setTaskReportsCount(results.count);
+                }
             })
-            .catch((_error: any) => {
+            .catch((error: any) => {
                 if (isMounted()) {
                     notification.error({
-                        description: _error.toString(),
+                        description: error.toString(),
                         message: "Couldn't fetch project quality reports",
                         className: 'cvat-notification-notice-get-reports-error',
                     });
@@ -77,16 +76,8 @@ function CoverageSummary(props: Props): JSX.Element {
 
     const bottomElement = (
         <>
-            <Text type='secondary'>
-                Frames with GT:
-                {' '}
-                {gtFramesCount}
-            </Text>
-            <Text type='secondary'>
-                , Total frames:
-                {' '}
-                {totalFramesCount}
-            </Text>
+            <Text type='secondary'>{`Frames with GT: ${gtFramesCount}`}</Text>
+            <Text type='secondary'>{`, total frames: ${totalFramesCount}`}</Text>
         </>
     );
 

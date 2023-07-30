@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
-
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';

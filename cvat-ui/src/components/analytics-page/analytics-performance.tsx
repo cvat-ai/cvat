@@ -26,6 +26,7 @@ export enum DateIntervals {
 
 interface Props {
     report: AnalyticsReport | null;
+    timePeriod: DateIntervals;
     onTimePeriodChange: (val: DateIntervals) => void;
 }
 
@@ -38,7 +39,7 @@ const colors = [
 ];
 
 function AnalyticsOverview(props: Props): JSX.Element | null {
-    const { report, onTimePeriodChange } = props;
+    const { report, timePeriod, onTimePeriodChange } = props;
 
     if (!report) return null;
     const layout: any = [];
@@ -148,7 +149,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                 <Col>
                     <Select
                         placeholder='Select time period'
-                        defaultValue={DateIntervals.LAST_WEEK}
+                        value={timePeriod}
                         onChange={onTimePeriodChange}
                         options={[
                             {

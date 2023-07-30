@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
-
 import React, { useEffect, useState } from 'react';
 import Text from 'antd/lib/typography/Text';
 import { QualityReport, QualitySummary } from 'cvat-core-wrapper';

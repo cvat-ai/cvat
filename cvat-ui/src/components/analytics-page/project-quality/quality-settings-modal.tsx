@@ -6,6 +6,7 @@ import React, { useCallback } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 import Form from 'antd/lib/form';
+import notification from 'antd/lib/notification';
 import QualitySettings from 'cvat-core/src/quality-settings';
 import QualitySettingsForm from '../task-quality/quality-settings-form';
 
@@ -28,8 +29,8 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
         visible, setVisible,
         settingsInitialized, setInitialized,
     } = props;
-    const [form] = Form.useForm();
 
+    const [form] = Form.useForm();
     const onOk = useCallback(async () => {
         try {
             if (settings) {
@@ -52,14 +53,21 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
 
                 settings.panopticComparison = values.panopticComparison;
 
-                const responseSettings = await settings.save();
-                setQualitySettings(responseSettings);
-                setInitialized(true);
+                try {
+                    const responseSettings = await settings.save();
+                    setQualitySettings(responseSettings);
+                    setInitialized(true);
+                } catch (error: unknown) {
+                    notification.error({
+                        message: 'Could not save quiality settings',
+                        description: typeof Error === 'object' ? (error as object).toString() : '',
+                    });
+                    throw error;
+                }
             }
             setVisible(false);
-            return settings;
         } catch (e) {
-            return false;
+            // ignore validation errors if exist
         }
     }, [settings, settingsInitialized]);
 

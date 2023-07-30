@@ -200,6 +200,7 @@ function AnalyticsPage(): JSX.Element {
                 <Tabs.TabPane tab='Performance' key='Overview'>
                     <AnalyticsOverview
                         report={analyticsReport}
+                        timePeriod={timePeriod}
                         onTimePeriodChange={setTimePeriod}
                     />
                 </Tabs.TabPane>
