@@ -4,17 +4,6 @@
 
 @import '../styles';
 
-.cvat-analytics-inner {
-    background: $background-color-1;
-    min-height: $grid-unit-size * 95;
-    padding: $grid-unit-size * 4;
-    padding-bottom: $grid-unit-size;
-
-    .ant-tabs {
-        height: 100%;
-    }
-}
-
 .cvat-project-quality-page {
     >.ant-row {
         margin-top: $grid-unit-size;
@@ -66,7 +55,7 @@
     align-items: center;
 }
 
-.cvat-quality-task-list {
+.cvat-project-quality-task-list {
     width: 100%;
     height: auto;
     margin-top: $grid-unit-size * 2;
@@ -76,7 +65,7 @@
     }
 }
 
-.ant-typography.cvat-tasks-header {
+.ant-typography.cvat-project-quality-task-list-header {
     margin-bottom: 0;
     font-size: 20px;
     font-weight: bold;

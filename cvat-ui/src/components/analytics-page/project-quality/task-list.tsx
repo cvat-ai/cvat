@@ -343,10 +343,10 @@ function TaskListComponent(props: Props): JSX.Element {
     }, []);
 
     return (
-        <div className='cvat-quality-task-list'>
+        <div className='cvat-project-quality-task-list'>
             <Row justify='space-between' align='middle'>
                 <Col>
-                    <Text className='cvat-text-color cvat-tasks-header'> Tasks </Text>
+                    <Text className='cvat-text-color cvat-project-quality-task-list-header'>Tasks</Text>
                 </Col>
             </Row>
             {
