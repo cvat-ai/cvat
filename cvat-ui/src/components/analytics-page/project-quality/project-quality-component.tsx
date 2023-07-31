@@ -13,7 +13,7 @@ import {
 import { useIsMounted, useStateIfMounted } from 'utils/hooks';
 import ConflictsSummary from './conflicts-summary';
 import CoverageSummary from './coverage-summary';
-import QualitySettingsModal from './quality-settings-modal';
+import QualitySettingsModal from '../shared/quality-settings-modal';
 import QualitySummary from './quality-summary';
 import TaskList from './task-list';
 
@@ -115,7 +115,7 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                             />
                         </Row>
                         <QualitySettingsModal
-                            projectId={project.id}
+                            redirectToProjectId={null}
                             qualitySettings={qualitySettings}
                             setQualitySettings={setQualitySettings}
                             fetching={qualitySettingsFetching}

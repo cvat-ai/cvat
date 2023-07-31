@@ -3,34 +3,38 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 import Form from 'antd/lib/form';
 import notification from 'antd/lib/notification';
-import QualitySettings from 'cvat-core/src/quality-settings';
+import { QualitySettings } from 'cvat-core-wrapper';
 import QualitySettingsForm from '../task-quality/quality-settings-form';
 
 interface Props {
-    projectId: number;
-    qualitySettings: QualitySettings | null;
-    setQualitySettings: Function;
     fetching: boolean;
+    redirectToProjectId: number | null;
+    qualitySettings: QualitySettings | null;
     visible: boolean;
-    setVisible: Function;
+    setVisible: (visible: boolean) => void;
+    setQualitySettings: (settings: QualitySettings) => void;
 }
 
 export default function QualitySettingsModal(props: Props): JSX.Element | null {
     const {
+        fetching,
+        visible,
+        redirectToProjectId,
         qualitySettings: settings,
+        setVisible,
         setQualitySettings,
-        fetching: loading,
-        visible, setVisible,
     } = props;
 
     const [form] = Form.useForm();
+
     const onOk = useCallback(async () => {
         try {
-            if (settings) {
+            if (settings && redirectToProjectId === null) {
                 const values = await form.validateFields();
                 settings.lowOverlapThreshold = values.lowOverlapThreshold / 100;
                 settings.iouThreshold = values.iouThreshold / 100;
@@ -55,15 +59,17 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                     setQualitySettings(responseSettings);
                 } catch (error: unknown) {
                     notification.error({
-                        message: 'Could not save quiality settings',
+                        message: 'Could not save quality settings',
                         description: typeof Error === 'object' ? (error as object).toString() : '',
                     });
                     throw error;
                 }
+                await settings.save();
             }
             setVisible(false);
+            return settings;
         } catch (e) {
-            // ignore validation errors if exist
+            return false;
         }
     }, [settings]);
 
@@ -75,21 +81,38 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
         <Modal
             okType='primary'
             okText='Save'
-            cancelText='Cancel'
+            cancelText={redirectToProjectId ? 'Ok' : 'Cancel'}
             title={<Text strong>Annotation Quality Settings</Text>}
             visible={visible}
             onOk={onOk}
             onCancel={onCancel}
-            confirmLoading={loading}
+            confirmLoading={fetching}
+            destroyOnClose
             className='cvat-modal-quality-settings'
+            okButtonProps={{
+                style: { ...(redirectToProjectId ? { display: 'none' } : {}) },
+                disabled: !!redirectToProjectId,
+            }}
         >
-            {
-                settings ? (
-                    <QualitySettingsForm form={form} settings={settings} />
-                ) : (
-                    <Text>No quality settings</Text>
-                )
-            }
+            { settings && !redirectToProjectId ? (
+                <QualitySettingsForm form={form} settings={settings} />
+            ) : (
+                <>
+                    {!!redirectToProjectId && (
+                        <>
+                            <Text>The task is in a project, please check </Text>
+                            <Link
+                                to={`/projects/${!redirectToProjectId}/analytics`}
+                                onClick={onCancel}
+                            >
+                                the&nbsp;project&nbsp;quality&nbsp;settings
+                            </Link>
+                            <Text> instead.</Text>
+                        </>
+                    )}
+                    {(!redirectToProjectId && (<Text>No quality settings</Text>))}
+                </>
+            )}
         </Modal>
     );
 }

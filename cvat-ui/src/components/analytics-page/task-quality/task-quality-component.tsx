@@ -17,7 +17,7 @@ import GtConflicts from './gt-conflicts';
 import Issues from './issues';
 import JobList from './job-list';
 import MeanQuality from './mean-quality';
-import QualitySettingsModal from './quality-settings-modal';
+import QualitySettingsModal from '../shared/quality-settings-modal';
 
 const core = getCore();
 
@@ -126,9 +126,9 @@ function TaskQualityComponent(props: Props): JSX.Element {
                             fetching={qualitySettingsFetching}
                             qualitySettings={qualitySettings}
                             setQualitySettings={setQualitySettings}
-                            qualitySettingsVisible={qualitySettingsVisible}
-                            setQualitySettingsVisible={setQualitySettingsVisible}
-                            task={task}
+                            visible={qualitySettingsVisible}
+                            setVisible={setQualitySettingsVisible}
+                            redirectToProjectId={task.projectId}
                         />
                     </>
                 )
