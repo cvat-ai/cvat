@@ -34,19 +34,17 @@ function ProjectQualityComponent(props: Props): JSX.Element {
     const [qualitySettings, setQualitySettings] = useState<QualitySettings | null>(null);
     const [qualitySettingsFetching, setQualitySettingsFetching] = useState<boolean>(true);
     const [qualitySettingsVisible, setQualitySettingsVisible] = useState<boolean>(false);
-    const [qualitySettingsInitialized, setQualitySettingsInitialized] = useState<boolean>(false);
 
     useEffect(() => {
         setFetching(true);
         setQualitySettingsFetching(true);
 
-        const reportRequest = core.analytics.quality.reports({ projectId: project.id, target: 'project' });
+        const reportRequest = core.analytics.quality.reports({ projectId: project.id, pageSize: 1, target: 'project' });
         const settingsRequest = core.analytics.quality.settings.get({ projectId: project.id }, true);
 
         Promise.all([reportRequest, settingsRequest]).then(([[report], settings]) => {
             if (isMounted()) {
                 setQualitySettings(settings);
-                setQualitySettingsInitialized(!!settings.id);
                 if (report) {
                     setProjectReport(report);
                 }
@@ -56,7 +54,6 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                 notification.error({
                     description: error.toString(),
                     message: 'Could not initialize quality analytics page',
-                    className: 'cvat-notification-notice-get-settings-error',
                 });
             }
         }).finally(() => {
@@ -105,8 +102,6 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                             fetching={qualitySettingsFetching}
                             visible={qualitySettingsVisible}
                             setVisible={setQualitySettingsVisible}
-                            settingsInitialized={qualitySettingsInitialized}
-                            setInitialized={setQualitySettingsInitialized}
                         />
                     </>
                 )

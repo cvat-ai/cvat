@@ -6,7 +6,7 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, ModelProvider, Organization, QualityReport, QualityConflict, QualitySettings, FramesMetaData,
+    Webhook, MLModel, ModelProvider, Organization, QualityConflict, FramesMetaData,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -895,39 +895,6 @@ export interface WebhooksState {
     query: WebhooksQuery;
 }
 
-export interface QualityQuery {
-    projectId?: number | null;
-    taskId?: number | null;
-    jobId?: number | null;
-    parentId?: number | null;
-    target?: string | null;
-    page?: number | null;
-    pageSize?: number | 'all';
-}
-
-export interface QualitySettingsQuery {
-    id?: number | null;
-    projectId?: number | null;
-    taskId?: number | null;
-}
-
-export interface QualityAnalyticsState {
-    projectsReports: QualityReport[];
-    tasksReports: QualityReport[];
-    jobsReports: QualityReport[];
-    query: QualityQuery;
-    settings: {
-        modalVisible: boolean;
-        current: QualitySettings | null;
-        fetching: boolean;
-    }
-}
-
-export interface AnalyticsState {
-    fetching: boolean;
-    quality: QualityAnalyticsState;
-}
-
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -948,7 +915,6 @@ export interface CombinedState {
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
     webhooks: WebhooksState;
-    analytics: AnalyticsState;
 }
 
 export interface Indexable {

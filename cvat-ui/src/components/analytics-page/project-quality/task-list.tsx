@@ -15,12 +15,23 @@ import notification from 'antd/lib/notification';
 import { Task, QualityReport, getCore } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
-import { QualityQuery, TasksQuery } from 'reducers';
+import { TasksQuery } from 'reducers';
 import Tag from 'antd/lib/tag';
 import { useIsMounted } from 'utils/hooks';
 import { getQualityColor } from '../utils/quality-color';
 import { ConflictsTooltip } from './conflicts-summary';
 import { percent, toRepresentation } from '../utils/text-formatting';
+
+// TODO: move to core?
+export interface QualityQuery {
+    projectId?: number | null;
+    taskId?: number | null;
+    jobId?: number | null;
+    parentId?: number | null;
+    target?: string | null;
+    page?: number | null;
+    pageSize?: number | 'all';
+}
 
 interface Props {
     projectId: number;
@@ -110,10 +121,8 @@ function TaskListComponent(props: Props): JSX.Element {
                     }
                 }
                 setTaskReportsMap(tasksReportsMap);
-
                 setDisplayedTasks(fetchedTasks);
-            })
-            .finally(() => {
+            }).finally(() => {
                 if (isMounted()) {
                     setFetching(false);
                 }

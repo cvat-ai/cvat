@@ -47,7 +47,7 @@ function CoverageSummary(props: Props): JSX.Element {
             return;
         }
 
-        core.analytics.quality.reports({ projectId, target: 'task', parentId: projectReport.id })
+        core.analytics.quality.reports({ target: 'task', parentId: projectReport.id })
             .then((results: any) => {
                 if (isMounted()) {
                     setTaskReportsCount(results.count);

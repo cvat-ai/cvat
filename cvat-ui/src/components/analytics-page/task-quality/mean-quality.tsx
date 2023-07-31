@@ -2,29 +2,24 @@
 //
 // SPDX-License-Identifier: MIT
 
-import '../styles.scss';
-
 import React from 'react';
-import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
-import { QualityReport, Task, getCore } from 'cvat-core-wrapper';
-import { useSelector, useDispatch } from 'react-redux';
-import { CombinedState } from 'reducers';
-import Button from 'antd/lib/button';
 import { DownloadOutlined, SettingOutlined } from '@ant-design/icons';
-import { analyticsActions } from 'actions/analytics-actions';
+import Text from 'antd/lib/typography/Text';
+import Button from 'antd/lib/button';
+
+import { QualityReport, Task, getCore } from 'cvat-core-wrapper';
 import AnalyticsCard from '../views/analytics-card';
 import { toRepresentation } from '../utils/text-formatting';
 
 interface Props {
     task: Task;
+    taskReport: QualityReport | null;
+    setQualitySettingsVisible: (visible: boolean) => void;
 }
 
 function MeanQuality(props: Props): JSX.Element {
-    const { task } = props;
-    const dispatch = useDispatch();
-    const tasksReports: QualityReport[] = useSelector((state: CombinedState) => state.analytics.quality.tasksReports);
-    const taskReport = tasksReports.find((report: QualityReport) => report.taskId === task.id);
+    const { task, taskReport, setQualitySettingsVisible } = props;
     const reportSummary = taskReport?.summary;
 
     const tooltip = (
@@ -75,7 +70,7 @@ function MeanQuality(props: Props): JSX.Element {
             }
             <SettingOutlined
                 className='cvat-quality-settings-switch ant-btn ant-btn-default'
-                onClick={() => dispatch(analyticsActions.switchQualitySettingsVisible(true))}
+                onClick={() => setQualitySettingsVisible(true)}
             />
             {
                 taskReport?.id ? (
