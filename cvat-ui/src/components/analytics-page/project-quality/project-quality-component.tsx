@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Row } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
@@ -10,7 +10,7 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import {
     Project, QualityReport, QualitySettings, Task, getCore,
 } from 'cvat-core-wrapper';
-import { useIsMounted } from 'utils/hooks';
+import { useIsMounted, useStateIfMounted } from 'utils/hooks';
 import ConflictsSummary from './conflicts-summary';
 import CoverageSummary from './coverage-summary';
 import QualitySettingsModal from './quality-settings-modal';
@@ -29,13 +29,13 @@ function ProjectQualityComponent(props: Props): JSX.Element {
     const { project } = props;
 
     const isMounted = useIsMounted();
-    const [fetching, setFetching] = useState<boolean>(true);
-    const [projectReport, setProjectReport] = useState<QualityReport | null>(null);
-    const [tasksReports, setTasksReports] = useState<QualityReport[]>([]);
-    const [tasks, setTasks] = useState<ListOfTasks>(Object.defineProperty(([] as Task[]), 'count', { value: 0 }) as ListOfTasks);
-    const [qualitySettings, setQualitySettings] = useState<QualitySettings | null>(null);
-    const [qualitySettingsFetching, setQualitySettingsFetching] = useState<boolean>(true);
-    const [qualitySettingsVisible, setQualitySettingsVisible] = useState<boolean>(false);
+    const [fetching, setFetching] = useStateIfMounted<boolean>(true);
+    const [projectReport, setProjectReport] = useStateIfMounted<QualityReport | null>(null);
+    const [tasksReports, setTasksReports] = useStateIfMounted<QualityReport[]>([]);
+    const [tasks, setTasks] = useStateIfMounted<ListOfTasks>(Object.defineProperty(([] as Task[]), 'count', { value: 0 }) as ListOfTasks);
+    const [qualitySettings, setQualitySettings] = useStateIfMounted<QualitySettings | null>(null);
+    const [qualitySettingsFetching, setQualitySettingsFetching] = useStateIfMounted<boolean>(true);
+    const [qualitySettingsVisible, setQualitySettingsVisible] = useStateIfMounted<boolean>(false);
 
     useEffect(() => {
         setFetching(true);
