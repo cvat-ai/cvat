@@ -159,12 +159,8 @@ function AnalyticsPage(): JSX.Element {
 
     const onJobUpdate = useCallback((job: Job): void => {
         setFetching(true);
+
         job.save()
-            .then((updatedJob: Job) => {
-                if (isMounted()) {
-                    setInstance(updatedJob);
-                }
-            })
             .catch((error: Error) => {
                 notification.error({
                     message: 'Could not update the job',
