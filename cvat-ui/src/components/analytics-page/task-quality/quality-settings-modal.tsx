@@ -73,14 +73,18 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
         <Modal
             okType='primary'
             okText='Save'
-            cancelText='Cancel'
+            cancelText={formEnabled ? 'Cancel' : 'Ok'}
             title={<Text strong>Annotation Quality Settings</Text>}
             visible={visible}
             onOk={onOk}
             onCancel={onCancel}
             confirmLoading={loading}
+            destroyOnClose
             className='cvat-modal-quality-settings'
-            okButtonProps={{ disabled: !formEnabled }}
+            okButtonProps={{
+                style: { ...(!formEnabled ? { display: 'none' } : {}) },
+                disabled: !formEnabled,
+            }}
         >
             {
                 settings && formEnabled ? (
