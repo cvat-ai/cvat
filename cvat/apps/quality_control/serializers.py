@@ -50,6 +50,12 @@ class QualityReportSerializer(serializers.ModelSerializer):
     parent_id = serializers.IntegerField(
         source="parent.id", default=None, allow_null=True, read_only=True
     )
+    task_id = serializers.IntegerField(
+        source="get_task.id", default=None, allow_null=True, read_only=True
+    )
+    project_id = serializers.IntegerField(
+        source="get_task.project.id", default=None, allow_null=True, read_only=True
+    )
 
     class Meta:
         model = models.QualityReport

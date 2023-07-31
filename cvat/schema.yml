@@ -8865,12 +8865,12 @@ components:
           readOnly: true
         task_id:
           type: integer
-          nullable: true
           readOnly: true
+          nullable: true
         project_id:
           type: integer
-          nullable: true
           readOnly: true
+          nullable: true
         parent_id:
           type: integer
           readOnly: true
