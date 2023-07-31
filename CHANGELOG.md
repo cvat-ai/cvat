@@ -31,7 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- TDB
+- Accidentally using prebuilt FFmpeg bundled in PyAV instead of the custom
+  build.
 
 ### Security
 
