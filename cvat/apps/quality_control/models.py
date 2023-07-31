@@ -130,6 +130,14 @@ class QualityReport(models.Model):
         else:
             return None
 
+    def get_project(self) -> Optional[Task]:
+        if self.project:
+            return self.project
+        elif task := self.get_task():
+            return task.project
+        else:
+            return None
+
     def get_json_report(self) -> str:
         return self.data
 

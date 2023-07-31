@@ -71,7 +71,7 @@
       "id": 25,
       "job_id": 31,
       "parent_id": 24,
-      "project_id": null,
+      "project_id": 15,
       "summary": {
         "conflict_count": 11,
         "conflicts_by_type": {
@@ -94,7 +94,7 @@
       },
       "target": "job",
       "target_last_updated": "2023-07-07T14:47:33.771000Z",
-      "task_id": null
+      "task_id": 24
     },
     {
       "created_date": "2023-07-07T14:47:52.210000Z",
@@ -102,7 +102,7 @@
       "id": 24,
       "job_id": null,
       "parent_id": 26,
-      "project_id": null,
+      "project_id": 15,
       "summary": {
         "conflict_count": 11,
         "conflicts_by_type": {
@@ -161,7 +161,7 @@
       "id": 22,
       "job_id": 31,
       "parent_id": 21,
-      "project_id": null,
+      "project_id": 15,
       "summary": {
         "conflict_count": 9,
         "conflicts_by_type": {
@@ -180,7 +180,7 @@
       },
       "target": "job",
       "target_last_updated": "2023-07-07T14:45:36.564000Z",
-      "task_id": null
+      "task_id": 24
     },
     {
       "created_date": "2023-07-07T14:46:02.617000Z",
@@ -188,7 +188,7 @@
       "id": 21,
       "job_id": null,
       "parent_id": 23,
-      "project_id": null,
+      "project_id": 15,
       "summary": {
         "conflict_count": 9,
         "conflicts_by_type": {
@@ -271,7 +271,7 @@
       "id": 18,
       "job_id": 32,
       "parent_id": 17,
-      "project_id": null,
+      "project_id": 15,
       "summary": {
         "conflict_count": 3,
         "conflicts_by_type": {
@@ -291,7 +291,7 @@
       },
       "target": "job",
       "target_last_updated": "2023-07-07T14:41:56.422000Z",
-      "task_id": null
+      "task_id": 25
     },
     {
       "created_date": "2023-07-07T14:43:44.920000Z",
@@ -299,7 +299,7 @@
       "id": 17,
       "job_id": null,
       "parent_id": 19,
-      "project_id": null,
+      "project_id": 15,
       "summary": {
         "conflict_count": 3,
         "conflicts_by_type": {
@@ -355,7 +355,7 @@
       "id": 15,
       "job_id": 32,
       "parent_id": 14,
-      "project_id": null,
+      "project_id": 15,
       "summary": {
         "conflict_count": 3,
         "conflicts_by_type": {
@@ -375,7 +375,7 @@
       },
       "target": "job",
       "target_last_updated": "2023-07-07T14:41:56.422000Z",
-      "task_id": null
+      "task_id": 25
     },
     {
       "created_date": "2023-07-07T14:43:19.706000Z",
@@ -383,7 +383,7 @@
       "id": 14,
       "job_id": null,
       "parent_id": 16,
-      "project_id": null,
+      "project_id": 15,
       "summary": {
         "conflict_count": 3,
         "conflicts_by_type": {
@@ -491,7 +491,7 @@
       "id": 10,
       "job_id": 29,
       "parent_id": 9,
-      "project_id": null,
+      "project_id": 14,
       "summary": {
         "conflict_count": 3,
         "conflicts_by_type": {
@@ -511,7 +511,7 @@
       },
       "target": "job",
       "target_last_updated": "2023-07-07T14:30:20.574000Z",
-      "task_id": null
+      "task_id": 23
     },
     {
       "created_date": "2023-07-07T14:30:36.152000Z",
@@ -519,7 +519,7 @@
       "id": 9,
       "job_id": null,
       "parent_id": 11,
-      "project_id": null,
+      "project_id": 14,
       "summary": {
         "conflict_count": 3,
         "conflicts_by_type": {
@@ -574,7 +574,7 @@
       "id": 7,
       "job_id": 29,
       "parent_id": 6,
-      "project_id": null,
+      "project_id": 14,
       "summary": {
         "conflict_count": 4,
         "conflicts_by_type": {
@@ -593,7 +593,7 @@
       },
       "target": "job",
       "target_last_updated": "2023-07-07T14:27:29.536000Z",
-      "task_id": null
+      "task_id": 23
     },
     {
       "created_date": "2023-07-07T14:29:55.458000Z",
@@ -601,7 +601,7 @@
       "id": 6,
       "job_id": null,
       "parent_id": 8,
-      "project_id": null,
+      "project_id": 14,
       "summary": {
         "conflict_count": 4,
         "conflicts_by_type": {
@@ -655,7 +655,7 @@
       "id": 4,
       "job_id": 29,
       "parent_id": 3,
-      "project_id": null,
+      "project_id": 14,
       "summary": {
         "conflict_count": 4,
         "conflicts_by_type": {
@@ -674,7 +674,7 @@
       },
       "target": "job",
       "target_last_updated": "2023-07-07T14:27:29.536000Z",
-      "task_id": null
+      "task_id": 23
     },
     {
       "created_date": "2023-07-07T14:29:25.691000Z",
@@ -682,7 +682,7 @@
       "id": 3,
       "job_id": null,
       "parent_id": 5,
-      "project_id": null,
+      "project_id": 14,
       "summary": {
         "conflict_count": 4,
         "conflicts_by_type": {
@@ -734,7 +734,7 @@
       },
       "target": "job",
       "target_last_updated": "2023-05-26T16:11:24.294000Z",
-      "task_id": null
+      "task_id": 22
     },
     {
       "created_date": "2023-07-05T16:29:35.417000Z",

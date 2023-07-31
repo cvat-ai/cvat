@@ -137,7 +137,16 @@ class QualityConflictsViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         },
     ),
     list=extend_schema(
-        summary="Method returns a paginated list of quality reports",
+        summary="Method returns a paginated list of quality reports.",
+        description=textwrap.dedent(
+            """\
+            Please note that children reports are included by default
+            if the "task_id", "project_id" filters are used.
+            If you want to restrict the list of results to a specific report type,
+            use the "target" parameter. The "parent_id" filter includes only direct children
+            reports, without including their children and forth.
+        """
+        ),
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
