@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
-
 import React, { useEffect, useState } from 'react';
 import { Row } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
