@@ -60,7 +60,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                     setQualitySettings(responseSettings);
                 } catch (error: unknown) {
                     notification.error({
-                        message: 'Could not save quiality settings',
+                        message: 'Could not save quality settings',
                         description: typeof Error === 'object' ? (error as object).toString() : '',
                     });
                     throw error;
