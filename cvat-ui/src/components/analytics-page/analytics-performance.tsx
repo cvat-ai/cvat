@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
-
 import React from 'react';
 import moment from 'moment';
 import RGL, { WidthProvider } from 'react-grid-layout';

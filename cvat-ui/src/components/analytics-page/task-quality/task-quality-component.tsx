@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import '../styles.scss';
-
 import { Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';

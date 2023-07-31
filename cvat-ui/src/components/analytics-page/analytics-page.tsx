@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
+
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -206,7 +208,7 @@ function AnalyticsPage(): JSX.Element {
             analyticsFor = <Link to={`/tasks/${instance.taskId}/jobs/${instance.id}`}>{`Job #${instance.id}`}</Link>;
         }
         title = (
-            <Col className='cvat-project-analytics-title'>
+            <Col>
                 <Title level={4} className='cvat-text-color'>
                     Analytics for
                     {' '}

@@ -361,7 +361,7 @@ function TaskListComponent(props: Props): JSX.Element {
                 ) : (
                     <Table
                         className='cvat-project-tasks-table'
-                        rowClassName={() => 'cvat-project-tasks-table-row'}
+                        rowClassName={() => 'cvat-project-quality-task-list-table-row'}
                         columns={columns}
                         dataSource={data}
                         size='small'
