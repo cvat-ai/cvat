@@ -695,8 +695,9 @@ IMPORT_CACHE_FAILED_TTL = timedelta(days=90)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
 IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=2)
 
-ASSET_MAX_SIZE_MB = 2
+ASSET_MAX_SIZE_MB = 10
 ASSET_SUPPORTED_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', )
-ASSET_MAX_COUNT_PER_GUIDE = 10
+ASSET_MAX_IMAGE_SIZE = 1920
+ASSET_MAX_COUNT_PER_GUIDE = 30
 
 SMOKESCREEN_ENABLED = True
