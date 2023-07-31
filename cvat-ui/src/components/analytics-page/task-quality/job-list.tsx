@@ -28,9 +28,10 @@ interface Props {
 function JobListComponent(props: Props): JSX.Element {
     const {
         task: taskInstance,
-        jobsReports,
+        jobsReports: jobsReportsArray,
     } = props;
 
+    const jobsReports = jobsReportsArray.reduce((acc, report) => ({ ...acc, [report.jobId]: report }), {});
     const history = useHistory();
     const { id: taskId, jobs } = taskInstance;
     const [renderedJobs] = useState<Job[]>(jobs.filter((job: Job) => job.type === JobType.ANNOTATION));
