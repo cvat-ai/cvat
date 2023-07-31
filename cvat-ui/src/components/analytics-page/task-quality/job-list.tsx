@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import { DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
@@ -10,43 +10,30 @@ import { ColumnFilterItem } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
+import Tag from 'antd/lib/tag';
 
 import {
     Task, Job, JobType, QualityReport, getCore,
 } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState } from 'reducers';
-import { useSelector } from 'react-redux';
-import Tag from 'antd/lib/tag';
 import { getQualityColor } from '../utils/quality-color';
 import { toRepresentation } from '../utils/text-formatting';
 import { ConflictsTooltip } from './gt-conflicts';
 
 interface Props {
     task: Task;
+    jobsReports: QualityReport[];
 }
 
 function JobListComponent(props: Props): JSX.Element {
     const {
         task: taskInstance,
+        jobsReports,
     } = props;
 
     const history = useHistory();
-    const { id: taskId } = taskInstance;
-    const { jobs } = taskInstance;
+    const { id: taskId, jobs } = taskInstance;
     const [renderedJobs] = useState<Job[]>(jobs.filter((job: Job) => job.type === JobType.ANNOTATION));
-    const [jobsReports, setJobsReports] = useState<Record<number, QualityReport>>({});
-    const jobReportsFromState: QualityReport[] =
-        useSelector((state: CombinedState) => state.analytics.quality.jobsReports);
-
-    useEffect(() => {
-        const jobsReportsMap: Record<number, QualityReport> = {};
-        for (const job of jobs) {
-            const report = jobReportsFromState.find((_report: QualityReport) => _report.jobId === job.id);
-            if (report) jobsReportsMap[job.id] = report;
-        }
-        setJobsReports(jobsReportsMap);
-    }, [taskInstance, jobReportsFromState]);
 
     function sorter(path: string) {
         return (obj1: any, obj2: any): number => {

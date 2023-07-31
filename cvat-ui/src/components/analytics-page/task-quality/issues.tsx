@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import '../styles.scss';
-
 import React, { useEffect, useState } from 'react';
 import Text from 'antd/lib/typography/Text';
 import notification from 'antd/lib/notification';
+
 import { Task } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
 import AnalyticsCard from '../views/analytics-card';
@@ -24,31 +23,26 @@ function Issues(props: Props): JSX.Element {
     const isMounted = useIsMounted();
 
     useEffect(() => {
-        task
-            .issues()
-            .then((issues: any[]) => {
-                if (isMounted()) {
-                    setIssuesCount(issues.length);
-                    setResolvedIssues(issues.reduce((acc, issue) => (issue.resolved ? acc + 1 : acc), 0));
-                }
-            })
-            .catch((_error: any) => {
-                if (isMounted()) {
-                    notification.error({
-                        description: _error.toString(),
-                        message: "Couldn't fetch issues",
-                        className: 'cvat-notification-notice-get-issues-error',
-                    });
-                }
-            });
+        task.issues().then((issues: any[]) => {
+            if (isMounted()) {
+                setIssuesCount(issues.length);
+                setResolvedIssues(issues.reduce((acc, issue) => (issue.resolved ? acc + 1 : acc), 0));
+            }
+        }).catch((_error: any) => {
+            if (isMounted()) {
+                notification.error({
+                    description: _error.toString(),
+                    message: 'Could not get number of issues',
+                    className: 'cvat-notification-notice-get-issues-error',
+                });
+            }
+        });
     }, []);
 
     const bottomElement = (
         <>
             <Text type='secondary'>
-                Resolved:
-                {' '}
-                {clampValue(resolvedIssues)}
+                {`Resolved: ${clampValue(resolvedIssues)}`}
                 {resolvedIssues ? ` (${percent(resolvedIssues, issuesCount)})` : ''}
             </Text>
         </>

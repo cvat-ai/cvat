@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import { Col, Row } from 'antd/lib/grid';
@@ -10,7 +11,6 @@ import Divider from 'antd/lib/divider';
 import Form, { FormInstance } from 'antd/lib/form';
 import Checkbox from 'antd/lib/checkbox/Checkbox';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { QuestionCircleOutlined } from '@ant-design/icons/lib/icons';
 import { QualitySettings } from 'cvat-core-wrapper';
 
 interface FormProps {

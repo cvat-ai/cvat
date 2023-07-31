@@ -17,8 +17,6 @@ interface Props {
     fetching: boolean;
     visible: boolean;
     setVisible: Function;
-    settingsInitialized: boolean;
-    setInitialized: Function;
 }
 
 export default function QualitySettingsModal(props: Props): JSX.Element | null {
@@ -27,7 +25,6 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
         setQualitySettings,
         fetching: loading,
         visible, setVisible,
-        settingsInitialized, setInitialized,
     } = props;
 
     const [form] = Form.useForm();
@@ -56,7 +53,6 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                 try {
                     const responseSettings = await settings.save();
                     setQualitySettings(responseSettings);
-                    setInitialized(true);
                 } catch (error: unknown) {
                     notification.error({
                         message: 'Could not save quiality settings',
@@ -69,7 +65,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
         } catch (e) {
             // ignore validation errors if exist
         }
-    }, [settings, settingsInitialized]);
+    }, [settings]);
 
     const onCancel = useCallback(() => {
         setVisible(false);

@@ -3,32 +3,35 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
+import { Link } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
-import {
-    analyticsActions, createQualitySettingsAsync, updateQualitySettingsAsync,
-} from 'actions/analytics-actions';
 import Form from 'antd/lib/form';
-import { Task } from 'cvat-core-wrapper';
-import { Link } from 'react-router-dom';
+import notification from 'antd/lib/notification';
+import { QualitySettings, Task } from 'cvat-core-wrapper';
 import QualitySettingsForm from './quality-settings-form';
 
 interface Props {
     task: Task;
+    qualitySettings: QualitySettings | null;
+    qualitySettingsVisible: boolean;
+    fetching: boolean;
+    setQualitySettingsVisible: (visible: boolean) => void;
+    setQualitySettings: (settings: QualitySettings) => void;
 }
 
 export default function QualitySettingsModal(props: Props): JSX.Element | null {
-    const { task } = props;
-    const visible = useSelector((state: CombinedState) => state.analytics.quality.settings.modalVisible);
-    const loading = useSelector((state: CombinedState) => state.analytics.quality.settings.fetching);
-    const settings = useSelector((state: CombinedState) => state.analytics.quality.settings.current);
-    const settingsInitialized = !!(settings?.id);
+    const {
+        task,
+        fetching,
+        qualitySettingsVisible,
+        qualitySettings: settings,
+        setQualitySettingsVisible,
+        setQualitySettings,
+    } = props;
+
     const formEnabled = !task.projectId;
     const [form] = Form.useForm();
-
-    const dispatch = useDispatch();
 
     const onOk = useCallback(async () => {
         try {
@@ -52,21 +55,27 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
 
                 settings.panopticComparison = values.panopticComparison;
 
-                if (!settingsInitialized) {
-                    await dispatch(createQualitySettingsAsync(settings));
-                } else {
-                    await dispatch(updateQualitySettingsAsync(settings));
+                try {
+                    const responseSettings = await settings.save();
+                    setQualitySettings(responseSettings);
+                } catch (error: unknown) {
+                    notification.error({
+                        message: 'Could not save quiality settings',
+                        description: typeof Error === 'object' ? (error as object).toString() : '',
+                    });
+                    throw error;
                 }
-                await dispatch(analyticsActions.switchQualitySettingsVisible(false));
+                await settings.save();
             }
+            setQualitySettingsVisible(false);
             return settings;
         } catch (e) {
             return false;
         }
-    }, [settings, settingsInitialized]);
+    }, [settings]);
 
     const onCancel = useCallback(() => {
-        dispatch(analyticsActions.switchQualitySettingsVisible(false));
+        setQualitySettingsVisible(false);
     }, []);
 
     return (
@@ -75,10 +84,10 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
             okText='Save'
             cancelText={formEnabled ? 'Cancel' : 'Ok'}
             title={<Text strong>Annotation Quality Settings</Text>}
-            visible={visible}
+            visible={qualitySettingsVisible}
             onOk={onOk}
             onCancel={onCancel}
-            confirmLoading={loading}
+            confirmLoading={fetching}
             destroyOnClose
             className='cvat-modal-quality-settings'
             okButtonProps={{

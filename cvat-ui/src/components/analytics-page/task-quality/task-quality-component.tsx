@@ -4,22 +4,24 @@
 
 import '../styles.scss';
 
-import { getQualitySettingsAsync, getTaskQualityReportsAsync } from 'actions/analytics-actions';
 import { Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
+import notification from 'antd/lib/notification';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import JobItem from 'components/job-item/job-item';
-import { Job, JobType, Task } from 'cvat-core-wrapper';
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
-import { useIsMounted } from 'utils/hooks';
+import {
+    Job, JobType, QualityReport, QualitySettings, Task, getCore,
+} from 'cvat-core-wrapper';
+import React, { useEffect } from 'react';
+import { useIsMounted, useStateIfMounted } from 'utils/hooks';
 import EmptyGtJob from './empty-job';
 import GtConflicts from './gt-conflicts';
 import Issues from './issues';
 import JobList from './job-list';
 import MeanQuality from './mean-quality';
 import QualitySettingsModal from './quality-settings-modal';
+
+const core = getCore();
 
 interface Props {
     task: Task,
@@ -28,23 +30,47 @@ interface Props {
 
 function TaskQualityComponent(props: Props): JSX.Element {
     const { task, onJobUpdate } = props;
-    const dispatch = useDispatch();
     const isMounted = useIsMounted();
-    const query = useSelector((state: CombinedState) => state.analytics.quality.query);
-
-    const [fetching, setFetching] = useState<boolean>(true);
+    const [fetching, setFetching] = useStateIfMounted<boolean>(true);
+    const [taskReport, setTaskReport] = useStateIfMounted<QualityReport | null>(null);
+    const [jobsReports, setJobsReports] = useStateIfMounted<QualityReport[]>([]);
+    const [qualitySettings, setQualitySettings] = useStateIfMounted<QualitySettings | null>(null);
+    const [qualitySettingsVisible, setQualitySettingsVisible] = useStateIfMounted<boolean>(false);
+    const [qualitySettingsFetching, setQualitySettingsFetching] = useStateIfMounted<boolean>(true);
 
     useEffect(() => {
-        Promise.all([
-            dispatch(getTaskQualityReportsAsync(task, { ...query, taskId: task.id })),
-            dispatch(getQualitySettingsAsync({
+        setFetching(true);
+        setQualitySettingsFetching(true);
+
+        core.analytics.quality.reports({ pageSize: 1, target: 'task', taskId: task.id }).then(([report]) => {
+            let reportRequest = Promise.resolve<QualityReport[]>([]);
+            if (report) {
+                reportRequest = core.analytics.quality.reports({
+                    pageSize: task.jobs.length,
+                    parentId: report.id,
+                    target: 'job',
+                });
+            }
+            const settingsRequest = core.analytics.quality.settings.get({
                 ...(!task.projectId ? { taskId: task.id } : {}),
                 ...(task.projectId ? { projectId: task.projectId } : {}),
-            }, !task.projectId)),
-        ]).finally(() => {
-            if (isMounted()) {
+            }, !task.projectId);
+
+            Promise.all([reportRequest, settingsRequest]).then(([jobReports, settings]) => {
+                setQualitySettings(settings);
+                setTaskReport(report || null);
+                setJobsReports(jobReports);
+            }).catch((error: Error) => {
+                if (isMounted()) {
+                    notification.error({
+                        description: error.toString(),
+                        message: 'Could not initialize quality analytics page',
+                    });
+                }
+            }).finally(() => {
+                setQualitySettingsFetching(false);
                 setFetching(false);
-            }
+            });
         });
     }, [task?.id]);
 
@@ -61,10 +87,14 @@ function TaskQualityComponent(props: Props): JSX.Element {
                             gtJob ? (
                                 <>
                                     <Row>
-                                        <MeanQuality task={task} />
+                                        <MeanQuality
+                                            taskReport={taskReport}
+                                            setQualitySettingsVisible={setQualitySettingsVisible}
+                                            task={task}
+                                        />
                                     </Row>
                                     <Row gutter={16}>
-                                        <GtConflicts task={task} />
+                                        <GtConflicts taskReport={taskReport} />
                                         <Issues task={task} />
                                     </Row>
                                     {
@@ -83,7 +113,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
                                         <JobItem job={gtJob} task={task} onJobUpdate={onJobUpdate} />
                                     </Row>
                                     <Row>
-                                        <JobList task={task} />
+                                        <JobList jobsReports={jobsReports} task={task} />
                                     </Row>
                                 </>
                             ) : (
@@ -92,7 +122,14 @@ function TaskQualityComponent(props: Props): JSX.Element {
                                 </Row>
                             )
                         }
-                        <QualitySettingsModal task={task} />
+                        <QualitySettingsModal
+                            fetching={qualitySettingsFetching}
+                            qualitySettings={qualitySettings}
+                            setQualitySettings={setQualitySettings}
+                            qualitySettingsVisible={qualitySettingsVisible}
+                            setQualitySettingsVisible={setQualitySettingsVisible}
+                            task={task}
+                        />
                     </>
                 )
             }
