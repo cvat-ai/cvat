@@ -50,7 +50,8 @@ function AnalyticsPage(): JSX.Element {
     const requestedInstanceType: InstanceType = (() => {
         if (location.pathname.includes('projects')) {
             return 'project';
-        } if (location.pathname.includes('jobs')) {
+        }
+        if (location.pathname.includes('jobs')) {
             return 'job';
         }
         return 'task';
@@ -65,6 +66,8 @@ function AnalyticsPage(): JSX.Element {
         }
         return +useParams<{ tid: string }>().tid;
     })();
+
+    const [activeTab, setTab] = useState(window.location.hash.slice(1));
 
     const [instanceType, setInstanceType] = useState<InstanceType | null>(null);
     const [instance, setInstance] = useState<Project | Task | Job | null>(null);
@@ -117,25 +120,28 @@ function AnalyticsPage(): JSX.Element {
             Promise.all([
                 receiveInstance(requestedInstanceType, requestedInstanceID),
                 receiveReport(timePeriod, requestedInstanceType, requestedInstanceID),
-            ]).then(([instanceResponce, report]) => {
-                const receivedInstance: Task | Project | Job = instanceResponce[0];
-                if (receivedInstance && isMounted()) {
-                    setInstance(receivedInstance);
-                    setInstanceType(requestedInstanceType);
-                }
-                if (report && isMounted()) {
-                    setAnalyticsReport(report);
-                }
-            }).catch((error: Error) => {
-                notification.error({
-                    message: 'Could not receive requested resources',
-                    description: `${error.toString()}`,
+            ])
+                .then(([instanceResponse, report]) => {
+                    const receivedInstance: Task | Project | Job = instanceResponse[0];
+                    if (receivedInstance && isMounted()) {
+                        setInstance(receivedInstance);
+                        setInstanceType(requestedInstanceType);
+                    }
+                    if (report && isMounted()) {
+                        setAnalyticsReport(report);
+                    }
+                })
+                .catch((error: Error) => {
+                    notification.error({
+                        message: 'Could not receive requested resources',
+                        description: `${error.toString()}`,
+                    });
+                })
+                .finally(() => {
+                    if (isMounted()) {
+                        setFetching(false);
+                    }
                 });
-            }).finally(() => {
-                if (isMounted()) {
-                    setFetching(false);
-                }
-            });
         } else {
             notification.error({
                 message: 'Could not load this page',
@@ -153,21 +159,39 @@ function AnalyticsPage(): JSX.Element {
 
     const onJobUpdate = useCallback((job: Job): void => {
         setFetching(true);
-        job.save().then((updatedJob: Job) => {
-            if (isMounted()) {
-                setInstance(updatedJob);
-            }
-        }).catch((error: Error) => {
-            notification.error({
-                message: 'Could not update the job',
-                description: error.toString(),
+        job.save()
+            .then((updatedJob: Job) => {
+                if (isMounted()) {
+                    setInstance(updatedJob);
+                }
+            })
+            .catch((error: Error) => {
+                notification.error({
+                    message: 'Could not update the job',
+                    description: error.toString(),
+                });
+            })
+            .finally(() => {
+                if (isMounted()) {
+                    setFetching(false);
+                }
             });
-        }).finally(() => {
-            if (isMounted()) {
-                setFetching(false);
-            }
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash.slice(1);
+            setTab(hash);
         });
     }, []);
+
+    const onTabKeyChange = (key: string) => {
+        setTab(key);
+    };
+
+    useEffect(() => {
+        window.location.hash = activeTab;
+    }, [activeTab]);
 
     let backNavigation: JSX.Element | null = null;
     let title: JSX.Element | null = null;
@@ -196,8 +220,13 @@ function AnalyticsPage(): JSX.Element {
         );
 
         tabs = (
-            <Tabs type='card'>
-                <Tabs.TabPane tab='Performance' key='Overview'>
+            <Tabs
+                type='card'
+                activeKey={activeTab || 'overview'}
+                defaultActiveKey='overview'
+                onChange={onTabKeyChange}
+            >
+                <Tabs.TabPane tab='Performance' key='overview'>
                     <AnalyticsOverview
                         report={analyticsReport}
                         timePeriod={timePeriod}
@@ -220,21 +249,19 @@ function AnalyticsPage(): JSX.Element {
 
     return (
         <div className='cvat-analytics-page'>
-            {
-                fetching ? (
-                    <div className='cvat-analytics-loading'>
-                        <CVATLoadingSpinner />
-                    </div>
-                ) : (
-                    <Row justify='center' align='top' className='cvat-analytics-wrapper'>
-                        {backNavigation}
-                        <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
-                            {title}
-                            {tabs}
-                        </Col>
-                    </Row>
-                )
-            }
+            {fetching ? (
+                <div className='cvat-analytics-loading'>
+                    <CVATLoadingSpinner />
+                </div>
+            ) : (
+                <Row justify='center' align='top' className='cvat-analytics-wrapper'>
+                    {backNavigation}
+                    <Col span={22} xl={18} xxl={14} className='cvat-analytics-inner'>
+                        {title}
+                        {tabs}
+                    </Col>
+                </Row>
+            )}
         </div>
     );
 }
