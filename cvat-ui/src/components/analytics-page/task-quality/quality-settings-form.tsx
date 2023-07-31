@@ -140,7 +140,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         label='Min overlap threshold (%)'
                         rules={[{ required: true }]}
                     >
-                        <InputNumber min={0} max={100} />
+                        <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
                 </Col>
                 <Col span={12}>
@@ -149,7 +149,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         label='Low overlap threshold (%)'
                         rules={[{ required: true }]}
                     >
-                        <InputNumber min={0} max={100} />
+                        <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
                 </Col>
             </Row>
@@ -184,7 +184,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         label='OKS sigma (bbox side %)'
                         rules={[{ required: true }]}
                     >
-                        <InputNumber min={0} max={100} />
+                        <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
                 </Col>
             </Row>
@@ -206,7 +206,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         label='Relative thickness (frame side %)'
                         rules={[{ required: true }]}
                     >
-                        <InputNumber min={0} max={1000} />
+                        <InputNumber min={0} max={1000} precision={0} />
                     </Form.Item>
                 </Col>
             </Row>
@@ -228,7 +228,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         label='Min similarity gain (%)'
                         rules={[{ required: true }]}
                     >
-                        <InputNumber min={0} max={100} />
+                        <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
                 </Col>
             </Row>
@@ -261,7 +261,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         label='Min group match threshold (%)'
                         rules={[{ required: true }]}
                     >
-                        <InputNumber min={0} max={100} />
+                        <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
                 </Col>
             </Row>
@@ -294,7 +294,7 @@ export default function QualitySettingsForm(props: FormProps): JSX.Element | nul
                         label='Min visibility threshold (area %)'
                         rules={[{ required: true }]}
                     >
-                        <InputNumber min={0} max={100} />
+                        <InputNumber min={0} max={100} precision={0} />
                     </Form.Item>
                 </Col>
             </Row>
