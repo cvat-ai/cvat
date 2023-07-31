@@ -46,7 +46,6 @@ function TaskListComponent(props: Props): JSX.Element {
     const isMounted = useIsMounted();
 
     const [fetching, setFetching] = useState<boolean>(true);
-
     const [tasks, setTasks] = useState<Task[]>([]);
     const [tasksMap, setTasksMap] = useState<Record<number, Task>>({});
     const [taskReportsMap, setTaskReportsMap] = useState<Record<number, QualityReport | null>>({});
