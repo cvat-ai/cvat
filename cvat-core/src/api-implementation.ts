@@ -84,7 +84,15 @@ interface CVATInterface {
         get: any;
     };
     tasks: {
-        get: any;
+        get: (filter: {
+            page?: number;
+            pageSize?: number | 'all';
+            projectId?: number;
+            id?: number;
+            sort?: string;
+            search?: string;
+            filter?: string;
+        }) => Promise<ListPage<Task>>;
     }
     projects: {
         get: any;

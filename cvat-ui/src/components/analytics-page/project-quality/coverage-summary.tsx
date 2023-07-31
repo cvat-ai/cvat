@@ -2,66 +2,38 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import Text from 'antd/lib/typography/Text';
-import notification from 'antd/lib/notification';
 import { QualityReport, getCore } from 'cvat-core-wrapper';
-import { useIsMounted } from 'utils/hooks';
+import { useStateIfMounted } from 'utils/hooks';
 import AnalyticsCard from '../views/analytics-card';
 import { percent, clampValue } from '../utils/text-formatting';
 
 const core = getCore();
 
 interface Props {
-    projectId: number;
+    tasks: Awaited<ReturnType<typeof core['tasks']['get']>>;
+    reports: QualityReport[];
     projectReport: QualityReport | null;
 }
 
 function CoverageSummary(props: Props): JSX.Element {
-    const { projectId, projectReport } = props;
+    const { tasks, reports, projectReport } = props;
 
-    const [gtFramesCount, setGtFramesCount] = useState<string | number>('N/A');
-    const [totalFramesCount, setTotalFramesCount] = useState<string | number>('N/A');
-    const [tasksCount, setTaskCount] = useState<number>(0);
-    const [taskReportsCount, setTaskReportsCount] = useState<number>(0);
-    const isMounted = useIsMounted();
+    const [gtFramesCount, setGtFramesCount] = useStateIfMounted<string | number>('N/A');
+    const [totalFramesCount, setTotalFramesCount] = useStateIfMounted<string | number>('N/A');
+    const [tasksCount, setTaskCount] = useStateIfMounted<number>(0);
+    const [taskReportsCount, setTaskReportsCount] = useStateIfMounted<number>(0);
 
     useEffect(() => {
-        core.tasks.get({ projectId })
-            .then((results: any) => {
-                if (isMounted()) {
-                    setTaskCount(results.count);
-                }
-            }).catch((error: any) => {
-                if (isMounted()) {
-                    notification.error({
-                        description: error.toString(),
-                        message: "Couldn't fetch tasks count",
-                    });
-                }
-            });
-    }, [projectId]);
+        setTaskCount(tasks.count);
+        setTaskReportsCount(reports.length);
+    }, []);
 
     useEffect(() => {
         if (!projectReport) {
             return;
         }
-
-        core.analytics.quality.reports({ target: 'task', parentId: projectReport.id })
-            .then((results: any) => {
-                if (isMounted()) {
-                    setTaskReportsCount(results.count);
-                }
-            })
-            .catch((error: any) => {
-                if (isMounted()) {
-                    notification.error({
-                        description: error.toString(),
-                        message: "Couldn't fetch project quality reports",
-                        className: 'cvat-notification-notice-get-reports-error',
-                    });
-                }
-            });
 
         const reportSummary = projectReport.summary;
         setGtFramesCount(
@@ -72,7 +44,7 @@ function CoverageSummary(props: Props): JSX.Element {
         );
 
         setTotalFramesCount(reportSummary?.totalFrames);
-    }, [projectId, projectReport?.id]);
+    }, [projectReport?.id]);
 
     const bottomElement = (
         <>

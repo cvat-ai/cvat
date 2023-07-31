@@ -8,18 +8,18 @@ import { DownloadOutlined, SettingOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 
-import { QualityReport, Task, getCore } from 'cvat-core-wrapper';
+import { QualityReport, getCore } from 'cvat-core-wrapper';
 import AnalyticsCard from '../views/analytics-card';
 import { toRepresentation } from '../utils/text-formatting';
 
 interface Props {
-    task: Task;
+    taskId: number;
     taskReport: QualityReport | null;
     setQualitySettingsVisible: (visible: boolean) => void;
 }
 
 function MeanQuality(props: Props): JSX.Element {
-    const { task, taskReport, setQualitySettingsVisible } = props;
+    const { taskId, taskReport, setQualitySettingsVisible } = props;
     const reportSummary = taskReport?.summary;
 
     const tooltip = (
@@ -61,7 +61,7 @@ function MeanQuality(props: Props): JSX.Element {
                     <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
                         <a
                             href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
-                            download={`quality-report-task_${task.id}-${taskReport?.id}.json`}
+                            download={`quality-report-task_${taskId}-${taskReport?.id}.json`}
                         >
                             Quality Report
                         </a>

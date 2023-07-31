@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import { DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
@@ -10,123 +10,30 @@ import { ColumnFilterItem } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
-import notification from 'antd/lib/notification';
+import Tag from 'antd/lib/tag';
 
 import { Task, QualityReport, getCore } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import CVATLoadingSpinner from 'components/common/loading-spinner';
-import { TasksQuery } from 'reducers';
-import Tag from 'antd/lib/tag';
-import { useIsMounted } from 'utils/hooks';
 import { getQualityColor } from '../utils/quality-color';
 import { ConflictsTooltip } from './conflicts-summary';
 import { percent, toRepresentation } from '../utils/text-formatting';
 
-// TODO: move to core?
-export interface QualityQuery {
-    projectId?: number | null;
-    taskId?: number | null;
-    jobId?: number | null;
-    parentId?: number | null;
-    target?: string | null;
-    page?: number | null;
-    pageSize?: number | 'all';
-}
-
 interface Props {
-    projectId: number;
+    tasksReports: QualityReport[];
+    tasks: Task[];
     projectReport: QualityReport | null;
 }
 
 function TaskListComponent(props: Props): JSX.Element {
-    const { projectId, projectReport } = props;
-    const projectReportId = projectReport?.id;
-
+    const {
+        tasks, tasksReports, projectReport,
+    } = props;
     const history = useHistory();
-    const isMounted = useIsMounted();
 
-    const [fetching, setFetching] = useState<boolean>(true);
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [tasksMap, setTasksMap] = useState<Record<number, Task>>({});
-    const [taskReportsMap, setTaskReportsMap] = useState<Record<number, QualityReport | null>>({});
-    const [query] = useState<{ tasks: TasksQuery, quality: QualityQuery } | null>({
-        tasks: { pageSize: 'all' },
-        quality: { pageSize: 'all' },
-    });
-
-    const [displayedTasks, setDisplayedTasks] = useState<Task[]>(tasks);
-
-    useEffect(() => {
-        setFetching(true);
-
-        if (!projectId || !projectReportId) {
-            setTasks([]);
-            setFetching(false);
-            return;
-        }
-
-        const core = getCore();
-
-        const reportsPromise = core.analytics.quality.reports({
-            ...query?.quality || {},
-            projectId,
-            target: 'task',
-            parentId: projectReportId,
-            sort: 'task_id',
-        })
-            .catch((_error: any) => {
-                if (isMounted()) {
-                    notification.error({
-                        description: _error.toString(),
-                        message: "Couldn't fetch project quality reports",
-                        className: 'cvat-notification-notice-get-reports-error',
-                    });
-                }
-            });
-
-        const tasksPromise = core.tasks.get({
-            ...query?.tasks || {},
-            projectId,
-            sort: 'id',
-        })
-            .catch((_error: any) => {
-                if (isMounted()) {
-                    notification.error({
-                        description: _error.toString(),
-                        message: "Couldn't fetch project quality reports",
-                        className: 'cvat-notification-notice-get-reports-error',
-                    });
-                }
-            });
-
-        Promise.all([reportsPromise, tasksPromise])
-            .then((values: [QualityReport[], Task[]]) => {
-                const [fetchedTaskReports, fetchedTasks] = values;
-                setTasks(fetchedTasks);
-
-                const newTasksMap: Record<number, Task> = {};
-                for (const task of (fetchedTasks || [])) {
-                    newTasksMap[task.id] = task;
-                }
-                setTasksMap(newTasksMap);
-
-                const tasksReportsMap: Record<number, QualityReport | null> = {};
-                for (const task of (fetchedTasks || [])) {
-                    tasksReportsMap[task.id] = null;
-                }
-                for (const report of (fetchedTaskReports || [])) {
-                    if (report.taskId in tasksReportsMap) {
-                        tasksReportsMap[report.taskId] = report;
-                    }
-                }
-                setTaskReportsMap(tasksReportsMap);
-                setDisplayedTasks(fetchedTasks);
-            }).finally(() => {
-                if (isMounted()) {
-                    setFetching(false);
-                }
-            });
-    }, [projectId, projectReportId, query]);
+    const tasksMap = tasks
+        .reduce((acc, task) => ({ ...acc, [task.id]: task }), {}) as Record<number, Task>;
+    const taskReportMap = tasksReports
+        .reduce((acc, report) => ({ ...acc, [report.taskId]: report }), {}) as Record<number, QualityReport>;
 
     function sorter(path: string) {
         return (obj1: any, obj2: any): number => {
@@ -316,7 +223,7 @@ function TaskListComponent(props: Props): JSX.Element {
             className: 'cvat-task-item-quality-report-download',
             align: 'center' as const,
             render: (task: Task): JSX.Element => {
-                const report = taskReportsMap[task.id];
+                const report = taskReportMap[task.id];
                 const reportID = report?.id || null;
                 return (
                     report ? (
@@ -332,8 +239,8 @@ function TaskListComponent(props: Props): JSX.Element {
         },
     ];
 
-    const data = displayedTasks.reduce((acc: any[], task: Task) => {
-        const report = taskReportsMap[task.id];
+    const data = tasks.reduce((acc: any[], task: Task) => {
+        const report = taskReportMap[task.id];
         acc.push({
             key: task.id,
             task: task.id,
@@ -355,19 +262,13 @@ function TaskListComponent(props: Props): JSX.Element {
                     <Text className='cvat-text-color cvat-project-quality-task-list-header'>Tasks</Text>
                 </Col>
             </Row>
-            {
-                fetching ? (
-                    <CVATLoadingSpinner size='small' />
-                ) : (
-                    <Table
-                        className='cvat-project-tasks-table'
-                        rowClassName={() => 'cvat-project-quality-task-list-table-row'}
-                        columns={columns}
-                        dataSource={data}
-                        size='small'
-                    />
-                )
-            }
+            <Table
+                className='cvat-project-tasks-table'
+                rowClassName={() => 'cvat-project-quality-task-list-table-row'}
+                columns={columns}
+                dataSource={data}
+                size='small'
+            />
         </div>
     );
 }
