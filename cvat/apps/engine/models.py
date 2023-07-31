@@ -242,7 +242,7 @@ class Data(models.Model):
         return int(match.group(1)) if match else 1
 
     def get_valid_frame_indices(self):
-        return range(self.start_frame, self.stop_frame, self.get_frame_step())
+        return range(self.start_frame, self.stop_frame + 1, self.get_frame_step())
 
     def get_data_dirname(self):
         return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
