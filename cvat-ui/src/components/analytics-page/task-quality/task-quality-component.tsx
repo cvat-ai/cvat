@@ -40,6 +40,15 @@ function TaskQualityComponent(props: Props): JSX.Element {
         setFetching(true);
         setQualitySettingsFetching(true);
 
+        function handleError(error: Error): void {
+            if (isMounted()) {
+                notification.error({
+                    description: error.toString(),
+                    message: 'Could not initialize quality analytics page',
+                });
+            }
+        }
+
         core.analytics.quality.reports({ pageSize: 1, target: 'task', taskId: task.id }).then(([report]) => {
             let reportRequest = Promise.resolve<QualityReport[]>([]);
             if (report) {
@@ -58,18 +67,11 @@ function TaskQualityComponent(props: Props): JSX.Element {
                 setQualitySettings(settings);
                 setTaskReport(report || null);
                 setJobsReports(jobReports);
-            }).catch((error: Error) => {
-                if (isMounted()) {
-                    notification.error({
-                        description: error.toString(),
-                        message: 'Could not initialize quality analytics page',
-                    });
-                }
-            }).finally(() => {
+            }).catch(handleError).finally(() => {
                 setQualitySettingsFetching(false);
                 setFetching(false);
             });
-        });
+        }).catch(handleError);
     }, [task?.id]);
 
     const gtJob = task.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);
@@ -88,7 +90,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
                                         <MeanQuality
                                             taskReport={taskReport}
                                             setQualitySettingsVisible={setQualitySettingsVisible}
-                                            task={task}
+                                            taskId={task.id}
                                         />
                                     </Row>
                                     <Row gutter={16}>

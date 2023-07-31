@@ -8,7 +8,7 @@ import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import {
-    Project, QualityReport, QualitySettings, getCore,
+    Project, QualityReport, QualitySettings, Task, getCore,
 } from 'cvat-core-wrapper';
 import { useIsMounted } from 'utils/hooks';
 import ConflictsSummary from './conflicts-summary';
@@ -23,12 +23,16 @@ interface Props {
     project: Project,
 }
 
+type ListOfTasks = Awaited<ReturnType<typeof core['tasks']['get']>>;
+
 function ProjectQualityComponent(props: Props): JSX.Element {
     const { project } = props;
 
     const isMounted = useIsMounted();
     const [fetching, setFetching] = useState<boolean>(true);
     const [projectReport, setProjectReport] = useState<QualityReport | null>(null);
+    const [tasksReports, setTasksReports] = useState<QualityReport[]>([]);
+    const [tasks, setTasks] = useState<ListOfTasks>(Object.defineProperty(([] as Task[]), 'count', { value: 0 }) as ListOfTasks);
     const [qualitySettings, setQualitySettings] = useState<QualitySettings | null>(null);
     const [qualitySettingsFetching, setQualitySettingsFetching] = useState<boolean>(true);
     const [qualitySettingsVisible, setQualitySettingsVisible] = useState<boolean>(false);
@@ -37,29 +41,38 @@ function ProjectQualityComponent(props: Props): JSX.Element {
         setFetching(true);
         setQualitySettingsFetching(true);
 
-        const reportRequest = core.analytics.quality.reports({ projectId: project.id, pageSize: 1, target: 'project' });
-        const settingsRequest = core.analytics.quality.settings.get({ projectId: project.id }, true);
-
-        Promise.all([reportRequest, settingsRequest]).then(([[report], settings]) => {
-            if (isMounted()) {
-                setQualitySettings(settings);
-                if (report) {
-                    setProjectReport(report);
-                }
-            }
-        }).catch((error: Error) => {
+        function handleError(error: Error): void {
             if (isMounted()) {
                 notification.error({
                     description: error.toString(),
                     message: 'Could not initialize quality analytics page',
                 });
             }
-        }).finally(() => {
-            if (isMounted()) {
+        }
+
+        core.analytics.quality.reports({ pageSize: 1, target: 'project', projectId: project.id }).then(([report]) => {
+            let reportRequest = Promise.resolve<QualityReport[]>([]);
+            if (report) {
+                reportRequest = core.analytics.quality.reports({
+                    pageSize: 'all',
+                    parentId: report.id,
+                    target: 'task',
+                });
+            }
+
+            const settingsRequest = core.analytics.quality.settings.get({ projectId: project.id }, true);
+            const tasksRequest = core.tasks.get({ pageSize: 'all', projectId: project.id });
+
+            Promise.all([reportRequest, settingsRequest, tasksRequest]).then((results) => {
+                setProjectReport(report || null);
+                setTasksReports(results[0]);
+                setQualitySettings(results[1]);
+                setTasks(results[2]);
+            }).catch(handleError).finally(() => {
                 setQualitySettingsFetching(false);
                 setFetching(false);
-            }
-        });
+            });
+        }).catch(handleError);
     }, [project?.id]);
 
     return (
@@ -78,7 +91,11 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                         </Row>
                         <Row gutter={16}>
                             <ConflictsSummary projectId={project.id} projectReport={projectReport} />
-                            <CoverageSummary projectId={project.id} projectReport={projectReport} />
+                            <CoverageSummary
+                                projectReport={projectReport}
+                                tasks={tasks}
+                                reports={tasksReports}
+                            />
                         </Row>
                         {
                             (!projectReport || !projectReport.summary.gtCount) ? (
@@ -91,7 +108,11 @@ function ProjectQualityComponent(props: Props): JSX.Element {
                             ) : null
                         }
                         <Row>
-                            <TaskList projectId={project.id} projectReport={projectReport} />
+                            <TaskList
+                                tasks={tasks}
+                                tasksReports={tasksReports}
+                                projectReport={projectReport}
+                            />
                         </Row>
                         <QualitySettingsModal
                             projectId={project.id}
