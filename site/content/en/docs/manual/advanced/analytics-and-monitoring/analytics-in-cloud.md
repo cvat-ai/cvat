@@ -32,16 +32,16 @@ The **Performance** dashboard has the following elements:
 
 <!--lint disable maximum-line-length-->
 
-| Element                                   | Description                                                                      |
-| ----------------------------------------- | -------------------------------------------------------------------------------- |
-| Analytics for                             | **Object**/ **Task**/ **Job** number.                                                        |
-| Created                                   | Time when the dashboard was updated last time.                                   |
-| Objects                                   | Graph, showing the number of annotated, updated, and deleted objects by day.     |
-| Annotation speed (objects per hour)       | Number of objects annotated per hour.                                            |
-| Time                                      | A drop-down list with various periods for the graph.                             |
-| Annotation time (hours)                   | Shows for how long the **Project**/**Task**/**Job** is in **In progress** state. |
-| Total objects count                       | Shows the total objects count in the task.                                       |
-| Total annotation speed (objects per hour) | Shows the annotation speed in the **Project**/**Task**/**Job**                   |
+| Element                                   | Description                                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Analytics for                             | **Object**/ **Task**/ **Job** number.                                                             |
+| Created                                   | Time when the dashboard was updated last time.                                                    |
+| Objects                                   | Graph, showing the number of annotated, updated, and deleted objects by day.                      |
+| Annotation speed (objects per hour)       | Number of objects annotated per hour.                                                             |
+| Time                                      | A drop-down list with various periods for the graph. Currently affects only the histogram data.   |
+| Annotation time (hours)                   | Shows for how long the **Project**/**Task**/**Job** is in **In progress** state.                  |
+| Total objects count                       | Shows the total objects count in the task. Interpolated objects are counted.                      |
+| Total annotation speed (objects per hour) | Shows the annotation speed in the **Project**/**Task**/**Job**. Interpolated objects are counted. |
 
 <!--lint enable maximum-line-length-->
 
