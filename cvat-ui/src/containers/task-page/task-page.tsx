@@ -6,15 +6,16 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 
-import { getTasksAsync } from 'actions/tasks-actions';
+import { getTasksAsync, imageSearchReset } from 'actions/tasks-actions';
 
 import TaskPageComponent from 'components/task-page/task-page';
-import { Task, CombinedState } from 'reducers';
+import { Task, ImageSearch, CombinedState } from 'reducers';
 
 type Props = RouteComponentProps<{ id: string }>;
 
 interface StateToProps {
     task: Task | null | undefined;
+    imageSearch: ImageSearch;
     fetching: boolean;
     updating: boolean;
     jobUpdating: boolean;
@@ -24,6 +25,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     getTask: () => void;
+    imageSearchReset: () => void;
 }
 
 function mapStateToProps(state: CombinedState, own: Props): StateToProps {
@@ -51,6 +53,7 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
 
     return {
         task,
+        imageSearch: state.tasks.imageSearch,
         jobUpdating,
         deleteActivity,
         fetching,
@@ -75,6 +78,11 @@ function mapDispatchToProps(dispatch: any, own: Props): DispatchToProps {
                     status: null,
                     mode: null,
                 }),
+            );
+        },
+        imageSearchReset: (): void => {
+            dispatch(
+                imageSearchReset(),
             );
         },
     };

@@ -3,12 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
-import { RouteComponentProps } from 'react-router';
+import { RouteComponentProps, useHistory } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import { LoadingOutlined, QuestionCircleOutlined, CopyOutlined } from '@ant-design/icons';
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
+import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
@@ -18,6 +19,16 @@ import copy from 'copy-to-clipboard';
 import { JobStage } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import UserSelector, { User } from './user-selector';
+
+interface ImageSearchProps {
+    onImageSearch(task: any, imageName: string | null): void;
+    imageSearchQuery: string | null;
+    foundImages: [{
+        name: string,
+        jobId: number,
+        frame: number,
+    }];
+}
 
 interface Props {
     taskInstance: any;
@@ -81,11 +92,69 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
     );
 }
 
-function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
+function ImageSearchComponent(props: ImageSearchProps & { taskInstance: any }): JSX.Element {
+    const {
+        onImageSearch,
+        imageSearchQuery,
+        foundImages,
+        taskInstance,
+    } = props;
+
+    const history = useHistory();
+
+    let searchResults;
+    if (imageSearchQuery) {
+        if (foundImages.length > 0) {
+            searchResults = foundImages.map((item, i) => (
+                <Col className='cvat-task-page-image-search-result' xs={24} key={`image-search-result-${i}`}>
+                    <Button
+                        onClick={
+                            () => history.push(`/tasks/${taskInstance.id}/jobs/${item.jobId}/?frame=${item.frame}`)
+                        }
+                        type='link'
+                        size='small'
+                    >
+                        {item.name}
+                    </Button>
+                </Col>
+            ));
+        } else {
+            searchResults = (
+                <Col className='cvat-task-page-image-search-result' xs={24}>
+                    <Text>No images found...</Text>
+                </Col>
+            );
+        }
+    } else {
+        searchResults = null;
+    }
+
+    return (
+        <Row>
+            <Col xs={24}>
+                <Input.Search
+                    enterButton
+                    onSearch={(phrase: string) => {
+                        onImageSearch(taskInstance, phrase);
+                    }}
+                    defaultValue={imageSearchQuery || ''}
+                    className='cvat-task-page-image-search-bar'
+                    placeholder='Search image ...'
+                />
+            </Col>
+            {searchResults}
+        </Row>
+    );
+}
+
+function JobListComponent(props: Props & RouteComponentProps & ImageSearchProps): JSX.Element {
     const {
         taskInstance,
         onJobUpdate,
         history: { push },
+        onImageSearch,
+        imageSearchQuery,
+        foundImages,
     } = props;
 
     const { jobs, id: taskId } = taskInstance;
@@ -312,6 +381,12 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                     <Text className='cvat-text-color'>{`${completed} of ${data.length} jobs`}</Text>
                 </Col>
             </Row>
+            <ImageSearchComponent
+                onImageSearch={onImageSearch}
+                imageSearchQuery={imageSearchQuery}
+                foundImages={foundImages}
+                taskInstance={taskInstance}
+            />
             <Table
                 className='cvat-task-jobs-table'
                 rowClassName={() => 'cvat-task-jobs-table-row'}

@@ -15,17 +15,19 @@ import JobListContainer from 'containers/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
-import { Task } from 'reducers';
+import { Task, ImageSearch } from 'reducers';
 import TopBarComponent from './top-bar';
 
 interface TaskPageComponentProps {
     task: Task | null | undefined;
+    imageSearch: ImageSearch,
     fetching: boolean;
     updating: boolean;
     jobUpdating: boolean;
     deleteActivity: boolean | null;
     installedGit: boolean;
     getTask: () => void;
+    imageSearchReset: () => void;
 }
 
 type Props = TaskPageComponentProps & RouteComponentProps<{ id: string }>;
@@ -54,8 +56,16 @@ class TaskPageComponent extends React.PureComponent<Props> {
         }
     }
 
+    public componentWillUnmount(): void {
+        const { imageSearchReset } = this.props;
+
+        imageSearchReset();
+    }
+
     public render(): JSX.Element {
-        const { task, updating, fetching } = this.props;
+        const {
+            task, updating, fetching, imageSearch,
+        } = this.props;
 
         if (task === null || (fetching && !updating)) {
             return <Spin size='large' className='cvat-spinner' />;
@@ -83,7 +93,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
                     <Col md={22} lg={18} xl={16} xxl={14}>
                         <TopBarComponent taskInstance={(task as Task).instance} />
                         <DetailsContainer task={task as Task} />
-                        <JobListContainer task={task as Task} />
+                        <JobListContainer task={task as Task} imageSearch={imageSearch} />
                     </Col>
                 </Row>
                 <ModelRunnerModal />
