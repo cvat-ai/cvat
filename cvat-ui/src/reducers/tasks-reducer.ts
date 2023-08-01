@@ -35,6 +35,10 @@ const defaultState: TasksState = {
         deletes: {},
         jobUpdates: {},
     },
+    imageSearch: {
+        query: null,
+        results: [],
+    },
 };
 
 export default (state: TasksState = defaultState, action: AnyAction): TasksState => {
@@ -221,6 +225,21 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     modalVisible: action.payload.visible,
                     taskId: action.payload.taskId,
                 },
+            };
+        }
+        case TasksActionTypes.SEARCH_IMAGE: {
+            return {
+                ...state,
+                imageSearch: {
+                    query: action.payload.query,
+                    results: action.payload.results,
+                },
+            };
+        }
+        case TasksActionTypes.IMAGE_SEARCH_RESET: {
+            return {
+                ...state,
+                imageSearch: { ...defaultState.imageSearch },
             };
         }
         case AnnotationActionTypes.CLOSE_JOB: {

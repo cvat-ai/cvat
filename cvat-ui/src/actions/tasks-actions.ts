@@ -6,7 +6,7 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import {
-    TasksQuery, CombinedState, Indexable, StorageLocation,
+    TasksQuery, CombinedState, Indexable, StorageLocation, ImageSearchResult,
 } from 'reducers';
 import { getCore, Storage } from 'cvat-core-wrapper';
 import { getInferenceStatusAsync } from './models-actions';
@@ -29,6 +29,8 @@ export enum TasksActionTypes {
     UPDATE_JOB_FAILED = 'UPDATE_JOB_FAILED',
     HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
+    SEARCH_IMAGE = 'SEARCH_IMAGE',
+    IMAGE_SEARCH_RESET = 'IMAGE_SEARCH_RESET',
 }
 
 function getTasks(query: TasksQuery, updateQuery: boolean): AnyAction {
@@ -375,5 +377,40 @@ export function moveTaskToProjectAsync(
         } catch (error) {
             dispatch(updateTaskFailed(error, taskInstance));
         }
+    };
+}
+
+export function searchImage(taskInstance: any, name: string): AnyAction {
+    const query = name.length > 0 ? name : null;
+    const results: ImageSearchResult[] = [];
+
+    if (query) {
+        let frame = 0;
+        for (const job of taskInstance.jobs) {
+            for (const filename of job.filenames) {
+                if (filename.includes(name)) {
+                    results.push({
+                        name: filename,
+                        jobId: job.id,
+                        frame,
+                    });
+                }
+                frame++;
+            }
+        }
+    }
+
+    return {
+        type: TasksActionTypes.SEARCH_IMAGE,
+        payload: {
+            query,
+            results,
+        },
+    };
+}
+
+export function imageSearchReset(): AnyAction {
+    return {
+        type: TasksActionTypes.IMAGE_SEARCH_RESET,
     };
 }

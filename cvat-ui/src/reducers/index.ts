@@ -86,6 +86,17 @@ export interface JobsState {
     previews: string[];
 }
 
+export interface ImageSearchResult {
+    name: string;
+    jobId: number;
+    frame: number;
+}
+
+export interface ImageSearch {
+    query: string | null;
+    results: ImageSearchResult[];
+}
+
 export interface TasksState {
     initialized: boolean;
     fetching: boolean;
@@ -106,6 +117,7 @@ export interface TasksState {
             [jid: number]: boolean,
         };
     };
+    imageSearch: ImageSearch;
 }
 
 export interface ExportState {
