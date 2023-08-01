@@ -34,7 +34,7 @@ The **Performance** dashboard has the following elements:
 
 | Element                                   | Description                                                                      |
 | ----------------------------------------- | -------------------------------------------------------------------------------- |
-| Analytics for                             | Object/ task/ job number.                                                        |
+| Analytics for                             | **Object**/ **Task**/ **Job** number.                                                        |
 | Created                                   | Time when the dashboard was updated last time.                                   |
 | Objects                                   | Graph, showing the number of annotated, updated, and deleted objects by day.     |
 | Annotation speed (objects per hour)       | Number of objects annotated per hour.                                            |
