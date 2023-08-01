@@ -20,6 +20,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
+from cvat.apps.engine.media_extractors import sort
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 
@@ -182,17 +183,28 @@ class JobCommitSerializer(serializers.ModelSerializer):
         fields = ('id', 'owner', 'data', 'timestamp', 'scope')
 
 
-class JobFilenamesMixin(serializers.Serializer):
+class _JobFilenamesMixin(serializers.Serializer):
     filenames = serializers.SerializerMethodField()
 
     def get_filenames(self, obj: models.Job) -> List[str]:
-        filenames = self.context.get('filenames', [])
+        task: models.Task = self.context.get('task')
+        if not task:
+            return []
+
+        data = task.data
+        if data is None or data.sorting_method == models.SortingMethod.RANDOM:
+            return []
+
+        files = data.s3_files.all()
+        filenames = [os.path.basename(file.file.name) for file in files]
+        filenames = sort(filenames, sorting_method=data.sorting_method)
+
         start_frame = obj.segment.start_frame
         stop_frame = obj.segment.stop_frame
         return filenames[start_frame:stop_frame + 1]
 
 
-class JobReadSerializer(JobFilenamesMixin, serializers.ModelSerializer):
+class JobReadSerializer(_JobFilenamesMixin, serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
@@ -262,7 +274,7 @@ class JobWriteSerializer(serializers.ModelSerializer):
         model = models.Job
         fields = ('assignee', 'stage', 'state')
 
-class SimpleJobSerializer(JobFilenamesMixin, serializers.ModelSerializer):
+class SimpleJobSerializer(_JobFilenamesMixin, serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True)
 
     class Meta:
@@ -492,20 +504,9 @@ class StorageSerializer(serializers.ModelSerializer):
         fields = ('id', 'location', 'cloud_storage_id')
 
 
-class S3FileSerializer(serializers.ModelSerializer):
-    file = serializers.SerializerMethodField()
-
-    def get_file(self, obj: models.S3File):
-        return os.path.basename(obj.file.name)
-
-    class Meta:
-        model = models.S3File
-        fields = ('file',)
-
-
 class TaskReadSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
-    segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
+    segments = serializers.SerializerMethodField()
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type', required=False)
     data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type', required=False)
@@ -539,6 +540,13 @@ class TaskReadSerializer(serializers.ModelSerializer):
         if instance.project_id:
             response["labels"] = LabelSerializer(many=True).to_representation(instance.project.label_set)
         return response
+
+    def get_segments(self, obj: models.Task) -> SegmentSerializer(many=True):
+        context = self.context
+        context['task'] = obj
+        segments = obj.segment_set.all()
+        return SegmentSerializer(segments, many=True, read_only=True, context=context).data
+
 
 class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)

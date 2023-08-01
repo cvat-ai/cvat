@@ -22,7 +22,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, Http404, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, Http404
 from django.utils import timezone
 
 from drf_spectacular.types import OpenApiTypes
@@ -51,7 +51,7 @@ from cvat.apps.engine.cloud_provider import (
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.media_extractors import ImageListReader, sort
+from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
@@ -762,17 +762,17 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
+            queryset = queryset.select_related(
+                'data'
+            ).prefetch_related(
+                'data__s3_files',
+                'segment_set',
+                'segment_set__job_set'
+            )
             perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
         return queryset
-
-    def retrieve(self, request, *args, **kwargs):
-        task = self.get_object()
-        context = self.get_serializer_context()
-        context['filenames'] = self._get_filenames(task)
-        serializer = self.get_serializer(task, context=context)
-        return Response(serializer.data)
 
     @extend_schema(summary='Method recreates a task from an attached task backup file',
         parameters=[
@@ -889,19 +889,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset, many=True,
             context={
                 "request": request,
-                "filenames": self._get_filenames(task),
+                "task": task,
             }
         )
 
         return Response(serializer.data)
-
-    def _get_filenames(self, task: Task):
-        data = task.data
-        if data is None or data.sorting_method == models.SortingMethod.RANDOM:
-            return []
-        queryset = data.s3_files.all()
-        filenames = [os.path.basename(file.file.name) for file in queryset]
-        return sort(filenames, sorting_method=data.sorting_method)
 
     # UploadMixin method
     def get_upload_dir(self):
