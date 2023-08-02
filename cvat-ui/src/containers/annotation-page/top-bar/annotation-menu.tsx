@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
-import { CombinedState, JobsQuery, JobsState, JobStage, TasksQuery, TasksState } from 'reducers';
+import { CombinedState, JobsQuery, JobStage } from 'reducers';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
 import { updateJobAsync } from 'actions/tasks-actions';
 import {
@@ -28,7 +28,6 @@ const core = getCore();
 interface StateToProps {
     jobInstance: any;
     stopFrame: number;
-    currentJobs: any[];
 }
 
 interface DispatchToProps {
@@ -38,7 +37,6 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
     updateJob(jobInstance: any): void;
-    getJobs: (query: JobsQuery) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -52,11 +50,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         }
     } = state;
 
-    console.log('Jobs prop:', jobs);
     return {
         jobInstance,
         stopFrame,
-        currentJobs: jobs.current
     };
 }
 
@@ -80,9 +76,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateJob(jobInstance: any): void {
             dispatch(updateJobAsync(jobInstance));
         },
-        getJobs(query: JobsQuery): void {
-            dispatch(getJobsAsync({ ...query}));
-        },
     };
 }
 
@@ -92,7 +85,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
         stopFrame,
-        currentJobs,
         history,
         showExportModal,
         showImportModal,
@@ -100,39 +92,38 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         setForceExitAnnotationFlag,
         saveAnnotations,
         updateJob,
-        getJobs,
     } = props;
 
-    console.log("New jobs: ", currentJobs)
-
-    const nextJobsQuery: JobsQuery = {
-        page: 1,
-        sort: null,
-        search: null,
-        filter: JSON.stringify({
-            "and": [
-                {
-                    "!": {
-                        "or": [
-                            { "==" : [{"var":"state"}, "completed"]},
-                            { "==" : [{"var": "stage"}, "acceptance"]},
-                            { "==" : [{"var": "id"}, "1"]}
-                        ]
-                    }
-                },
-                { "==": [{"var":"assignee"}, "skall"] }
-            ]
-        })
-    };
+    function nextJobsQuery(assignee: String, previousId: number): JobsQuery {
+        return {
+            page: 1,
+            sort: null,
+            search: null,
+            filter: JSON.stringify({
+                "and": [
+                    {
+                        "!": {
+                            "or": [
+                                { "==": [{ "var": "state" }, "completed"] },
+                                { "==": [{ "var": "stage" }, "acceptance"] },
+                                { "==": [{ "var": "id" }, previousId] }
+                            ]
+                        }
+                    },
+                    { "==": [{ "var": "assignee" }, assignee] }
+                ]
+            })
+        };
+    }
 
 
     const loadNextJob = async () => {
         try {
-            const jobs = await core.jobs.get(filterNull(nextJobsQuery));
-            console.log("Direct jobs: ", jobs)
-            if (jobs  && jobs.length > 0) {
-                const firstJob = jobs[0];
-                history.push(`/tasks/${firstJob.taskId}/jobs/${firstJob.id}`);
+            const query = nextJobsQuery(jobInstance.assignee.username, jobInstance.id)
+            const nextJobs = await core.jobs.get(filterNull(query));
+            if (nextJobs  && nextJobs.length > 0) {
+                const nextJob = nextJobs[0];
+                history.push(`/tasks/${nextJob.taskId}/jobs/${nextJob.id}`);
             } else {
                 console.log("No other jobs found, returning to main page")
                 history.push(`/jobs?page=1`);
