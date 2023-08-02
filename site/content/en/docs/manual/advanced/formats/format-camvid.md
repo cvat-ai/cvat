@@ -13,7 +13,7 @@ Downloaded file: a zip archive of the following structure:
 
 ```bash
 taskname.zip/
-├── labelmap.txt # optional, required for non-CamVid labels
+├── label_colors.txt # optional, required for non-CamVid labels
 ├── <any_subset_name>/
 |   ├── image1.png
 |   └── image2.png
@@ -22,8 +22,9 @@ taskname.zip/
 |   └── image2.png
 └── <any_subset_name>.txt
 
-# labelmap.txt
+# label_colors.txt
 # color (RGB) label
+# if you do not enter a color (RGB) value, it will be set automatically.
 0 0 0 Void
 64 128 64 Animal
 192 0 128 Archway
