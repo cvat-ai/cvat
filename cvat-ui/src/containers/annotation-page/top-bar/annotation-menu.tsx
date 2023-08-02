@@ -45,7 +45,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 instance: jobInstance,
                 instance: { stopFrame },
             },
-        }
+        },
     } = state;
 
     return {

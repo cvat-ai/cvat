@@ -230,7 +230,7 @@ services:
   cvat_ui:
     container_name: cvat_ui
     # image: cvat/ui:${CVAT_VERSION:-dev}
-    image:  cvat_ui_noah
+    image: cvat_ui_noah
     restart: always
     depends_on:
       - cvat_server
@@ -380,19 +380,19 @@ services:
 volumes:
   cvat_db:
   cvat_data:
-      external:
-          name: cvat_cvat_data
+    external:
+      name: cvat_cvat_data
   cvat_keys:
-      external:
-          name: cvat_cvat_keys
+    external:
+      name: cvat_cvat_keys
   cvat_logs:
-      external:
-          name: cvat_cvat_logs
+    external:
+      name: cvat_cvat_logs
   cvat_share:
-      driver_opts:
-          type: none
-          device: /home/ubuntu/new_cvat/sewerai_prod
-          o: bind
+    driver_opts:
+      type: none
+      device: /home/ubuntu/new_cvat/sewerai_prod
+      o: bind
   cvat_events_db:
 
 networks:
