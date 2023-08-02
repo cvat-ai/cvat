@@ -3,14 +3,15 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React, { useEffect } from 'react';
 import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
-import { CombinedState, JobStage, TasksQuery, TasksState } from 'reducers';
+import { CombinedState, JobsQuery, JobsState, JobStage, TasksQuery, TasksState } from 'reducers';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
-import { getTasksAsync, updateJobAsync } from 'actions/tasks-actions';
+import { updateJobAsync } from 'actions/tasks-actions';
 import {
     saveAnnotationsAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
@@ -19,14 +20,15 @@ import {
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { getCore } from 'cvat-core-wrapper';
-import { useEffect } from 'react';
+import { getJobsAsync } from 'actions/jobs-actions';
+import { updateHistoryFromQuery } from '../../../components/resource-sorting-filtering';
 
 const core = getCore();
 
 interface StateToProps {
     jobInstance: any;
     stopFrame: number;
-    tasks: TasksState;
+    jobs: JobsState;
 }
 
 interface DispatchToProps {
@@ -36,18 +38,24 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
     updateJob(jobInstance: any): void;
-    getTasks: (query: TasksQuery) => void;
+    getJobs(query: JobsQuery): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        annotation: { job: { instance: jobInstance, instance: { stopFrame } } },
+        annotation: {
+            job: {
+                instance: jobInstance,
+                instance: { stopFrame },
+            },
+        },
+        jobs: jobs
     } = state;
 
     return {
         jobInstance,
         stopFrame,
-        tasks: state.tasks,
+        jobs
     };
 }
 
@@ -71,8 +79,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateJob(jobInstance: any): void {
             dispatch(updateJobAsync(jobInstance));
         },
-        getTasks: (query: TasksQuery): void => {
-            dispatch(getTasksAsync(query));
+        getJobs(query: JobsQuery): void {
+            dispatch(getJobsAsync({ ...query}));
         },
     };
 }
@@ -83,7 +91,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
         stopFrame,
-        tasks,
+        jobs,
         history,
         showExportModal,
         showImportModal,
@@ -91,34 +99,48 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         setForceExitAnnotationFlag,
         saveAnnotations,
         updateJob,
-        getTasks,
+        getJobs,
     } = props;
 
-    const nextTasksQuery: TasksQuery = {
-        id: null,
-        projectId: null,
+    const nextJobsQuery: JobsQuery = {
         page: 1,
         sort: null,
         search: null,
-        filter: "{\n" +
-            "  \"and\": [\n" +
-            "    { \"==\": [{ \"var\": \"assignee\" }, \"skall\" ] },\n" +
-            "    { \"!\": { \"in\": [{ \"var\": \"status\" }, [\"completed\"]] } }\n" +
-            "  ]\n" +
-            "}"
+        filter: JSON.stringify({
+            "and": [
+                {
+                    "!": {
+                        "or": [
+                            { "==" : [{"var":"state"}, "completed"]},
+                            { "==" : [{"var": "stage"}, "acceptance"]},
+                            { "==" : [{"var": "id"}, "1"]}
+                        ]
+                    }
+                },
+                { "==": [{"var":"assignee"}, "skall"] }
+            ]
+        })
     };
 
     const gotoNextJob = async () => {
         try {
-            await getTasks(nextTasksQuery);
-            console.log("Tasks actual:", tasks);
-            if (tasks && tasks.current && tasks.current.length > 0) {
-                const firstTask = tasks.current[0];
-                console.log('Extracted Task:', firstTask);
-                history.push(`/tasks/${firstTask.id}/jobs/${firstTask.id}`);
+            console.log("Query: ", nextJobsQuery)
+            history.replace({
+                search: updateHistoryFromQuery(nextJobsQuery),
+            });
+            await getJobs({...nextJobsQuery});
+            console.log("Jobs actual:", jobs);
+            if (jobs && jobs.current && jobs.current.length > 0) {
+                const firstJob = jobs.current[0];
+                console.log('Extracted Job:', firstJob);
+                console.log("Jobs now: ", jobs)
+                history.push(`/tasks/${firstJob.taskId}/jobs/${firstJob.id}`);
+            } else {
+                console.log("No other jobs found, returning to main page")
+                history.push(`/jobs?page=1`);
             }
         } catch (error) {
-            console.error('Error when fetching tasks:', error);
+            console.error('Error when fetching next job:', error);
         }
     };
 
@@ -159,7 +181,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             stopFrame={stopFrame}
         />
     );
-
 }
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AnnotationMenuContainer));

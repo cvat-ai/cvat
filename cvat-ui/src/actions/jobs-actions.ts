@@ -66,6 +66,7 @@ export const getJobsAsync = (query: JobsQuery): ThunkAction => async (dispatch) 
 
         dispatch(jobsActions.getJobs(filteredQuery as JobsQuery));
         const jobs = await cvat.jobs.get(filteredQuery);
+        console.log("Jobs found in async: ", jobs)
         dispatch(jobsActions.getJobsSuccess(jobs));
     } catch (error) {
         dispatch(jobsActions.getJobsFailed(error));
