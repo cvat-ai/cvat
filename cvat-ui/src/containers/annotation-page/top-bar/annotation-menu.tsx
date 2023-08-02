@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -21,14 +21,14 @@ import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { getCore } from 'cvat-core-wrapper';
 import { getJobsAsync } from 'actions/jobs-actions';
-import { updateHistoryFromQuery } from '../../../components/resource-sorting-filtering';
+import { filterNull } from '../../../utils/filter-null';
 
 const core = getCore();
 
 interface StateToProps {
     jobInstance: any;
     stopFrame: number;
-    jobs: JobsState;
+    currentJobs: any[];
 }
 
 interface DispatchToProps {
@@ -38,24 +38,25 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
     updateJob(jobInstance: any): void;
-    getJobs(query: JobsQuery): void;
+    getJobs: (query: JobsQuery) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
+        jobs: jobs,
         annotation: {
             job: {
                 instance: jobInstance,
                 instance: { stopFrame },
             },
-        },
-        jobs: jobs
+        }
     } = state;
 
+    console.log('Jobs prop:', jobs);
     return {
         jobInstance,
         stopFrame,
-        jobs
+        currentJobs: jobs.current
     };
 }
 
@@ -91,7 +92,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
         stopFrame,
-        jobs,
+        currentJobs,
         history,
         showExportModal,
         showImportModal,
@@ -101,6 +102,8 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         updateJob,
         getJobs,
     } = props;
+
+    console.log("New jobs: ", currentJobs)
 
     const nextJobsQuery: JobsQuery = {
         page: 1,
@@ -122,18 +125,13 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         })
     };
 
-    const gotoNextJob = async () => {
+
+    const loadNextJob = async () => {
         try {
-            console.log("Query: ", nextJobsQuery)
-            history.replace({
-                search: updateHistoryFromQuery(nextJobsQuery),
-            });
-            await getJobs({...nextJobsQuery});
-            console.log("Jobs actual:", jobs);
-            if (jobs && jobs.current && jobs.current.length > 0) {
-                const firstJob = jobs.current[0];
-                console.log('Extracted Job:', firstJob);
-                console.log("Jobs now: ", jobs)
+            const jobs = await core.jobs.get(filterNull(nextJobsQuery));
+            console.log("Direct jobs: ", jobs)
+            if (jobs  && jobs.length > 0) {
+                const firstJob = jobs[0];
                 history.push(`/tasks/${firstJob.taskId}/jobs/${firstJob.id}`);
             } else {
                 console.log("No other jobs found, returning to main page")
@@ -144,8 +142,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         }
     };
 
-
-    const onClickMenu = (params: MenuInfo): void => {
+    const onClickMenu = async (params: MenuInfo) => {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_JOB_DATASET) {
             showExportModal(jobInstance);
@@ -158,7 +155,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             jobInstance.stage = JobStage.ACCEPTANCE;
             jobInstance.state = core.enums.JobState.COMPLETED;
             updateJob(jobInstance);
-            gotoNextJob();
+            await loadNextJob();
         } else if (action === Actions.OPEN_TASK) {
             history.push(`/tasks/${jobInstance.taskId}`);
         } else if (action.startsWith('state:')) {
