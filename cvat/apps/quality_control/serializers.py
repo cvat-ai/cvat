@@ -4,6 +4,8 @@
 
 import textwrap
 
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.utils import set_override as set_drf_override
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -44,8 +46,14 @@ class QualityReportSummarySerializer(serializers.Serializer):
     gt_count = serializers.IntegerField(source="annotations.gt_count")
 
 
+class QualityReportTargetSerializer(serializers.ChoiceField):
+    # Make a separate class in API schema, otherwise it gets merged with AnalyticsTarget enum
+    def __init__(self, **kwargs):
+        super().__init__(choices=models.QualityReportTarget.choices(), **kwargs)
+
+
 class QualityReportSerializer(serializers.ModelSerializer):
-    target = serializers.ChoiceField(models.QualityReportTarget.choices())
+    target = QualityReportTargetSerializer()
     summary = QualityReportSummarySerializer()
     parent_id = serializers.IntegerField(
         source="parent.id", default=None, allow_null=True, read_only=True
