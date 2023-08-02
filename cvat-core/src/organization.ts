@@ -11,7 +11,7 @@ import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import User from './user';
 
-interface RawOrganizationData {
+interface SerialzedOrganization {
     id?: number,
     slug?: string,
     name?: string,
@@ -49,8 +49,8 @@ export default class Organization {
     public name: string;
     public description: string;
 
-    constructor(initialData: RawOrganizationData) {
-        const data: RawOrganizationData = {
+    constructor(initialData: SerialzedOrganization) {
+        const data: SerialzedOrganization = {
             id: undefined,
             slug: undefined,
             name: undefined,

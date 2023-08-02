@@ -129,6 +129,7 @@ export function implementJob(Job) {
             isPlaying,
             step,
             this.dimension,
+            (chunkNumber, quality) => this.frames.chunk(chunkNumber, quality),
         );
         return frameData;
     };
@@ -176,6 +177,11 @@ export function implementJob(Job) {
 
     Job.prototype.frames.contextImage.implementation = async function (frameId) {
         const result = await getContextImage(this.id, frameId);
+        return result;
+    };
+
+    Job.prototype.frames.chunk.implementation = async function (chunkNumber, quality) {
+        const result = await serverProxy.frames.getData(this.id, chunkNumber, quality);
         return result;
     };
 
@@ -654,6 +660,14 @@ export function implementTask(Task) {
         }
 
         return null;
+    };
+
+    Task.prototype.frames.contextImage.implementation = async function () {
+        throw new Error('Not implemented');
+    };
+
+    Task.prototype.frames.chunk.implementation = async function () {
+        throw new Error('Not implemented');
     };
 
     // TODO: Check filter for annotations

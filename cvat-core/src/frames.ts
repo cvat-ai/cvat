@@ -25,6 +25,7 @@ const frameDataCache: Record<string, {
     decodedBlocksCacheSize: number;
     activeChunkRequest: null;
     nextChunkRequest: null;
+    getChunk: (chunkNumber: number, quality: 'original' | 'compressed') => Promise<ArrayBuffer>;
 }> = {};
 
 export class FramesMetaData {
@@ -227,8 +228,7 @@ FrameData.prototype.data.implementation = async function (onServerRequest) {
         const makeActiveRequest = () => {
             const taskDataCache = frameDataCache[this.jid];
             const activeChunk = taskDataCache.activeChunkRequest;
-            activeChunk.request = serverProxy.frames
-                .getData(this.jid, activeChunk.chunkNumber)
+            activeChunk.request = taskDataCache.getChunk(activeChunk.chunkNumber, 'compressed')
                 .then((chunk) => {
                     frameDataCache[this.jid].activeChunkRequest.completed = true;
                     if (!taskDataCache.nextChunkRequest) {
@@ -707,6 +707,7 @@ export async function getFrame(
     isPlaying: boolean,
     step: number,
     dimension: DimensionType,
+    getChunk: (chunkNumber: number, quality: 'original' | 'compressed') => Promise<ArrayBuffer>,
 ) {
     if (!(jobID in frameDataCache)) {
         const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO : cvatData.BlockType.ARCHIVE;
@@ -744,6 +745,7 @@ export async function getFrame(
             decodedBlocksCacheSize,
             activeChunkRequest: null,
             nextChunkRequest: null,
+            getChunk,
         };
 
         const frameMeta = getFrameMeta(jobID, frame);
