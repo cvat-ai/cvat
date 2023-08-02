@@ -3,15 +3,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
 import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
-import { CombinedState, JobStage } from 'reducers';
+import { CombinedState, JobStage, TasksQuery, TasksState } from 'reducers';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
-import { updateJobAsync } from 'actions/tasks-actions';
+import { getTasksAsync, updateJobAsync } from 'actions/tasks-actions';
 import {
     saveAnnotationsAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
@@ -20,12 +19,14 @@ import {
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { getCore } from 'cvat-core-wrapper';
+import { useEffect } from 'react';
 
 const core = getCore();
 
 interface StateToProps {
     jobInstance: any;
     stopFrame: number;
+    tasks: TasksState;
 }
 
 interface DispatchToProps {
@@ -35,21 +36,18 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
     updateJob(jobInstance: any): void;
+    getTasks: (query: TasksQuery) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        annotation: {
-            job: {
-                instance: jobInstance,
-                instance: { stopFrame },
-            },
-        },
+        annotation: { job: { instance: jobInstance, instance: { stopFrame } } },
     } = state;
 
     return {
         jobInstance,
         stopFrame,
+        tasks: state.tasks,
     };
 }
 
@@ -73,6 +71,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateJob(jobInstance: any): void {
             dispatch(updateJobAsync(jobInstance));
         },
+        getTasks: (query: TasksQuery): void => {
+            dispatch(getTasksAsync(query));
+        },
     };
 }
 
@@ -82,6 +83,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
         stopFrame,
+        tasks,
         history,
         showExportModal,
         showImportModal,
@@ -89,7 +91,37 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         setForceExitAnnotationFlag,
         saveAnnotations,
         updateJob,
+        getTasks,
     } = props;
+
+    const nextTasksQuery: TasksQuery = {
+        id: null,
+        projectId: null,
+        page: 1,
+        sort: null,
+        search: null,
+        filter: "{\n" +
+            "  \"and\": [\n" +
+            "    { \"==\": [{ \"var\": \"assignee\" }, \"skall\" ] },\n" +
+            "    { \"!\": { \"in\": [{ \"var\": \"status\" }, [\"completed\"]] } }\n" +
+            "  ]\n" +
+            "}"
+    };
+
+    const gotoNextJob = async () => {
+        try {
+            await getTasks(nextTasksQuery);
+            console.log("Tasks actual:", tasks);
+            if (tasks && tasks.current && tasks.current.length > 0) {
+                const firstTask = tasks.current[0];
+                console.log('Extracted Task:', firstTask);
+                history.push(`/tasks/${firstTask.id}/jobs/${firstTask.id}`);
+            }
+        } catch (error) {
+            console.error('Error when fetching tasks:', error);
+        }
+    };
+
 
     const onClickMenu = (params: MenuInfo): void => {
         const [action] = params.keyPath;
@@ -104,7 +136,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             jobInstance.stage = JobStage.ACCEPTANCE;
             jobInstance.state = core.enums.JobState.COMPLETED;
             updateJob(jobInstance);
-            history.push(`/tasks/${jobInstance.taskId}`);
+            gotoNextJob();
         } else if (action === Actions.OPEN_TASK) {
             history.push(`/tasks/${jobInstance.taskId}`);
         } else if (action.startsWith('state:')) {
@@ -127,6 +159,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             stopFrame={stopFrame}
         />
     );
+
 }
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AnnotationMenuContainer));
