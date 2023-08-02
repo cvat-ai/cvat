@@ -20,8 +20,7 @@ import {
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { getCore } from 'cvat-core-wrapper';
-import { getJobsAsync } from 'actions/jobs-actions';
-import { filterNull } from '../../../utils/filter-null';
+import { filterNull } from 'utils/filter-null';
 
 const core = getCore();
 
@@ -41,7 +40,6 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        jobs: jobs,
         annotation: {
             job: {
                 instance: jobInstance,
