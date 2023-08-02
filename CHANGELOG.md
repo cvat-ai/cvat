@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[SDK\] A `DeferredTqdmProgressReporter` class, which doesn't have glitchy output
   like `TqdmProgressReporter` in certain circumstances
   (<https://github.com/opencv/cvat/pull/6556>)
+- \[SDK, CLI\] A `cvat_sdk.auto_annotation` module that provides
+  functionality for automatically annotating a task by running a
+  user-provided function on the local machine, and a corresponding CLI command
+  (`auto-annotate`)
+  (<https://github.com/opencv/cvat/pull/6483>)
 
 ### Changed
 

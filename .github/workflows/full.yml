@@ -152,16 +152,19 @@ jobs:
           name: expected_schema
           path: cvat/schema-expected.yml
 
-      - name: Running REST API and SDK tests
-        id: run_tests
+      - name: Generate SDK
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
-          pip3 install -r ./tests/python/requirements.txt
-          pip3 install -e ./cvat-sdk
-          pip3 install -e ./cvat-cli
+      - name: Install SDK
+        run: |
+          pip3 install -r ./tests/python/requirements.txt \
+            -e './cvat-sdk[pytorch,ultralytics]' -e ./cvat-cli
 
+      - name: Running REST API and SDK tests
+        id: run_tests
+        run: |
           pytest tests/python/
 
       - name: Creating a log file from cvat containers
