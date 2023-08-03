@@ -278,6 +278,12 @@ class ComparisonReportAnnotationsSummary(_Serializable):
         ]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
+        self.reset_cached_fields()
+
+    def reset_cached_fields(self):
+        for field in self._CACHED_FIELDS:
+            del self.__dict__[field]
+
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or self._CACHED_FIELDS)
 
@@ -336,6 +342,12 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
         ]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
+        self.reset_cached_fields()
+
+    def reset_cached_fields(self):
+        for field in self._CACHED_FIELDS:
+            del self.__dict__[field]
+
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or self._CACHED_FIELDS)
 
@@ -377,6 +389,12 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
         for field in ["valid_count", "total_count", "invalid_count"]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
+        self.reset_cached_fields()
+
+    def reset_cached_fields(self):
+        for field in self._CACHED_FIELDS:
+            del self.__dict__[field]
+
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
         return super()._fields_dict(include_properties=include_properties or ["accuracy"])
 
@@ -408,6 +426,12 @@ class ComparisonReportAnnotationComponentsSummary(_Serializable):
     def accumulate(self, other: ComparisonReportAnnotationComponentsSummary):
         self.shape.accumulate(other.shape)
         self.label.accumulate(other.label)
+
+        self.reset_cached_fields()
+
+    def reset_cached_fields(self):
+        for field in self._CACHED_FIELDS:
+            del self.__dict__[field]
 
     @classmethod
     def from_dict(cls, d: dict):
