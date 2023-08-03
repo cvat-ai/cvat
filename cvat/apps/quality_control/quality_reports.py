@@ -81,8 +81,72 @@ class _Serializable:
         raise NotImplementedError("Must be implemented in the subclass")
 
 
-@define(kw_only=True)
-class AnnotationId(_Serializable):
+class _ReportNode(_Serializable):
+    _CHECK_SETATTR_FIELD_NAME = "_check_setattr"
+
+    _CACHED_FIELDS: Optional[List[str]] = None
+    """
+    Fields that can be set externally or be computed on access
+    """
+
+    @classmethod
+    def _find_cached_fields(cls) -> List[str]:
+        return [
+            member.attrname
+            for _, member in cls.__dict__.items()
+            if isinstance(member, cached_property)
+        ]
+
+    @classmethod
+    def _get_cached_fields(cls, recursive: bool = True) -> List[str]:
+        if "_CACHED_FIELDS" not in cls.__dict__:
+            fields = cls._find_cached_fields() or []
+        else:
+            fields = list(cls.__dict__["_CACHED_FIELDS"])
+
+        if recursive:
+            for base_class in cls.__bases__:
+                if issubclass(base_class, _ReportNode) and base_class != _ReportNode:
+                    fields += base_class._get_cached_fields(recursive=False)
+
+        return fields
+
+    def __init__(self, *args, **kwargs):
+        for field_name in self._get_cached_fields():
+            if field_name in kwargs:
+                setattr(self, field_name, kwargs.pop(field_name))
+
+        if attrs_init := getattr(self, "__attrs_init__"):
+            attrs_init(*args, **kwargs)
+
+        self._enable_setattr_checks(True)
+
+    def _enable_setattr_checks(self, value: bool):
+        setattr(self, self._CHECK_SETATTR_FIELD_NAME, value)
+
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        if (
+            __name != self._CHECK_SETATTR_FIELD_NAME
+            and getattr(self, self._CHECK_SETATTR_FIELD_NAME, False) is True
+            and __name not in self._get_cached_fields()
+        ):
+            self.reset_cached_fields()
+
+        return super().__setattr__(__name, __value)
+
+    def reset_cached_fields(self):
+        for field in self._get_cached_fields():
+            if hasattr(self, field):
+                delattr(self, field)
+
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        return super()._fields_dict(
+            include_properties=include_properties or self._get_cached_fields()
+        )
+
+
+@define(kw_only=True, init=False)
+class AnnotationId(_ReportNode):
     obj_id: int
     job_id: int
     type: AnnotationType
@@ -104,8 +168,8 @@ class AnnotationId(_Serializable):
         )
 
 
-@define(kw_only=True)
-class AnnotationConflict(_Serializable):
+@define(kw_only=True, init=False)
+class AnnotationConflict(_ReportNode):
     frame_id: int
     type: AnnotationConflictType
     annotation_ids: List[AnnotationId]
@@ -149,8 +213,8 @@ class AnnotationConflict(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonParameters(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonParameters(_ReportNode):
     included_annotation_types: List[dm.AnnotationType] = [
         dm.AnnotationType.bbox,
         dm.AnnotationType.points,
@@ -213,8 +277,8 @@ class ComparisonParameters(_Serializable):
         return cls(**{field_name: d[field_name] for field_name in fields if field_name in d})
 
 
-@define(kw_only=True)
-class ConfusionMatrix(_Serializable):
+@define(kw_only=True, init=False)
+class ConfusionMatrix(_ReportNode):
     labels: List[str]
     rows: np.array
     precision: np.array
@@ -245,8 +309,8 @@ class ConfusionMatrix(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonReportAnnotationsSummary(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReportAnnotationsSummary(_ReportNode):
     valid_count: int
     missing_count: int
     extra_count: int
@@ -278,25 +342,6 @@ class ComparisonReportAnnotationsSummary(_Serializable):
         ]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-        self.reset_cached_fields()
-
-    def reset_cached_fields(self):
-        for field in self._CACHED_FIELDS:
-            del self.__dict__[field]
-
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or self._CACHED_FIELDS)
-
-    _CACHED_FIELDS = ["accuracy", "precision", "recall"]
-
-    def __init__(self, *args, **kwargs):
-        # these fields are optional, but can be computed on access
-        for field_name in self._CACHED_FIELDS:
-            if field_name in kwargs:
-                setattr(self, field_name, kwargs.pop(field_name))
-
-        self.__attrs_init__(*args, **kwargs)
-
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
@@ -317,8 +362,8 @@ class ComparisonReportAnnotationsSummary(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonReportAnnotationShapeSummary(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReportAnnotationShapeSummary(_ReportNode):
     valid_count: int
     missing_count: int
     extra_count: int
@@ -342,25 +387,6 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
         ]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-        self.reset_cached_fields()
-
-    def reset_cached_fields(self):
-        for field in self._CACHED_FIELDS:
-            del self.__dict__[field]
-
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or self._CACHED_FIELDS)
-
-    _CACHED_FIELDS = ["accuracy"]
-
-    def __init__(self, *args, **kwargs):
-        # these fields are optional, but can be computed on access
-        for field_name in self._CACHED_FIELDS:
-            if field_name in kwargs:
-                setattr(self, field_name, kwargs.pop(field_name))
-
-        self.__attrs_init__(*args, **kwargs)
-
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
@@ -375,8 +401,8 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonReportAnnotationLabelSummary(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReportAnnotationLabelSummary(_ReportNode):
     valid_count: int
     invalid_count: int
     total_count: int
@@ -389,25 +415,6 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
         for field in ["valid_count", "total_count", "invalid_count"]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-        self.reset_cached_fields()
-
-    def reset_cached_fields(self):
-        for field in self._CACHED_FIELDS:
-            del self.__dict__[field]
-
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or ["accuracy"])
-
-    _CACHED_FIELDS = ["accuracy", "precision", "recall"]
-
-    def __init__(self, *args, **kwargs):
-        # these fields are optional, but can be computed on access
-        for field_name in self._CACHED_FIELDS:
-            if field_name in kwargs:
-                setattr(self, field_name, kwargs.pop(field_name))
-
-        self.__attrs_init__(*args, **kwargs)
-
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
@@ -418,20 +425,14 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonReportAnnotationComponentsSummary(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReportAnnotationComponentsSummary(_ReportNode):
     shape: ComparisonReportAnnotationShapeSummary
     label: ComparisonReportAnnotationLabelSummary
 
     def accumulate(self, other: ComparisonReportAnnotationComponentsSummary):
         self.shape.accumulate(other.shape)
         self.label.accumulate(other.label)
-
-        self.reset_cached_fields()
-
-    def reset_cached_fields(self):
-        for field in self._CACHED_FIELDS:
-            del self.__dict__[field]
 
     @classmethod
     def from_dict(cls, d: dict):
@@ -441,8 +442,8 @@ class ComparisonReportAnnotationComponentsSummary(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonReportComparisonSummary(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReportComparisonSummary(_ReportNode):
     frames: List[str]
 
     @cached_property
@@ -473,29 +474,6 @@ class ComparisonReportComparisonSummary(_Serializable):
         else:
             return super()._value_serializer(v)
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(
-            include_properties=include_properties
-            or [
-                "frame_share",
-                "frame_count",
-                "mean_conflict_count",
-                "warning_count",
-                "error_count",
-                "conflicts_by_type",
-            ]
-        )
-
-    _CACHED_FIELDS = ["frame_count", "mean_conflict_count", "frame_share"]
-
-    def __init__(self, *args, **kwargs):
-        # these fields are optional, but can be computed on access
-        for field_name in self._CACHED_FIELDS:
-            if field_name in kwargs:
-                setattr(self, field_name, kwargs.pop(field_name))
-
-        self.__attrs_init__(*args, **kwargs)
-
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
@@ -525,7 +503,7 @@ class ComparisonReportComparisonSummary(_Serializable):
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportFrameSummary(_Serializable):
+class ComparisonReportFrameSummary(_ReportNode):
     conflicts: List[AnnotationConflict]
 
     @cached_property
@@ -547,28 +525,15 @@ class ComparisonReportFrameSummary(_Serializable):
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: ComparisonReportAnnotationComponentsSummary
 
-    _CACHED_FIELDS = ["conflict_count", "warning_count", "error_count", "conflicts_by_type"]
-
     def _value_serializer(self, v):
         if isinstance(v, AnnotationConflictType):
             return str(v)
         else:
             return super()._value_serializer(v)
 
-    def __init__(self, *args, **kwargs):
-        # these fields are optional, but can be computed on access
-        for field_name in self._CACHED_FIELDS:
-            if field_name in kwargs:
-                setattr(self, field_name, kwargs.pop(field_name))
-
-        self.__attrs_init__(*args, **kwargs)
-
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or self._CACHED_FIELDS)
-
     @classmethod
     def from_dict(cls, d: dict):
-        optional_fields = set(cls._CACHED_FIELDS) - {
+        optional_fields = set(cls._get_cached_fields()) - {
             "conflicts_by_type"  # requires extra conversion
         }
         return cls(
@@ -588,8 +553,8 @@ class ComparisonReportFrameSummary(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonReport(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReport(_ReportNode):
     parameters: ComparisonParameters
     comparison_summary: ComparisonReportComparisonSummary
     frame_results: Dict[int, ComparisonReportFrameSummary]
