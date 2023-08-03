@@ -312,6 +312,9 @@ export interface PluginsState {
                 player: PluginComponent[];
             };
         };
+        settings: {
+            player: PluginComponent[],
+        }
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
     }
