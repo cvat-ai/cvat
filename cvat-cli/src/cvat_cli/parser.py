@@ -10,6 +10,7 @@ import logging
 import os
 import textwrap
 from distutils.util import strtobool
+from pathlib import Path
 
 from cvat_sdk.core.proxies.tasks import ResourceType
 
@@ -367,6 +368,40 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         default=2,
         type=float,
         help="time interval between checks if archive processing was finished, in seconds",
+    )
+
+    #######################################################################
+    # Auto-annotate
+    #######################################################################
+    auto_annotate_task_parser = task_subparser.add_parser(
+        "auto-annotate",
+        description="Automatically annotate a CVAT task by running a function on the local machine.",
+    )
+    auto_annotate_task_parser.add_argument("task_id", type=int, help="task ID")
+
+    function_group = auto_annotate_task_parser.add_mutually_exclusive_group(required=True)
+
+    function_group.add_argument(
+        "--function-module",
+        metavar="MODULE",
+        help="qualified name of a module to use as the function",
+    )
+
+    function_group.add_argument(
+        "--function-file",
+        metavar="PATH",
+        type=Path,
+        help="path to a Python source file to use as the function",
+    )
+
+    auto_annotate_task_parser.add_argument(
+        "--clear-existing", action="store_true", help="Remove existing annotations from the task"
+    )
+
+    auto_annotate_task_parser.add_argument(
+        "--allow-unmatched-labels",
+        action="store_true",
+        help="Allow the function to declare labels not configured in the task",
     )
 
     return parser

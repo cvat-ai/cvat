@@ -101,6 +101,7 @@ class TestTaskDataset:
 
         for index, sample in enumerate(dataset.samples):
             assert sample.frame_index == index
+            assert sample.frame_name == self.images[index].name
 
             actual_image = sample.media.load_image()
             expected_image = PIL.Image.open(self.images[index])
