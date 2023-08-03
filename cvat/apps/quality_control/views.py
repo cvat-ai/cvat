@@ -380,7 +380,7 @@ class QualityReportViewSet(
             if (
                 not rq_job
                 or not QualityReportPermission.create_scope_check_status(
-                    request, job_owner_id=rq_job.meta["user_id"]
+                    request, rq_job_owner_id=rq_job.meta["user_id"]
                 )
                 .check_access()
                 .allow

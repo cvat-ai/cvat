@@ -89,11 +89,8 @@ def _on_update_project_quality_metrics_on_task_move_from_project(instance, **kwa
 def _on_task_report_save__update_project_quality_metrics(instance, created, **kwargs):
     project = None
 
-    if isinstance(instance, QualityReport):
-        if created and instance.target == QualityReportTarget.TASK and instance.task.project:
-            project = instance.task.project
-    else:
-        assert False
+    if created and instance.target == QualityReportTarget.TASK and instance.task.project:
+        project = instance.task.project
 
     if project:
         qc.ProjectQualityReportUpdateManager().schedule_quality_autoupdate_job(project)

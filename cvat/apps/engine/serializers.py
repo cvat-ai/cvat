@@ -630,7 +630,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 frame_count = validated_data.pop("frame_count")
                 if size < frame_count:
                     raise serializers.ValidationError(
-                        f"The number of frames requested ({frame_count}) must be lesser than or "
+                        f"The number of frames requested ({frame_count}) must be less than or "
                         f"equal to the number of the task frames ({size})"
                     )
 

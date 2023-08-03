@@ -337,9 +337,9 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
     def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or ["accuracy"])
+        return super()._fields_dict(include_properties=include_properties or self._CACHED_FIELDS)
 
-    _CACHED_FIELDS = ["accuracy", "precision", "recall"]
+    _CACHED_FIELDS = ["accuracy"]
 
     def __init__(self, *args, **kwargs):
         # these fields are optional, but can be computed on access

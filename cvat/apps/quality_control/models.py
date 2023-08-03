@@ -130,7 +130,7 @@ class QualityReport(models.Model):
         else:
             return None
 
-    def get_project(self) -> Optional[Task]:
+    def get_project(self) -> Optional[Project]:
         if self.project:
             return self.project
         elif task := self.get_task():

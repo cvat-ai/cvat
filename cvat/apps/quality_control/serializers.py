@@ -4,8 +4,6 @@
 
 import textwrap
 
-from drf_spectacular.utils import extend_schema_field
-from drf_spectacular.utils import set_override as set_drf_override
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -166,9 +164,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             )
 
     def get_extra_kwargs(self):
-        from .models import QualitySettings
-
-        defaults = QualitySettings.get_defaults()
+        defaults = models.QualitySettings.get_defaults()
 
         extra_kwargs = super().get_extra_kwargs()
 

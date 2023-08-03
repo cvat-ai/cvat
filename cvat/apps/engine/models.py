@@ -632,7 +632,7 @@ class Segment(models.Model):
             )
 
         if self.stop_frame < self.start_frame:
-            raise ValidationError("stop_frame cannot be lesser than start_frame")
+            raise ValidationError("stop_frame cannot be less than start_frame")
 
         return super().clean()
 
