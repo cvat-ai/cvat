@@ -103,6 +103,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
                         '!': {
                             or: [
                                 { '==': [{ var: 'state' }, 'completed'] },
+                                { '==': [{ var: 'state' }, 'rejected'] },
                                 { '==': [{ var: 'stage' }, 'acceptance'] },
                                 { '==': [{ var: 'id' }, previousId] },
                             ],
@@ -114,16 +115,21 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         };
     }
 
+    function makeUserFilter(assignee: string): string {
+        return JSON.stringify({ and: [{ '==': [{ var: 'assignee' }, assignee] }] });
+    }
+
     const loadNextJob = async (): Promise<void> => {
         try {
-            const query = nextJobsQuery(jobInstance.assignee.username, jobInstance.id);
+            const assignee = jobInstance.assignee.username;
+            const query = nextJobsQuery(assignee, jobInstance.id);
             const nextJobs = await core.jobs.get(filterNull(query));
             if (nextJobs && nextJobs.length > 0) {
                 const nextJob = nextJobs[0];
                 history.push(`/tasks/${nextJob.taskId}/jobs/${nextJob.id}`);
             } else {
-                console.log('No other jobs found, returning to main page');
-                history.push('/jobs?page=1');
+                const userFilter = makeUserFilter(assignee);
+                history.push(`/jobs?filter=${userFilter}`);
             }
         } catch (error) {
             console.error('Error when fetching next job:', error);
@@ -149,7 +155,11 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         } else if (action.startsWith('state:')) {
             [, jobInstance.state] = action.split(':');
             updateJob(jobInstance);
-            window.location.reload();
+            if (['rejected', 'completed'].includes(jobInstance.state)) {
+                await loadNextJob();
+            } else {
+                window.location.reload();
+            }
         } else if (action === Actions.LOAD_JOB_ANNO) {
             showImportModal(jobInstance);
         }
