@@ -108,6 +108,7 @@ services:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
+      - cvat_share:/home/django/share:ro
     networks:
       - cvat
 
@@ -155,6 +156,7 @@ services:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
+      - cvat_share:/home/django/share:ro
     networks:
       - cvat
 
