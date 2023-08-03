@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
-import { CombinedState, JobStage } from 'reducers';
+import { CombinedState, JobsQuery, JobStage } from 'reducers';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
 import { updateJobAsync } from 'actions/tasks-actions';
 import {
@@ -20,6 +20,7 @@ import {
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { getCore } from 'cvat-core-wrapper';
+import { filterNull } from 'utils/filter-null';
 
 const core = getCore();
 
@@ -91,7 +92,45 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         updateJob,
     } = props;
 
-    const onClickMenu = (params: MenuInfo): void => {
+    function nextJobsQuery(assignee: string, previousId: number): JobsQuery {
+        return {
+            page: 1,
+            sort: null,
+            search: null,
+            filter: JSON.stringify({
+                and: [
+                    {
+                        '!': {
+                            or: [
+                                { '==': [{ var: 'state' }, 'completed'] },
+                                { '==': [{ var: 'stage' }, 'acceptance'] },
+                                { '==': [{ var: 'id' }, previousId] },
+                            ],
+                        },
+                    },
+                    { '==': [{ var: 'assignee' }, assignee] },
+                ],
+            }),
+        };
+    }
+
+    const loadNextJob = async (): Promise<void> => {
+        try {
+            const query = nextJobsQuery(jobInstance.assignee.username, jobInstance.id);
+            const nextJobs = await core.jobs.get(filterNull(query));
+            if (nextJobs && nextJobs.length > 0) {
+                const nextJob = nextJobs[0];
+                history.push(`/tasks/${nextJob.taskId}/jobs/${nextJob.id}`);
+            } else {
+                console.log('No other jobs found, returning to main page');
+                history.push('/jobs?page=1');
+            }
+        } catch (error) {
+            console.error('Error when fetching next job:', error);
+        }
+    };
+
+    const onClickMenu = async (params: MenuInfo): Promise<void> => {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_JOB_DATASET) {
             showExportModal(jobInstance);
@@ -104,7 +143,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             jobInstance.stage = JobStage.ACCEPTANCE;
             jobInstance.state = core.enums.JobState.COMPLETED;
             updateJob(jobInstance);
-            history.push(`/tasks/${jobInstance.taskId}`);
+            await loadNextJob();
         } else if (action === Actions.OPEN_TASK) {
             history.push(`/tasks/${jobInstance.taskId}`);
         } else if (action.startsWith('state:')) {
