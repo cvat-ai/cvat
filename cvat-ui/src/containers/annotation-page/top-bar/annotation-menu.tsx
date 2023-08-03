@@ -92,46 +92,45 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         updateJob,
     } = props;
 
-    function nextJobsQuery(assignee: String, previousId: number): JobsQuery {
+    function nextJobsQuery(assignee: string, previousId: number): JobsQuery {
         return {
             page: 1,
             sort: null,
             search: null,
             filter: JSON.stringify({
-                "and": [
+                and: [
                     {
-                        "!": {
-                            "or": [
-                                { "==": [{ "var": "state" }, "completed"] },
-                                { "==": [{ "var": "stage" }, "acceptance"] },
-                                { "==": [{ "var": "id" }, previousId] }
-                            ]
-                        }
+                        '!': {
+                            or: [
+                                { '==': [{ var: 'state' }, 'completed'] },
+                                { '==': [{ var: 'stage' }, 'acceptance'] },
+                                { '==': [{ var: 'id' }, previousId] },
+                            ],
+                        },
                     },
-                    { "==": [{ "var": "assignee" }, assignee] }
-                ]
-            })
+                    { '==': [{ var: 'assignee' }, assignee] },
+                ],
+            }),
         };
     }
 
-
-    const loadNextJob = async () => {
+    const loadNextJob = async (): Promise<void> => {
         try {
-            const query = nextJobsQuery(jobInstance.assignee.username, jobInstance.id)
+            const query = nextJobsQuery(jobInstance.assignee.username, jobInstance.id);
             const nextJobs = await core.jobs.get(filterNull(query));
-            if (nextJobs  && nextJobs.length > 0) {
+            if (nextJobs && nextJobs.length > 0) {
                 const nextJob = nextJobs[0];
                 history.push(`/tasks/${nextJob.taskId}/jobs/${nextJob.id}`);
             } else {
-                console.log("No other jobs found, returning to main page")
-                history.push(`/jobs?page=1`);
+                console.log('No other jobs found, returning to main page');
+                history.push('/jobs?page=1');
             }
         } catch (error) {
             console.error('Error when fetching next job:', error);
         }
     };
 
-    const onClickMenu = async (params: MenuInfo) => {
+    const onClickMenu = async (params: MenuInfo): Promise<void> => {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_JOB_DATASET) {
             showExportModal(jobInstance);
