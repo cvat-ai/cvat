@@ -25,11 +25,13 @@ and consist of the following basic elements:
 
 - Code to convert resulting annotations to a format CVAT can understand.
 
-The layer can be divided into two parts:
+The layer can be divided into several parts:
 
-- The interface part that defines the protocol that an AA function must implement.
+- The interface, containing the protocol that an AA function must implement.
 
-- The driver part that defines functionality to annotate a CVAT dataset using an AA function.
+- The driver, containing functionality to annotate a CVAT dataset using an AA function.
+
+- The predefined AA function based on Ultralytics YOLOv8n.
 
 The `auto-annotate` CLI command provides a way to use an AA function from the command line
 rather than from a Python program.
@@ -195,3 +197,24 @@ Same logic applies to sub-label IDs.
 
 `annotate_task` will raise a `BadFunctionError` exception
 if it detects that the function violated the AA function protocol.
+
+## Predefined AA function
+
+This layer includes a predefined AA function based on the Ultralytics YOLOv8n model.
+You can use this AA function as-is, or use it as a base on which to build your own.
+
+To use this function, you have to install CVAT SDK with the `ultralytics` extra:
+
+```console
+$ pip install "cvat-sdk[ultralytics]"
+```
+
+The AA function is implemented as a module
+in order to be compatible with the `cvat-cli auto-annotate` command.
+Simply import `cvat_sdk.auto_annotation.functions.yolov8n`
+and use the module itself as a function:
+
+```python
+import cvat_sdk.auto_annotation.functions.yolov8n as yolov8n
+annotate_task(<client>, <task ID>, yolov8n)
+```
