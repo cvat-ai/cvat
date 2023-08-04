@@ -197,15 +197,12 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                 return nextChunkNumber;
             }
 
-            console.log('request frame: ', this.number);
             if (frame) {
-                console.log('frame found: ', this.number);
                 if (decodeForward && decodedBlocksCacheSize > 1 && !frameDataCache[this.jobID].activeChunkRequest) {
                     const nextChunkNumber = findTheNextNotDecodedChunk(this.number);
-                    if (nextChunkNumber * chunkSize <= stopFrame && nextChunkNumber <= chunkNumber + Math.floor(decodedBlocksCacheSize / 2)) {
+                    if (nextChunkNumber * chunkSize <= stopFrame &&
+                        nextChunkNumber <= chunkNumber + Math.floor(decodedBlocksCacheSize / 2)) {
                         provider.cleanup(Math.floor(decodedBlocksCacheSize / 2));
-                        const start = performance.now();
-                        console.log(`Range [${nextChunkNumber * chunkSize}-${nextChunkNumber * chunkSize + chunkSize - 1}] request decode`)
                         frameDataCache[this.jobID].activeChunkRequest = new Promise((resolveForward) => {
                             frameDataCache[this.jobID].getChunk(nextChunkNumber, 'compressed').then((chunk: ArrayBuffer) => {
                                 provider.requestDecodeBlock(
@@ -214,8 +211,6 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                                     Math.min(stopFrame, (nextChunkNumber + 1) * chunkSize - 1),
                                     () => {},
                                     () => {
-                                        const end = performance.now();
-                                        console.log(`Range [${nextChunkNumber * chunkSize}-${nextChunkNumber * chunkSize + chunkSize - 1}] decoded for ${end - start}`)
                                         resolveForward();
                                         frameDataCache[this.jobID].activeChunkRequest = null;
                                     },
@@ -237,7 +232,6 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                 return;
             }
 
-            console.log('frame not found: ', this.number);
             onServerRequest();
             frameDataCache[this.jobID].latestFrameDecodeRequest = requestId;
             (frameDataCache[this.jobID].activeChunkRequest || Promise.resolve()).finally(() => {
