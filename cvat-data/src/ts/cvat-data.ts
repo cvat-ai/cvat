@@ -137,16 +137,6 @@ export class FrameDecoder {
             delete this.decodedChunks[lastChunk];
             length--;
         }
-
-        let totalSpaceUsed = 0;
-        for (const chunk of Object.keys(this.decodedChunks)) {
-            for (const im of Object.values(this.decodedChunks[chunk])) {
-                const im1 = im as ImageBitmap;
-                totalSpaceUsed += im1.height * im1.width * 4;
-            }
-        }
-
-        console.log('Total space used, Mb: ', totalSpaceUsed / (1024 * 1024));
     }
 
     requestDecodeBlock(

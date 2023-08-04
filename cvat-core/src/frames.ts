@@ -200,25 +200,27 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             if (frame) {
                 if (decodeForward && decodedBlocksCacheSize > 1 && !frameDataCache[this.jobID].activeChunkRequest) {
                     const nextChunkNumber = findTheNextNotDecodedChunk(this.number);
+                    const predecodeChunksMax = Math.floor(decodedBlocksCacheSize / 2);
                     if (nextChunkNumber * chunkSize <= stopFrame &&
-                        nextChunkNumber <= chunkNumber + Math.floor(decodedBlocksCacheSize / 2)) {
-                        provider.cleanup(Math.floor(decodedBlocksCacheSize / 2));
+                        nextChunkNumber <= chunkNumber + predecodeChunksMax) {
+                        provider.cleanup(1);
                         frameDataCache[this.jobID].activeChunkRequest = new Promise((resolveForward) => {
+                            const releasePromise = (): void => {
+                                resolveForward();
+                                frameDataCache[this.jobID].activeChunkRequest = null;
+                            };
+
                             frameDataCache[this.jobID].getChunk(nextChunkNumber, 'compressed').then((chunk: ArrayBuffer) => {
                                 provider.requestDecodeBlock(
                                     chunk,
                                     nextChunkNumber * chunkSize,
                                     Math.min(stopFrame, (nextChunkNumber + 1) * chunkSize - 1),
                                     () => {},
-                                    () => {
-                                        resolveForward();
-                                        frameDataCache[this.jobID].activeChunkRequest = null;
-                                    },
-                                    () => {
-                                        resolveForward();
-                                        frameDataCache[this.jobID].activeChunkRequest = null;
-                                    },
+                                    releasePromise,
+                                    releasePromise,
                                 );
+                            }).catch(() => {
+                                releasePromise();
                             });
                         });
                     }
