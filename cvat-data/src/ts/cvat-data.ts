@@ -20,10 +20,11 @@ export enum DimensionType {
     DIMENSION_2D = '2d',
 }
 
-const decodeZipWorker = new (ZipDecoder as any)() as any as Worker;
 export function decodeContextImages(
     block: any, start: number, end: number,
 ): Promise<Record<string, ImageBitmap>> {
+    const decodeZipWorker = ((decodeContextImages as any).zipWorker || new (ZipDecoder as any)()) as Worker;
+    (decodeContextImages as any).zipWorker = decodeZipWorker;
     return new Promise((resolve, reject) => {
         decodeContextImages.mutex.acquire().then((release) => {
             const result: Record<string, ImageBitmap> = {};
