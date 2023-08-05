@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { isBrowser, isNode } from 'browser-or-node';
 import _ from 'lodash';
 import {
     FrameDecoder, BlockType, DimensionType, decodeContextImages, RequestOutdatedError,
@@ -175,9 +176,14 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
             renderHeight: number;
             imageData: ImageBitmap | Blob;
         } | Blob>((resolve, reject) => {
+            if (isNode) {
+                throw new Error('Not implemented');
+            }
+
             const {
                 provider, chunkSize, stopFrame, decodeForward, forwardStep, decodedBlocksCacheSize,
             } = frameDataCache[this.jobID];
+
             const requestId = +_.uniqueId();
             const chunkNumber = Math.floor(this.number / chunkSize);
             const frame = provider.frame(this.number);
@@ -396,7 +402,7 @@ export async function getFrame(
     dimension: DimensionType,
     getChunk: (chunkNumber: number, quality: 'original' | 'compressed') => Promise<ArrayBuffer>,
 ): Promise<FrameData> {
-    if (!(jobID in frameDataCache)) {
+    if (!(jobID in frameDataCache) && isBrowser) {
         const blockType = chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
         const meta = await serverProxy.frames.getMeta('job', jobID);
         const updatedMeta = {
