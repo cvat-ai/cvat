@@ -295,7 +295,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         marks={marks}
                     />
                 </Col>
-                <Col span={24}>
+                <Col>
                     <Text type='secondary'>Works for serverless interactors and OpenCV scissors</Text>
                 </Col>
             </Row>
