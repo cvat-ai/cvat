@@ -21,11 +21,16 @@ const frameDataCache: Record<string, {
     decodeForward: boolean;
     forwardStep: number;
     latestFrameDecodeRequest: number | null;
+    latestContextImagesRequest: number | null;
     provider: FrameDecoder;
     decodedBlocksCacheSize: number;
     activeChunkRequest: Promise<void> | null;
-    activeContextRequest: Promise<void> | null;
-    contextCache: Record<number, any>;
+    activeContextRequest: Promise<Record<number, ImageBitmap>> | null;
+    contextCache: Record<number, {
+        data: Record<number, ImageBitmap>;
+        timestamp: number;
+        size: number;
+    }>;
     getChunk: (chunkNumber: number, quality: 'original' | 'compressed') => Promise<ArrayBuffer>;
 }> = {};
 
@@ -338,37 +343,68 @@ function getFrameMeta(jobID, frame): RawFramesMetaData['frames'][0] {
     return frameMeta;
 }
 
-export async function getContextImage(jobID: number, frame: number): Promise<Record<string, ImageBitmap>> {
-    if (!(jobID in frameDataCache)) {
-        throw new Error('Frame data was not initialized for this job. Try first requesting any frame.');
-    }
+export function getContextImage(jobID: number, frame: number): Promise<Record<string, ImageBitmap>> {
+    return new Promise<Record<string, ImageBitmap>>((resolve, reject) => {
+        if (!(jobID in frameDataCache)) {
+            reject(new Error(
+                'Frame data was not initialized for this job. Try first requesting any frame.',
+            ));
+        }
+        const frameData = frameDataCache[jobID];
+        const requestId = frame;
+        const { startFrame } = frameData;
+        const { related_files: relatedFiles } = frameData.meta.frames[frame - startFrame];
 
-    const { related_files: relatedFiles } = frameDataCache[jobID]
-        .meta.frames[frame - frameDataCache[jobID].startFrame];
-    if (relatedFiles === 0) {
-        return {};
-    }
+        if (relatedFiles === 0) {
+            resolve({});
+        } else if (frame in frameData.contextCache) {
+            resolve(frameData.contextCache[frame].data);
+        } else {
+            frameData.latestContextImagesRequest = requestId;
+            const executor = (): void => {
+                if (frameData.latestContextImagesRequest !== requestId) {
+                    reject(frame);
+                } else if (frame in frameData.contextCache) {
+                    resolve(frameData.contextCache[frame].data);
+                } else {
+                    frameData.activeContextRequest = serverProxy.frames.getImageContext(jobID, frame)
+                        .then((encodedImages) => decodeContextImages(encodedImages, 0, relatedFiles));
+                    frameData.activeContextRequest.then((images) => {
+                        const size = Object.values(images)
+                            .reduce((acc, image) => acc + image.width * image.height * 4, 0);
+                        const totalSize = Object.values(frameData.contextCache)
+                            .reduce((acc, item) => acc + item.size, 0);
+                        if (totalSize > 512 * 1024 * 1024) {
+                            const [leastTimestampFrame] = Object.entries(frameData.contextCache)
+                                .sort(([, item1], [, item2]) => item1.timestamp - item2.timestamp)[0];
+                            delete frameData.contextCache[leastTimestampFrame];
+                        }
 
-    if (frameDataCache[jobID].activeContextRequest) {
-        await (frameDataCache[jobID].activeContextRequest);
-    }
+                        frameData.contextCache[frame] = {
+                            data: images,
+                            timestamp: Date.now(),
+                            size,
+                        };
 
-    if (frame in frameDataCache[jobID].contextCache) {
-        return frameDataCache[jobID].contextCache[frame];
-    }
+                        if (frameData.latestContextImagesRequest !== requestId) {
+                            reject(frame);
+                        } else {
+                            resolve(images);
+                        }
+                    });
+                }
+            };
 
-    const promise = serverProxy.frames.getImageContext(jobID, frame)
-        .then((encodedImages) => decodeContextImages(encodedImages, 0, relatedFiles));
-    frameDataCache[jobID].activeContextRequest = new Promise((resolve) => {
-        promise.finally(() => {
-            resolve();
-            frameDataCache[jobID].activeContextRequest = null;
-        });
+            if (frameData.activeContextRequest) {
+                frameData.activeContextRequest.finally(() => {
+                    frameData.activeContextRequest = null;
+                    executor();
+                });
+            } else {
+                executor();
+            }
+        }
     });
-
-    const images = await promise;
-    frameDataCache[jobID].contextCache[frame] = images;
-    return images;
 }
 
 export function decodePreview(preview: Blob): Promise<string> {
@@ -412,7 +448,7 @@ export async function getFrame(
 
         // limit of decoded frames cache by 2GB
         const decodedBlocksCacheSize = Math.min(
-            Math.floor(2147483648 / ((mean + stdDev) * 4 * chunkSize)) || 1, 10,
+            Math.floor((2048 * 1024 * 1024) / ((mean + stdDev) * 4 * chunkSize)) || 1, 10,
         );
         frameDataCache[jobID] = {
             meta: updatedMeta,
@@ -432,6 +468,7 @@ export async function getFrame(
             activeChunkRequest: null,
             activeContextRequest: null,
             latestFrameDecodeRequest: null,
+            latestContextImagesRequest: null,
             contextCache: {},
             getChunk,
         };
