@@ -13,7 +13,7 @@ class AnalyticsTargetExtension(OpenApiSerializerFieldExtension):
     target_class = "cvat.apps.analytics_report.serializers.AnalyticsReportTargetSerializer"
 
     def get_name(self):
-        return "AnalyticsTargetEnum"
+        return "AnalyticsReportTargetEnum"
 
     def map_serializer_field(self, auto_schema, direction):
         return auto_schema._map_serializer_field(

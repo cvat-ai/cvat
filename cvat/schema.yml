@@ -5974,7 +5974,7 @@ components:
           type: string
           format: date-time
         target:
-          $ref: '#/components/schemas/AnalyticsTargetEnum'
+          $ref: '#/components/schemas/AnalyticsReportTargetEnum'
         job_id:
           type: integer
         task_id:
@@ -5998,7 +5998,7 @@ components:
           type: integer
         project_id:
           type: integer
-    AnalyticsTargetEnum:
+    AnalyticsReportTargetEnum:
       enum:
       - job
       - task
