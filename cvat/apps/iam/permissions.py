@@ -1959,7 +1959,10 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
         permissions = []
         if view.basename == 'quality_settings':
             for scope in cls.get_scopes(request, view, obj):
-                if scope in [Scopes.CREATE, Scopes.VIEW, Scopes.UPDATE] or scope == Scopes.LIST and isinstance(obj, (Task, Project)):
+                if (
+                    scope in [Scopes.CREATE, Scopes.VIEW, Scopes.UPDATE] or
+                    scope == Scopes.LIST and isinstance(obj, (Task, Project))
+                ):
                     project = None
                     task = None
 
@@ -1990,33 +1993,26 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                         assert False
 
                     if task:
-                        if scope in [Scopes.VIEW, Scopes.LIST]:
-                            task_scope = TaskPermission.Scopes.VIEW
-                        elif scope in [Scopes.UPDATE, Scopes.CREATE]:
-                            task_scope = TaskPermission.Scopes.UPDATE_DESC
-                        else:
-                            assert False
-
-                        parent_perm = TaskPermission.create_base_perm(
-                            request, view,
-                            iam_context=get_iam_context(request, task),
-                            scope=task_scope, obj=task
-                        )
+                        parent_permission_type = TaskPermission
+                        parent = task
                     elif project:
-                        if scope in [Scopes.VIEW, Scopes.LIST]:
-                            project_scope = ProjectPermission.Scopes.VIEW
-                        elif scope in [Scopes.UPDATE, Scopes.CREATE]:
-                            project_scope = ProjectPermission.Scopes.UPDATE_DESC
-                        else:
-                            assert False
-
-                        parent_perm = ProjectPermission.create_base_perm(
-                            request, view,
-                            iam_context=get_iam_context(request, project),
-                            scope=project_scope, obj=project
-                        )
+                        parent_permission_type = ProjectPermission
+                        parent = project
                     else:
                         assert False
+
+                    if scope in [Scopes.VIEW, Scopes.LIST]:
+                        parent_scope = parent_permission_type.Scopes.VIEW
+                    elif scope in [Scopes.UPDATE, Scopes.CREATE]:
+                        parent_scope = parent_permission_type.Scopes.UPDATE_DESC
+                    else:
+                        assert False
+
+                    parent_perm = parent_permission_type.create_base_perm(
+                        request, view,
+                        iam_context=get_iam_context(request, parent),
+                        scope=parent_scope, obj=parent
+                    )
 
                     # Access rights are the same as in the owning object
                     # This component doesn't define its own rules in this case
