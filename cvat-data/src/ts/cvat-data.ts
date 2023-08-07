@@ -114,8 +114,6 @@ export class FrameDecoder {
         this.decodedChunks = {};
         this.requestedChunkToDecode = null;
         this.chunkIsBeingDecoded = null;
-
-        this.zipWorker = new (ZipDecoder as any)() as any as Worker;
     }
 
     isChunkCached(chunkNumber: number): boolean {
@@ -282,6 +280,7 @@ export class FrameDecoder {
                     });
                 }
             } else {
+                this.zipWorker = this.zipWorker || new (ZipDecoder as any)() as any as Worker;
                 let index = start;
 
                 this.zipWorker.onmessage = async (event) => {
