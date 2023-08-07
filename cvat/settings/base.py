@@ -420,16 +420,20 @@ os.makedirs(STATIC_ROOT, exist_ok=True)
 # Make sure to update other config files when updating these directories
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
 
-EVENTS_LOCAL_DB = os.path.join(DATA_ROOT, 'events.db')
-os.makedirs(DATA_ROOT, exist_ok=True)
-if not os.path.exists(EVENTS_LOCAL_DB):
-    open(EVENTS_LOCAL_DB, 'w').close()
-
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
 
 CACHE_ROOT = os.path.join(DATA_ROOT, 'cache')
 os.makedirs(CACHE_ROOT, exist_ok=True)
+
+EVENTS_LOCAL_DB_ROOT = os.path.join(CACHE_ROOT, 'events')
+os.makedirs(EVENTS_LOCAL_DB_ROOT, exist_ok=True)
+EVENTS_LOCAL_DB_FILE = os.path.join(
+    EVENTS_LOCAL_DB_ROOT,
+    os.getenv('CVAT_EVENTS_LOCAL_DB_FILENAME', 'events.db'),
+)
+if not os.path.exists(EVENTS_LOCAL_DB_FILE):
+    open(EVENTS_LOCAL_DB_FILE, 'w').close()
 
 JOBS_ROOT = os.path.join(DATA_ROOT, 'jobs')
 os.makedirs(JOBS_ROOT, exist_ok=True)
@@ -504,7 +508,7 @@ LOGGING = {
             'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8282),
             'version': 1,
             'message_type': 'django',
-            'database_path': EVENTS_LOCAL_DB,
+            'database_path': EVENTS_LOCAL_DB_FILE,
         }
     },
     'loggers': {
