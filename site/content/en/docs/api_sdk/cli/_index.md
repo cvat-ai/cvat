@@ -275,6 +275,13 @@ It can auto-annotate using AA functions implemented in one of the following ways
        return _MyFunction(...)
    ```
 
+- Annotate the task with id 137 with the predefined torchvision detection function,
+  which is parameterized:
+  ```bash
+  cvat-cli auto-annotate 137 --function-module cvat_sdk.auto_annotation.functions.torchvision_detection \
+      -p model_name=str:fasterrcnn_resnet50_fpn_v2 -p box_score_thresh=float:0.5
+  ```
+
 - Annotate the task with id 138 with an AA function defined in `my_func.py`:
   ```bash
   cvat-cli auto-annotate 138 --function-file path/to/my_func.py
