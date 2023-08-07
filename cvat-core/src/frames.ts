@@ -374,7 +374,7 @@ export function getContextImage(jobID: number, frame: number): Promise<Record<st
                             .reduce((acc, image) => acc + image.width * image.height * 4, 0);
                         const totalSize = Object.values(frameData.contextCache)
                             .reduce((acc, item) => acc + item.size, 0);
-                        if (totalSize > 0 * 1024 * 1024) {
+                        if (totalSize > 512 * 1024 * 1024) {
                             const [leastTimestampFrame] = Object.entries(frameData.contextCache)
                                 .sort(([, item1], [, item2]) => item1.timestamp - item2.timestamp)[0];
                             delete frameData.contextCache[leastTimestampFrame];
