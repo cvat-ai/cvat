@@ -30,7 +30,10 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.test_servers.yml",
+    "tests/docker-compose.test_extras.yml",
 ]
+
+TEST_EXTRAS_MOUNT_DIR = "/test_extras"
 
 
 class Container(str, Enum):
@@ -201,6 +204,36 @@ def kube_restore_clickhouse_db():
             "/bin/sh",
             "-c",
             'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /bin/sh /docker-entrypoint-initdb.d/init.sh',
+        ]
+    )
+
+
+def docker_clear_rq():
+    docker_exec_cvat(
+        [
+            "/bin/sh",
+            "-c",
+            "python",
+            f"{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
+            "--host",
+            "${CVAT_REDIS_HOST}",
+            "--password",
+            "${CVAT_REDIS_PASSWORD}",
+        ]
+    )
+
+
+def kube_clear_rq():
+    kube_exec_cvat(
+        [
+            "/bin/sh",
+            "-c",
+            "python",
+            f"{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
+            "--host",
+            "${CVAT_REDIS_HOST}",
+            "--password",
+            "${CVAT_REDIS_PASSWORD}",
         ]
     )
 
@@ -506,6 +539,24 @@ def restore_cvat_data(request):
         docker_restore_data_volumes()
     else:
         kube_restore_data_volumes()
+
+
+@pytest.fixture(scope="class")
+def clear_rq_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_clear_rq()
+    else:
+        kube_clear_rq()
+
+
+@pytest.fixture(scope="function")
+def clear_rq_per_function(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_clear_rq()
+    else:
+        kube_clear_rq()
 
 
 @pytest.fixture(scope="function")

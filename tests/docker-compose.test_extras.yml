@@ -1,0 +1,4 @@
+services:
+  cvat_server:
+    volumes:
+      - ./tests/extras:/test_extras:r
