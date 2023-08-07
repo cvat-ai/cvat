@@ -78,6 +78,7 @@ setup(
     install_requires=BASE_REQUIREMENTS,
     extras_require={
         "pytorch": ['torch', 'torchvision'],
+        "ultralytics": ["ultralytics"],
     },
     package_dir={"": "."},
     packages=find_packages(include=["cvat_sdk*"]),

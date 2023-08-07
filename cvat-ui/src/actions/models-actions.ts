@@ -271,7 +271,7 @@ export function getModelProvidersAsync(): ThunkAction {
 export const getModelPreviewAsync = (model: MLModel): ThunkAction => async (dispatch) => {
     dispatch(modelsActions.getModelPreview(model.id));
     try {
-        const result = await model.getPreview();
+        const result = await model.preview();
         dispatch(modelsActions.getModelPreviewSuccess(model.id, result));
     } catch (error) {
         dispatch(modelsActions.getModelPreviewFailed(model.id, error));
