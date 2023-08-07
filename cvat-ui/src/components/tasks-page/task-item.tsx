@@ -79,52 +79,26 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         // Count number of jobs and performed jobs
         const numOfJobs = taskInstance.progress.totalJobs;
         const numOfCompleted = taskInstance.progress.completedJobs;
+        const numOfValidation = taskInstance.progress.validationJobs;
+        const numOfAnnotation = taskInstance.progress.annotationJobs;
 
         // Progress appearance depends on number of jobs
-        let progressColor = null;
-        let progressText = null;
-        if (numOfCompleted && numOfCompleted === numOfJobs) {
-            progressColor = 'cvat-task-completed-progress';
-            progressText = (
-                <Text strong className={progressColor}>
-                    Completed
-                </Text>
-            );
-        } else if (numOfCompleted) {
-            progressColor = 'cvat-task-progress-progress';
-            progressText = (
-                <Text strong className={progressColor}>
-                    In Progress
-                </Text>
-            );
-        } else {
-            progressColor = 'cvat-task-pending-progress';
-            progressText = (
-                <Text strong className={progressColor}>
-                    Pending
-                </Text>
-            );
-        }
+        const jobsProgress = ((numOfCompleted + numOfValidation) * 100) / numOfJobs;
 
-        const jobsProgress = numOfCompleted / numOfJobs;
         return (
             <Col span={6}>
                 <Row justify='space-between' align='top'>
                     <Col>
-                        <svg height='8' width='8' className={progressColor}>
-                            <circle cx='4' cy='4' r='4' strokeWidth='0' />
-                        </svg>
-                        {progressText}
-                    </Col>
-                    <Col>
-                        <Text type='secondary'>{`${numOfCompleted} of ${numOfJobs} jobs`}</Text>
+                        <Text type='secondary'>{`Completed: ${numOfCompleted} Validation: ${numOfValidation} Annotation: ${numOfAnnotation}`}</Text>
                     </Col>
                 </Row>
                 <Row>
                     <Col span={24}>
                         <Progress
-                            className={`${progressColor} cvat-task-progress`}
-                            percent={jobsProgress * 100}
+                            percent={jobsProgress}
+                            success={{
+                                percent: (numOfCompleted * 100) / numOfJobs,
+                            }}
                             strokeColor='#1890FF'
                             showInfo={false}
                             strokeWidth={5}

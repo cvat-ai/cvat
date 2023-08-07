@@ -744,7 +744,20 @@ export class Task extends Session {
         data.progress = {
             completedJobs: initialData?.jobs?.completed || 0,
             totalJobs: initialData?.jobs?.count || 0,
+            validationJobs: 0,
+            annotationJobs: 0
         };
+
+        console.log("initial data")
+        console.log(initialData)
+        if (Array.isArray(initialData.jobs)) {
+            console.log("INITIAL JOB")
+            for (const job of initialData.jobs) {
+                console.log(job)
+                if (job.stage === 'validation') data.progress.validationJobs += 1;
+                if (job.stage === 'annotation') data.progress.annotationJobs += 1;
+                }
+        }
 
         data.files = Object.freeze({
             server_files: [],

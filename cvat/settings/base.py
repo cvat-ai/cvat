@@ -700,3 +700,7 @@ ASSET_SUPPORTED_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/gif', '
 ASSET_MAX_COUNT_PER_GUIDE = 10
 
 SMOKESCREEN_ENABLED = True
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8080', 'http://localhost:3000']
+CORS_ORIGIN_WHITELIST = ['http://localhost:8080', 'http://localhost:3000']
+CORS_REPLACE_HTTPS_REFERER = True

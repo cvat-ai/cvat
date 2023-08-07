@@ -780,7 +780,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'tracker_link': 'bug_tracker',
     }
     search_fields = (
-        'project_name', 'name', 'owner', 'status', 'assignee',
+        'project_name', 'name', 'owner', 'stage', 'assignee',
         'subset', 'mode', 'dimension', 'tracker_link'
     )
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
@@ -1164,6 +1164,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$',
         parser_classes=_UPLOAD_PARSER_CLASSES)
     def data(self, request, pk):
+        # todo HERE WE ARE
         self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
             task_data = self._object.data
