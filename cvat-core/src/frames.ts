@@ -402,6 +402,12 @@ export function getContextImage(jobID: number, frame: number): Promise<Record<st
             } else {
                 const checkAndExecute = (): void => {
                     if (frameData.activeContextRequest) {
+                        // if we just execute in finally
+                        // it might raise multiple server requests for context images
+                        // if the promise was pending before and several requests came for the same frame
+                        // all these requests will stuck on "finally"
+                        // and when the promise fullfilled, it will run all the microtasks
+                        // since they all have the same request id, all they will perform in executor()
                         frameData.activeContextRequest.finally(() => setTimeout(checkAndExecute));
                     } else {
                         executor();
