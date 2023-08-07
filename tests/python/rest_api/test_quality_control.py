@@ -1067,6 +1067,18 @@ class TestPostSettings(_PermissionTestBase):
         else:
             self._test_post_settings_403(user["username"], data)
 
+    @pytest.mark.parametrize("target", ["task", "project"])
+    def test_cannot_add_settings_if_already_exist(self, admin_user, quality_settings, target):
+        target_id = next(s[f"{target}_id"] for s in quality_settings if s[f"{target}_id"])
+        data = {f"{target}_id": target_id}
+
+        with make_api_client(admin_user) as api_client:
+            (_, response) = api_client.quality_api.create_settings(
+                quality_settings_request=data, _parse_response=False, _check_status=False
+            )
+            assert response.status == HTTPStatus.BAD_REQUEST
+            assert b"already exist" in response.data
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchSettings(_PermissionTestBase):
