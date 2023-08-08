@@ -18,7 +18,8 @@ module.exports = (env, argv) => {
     const defaultPlugins = ['plugins/sam_plugin'];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
     const pluginsList = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
-        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins
+        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins;
+    const sourceMapsToken = process.env.SOURCE_MAPS_TOKEN || '';
 
     const transformedPlugins = pluginsList
         .filter((plugin) => !!plugin).reduce((acc, _path, index) => ({
@@ -211,9 +212,9 @@ module.exports = (env, argv) => {
                     },
                 ],
             }),
-            ...(mode === 'production' ? [new webpack.SourceMapDevToolPlugin({
+            ...(sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
                 append: '\n',
-                filename: '[file].map[query]',
+                filename: `${sourceMapsToken}[file].map`,
             })] : []),
         ],
     }
