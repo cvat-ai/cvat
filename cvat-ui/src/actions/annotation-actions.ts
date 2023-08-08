@@ -608,8 +608,11 @@ export function changeFrameAsync(
 
         const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
+        const startFrame = await job.startFrame;
+        const stopFrame = await job.stopFrame;
+
         try {
-            if (toFrame < job.startFrame || toFrame > job.stopFrame) {
+            if (toFrame < startFrame || toFrame > stopFrame) {
                 throw Error(`Required frame ${toFrame} is out of the current job`);
             }
 

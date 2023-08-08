@@ -102,7 +102,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                             className='cvat-player-slider'
                             min={startFrame}
                             max={stopFrame}
-                            value={frameNumber || 0}
+                            value={frameNumber || 90}
                             onChange={onSliderChange}
                         />
                     </Col>

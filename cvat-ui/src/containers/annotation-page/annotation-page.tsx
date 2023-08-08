@@ -70,6 +70,9 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
             initialFrame = searchFrame;
         }
     }
+    if (initialFrame == null) {
+        initialFrame = 90;
+    }
 
     if (searchParams.has('serverID') && searchParams.has('type')) {
         const serverID = searchParams.get('serverID');
