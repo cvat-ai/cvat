@@ -34,10 +34,9 @@ module.exports = (env, argv) => {
 
     console.log('List of plugins: ', Object.values(transformedPlugins).map((plugin) => plugin.import));
 
-    const mode = argv.mode === 'development' ? 'development' : 'production';
     return {
         target: 'web',
-        mode,
+        mode: 'production',
         devtool: 'source-map',
         entry: {
             'cvat-ui': './src/index.tsx',
