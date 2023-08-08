@@ -13,7 +13,7 @@ import { Exception, ArgumentError, DataError } from './exceptions';
 
 // frame storage by job id
 const frameDataCache: Record<string, {
-    meta: RawFramesMetaData & { deleted_frames: Record<number, boolean> };
+    meta: Omit<RawFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> };
     chunkSize: number;
     mode: 'annotation' | 'interpolation';
     startFrame: number;
@@ -160,16 +160,6 @@ export class FrameData {
     async data(onServerRequest = () => {}): Promise<ImageBitmap | Blob> {
         const result = await PluginRegistry.apiWrapper.call(this, FrameData.prototype.data, onServerRequest);
         return result;
-    }
-
-    get imageData() {
-        // todo: check where it is used
-        return this._data.imageData;
-    }
-
-    set imageData(imageData) {
-        // todo: check where it is used
-        this._data.imageData = imageData;
     }
 }
 
