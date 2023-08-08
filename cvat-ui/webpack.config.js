@@ -214,7 +214,7 @@ module.exports = (env, argv) => {
             }),
             ...(sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
                 append: '\n',
-                filename: `${sourceMapsToken}[file].map`,
+                filename: `${sourceMapsToken}/[file].map`,
             })] : []),
         ],
     }
