@@ -33,7 +33,7 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "tests/docker-compose.test_extras.yml",
 ]
 
-TEST_EXTRAS_MOUNT_DIR = "/test_extras"
+TEST_EXTRAS_MOUNT_DIR = "/home/django/test_extras"
 
 
 class Container(str, Enum):
