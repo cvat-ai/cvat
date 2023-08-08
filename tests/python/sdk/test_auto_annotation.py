@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import sys
 from logging import Logger
 from pathlib import Path
 from types import SimpleNamespace as namespace
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 import cvat_sdk.auto_annotation as cvataa
 import PIL.Image
@@ -18,13 +17,6 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 from shared.utils.helpers import generate_image_file
 
 from .util import make_pbar
-
-try:
-    import numpy as np
-    from ultralytics.engine.results import Results as UResults
-except ModuleNotFoundError:
-    np = None
-    UResults = None
 
 
 @pytest.fixture(autouse=True)
@@ -561,69 +553,3 @@ class TestTaskAutoAnnotation:
             ],
             "non-skeleton shape with elements",
         )
-
-
-class FakeYolo:
-    def __init__(self, *args, **kwargs) -> None:
-        pass
-
-    names = {42: "person"}
-
-    def predict(self, source: Any, **kwargs) -> "List[UResults]":
-        return [
-            UResults(
-                orig_img=np.zeros([100, 100, 3]),
-                path=None,
-                names=self.names,
-                boxes=np.array([[1, 2, 3, 4, 0.9, 42]]),
-            )
-        ]
-
-
-@pytest.mark.skipif(UResults is None, reason="Ultralytics is not installed")
-class TestAutoAnnotationFunctions:
-    @pytest.fixture(autouse=True)
-    def setup(
-        self,
-        tmp_path: Path,
-        fxt_login: Tuple[Client, str],
-    ):
-        self.client = fxt_login[0]
-        self.image = generate_image_file("1.png", size=(100, 100))
-
-        image_dir = tmp_path / "images"
-        image_dir.mkdir()
-
-        image_path = image_dir / self.image.name
-        image_path.write_bytes(self.image.getbuffer())
-
-        self.task = self.client.tasks.create_from_data(
-            models.TaskWriteRequest(
-                "Auto-annotation test task",
-                labels=[
-                    models.PatchedLabelRequest(name="person"),
-                ],
-            ),
-            resources=[image_path],
-        )
-
-        task_labels = self.task.get_labels()
-        self.task_labels_by_id = {label.id: label for label in task_labels}
-
-    def test_yolov8n(self, monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.setattr("ultralytics.YOLO", FakeYolo)
-
-        import cvat_sdk.auto_annotation.functions.yolov8n as yolov8n
-
-        try:
-            cvataa.annotate_task(self.client, self.task.id, yolov8n)
-
-            annotations = self.task.get_annotations()
-
-            assert len(annotations.shapes) == 1
-            assert self.task_labels_by_id[annotations.shapes[0].label_id].name == "person"
-            assert annotations.shapes[0].type.value == "rectangle"
-            assert annotations.shapes[0].points == [1, 2, 3, 4]
-
-        finally:
-            del sys.modules[yolov8n.__name__]

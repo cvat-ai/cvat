@@ -249,11 +249,6 @@ def detect(context, image):
     ...
 ```
 
-- Annotate the task with id 137 with the predefined YOLOv8 function:
-  ```bash
-  cvat-cli auto-annotate 137 --function-module cvat_sdk.auto_annotation.functions.yolov8n
-  ```
-
 - Annotate the task with id 138 with an AA function defined in `my_func.py`:
   ```bash
   cvat-cli auto-annotate 138 --function-file path/to/my_func.py
