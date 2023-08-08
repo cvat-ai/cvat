@@ -608,8 +608,11 @@ export function changeFrameAsync(
 
         const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
+        const startFrame = await job.startFrame;
+        const stopFrame = await job.stopFrame;
+
         try {
-            if (toFrame < job.startFrame || toFrame > job.stopFrame) {
+            if (toFrame < startFrame || toFrame > stopFrame) {
                 throw Error(`Required frame ${toFrame} is out of the current job`);
             }
 
@@ -945,8 +948,8 @@ export function getJobAsync(
             // frame query parameter does not work for GT job
             const frameNumber = Number.isInteger(initialFrame) && groundTruthJobId !== job.id ?
                 initialFrame : (await job.frames.search(
-                    { notDeleted: !showDeletedFrames }, 90, job.stopFrame,
-                )) || 90;
+                    { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
+                )) || job.startFrame;
 
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
