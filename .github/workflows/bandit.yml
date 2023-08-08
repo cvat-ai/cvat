@@ -18,24 +18,11 @@ jobs:
           CHANGED_FILES="${{steps.files.outputs.all_changed_files}}"
 
           if [[ ! -z $CHANGED_FILES ]]; then
-            sudo apt-get --no-install-recommends install -y build-essential curl python3-dev python3-pip python3-venv
-            python3 -m venv .env
-            . .env/bin/activate
-            pip install -U pip wheel setuptools
-            pip install bandit
-            mkdir -p bandit_report
+            pipx install bandit
 
             echo "Bandit version: "$(bandit --version | head -1)
             echo "The files will be checked: "$(echo $CHANGED_FILES)
-            bandit -a file --ini .bandit -f html -o ./bandit_report/bandit_checks.html $CHANGED_FILES
-            deactivate
+            bandit -a file --ini .bandit $CHANGED_FILES
           else
             echo "No files with the \"py\" extension found"
           fi
-
-      - name: Upload artifacts
-        if: failure()
-        uses: actions/upload-artifact@v3.1.1
-        with:
-          name: bandit_report
-          path: bandit_report

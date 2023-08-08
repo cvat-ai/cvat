@@ -50,6 +50,9 @@ class Sample:
     frame_index: int
     """Index of the corresponding frame in its task."""
 
+    frame_name: str
+    """File name of the frame in its task."""
+
     annotations: FrameAnnotations
     """Annotations belonging to the frame."""
 

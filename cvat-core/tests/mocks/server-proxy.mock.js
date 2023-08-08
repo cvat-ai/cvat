@@ -373,7 +373,7 @@ class ServerProxy {
         }
 
         async function getPreview() {
-            return 'DUMMY_IMAGE';
+            return null;
         }
 
         async function getData() {
