@@ -7,15 +7,15 @@ import FormData from 'form-data';
 import store from 'store';
 import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
+import { ChunkQuality } from 'cvat-data';
+
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
-    SerializedProject, SerializedTask, TasksFilter, SerializedUser,
-    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
+    SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, FunctionsResponseBody,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
-} from 'server-response-types';
-import { SerializedOrganization } from 'organization';
-import { SerializedQualityReportData } from 'quality-report';
-import { SerializedQualitySettingsData } from 'quality-settings';
+} from './server-response-types';
+import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
@@ -23,7 +23,6 @@ import { isEmail, isResourceURL } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
-import { FunctionsResponseBody } from './server-response-types';
 import { SerializedQualityConflictData } from './quality-conflict';
 
 type Params = {
@@ -1461,7 +1460,7 @@ async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer>
     }
 }
 
-async function getData(jid: number, chunk: number, quality: 'original' | 'compressed'): Promise<ArrayBuffer> {
+async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
     try {

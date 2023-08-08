@@ -15,6 +15,11 @@ export enum BlockType {
     ARCHIVE = 'archive',
 }
 
+export enum ChunkQuality {
+    ORIGINAL = 'original',
+    COMPRESSED = 'compressed',
+}
+
 export enum DimensionType {
     DIMENSION_3D = '3d',
     DIMENSION_2D = '2d',

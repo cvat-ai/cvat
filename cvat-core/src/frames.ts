@@ -5,7 +5,7 @@
 
 import _ from 'lodash';
 import {
-    FrameDecoder, BlockType, DimensionType, decodeContextImages, RequestOutdatedError,
+    FrameDecoder, BlockType, DimensionType, ChunkQuality, decodeContextImages, RequestOutdatedError,
 } from 'cvat-data';
 import PluginRegistry from './plugins';
 import serverProxy, { RawFramesMetaData } from './server-proxy';
@@ -31,7 +31,7 @@ const frameDataCache: Record<string, {
         timestamp: number;
         size: number;
     }>;
-    getChunk: (chunkNumber: number, quality: 'original' | 'compressed') => Promise<ArrayBuffer>;
+    getChunk: (chunkNumber: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
 }> = {};
 
 export class FramesMetaData {
@@ -206,7 +206,9 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                                 frameDataCache[this.jobID].activeChunkRequest = null;
                             };
 
-                            frameDataCache[this.jobID].getChunk(nextChunkNumber, 'compressed').then((chunk: ArrayBuffer) => {
+                            frameDataCache[this.jobID].getChunk(
+                                nextChunkNumber, ChunkQuality.COMPRESSED,
+                            ).then((chunk: ArrayBuffer) => {
                                 provider.requestDecodeBlock(
                                     chunk,
                                     nextChunkNumber * chunkSize,
@@ -254,7 +256,9 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                     resolveLoadAndDecode,
                 ) => {
                     let wasResolved = false;
-                    frameDataCache[this.jobID].getChunk(chunkNumber, 'compressed').then((chunk: ArrayBuffer) => {
+                    frameDataCache[this.jobID].getChunk(
+                        chunkNumber, ChunkQuality.COMPRESSED,
+                    ).then((chunk: ArrayBuffer) => {
                         try {
                             provider
                                 .requestDecodeBlock(
@@ -434,7 +438,7 @@ export async function getFrame(
     isPlaying: boolean,
     step: number,
     dimension: DimensionType,
-    getChunk: (chunkNumber: number, quality: 'original' | 'compressed') => Promise<ArrayBuffer>,
+    getChunk: (chunkNumber: number, quality: ChunkQuality) => Promise<ArrayBuffer>,
 ): Promise<FrameData> {
     if (!(jobID in frameDataCache)) {
         const blockType = chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
