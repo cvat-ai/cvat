@@ -13,6 +13,7 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
 } from 'server-response-types';
+import { SerializedOrganization } from 'organization';
 import { SerializedQualityReportData } from 'quality-report';
 import { SerializedQualitySettingsData } from 'quality-settings';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -1955,7 +1956,7 @@ async function getOrganizations() {
     return response.results;
 }
 
-async function createOrganization(data: SerializedOr) {
+async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1970,7 +1971,9 @@ async function createOrganization(data: SerializedOr) {
     return response.data;
 }
 
-async function updateOrganization(id, data) {
+async function updateOrganization(
+    id: number, data: Partial<SerializedOrganization>,
+): Promise<SerializedOrganization> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1983,7 +1986,7 @@ async function updateOrganization(id, data) {
     return response.data;
 }
 
-async function deleteOrganization(id) {
+async function deleteOrganization(id: number): Promise<void> {
     const { backendAPI } = config;
 
     try {
