@@ -12,7 +12,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
-module.exports = (env) => {
+module.exports = (env, argv) => {
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
     const defaultPlugins = ['plugins/sam_plugin'];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
@@ -35,7 +35,7 @@ module.exports = (env) => {
     return {
         target: 'web',
         mode: 'production',
-        devtool: 'source-map',
+        devtool: argv.mode === 'development' ? 'source-map' : undefined,
         entry: {
             'cvat-ui': './src/index.tsx',
             ...transformedPlugins,
