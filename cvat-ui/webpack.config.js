@@ -8,6 +8,7 @@
 */
 
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
@@ -32,10 +33,11 @@ module.exports = (env, argv) => {
 
     console.log('List of plugins: ', Object.values(transformedPlugins).map((plugin) => plugin.import));
 
+    const mode = argv.mode === 'development' ? 'development' : 'production';
     return {
         target: 'web',
-        mode: 'production',
-        devtool: argv.mode === 'development' ? 'source-map' : undefined,
+        mode,
+        devtool: 'source-map',
         entry: {
             'cvat-ui': './src/index.tsx',
             ...transformedPlugins,
@@ -209,6 +211,10 @@ module.exports = (env, argv) => {
                     },
                 ],
             }),
+            ...(mode === 'production' ? [new webpack.SourceMapDevToolPlugin({
+                append: '\n',
+                filename: '[file].map[query]',
+            })] : []),
         ],
     }
 };
