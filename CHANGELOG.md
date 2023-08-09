@@ -32,7 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- TDB
+- The YOLOv5 serverless function
+  (<https://github.com/opencv/cvat/pull/6618>)
 
 ### Fixed
 
