@@ -25,9 +25,10 @@ interface Props {
     onApplySearch(search: string | null): void;
 }
 
-function openAllJobsInNewTabs(jobs: Job[]) {
+async function openAllJobsInNewTabs(jobs: Job[]) {
     for (const job of jobs) {
         window.open(`/tasks/${job.taskId}/jobs/${job.id}`, '_blank');
+        await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 }
 function TopBarComponent(props: Props): JSX.Element {
