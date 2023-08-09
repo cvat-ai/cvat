@@ -198,3 +198,37 @@ export interface SerializedAsset {
     created_date: string;
     owner: SerializedUser;
 }
+
+export interface SerializedOrganizationContact {
+    email?: string;
+    location?: string;
+    phoneNumber?: string
+}
+
+export interface SerializedOrganization {
+    id?: number,
+    slug?: string,
+    name?: string,
+    description?: string,
+    created_date?: string,
+    updated_date?: string,
+    owner?: any,
+    contact?: SerializedOrganizationContact,
+}
+
+export interface SerializedQualitySettingsData {
+    id?: number;
+    task?: number;
+    iou_threshold?: number;
+    oks_sigma?: number;
+    line_thickness?: number;
+    low_overlap_threshold?: number;
+    compare_line_orientation?: boolean;
+    line_orientation_threshold?: number;
+    compare_groups?: boolean;
+    group_match_threshold?: number;
+    check_covered_annotations?: boolean;
+    object_visibility_threshold?: number;
+    panoptic_comparison?: boolean;
+    compare_attributes?: boolean;
+}

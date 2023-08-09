@@ -397,8 +397,20 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     .reduce((oldImageData, activeImageModifier) => activeImageModifier
                         .modifier.processImage(oldImageData, frame), imageData);
                 const imageBitmap = await createImageBitmap(newImageData);
-                frameData.imageData = imageBitmap;
-                canvasInstance.setup(frameData, states, curZOrder);
+                const proxy = new Proxy(frameData, {
+                    get: (_frameData, prop, receiver) => {
+                        if (prop === 'data') {
+                            return async () => ({
+                                renderWidth: imageData.width,
+                                renderHeight: imageData.height,
+                                imageData: imageBitmap,
+                            });
+                        }
+
+                        return Reflect.get(_frameData, prop, receiver);
+                    },
+                });
+                canvasInstance.setup(proxy, states, curZOrder);
             }
         } catch (error: any) {
             notification.error({

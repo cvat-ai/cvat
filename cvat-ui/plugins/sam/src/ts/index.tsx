@@ -132,7 +132,7 @@ function modelData(
 
 const samPlugin: SAMPlugin = {
     name: 'Segment Anything',
-    description: 'Plugin handles non-default SAM serverless function output',
+    description: 'Handles non-default SAM serverless function output',
     cvat: {
         jobs: {
             get: {
@@ -287,7 +287,7 @@ const samPlugin: SAMPlugin = {
     },
 };
 
-const SAMModelPlugin: ComponentBuilder = ({ core }) => {
+const builder: ComponentBuilder = ({ core }) => {
     samPlugin.data.core = core;
     core.plugins.register(samPlugin);
     InferenceSession.create(samPlugin.data.modelURL).then((session) => {
@@ -295,7 +295,7 @@ const SAMModelPlugin: ComponentBuilder = ({ core }) => {
     });
 
     return {
-        name: 'Segment Anything model',
+        name: samPlugin.name,
         destructor: () => {},
     };
 };
@@ -303,7 +303,7 @@ const SAMModelPlugin: ComponentBuilder = ({ core }) => {
 function register(): void {
     if (Object.prototype.hasOwnProperty.call(window, 'cvatUI')) {
         (window as any as { cvatUI: { registerComponent: PluginEntryPoint } })
-            .cvatUI.registerComponent(SAMModelPlugin);
+            .cvatUI.registerComponent(builder);
     }
 }
 
