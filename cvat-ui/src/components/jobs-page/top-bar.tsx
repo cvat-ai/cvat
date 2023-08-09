@@ -6,8 +6,10 @@ import React, { useState } from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 
-import { JobsQuery } from 'reducers';
+import { CombinedState, Job, JobsQuery } from 'reducers';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import Button from 'antd/lib/button';
+import { useSelector } from 'react-redux';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -23,11 +25,17 @@ interface Props {
     onApplySearch(search: string | null): void;
 }
 
+function openAllJobsInNewTabs(jobs: Job[]) {
+    for (const job of jobs) {
+        window.open(`/tasks/${job.taskId}/jobs/${job.id}`, '_blank');
+    }
+}
 function TopBarComponent(props: Props): JSX.Element {
     const {
         query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
+    const jobs = useSelector((state: CombinedState) => state.jobs.current);
 
     return (
         <Row className='cvat-jobs-page-top-bar' justify='center' align='middle'>
@@ -43,6 +51,13 @@ function TopBarComponent(props: Props): JSX.Element {
                         placeholder='Search ...'
                     />
                     <div>
+                        <Button
+                            key='open-jobs'
+                            onClick={() => openAllJobsInNewTabs(jobs)}
+                            className='cvat-filters-modal-submit-button'
+                        >
+                            Open all
+                        </Button>
                         <SortingComponent
                             visible={visibility.sorting}
                             onVisibleChange={(visible: boolean) => (
