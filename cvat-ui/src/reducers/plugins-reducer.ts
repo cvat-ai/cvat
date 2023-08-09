@@ -44,6 +44,9 @@ const defaultState: PluginsState = {
         },
         router: [],
         loggedInModals: [],
+        settings: {
+            player: [],
+        },
     },
 };
 
