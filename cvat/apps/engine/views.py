@@ -6,6 +6,7 @@
 import io
 import os
 import os.path as osp
+from PIL import Image
 from types import SimpleNamespace
 from typing import Optional
 import pytz
@@ -2720,9 +2721,16 @@ class AssetsViewSet(
         self.perform_create(serializer)
         path = os.path.join(settings.ASSETS_ROOT, str(serializer.instance.uuid))
         os.makedirs(path)
-        with open(os.path.join(path, file.name), 'wb+') as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
+        if file.content_type in ('image/jpeg', 'image/png'):
+            image = Image.open(file)
+            if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
+                scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
+                image = image.resize((map(lambda x: int(x * scale_factor), image.size)))
+            image.save(os.path.join(path, file.name))
+        else:
+            with open(os.path.join(path, file.name), 'wb+') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

@@ -39,12 +39,12 @@ You can get help with `cvat-cli --help`.
 ```
 usage: cvat-cli [-h] [--version] [--insecure] [--auth USER:[PASS]] [--server-host SERVER_HOST]
                 [--server-port SERVER_PORT] [--organization SLUG] [--debug]
-                {create,delete,ls,frames,dump,upload,export,import} ...
+                {create,delete,ls,frames,dump,upload,export,import,auto-annotate} ...
 
 Perform common operations related to CVAT tasks.
 
 positional arguments:
-  {create,delete,ls,frames,dump,upload,export,import}
+  {create,delete,ls,frames,dump,upload,export,import,auto-annotate}
 
 options:
   -h, --help            show this help message and exit
@@ -229,4 +229,44 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
 - Import task from file "task_backup.zip":
   ```bash
   cvat-cli import task_backup.zip
+  ```
+
+### Auto-annotate
+
+This command provides a command-line interface
+to the [auto-annotation API](/docs/api_sdk/sdk/auto-annotation).
+To use it, create a Python module that implements the AA function protocol.
+
+In other words, this module must define the required attributes on the module level.
+For example:
+
+```python
+import cvat_sdk.auto_annotation as cvataa
+
+spec = cvataa.DetectionFunctionSpec(...)
+
+def detect(context, image):
+    ...
+```
+
+- Annotate the task with id 137 with the predefined YOLOv8 function:
+  ```bash
+  cvat-cli auto-annotate 137 --function-module cvat_sdk.auto_annotation.functions.yolov8n
+  ```
+
+- Annotate the task with id 138 with an AA function defined in `my_func.py`:
+  ```bash
+  cvat-cli auto-annotate 138 --function-file path/to/my_func.py
+  ```
+
+Note that this command does not modify the Python module search path.
+If your function module needs to import other local modules,
+you must add your module directory to the search path
+if it isn't there already.
+
+- Annotate the task with id 139 with a function defined in the `my_func` module
+  located in the `my-project` directory,
+  letting it import other modules from that directory.
+  ```bash
+  PYTHONPATH=path/to/my-project cvat-cli auto-annotate 139 --function-module my_func
   ```

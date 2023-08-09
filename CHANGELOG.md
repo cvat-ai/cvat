@@ -8,11 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[Unreleased]
 ### Added
 
-- TDB
+- \[SDK\] A `DeferredTqdmProgressReporter` class, which doesn't have glitchy output
+  like `TqdmProgressReporter` in certain circumstances
+  (<https://github.com/opencv/cvat/pull/6556>)
+- \[SDK, CLI\] A `cvat_sdk.auto_annotation` module that provides
+  functionality for automatically annotating a task by running a
+  user-provided function on the local machine, and a corresponding CLI command
+  (`auto-annotate`)
+  (<https://github.com/opencv/cvat/pull/6483>)
 
 ### Changed
 
-- TDB
+- Increased default guide assets limitations (30 assets, up to 10Mb each)
+  (<https://github.com/opencv/cvat/pull/6575>)
+- \[SDK\] Custom `ProgressReporter` implementations should now override `start2` instead of `start`
+  (<https://github.com/opencv/cvat/pull/6556>)
+
 
 ### Deprecated
 
@@ -24,7 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- TDB
+- Accidentally using prebuilt FFmpeg bundled in PyAV instead of the custom
+  build.
 
 ### Security
 

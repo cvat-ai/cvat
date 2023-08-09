@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, ContextManager, Dict, List, Optional, Sequence, Tuple
 
 import requests
 import urllib3
@@ -180,12 +180,24 @@ class Uploader:
         # query params are used only in the extra messages
         assert meta["filename"]
 
+        if pbar is None:
+            pbar = NullProgressReporter()
+
+        file_size = filename.stat().st_size
+
         self._tus_start_upload(url, query_params=query_params)
-        real_filename = self._upload_file_data_with_tus(
-            url=url, filename=filename, meta=meta, pbar=pbar, logger=logger
-        )
+        with self._uploading_task(pbar, file_size):
+            real_filename = self._upload_file_data_with_tus(
+                url=url, filename=filename, meta=meta, pbar=pbar, logger=logger
+            )
         query_params["filename"] = real_filename
         return self._tus_finish_upload(url, query_params=query_params, fields=fields)
+
+    @staticmethod
+    def _uploading_task(pbar: ProgressReporter, total_size: int) -> ContextManager[None]:
+        return pbar.task(
+            total=total_size, desc="Uploading data", unit_scale=True, unit="B", unit_divisor=1024
+        )
 
     def _wait_for_completion(
         self,
@@ -219,21 +231,13 @@ class Uploader:
 
         return _MyTusUploader(client=client, api_client=api_client, **kwargs)
 
-    def _upload_file_data_with_tus(
-        self, url, filename, *, meta=None, pbar=None, logger=None
-    ) -> str:
-        file_size = filename.stat().st_size
-        if pbar is None:
-            pbar = NullProgressReporter()
-
-        with open(filename, "rb") as input_file, StreamWithProgress(
-            input_file, pbar, length=file_size
-        ) as input_file_with_progress:
+    def _upload_file_data_with_tus(self, url, filename, *, meta=None, pbar, logger=None) -> str:
+        with open(filename, "rb") as input_file:
             tus_uploader = self._make_tus_uploader(
                 self._client.api_client,
                 url=url.rstrip("/") + "/",
                 metadata=meta,
-                file_stream=input_file_with_progress,
+                file_stream=StreamWithProgress(input_file, pbar),
                 chunk_size=Uploader._CHUNK_SIZE,
                 log_func=logger,
             )
@@ -347,44 +351,44 @@ class DataUploader(Uploader):
     ):
         bulk_file_groups, separate_files, total_size = self._split_files_by_requests(resources)
 
-        if pbar is not None:
-            pbar.start(total_size, desc="Uploading data")
+        if pbar is None:
+            pbar = NullProgressReporter()
 
         if str(kwargs.get("sorting_method")).lower() == "predefined":
             # Request file ordering, because we reorder files to send more efficiently
             kwargs.setdefault("upload_file_order", [p.name for p in resources])
 
-        self._tus_start_upload(url)
+        with self._uploading_task(pbar, total_size):
+            self._tus_start_upload(url)
 
-        for group, group_size in bulk_file_groups:
-            files = {}
-            for i, filename in enumerate(group):
-                files[f"client_files[{i}]"] = (
-                    os.fspath(filename),
-                    filename.read_bytes(),
+            for group, group_size in bulk_file_groups:
+                files = {}
+                for i, filename in enumerate(group):
+                    files[f"client_files[{i}]"] = (
+                        os.fspath(filename),
+                        filename.read_bytes(),
+                    )
+                response = self._client.api_client.rest_client.POST(
+                    url,
+                    post_params={"image_quality": kwargs["image_quality"], **files},
+                    headers={
+                        "Content-Type": "multipart/form-data",
+                        "Upload-Multiple": "",
+                        **self._client.api_client.get_common_headers(),
+                    },
                 )
-            response = self._client.api_client.rest_client.POST(
-                url,
-                post_params={"image_quality": kwargs["image_quality"], **files},
-                headers={
-                    "Content-Type": "multipart/form-data",
-                    "Upload-Multiple": "",
-                    **self._client.api_client.get_common_headers(),
-                },
-            )
-            expect_status(200, response)
+                expect_status(200, response)
 
-            if pbar is not None:
                 pbar.advance(group_size)
 
-        for filename in separate_files:
-            self._upload_file_data_with_tus(
-                url,
-                filename,
-                meta={"filename": filename.name},
-                pbar=pbar,
-                logger=self._client.logger.debug,
-            )
+            for filename in separate_files:
+                self._upload_file_data_with_tus(
+                    url,
+                    filename,
+                    meta={"filename": filename.name},
+                    pbar=pbar,
+                    logger=self._client.logger.debug,
+                )
 
         self._tus_finish_upload(url, fields=kwargs)
 
