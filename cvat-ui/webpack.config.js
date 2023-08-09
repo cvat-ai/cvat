@@ -8,6 +8,7 @@
 */
 
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
@@ -17,7 +18,8 @@ module.exports = (env) => {
     const defaultPlugins = ['plugins/sam_plugin'];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
     const pluginsList = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
-        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins
+        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins;
+    const sourceMapsToken = process.env.SOURCE_MAPS_TOKEN || '';
 
     const transformedPlugins = pluginsList
         .filter((plugin) => !!plugin).reduce((acc, _path, index) => ({
@@ -209,6 +211,10 @@ module.exports = (env) => {
                     },
                 ],
             }),
+            ...(sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
+                append: '\n',
+                filename: `${sourceMapsToken}/[file].map`,
+            })] : []),
         ],
     }
 };
