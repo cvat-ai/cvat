@@ -1260,14 +1260,19 @@ Cypress.Commands.add('createJob', (options = {
     frameSelectionMethod: 'Random',
     quantity: null,
     frameCount: null,
+    fromTaskPage: true,
 }) => {
     const {
         jobType,
         frameSelectionMethod,
         quantity,
         frameCount,
+        fromTaskPage,
     } = options;
-    cy.get('.cvat-create-job').click({ force: true });
+
+    if (fromTaskPage) {
+        cy.get('.cvat-create-job').click({ force: true });
+    }
     cy.url().should('include', '/jobs/create');
 
     cy.get('.cvat-select-job-type').click();
@@ -1296,6 +1301,26 @@ Cypress.Commands.add('createJob', (options = {
 
     cy.get('.cvat-spinner').should('not.exist');
     cy.url().should('match', /\/tasks\/\d+\/jobs\/\d+/);
+});
+
+Cypress.Commands.add('deleteJob', (jobID) => {
+    cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
+        .parents('.cvat-job-item')
+        .find('.cvat-job-item-more-button')
+        .trigger('mouseover');
+    cy.get('.ant-dropdown')
+        .not('.ant-dropdown-hidden')
+        .within(() => {
+            cy.contains('[role="menuitem"]', 'Delete').click();
+        });
+    cy.get('.cvat-modal-confirm-delete-job')
+        .should('contain', `The job ${jobID} will be deleted`)
+        .within(() => {
+            cy.contains('button', 'Delete').click();
+        });
+    cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
+        .parents('.cvat-job-item')
+        .should('have.css', 'opacity', '0.5');
 });
 
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
