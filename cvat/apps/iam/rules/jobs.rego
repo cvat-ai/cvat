@@ -209,8 +209,7 @@ allow {
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA,
-      utils.VIEW_METADATA, utils.VIEW_COMMITS,
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA,
       utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
       utils.IMPORT_ANNOTATIONS, utils.UPDATE_METADATA
     }[input.scope]
