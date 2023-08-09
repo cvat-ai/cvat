@@ -695,6 +695,7 @@ export interface AnnotationState {
             delay: number;
             changeTime: number | null;
         };
+        ranges: string[];
         navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];

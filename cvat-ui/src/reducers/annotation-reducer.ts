@@ -72,6 +72,7 @@ const defaultState: AnnotationState = {
             delay: 0,
             changeTime: null,
         },
+        ranges: [],
         playing: false,
         frameAngles: [],
         navigationBlocked: false,
@@ -275,12 +276,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 maxZ,
                 curZ,
                 delay,
+                ranges,
                 changeTime,
             } = action.payload;
             return {
                 ...state,
                 player: {
                     ...state.player,
+                    ranges,
                     frame: {
                         data,
                         filename,

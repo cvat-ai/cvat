@@ -7,6 +7,7 @@ import { connect } from 'react-redux';
 
 import {
     switchAutoSave,
+    switchImagesCache,
     changeAutoSaveInterval,
     changeAAMZoomMargin,
     switchShowingInterpolatedTracks,
@@ -43,6 +44,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     onSwitchAutoSave(enabled: boolean): void;
+    onSwitchImagesCache(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
@@ -94,6 +96,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 const mapDispatchToProps: DispatchToProps = {
     onSwitchAutoSave: switchAutoSave,
+    onSwitchImagesCache: switchImagesCache,
     onChangeAutoSaveInterval: changeAutoSaveInterval,
     onChangeAAMZoomMargin: changeAAMZoomMargin,
     onSwitchShowingInterpolatedTracks: switchShowingInterpolatedTracks,

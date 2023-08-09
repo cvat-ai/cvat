@@ -126,12 +126,32 @@
     }
 }
 
-.cvat-player-slider {
+.cvat-player-slider.ant-slider {
     width: 350px;
     margin: 0;
+    margin-top: $grid-unit-size * -0.5;
 
+    > .ant-slider-handle {
+        z-index: 100;
+        margin-top: -3.5px;
+    }
+    > .ant-slider-track {
+        background: none;
+    }
     > .ant-slider-rail {
+        height: $grid-unit-size;
         background-color: $player-slider-color;
+    }
+}
+
+.cvat-player-slider-progress {
+    width: 350px;
+    position: absolute;
+    top: 0;
+    pointer-events: none;
+
+    > rect {
+        fill: #ff4136;
     }
 }
 

@@ -624,6 +624,7 @@ export function changeFrameAsync(
                         relatedFiles: currentState.annotation.player.frame.relatedFiles,
                         delay: currentState.annotation.player.frame.delay,
                         changeTime: currentState.annotation.player.frame.changeTime,
+                        ranges: currentState.annotation.player.ranges,
                         states: currentState.annotation.annotations.states,
                         minZ: currentState.annotation.annotations.zLayer.min,
                         maxZ: currentState.annotation.annotations.zLayer.max,
@@ -645,6 +646,8 @@ export function changeFrameAsync(
             }
 
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
+            const ranges = await job.frames.ranges();
+            console.log(ranges);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
 
             if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
@@ -695,6 +698,7 @@ export function changeFrameAsync(
                     curZ: maxZ,
                     changeTime: currentTime + delay,
                     delay,
+                    ranges,
                 },
             });
         } catch (error) {
