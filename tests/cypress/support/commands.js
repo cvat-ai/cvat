@@ -1255,6 +1255,49 @@ Cypress.Commands.add('deleteCloudStorage', (displayName) => {
         });
 });
 
+Cypress.Commands.add('createJob', (options = {
+    jobType: 'Ground truth',
+    frameSelectionMethod: 'Random',
+    quantity: null,
+    frameCount: null,
+}) => {
+    const {
+        jobType,
+        frameSelectionMethod,
+        quantity,
+        frameCount,
+    } = options;
+    cy.get('.cvat-create-job').click({ force: true });
+    cy.url().should('include', '/jobs/create');
+
+    cy.get('.cvat-select-job-type').click();
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .first()
+        .within(() => {
+            cy.get(`.ant-select-item-option[title="${jobType}"]`).click();
+        });
+
+    cy.get('.cvat-select-frame-selection-method').click();
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .first()
+        .within(() => {
+            cy.get(`.ant-select-item-option[title="${frameSelectionMethod}"]`).click();
+        });
+
+    if (quantity) {
+        cy.get('.cvat-input-frame-quantity').clear().type(quantity);
+    } else if (frameCount) {
+        cy.get('.cvat-input-frame-count').clear().type(frameCount);
+    }
+
+    cy.contains('button', 'Submit').click();
+
+    cy.get('.cvat-spinner').should('not.exist');
+    cy.url().should('match', /\/tasks\/\d+\/jobs\/\d+/);
+});
+
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
     orig(url, options);
     cy.closeModalUnsupportedPlatform();
