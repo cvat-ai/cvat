@@ -203,7 +203,10 @@ function JobForm(props: Props): JSX.Element {
                                     name='seed'
                                     label='Seed'
                                 >
-                                    <InputNumber size='middle' />
+                                    <InputNumber
+                                        className='cvat-input-seed'
+                                        size='middle'
+                                    />
                                 </Form.Item>
                             </Col>
                         </Row>

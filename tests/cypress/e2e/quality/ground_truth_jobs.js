@@ -30,6 +30,9 @@ context('Ground truth jobs', () => {
 
     let jobID = null;
 
+    // With seed = 1, frameCount = 3, totalFrames = 10 - predifined ground truth frames are:
+    const groundTruthFrames = [1, 6, 7];
+
     function checkCardValue(className, value) {
         cy.get(className)
             .should('be.visible')
@@ -96,7 +99,8 @@ context('Ground truth jobs', () => {
                 });
             cy.createJob({
                 ...jobOptions,
-                frameCount: 5,
+                frameCount: 3,
+                seed: 1,
                 fromTaskPage: false,
             });
 
@@ -110,6 +114,18 @@ context('Ground truth jobs', () => {
                     .find('.ant-tag')
                     .should('have.text', 'Ground truth');
             });
+        });
+
+        it('Check frame navigation in ground truth job', () => {
+            cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
+            cy.get('.cvat-spinner').should('not.exist');
+
+            groundTruthFrames.forEach((frame) => {
+                cy.checkFrameNum(frame);
+                cy.get('.cvat-player-next-button').click();
+            });
+
+            cy.checkFrameNum(groundTruthFrames[2]);
         });
     });
 });

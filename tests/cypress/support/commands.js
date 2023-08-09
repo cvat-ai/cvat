@@ -1260,6 +1260,7 @@ Cypress.Commands.add('createJob', (options = {
     frameSelectionMethod: 'Random',
     quantity: null,
     frameCount: null,
+    seed: null,
     fromTaskPage: true,
 }) => {
     const {
@@ -1267,6 +1268,7 @@ Cypress.Commands.add('createJob', (options = {
         frameSelectionMethod,
         quantity,
         frameCount,
+        seed,
         fromTaskPage,
     } = options;
 
@@ -1295,6 +1297,10 @@ Cypress.Commands.add('createJob', (options = {
         cy.get('.cvat-input-frame-quantity').clear().type(quantity);
     } else if (frameCount) {
         cy.get('.cvat-input-frame-count').clear().type(frameCount);
+    }
+
+    if (seed) {
+        cy.get('.cvat-input-seed').clear().type(seed);
     }
 
     cy.contains('button', 'Submit').click();
