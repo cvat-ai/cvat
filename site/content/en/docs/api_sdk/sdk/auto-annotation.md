@@ -197,24 +197,3 @@ Same logic applies to sub-label IDs.
 
 `annotate_task` will raise a `BadFunctionError` exception
 if it detects that the function violated the AA function protocol.
-
-## Predefined AA function
-
-This layer includes a predefined AA function based on the Ultralytics YOLOv8n model.
-You can use this AA function as-is, or use it as a base on which to build your own.
-
-To use this function, you have to install CVAT SDK with the `ultralytics` extra:
-
-```console
-$ pip install "cvat-sdk[ultralytics]"
-```
-
-The AA function is implemented as a module
-in order to be compatible with the `cvat-cli auto-annotate` command.
-Simply import `cvat_sdk.auto_annotation.functions.yolov8n`
-and use the module itself as a function:
-
-```python
-import cvat_sdk.auto_annotation.functions.yolov8n as yolov8n
-annotate_task(<client>, <task ID>, yolov8n)
-```

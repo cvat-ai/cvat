@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6575>)
 - \[SDK\] Custom `ProgressReporter` implementations should now override `start2` instead of `start`
   (<https://github.com/opencv/cvat/pull/6556>)
+- Optimized memory using & code in decoding module (<https://github.com/opencv/cvat/pull/6585>)
 
 
 ### Deprecated
@@ -31,12 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- TDB
+- The YOLOv5 serverless function
+  (<https://github.com/opencv/cvat/pull/6618>)
 
 ### Fixed
 
 - Accidentally using prebuilt FFmpeg bundled in PyAV instead of the custom
   build.
+- Fix filename for label in CamVid format (<https://github.com/opencv/cvat/pull/6600>)
 
 ### Security
 

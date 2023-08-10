@@ -30,7 +30,7 @@ To install an [official release of CVAT CLI](https://pypi.org/project/cvat-cli/)
 pip install cvat-cli
 ```
 
-We support Python versions 3.7 - 3.9.
+We support Python versions 3.8 and higher.
 
 ## Usage
 
@@ -248,11 +248,6 @@ spec = cvataa.DetectionFunctionSpec(...)
 def detect(context, image):
     ...
 ```
-
-- Annotate the task with id 137 with the predefined YOLOv8 function:
-  ```bash
-  cvat-cli auto-annotate 137 --function-module cvat_sdk.auto_annotation.functions.yolov8n
-  ```
 
 - Annotate the task with id 138 with an AA function defined in `my_func.py`:
   ```bash

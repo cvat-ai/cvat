@@ -236,6 +236,15 @@ function buildDuplicatedAPI(prototype) {
                     );
                     return result;
                 },
+                async chunk(chunkNumber, quality) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.frames.chunk,
+                        chunkNumber,
+                        quality,
+                    );
+                    return result;
+                },
             },
             writable: true,
         }),
@@ -364,6 +373,7 @@ export class Job extends Session {
         preview: CallableFunction;
         contextImage: CallableFunction;
         search: CallableFunction;
+        chunk: CallableFunction;
     };
 
     public logger: {
@@ -567,6 +577,7 @@ export class Job extends Session {
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
+            chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
         };
 
         this.logger = {
@@ -677,6 +688,7 @@ export class Task extends Session {
         preview: CallableFunction;
         contextImage: CallableFunction;
         search: CallableFunction;
+        chunk: CallableFunction;
     };
 
     public logger: {
@@ -1093,6 +1105,7 @@ export class Task extends Session {
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
+            chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
         };
 
         this.logger = {
