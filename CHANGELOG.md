@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Accidentally using prebuilt FFmpeg bundled in PyAV instead of the custom
   build.
+- Fix filename for label in CamVid format (<https://github.com/opencv/cvat/pull/6600>)
 
 ### Security
 
