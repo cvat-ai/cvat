@@ -32,7 +32,7 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "tests/docker-compose.test_servers.yml",
 ]
 
-TEST_EXTRAS_MOUNT_DIR = "/home/django/test_extras"
+# TEST_EXTRAS_MOUNT_DIR = "/home/django/test_extras"
 
 
 class Container(str, Enum):
@@ -208,33 +208,35 @@ def kube_restore_clickhouse_db():
 
 
 def docker_clear_rq():
-    docker_exec_cvat(
-        [
-            "/bin/sh",
-            "-c",
-            "python",
-            f"{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
-            "--host",
-            "${CVAT_REDIS_HOST}",
-            "--password",
-            "${CVAT_REDIS_PASSWORD}",
-        ]
-    )
+    # docker_exec_cvat(
+    #     [
+    #         "/bin/sh",
+    #         "-c",
+    #         "python",
+    #         f"{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
+    #         "--host",
+    #         "${CVAT_REDIS_HOST}",
+    #         "--password",
+    #         "${CVAT_REDIS_PASSWORD}",
+    #     ]
+    # )
+    pass
 
 
 def kube_clear_rq():
-    kube_exec_cvat(
-        [
-            "/bin/sh",
-            "-c",
-            "python",
-            f"{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
-            "--host",
-            "${CVAT_REDIS_HOST}",
-            "--password",
-            "${CVAT_REDIS_PASSWORD}",
-        ]
-    )
+    # kube_exec_cvat(
+    #     [
+    #         "/bin/sh",
+    #         "-c",
+    #         "python",
+    #         f"{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
+    #         "--host",
+    #         "${CVAT_REDIS_HOST}",
+    #         "--password",
+    #         "${CVAT_REDIS_PASSWORD}",
+    #     ]
+    # )
+    pass
 
 
 def running_containers():
