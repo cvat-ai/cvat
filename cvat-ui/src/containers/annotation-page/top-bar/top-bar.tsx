@@ -144,7 +144,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance,
         forceExit,
         activeControl,
-        ranges: ranges.join(';'),
+        ranges: ranges.length ? ranges.join(';') : '',
     };
 }
 

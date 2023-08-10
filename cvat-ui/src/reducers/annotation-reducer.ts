@@ -55,6 +55,7 @@ const defaultState: AnnotationState = {
     job: {
         openTime: null,
         labels: [],
+        groundTruthJobFramesMeta: null,
         requestedId: null,
         groundTruthJobId: null,
         instance: null,
@@ -146,7 +147,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 states,
                 openTime,
                 frameNumber: number,
-                ranges,
                 frameFilename: filename,
                 relatedFiles,
                 colors,
@@ -210,7 +210,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         number,
                         data,
                     },
-                    ranges,
                     frameAngles: Array(job.stopFrame - job.startFrame + 1).fill(0),
                 },
                 drawing: {
@@ -278,14 +277,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 maxZ,
                 curZ,
                 delay,
-                ranges,
                 changeTime,
             } = action.payload;
             return {
                 ...state,
                 player: {
                     ...state.player,
-                    ranges,
                     frame: {
                         data,
                         filename,
@@ -422,8 +419,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CONFIRM_CANVAS_READY: {
+            const { ranges } = action.payload;
             return {
                 ...state,
+                player: {
+                    ...state.player,
+                    ranges: ranges || state.player.ranges,
+                },
                 canvas: {
                     ...state.canvas,
                     ready: true,

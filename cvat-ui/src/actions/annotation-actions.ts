@@ -581,10 +581,24 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
-export function confirmCanvasReady(): AnyAction {
+export function confirmCanvasReady(ranges?: string[]): AnyAction {
     return {
         type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
-        payload: {},
+        payload: { ranges },
+    };
+}
+
+export function confirmCanvasReadyAsync(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
+        try {
+            const state: CombinedState = getState();
+            const { instance: job } = state.annotation.job;
+            const ranges = await job.frames.ranges();
+            dispatch(confirmCanvasReady(ranges));
+        } catch (error) {
+            // even if error happens here, do not need to notify the users
+            dispatch(confirmCanvasReady());
+        }
     };
 }
 
@@ -624,7 +638,6 @@ export function changeFrameAsync(
                         relatedFiles: currentState.annotation.player.frame.relatedFiles,
                         delay: currentState.annotation.player.frame.delay,
                         changeTime: currentState.annotation.player.frame.changeTime,
-                        ranges: currentState.annotation.player.ranges,
                         states: currentState.annotation.annotations.states,
                         minZ: currentState.annotation.annotations.zLayer.min,
                         maxZ: currentState.annotation.annotations.zLayer.max,
@@ -646,8 +659,6 @@ export function changeFrameAsync(
             }
 
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
-            const ranges = await job.frames.ranges();
-            console.log(ranges);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
 
             if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
@@ -698,7 +709,6 @@ export function changeFrameAsync(
                     curZ: maxZ,
                     changeTime: currentTime + delay,
                     delay,
-                    ranges,
                 },
             });
         } catch (error) {
@@ -966,7 +976,6 @@ export function getJobAsync(
                 });
             }
 
-            const ranges = await job.frames.ranges();
             const states = await job.annotations.get(
                 frameNumber, showAllInterpolationTracks, filters, groundTruthJobId,
             );
@@ -992,7 +1001,6 @@ export function getJobAsync(
                     frameFilename: frameData.filename,
                     relatedFiles: frameData.relatedFiles,
                     frameData,
-                    ranges,
                     colors,
                     filters,
                     minZ,
