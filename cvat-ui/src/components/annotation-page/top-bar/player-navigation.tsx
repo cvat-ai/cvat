@@ -109,12 +109,12 @@ function PlayerNavigation(props: Props): JSX.Element {
                         />
                         <svg className='cvat-player-slider-progress' viewBox='0 0 1000 9' xmlns='http://www.w3.org/2000/svg'>
                             {ranges.split(';').map((range) => {
-                                let [start, end] = range.split(':').map((num) => +num);
-                                start = Math.max(0, start - 1);
+                                const [start, end] = range.split(':').map((num) => +num);
+                                const adjustedStart = Math.max(0, start - 1);
                                 const totalSegments = stopFrame - startFrame;
                                 const segmentWidth = 1000 / totalSegments;
-                                const width = Math.max((end - start), 1) * segmentWidth;
-                                const offset = (Math.max((start - startFrame), 0) / totalSegments) * 1000;
+                                const width = Math.max((end - adjustedStart), 1) * segmentWidth;
+                                const offset = (Math.max((adjustedStart - startFrame), 0) / totalSegments) * 1000;
                                 return (<rect x={offset} y={0} height={9} width={width} />);
                             })}
                         </svg>

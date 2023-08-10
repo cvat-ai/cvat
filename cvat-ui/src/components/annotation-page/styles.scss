@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-annotation-page.ant-layout {
     height: 100%;
@@ -135,9 +135,11 @@
         z-index: 100;
         margin-top: -3.5px;
     }
+
     > .ant-slider-track {
         background: none;
     }
+
     > .ant-slider-rail {
         height: $grid-unit-size;
         background-color: $player-slider-color;
@@ -241,7 +243,7 @@
 
             .ant-table-thead {
                 > tr > th {
-                    padding: 5px 5px;
+                    padding: $grid-unit-size 0 $grid-unit-size $grid-unit-size * 0.5;
                 }
             }
         }
@@ -466,7 +468,7 @@
             }
 
             .group {
-                background: rgba(216, 233, 250, 0.5);
+                background: rgba(216, 233, 250, 50%);
                 border: 1px solid #d3e0ec;
             }
         }
