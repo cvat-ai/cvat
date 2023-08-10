@@ -153,6 +153,7 @@
     pointer-events: none;
 
     > rect {
+        transition: width 0.5s;
         fill: #ff4136;
     }
 }

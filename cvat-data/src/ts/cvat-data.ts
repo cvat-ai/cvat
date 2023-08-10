@@ -340,12 +340,21 @@ export class FrameDecoder {
             .sort((a, b) => a - b);
         return chunks.map((chunk) => {
             if (chunk === chunkIsBeingDecoded) {
-                return `${this.chunkIsBeingDecoded.start}:${this.chunkIsBeingDecoded.end}`;
+                return [this.chunkIsBeingDecoded.start, this.chunkIsBeingDecoded.end];
             }
             const frames = Object.keys(this.decodedChunks[chunk]).map((frame) => +frame);
             const min = Math.min(...frames);
             const max = Math.max(...frames);
-            return `${min}:${max}`;
-        });
+            return [min, max];
+        }).reduce<Array<[number, number]>>((acc, val) => {
+            if (acc.length && acc[acc.length - 1][1] + 1 === val[0]) {
+                const newMax = val[1];
+                acc[acc.length - 1][1] = newMax;
+            } else {
+                acc.push(val as [number, number]);
+            }
+
+            return acc;
+        }, []).map((val) => `${val[0]}:${val[1]}`);
     }
 }
