@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import abc
-from typing import List, Sequence
+from typing import List, Protocol, Sequence
 
 import attrs
 import PIL.Image
-from typing_extensions import Protocol
 
 import cvat_sdk.models as models
 
