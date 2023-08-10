@@ -183,7 +183,7 @@ function AnalyticsPage(): JSX.Element {
         });
     }, []);
 
-    const onTabKeyChange = (key: string) => {
+    const onTabKeyChange = (key: string): void => {
         setTab(key);
     };
 
