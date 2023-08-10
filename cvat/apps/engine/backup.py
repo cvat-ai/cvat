@@ -928,12 +928,20 @@ def export(db_instance, request, queue_name):
             "Unexpected action specified for the request")
 
     if isinstance(db_instance, Task):
+        if db_instance.data is None:
+            raise serializers.ValidationError("Backup task without data is not allowed")
+
         obj_type = 'task'
         logger = slogger.task[db_instance.pk]
         Exporter = TaskExporter
         cache_ttl = TASK_CACHE_TTL
         use_target_storage_conf = request.query_params.get('use_default_location', True)
     elif isinstance(db_instance, Project):
+        if tasks_wo_data := [task.id for task in db_instance.tasks.all() if task.data is None]:
+            raise serializers.ValidationError(
+                f"Project has tasks without data. Delete tasks with the following ids: {tasks_wo_data}"
+            )
+
         obj_type = 'project'
         logger = slogger.project[db_instance.pk]
         Exporter = ProjectExporter
@@ -942,6 +950,7 @@ def export(db_instance, request, queue_name):
     else:
         raise Exception(
             "Unexpected type of db_instance: {}".format(type(db_instance)))
+
     use_settings = strtobool(str(use_target_storage_conf))
     obj = db_instance if use_settings else request.query_params
     location_conf = get_location_configuration(

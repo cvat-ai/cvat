@@ -2939,6 +2939,12 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
 
+    if isinstance(db_instance, Project):
+        if tasks_wo_data := [t.id for t in db_instance.tasks.all() if t.data is None]:
+            raise serializers.ValidationError(
+                f"Project has tasks without data. Delete tasks with the following ids: {tasks_wo_data}"
+            )
+
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_export_formats()}.get(format_name)
     if format_desc is None:
