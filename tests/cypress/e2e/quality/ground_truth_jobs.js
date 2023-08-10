@@ -28,7 +28,7 @@ context('Ground truth jobs', () => {
         fromTaskPage: true,
     };
 
-    const rectangles = [
+    const groundTruthRectangles = [
         {
             id: 1,
             points: 'By 2 Points',
@@ -61,8 +61,41 @@ context('Ground truth jobs', () => {
         },
     ];
 
+    const rectangles = [
+        {
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName,
+            firstX: 270,
+            firstY: 350,
+            secondX: 370,
+            secondY: 450,
+        },
+        {
+            id: 2,
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName,
+            firstX: 350,
+            firstY: 450,
+            secondX: 450,
+            secondY: 550,
+        },
+        {
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName,
+            firstX: 130,
+            firstY: 200,
+            secondX: 150,
+            secondY: 250,
+        },
+    ];
+
     let groundTruthJobID = null;
     let jobID = null;
+    let taskID = null;
+    let qualityReportID = null;
 
     // With seed = 1, frameCount = 3, totalFrames = 10 - predifined ground truth frames are:
     const groundTruthFrames = [1, 6, 7];
@@ -97,6 +130,26 @@ context('Ground truth jobs', () => {
             .should('be.visible');
     }
 
+    function waitForReport(authKey, rqID) {
+        cy.request({
+            method: 'POST',
+            url: `/api/quality/reports?rq_id=${rqID}`,
+            headers: {
+                Authorization: `Token ${authKey}`,
+            },
+            body: {
+                task_id: taskID,
+            },
+        }).then((response) => {
+            if (response.status === 201) {
+                qualityReportID = response.body.id;
+                console.log(response.body, response.body.id, qualityReportID);
+                return;
+            }
+            waitForReport(authKey, rqID);
+        });
+    }
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
@@ -105,6 +158,9 @@ context('Ground truth jobs', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
+        cy.url().then((url) => {
+            taskID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+        });
         cy.get('.cvat-job-item').first().invoke('attr', 'data-row-id').then((val) => {
             jobID = val;
         });
@@ -179,10 +235,13 @@ context('Ground truth jobs', () => {
 
             groundTruthFrames.forEach((frame, index) => {
                 cy.goCheckFrameNumber(frame);
-                cy.createRectangle(rectangles[index]);
+                cy.createRectangle(groundTruthRectangles[index]);
             });
             cy.saveJob();
-            cy.interactMenu('Open the task');
+            cy.interactMenu('Finish the job');
+            cy.get('.cvat-modal-content-finish-job').within(() => {
+                cy.contains('button', 'Continue').click();
+            });
 
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
             cy.changeWorkspace('Review');
@@ -190,8 +249,51 @@ context('Ground truth jobs', () => {
             cy.get('.cvat-objects-sidebar-show-ground-truth').click();
             groundTruthFrames.forEach((frame, index) => {
                 cy.goCheckFrameNumber(frame);
-                checkRectangle(rectangles[index]);
+                checkRectangle(groundTruthRectangles[index]);
             });
+        });
+
+        it('Add annotations to regular job, check quality report', () => {
+            cy.changeWorkspace('Standard');
+            groundTruthFrames.forEach((frame, index) => {
+                cy.goCheckFrameNumber(frame);
+                cy.createRectangle(rectangles[index]);
+            });
+            cy.saveJob();
+            cy.interactMenu('Open the task');
+
+            cy.logout();
+            cy.getAuthKey().then((res) => {
+                const authKey = res.body.key;
+                cy.request({
+                    method: 'POST',
+                    url: '/api/quality/reports',
+                    headers: {
+                        Authorization: `Token ${authKey}`,
+                    },
+                    body: {
+                        task_id: taskID,
+                    },
+                }).then((response) => {
+                    const rqID = response.body.rq_id;
+                    waitForReport(authKey, rqID);
+                });
+            });
+            cy.login();
+            cy.visit('/tasks');
+            cy.openTask(taskName);
+
+            openQualityTab();
+            cy.intercept('GET', '/api/quality/reports**').as('getReport');
+            cy.wait('@getReport');
+            checkCardValue('.cvat-task-mean-annotation-quality', '50.0%');
+            checkCardValue('.cvat-task-gt-conflicts', '3');
+            checkCardValue('.cvat-task-issues', '0');
+        });
+
+        it('Check quality report is available for download', () => {
+            cy.get('.cvat-analytics-download-report-button').click();
+            cy.verifyDownload(`quality-report-task_${taskID}-${qualityReportID}.json`);
         });
     });
 });
