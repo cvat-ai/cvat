@@ -329,6 +329,7 @@ export class Job extends Session {
     public readonly taskId: number;
     public readonly dimension: DimensionType;
     public readonly dataChunkType: ChunkType;
+    public readonly dataChunkSize: number;
     public readonly bugTracker: string | null;
     public readonly mode: TaskMode;
     public readonly labels: Label[];
