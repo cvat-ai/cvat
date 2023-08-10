@@ -5,4 +5,3 @@ services:
   cvat_server:
     volumes:
       - ./tests/mounted_file_share:/home/django/share:rw
-      - ./tests/extras:/home/django/test_extras:rw
