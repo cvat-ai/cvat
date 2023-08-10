@@ -148,13 +148,14 @@
 
 .cvat-player-slider-progress {
     width: 350px;
+    height: $grid-unit-size;
     position: absolute;
     top: 0;
     pointer-events: none;
 
     > rect {
         transition: width 0.5s;
-        fill: #ff4136;
+        fill: #1890ff;
     }
 }
 
