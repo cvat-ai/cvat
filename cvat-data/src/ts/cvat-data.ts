@@ -82,8 +82,6 @@ interface BlockToDecode {
 export class FrameDecoder {
     private blockType: BlockType;
     private chunkSize: number;
-    private startFrame: number;
-    private stopFrame: number;
     /*
         ImageBitmap when decode zip or video chunks
         Blob when 3D dimension
@@ -106,8 +104,6 @@ export class FrameDecoder {
         chunkSize: number,
         cachedBlockCount: number,
         dimension: DimensionType = DimensionType.DIMENSION_2D,
-        startFrame: number,
-        stopFrame: number,
     ) {
         this.mutex = new Mutex();
         this.orderedStack = [];
@@ -119,8 +115,6 @@ export class FrameDecoder {
         this.renderHeight = 1080;
         this.chunkSize = chunkSize;
         this.blockType = blockType;
-        this.startFrame = startFrame;
-        this.stopFrame = stopFrame;
 
         this.decodedChunks = {};
         this.requestedChunkToDecode = null;

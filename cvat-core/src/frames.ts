@@ -470,8 +470,6 @@ export async function getFrame(
                 chunkSize,
                 decodedBlocksCacheSize,
                 dimension,
-                startFrame,
-                stopFrame,
             ),
             decodedBlocksCacheSize,
             activeChunkRequest: null,
