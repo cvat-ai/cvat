@@ -116,7 +116,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                                     const segmentWidth = 1000 / totalSegments;
                                     const width = Math.max((end - adjustedStart), 1) * segmentWidth;
                                     const offset = (Math.max((adjustedStart - startFrame), 0) / totalSegments) * 1000;
-                                    return (<rect key={start} x={offset} y={0} height={9} width={width} />);
+                                    return (<rect rx={10} key={start} x={offset} y={0} height={9} width={width} />);
                                 })}
                             </svg>
                         )}
