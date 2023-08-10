@@ -146,6 +146,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 states,
                 openTime,
                 frameNumber: number,
+                ranges,
                 frameFilename: filename,
                 relatedFiles,
                 colors,
@@ -209,6 +210,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         number,
                         data,
                     },
+                    ranges,
                     frameAngles: Array(job.stopFrame - job.startFrame + 1).fill(0),
                 },
                 drawing: {

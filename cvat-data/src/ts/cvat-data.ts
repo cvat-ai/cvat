@@ -332,8 +332,16 @@ export class FrameDecoder {
     }
 
     get cachedFrames(): string[] {
-        const chunks = Object.keys(this.decodedChunks).map((chunkNumber: string) => +chunkNumber).sort((a, b) => a - b);
+        const chunkIsBeingDecoded = this.chunkIsBeingDecoded ?
+            Math.floor(this.chunkIsBeingDecoded.start / this.chunkSize) : null;
+        const chunks = Object.keys(this.decodedChunks)
+            .map((chunkNumber: string) => +chunkNumber)
+            .concat(...(chunkIsBeingDecoded !== null ? [chunkIsBeingDecoded] : []))
+            .sort((a, b) => a - b);
         return chunks.map((chunk) => {
+            if (chunk === chunkIsBeingDecoded) {
+                return `${this.chunkIsBeingDecoded.start}:${this.chunkIsBeingDecoded.end}`;
+            }
             const frames = Object.keys(this.decodedChunks[chunk]).map((frame) => +frame);
             const min = Math.min(...frames);
             const max = Math.max(...frames);

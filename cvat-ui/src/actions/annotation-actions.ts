@@ -966,6 +966,7 @@ export function getJobAsync(
                 });
             }
 
+            const ranges = await job.frames.ranges();
             const states = await job.annotations.get(
                 frameNumber, showAllInterpolationTracks, filters, groundTruthJobId,
             );
@@ -991,6 +992,7 @@ export function getJobAsync(
                     frameFilename: frameData.filename,
                     relatedFiles: frameData.relatedFiles,
                     frameData,
+                    ranges,
                     colors,
                     filters,
                     minZ,
