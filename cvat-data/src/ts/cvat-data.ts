@@ -82,6 +82,8 @@ interface BlockToDecode {
 export class FrameDecoder {
     private blockType: BlockType;
     private chunkSize: number;
+    private startFrame: number;
+    private stopFrame: number;
     /*
         ImageBitmap when decode zip or video chunks
         Blob when 3D dimension
@@ -104,6 +106,8 @@ export class FrameDecoder {
         chunkSize: number,
         cachedBlockCount: number,
         dimension: DimensionType = DimensionType.DIMENSION_2D,
+        startFrame: number,
+        stopFrame: number,
     ) {
         this.mutex = new Mutex();
         this.orderedStack = [];
@@ -115,6 +119,8 @@ export class FrameDecoder {
         this.renderHeight = 1080;
         this.chunkSize = chunkSize;
         this.blockType = blockType;
+        this.startFrame = startFrame;
+        this.stopFrame = stopFrame;
 
         this.decodedChunks = {};
         this.requestedChunkToDecode = null;
@@ -327,34 +333,11 @@ export class FrameDecoder {
         }
     }
 
-    get cachedChunks(): number[] {
-        return Object.keys(this.decodedChunks).map((chunkNumber: string) => +chunkNumber).sort((a, b) => a - b);
-    }
-
-    get cachedFrames(): string[] {
-        const chunkIsBeingDecoded = this.chunkIsBeingDecoded ?
+    public cachedChunks(includeInProgress = false): number[] {
+        const chunkIsBeingDecoded = includeInProgress && this.chunkIsBeingDecoded ?
             Math.floor(this.chunkIsBeingDecoded.start / this.chunkSize) : null;
-        const chunks = Object.keys(this.decodedChunks)
-            .map((chunkNumber: string) => +chunkNumber)
-            .concat(...(chunkIsBeingDecoded !== null ? [chunkIsBeingDecoded] : []))
-            .sort((a, b) => a - b);
-        return chunks.map((chunk) => {
-            if (chunk === chunkIsBeingDecoded) {
-                return [this.chunkIsBeingDecoded.start, this.chunkIsBeingDecoded.end];
-            }
-            const frames = Object.keys(this.decodedChunks[chunk]).map((frame) => +frame);
-            const min = Math.min(...frames);
-            const max = Math.max(...frames);
-            return [min, max];
-        }).reduce<Array<[number, number]>>((acc, val) => {
-            if (acc.length && acc[acc.length - 1][1] + 1 === val[0]) {
-                const newMax = val[1];
-                acc[acc.length - 1][1] = newMax;
-            } else {
-                acc.push(val as [number, number]);
-            }
-
-            return acc;
-        }, []).map((val) => `${val[0]}:${val[1]}`);
+        return Object.keys(this.decodedChunks).map((chunkNumber: string) => +chunkNumber).concat(
+            ...(chunkIsBeingDecoded !== null ? [chunkIsBeingDecoded] : []),
+        ).sort((a, b) => a - b);
     }
 }

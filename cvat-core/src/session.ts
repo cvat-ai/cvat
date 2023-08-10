@@ -210,8 +210,8 @@ function buildDuplicatedAPI(prototype) {
                         prototype.frames.save,
                     );
                 },
-                async ranges() {
-                    const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.ranges);
+                async cachedChunks() {
+                    const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.cachedChunks);
                     return result;
                 },
                 async preview() {
@@ -370,7 +370,7 @@ export class Job extends Session {
         delete: CallableFunction;
         restore: CallableFunction;
         save: CallableFunction;
-        ranges: CallableFunction;
+        cachedChunks: CallableFunction;
         preview: CallableFunction;
         contextImage: CallableFunction;
         search: CallableFunction;
@@ -574,7 +574,7 @@ export class Job extends Session {
             delete: Object.getPrototypeOf(this).frames.delete.bind(this),
             restore: Object.getPrototypeOf(this).frames.restore.bind(this),
             save: Object.getPrototypeOf(this).frames.save.bind(this),
-            ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
+            cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
@@ -685,7 +685,7 @@ export class Task extends Session {
         delete: CallableFunction;
         restore: CallableFunction;
         save: CallableFunction;
-        ranges: CallableFunction;
+        cachedChunks: CallableFunction;
         preview: CallableFunction;
         contextImage: CallableFunction;
         search: CallableFunction;
@@ -1102,7 +1102,7 @@ export class Task extends Session {
             delete: Object.getPrototypeOf(this).frames.delete.bind(this),
             restore: Object.getPrototypeOf(this).frames.restore.bind(this),
             save: Object.getPrototypeOf(this).frames.save.bind(this),
-            ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
+            cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
