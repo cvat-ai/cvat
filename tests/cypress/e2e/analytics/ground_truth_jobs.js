@@ -7,7 +7,7 @@
 context('Ground truth jobs', () => {
     const caseId = 'Ground truth jobs';
     const labelName = 'car';
-    const taskName = `New annotation task for Case ${caseId}`;
+    const taskName = `Annotation task for Case ${caseId}`;
     const attrName = `Attr for Case ${caseId}`;
     const textDefaultValue = 'Some default value for type Text';
     const imagesCount = 10;
@@ -130,6 +130,27 @@ context('Ground truth jobs', () => {
             .should('be.visible');
     }
 
+    function checkConflicts(type, amount) {
+        switch (type) {
+            case 'warning': {
+                cy.get('.cvat-conflict-warning').should('have.length', amount);
+                cy.get('.cvat-objects-sidebar-warning-item').should('have.length', amount);
+                break;
+            }
+            case 'error': {
+                cy.get('.cvat-conflict-error').should('have.length', amount);
+                cy.get('.cvat-objects-sidebar-conflict-item').should('have.length', amount);
+                break;
+            }
+            default: {
+                cy.get('.cvat-conflict-warning').should('not.exist');
+                cy.get('.cvat-conflict-error').should('not.exist');
+                cy.get('.cvat-objects-sidebar-warning-item').should('not.exist');
+                cy.get('.cvat-objects-sidebar-conflict-item').should('not.exist');
+            }
+        }
+    }
+
     function waitForReport(authKey, rqID) {
         cy.request({
             method: 'POST',
@@ -143,7 +164,6 @@ context('Ground truth jobs', () => {
         }).then((response) => {
             if (response.status === 201) {
                 qualityReportID = response.body.id;
-                console.log(response.body, response.body.id, qualityReportID);
                 return;
             }
             waitForReport(authKey, rqID);
@@ -217,7 +237,7 @@ context('Ground truth jobs', () => {
             });
         });
 
-        it('Check frame navigation in ground truth job', () => {
+        it('Frame navigation in ground truth job', () => {
             cy.get('.cvat-job-item').contains('a', `Job #${groundTruthJobID}`).click();
             cy.get('.cvat-spinner').should('not.exist');
 
@@ -229,7 +249,7 @@ context('Ground truth jobs', () => {
             cy.checkFrameNum(groundTruthFrames[2]);
         });
 
-        it('Check ground truth annotations', () => {
+        it('Check ground truth annotations in regular job', () => {
             cy.interactMenu('Open the task');
             cy.get('.cvat-job-item').contains('a', `Job #${groundTruthJobID}`).click();
 
@@ -294,6 +314,38 @@ context('Ground truth jobs', () => {
         it('Check quality report is available for download', () => {
             cy.get('.cvat-analytics-download-report-button').click();
             cy.verifyDownload(`quality-report-task_${taskID}-${qualityReportID}.json`);
+        });
+
+        it('Conflicts on canvas and sidebar', () => {
+            cy.get('.cvat-task-job-list').within(() => {
+                cy.contains('a', `Job #${jobID}`).click();
+            });
+            cy.get('.cvat-spinner').should('not.exist');
+
+            cy.changeWorkspace('Review');
+            cy.get('.cvat-objects-sidebar-tabs').within(() => {
+                cy.contains('span', 'Issues').click();
+            });
+            cy.get('.cvat-objects-sidebar-show-ground-truth').filter(':visible').click();
+
+            cy.goCheckFrameNumber(groundTruthFrames[0]);
+            checkConflicts('warning', 1);
+
+            cy.goCheckFrameNumber(groundTruthFrames[1]);
+            checkConflicts();
+
+            cy.goCheckFrameNumber(groundTruthFrames[2]);
+            checkConflicts('error', 2);
+        });
+
+        it('Frames with conflicts navigation', () => {
+            cy.goCheckFrameNumber(0);
+
+            cy.get('.cvat-issues-sidebar-next-frame').click();
+            cy.checkFrameNum(groundTruthFrames[0]);
+
+            cy.get('.cvat-issues-sidebar-next-frame').click();
+            cy.checkFrameNum(groundTruthFrames[2]);
         });
     });
 });

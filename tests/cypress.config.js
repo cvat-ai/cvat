@@ -31,6 +31,7 @@ module.exports = defineConfig({
             'cypress/e2e/issues_prs/**/*.js',
             'cypress/e2e/issues_prs2/**/*.js',
             'cypress/e2e/actions_users/**/*.js',
+            'cypress/e2e/analytics/*.js',
             'cypress/e2e/actions_projects_models/**/*.js',
             'cypress/e2e/actions_organizations/**/*.js',
             'cypress/e2e/remove_users_tasks_projects_organizations.js',
