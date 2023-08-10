@@ -14,13 +14,12 @@ from typing import (
     ContextManager,
     Dict,
     Iterator,
+    Literal,
     Sequence,
     TextIO,
     Union,
     overload,
 )
-
-from typing_extensions import Literal
 
 
 def filter_dict(

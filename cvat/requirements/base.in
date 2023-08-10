@@ -58,7 +58,7 @@ dnspython==2.2.0
 setuptools==65.5.1
 django-health-check==3.17.0
 psutil==5.9.4
-clickhouse-connect==0.5.10
+clickhouse-connect==0.6.8
 django-crum==0.7.9
 wheel>=0.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
 psycopg2-binary==2.9.5
