@@ -327,17 +327,11 @@ export class FrameDecoder {
         }
     }
 
-    get cachedChunks(): number[] {
-        return Object.keys(this.decodedChunks).map((chunkNumber: string) => +chunkNumber).sort((a, b) => a - b);
-    }
-
-    get cachedFrames(): string[] {
-        const chunks = Object.keys(this.decodedChunks).map((chunkNumber: string) => +chunkNumber).sort((a, b) => a - b);
-        return chunks.map((chunk) => {
-            const frames = Object.keys(this.decodedChunks[chunk]).map((frame) => +frame);
-            const min = Math.min(...frames);
-            const max = Math.max(...frames);
-            return `${min}:${max}`;
-        });
+    public cachedChunks(includeInProgress = false): number[] {
+        const chunkIsBeingDecoded = includeInProgress && this.chunkIsBeingDecoded ?
+            Math.floor(this.chunkIsBeingDecoded.start / this.chunkSize) : null;
+        return Object.keys(this.decodedChunks).map((chunkNumber: string) => +chunkNumber).concat(
+            ...(chunkIsBeingDecoded !== null ? [chunkIsBeingDecoded] : []),
+        ).sort((a, b) => a - b);
     }
 }

@@ -44,7 +44,7 @@ To use the PyTorch adapter, request the `pytorch` extra:
 pip install "cvat-sdk[pytorch]"
 ```
 
-We support Python versions 3.7 - 3.9.
+We support Python versions 3.8 and higher.
 
 ## Usage
 
