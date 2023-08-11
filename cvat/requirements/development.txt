@@ -14,7 +14,7 @@ autopep8==2.0.2
     # via django-silk
 black==23.3.0
     # via -r cvat/requirements/development.in
-dill==0.3.6
+dill==0.3.7
     # via pylint
 django-extensions==3.0.8
     # via -r cvat/requirements/development.in
@@ -30,9 +30,9 @@ mccabe==0.7.0
     # via pylint
 mypy-extensions==1.0.0
     # via black
-pathspec==0.11.1
+pathspec==0.11.2
     # via black
-platformdirs==3.5.1
+platformdirs==3.9.1
     # via
     #   black
     #   pylint
@@ -58,7 +58,7 @@ tomli==2.0.1
     #   autopep8
     #   black
     #   pylint
-tomlkit==0.11.8
+tomlkit==0.12.1
     # via pylint
 tornado==6.3.2
     # via snakeviz

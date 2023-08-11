@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import io
 import json
+import warnings
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 import tqdm
@@ -13,7 +14,7 @@ import urllib3
 
 from cvat_sdk import exceptions
 from cvat_sdk.api_client.api_client import Endpoint
-from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.progress import BaseProgressReporter, ProgressReporter
 
 
 def get_paginated_collection(
@@ -46,39 +47,83 @@ def get_paginated_collection(
     return results
 
 
-class TqdmProgressReporter(ProgressReporter):
-    def __init__(self, instance: tqdm.tqdm) -> None:
-        super().__init__()
-        self.tqdm = instance
-
-    @property
-    def period(self) -> float:
-        return 0
-
-    def start(self, total: int, *, desc: Optional[str] = None):
-        self.tqdm.reset(total)
-        self.tqdm.set_description_str(desc)
+class _BaseTqdmProgressReporter(BaseProgressReporter):
+    tqdm: Optional[tqdm.tqdm]
 
     def report_status(self, progress: int):
+        super().report_status(progress)
         self.tqdm.update(progress - self.tqdm.n)
 
     def advance(self, delta: int):
+        super().advance(delta)
         self.tqdm.update(delta)
+
+
+class TqdmProgressReporter(_BaseTqdmProgressReporter):
+    def __init__(self, instance: tqdm.tqdm) -> None:
+        super().__init__()
+        warnings.warn(f"use {DeferredTqdmProgressReporter.__name__} instead", DeprecationWarning)
+
+        self.tqdm = instance
+
+    def start2(self, total: int, *, desc: Optional[str] = None, **kwargs) -> None:
+        super().start2(total=total, desc=desc, **kwargs)
+
+        self.tqdm.reset(total)
+        self.tqdm.set_description_str(desc)
 
     def finish(self):
         self.tqdm.refresh()
+        super().finish()
+
+
+class DeferredTqdmProgressReporter(_BaseTqdmProgressReporter):
+    def __init__(self, tqdm_args: Optional[dict] = None) -> None:
+        super().__init__()
+        self.tqdm_args = tqdm_args or {}
+        self.tqdm = None
+
+    def start2(
+        self,
+        total: int,
+        *,
+        desc: Optional[str] = None,
+        unit: str = "it",
+        unit_scale: bool = False,
+        unit_divisor: int = 1000,
+        **kwargs,
+    ) -> None:
+        super().start2(
+            total=total,
+            desc=desc,
+            unit=unit,
+            unit_scale=unit_scale,
+            unit_divisor=unit_divisor,
+            **kwargs,
+        )
+        assert not self.tqdm
+
+        self.tqdm = tqdm.tqdm(
+            **self.tqdm_args,
+            total=total,
+            desc=desc,
+            unit=unit,
+            unit_scale=unit_scale,
+            unit_divisor=unit_divisor,
+        )
+
+    def finish(self):
+        self.tqdm.close()
+        self.tqdm = None
+        super().finish()
 
 
 class StreamWithProgress:
-    def __init__(self, stream: io.RawIOBase, pbar: ProgressReporter, length: Optional[int] = None):
+    def __init__(self, stream: io.RawIOBase, pbar: ProgressReporter):
         self.stream = stream
         self.pbar = pbar
 
-        if hasattr(stream, "__len__"):
-            length = len(stream)
-
-        self.length = length
-        pbar.start(length)
+        assert self.stream.tell() == 0
 
     def read(self, size=-1):
         chunk = self.stream.read(size)
@@ -86,21 +131,14 @@ class StreamWithProgress:
             self.pbar.advance(len(chunk))
         return chunk
 
-    def __len__(self):
-        return self.length
+    def seek(self, pos: int, whence: int = io.SEEK_SET) -> None:
+        old_pos = self.stream.tell()
+        new_pos = self.stream.seek(pos, whence)
+        self.pbar.advance(new_pos - old_pos)
+        return new_pos
 
-    def seek(self, pos, start=0):
-        self.stream.seek(pos, start)
-        self.pbar.report_status(pos)
-
-    def tell(self):
+    def tell(self) -> int:
         return self.stream.tell()
-
-    def __enter__(self) -> StreamWithProgress:
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
-        self.pbar.finish()
 
 
 def expect_status(codes: Union[int, Iterable[int]], response: urllib3.HTTPResponse) -> None:

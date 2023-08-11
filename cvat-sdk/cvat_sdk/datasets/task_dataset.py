@@ -126,7 +126,12 @@ class TaskDataset:
         # TODO: tracks?
 
         self._samples = [
-            Sample(frame_index=k, annotations=v, media=self._TaskMediaElement(self, k))
+            Sample(
+                frame_index=k,
+                frame_name=data_meta.frames[k].name,
+                annotations=v,
+                media=self._TaskMediaElement(self, k),
+            )
             for k, v in self._frame_annotations.items()
         ]
 

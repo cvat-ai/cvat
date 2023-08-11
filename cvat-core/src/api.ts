@@ -326,16 +326,23 @@ function build() {
     cvat.server = Object.freeze(cvat.server);
     cvat.projects = Object.freeze(cvat.projects);
     cvat.tasks = Object.freeze(cvat.tasks);
+    cvat.assets = Object.freeze(cvat.assets);
     cvat.jobs = Object.freeze(cvat.jobs);
+    cvat.frames = Object.freeze(cvat.frames);
     cvat.users = Object.freeze(cvat.users);
     cvat.plugins = Object.freeze(cvat.plugins);
     cvat.lambda = Object.freeze(cvat.lambda);
+    // logger: todo: logger storage implemented other way
+    cvat.config = Object.freeze(cvat.config);
     cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
+    cvat.exceptions = Object.freeze(cvat.exceptions);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
     cvat.organizations = Object.freeze(cvat.organizations);
+    cvat.webhooks = Object.freeze(cvat.webhooks);
     cvat.analytics = Object.freeze(cvat.analytics);
-    cvat.frames = Object.freeze(cvat.frames);
+    cvat.storage = Object.freeze(cvat.storage);
+    cvat.classes = Object.freeze(cvat.classes);
 
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;

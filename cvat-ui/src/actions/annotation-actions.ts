@@ -581,10 +581,41 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
-export function confirmCanvasReady(): AnyAction {
+export function confirmCanvasReady(ranges?: string): AnyAction {
     return {
         type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
-        payload: {},
+        payload: { ranges },
+    };
+}
+
+export function confirmCanvasReadyAsync(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
+        try {
+            const state: CombinedState = getState();
+            const { instance: job } = state.annotation.job;
+            const chunks = await job.frames.cachedChunks() as number[];
+            const { startFrame, stopFrame, dataChunkSize } = job;
+
+            const ranges = chunks.map((chunk) => (
+                [
+                    Math.max(startFrame, chunk * dataChunkSize),
+                    Math.min(stopFrame, (chunk + 1) * dataChunkSize - 1),
+                ]
+            )).reduce<Array<[number, number]>>((acc, val) => {
+                if (acc.length && acc[acc.length - 1][1] + 1 === val[0]) {
+                    const newMax = val[1];
+                    acc[acc.length - 1][1] = newMax;
+                } else {
+                    acc.push(val as [number, number]);
+                }
+                return acc;
+            }, []).map(([start, end]) => `${start}:${end}`).join(';');
+
+            dispatch(confirmCanvasReady(ranges));
+        } catch (error) {
+            // even if error happens here, do not need to notify the users
+            dispatch(confirmCanvasReady());
+        }
     };
 }
 

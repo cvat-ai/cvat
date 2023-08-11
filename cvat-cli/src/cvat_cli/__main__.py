@@ -59,6 +59,7 @@ def main(args: List[str] = None):
         "upload": CLI.tasks_upload,
         "export": CLI.tasks_export,
         "import": CLI.tasks_import,
+        "auto-annotate": CLI.tasks_auto_annotate,
     }
     parser = make_cmdline_parser()
     parsed_args = parser.parse_args(args)

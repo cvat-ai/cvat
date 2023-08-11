@@ -65,6 +65,7 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas | Canvas3d;
     forceExit: boolean;
+    ranges: string;
     activeControl: ActiveControl;
 }
 
@@ -91,6 +92,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             player: {
                 playing,
+                ranges,
                 frame: {
                     data: { deleted: frameIsDeleted },
                     filename: frameFilename,
@@ -142,6 +144,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance,
         forceExit,
         activeControl,
+        ranges,
     };
 }
 
@@ -638,6 +641,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             workspace,
             canvasIsReady,
             keyMap,
+            ranges,
             normalizedKeyMap,
             activeControl,
             searchAnnotations,
@@ -766,6 +770,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     workspace={workspace}
                     playing={playing}
                     saving={saving}
+                    ranges={ranges}
                     startFrame={startFrame}
                     stopFrame={stopFrame}
                     frameNumber={frameNumber}

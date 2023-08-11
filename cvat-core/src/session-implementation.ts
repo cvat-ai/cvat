@@ -6,13 +6,14 @@
 import { ArgumentError } from './exceptions';
 import { HistoryActions, JobType } from './enums';
 import { Storage } from './storage';
+import { Task as TaskClass, Job as JobClass } from './session';
 import loggerStorage from './logger-storage';
 import serverProxy from './server-proxy';
 import {
     getFrame,
     deleteFrame,
     restoreFrame,
-    getRanges,
+    getCachedChunks,
     clear as clearFrames,
     findFrame,
     getContextImage,
@@ -128,6 +129,7 @@ export function implementJob(Job) {
             isPlaying,
             step,
             this.dimension,
+            (chunkNumber, quality) => this.frames.chunk(chunkNumber, quality),
         );
         return frameData;
     };
@@ -161,23 +163,25 @@ export function implementJob(Job) {
         return result;
     };
 
-    Job.prototype.frames.ranges.implementation = async function () {
-        const rangesData = await getRanges(this.id);
-        return rangesData;
+    Job.prototype.frames.cachedChunks.implementation = async function () {
+        const cachedChunks = await getCachedChunks(this.id);
+        return cachedChunks;
     };
 
-    Job.prototype.frames.preview.implementation = async function () {
-        if (this.id === null || this.taskId === null) {
-            return '';
-        }
-
+    Job.prototype.frames.preview.implementation = async function (this: JobClass): Promise<string> {
+        if (this.id === null || this.taskId === null) return '';
         const preview = await serverProxy.jobs.getPreview(this.id);
-        const decoded = await decodePreview(preview);
-        return decoded;
+        if (!preview) return '';
+        return decodePreview(preview);
     };
 
     Job.prototype.frames.contextImage.implementation = async function (frameId) {
         const result = await getContextImage(this.id, frameId);
+        return result;
+    };
+
+    Job.prototype.frames.chunk.implementation = async function (chunkNumber, quality) {
+        const result = await serverProxy.frames.getData(this.id, chunkNumber, quality);
         return result;
     };
 
@@ -566,31 +570,25 @@ export function implementTask(Task) {
             isPlaying,
             step,
             this.dimension,
+            (chunkNumber, quality) => job.frames.chunk(chunkNumber, quality),
         );
         return result;
     };
 
-    Task.prototype.frames.ranges.implementation = async function () {
-        const rangesData = {
-            decoded: [],
-            buffered: [],
-        };
+    Task.prototype.frames.cachedChunks.implementation = async function () {
+        let chunks = [];
         for (const job of this.jobs) {
-            const { decoded, buffered } = await getRanges(job.id);
-            rangesData.decoded.push(decoded);
-            rangesData.buffered.push(buffered);
+            const cachedChunks = await getCachedChunks(job.id);
+            chunks = chunks.concat(cachedChunks);
         }
-        return rangesData;
+        return Array.from(new Set(chunks));
     };
 
-    Task.prototype.frames.preview.implementation = async function () {
-        if (this.id === null) {
-            return '';
-        }
-
+    Task.prototype.frames.preview.implementation = async function (this: TaskClass): Promise<string> {
+        if (this.id === null) return '';
         const preview = await serverProxy.tasks.getPreview(this.id);
-        const decoded = await decodePreview(preview);
-        return decoded;
+        if (!preview) return '';
+        return decodePreview(preview);
     };
 
     Task.prototype.frames.delete.implementation = async function (frame) {
@@ -659,6 +657,14 @@ export function implementTask(Task) {
         }
 
         return null;
+    };
+
+    Task.prototype.frames.contextImage.implementation = async function () {
+        throw new Error('Not implemented');
+    };
+
+    Task.prototype.frames.chunk.implementation = async function () {
+        throw new Error('Not implemented');
     };
 
     // TODO: Check filter for annotations

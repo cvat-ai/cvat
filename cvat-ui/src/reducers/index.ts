@@ -312,6 +312,9 @@ export interface PluginsState {
                 player: PluginComponent[];
             };
         };
+        settings: {
+            player: PluginComponent[],
+        }
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
     }
@@ -692,6 +695,7 @@ export interface AnnotationState {
             delay: number;
             changeTime: number | null;
         };
+        ranges: string;
         navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];

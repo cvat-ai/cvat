@@ -56,8 +56,11 @@ COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/require
 RUN grep -q '^av==' /tmp/utils/dataset_manifest/requirements.txt
 RUN sed -i '/^av==/!d' /tmp/utils/dataset_manifest/requirements.txt
 
+# Work around https://github.com/PyAV-Org/PyAV/issues/1140
+RUN pip install setuptools wheel 'cython<3'
+
 RUN --mount=type=cache,target=/root/.cache/pip/http \
-    python3 -m pip wheel \
+    python3 -m pip wheel --no-binary=av --no-build-isolation \
     -r /tmp/utils/dataset_manifest/requirements.txt \
     -w /tmp/wheelhouse
 
