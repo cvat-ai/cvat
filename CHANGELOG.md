@@ -12,22 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[SDK\] Introduced the `DeferredTqdmProgressReporter` class,
   which avoids the glitchy output seen with the `TqdmProgressReporter` under certain circumstances
   (<https://github.com/opencv/cvat/pull/6556>)
-- \[SDK, CLI\] Added the `cvat_sdk.auto_annotation` module,
+- \[SDK, CLI\] Added predefined functions using torchvision
+  and the `cvat_sdk.auto_annotation` module,
   providing functionality to automatically annotate tasks
   by executing a user-provided function on the local machine.
   A corresponding CLI command (`auto-annotate`) is also available
-  (<https://github.com/opencv/cvat/pull/6483>)
+  (<https://github.com/opencv/cvat/pull/6483>) and
+  (<https://github.com/opencv/cvat/pull/6649>)
 - Included an indication for cached frames in the interface
   (<https://github.com/opencv/cvat/pull/6586>)
-- Added predefined functions using torchvision,
-  which will serve as a replacement for YOLOv8(<https://github.com/opencv/cvat/pull/6649>)
 
 ### Changed
 
 - Raised the default guide assets limitations to 30 assets,
   with a maximum size of 10MB each
   (<https://github.com/opencv/cvat/pull/6575>)
-- \[SDK\] Custom `ProgressReporter` implementations must now override `start2` instead of start
+- \[SDK\] Custom `ProgressReporter` implementations must now override `start2` instead of `start`
   (<https://github.com/opencv/cvat/pull/6556>)
 - Improved memory optimization and code in the decoding module (<https://github.com/opencv/cvat/pull/6585>)
 
