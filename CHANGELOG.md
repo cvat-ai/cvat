@@ -17,8 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   providing functionality to automatically annotate tasks
   by executing a user-provided function on the local machine.
   A corresponding CLI command (`auto-annotate`) is also available
-  (<https://github.com/opencv/cvat/pull/6483>) and
-  (<https://github.com/opencv/cvat/pull/6649>)
+  (<https://github.com/opencv/cvat/pull/6483>,
+  <https://github.com/opencv/cvat/pull/6649>)
 - Included an indication for cached frames in the interface
   (<https://github.com/opencv/cvat/pull/6586>)
 
