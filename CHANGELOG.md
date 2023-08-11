@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   user-provided function on the local machine, and a corresponding CLI command
   (`auto-annotate`)
   (<https://github.com/opencv/cvat/pull/6483>)
+- Cached frames indication on the interface (<https://github.com/opencv/cvat/pull/6586>)
 
 ### Changed
 

@@ -582,12 +582,12 @@ export async function findFrame(
     return lastUndeletedFrame;
 }
 
-export function getRanges(jobID): Array<string> {
+export function getCachedChunks(jobID): number[] {
     if (!(jobID in frameDataCache)) {
         return [];
     }
 
-    return frameDataCache[jobID].provider.cachedFrames;
+    return frameDataCache[jobID].provider.cachedChunks(true);
 }
 
 export function clear(jobID: number): void {
