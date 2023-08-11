@@ -6,27 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## \[Unreleased]
+
 ### Added
 
-- \[SDK\] A `DeferredTqdmProgressReporter` class, which doesn't have glitchy output
-  like `TqdmProgressReporter` in certain circumstances
+- \[SDK\] Introduced the `DeferredTqdmProgressReporter` class,
+  which avoids the glitchy output seen with the `TqdmProgressReporter` under certain circumstances
   (<https://github.com/opencv/cvat/pull/6556>)
-- \[SDK, CLI\] A `cvat_sdk.auto_annotation` module that provides
-  functionality for automatically annotating a task by running a
-  user-provided function on the local machine, and a corresponding CLI command
-  (`auto-annotate`)
+- \[SDK, CLI\] Added the `cvat_sdk.auto_annotation`
+  module, providing functionality to automatically annotate tasks
+  by executing a user-provided function on the local machine.
+  A corresponding CLI command (`auto-annotate`) is also available.
+  Some predefined functions using torchvision are also available.
   (<https://github.com/opencv/cvat/pull/6483>,
   <https://github.com/opencv/cvat/pull/6649>)
-- Cached frames indication on the interface (<https://github.com/opencv/cvat/pull/6586>)
+- Included an indication for cached frames in the interface
+  (<https://github.com/opencv/cvat/pull/6586>)
 
 ### Changed
 
-- Increased default guide assets limitations (30 assets, up to 10Mb each)
+- Raised the default guide assets limitations to 30 assets,
+  with a maximum size of 10MB each
   (<https://github.com/opencv/cvat/pull/6575>)
 - \[SDK\] Custom `ProgressReporter` implementations should now override `start2` instead of `start`
+  The old implementation is still supported.
   (<https://github.com/opencv/cvat/pull/6556>)
-- Optimized memory using & code in decoding module (<https://github.com/opencv/cvat/pull/6585>)
-
+- Improved memory optimization and code in the decoding module (<https://github.com/opencv/cvat/pull/6585>)
 
 ### Deprecated
 
@@ -34,14 +38,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- The YOLOv5 serverless function
+- Removed the YOLOv5 serverless function
   (<https://github.com/opencv/cvat/pull/6618>)
 
 ### Fixed
 
-- Accidentally using prebuilt FFmpeg bundled in PyAV instead of the custom
-  build.
-- Fix filename for label in CamVid format (<https://github.com/opencv/cvat/pull/6600>)
+- Corrected an issue where the prebuilt FFmpeg bundled in PyAV
+  was being used instead of the custom build.
+- Fixed the filename for labels in the CamVid format (<https://github.com/opencv/cvat/pull/6600>)
 
 ### Security
 
@@ -84,7 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6447>)
 - \[API\] Fixed API issue related to file downloading failures for filenames with special characters (<https://github.com/opencv/cvat/pull/6492>)
 - \[Helm\] In Helm, we've resolved an issue with multiple caches
-   in the same RWX volume, which was preventing db migration from starting (<https://github.com/opencv/cvat/pull/6137>)
+  in the same RWX volume, which was preventing db migration from starting (<https://github.com/opencv/cvat/pull/6137>)
 
 ## \[2.5.1\] - 2023-07-19
 
