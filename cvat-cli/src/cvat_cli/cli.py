@@ -8,7 +8,7 @@ import importlib
 import importlib.util
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client, models
@@ -151,6 +151,7 @@ class CLI:
         *,
         function_module: Optional[str] = None,
         function_file: Optional[Path] = None,
+        function_parameters: Dict[str, Any],
         clear_existing: bool = False,
         allow_unmatched_labels: bool = False,
     ) -> None:
@@ -162,6 +163,13 @@ class CLI:
             module_spec.loader.exec_module(function)
         else:
             assert False, "function identification arguments missing"
+
+        if hasattr(function, "create"):
+            # this is actually a function factory
+            function = function.create(**function_parameters)
+        else:
+            if function_parameters:
+                raise TypeError("function takes no parameters")
 
         cvataa.annotate_task(
             self.client,

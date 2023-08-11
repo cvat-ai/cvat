@@ -197,3 +197,57 @@ Same logic applies to sub-label IDs.
 
 `annotate_task` will raise a `BadFunctionError` exception
 if it detects that the function violated the AA function protocol.
+
+## Predefined AA functions
+
+This layer includes several predefined AA functions.
+You can use them as-is, or as a base on which to build your own.
+
+Each function is implemented as a module
+to allow usage via the CLI `auto-annotate` command.
+Therefore, in order to use it from the SDK,
+you'll need to import the corresponding module.
+
+### `cvat_sdk.auto_annotation.functions.torchvision_detection`
+
+This AA function uses object detection models from
+the [torchvision](https://pytorch.org/vision/stable/index.html) library.
+It produces rectangle annotations.
+
+To use it, install CVAT SDK with the `pytorch` extra:
+
+```
+$ pip install "cvat-sdk[pytorch]"
+```
+
+Usage from Python:
+
+```python
+from cvat_sdk.auto_annotation.functions.torchvision_detection import create as create_torchvision
+annotate_task(<client>, <task ID>, create_torchvision(<model name>, ...))
+```
+
+Usage from the CLI:
+
+```bash
+cvat-cli auto-annotate "<task ID>" --function-module cvat_sdk.auto_annotation.functions.torchvision_detection \
+      -p model_name=str:"<model name>" ...
+```
+
+The `create` function accepts the following parameters:
+
+- `model_name` (`str`) - the name of the model, such as `fasterrcnn_resnet50_fpn_v2`.
+  This parameter is required.
+- `weights_name` (`str`) - the name of a weights enum value for the model, such as `COCO_V1`.
+  Defaults to `DEFAULT`.
+
+It also accepts arbitrary additional parameters,
+which are passed directly to the model constructor.
+
+### `cvat_sdk.auto_annotation.functions.torchvision_keypoint_detection`
+
+This AA function is analogous to `torchvision_detection`,
+except it uses torchvision's keypoint detection models and produces skeleton annotations.
+Keypoints which the model marks as invisible will be marked as occluded in CVAT.
+
+Refer to the previous section for usage instructions and parameter information.
