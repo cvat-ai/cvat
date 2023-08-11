@@ -112,7 +112,11 @@ function PlayerNavigation(props: Props): JSX.Element {
                                 {ranges.split(';').map((range) => {
                                     const [start, end] = range.split(':').map((num) => +num);
                                     const adjustedStart = Math.max(0, start - 1);
-                                    const totalSegments = stopFrame - startFrame;
+                                    let totalSegments = stopFrame - startFrame;
+                                    if (totalSegments === 0) {
+                                        // corner case for jobs with one image
+                                        totalSegments = 1;
+                                    }
                                     const segmentWidth = 1000 / totalSegments;
                                     const width = Math.max((end - adjustedStart), 1) * segmentWidth;
                                     const offset = (Math.max((adjustedStart - startFrame), 0) / totalSegments) * 1000;
