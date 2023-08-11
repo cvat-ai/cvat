@@ -581,7 +581,7 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
-export function confirmCanvasReady(ranges?: string[]): AnyAction {
+export function confirmCanvasReady(ranges?: string): AnyAction {
     return {
         type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
         payload: { ranges },
@@ -609,7 +609,7 @@ export function confirmCanvasReadyAsync(): ThunkAction {
                     acc.push(val as [number, number]);
                 }
                 return acc;
-            }, []).map(([start, end]) => `${start}:${end}`);
+            }, []).map(([start, end]) => `${start}:${end}`).join(';');
 
             dispatch(confirmCanvasReady(ranges));
         } catch (error) {

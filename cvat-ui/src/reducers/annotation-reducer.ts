@@ -73,7 +73,7 @@ const defaultState: AnnotationState = {
             delay: 0,
             changeTime: null,
         },
-        ranges: [],
+        ranges: '',
         playing: false,
         frameAngles: [],
         navigationBlocked: false,
