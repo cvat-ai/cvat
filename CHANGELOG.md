@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Raised the default guide assets limitations to 30 assets,
-  with a maximum size of 10Mb each
+  with a maximum size of 10MB each
   (<https://github.com/opencv/cvat/pull/6575>)
 - \[SDK\] Custom `ProgressReporter` implementations must now override `start2` instead of start
   (<https://github.com/opencv/cvat/pull/6556>)
