@@ -332,7 +332,6 @@ class TestGetProjectBackup:
         self._test_can_get_project_backup("admin1", empty_project["id"])
 
 
-
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostProjects:
     def _test_create_project_201(self, user, spec, **kwargs):
