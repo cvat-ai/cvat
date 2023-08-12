@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import sys
 from logging import Logger
 from pathlib import Path
 from types import SimpleNamespace as namespace
-from typing import Any, List, Tuple
+from typing import List, Tuple
 
 import cvat_sdk.auto_annotation as cvataa
 import PIL.Image
@@ -20,11 +19,9 @@ from shared.utils.helpers import generate_image_file
 from .util import make_pbar
 
 try:
-    import numpy as np
-    from ultralytics.engine.results import Results as UResults
+    import torchvision.models as torchvision_models
 except ModuleNotFoundError:
-    np = None
-    UResults = None
+    torchvision_models = None
 
 
 @pytest.fixture(autouse=True)
@@ -563,24 +560,68 @@ class TestTaskAutoAnnotation:
         )
 
 
-class FakeYolo:
-    def __init__(self, *args, **kwargs) -> None:
-        pass
+if torchvision_models is not None:
+    import torch
+    import torch.nn as nn
 
-    names = {42: "person"}
+    class FakeTorchvisionDetector(nn.Module):
+        def __init__(self, label_id: int) -> None:
+            super().__init__()
+            self._label_id = label_id
 
-    def predict(self, source: Any, **kwargs) -> "List[UResults]":
-        return [
-            UResults(
-                orig_img=np.zeros([100, 100, 3]),
-                path=None,
-                names=self.names,
-                boxes=np.array([[1, 2, 3, 4, 0.9, 42]]),
-            )
-        ]
+        def forward(self, images: List[torch.Tensor]) -> List[dict]:
+            assert isinstance(images, list)
+            assert all(isinstance(t, torch.Tensor) for t in images)
+
+            return [
+                {
+                    "boxes": torch.tensor([[1, 2, 3, 4]]),
+                    "labels": torch.tensor([self._label_id]),
+                }
+            ]
+
+    def fake_get_detection_model(name: str, weights, test_param):
+        assert test_param == "expected_value"
+
+        car_label_id = weights.meta["categories"].index("car")
+
+        return FakeTorchvisionDetector(label_id=car_label_id)
+
+    class FakeTorchvisionKeypointDetector(nn.Module):
+        def __init__(self, label_id: int, keypoint_names: List[str]) -> None:
+            super().__init__()
+            self._label_id = label_id
+            self._keypoint_names = keypoint_names
+
+        def forward(self, images: List[torch.Tensor]) -> List[dict]:
+            assert isinstance(images, list)
+            assert all(isinstance(t, torch.Tensor) for t in images)
+
+            return [
+                {
+                    "labels": torch.tensor([self._label_id]),
+                    "keypoints": torch.tensor(
+                        [
+                            [
+                                [hash(name) % 100, 0, 1 if name.startswith("right_") else 0]
+                                for i, name in enumerate(self._keypoint_names)
+                            ]
+                        ]
+                    ),
+                }
+            ]
+
+    def fake_get_keypoint_detection_model(name: str, weights, test_param):
+        assert test_param == "expected_value"
+
+        person_label_id = weights.meta["categories"].index("person")
+
+        return FakeTorchvisionKeypointDetector(
+            label_id=person_label_id, keypoint_names=weights.meta["keypoint_names"]
+        )
 
 
-@pytest.mark.skipif(UResults is None, reason="Ultralytics is not installed")
+@pytest.mark.skipif(torchvision_models is None, reason="torchvision is not installed")
 class TestAutoAnnotationFunctions:
     @pytest.fixture(autouse=True)
     def setup(
@@ -601,7 +642,15 @@ class TestAutoAnnotationFunctions:
             models.TaskWriteRequest(
                 "Auto-annotation test task",
                 labels=[
-                    models.PatchedLabelRequest(name="person"),
+                    models.PatchedLabelRequest(
+                        name="person",
+                        type="skeleton",
+                        sublabels=[
+                            models.SublabelRequest(name="left_eye"),
+                            models.SublabelRequest(name="right_eye"),
+                        ],
+                    ),
+                    models.PatchedLabelRequest(name="car"),
                 ],
             ),
             resources=[image_path],
@@ -610,20 +659,56 @@ class TestAutoAnnotationFunctions:
         task_labels = self.task.get_labels()
         self.task_labels_by_id = {label.id: label for label in task_labels}
 
-    def test_yolov8n(self, monkeypatch: pytest.MonkeyPatch):
-        monkeypatch.setattr("ultralytics.YOLO", FakeYolo)
+        person_label = next(label for label in task_labels if label.name == "person")
+        self.person_sublabels_by_id = {sl.id: sl for sl in person_label.sublabels}
 
-        import cvat_sdk.auto_annotation.functions.yolov8n as yolov8n
+    def test_torchvision_detection(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(torchvision_models, "get_model", fake_get_detection_model)
 
-        try:
-            cvataa.annotate_task(self.client, self.task.id, yolov8n)
+        import cvat_sdk.auto_annotation.functions.torchvision_detection as td
 
-            annotations = self.task.get_annotations()
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            td.create("fasterrcnn_resnet50_fpn_v2", "COCO_V1", test_param="expected_value"),
+            allow_unmatched_labels=True,
+        )
 
-            assert len(annotations.shapes) == 1
-            assert self.task_labels_by_id[annotations.shapes[0].label_id].name == "person"
-            assert annotations.shapes[0].type.value == "rectangle"
-            assert annotations.shapes[0].points == [1, 2, 3, 4]
+        annotations = self.task.get_annotations()
 
-        finally:
-            del sys.modules[yolov8n.__name__]
+        assert len(annotations.shapes) == 1
+        assert self.task_labels_by_id[annotations.shapes[0].label_id].name == "car"
+        assert annotations.shapes[0].type.value == "rectangle"
+        assert annotations.shapes[0].points == [1, 2, 3, 4]
+
+    def test_torchvision_keypoint_detection(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(torchvision_models, "get_model", fake_get_keypoint_detection_model)
+
+        import cvat_sdk.auto_annotation.functions.torchvision_keypoint_detection as tkd
+
+        cvataa.annotate_task(
+            self.client,
+            self.task.id,
+            tkd.create("keypointrcnn_resnet50_fpn", "COCO_V1", test_param="expected_value"),
+            allow_unmatched_labels=True,
+        )
+
+        annotations = self.task.get_annotations()
+
+        assert len(annotations.shapes) == 1
+        assert self.task_labels_by_id[annotations.shapes[0].label_id].name == "person"
+        assert annotations.shapes[0].type.value == "skeleton"
+        assert len(annotations.shapes[0].elements) == 2
+
+        elements = sorted(
+            annotations.shapes[0].elements,
+            key=lambda e: self.person_sublabels_by_id[e.label_id].name,
+        )
+
+        assert self.person_sublabels_by_id[elements[0].label_id].name == "left_eye"
+        assert elements[0].points[0] == hash("left_eye") % 100
+        assert elements[0].occluded
+
+        assert self.person_sublabels_by_id[elements[1].label_id].name == "right_eye"
+        assert elements[1].points[0] == hash("right_eye") % 100
+        assert not elements[1].occluded
