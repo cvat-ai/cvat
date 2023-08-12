@@ -12,7 +12,7 @@ module.exports = {
     ignorePatterns: [
         '.eslintrc.js',
         'webpack.config.js',
-        'cvat-ui/src/assets/opencv_4.5.4_dev.js',
+        'src/assets/opencv_4.5.4_dev.js',
         'node_modules/**',
         'dist/**',
     ],
