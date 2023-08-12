@@ -1007,11 +1007,3 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         rq_job = queue.fetch_job(pk)
         rq_job.delete()
-
-def ONNXDetector(request):
-    dirname = os.path.join(settings.STATIC_ROOT, 'lambda_manager')
-    pattern = os.path.join(dirname, 'decoder.onnx')
-    path = glob.glob(pattern)[0]
-    response = sendfile(request, path)
-    response['Cache-Control'] = "public, max-age=604800"
-    return response

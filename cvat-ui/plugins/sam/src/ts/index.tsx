@@ -267,7 +267,7 @@ const samPlugin: SAMPlugin = {
         core: null,
         jobs: {},
         modelID: 'pth-facebookresearch-sam-vit-h',
-        modelURL: '/api/lambda/sam_detector.onnx',
+        modelURL: '/assets/decoder.onnx',
         embeddings: new LRUCache({
             // float32 tensor [256, 64, 64] is 4 MB, max 512 MB
             max: 128,
