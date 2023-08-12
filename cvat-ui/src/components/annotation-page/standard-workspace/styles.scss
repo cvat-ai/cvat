@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import 'base.scss';
+@import 'base';
 
 .cvat-standard-workspace.ant-layout {
     height: 100%;
@@ -160,9 +160,10 @@
 .cvat-interactors-setups-container {
     margin-top: $grid-unit-size;
     margin-bottom: $grid-unit-size;
+    align-items: center;
 
-    > button {
-        margin-right: $grid-unit-size;
+    .ant-select {
+        min-width: $grid-unit-size * 16;
     }
 }
 

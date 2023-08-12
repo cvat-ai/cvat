@@ -22,7 +22,6 @@ import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 import Dropdown from 'antd/lib/dropdown';
-import Switch from 'antd/lib/switch';
 import lodash from 'lodash';
 
 import { AIToolsIcon } from 'icons';
@@ -83,6 +82,27 @@ const MIN_SUPPORTED_INTERACTOR_VERSION = 2;
 const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
+function wrappingBBox(points: Readonly<number[][]>): [number, number, number, number] {
+    let minX = Number.MAX_SAFE_INTEGER;
+    let minY = Number.MAX_SAFE_INTEGER;
+    let maxX = Number.MIN_SAFE_INTEGER;
+    let maxY = Number.MIN_SAFE_INTEGER;
+    for (const [x, y] of points) {
+        if (x < minX) {
+            minX = x;
+        } else if (x > maxX) {
+            maxX = x;
+        }
+
+        if (y < minY) {
+            minY = y;
+        } else if (y > maxY) {
+            maxY = y;
+        }
+    }
+    return [minX, minY, maxX, maxY];
+}
+
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
@@ -140,11 +160,13 @@ interface TrackedShape {
     trackerModel: MLModel;
 }
 
+type InteractionTargetShape = ShapeType.MASK | ShapeType.POLYGON | ShapeType.RECTANGLE;
+
 interface State {
     activeInteractor: MLModel | null;
     activeLabelID: number;
     activeTracker: MLModel | null;
-    convertMasksToPolygons: boolean;
+    interactionTargetShape: InteractionTargetShape;
     trackedShapes: TrackedShape[];
     fetching: boolean;
     pointsReceived: boolean;
@@ -229,7 +251,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);
         this.state = {
-            convertMasksToPolygons: false,
+            interactionTargetShape: ShapeType.MASK,
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: props.trackers.length ? props.trackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id : null,
@@ -352,7 +374,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private runInteractionRequest = async (interactionId: string): Promise<void> => {
         const { jobInstance, canvasInstance } = this.props;
-        const { activeInteractor, fetching, convertMasksToPolygons } = this.state;
+        const { activeInteractor, fetching, interactionTargetShape } = this.state;
 
         const { id, latestRequest } = this.interaction;
         if (id !== interactionId || !latestRequest || fetching) {
@@ -414,12 +436,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     const width = this.interaction.latestResponse.mask[0].length;
                     maskPoints.push(0, 0, width - 1, height - 1);
                 }
+
+                let points = maskPoints;
+                if (interactionTargetShape === ShapeType.POLYGON) {
+                    points = this.interaction.lastestApproximatedPoints.flat();
+                } else if (interactionTargetShape === ShapeType.RECTANGLE) {
+                    points = wrappingBBox(this.interaction.lastestApproximatedPoints);
+                }
+
                 canvasInstance.interact({
                     enabled: true,
                     intermediateShape: {
-                        shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
-                        points: convertMasksToPolygons ? this.interaction.lastestApproximatedPoints.flat() :
-                            maskPoints,
+                        shapeType: interactionTargetShape,
+                        points,
                     },
                     onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                 });
@@ -846,12 +875,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private async constructFromPoints(points: number[][]): Promise<void> {
-        const { convertMasksToPolygons } = this.state;
+        const { interactionTargetShape } = this.state;
         const {
             frame, labels, curZOrder, jobInstance, activeLabelID, createAnnotations,
         } = this.props;
 
-        if (convertMasksToPolygons) {
+        if (interactionTargetShape === 'polygon') {
             const object = new core.classes.ObjectState({
                 frame,
                 objectType: ObjectType.SHAPE,
@@ -864,7 +893,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             });
 
             createAnnotations(jobInstance, frame, [object]);
-        } else {
+        } else if (interactionTargetShape === 'mask') {
             const maskPoints = this.interaction.latestResponse.mask.flat();
             if (this.interaction.latestResponse.bounds) {
                 maskPoints.push(...this.interaction.latestResponse.bounds);
@@ -881,6 +910,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                 shapeType: ShapeType.MASK,
                 points: maskPoints,
+                occluded: false,
+                zOrder: curZOrder,
+            });
+
+            createAnnotations(jobInstance, frame, [object]);
+        } else {
+            const object = new core.classes.ObjectState({
+                frame,
+                objectType: ObjectType.SHAPE,
+                source: core.enums.Source.SEMI_AUTO,
+                label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
+                shapeType: ShapeType.RECTANGLE,
+                points: wrappingBBox(points),
                 occluded: false,
                 zOrder: curZOrder,
             });
@@ -942,16 +984,25 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private renderMasksConvertingBlock(): JSX.Element {
-        const { convertMasksToPolygons } = this.state;
+        const { interactionTargetShape } = this.state;
         return (
             <Row className='cvat-interactors-setups-container'>
-                <Switch
-                    checked={convertMasksToPolygons}
-                    onChange={(checked: boolean) => {
-                        this.setState({ convertMasksToPolygons: checked });
-                    }}
-                />
-                <Text>Convert masks to polygons</Text>
+                <Col>
+                    <Text strong>Output shape:</Text>
+                </Col>
+                <Col offset={1}>
+                    <Select
+                        size='small'
+                        value={interactionTargetShape}
+                        onChange={(value: InteractionTargetShape) => {
+                            this.setState({ interactionTargetShape: value });
+                        }}
+                    >
+                        <Select.Option value={ShapeType.MASK}>Mask</Select.Option>
+                        <Select.Option value={ShapeType.POLYGON}>Polygon</Select.Option>
+                        <Select.Option value={ShapeType.RECTANGLE}>Rectangle</Select.Option>
+                    </Select>
+                </Col>
             </Row>
         );
     }
@@ -1336,7 +1387,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, detectors, trackers, isActivated, canvasInstance, labels, frameIsDeleted,
         } = this.props;
         const {
-            fetching, approxPolyAccuracy, pointsReceived, mode, portals, convertMasksToPolygons,
+            fetching, approxPolyAccuracy, pointsReceived, mode, portals, interactionTargetShape,
         } = this.state;
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
@@ -1361,7 +1412,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             };
 
         const showAnyContent = labels.length && !frameIsDeleted;
-        const showInteractionContent = isActivated && mode === 'interaction' && pointsReceived && convertMasksToPolygons;
+        const showInteractionContent = isActivated && mode === 'interaction' &&
+            pointsReceived && interactionTargetShape === 'polygon';
         const showDetectionContent = fetching && mode === 'detection';
 
         const interactionContent: JSX.Element | null = showInteractionContent ? (

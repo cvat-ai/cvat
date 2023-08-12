@@ -293,10 +293,28 @@ export class InteractionHandlerImpl implements InteractionHandler {
         if (!intermediateShape) return;
         const { shapeType, points } = intermediateShape;
         if (shapeType === 'polygon') {
-            const erroredShape = shapeType === 'polygon' && points.length < 3 * 2;
+            const erroredShape = points.length < 3 * 2;
             this.drawnIntermediateShape = this.canvas
                 .polygon(stringifyPoints(translateToCanvas(geometry.offset, points)))
                 .attr({
+                    'color-rendering': 'optimizeQuality',
+                    'shape-rendering': 'geometricprecision',
+                    'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                    stroke: erroredShape ? 'red' : 'black',
+                })
+                .fill({ opacity: this.selectedShapeOpacity, color: 'white' })
+                .addClass('cvat_canvas_interact_intermediate_shape');
+            this.selectize(true, this.drawnIntermediateShape, erroredShape);
+        } else if (shapeType === 'rectangle') {
+            const adjustedPoints = translateToCanvas(geometry.offset, points);
+            const erroredShape = points.length !== 4;
+            this.drawnIntermediateShape = this.canvas
+                .rect()
+                .attr({
+                    x: adjustedPoints[0],
+                    y: adjustedPoints[1],
+                    width: adjustedPoints[2] - adjustedPoints[0],
+                    height: adjustedPoints[3] - adjustedPoints[1],
                     'color-rendering': 'optimizeQuality',
                     'shape-rendering': 'geometricprecision',
                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
