@@ -30,6 +30,7 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.test_servers.yml",
+    "tests/docker-compose.test_extras.yml",
 ]
 
 TEST_EXTRAS_MOUNT_DIR = "/home/django/test_extras"
@@ -108,7 +109,7 @@ def _run(command, capture_output=True):
         stderr = exc.stderr.decode() or exc.stdout.decode() if capture_output else "see above"
         pytest.exit(
             f"Command failed: {command}.\n"
-            f"Error message: {stderr}.\n"
+            f"Error message: {stdout} {stderr}.\n"
             "Add `-s` option to see more details"
         )
 
@@ -208,25 +209,22 @@ def kube_restore_clickhouse_db():
 
 
 def docker_clear_rq():
-    docker_exec_cvat(
-        [
-            "/bin/sh",
-            "-c",
-            "python",
-            f"'{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py'",
-            "--host",
-            "'${CVAT_REDIS_HOST}'",
-            "--password",
-            "'${CVAT_REDIS_PASSWORD}'",
-        ]
-    )
+    # print(*docker_exec_cvat(
+    #     [
+    #         "python",
+    #         f"{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
+    #         "--host",
+    #         "${CVAT_REDIS_HOST}",
+    #         "--password",
+    #         "${CVAT_REDIS_PASSWORD}",
+    #     ]
+    # ))
+    pass
 
 
 def kube_clear_rq():
     kube_exec_cvat(
         [
-            "/bin/sh",
-            "-c",
             "python",
             f"'{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py'",
             "--host",
