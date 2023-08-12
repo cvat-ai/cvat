@@ -210,7 +210,11 @@ module.exports = (env) => {
                         to  : 'assets/[name][ext]',
                     },
                     {
-                        from: 'plugins/**/assets/*.onnx',
+                        from: 'src/assets/opencv*.js',
+                        to  : 'assets/opencv.js',
+                    },
+                    {
+                        from: 'plugins/**/assets/*.(onnx|js)',
                         to  : 'assets/[name][ext]',
                     }
                 ],
