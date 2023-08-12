@@ -15,7 +15,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = (env) => {
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
-    const defaultPlugins = ['plugins/sam'];
+    const defaultPlugins = ['plugins/sam', 'plugins/sam_mobile'];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
     const pluginsList = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
         .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins;
@@ -209,6 +209,10 @@ module.exports = (env) => {
                         from: '../node_modules/onnxruntime-web/dist/*.wasm',
                         to  : 'assets/[name][ext]',
                     },
+                    {
+                        from: 'plugins/**/assets/*.onnx',
+                        to  : 'assets/[name][ext]',
+                    }
                 ],
             }),
             ...(sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
