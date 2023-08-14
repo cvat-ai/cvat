@@ -32,6 +32,9 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "tests/docker-compose.test_servers.yml",
 ]
 
+TEST_EXTRAS_HOST_DIR = CVAT_ROOT_DIR / "tests" / "extras"
+TEST_EXTRAS_MOUNT_DIR = "/home/django/test_extras"
+
 
 class Container(str, Enum):
     DB = "cvat_db"
@@ -106,7 +109,7 @@ def _run(command, capture_output=True):
         stderr = exc.stderr.decode() or exc.stdout.decode() if capture_output else "see above"
         pytest.exit(
             f"Command failed: {command}.\n"
-            f"Error message: {stderr}.\n"
+            f"Error message: {stdout} {stderr}.\n"
             "Add `-s` option to see more details"
         )
 
@@ -205,6 +208,33 @@ def kube_restore_clickhouse_db():
     )
 
 
+def docker_clear_rq():
+    # print(*docker_exec_cvat(
+    #     [
+    #         "python",
+    #         f"{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
+    #         "--host",
+    #         "${CVAT_REDIS_HOST}",
+    #         "--password",
+    #         "${CVAT_REDIS_PASSWORD}",
+    #     ]
+    # ))
+    pass
+
+
+def kube_clear_rq():
+    kube_exec_cvat(
+        [
+            "python",
+            f"'{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py'",
+            "--host",
+            "'${CVAT_REDIS_HOST}'",
+            "--password",
+            "'${CVAT_REDIS_PASSWORD}'",
+        ]
+    )
+
+
 def running_containers():
     return [cn for cn in _run("docker ps --format {{.Names}}")[0].split("\n") if cn]
 
@@ -279,7 +309,7 @@ def docker_restore_data_volumes():
         CVAT_DB_DIR / "cvat_data.tar.bz2",
         f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
     )
-    docker_exec(Container.SERVER, "tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
+    print(*docker_exec(Container.SERVER, "tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/"))
 
 
 def kube_restore_data_volumes():
@@ -401,6 +431,7 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     docker_restore_data_volumes()
     docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
+    # docker_cp(TEST_EXTRAS_HOST_DIR, f"{PREFIX}_cvat_server_1:{TEST_EXTRAS_MOUNT_DIR}")
     wait_for_services()
 
     docker_exec(Container.SERVER, "python manage.py loaddata /tmp/data.json")
@@ -418,6 +449,7 @@ def kube_start(cvat_db_dir):
     db_pod_name = _kube_get_db_pod_name()
     kube_cp(cvat_db_dir / "restore.sql", f"{db_pod_name}:/tmp/restore.sql")
     kube_cp(cvat_db_dir / "data.json", f"{server_pod_name}:/tmp/data.json")
+    # kube_cp(TEST_EXTRAS_HOST_DIR, f"{server_pod_name}:{TEST_EXTRAS_MOUNT_DIR}")
 
     wait_for_services()
 
@@ -506,6 +538,24 @@ def restore_cvat_data(request):
         docker_restore_data_volumes()
     else:
         kube_restore_data_volumes()
+
+
+@pytest.fixture(scope="class")
+def clear_rq_per_class(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_clear_rq()
+    else:
+        kube_clear_rq()
+
+
+@pytest.fixture(scope="function")
+def clear_rq_per_function(request):
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_clear_rq()
+    else:
+        kube_clear_rq()
 
 
 @pytest.fixture(scope="function")
