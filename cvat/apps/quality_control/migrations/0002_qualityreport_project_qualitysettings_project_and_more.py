@@ -21,7 +21,6 @@ def copy_parents_to_new_field(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("engine", "0070_add_job_type_created_date"),
         ("quality_control", "0001_initial"),
     ]
 
