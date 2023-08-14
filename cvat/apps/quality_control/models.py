@@ -6,13 +6,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from enum import Enum
-from typing import Any, Sequence
+from typing import Any, Dict, Optional, Sequence
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, ShapeType, Task
+from cvat.apps.engine.models import Job, Project, ShapeType, Task
 
 
 class AnnotationConflictType(str, Enum):
@@ -60,6 +60,7 @@ class MismatchingAnnotationKind(str, Enum):
 class QualityReportTarget(str, Enum):
     JOB = "job"
     TASK = "task"
+    PROJECT = "project"
 
     def __str__(self) -> str:
         return self.value
@@ -76,19 +77,29 @@ class QualityReport(models.Model):
     task = models.ForeignKey(
         Task, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
     )
-
-    parent = models.ForeignKey(
-        "self", on_delete=models.CASCADE, related_name="children", null=True, blank=True
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name="quality_reports", null=True, blank=True
     )
+
+    # job reports should all have a single parent report
+    # task reports may have none, or be shared between several project reports
+    parents = models.ManyToManyField("self", symmetrical=False, blank=True, related_name="children")
     children: Sequence[QualityReport]
 
     created_date = models.DateTimeField(auto_now_add=True)
     target_last_updated = models.DateTimeField()
-    gt_last_updated = models.DateTimeField()
+    gt_last_updated = models.DateTimeField(null=True)
 
     data = models.JSONField()
 
     conflicts: Sequence[AnnotationConflict]
+
+    @property
+    def parent(self) -> Optional[QualityReport]:
+        try:
+            return self.parents.first()
+        except self.DoesNotExist:
+            return None
 
     @property
     def target(self) -> QualityReportTarget:
@@ -96,6 +107,8 @@ class QualityReport(models.Model):
             return QualityReportTarget.JOB
         elif self.task:
             return QualityReportTarget.TASK
+        elif self.project:
+            return QualityReportTarget.PROJECT
         else:
             assert False
 
@@ -109,11 +122,21 @@ class QualityReport(models.Model):
         report = self._parse_report()
         return report.comparison_summary
 
-    def get_task(self) -> Task:
-        if self.task is not None:
+    def get_task(self) -> Optional[Task]:
+        if self.task:
             return self.task
-        else:
+        elif self.job:
             return self.job.segment.task
+        else:
+            return None
+
+    def get_project(self) -> Optional[Project]:
+        if self.project:
+            return self.project
+        elif task := self.get_task():
+            return task.project
+        else:
+            return None
 
     def get_json_report(self) -> str:
         return self.data
@@ -126,6 +149,8 @@ class QualityReport(models.Model):
     def organization_id(self):
         if task := self.get_task():
             return getattr(task.organization, "id", None)
+        elif project := self.project:
+            return getattr(project.organization, "id", None)
         return None
 
 
@@ -178,8 +203,71 @@ class AnnotationId(models.Model):
             raise ValidationError(f"Unexpected type value '{self.type}'")
 
 
+class QualitySettingsQuerySet(models.QuerySet):
+    @transaction.atomic
+    def create(self, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().create(**kwargs)
+
+    @transaction.atomic
+    def update(self, **kwargs: Any) -> int:
+        self._validate_constraints(kwargs)
+
+        return super().update(**kwargs)
+
+    @transaction.atomic
+    def get_or_create(self, *args, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().get_or_create(*args, **kwargs)
+
+    @transaction.atomic
+    def update_or_create(self, *args, **kwargs: Any):
+        self._validate_constraints(kwargs)
+
+        return super().update_or_create(*args, **kwargs)
+
+    def _validate_constraints(self, obj: Dict[str, Any]):
+        # Constraints can't be set on the related model fields
+        # This method requires the save operation to be called as a transaction
+        if obj.get("task_id") and obj.get("project_id"):
+            raise QualitySettings.InvalidParametersError(
+                "'task[_id]' and 'project[_id]' cannot be used together"
+            )
+
+        task_id = obj.get("task_id")
+        if not task_id:
+            return
+
+        try:
+            task = Task.objects.get(id=task_id)
+        except Task.DoesNotExist as ex:
+            raise QualitySettings.InvalidParametersError(
+                f"Task with id '{task_id}' does not exist"
+            ) from ex
+
+        if task.project_id:
+            raise QualitySettings.SettingsAlreadyExistError(
+                "Can't define quality settings for a task if the task is in a project."
+            )
+
+
 class QualitySettings(models.Model):
-    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="quality_settings")
+    class SettingsAlreadyExistError(ValidationError):
+        pass
+
+    class InvalidParametersError(ValidationError):
+        pass
+
+    objects = QualitySettingsQuerySet.as_manager()
+
+    task = models.OneToOneField(
+        Task, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
+    )  # OneToOneField implies unique
+    project = models.OneToOneField(
+        Project, on_delete=models.CASCADE, related_name="quality_settings", null=True, blank=True
+    )  # OneToOneField implies unique
 
     iou_threshold = models.FloatField()
     oks_sigma = models.FloatField()
@@ -222,4 +310,26 @@ class QualitySettings(models.Model):
 
     @property
     def organization_id(self):
-        return getattr(self.task.organization, "id", None)
+        if self.task:
+            return getattr(self.task.organization, "id", None)
+        elif self.project:
+            return getattr(self.project.organization, "id", None)
+        return None
+
+    @transaction.atomic
+    def save(self, *args, **kwargs) -> None:
+        try:
+            return super().save(*args, **kwargs)
+        except IntegrityError as ex:
+            message = str(ex)
+            if "duplicate key value violates unique constraint" in message:
+                if "project_id" in message:
+                    raise self.SettingsAlreadyExistError(
+                        f"Quality parameters for the project id {self.project_id} already exist"
+                    )
+                elif "task_id" in message:
+                    raise self.SettingsAlreadyExistError(
+                        f"Quality parameters for the task id {self.task_id} already exist"
+                    )
+                else:
+                    raise

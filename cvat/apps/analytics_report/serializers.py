@@ -52,10 +52,16 @@ class MetricSerializer(serializers.Serializer):
     transformations = serializers.ListField(child=TransformationSerializer())
 
 
+class AnalyticsReportTargetSerializer(serializers.ChoiceField):
+    # Make a separate class in API schema, otherwise it gets merged with QualityReportTarget enum
+    def __init__(self, **kwargs):
+        super().__init__(choices=TargetChoice.choices(), **kwargs)
+
+
 @extend_schema_serializer(many=False)
 class AnalyticsReportSerializer(serializers.Serializer):
     created_date = serializers.DateTimeField()
-    target = serializers.ChoiceField(choices=TargetChoice.choices())
+    target = AnalyticsReportTargetSerializer()
     job_id = serializers.IntegerField(required=False)
     task_id = serializers.IntegerField(required=False)
     project_id = serializers.IntegerField(required=False)

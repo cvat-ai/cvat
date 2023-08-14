@@ -10,7 +10,7 @@ from collections import Counter
 from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property, partial
-from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Callable, Dict, Hashable, List, Optional, Sequence, Set, Tuple, Union, cast
 from uuid import uuid4
 
 import datumaro as dm
@@ -21,6 +21,7 @@ from attrs import asdict, define, fields_dict
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 from scipy.optimize import linear_sum_assignment
 
@@ -38,9 +39,10 @@ from cvat.apps.engine.models import (
     DimensionType,
     Job,
     JobType,
+    Project,
     ShapeType,
     StageChoice,
-    StatusChoice,
+    StateChoice,
     Task,
 )
 from cvat.apps.profiler import silk_profile
@@ -79,8 +81,72 @@ class _Serializable:
         raise NotImplementedError("Must be implemented in the subclass")
 
 
-@define(kw_only=True)
-class AnnotationId(_Serializable):
+class _ReportNode(_Serializable):
+    _CHECK_SETATTR_FIELD_NAME = "_check_setattr"
+
+    _CACHED_FIELDS: Optional[List[str]] = None
+    """
+    Fields that can be set externally or be computed on access
+    """
+
+    @classmethod
+    def _find_cached_fields(cls) -> List[str]:
+        return [
+            member.attrname
+            for _, member in cls.__dict__.items()
+            if isinstance(member, cached_property)
+        ]
+
+    @classmethod
+    def _get_cached_fields(cls, recursive: bool = True) -> List[str]:
+        if "_CACHED_FIELDS" not in cls.__dict__:
+            fields = cls._find_cached_fields() or []
+        else:
+            fields = list(cls.__dict__["_CACHED_FIELDS"])
+
+        if recursive:
+            for base_class in cls.__bases__:
+                if issubclass(base_class, _ReportNode) and base_class != _ReportNode:
+                    fields += base_class._get_cached_fields(recursive=False)
+
+        return fields
+
+    def __init__(self, *args, **kwargs):
+        for field_name in self._get_cached_fields():
+            if field_name in kwargs:
+                setattr(self, field_name, kwargs.pop(field_name))
+
+        if attrs_init := getattr(self, "__attrs_init__"):
+            attrs_init(*args, **kwargs)
+
+        self._enable_setattr_checks(True)
+
+    def _enable_setattr_checks(self, value: bool):
+        setattr(self, self._CHECK_SETATTR_FIELD_NAME, value)
+
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        if (
+            __name != self._CHECK_SETATTR_FIELD_NAME
+            and getattr(self, self._CHECK_SETATTR_FIELD_NAME, False) is True
+            and __name not in self._get_cached_fields()
+        ):
+            self.reset_cached_fields()
+
+        return super().__setattr__(__name, __value)
+
+    def reset_cached_fields(self):
+        for field in self._get_cached_fields():
+            if hasattr(self, field):
+                delattr(self, field)
+
+    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
+        return super()._fields_dict(
+            include_properties=include_properties or self._get_cached_fields()
+        )
+
+
+@define(kw_only=True, init=False)
+class AnnotationId(_ReportNode):
     obj_id: int
     job_id: int
     type: AnnotationType
@@ -102,8 +168,8 @@ class AnnotationId(_Serializable):
         )
 
 
-@define(kw_only=True)
-class AnnotationConflict(_Serializable):
+@define(kw_only=True, init=False)
+class AnnotationConflict(_ReportNode):
     frame_id: int
     type: AnnotationConflictType
     annotation_ids: List[AnnotationId]
@@ -147,8 +213,8 @@ class AnnotationConflict(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonParameters(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonParameters(_ReportNode):
     included_annotation_types: List[dm.AnnotationType] = [
         dm.AnnotationType.bbox,
         dm.AnnotationType.points,
@@ -211,8 +277,8 @@ class ComparisonParameters(_Serializable):
         return cls(**{field_name: d[field_name] for field_name in fields if field_name in d})
 
 
-@define(kw_only=True)
-class ConfusionMatrix(_Serializable):
+@define(kw_only=True, init=False)
+class ConfusionMatrix(_ReportNode):
     labels: List[str]
     rows: np.array
     precision: np.array
@@ -243,25 +309,25 @@ class ConfusionMatrix(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonReportAnnotationsSummary(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReportAnnotationsSummary(_ReportNode):
     valid_count: int
     missing_count: int
     extra_count: int
     total_count: int
     ds_count: int
     gt_count: int
-    confusion_matrix: ConfusionMatrix
+    confusion_matrix: Optional[ConfusionMatrix]
 
-    @property
+    @cached_property
     def accuracy(self) -> float:
         return self.valid_count / (self.total_count or 1)
 
-    @property
+    @cached_property
     def precision(self) -> float:
         return self.valid_count / (self.ds_count or 1)
 
-    @property
+    @cached_property
     def recall(self) -> float:
         return self.valid_count / (self.gt_count or 1)
 
@@ -276,11 +342,6 @@ class ComparisonReportAnnotationsSummary(_Serializable):
         ]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(
-            include_properties=include_properties or ["accuracy", "precision", "recall"]
-        )
-
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
@@ -290,12 +351,19 @@ class ComparisonReportAnnotationsSummary(_Serializable):
             total_count=d["total_count"],
             ds_count=d["ds_count"],
             gt_count=d["gt_count"],
-            confusion_matrix=ConfusionMatrix.from_dict(d["confusion_matrix"]),
+            confusion_matrix=(
+                ConfusionMatrix.from_dict(d["confusion_matrix"])
+                if d.get("confusion_matrix")
+                else None
+            ),
+            **dict(accuracy=d["accuracy"]) if "accuracy" in d else {},
+            **dict(precision=d["precision"]) if "precision" in d else {},
+            **dict(recall=d["recall"]) if "recall" in d else {},
         )
 
 
-@define(kw_only=True)
-class ComparisonReportAnnotationShapeSummary(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReportAnnotationShapeSummary(_ReportNode):
     valid_count: int
     missing_count: int
     extra_count: int
@@ -304,7 +372,7 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
     gt_count: int
     mean_iou: float
 
-    @property
+    @cached_property
     def accuracy(self) -> float:
         return self.valid_count / (self.total_count or 1)
 
@@ -319,9 +387,6 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
         ]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or ["accuracy"])
-
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
@@ -332,16 +397,17 @@ class ComparisonReportAnnotationShapeSummary(_Serializable):
             ds_count=d["ds_count"],
             gt_count=d["gt_count"],
             mean_iou=d["mean_iou"],
+            **dict(accuracy=d["accuracy"]) if "accuracy" in d else {},
         )
 
 
-@define(kw_only=True)
-class ComparisonReportAnnotationLabelSummary(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReportAnnotationLabelSummary(_ReportNode):
     valid_count: int
     invalid_count: int
     total_count: int
 
-    @property
+    @cached_property
     def accuracy(self) -> float:
         return self.valid_count / (self.total_count or 1)
 
@@ -349,20 +415,18 @@ class ComparisonReportAnnotationLabelSummary(_Serializable):
         for field in ["valid_count", "total_count", "invalid_count"]:
             setattr(self, field, getattr(self, field) + getattr(other, field))
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or ["accuracy"])
-
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
             valid_count=d["valid_count"],
             invalid_count=d["invalid_count"],
             total_count=d["total_count"],
+            **dict(accuracy=d["accuracy"]) if "accuracy" in d else {},
         )
 
 
-@define(kw_only=True)
-class ComparisonReportAnnotationComponentsSummary(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReportAnnotationComponentsSummary(_ReportNode):
     shape: ComparisonReportAnnotationShapeSummary
     label: ComparisonReportAnnotationLabelSummary
 
@@ -378,24 +442,29 @@ class ComparisonReportAnnotationComponentsSummary(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonReportComparisonSummary(_Serializable):
-    frame_share: float
+@define(kw_only=True, init=False)
+class ComparisonReportComparisonSummary(_ReportNode):
     frames: List[str]
 
-    @property
+    @cached_property
+    def frame_share(self) -> float:
+        return self.frame_count / (self.total_frames or 1)
+
+    @cached_property
     def mean_conflict_count(self) -> float:
-        return self.conflict_count / (len(self.frames) or 1)
+        return self.conflict_count / (self.frame_count or 1)
 
     conflict_count: int
     warning_count: int
     error_count: int
     conflicts_by_type: Dict[AnnotationConflictType, int]
+    frames_with_errors: int
+    total_frames: int
 
     annotations: ComparisonReportAnnotationsSummary
-    annotation_components: ComparisonReportAnnotationComponentsSummary
+    annotation_components: Optional[ComparisonReportAnnotationComponentsSummary]
 
-    @property
+    @cached_property
     def frame_count(self) -> int:
         return len(self.frames)
 
@@ -405,38 +474,36 @@ class ComparisonReportComparisonSummary(_Serializable):
         else:
             return super()._value_serializer(v)
 
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(
-            include_properties=include_properties
-            or [
-                "frame_count",
-                "mean_conflict_count",
-                "warning_count",
-                "error_count",
-                "conflicts_by_type",
-            ]
-        )
-
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
-            frame_share=d["frame_share"],
             frames=list(d["frames"]),
+            **(dict(frame_share=d["frame_share"]) if "frame_share" in d else {}),
+            **(dict(frame_count=d["frame_count"]) if "frame_count" in d else {}),
+            **(
+                dict(mean_conflict_count=d["mean_conflict_count"])
+                if "mean_conflict_count" in d
+                else {}
+            ),
             conflict_count=d["conflict_count"],
             warning_count=d.get("warning_count", 0),
             error_count=d.get("error_count", 0),
+            frames_with_errors=d.get("frames_with_errors", 0),
+            total_frames=d.get("total_frames", 0),
             conflicts_by_type={
                 AnnotationConflictType(k): v for k, v in d.get("conflicts_by_type", {}).items()
             },
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
-            annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
-                d["annotation_components"]
+            annotation_components=(
+                ComparisonReportAnnotationComponentsSummary.from_dict(d["annotation_components"])
+                if d.get("annotation_components")
+                else None
             ),
         )
 
 
 @define(kw_only=True, init=False)
-class ComparisonReportFrameSummary(_Serializable):
+class ComparisonReportFrameSummary(_ReportNode):
     conflicts: List[AnnotationConflict]
 
     @cached_property
@@ -458,28 +525,15 @@ class ComparisonReportFrameSummary(_Serializable):
     annotations: ComparisonReportAnnotationsSummary
     annotation_components: ComparisonReportAnnotationComponentsSummary
 
-    _CACHED_FIELDS = ["conflict_count", "warning_count", "error_count", "conflicts_by_type"]
-
     def _value_serializer(self, v):
         if isinstance(v, AnnotationConflictType):
             return str(v)
         else:
             return super()._value_serializer(v)
 
-    def __init__(self, *args, **kwargs):
-        # these fields are optional, but can be computed on access
-        for field_name in self._CACHED_FIELDS:
-            if field_name in kwargs:
-                setattr(self, field_name, kwargs.pop(field_name))
-
-        self.__attrs_init__(*args, **kwargs)
-
-    def _fields_dict(self, *, include_properties: Optional[List[str]] = None) -> dict:
-        return super()._fields_dict(include_properties=include_properties or self._CACHED_FIELDS)
-
     @classmethod
     def from_dict(cls, d: dict):
-        optional_fields = set(cls._CACHED_FIELDS) - {
+        optional_fields = set(cls._get_cached_fields()) - {
             "conflicts_by_type"  # requires extra conversion
         }
         return cls(
@@ -499,8 +553,8 @@ class ComparisonReportFrameSummary(_Serializable):
         )
 
 
-@define(kw_only=True)
-class ComparisonReport(_Serializable):
+@define(kw_only=True, init=False)
+class ComparisonReport(_ReportNode):
     parameters: ComparisonParameters
     comparison_summary: ComparisonReportComparisonSummary
     frame_results: Dict[int, ComparisonReportFrameSummary]
@@ -1614,6 +1668,7 @@ class DatasetComparator:
         self,
         ds_data_provider: JobDataProvider,
         gt_data_provider: JobDataProvider,
+        task: Task,
         *,
         settings: Optional[ComparisonParameters] = None,
     ) -> None:
@@ -1625,6 +1680,7 @@ class DatasetComparator:
         self._gt_data_provider = gt_data_provider
         self._ds_dataset = self._ds_data_provider.dm_dataset
         self._gt_dataset = self._gt_data_provider.dm_dataset
+        self._task = task
 
         self._frame_results: Dict[int, ComparisonReportFrameSummary] = {}
 
@@ -1644,6 +1700,9 @@ class DatasetComparator:
             assert False
 
         return source_data_provider.dm_ann_to_ann_id(ann)
+
+    def _get_total_frames(self) -> int:
+        return self._task.data.size
 
     def _find_gt_conflicts(self):
         ds_job_dataset = self._ds_dataset
@@ -1993,6 +2052,8 @@ class DatasetComparator:
                 annotation_components.accumulate(frame_result.annotation_components)
             mean_ious.append(frame_result.annotation_components.shape.mean_iou)
 
+        mean_ious = mean_ious or [0]
+
         confusion_matrix_labels = {
             i: label.name
             for i, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label])
@@ -2041,6 +2102,8 @@ class DatasetComparator:
                     [c for c in conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in conflicts),
+                frames_with_errors=len([f for f in self._frame_results.values() if f.error_count]),
+                total_frames=self._get_total_frames(),
                 annotations=ComparisonReportAnnotationsSummary(
                     valid_count=valid_annotations_count,
                     missing_count=missing_annotations_count,
@@ -2077,7 +2140,7 @@ class DatasetComparator:
         )
 
 
-class QualityReportUpdateManager:
+class TaskQualityReportUpdateManager:
     _QUEUE_JOB_PREFIX = "update-quality-metrics-task-"
     _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
     _JOB_RESULT_TTL = 120
@@ -2106,10 +2169,12 @@ class QualityReportUpdateManager:
 
     @classmethod
     def _get_last_report_time(cls, task: Task) -> Optional[timezone.datetime]:
-        report = models.QualityReport.objects.filter(task=task).order_by("-created_date").first()
-        if report:
-            return report.created_date
-        return None
+        try:
+            report = models.QualityReport.objects.filter(task=task).latest("created_date")
+        except models.QualityReport.DoesNotExist:
+            return None
+
+        return report.created_date
 
     def _find_next_job_id(
         self, existing_job_ids: Sequence[str], task: Task, *, now: timezone.datetime
@@ -2155,12 +2220,12 @@ class QualityReportUpdateManager:
 
         gt_job = task.gt_job
         if gt_job is None or not (
-            gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StatusChoice.COMPLETED
+            gt_job.stage == StageChoice.ACCEPTANCE and gt_job.state == StateChoice.COMPLETED
         ):
             raise self.QualityReportsNotAvailable(
                 "Quality reports require a Ground Truth job in the task "
                 f"at the {StageChoice.ACCEPTANCE} stage "
-                f"and in the {StatusChoice.COMPLETED} state"
+                f"and in the {StateChoice.COMPLETED} state"
             )
 
     def _should_update(self, task: Task) -> bool:
@@ -2245,15 +2310,22 @@ class QualityReportUpdateManager:
             except Task.DoesNotExist:
                 return
 
+            quality_params = self._get_task_quality_params(task)
+
             # Try to use a shared queryset to minimize DB requests
             job_queryset = Job.objects.select_related("segment")
             job_queryset = job_queryset.filter(segment__task_id=task_id)
 
-            # The GT job could have been removed during scheduling, so we need to check it exists
+            # The GT job could have been removed or marked incomplete during scheduling,
+            # so we need to check it
             gt_job: Job = next(
                 (job for job in job_queryset if job.type == JobType.GROUND_TRUTH), None
             )
-            if gt_job is None:
+            if (
+                gt_job is None
+                or gt_job.stage != StageChoice.ACCEPTANCE
+                or gt_job.state != StateChoice.COMPLETED
+            ):
                 return
 
             # TODO: Probably, can be optimized to this:
@@ -2284,13 +2356,11 @@ class QualityReportUpdateManager:
                 for job in jobs
             }
 
-            quality_params = self._get_task_quality_params(task)
-
         job_comparison_reports: Dict[int, ComparisonReport] = {}
         for job in jobs:
             job_data_provider = job_data_providers[job.id]
             comparator = DatasetComparator(
-                job_data_provider, gt_job_data_provider, settings=quality_params
+                job_data_provider, gt_job_data_provider, task=task, settings=quality_params
             )
             job_comparison_reports[job.id] = comparator.generate_report()
 
@@ -2302,7 +2372,7 @@ class QualityReportUpdateManager:
         with transaction.atomic():
             # The task could have been deleted during processing
             try:
-                Task.objects.get(id=task_id)
+                updated_task = Task.objects.get(id=task_id)
             except Task.DoesNotExist:
                 return
 
@@ -2313,6 +2383,10 @@ class QualityReportUpdateManager:
             ):
                 # Discard this report as it has probably been computed in parallel
                 # with another one
+                return
+
+            # The task could have been moved to a project during the computations
+            if updated_task.project_id != task.project_id:
                 return
 
             job_quality_reports = {}
@@ -2358,7 +2432,7 @@ class QualityReportUpdateManager:
         task_annotations_summary = None
         task_ann_components_summary = None
         task_mean_shape_ious = []
-        task_frame_results = {}
+        task_frame_results: Dict[int, Optional[ComparisonReportFrameSummary]] = {}
         task_frame_results_counts = {}
         for r in job_reports.values():
             task_intersection_frames.update(r.comparison_summary.frames)
@@ -2414,6 +2488,8 @@ class QualityReportUpdateManager:
                     [c for c in task_conflicts if c.severity == AnnotationConflictSeverity.ERROR]
                 ),
                 conflicts_by_type=Counter(c.type for c in task_conflicts),
+                frames_with_errors=len([f for f in task_frame_results.values() if f.error_count]),
+                total_frames=task.data.size,
                 annotations=task_annotations_summary,
                 annotation_components=task_ann_components_summary,
             ),
@@ -2436,7 +2512,6 @@ class QualityReportUpdateManager:
         db_job_reports = []
         for job_report in job_reports:
             db_job_report = models.QualityReport(
-                parent=db_task_report,
                 job=job_report["job"],
                 target_last_updated=job_report["target_last_updated"],
                 gt_last_updated=job_report["gt_last_updated"],
@@ -2447,6 +2522,7 @@ class QualityReportUpdateManager:
         db_job_reports = bulk_create(
             db_model=models.QualityReport, objects=db_job_reports, flt_param={}
         )
+        db_task_report.children.add(*db_job_reports)
 
         db_conflicts = []
         db_report_iter = itertools.chain([db_task_report], db_job_reports)
@@ -2483,8 +2559,402 @@ class QualityReportUpdateManager:
 
         return db_task_report
 
-    def _get_task_quality_params(self, task: Task) -> Optional[ComparisonParameters]:
-        quality_params, _ = models.QualitySettings.objects.get_or_create(task=task)
+    def _get_task_quality_params(self, task: Task) -> ComparisonParameters:
+        params = {}
+        if task.project:
+            params["project"] = task.project
+        else:
+            params["task"] = task
+
+        quality_params, _ = models.QualitySettings.objects.get_or_create(**params)
+        return ComparisonParameters.from_dict(quality_params.to_dict())
+
+
+class ProjectQualityReportUpdateManager:
+    _QUEUE_JOB_PREFIX = "update-quality-metrics-project-"
+    _RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE = "custom_quality_check"
+    _JOB_RESULT_TTL = 120
+    _DEFAULT_DB_BATCH_SIZE = 1000
+
+    @classmethod
+    def _get_quality_check_job_delay(cls) -> timedelta:
+        return timedelta(seconds=settings.PROJECT_QUALITY_CHECK_JOB_DELAY)
+
+    def _get_scheduler(self):
+        return django_rq.get_scheduler(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
+
+    def _get_queue(self):
+        return django_rq.get_queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value)
+
+    def _make_queue_job_prefix(self, project: Project) -> str:
+        return f"{self._QUEUE_JOB_PREFIX}{project.id}-"
+
+    def _make_custom_quality_check_job_id(self) -> str:
+        return uuid4().hex
+
+    def _make_initial_queue_job_id(self, project: Project) -> str:
+        return f"{self._make_queue_job_prefix(project)}initial"
+
+    def _make_regular_queue_job_id(self, project: Project, start_time: timezone.datetime) -> str:
+        return f"{self._make_queue_job_prefix(project)}{start_time.timestamp()}"
+
+    @classmethod
+    def _get_last_report_time(cls, project: Project) -> Optional[timezone.datetime]:
+        try:
+            report = models.QualityReport.objects.filter(project=project).latest("created_date")
+        except models.QualityReport.DoesNotExist:
+            return None
+
+        return report.created_date
+
+    def _find_next_job_id(
+        self, existing_job_ids: Sequence[str], project: Project, *, now: timezone.datetime
+    ) -> str:
+        job_id_prefix = self._make_queue_job_prefix(project)
+
+        def _get_timestamp(job_id: str) -> timezone.datetime:
+            job_timestamp = job_id.split(job_id_prefix, maxsplit=1)[-1]
+            if job_timestamp == "initial":
+                return timezone.datetime.min.replace(tzinfo=timezone.utc)
+            else:
+                return timezone.datetime.fromtimestamp(float(job_timestamp), tz=timezone.utc)
+
+        max_job_id = max(
+            (j for j in existing_job_ids if j.startswith(job_id_prefix)),
+            key=_get_timestamp,
+            default=None,
+        )
+        max_timestamp = _get_timestamp(max_job_id) if max_job_id else None
+
+        last_update_time = self._get_last_report_time(project)
+        if last_update_time is None:
+            # Report has never been computed, is queued, or is being computed
+            queue_job_id = self._make_initial_queue_job_id(project)
+        elif max_timestamp is not None and now < max_timestamp:
+            # Reuse the existing next job
+            queue_job_id = max_job_id
+        else:
+            # Add an updating job in the queue in the next time frame
+            delay = self._get_quality_check_job_delay()
+            intervals = max(1, 1 + (now - last_update_time) // delay)
+            next_update_time = last_update_time + delay * intervals
+            queue_job_id = self._make_regular_queue_job_id(project, next_update_time)
+
+        return queue_job_id
+
+    class QualityReportsNotAvailable(Exception):
+        pass
+
+    def _check_quality_reporting_available(self, project: Project):
+        pass  # nothing prevents report computation
+
+    def _should_update(self, project: Project) -> bool:
+        try:
+            self._check_quality_reporting_available(project)
+            return True
+        except self.QualityReportsNotAvailable:
+            return False
+
+    def schedule_quality_autoupdate_job(self, project: Project):
+        """
+        This function schedules a quality report autoupdate job
+        """
+
+        # The algorithm is lock-free. It should keep the following properties:
+        # - job names are stable between potential writers
+        # - if multiple simultaneous writes can happen, the objects written must be the same
+        # - once a job is created, it can only be updated by the scheduler and the handling worker
+
+        if not self._should_update(project):
+            return
+
+        now = timezone.now()
+        delay = self._get_quality_check_job_delay()
+        next_job_time = now.utcnow() + delay
+
+        scheduler = self._get_scheduler()
+        existing_job_ids = set(j.id for j in scheduler.get_jobs(until=next_job_time))
+
+        queue_job_id = self._find_next_job_id(existing_job_ids, project, now=now)
+        if queue_job_id not in existing_job_ids:
+            scheduler.enqueue_at(
+                next_job_time,
+                self._check_project_quality,
+                project_id=project.id,
+                job_id=queue_job_id,
+            )
+
+    def schedule_quality_check_job(self, project: Project, *, user_id: int) -> str:
+        """
+        Schedules a quality report computation job, supposed for updates by a request.
+        """
+
+        self._check_quality_reporting_available(project)
+
+        rq_id = self._make_custom_quality_check_job_id()
+
+        queue = self._get_queue()
+        queue.enqueue(
+            self._check_project_quality,
+            project_id=project.id,
+            job_id=rq_id,
+            meta={"user_id": user_id, "job_type": self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE},
+            result_ttl=self._JOB_RESULT_TTL,
+            failure_ttl=self._JOB_RESULT_TTL,
+        )
+
+        return rq_id
+
+    def get_quality_check_job(self, rq_id: str):
+        queue = self._get_queue()
+        rq_job = queue.fetch_job(rq_id)
+
+        if rq_job and not self.is_custom_quality_check_job(rq_job):
+            rq_job = None
+
+        return rq_job
+
+    def is_custom_quality_check_job(self, rq_job) -> bool:
+        return rq_job.meta.get("job_type") == self._RQ_CUSTOM_QUALITY_CHECK_JOB_TYPE
+
+    def _get_current_job(self):
+        from rq import get_current_job
+
+        return get_current_job()
+
+    @classmethod
+    @silk_profile()
+    def _check_project_quality(cls, *, project_id: int) -> int:
+        return cls()._compute_reports(project_id=project_id)
+
+    def _compute_reports(self, project_id: int) -> int:
+        with transaction.atomic():
+            # Preload all the data for the computations
+            # It must be done in a single transaction and before all the remaining computations
+            # because the it can be changed after the beginning,
+            # which will lead to inconsistent results
+
+            # The project could have been deleted during scheduling
+            try:
+                project = Project.objects.prefetch_related(
+                    "tasks", "tasks__data", "tasks__segment_set__job_set", "quality_settings"
+                ).get(id=project_id)
+            except Project.DoesNotExist:
+                return
+
+            quality_params = self._get_quality_params(project)
+
+            tasks_with_reports = project.tasks.annotate(
+                Count("quality_reports"),
+                gt_jobs=Count(
+                    "segment__job",
+                    filter=Q(
+                        segment__job__type=JobType.GROUND_TRUTH,
+                        segment__job__stage=StageChoice.ACCEPTANCE,
+                        segment__job__state=StateChoice.COMPLETED,
+                    ),
+                    distinct=True,
+                ),
+            ).filter(quality_reports__count__gt=0, gt_jobs__gt=0)
+
+            task_quality_reports: Dict[int, models.QualityReport] = {}
+            task_comparison_reports: Dict[int, ComparisonReport] = {}
+            for task in tasks_with_reports:
+                last_quality_report = models.QualityReport.objects.filter(task=task).latest(
+                    "created_date"
+                )
+                task_quality_reports[task.id] = last_quality_report
+                task_comparison_reports[task.id] = ComparisonReport.from_json(
+                    last_quality_report.get_json_report()
+                )
+
+        project_comparison_report = self._compute_project_report(
+            project.tasks.all(),
+            task_comparison_reports,
+            quality_params,
+        )
+
+        with transaction.atomic():
+            # The project could have been deleted during processing
+            try:
+                Project.objects.get(id=project_id)
+            except Project.DoesNotExist:
+                return
+
+            last_report_time = self._get_last_report_time(project)
+            if not self.is_custom_quality_check_job(self._get_current_job()) and (
+                last_report_time
+                and timezone.now() < last_report_time + self._get_quality_check_job_delay()
+            ):
+                # Discard this report as it has probably been computed in parallel
+                # with another one
+                return
+
+            project_report = self._save_reports(
+                project_report=dict(
+                    project=project,
+                    target_last_updated=project.updated_date,
+                    gt_last_updated=max(
+                        [r.gt_last_updated for r in task_quality_reports.values()],
+                        default=None,
+                    ),
+                    data=project_comparison_report.to_json(),
+                    conflicts=[],  # the project doesn't have own conflicts
+                ),
+                task_reports=list(task_quality_reports.values()),
+            )
+
+        return project_report.id
+
+    def _compute_project_report(
+        self,
+        tasks: List[Task],
+        task_reports: Dict[int, ComparisonReport],
+        quality_params: ComparisonParameters,
+    ) -> ComparisonReport:
+        # It's possible that there are no children reports available,
+        # but we still need to return a meaningful report
+
+        project_intersection_frames: Dict[int, Set[int]] = {}
+        project_conflicts: List[AnnotationConflict] = []
+        project_annotations_summary = None
+        project_ann_components_summary = None
+        project_frame_results = {}
+        project_frame_results_counts = {}
+        for task_id, r in task_reports.items():
+            project_intersection_frames[task_id] = r.comparison_summary.frames
+            project_conflicts.extend(r.conflicts)
+
+            if project_annotations_summary:
+                project_annotations_summary.accumulate(r.comparison_summary.annotations)
+            else:
+                project_annotations_summary = deepcopy(r.comparison_summary.annotations)
+
+            if project_ann_components_summary:
+                project_ann_components_summary.accumulate(
+                    r.comparison_summary.annotation_components
+                )
+            else:
+                project_ann_components_summary = deepcopy(
+                    r.comparison_summary.annotation_components
+                )
+
+            for frame_id, job_frame_result in r.frame_results.items():
+                project_frame_result = cast(
+                    Optional[ComparisonReportFrameSummary], project_frame_results.get(frame_id)
+                )
+                frame_results_count = project_frame_results_counts.get(frame_id, 0)
+
+                if project_frame_result is None:
+                    project_frame_result = deepcopy(job_frame_result)
+                else:
+                    project_frame_result.conflicts += job_frame_result.conflicts
+
+                    project_frame_result.annotations.accumulate(job_frame_result.annotations)
+                    project_frame_result.annotation_components.accumulate(
+                        job_frame_result.annotation_components
+                    )
+
+                    project_frame_result.annotation_components.shape.mean_iou = (
+                        project_frame_result.annotation_components.shape.mean_iou
+                        * frame_results_count
+                        + job_frame_result.annotation_components.shape.mean_iou
+                    ) / (frame_results_count + 1)
+
+                project_frame_results_counts[frame_id] = 1 + frame_results_count
+                project_frame_results[frame_id] = project_frame_result
+
+        if task_reports:
+            # Compute the combined weighted summary of the task reports.
+            # The resulting percents are weighted wrt the
+            # project frame shares in corresponding tasks
+            project_qa_total_frames = sum(t.data.size for t in tasks if t.id in task_reports)
+            task_weights = {
+                task.id: task.data.size / (project_qa_total_frames or 1)
+                for task in tasks
+                if task.id in task_reports
+            }
+            project_annotations_summary.accuracy = sum(
+                r.comparison_summary.annotations.accuracy * task_weights[tid]
+                for tid, r in task_reports.items()
+            )
+            project_ann_components_summary.shape.mean_iou = sum(
+                r.comparison_summary.annotation_components.shape.mean_iou * task_weights[tid]
+                for tid, r in task_reports.items()
+            )
+            project_ann_components_summary.shape.accuracy = sum(
+                r.comparison_summary.annotation_components.shape.accuracy * task_weights[tid]
+                for tid, r in task_reports.items()
+            )
+            project_ann_components_summary.label.accuracy = sum(
+                r.comparison_summary.annotation_components.label.accuracy * task_weights[tid]
+                for tid, r in task_reports.items()
+            )
+        else:
+            project_annotations_summary = ComparisonReportAnnotationsSummary(
+                valid_count=0,
+                missing_count=0,
+                extra_count=0,
+                total_count=0,
+                ds_count=0,
+                gt_count=0,
+                confusion_matrix=None,
+            )
+
+        total_intersection_frames = sum(
+            len(task_intersection_frames)
+            for task_intersection_frames in project_intersection_frames.values()
+        )
+        total_frames = sum(t.data.size for t in tasks)
+        project_report_data = ComparisonReport(
+            parameters=quality_params,
+            comparison_summary=ComparisonReportComparisonSummary(
+                frame_share=total_intersection_frames / (total_frames or 1),
+                frame_count=total_intersection_frames,
+                frames=[],  # project reports do not provide this info
+                conflict_count=len(project_conflicts),
+                warning_count=len(
+                    [
+                        c
+                        for c in project_conflicts
+                        if c.severity == AnnotationConflictSeverity.WARNING
+                    ]
+                ),
+                error_count=len(
+                    [c for c in project_conflicts if c.severity == AnnotationConflictSeverity.ERROR]
+                ),
+                conflicts_by_type=Counter(c.type for c in project_conflicts),
+                frames_with_errors=sum(
+                    s.comparison_summary.frames_with_errors for s in task_reports.values()
+                ),
+                total_frames=total_frames,
+                annotations=project_annotations_summary,
+                annotation_components=project_ann_components_summary,
+            ),
+            frame_results={},  # this is a too detailed representation for the project report
+        )
+
+        return project_report_data
+
+    def _save_reports(
+        self, *, project_report: Dict, task_reports: List[models.QualityReport]
+    ) -> models.QualityReport:
+        # TODO: add validation (e.g. ann id count for different types of conflicts)
+
+        db_project_report = models.QualityReport(
+            project=project_report["project"],
+            target_last_updated=project_report["target_last_updated"],
+            gt_last_updated=project_report["gt_last_updated"],
+            data=project_report["data"],
+        )
+        db_project_report.save()
+
+        db_project_report.children.add(*task_reports)
+
+        return db_project_report
+
+    def _get_quality_params(self, project: Project) -> ComparisonParameters:
+        quality_params, _ = models.QualitySettings.objects.get_or_create(project_id=project.id)
         return ComparisonParameters.from_dict(quality_params.to_dict())
 
 
@@ -2495,36 +2965,70 @@ def prepare_report_for_downloading(db_report: models.QualityReport, *, host: str
     # - convert some fractions to percents
     # - add common report info
 
-    task_id = db_report.get_task().id
+    project_id = None
+    task_id = None
+    job_id = None
+    jobs_to_tasks: Dict[int, int] = {}
+    if db_report.project:
+        project_id = db_report.project.id
+
+        jobs = Job.objects.filter(segment__task__project__id=project_id).all()
+        jobs_to_tasks.update((j.id, j.segment.task.id) for j in jobs)
+    elif db_report.task:
+        project_id = getattr(db_report.task.project, "id", None)
+        task_id = db_report.task.id
+
+        jobs = Job.objects.filter(segment__task__id=task_id).all()
+        jobs_to_tasks.update((j.id, task_id) for j in jobs)
+    elif db_report.job:
+        project_id = getattr(db_report.get_task().project, "id", None)
+        task_id = db_report.get_task().id
+        job_id = db_report.job.id
+
+        jobs_to_tasks[db_report.job.id] = task_id
+        jobs_to_tasks[db_report.get_task().gt_job.id] = task_id
+    else:
+        assert False
+
+    # Add ids for the hierarchy objects, don't add empty ids
     serialized_data = dict(
-        job_id=db_report.job.id if db_report.job is not None else None,
-        task_id=task_id,
-        parent_id=db_report.parent.id if db_report.parent is not None else None,
+        id=db_report.id,
+        **dict(job_id=db_report.job.id) if job_id else {},
+        **dict(task_id=task_id) if task_id else {},
+        **dict(project_id=project_id) if project_id else {},
+        **dict(parent_id=db_report.parent.id) if db_report.parent else {},
         created_date=str(db_report.created_date),
         target_last_updated=str(db_report.target_last_updated),
-        gt_last_updated=str(db_report.gt_last_updated),
+        gt_last_updated=str(db_report.gt_last_updated) if db_report.gt_last_updated else "",
     )
 
     comparison_report = ComparisonReport.from_json(db_report.get_json_report())
     serialized_data.update(comparison_report.to_dict())
 
-    for frame_result in serialized_data["frame_results"].values():
-        for conflict in frame_result["conflicts"]:
-            for ann_id in conflict["annotation_ids"]:
-                ann_id["url"] = (
-                    f"{host}tasks/{task_id}/jobs/{ann_id['job_id']}"
-                    f"?frame={conflict['frame_id']}"
-                    f"&type={ann_id['type']}"
-                    f"&serverID={ann_id['obj_id']}"
-                )
+    if db_report.project:
+        # project reports should not have per-frame statistics, it's too detailed for this level
+        serialized_data["comparison_summary"].pop("frames")
+        serialized_data.pop("frame_results")
+    else:
+        for frame_result in serialized_data["frame_results"].values():
+            for conflict in frame_result["conflicts"]:
+                for ann_id in conflict["annotation_ids"]:
+                    task_id = jobs_to_tasks[ann_id["job_id"]]
+                    ann_id["url"] = (
+                        f"{host}tasks/{task_id}/jobs/{ann_id['job_id']}"
+                        f"?frame={conflict['frame_id']}"
+                        f"&type={ann_id['type']}"
+                        f"&serverID={ann_id['obj_id']}"
+                    )
+
+        # String keys are needed for json dumping
+        serialized_data["frame_results"] = {
+            str(k): v for k, v in serialized_data["frame_results"].items()
+        }
 
     # Add the percent representation for better human readability
     serialized_data["comparison_summary"]["frame_share_percent"] = (
         serialized_data["comparison_summary"]["frame_share"] * 100
     )
 
-    # String keys are needed for json dumping
-    serialized_data["frame_results"] = {
-        str(k): v for k, v in serialized_data["frame_results"].items()
-    }
     return dump_json(serialized_data, indent=True, append_newline=True).decode()

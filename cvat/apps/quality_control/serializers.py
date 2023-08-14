@@ -5,7 +5,9 @@
 import textwrap
 
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
+from cvat.apps.engine.serializers import WriteOnceMixin
 from cvat.apps.quality_control import models
 
 
@@ -32,6 +34,8 @@ class QualityReportSummarySerializer(serializers.Serializer):
     warning_count = serializers.IntegerField()
     error_count = serializers.IntegerField()
     conflicts_by_type = serializers.DictField(child=serializers.IntegerField())
+    frames_with_errors = serializers.IntegerField()
+    total_frames = serializers.IntegerField()
 
     # This set is enough for basic characteristics, such as
     # DS_unmatched, GT_unmatched, accuracy, precision and recall
@@ -40,9 +44,24 @@ class QualityReportSummarySerializer(serializers.Serializer):
     gt_count = serializers.IntegerField(source="annotations.gt_count")
 
 
+class QualityReportTargetSerializer(serializers.ChoiceField):
+    # Make a separate class in API schema, otherwise it gets merged with AnalyticsTarget enum
+    def __init__(self, **kwargs):
+        super().__init__(choices=models.QualityReportTarget.choices(), **kwargs)
+
+
 class QualityReportSerializer(serializers.ModelSerializer):
-    target = serializers.ChoiceField(models.QualityReportTarget.choices())
+    target = QualityReportTargetSerializer()
     summary = QualityReportSummarySerializer()
+    parent_id = serializers.IntegerField(
+        source="parent.id", default=None, allow_null=True, read_only=True
+    )
+    task_id = serializers.IntegerField(
+        source="get_task.id", default=None, allow_null=True, read_only=True
+    )
+    project_id = serializers.IntegerField(
+        source="get_project.id", default=None, allow_null=True, read_only=True
+    )
 
     class Meta:
         model = models.QualityReport
@@ -50,6 +69,7 @@ class QualityReportSerializer(serializers.ModelSerializer):
             "id",
             "job_id",
             "task_id",
+            "project_id",
             "parent_id",
             "target",
             "summary",
@@ -61,15 +81,26 @@ class QualityReportSerializer(serializers.ModelSerializer):
 
 
 class QualityReportCreateSerializer(serializers.Serializer):
-    task_id = serializers.IntegerField(write_only=True)
+    task_id = serializers.IntegerField(write_only=True, required=False)
+    project_id = serializers.IntegerField(write_only=True, required=False)
+
+    def validate(self, attrs):
+        if not (attrs.get("task_id") is not None) ^ (attrs.get("project_id") is not None):
+            raise ValidationError("One of 'task_id' or 'project_id' must be specified")
+
+        return attrs
 
 
-class QualitySettingsSerializer(serializers.ModelSerializer):
+class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    task_id = serializers.IntegerField(required=False, allow_null=True)
+    project_id = serializers.IntegerField(required=False, allow_null=True)
+
     class Meta:
         model = models.QualitySettings
         fields = (
             "id",
             "task_id",
+            "project_id",
             "iou_threshold",
             "oks_sigma",
             "line_thickness",
@@ -83,10 +114,8 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
             "panoptic_comparison",
             "compare_attributes",
         )
-        read_only_fields = (
-            "id",
-            "task_id",
-        )
+        read_only_fields = ("id",)
+        write_once_fields = ("task_id", "project_id")
 
         extra_kwargs = {k: {"required": False} for k in fields}
 
@@ -134,10 +163,35 @@ class QualitySettingsSerializer(serializers.ModelSerializer):
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))
             )
 
+    def get_extra_kwargs(self):
+        defaults = models.QualitySettings.get_defaults()
+
+        extra_kwargs = super().get_extra_kwargs()
+
+        for param_name in defaults.keys() | extra_kwargs.keys():
+            param_kwargs: dict = extra_kwargs.setdefault(param_name, {})
+
+            if param_name in defaults:
+                param_kwargs.setdefault("default", defaults[param_name])
+
+        return extra_kwargs
+
     def validate(self, attrs):
         for k, v in attrs.items():
             if k.endswith("_threshold") or k in ["oks_sigma", "line_thickness"]:
                 if not 0 <= v <= 1:
-                    raise serializers.ValidationError(f"{k} must be in the range [0; 1]")
+                    raise ValidationError(f"{k} must be in the range [0; 1]")
 
         return super().validate(attrs)
+
+    def create(self, validated_data):
+        if not bool(validated_data.get("project_id")) ^ bool(validated_data.get("task_id")):
+            raise ValidationError("Either 'project_id' or 'task_id' must be specified")
+
+        try:
+            return super().create(validated_data)
+        except (
+            models.QualitySettings.SettingsAlreadyExistError,
+            models.QualitySettings.InvalidParametersError,
+        ) as ex:
+            raise ValidationError(ex.message)

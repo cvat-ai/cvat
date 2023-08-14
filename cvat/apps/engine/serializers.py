@@ -628,10 +628,10 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             frame_selection_method = validated_data.pop("frame_selection_method", None)
             if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
                 frame_count = validated_data.pop("frame_count")
-                if size <= frame_count:
+                if size < frame_count:
                     raise serializers.ValidationError(
-                        f"The number of frames requested ({frame_count}) must be lesser than "
-                        f"the number of the task frames ({size})"
+                        f"The number of frames requested ({frame_count}) must be less than or "
+                        f"equal to the number of the task frames ({size})"
                     )
 
                 seed = validated_data.pop("seed", None)
