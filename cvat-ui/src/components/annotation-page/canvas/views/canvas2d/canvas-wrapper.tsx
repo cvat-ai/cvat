@@ -24,7 +24,7 @@ import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
 import {
-    confirmCanvasReady,
+    confirmCanvasReadyAsync,
     dragCanvas,
     zoomCanvas,
     resetCanvas,
@@ -259,7 +259,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onSetupCanvas(): void {
-            dispatch(confirmCanvasReady());
+            dispatch(confirmCanvasReadyAsync());
         },
         onDragCanvas(enabled: boolean): void {
             dispatch(dragCanvas(enabled));
