@@ -223,6 +223,7 @@ function AnalyticsPage(): JSX.Element {
                 activeKey={activeTab || 'overview'}
                 defaultActiveKey='overview'
                 onChange={onTabKeyChange}
+                className='cvat-task-analytics-tabs'
             >
                 <Tabs.TabPane tab='Performance' key='overview'>
                     <AnalyticsOverview

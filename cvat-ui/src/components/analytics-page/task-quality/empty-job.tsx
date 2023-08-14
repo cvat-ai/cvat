@@ -17,8 +17,8 @@ function EmptyJobComponent(props: Props): JSX.Element {
 
     return (
         <Col span={24}>
-            <Card className='cvat-job-item-empty-gt'>
-                <Row justify='center'>
+            <Card className='cvat-job-empty-ground-truth-item'>
+                <Row justify='space-between' align='middle'>
                     <Col>
                         No Ground Truth job created yet
                     </Col>
