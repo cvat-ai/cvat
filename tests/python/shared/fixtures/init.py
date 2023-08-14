@@ -431,7 +431,7 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     docker_restore_data_volumes()
     docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
-    docker_cp(TEST_EXTRAS_HOST_DIR, f"{PREFIX}_cvat_server_1:{TEST_EXTRAS_MOUNT_DIR}")
+    # docker_cp(TEST_EXTRAS_HOST_DIR, f"{PREFIX}_cvat_server_1:{TEST_EXTRAS_MOUNT_DIR}")
     wait_for_services()
 
     docker_exec(Container.SERVER, "python manage.py loaddata /tmp/data.json")
@@ -449,7 +449,7 @@ def kube_start(cvat_db_dir):
     db_pod_name = _kube_get_db_pod_name()
     kube_cp(cvat_db_dir / "restore.sql", f"{db_pod_name}:/tmp/restore.sql")
     kube_cp(cvat_db_dir / "data.json", f"{server_pod_name}:/tmp/data.json")
-    kube_cp(TEST_EXTRAS_HOST_DIR, f"{server_pod_name}:{TEST_EXTRAS_MOUNT_DIR}")
+    # kube_cp(TEST_EXTRAS_HOST_DIR, f"{server_pod_name}:{TEST_EXTRAS_MOUNT_DIR}")
 
     wait_for_services()
 
