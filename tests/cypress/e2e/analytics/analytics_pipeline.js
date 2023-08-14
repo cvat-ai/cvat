@@ -15,9 +15,30 @@ context('Analytics pipeline', () => {
     let jobID = null;
     let taskID = null;
 
+    const cardEntryNames = ['annotation_time', 'total_object_count', 'total_annotation_speed'];
+    function checkCards() {
+        cy.get('.cvat-analytics-card')
+            .should('have.length', 3)
+            .each((card) => {
+                cy.wrap(card).invoke('data', 'entry-name')
+                    .then((val) => expect(cardEntryNames.includes(val)).to.be.true);
+            });
+    }
+
+    const histogramEntryNames = ['objects', 'annotation_speed'];
+    function checkHistograms() {
+        cy.get('.cvat-performance-histogram-card')
+            .should('have.length', 2)
+            .each((card) => {
+                cy.wrap(card).invoke('data', 'entry-name')
+                    .then((val) => expect(histogramEntryNames.includes(val)).to.be.true);
+            });
+    }
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
+
         cy.headlessCreateProject({
             labels: projectLabels,
             name: projectName,
@@ -57,7 +78,30 @@ context('Analytics pipeline', () => {
                 .within(() => {
                     cy.contains('[role="menuitem"]', 'View analytics').click();
                 });
-            cy.get('.cvat-analytics-card').should('exist');
+            checkCards();
+            checkHistograms();
+
+            cy.visit(`/tasks/${taskID}`);
+            cy.get('.cvat-task-page-actions-button').click();
+            cy.get('.cvat-actions-menu')
+                .should('be.visible')
+                .find('[role="menuitem"]')
+                .filter(':contains("View analytics")')
+                .last()
+                .click();
+            checkCards();
+            checkHistograms();
+
+            cy.visit(`/projects/${projectID}`);
+            cy.get('.cvat-project-page-actions-button').click();
+            cy.get('.cvat-project-actions-menu')
+                .should('be.visible')
+                .find('[role="menuitem"]')
+                .filter(':contains("View analytics")')
+                .last()
+                .click();
+            checkCards();
+            checkHistograms();
         });
     });
 });
