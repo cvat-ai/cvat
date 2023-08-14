@@ -30,6 +30,8 @@
       ],
       "id": 6,
       "is_active": true,
+      "last_delivery_date": "2023-07-07T14:47:36.213000Z",
+      "last_status": 200,
       "organization": 1,
       "owner": {
         "first_name": "Admin",

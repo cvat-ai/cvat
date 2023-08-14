@@ -1,17 +1,234 @@
 {
-  "count": 21,
+  "count": 28,
   "next": null,
   "previous": null,
   "results": [
     {
       "assignee": null,
-      "bug_tracker": null,
+      "bug_tracker": "",
+      "created_date": "2023-07-07T14:44:18.071000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 2,
       "guide_id": null,
+      "id": 35,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=35"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=35"
+      },
+      "mode": "annotation",
+      "organization": 1,
+      "project_id": 15,
+      "stage": "acceptance",
+      "start_frame": 0,
+      "state": "completed",
+      "status": "completed",
+      "stop_frame": 2,
+      "task_id": 24,
+      "type": "ground_truth",
+      "updated_date": "2023-07-07T14:44:39.031000Z",
+      "url": "http://localhost:8080/api/jobs/35"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2023-07-07T14:42:07.461000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 1,
+      "guide_id": null,
+      "id": 34,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=34"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=34"
+      },
+      "mode": "annotation",
+      "organization": 1,
+      "project_id": 15,
+      "stage": "acceptance",
+      "start_frame": 0,
+      "state": "completed",
+      "status": "completed",
+      "stop_frame": 2,
+      "task_id": 25,
+      "type": "ground_truth",
+      "updated_date": "2023-07-07T14:42:35.511000Z",
+      "url": "http://localhost:8080/api/jobs/34"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2023-07-07T14:40:31.865000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 3,
+      "guide_id": null,
+      "id": 33,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=33"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=33"
+      },
+      "mode": "annotation",
+      "organization": 1,
+      "project_id": 15,
+      "stage": "acceptance",
+      "start_frame": 0,
+      "state": "completed",
+      "status": "completed",
+      "stop_frame": 2,
+      "task_id": 26,
+      "type": "annotation",
+      "updated_date": "2023-07-07T14:40:48.974000Z",
+      "url": "http://localhost:8080/api/jobs/33"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2023-07-07T14:40:02.592000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 3,
+      "guide_id": null,
+      "id": 32,
+      "issues": {
+        "count": 2,
+        "url": "http://localhost:8080/api/issues?job_id=32"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=32"
+      },
+      "mode": "annotation",
+      "organization": 1,
+      "project_id": 15,
+      "stage": "validation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "validation",
+      "stop_frame": 2,
+      "task_id": 25,
+      "type": "annotation",
+      "updated_date": "2023-07-07T14:41:56.422000Z",
+      "url": "http://localhost:8080/api/jobs/32"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2023-07-07T14:39:35.088000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 3,
+      "guide_id": null,
+      "id": 31,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=31"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=31"
+      },
+      "mode": "annotation",
+      "organization": 1,
+      "project_id": 15,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "completed",
+      "status": "annotation",
+      "stop_frame": 2,
+      "task_id": 24,
+      "type": "annotation",
+      "updated_date": "2023-07-07T14:47:33.771000Z",
+      "url": "http://localhost:8080/api/jobs/31"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2023-07-07T14:26:57.505000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 2,
+      "guide_id": null,
+      "id": 30,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=30"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=30"
+      },
+      "mode": "annotation",
+      "organization": null,
+      "project_id": 14,
+      "stage": "acceptance",
+      "start_frame": 0,
+      "state": "completed",
+      "status": "completed",
+      "stop_frame": 3,
+      "task_id": 23,
+      "type": "ground_truth",
+      "updated_date": "2023-07-07T14:27:16.171000Z",
+      "url": "http://localhost:8080/api/jobs/30"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2023-07-07T14:26:05.859000Z",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "frame_count": 4,
+      "guide_id": null,
+      "id": 29,
+      "issues": {
+        "count": 0,
+        "url": "http://localhost:8080/api/issues?job_id=29"
+      },
+      "labels": {
+        "count": 2,
+        "url": "http://localhost:8080/api/labels?job_id=29"
+      },
+      "mode": "annotation",
+      "organization": null,
+      "project_id": 14,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 3,
+      "task_id": 23,
+      "type": "annotation",
+      "updated_date": "2023-07-07T14:30:20.574000Z",
+      "url": "http://localhost:8080/api/jobs/29"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
       "created_date": "2023-05-26T16:11:23.946000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 3,
+      "guide_id": null,
       "id": 28,
       "issues": {
         "count": 0,
@@ -37,12 +254,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-05-26T16:11:23.880000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 11,
+      "guide_id": null,
       "id": 27,
       "issues": {
         "count": 0,
@@ -68,12 +285,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-03-27T19:08:07.649000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 4,
+      "guide_id": null,
       "id": 26,
       "issues": {
         "count": 0,
@@ -99,12 +316,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-03-27T19:08:07.649000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 6,
+      "guide_id": null,
       "id": 25,
       "issues": {
         "count": 0,
@@ -130,12 +347,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2023-03-10T11:57:31.614000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 2,
+      "guide_id": null,
       "id": 24,
       "issues": {
         "count": 0,
@@ -161,12 +378,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-03-10T11:56:33.757000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 2,
+      "guide_id": null,
       "id": 23,
       "issues": {
         "count": 0,
@@ -192,12 +409,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2023-03-01T15:36:26.668000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 2,
+      "guide_id": null,
       "id": 22,
       "issues": {
         "count": 0,
@@ -223,12 +440,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-02-10T14:05:25.947000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 21,
       "issues": {
         "count": 0,
@@ -254,12 +471,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-12-01T12:53:10.425000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 25,
+      "guide_id": null,
       "id": 19,
       "issues": {
         "count": 0,
@@ -285,12 +502,12 @@
     {
       "assignee": null,
       "bug_tracker": "https://bugtracker.localhost/task/12345",
-      "guide_id": null,
       "created_date": "2022-09-22T14:22:25.820000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 8,
+      "guide_id": null,
       "id": 18,
       "issues": {
         "count": 0,
@@ -316,12 +533,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-06-08T08:33:06.505000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 17,
       "issues": {
         "count": 0,
@@ -353,12 +570,12 @@
         "username": "worker2"
       },
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-05T10:32:19.149000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 11,
+      "guide_id": null,
       "id": 16,
       "issues": {
         "count": 1,
@@ -384,12 +601,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 14,
       "issues": {
         "count": 0,
@@ -415,12 +632,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 13,
       "issues": {
         "count": 0,
@@ -446,12 +663,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 12,
       "issues": {
         "count": 0,
@@ -483,12 +700,12 @@
         "username": "worker4"
       },
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 11,
       "issues": {
         "count": 1,
@@ -520,12 +737,12 @@
         "username": "admin1"
       },
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2022-03-05T08:30:48.612000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 14,
+      "guide_id": null,
       "id": 10,
       "issues": {
         "count": 1,
@@ -551,12 +768,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2022-02-21T10:31:52.429000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 11,
+      "guide_id": null,
       "id": 9,
       "issues": {
         "count": 1,
@@ -582,12 +799,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2022-02-16T06:26:54.631000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "3d",
       "frame_count": 1,
+      "guide_id": null,
       "id": 8,
       "issues": {
         "count": 0,
@@ -619,12 +836,12 @@
         "username": "worker4"
       },
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2022-02-16T06:25:48.168000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 25,
+      "guide_id": null,
       "id": 7,
       "issues": {
         "count": 1,
@@ -656,12 +873,12 @@
         "username": "worker1"
       },
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2021-12-14T18:50:29.458000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 23,
+      "guide_id": null,
       "id": 2,
       "issues": {
         "count": 0,
