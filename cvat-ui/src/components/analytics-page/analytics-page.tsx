@@ -233,7 +233,7 @@ function AnalyticsPage(): JSX.Element {
                     </Col>
                 );
                 tabs = (
-                    <Tabs type='card'>
+                    <Tabs type='card' className='cvat-project-analytics-tabs'>
                         <Tabs.TabPane
                             tab={(
                                 <span>
@@ -267,7 +267,7 @@ function AnalyticsPage(): JSX.Element {
                     </Col>
                 );
                 tabs = (
-                    <Tabs type='card'>
+                    <Tabs type='card' className='cvat-task-analytics-tabs'>
                         <Tabs.TabPane
                             tab={(
                                 <span>
