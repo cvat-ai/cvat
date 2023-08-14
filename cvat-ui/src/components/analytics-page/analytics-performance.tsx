@@ -143,6 +143,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                 <Col>
                     <Text type='secondary'>
                         Created
+                        &nbsp;
                         {report?.createdDate ? moment(report?.createdDate).fromNow() : ''}
                     </Text>
                 </Col>
