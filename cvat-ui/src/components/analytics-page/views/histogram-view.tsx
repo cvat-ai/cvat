@@ -61,7 +61,11 @@ function HistogramView(props: Props): JSX.Element | null {
     };
 
     return (
-        <div style={{ height: '100%', width: '100%' }} data-entry-name={entryName}>
+        <div
+            style={{ height: '100%', width: '100%' }}
+            className='cvat-performance-histogram-card'
+            data-entry-name={entryName}
+        >
             <Bar options={options} data={data} />
         </div>
     );
