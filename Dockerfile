@@ -199,7 +199,7 @@ RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
 USER ${USER}
 WORKDIR ${HOME}
 
-RUN mkdir -p data share keys logs /tmp/supervisord static test_extras
+RUN mkdir -p data share keys logs /tmp/supervisord static
 
 EXPOSE 8080
 ENTRYPOINT ["/usr/bin/supervisord"]

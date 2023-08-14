@@ -1,4 +1,0 @@
-services:
-  cvat_server:
-    volumes:
-      - ./tests/extras:/home/django/test_extras:r
