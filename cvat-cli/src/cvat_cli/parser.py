@@ -11,6 +11,7 @@ import os
 import textwrap
 from distutils.util import strtobool
 from pathlib import Path
+from typing import Any, Tuple
 
 from cvat_sdk.core.proxies.tasks import ResourceType
 
@@ -39,6 +40,40 @@ def parse_resource_type(s: str) -> ResourceType:
         return ResourceType[s.upper()]
     except KeyError:
         return s
+
+
+def parse_function_parameter(s: str) -> Tuple[str, Any]:
+    key, sep, type_and_value = s.partition("=")
+
+    if not sep:
+        raise argparse.ArgumentTypeError("parameter value not specified")
+
+    type_, sep, value = type_and_value.partition(":")
+
+    if not sep:
+        raise argparse.ArgumentTypeError("parameter type not specified")
+
+    if type_ == "int":
+        value = int(value)
+    elif type_ == "float":
+        value = float(value)
+    elif type_ == "str":
+        pass
+    elif type_ == "bool":
+        value = bool(strtobool(value))
+    else:
+        raise argparse.ArgumentTypeError(f"unsupported parameter type {type_!r}")
+
+    return (key, value)
+
+
+class BuildDictAction(argparse.Action):
+    def __init__(self, option_strings, dest, default=None, **kwargs):
+        super().__init__(option_strings, dest, default=default or {}, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        key, value = values
+        getattr(namespace, self.dest)[key] = value
 
 
 def make_cmdline_parser() -> argparse.ArgumentParser:
@@ -392,6 +427,16 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         type=Path,
         help="path to a Python source file to use as the function",
+    )
+
+    auto_annotate_task_parser.add_argument(
+        "--function-parameter",
+        "-p",
+        metavar="NAME=TYPE:VALUE",
+        type=parse_function_parameter,
+        action=BuildDictAction,
+        dest="function_parameters",
+        help="parameter for the function",
     )
 
     auto_annotate_task_parser.add_argument(

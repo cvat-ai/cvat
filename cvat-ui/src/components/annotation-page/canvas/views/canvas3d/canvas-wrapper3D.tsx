@@ -16,7 +16,7 @@ import Spin from 'antd/lib/spin';
 
 import {
     activateObject,
-    confirmCanvasReady,
+    confirmCanvasReadyAsync,
     createAnnotationsAsync,
     dragCanvas,
     editShape,
@@ -131,7 +131,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(dragCanvas(enabled));
         },
         onSetupCanvas(): void {
-            dispatch(confirmCanvasReady());
+            dispatch(confirmCanvasReadyAsync());
         },
         onResetCanvas(): void {
             dispatch(resetCanvas());
