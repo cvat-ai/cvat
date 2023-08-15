@@ -185,7 +185,7 @@ context('Analytics pipeline', () => {
                 .trigger('mouseout');
             cy.saveJob();
 
-            cy.goCheckFrameNumber(1);
+            cy.goToNextFrame(1);
             cy.get('#cvat_canvas_shape_2')
                 .trigger('mousemove')
                 .should('have.class', 'cvat_canvas_shape_activated');

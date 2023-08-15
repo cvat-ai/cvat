@@ -1039,8 +1039,7 @@ Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
         cy.get('input[role="spinbutton"]')
             .clear({ force: true })
             .type(`${frameNum}{Enter}`, { force: true })
-            .should('have.value', frameNum)
-            .blur();
+            .should('have.value', frameNum);
     });
 });
 
