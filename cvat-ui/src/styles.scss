@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import './base.scss';
+@import './base';
 
 $highlight-color: #1890ff;
 $highlight-active: #40a9ff;
@@ -136,6 +136,12 @@ hr {
     .query-builder {
         margin: $grid-unit-size;
 
+        .group {
+            background: none !important;
+            border: none !important;
+        }
+
+        /* stylelint-disable selector-class-pattern */
         .group--header {
             display: flex;
             justify-content: space-between;
@@ -143,11 +149,6 @@ hr {
             &::before {
                 left: 10px !important;
             }
-        }
-
-        .group {
-            background: none !important;
-            border: none !important;
         }
 
         .rule.group-or-rule {
@@ -161,7 +162,6 @@ hr {
 
                 .rule--field {
                     > .ant-select {
-                        width: $grid-unit-size * 16 !important;
                         min-width: $grid-unit-size * 16 !important;
                     }
                 }
@@ -176,7 +176,6 @@ hr {
 
                 .rule--value {
                     .ant-select {
-                        width: $grid-unit-size * 15 !important;
                         min-width: $grid-unit-size * 15 !important;
                     }
 
@@ -185,6 +184,7 @@ hr {
                     }
                 }
             }
+            /* stylelint-enable selector-class-pattern */
         }
     }
 }
