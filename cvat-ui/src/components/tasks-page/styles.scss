@@ -136,24 +136,28 @@
 
 .cvat-task-completed-progress {
     color: $completed-progress-color;
-    fill: $completed-progress-color;
-    margin-right: 5px;
 }
 
 .cvat-task-completed-progress div.ant-progress-bg {
     background: $completed-progress-color !important;
 }
 
-.cvat-task-progress-progress {
-    color: $inprogress-progress-color;
-    fill: $inprogress-progress-color;
-    margin-right: 5px;
+.cvat-task-validation-progress {
+    color: $validation-progress-color;
 }
 
-.cvat-task-pending-progress {
-    color: $pending-progress-color;
-    fill: $pending-progress-color;
-    margin-right: 5px;
+.cvat-task-annotation-progress {
+    color: $annotation-progress-color;
+}
+
+.cvat-task-item-progress-wrapper {
+    > div:first-child {
+        margin-bottom: -$grid-unit-size;
+
+        > span {
+            font-size: 12px;
+        }
+    }
 }
 
 .close-auto-annotation-icon {
