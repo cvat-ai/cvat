@@ -7,9 +7,9 @@ import re
 SUCCESS_CHAR = '\u2714'
 FAIL_CHAR = '\u2716'
 
-CVAT_VERSION_PATTERN = r'VERSION\s*=\s*\((\d+),\s*(\d*),\s*(\d+),\s*[\',\"](\w+)[\',\"],\s*(\d+)\)'
-COMPOSE_VERSION_PATTERN = r'(\$\{CVAT_VERSION:-)([\w.]+)(\})'
-HELM_VERSION_PATTERN = r'(^    image: cvat/(?:ui|server)\n    tag: )([\w.]+)'
+CVAT_VERSION_PATTERN = re.compile(r'VERSION\s*=\s*\((\d+),\s*(\d*),\s*(\d+),\s*[\',\"](\w+)[\',\"],\s*(\d+)\)')
+COMPOSE_VERSION_PATTERN = re.compile(r'(\$\{CVAT_VERSION:-)([\w.]+)(\})')
+HELM_VERSION_PATTERN = re.compile(r'(^    image: cvat/(?:ui|server)\n    tag: )([\w.]+)', re.M)
 
 REPO_ROOT_DIR = Path(__file__).resolve().parents[2]
 
@@ -120,12 +120,12 @@ def update_helm_version(new_version: Version) -> None:
     else:
         new_version_repr = 'dev'
 
-    match = re.search(HELM_VERSION_PATTERN, helm_values_text, re.M)
+    match = re.search(HELM_VERSION_PATTERN, helm_values_text)
     if not match:
         raise RuntimeError('Cannot match version pattern')
 
     if match[2] != new_version_repr:
-        helm_values_text = re.sub(HELM_VERSION_PATTERN, f'\\g<1>{new_version_repr}', helm_values_text, 2, re.M)
+        helm_values_text = re.sub(HELM_VERSION_PATTERN, f'\\g<1>{new_version_repr}', helm_values_text, 2)
         HELM_VALUES_PATH.write_text(helm_values_text)
 
         print(f'{SUCCESS_CHAR} {HELM_VALUES_PATH} was updated. {match[2]} -> {new_version_repr}\n')
