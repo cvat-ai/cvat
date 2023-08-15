@@ -101,9 +101,11 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             </Text>
                         )}
 
-                        <Text strong className='cvat-task-annotation-progress'>
-                            {`\u2022 Annotation ${numOfAnnotation}`}
-                        </Text>
+                        { numOfAnnotation > 0 && (
+                            <Text strong className='cvat-task-annotation-progress'>
+                                {`\u2022 Annotation ${numOfAnnotation}`}
+                            </Text>
+                        )}
                     </Col>
                 </Row>
                 <Row>
