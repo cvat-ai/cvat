@@ -1430,6 +1430,10 @@ function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 
                 responseType: 'blob',
             });
 
+            if (response.status === 204) {
+                return null;
+            }
+
             return response.data;
         } catch (errorData) {
             const code = errorData.response ? errorData.response.status : errorData.code;
