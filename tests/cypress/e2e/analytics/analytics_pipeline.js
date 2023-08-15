@@ -51,12 +51,20 @@ context('Analytics pipeline', () => {
     ];
 
     const cardEntryNames = ['annotation_time', 'total_object_count', 'total_annotation_speed'];
-    function checkCards() {
+    function checkCards(notNull) {
         cy.get('.cvat-analytics-card')
             .should('have.length', 3)
             .each((card) => {
-                cy.wrap(card).invoke('data', 'entry-name')
-                    .then((val) => expect(cardEntryNames.includes(val)).to.be.true);
+                cy.wrap(card)
+                    .invoke('data', 'entry-name')
+                    .then((val) => {
+                        expect(cardEntryNames.includes(val)).to.eq(true);
+                        if (notNull && ['total_object_count', 'total_annotation_speed'].includes(val)) {
+                            cy.wrap(card).within(() => {
+                                cy.get('.cvat-analytics-card-value').should('not.have.text', '0.0');
+                            });
+                        }
+                    });
             });
     }
 
@@ -86,6 +94,20 @@ context('Analytics pipeline', () => {
             }
             waitForReport(authKey, rqID);
         });
+    }
+
+    function openAnalytics(type) {
+        if (['task', 'project'].includes(type)) {
+            const actionsMenu = type === 'project' ? '.cvat-project-actions-menu' : '.cvat-actions-menu';
+            const actionsButton = type === 'project' ? '.cvat-project-page-actions-button' : '.cvat-task-page-actions-button';
+            cy.get(actionsButton).click();
+            cy.get(actionsMenu)
+                .should('be.visible')
+                .find('[role="menuitem"]')
+                .filter(':contains("View analytics")')
+                .last()
+                .click();
+        }
     }
 
     before(() => {
@@ -134,30 +156,18 @@ context('Analytics pipeline', () => {
             checkCards();
             checkHistograms();
 
-            cy.visit(`/tasks/${taskID}`);
-            cy.get('.cvat-task-page-actions-button').click();
-            cy.get('.cvat-actions-menu')
-                .should('be.visible')
-                .find('[role="menuitem"]')
-                .filter(':contains("View analytics")')
-                .last()
-                .click();
+            cy.visit(`/projects/${projectID}`);
+            openAnalytics('project');
             checkCards();
             checkHistograms();
 
-            cy.visit(`/projects/${projectID}`);
-            cy.get('.cvat-project-page-actions-button').click();
-            cy.get('.cvat-project-actions-menu')
-                .should('be.visible')
-                .find('[role="menuitem"]')
-                .filter(':contains("View analytics")')
-                .last()
-                .click();
+            cy.visit(`/tasks/${taskID}`);
+            openAnalytics('task');
             checkCards();
             checkHistograms();
         });
 
-        it('Make some actions with objects, check analytics report', () => {
+        it('Make some actions with objects, create analytics report, check performance pages', () => {
             cy.visit(`/tasks/${taskID}`);
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
             cy.get('.cvat-spinner').should('not.exist');
@@ -201,6 +211,33 @@ context('Analytics pipeline', () => {
                 });
             });
             cy.login();
+            cy.intercept('GET', '/api/analytics/reports**').as('getReport');
+
+            cy.visit(`/projects/${projectID}`);
+            openAnalytics('project');
+            cy.wait('@getReport');
+            checkCards(true);
+            checkHistograms();
+
+            cy.visit(`/tasks/${taskID}`);
+            openAnalytics('task');
+            cy.wait('@getReport');
+            checkCards(true);
+            checkHistograms();
+
+            cy.visit(`/tasks/${taskID}`);
+            cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
+                .parents('.cvat-job-item')
+                .find('.cvat-job-item-more-button')
+                .trigger('mouseover');
+            cy.get('.ant-dropdown')
+                .not('.ant-dropdown-hidden')
+                .within(() => {
+                    cy.contains('[role="menuitem"]', 'View analytics').click();
+                });
+            cy.wait('@getReport');
+            checkCards(true);
+            checkHistograms();
         });
     });
 });
