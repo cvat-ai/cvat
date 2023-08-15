@@ -87,29 +87,30 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         return (
             <Col span={7}>
-                <Row justify='start' align='top'>
-                    <Col>
-                        { numOfCompleted > 0 && (
-                            <Text strong className='cvat-task-completed-progress'>
-                                {`\u2022 Completed ${numOfCompleted}`}
-                            </Text>
-                        )}
-
-                        { numOfValidation > 0 && (
-                            <Text strong className='cvat-task-validation-progress'>
-                                {`\u2022 Validation ${numOfValidation}`}
-                            </Text>
-                        )}
-
-                        { numOfAnnotation > 0 && (
-                            <Text strong className='cvat-task-annotation-progress'>
-                                {`\u2022 Annotation ${numOfAnnotation}`}
-                            </Text>
-                        )}
-                    </Col>
-                </Row>
                 <Row>
-                    <Col span={24}>
+                    <Col span={24} className='cvat-task-item-progress-wrapper'>
+                        <div>
+                            { numOfCompleted > 0 && (
+                                <Text strong className='cvat-task-completed-progress'>
+                                    {`\u2022 ${numOfCompleted} done `}
+                                </Text>
+                            )}
+
+                            { numOfValidation > 0 && (
+                                <Text strong className='cvat-task-validation-progress'>
+                                    {`\u2022 ${numOfValidation} on review `}
+                                </Text>
+                            )}
+
+                            { numOfAnnotation > 0 && (
+                                <Text strong className='cvat-task-annotation-progress'>
+                                    {`\u2022 ${numOfAnnotation} annotating `}
+                                </Text>
+                            )}
+                            <Text strong type='secondary'>
+                                {`\u2022 ${numOfJobs} total`}
+                            </Text>
+                        </div>
                         <Progress
                             percent={jobsProgress}
                             success={{
