@@ -70,11 +70,27 @@ context('Analytics pipeline', () => {
             });
     }
 
+    function waitForReport(authKey, rqID) {
+        cy.request({
+            method: 'POST',
+            url: `api/analytics/reports?rq_id=${rqID}`,
+            headers: {
+                Authorization: `Token ${authKey}`,
+            },
+            body: {
+                project_id: projectID,
+            },
+        }).then((response) => {
+            if (response.status === 201) {
+                return;
+            }
+            waitForReport(authKey, rqID);
+        });
+    }
+
     before(() => {
-        // cy.visit('auth/login');
-        // cy.login();
-        cy.visit('/tasks');
-        cy.wait(1000);
+        cy.visit('auth/login');
+        cy.login();
 
         cy.headlessCreateProject({
             labels: projectLabels,
@@ -164,7 +180,27 @@ context('Analytics pipeline', () => {
                 .trigger('mousemove')
                 .should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{del}');
+            cy.get('#cvat_canvas_shape_2').should('not.exist');
             cy.saveJob();
+
+            cy.logout();
+            cy.getAuthKey().then((res) => {
+                const authKey = res.body.key;
+                cy.request({
+                    method: 'POST',
+                    url: 'api/analytics/reports',
+                    headers: {
+                        Authorization: `Token ${authKey}`,
+                    },
+                    body: {
+                        project_id: projectID,
+                    },
+                }).then((response) => {
+                    const rqID = response.body.rq_id;
+                    waitForReport(authKey, rqID);
+                });
+            });
+            cy.login();
         });
     });
 });
