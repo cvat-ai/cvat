@@ -6,14 +6,49 @@
 
 context('Analytics pipeline', () => {
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
+    const mainLabelName = 'label';
+    const secondLabelName = 'secondLabel';
     const projectName = 'A project for testing performance analytics';
-    const projectLabels = [{ name: 'label', attributes: [], type: 'any' }];
+    const projectLabels = [
+        { name: mainLabelName, attributes: [], type: 'any' },
+        { name: secondLabelName, attributes: [], type: 'any' },
+    ];
 
     const taskName = 'Annotation task for testing performance analytics';
 
     let projectID = null;
     let jobID = null;
     let taskID = null;
+
+    const rectangles = [
+        {
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName: mainLabelName,
+            firstX: 270,
+            firstY: 350,
+            secondX: 370,
+            secondY: 450,
+        },
+        {
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName: mainLabelName,
+            firstX: 350,
+            firstY: 450,
+            secondX: 450,
+            secondY: 550,
+        },
+        {
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName: mainLabelName,
+            firstX: 130,
+            firstY: 200,
+            secondX: 150,
+            secondY: 250,
+        },
+    ];
 
     const cardEntryNames = ['annotation_time', 'total_object_count', 'total_annotation_speed'];
     function checkCards() {
@@ -36,8 +71,10 @@ context('Analytics pipeline', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
-        cy.login();
+        // cy.visit('auth/login');
+        // cy.login();
+        cy.visit('/tasks');
+        cy.wait(1000);
 
         cy.headlessCreateProject({
             labels: projectLabels,
@@ -102,6 +139,32 @@ context('Analytics pipeline', () => {
                 .click();
             checkCards();
             checkHistograms();
+        });
+
+        it('Make some actions with objects, check analytics report', () => {
+            cy.visit(`/tasks/${taskID}`);
+            cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
+            cy.get('.cvat-spinner').should('not.exist');
+
+            rectangles.forEach((rectangle, index) => {
+                cy.goCheckFrameNumber(index);
+                cy.createRectangle(rectangle);
+            });
+            cy.saveJob();
+
+            cy.goCheckFrameNumber(0);
+            cy.get('#cvat-objects-sidebar-state-item-1')
+                .find('.cvat-objects-sidebar-state-item-label-selector')
+                .type(`${secondLabelName}{Enter}`)
+                .trigger('mouseout');
+            cy.saveJob();
+
+            cy.goCheckFrameNumber(1);
+            cy.get('#cvat_canvas_shape_2')
+                .trigger('mousemove')
+                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').type('{del}');
+            cy.saveJob();
         });
     });
 });
