@@ -11,6 +11,12 @@ CVAT_VERSION_PATTERN = r'VERSION\s*=\s*\((\d+),\s*(\d*),\s*(\d+),\s*[\',\"](\w+)
 COMPOSE_VERSION_PATTERN = r'(\$\{CVAT_VERSION:-)([\w.]+)(\})'
 HELM_VERSION_PATTERN = r'(^    image: cvat/(?:ui|server)\n    tag: )([\w.]+)'
 
+REPO_ROOT_DIR = Path(__file__).resolve().parents[2]
+
+CVAT_INIT_PY_PATH = REPO_ROOT_DIR / 'cvat/__init__.py'
+COMPOSE_FILE_PATH = REPO_ROOT_DIR / 'docker-compose.yml'
+HELM_VALUES_PATH = REPO_ROOT_DIR / 'helm-chart/values.yaml'
+
 @dataclass()
 class Version:
     major: int = 0
@@ -76,9 +82,7 @@ class Version:
         self._set_default_patch()
 
 def update_compose_config(new_version: Version) -> None:
-    compose_file = get_compose_filename()
-    with open(compose_file, 'r') as fp:
-        compose_text = fp.read()
+    compose_text = COMPOSE_FILE_PATH.read_text()
 
     if new_version.prerelease == 'final':
         new_version_repr = new_version.compose_repr()
@@ -91,31 +95,25 @@ def update_compose_config(new_version: Version) -> None:
 
     if match[2] != new_version_repr:
         compose_text = re.sub(COMPOSE_VERSION_PATTERN, f'\\g<1>{new_version_repr}\\g<3>', compose_text)
-        with open(compose_file, 'w') as fp:
-            fp.write(compose_text)
+        COMPOSE_FILE_PATH.write_text(compose_text)
 
-        print(f'{SUCCESS_CHAR} {compose_file} was updated. {match[2]} -> {new_version_repr}\n')
+        print(f'{SUCCESS_CHAR} {COMPOSE_FILE_PATH} was updated. {match[2]} -> {new_version_repr}\n')
 
     else:
-        print(f'{SUCCESS_CHAR} {compose_file} no need to update.')
+        print(f'{SUCCESS_CHAR} {COMPOSE_FILE_PATH} no need to update.')
 
 def update_cvat_version(old_version: str, new_version: Version) -> None:
-    version_file = get_cvat_version_filename()
-    with open(version_file, 'r') as fp:
-        version_text = fp.read()
+    version_text = CVAT_INIT_PY_PATH.read_text()
 
     new_version_str = f'VERSION = {new_version.cvat_repr()}'
     version_text = version_text.replace(old_version, new_version_str)
 
-    with open(version_file, 'w') as fp:
-        fp.write(version_text)
+    CVAT_INIT_PY_PATH.write_text(version_text)
 
-    print(f'{SUCCESS_CHAR} {version_file} was updated. {old_version} -> {new_version_str}\n')
+    print(f'{SUCCESS_CHAR} {CVAT_INIT_PY_PATH} was updated. {old_version} -> {new_version_str}\n')
 
 def update_helm_version(new_version: Version) -> None:
-    helm_values_file = get_helm_version_filename()
-    with open(helm_values_file, 'r') as fp:
-        helm_values_text = fp.read()
+    helm_values_text = HELM_VALUES_PATH.read_text()
 
     if new_version.prerelease == 'final':
         new_version_repr = new_version.compose_repr()
@@ -128,13 +126,12 @@ def update_helm_version(new_version: Version) -> None:
 
     if match[2] != new_version_repr:
         helm_values_text = re.sub(HELM_VERSION_PATTERN, f'\\g<1>{new_version_repr}', helm_values_text, 2, re.M)
-        with open(helm_values_file, 'w') as fp:
-            fp.write(helm_values_text)
+        HELM_VALUES_PATH.write_text(helm_values_text)
 
-        print(f'{SUCCESS_CHAR} {helm_values_file} was updated. {match[2]} -> {new_version_repr}\n')
+        print(f'{SUCCESS_CHAR} {HELM_VALUES_PATH} was updated. {match[2]} -> {new_version_repr}\n')
 
     else:
-        print(f'{SUCCESS_CHAR} {helm_values_file} no need to update.')
+        print(f'{SUCCESS_CHAR} {HELM_VALUES_PATH} no need to update.')
 
 
 def verify_input(version_types: dict, args: dict) -> None:
@@ -145,24 +142,12 @@ def verify_input(version_types: dict, args: dict) -> None:
     if any(i):
         raise ValueError(f'Only one of {list(version_types)} options accepted')
 
-def get_cvat_version_filename() -> Path:
-    return Path(__file__).resolve().parents[2] / 'cvat' / '__init__.py'
-
-def get_compose_filename() -> Path:
-    return Path(__file__).resolve().parents[2] / 'docker-compose.yml'
-
-def get_helm_version_filename() -> Path:
-    return Path(__file__).resolve().parents[2] / 'helm-chart' / 'values.yaml'
-
 def get_current_version() -> 'tuple[str, Version]':
-    version_file = get_cvat_version_filename()
-
-    with open(version_file, 'r') as fp:
-        version_text = fp.read()
+    version_text = CVAT_INIT_PY_PATH.read_text()
 
     match = re.search(CVAT_VERSION_PATTERN, version_text)
     if not match:
-        raise RuntimeError(f'Failed to find version in {version_file}')
+        raise RuntimeError(f'Failed to find version in {CVAT_INIT_PY_PATH}')
 
     version = Version(int(match[1]), int(match[2]), int(match[3]), match[4], int(match[5]))
     return match[0], version
