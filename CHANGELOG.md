@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[Unreleased\]
 ### Added
 
-- TBD
+- More information about task progress on tasks page (<https://github.com/opencv/cvat/pull/5723>)
 
 ### Changed
 
