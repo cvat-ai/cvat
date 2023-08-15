@@ -4,6 +4,7 @@
 
 import { InferenceSession, Tensor } from 'onnxruntime-web';
 import { LRUCache } from 'lru-cache';
+import { Job } from 'cvat-core-wrapper';
 import { PluginEntryPoint, APIWrapperEnterOptions, ComponentBuilder } from 'components/plugins-entrypoint';
 
 interface SAMPlugin {
@@ -186,8 +187,9 @@ const samPlugin: SAMPlugin = {
                         return result;
                     }
 
-                    const job = Object.values(plugin.data.jobs)
-                        .find((_job) => _job.taskId === taskID);
+                    const job = Object.values(plugin.data.jobs).find((_job) => (
+                        _job.taskId === taskID && frame >= _job.startFrame && frame <= _job.stopFrame
+                    )) as Job;
                     if (!job) {
                         throw new Error('Could not find a job corresponding to the request');
                     }
