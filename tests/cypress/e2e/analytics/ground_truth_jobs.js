@@ -280,7 +280,6 @@ context('Ground truth jobs', () => {
                 cy.createRectangle(rectangles[index]);
             });
             cy.saveJob();
-            cy.interactMenu('Open the task');
 
             cy.logout();
             cy.getAuthKey().then((res) => {
@@ -301,10 +300,11 @@ context('Ground truth jobs', () => {
             });
             cy.login();
             cy.visit('/tasks');
-            cy.openTask(taskName);
-
-            openQualityTab();
+            cy.get('.cvat-spinner').should('not.exist');
             cy.intercept('GET', '/api/quality/reports**').as('getReport');
+
+            cy.openTask(taskName);
+            openQualityTab();
             cy.wait('@getReport');
             checkCardValue('.cvat-task-mean-annotation-quality', '50.0%');
             checkCardValue('.cvat-task-gt-conflicts', '3');
