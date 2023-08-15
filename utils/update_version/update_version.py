@@ -134,14 +134,6 @@ def update_helm_version(new_version: Version) -> None:
         print(f'{SUCCESS_CHAR} {HELM_VALUES_PATH} no need to update.')
 
 
-def verify_input(version_types: dict, args: dict) -> None:
-    versions_to_bump = [args[v_type] for v_type in version_types]
-    i = iter(versions_to_bump)
-    if not any(i):
-        raise ValueError(f'One of {list(version_types)} options must be specified')
-    if any(i):
-        raise ValueError(f'Only one of {list(version_types)} options accepted')
-
 def get_current_version() -> 'tuple[str, Version]':
     version_text = CVAT_INIT_PY_PATH.read_text()
 
@@ -153,37 +145,23 @@ def get_current_version() -> 'tuple[str, Version]':
     return match[0], version
 
 def main() -> None:
-    version_types = {
-        'major': {
-            'action': 'store_true',
-            'help': 'Increment the existing major version by 1',
-        },
-        'minor': {
-            'action': 'store_true',
-            'help': 'Increment the existing minor version by 1',
-        },
-        'patch': {
-            'action': 'store_true',
-            'help': 'Increment the existing patch version by 1',
-        },
-        'prerelease': {
-            'nargs': '?',
-            'const': 'increment',
-            'help': '''Increment prerelease version alpha->beta->rc->final,
-                    Also it's possible to pass value explicitly''',
-        },
-        'prerelease_number': {
-            'action': 'store_true',
-            'help': 'Increment prerelease number by 1',
-        },
-    }
-
     parser = argparse.ArgumentParser(description='Bump CVAT version')
 
-    for v, v_config in version_types.items():
-        parser.add_argument(f'--{v}', **v_config)
+    action_group = parser.add_mutually_exclusive_group(required=True)
 
-    parser.add_argument('--current', '--show-current',
+    action_group.add_argument('--major', action='store_true',
+        help='Increment the existing major version by 1')
+    action_group.add_argument('--minor', action='store_true',
+        help='Increment the existing minor version by 1')
+    action_group.add_argument('--patch', action='store_true',
+        help='Increment the existing patch version by 1')
+    action_group.add_argument('--prerelease', nargs='?', const='increment',
+        help='''Increment prerelease version alpha->beta->rc->final,
+                Also it's possible to pass value explicitly''')
+    action_group.add_argument('--prerelease_number', action='store_true',
+        help='Increment prerelease number by 1')
+
+    action_group.add_argument('--current', '--show-current',
         action='store_true', help='Display current version')
 
     args = parser.parse_args()
@@ -194,14 +172,7 @@ def main() -> None:
         print(version)
         return
 
-    try:
-        verify_input(version_types, vars(args))
-    except ValueError as e:
-        print(f'{FAIL_CHAR} ERROR: {e}\n')
-        parser.print_help()
-        return
-
-    if args.prerelease_number:
+    elif args.prerelease_number:
         version.increment_prerelease_number()
 
     elif args.prerelease:
@@ -218,6 +189,9 @@ def main() -> None:
 
     elif args.major:
         version.increment_major()
+
+    else:
+        assert False, "Unreachable code"
 
     print(f'{SUCCESS_CHAR} Bump version to {version}\n')
 
