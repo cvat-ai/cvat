@@ -9,6 +9,8 @@ import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog'
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import TaskItem from 'containers/tasks-page/task-item';
 
+import dimensions from '../projects-page/dimensions';
+
 export interface Props {
     currentTasksIndexes: number[];
 }
@@ -20,7 +22,7 @@ function TaskListComponent(props: Props): JSX.Element {
     return (
         <>
             <Row justify='center' align='middle'>
-                <Col className='cvat-tasks-list' md={22} lg={18} xl={16} xxl={14}>
+                <Col className='cvat-tasks-list' {...dimensions}>
                     {taskViews}
                 </Col>
             </Row>

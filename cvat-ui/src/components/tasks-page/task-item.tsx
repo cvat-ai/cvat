@@ -86,10 +86,24 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const jobsProgress = ((numOfCompleted + numOfValidation) * 100) / numOfJobs;
 
         return (
-            <Col span={6}>
-                <Row justify='space-between' align='top'>
+            <Col span={7}>
+                <Row justify='start' align='top'>
                     <Col>
-                        <Text type='secondary'>{`Completed: ${numOfCompleted} Validation: ${numOfValidation} Annotation: ${numOfAnnotation}`}</Text>
+                        { numOfCompleted > 0 && (
+                            <Text strong className='cvat-task-completed-progress'>
+                                {`\u2022 Completed ${numOfCompleted}`}
+                            </Text>
+                        )}
+
+                        { numOfValidation > 0 && (
+                            <Text strong className='cvat-task-validation-progress'>
+                                {`\u2022 Validation ${numOfValidation}`}
+                            </Text>
+                        )}
+
+                        <Text strong className='cvat-task-annotation-progress'>
+                            {`\u2022 Annotation ${numOfAnnotation}`}
+                        </Text>
                     </Col>
                 </Row>
                 <Row>
@@ -123,7 +137,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         };
 
         return (
-            <Col span={4}>
+            <Col span={3}>
                 <Row justify='end'>
                     <Col>
                         <Button
