@@ -1,7 +1,7 @@
 ---
 title: 'Annotation quality & Honeypot'
 linkTitle: 'Annotation quality'
-weight: 14
+weight: 1
 description: 'How to check the quality of annotation in CVAT'
 ---
 
@@ -187,20 +187,19 @@ Annotation quality settings have the following parameters:
 
 <!--lint disable maximum-line-length-->
 
-| Field                                                                              | Description                                                                                                                                                    |
-| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Min overlap threshold                                                              | Min overlap threshold(IoU) is used for the distinction between matched / unmatched shapes.                                                                     |
-| Low overlap threshold                                                              | Low overlap threshold is used for the distinction between strong/weak (low overlap) matches.                                                                   |
-| OKS Sigma                                                                          | IoU threshold for points. The percent of the box area, used as the radius of the circle around the GT point, where the checked point is expected to be.        |
-| Relative thickness (frame side %)                                                  | Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be. |
-| Check orientation                                                                  | Indicates that polylines have direction.                                                                                                                       |
-| Min similarity gain (%)                                                            | The minimal gain in the GT IoU between the given and reversed line directions to consider the line inverted. Only useful with the Check orientation parameter. |
-| Compare groups                                                                     | Enables or disables annotation group checks.                                                                                                                   |
-| Min group match threshold                                                          | Minimal IoU for groups to be considered matching, used when the Compare groups are enabled.                                                                    |
-| Check object visibility                                                            | Check for partially-covered annotations. Masks and polygons will be compared to each other.                                                                    |
-| Min visibility threshold                                                           | Minimal visible area percent of the spatial annotations (polygons, masks)                                                                                      |
-| For reporting covered annotations, useful with the Check object visibility option. |
-| Match only visible parts                                                           | Use only the visible part of the masks and polygons in comparisons.                                                                                            |
+| Field                             | Description                                                                                                                                                    |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Min overlap threshold             | Min overlap threshold(IoU) is used for the distinction between matched / unmatched shapes.                                                                     |
+| Low overlap threshold             | Low overlap threshold is used for the distinction between strong/weak (low overlap) matches.                                                                   |
+| OKS Sigma                         | IoU threshold for points. The percent of the box area, used as the radius of the circle around the GT point, where the checked point is expected to be.        |
+| Relative thickness (frame side %) | Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be. |
+| Check orientation                 | Indicates that polylines have direction.                                                                                                                       |
+| Min similarity gain (%)           | The minimal gain in the GT IoU between the given and reversed line directions to consider the line inverted. Only useful with the Check orientation parameter. |
+| Compare groups                    | Enables or disables annotation group checks.                                                                                                                   |
+| Min group match threshold         | Minimal IoU for groups to be considered matching, used when the Compare groups are enabled.                                                                    |
+| Check object visibility           | Check for partially-covered annotations. Masks and polygons will be compared to each other.                                                                    |
+| Min visibility threshold          | Minimal visible area percent of the spatial annotations (polygons, masks). For reporting covered annotations, useful with the Check object visibility option.  |
+| Match only visible parts          | Use only the visible part of the masks and polygons in comparisons.                                                                                            |
 
 <!--lint enable maximum-line-length-->
 

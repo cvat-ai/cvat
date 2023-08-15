@@ -95,16 +95,16 @@ spec:
   eventTimeout: 30s
   build:
     image: cvat.onnx.wongkinyiu.yolov7
-    baseImage: ultralytics/yolov5:latest-cpu
+    baseImage: ubuntu:22.04
 
     directives:
       preCopy:
         - kind: USER
           value: root
         - kind: RUN
-          value: apt update && apt install --no-install-recommends -y libglib2.0-0 && apt install wget
+          value: apt update && apt install --no-install-recommends -y wget python3-pip
         - kind: RUN
-          value: pip install onnxruntime
+          value: pip install onnxruntime opencv-python-headless pillow pyyaml
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN

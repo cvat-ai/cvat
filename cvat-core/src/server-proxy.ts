@@ -7,14 +7,15 @@ import FormData from 'form-data';
 import store from 'store';
 import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
+import { ChunkQuality } from 'cvat-data';
+
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
-    SerializedProject, SerializedTask, TasksFilter, SerializedUser,
-    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
+    SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, FunctionsResponseBody,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
-} from 'server-response-types';
-import { SerializedQualityReportData } from 'quality-report';
-import { SerializedQualitySettingsData } from 'quality-settings';
+} from './server-response-types';
+import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
 import { Storage } from './storage';
 import { StorageLocation, WebhookSourceType } from './enums';
@@ -22,7 +23,6 @@ import { isEmail, isResourceURL } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
-import { FunctionsResponseBody } from './server-response-types';
 import { SerializedQualityConflictData } from './quality-conflict';
 
 type Params = {
@@ -1429,25 +1429,23 @@ function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 
             response = await Axios.get(url, {
                 responseType: 'blob',
             });
+
+            return response.data;
         } catch (errorData) {
             const code = errorData.response ? errorData.response.status : errorData.code;
+            if (code === 404) {
+                return null;
+            }
             throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
         }
-
-        if (response.status === 404) {
-            return null;
-        }
-
-        return response.data;
     };
 }
 
 async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
-    let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/jobs/${jid}/data`, {
+        const response = await Axios.get(`${backendAPI}/jobs/${jid}/data`, {
             params: {
                 quality: 'original',
                 type: 'context_image',
@@ -1455,27 +1453,28 @@ async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer>
             },
             responseType: 'arraybuffer',
         });
+
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    return response.data;
 }
 
-async function getData(jid: number, chunk: number): Promise<ArrayBuffer> {
+async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
-    let response = null;
     try {
-        response = await workerAxios.get(`${backendAPI}/jobs/${jid}/data`, {
+        const response = await workerAxios.get(`${backendAPI}/jobs/${jid}/data`, {
             params: {
                 ...enableOrganization(),
-                quality: 'compressed',
+                quality,
                 type: 'chunk',
                 number: chunk,
             },
             responseType: 'arraybuffer',
         });
+
+        return response;
     } catch (errorData) {
         throw generateError({
             message: '',
@@ -1485,8 +1484,6 @@ async function getData(jid: number, chunk: number): Promise<ArrayBuffer> {
             },
         });
     }
-
-    return response;
 }
 
 export interface RawFramesMetaData {
@@ -1958,7 +1955,7 @@ async function getOrganizations() {
     return response.results;
 }
 
-async function createOrganization(data) {
+async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1973,7 +1970,9 @@ async function createOrganization(data) {
     return response.data;
 }
 
-async function updateOrganization(id, data) {
+async function updateOrganization(
+    id: number, data: Partial<SerializedOrganization>,
+): Promise<SerializedOrganization> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1986,7 +1985,7 @@ async function updateOrganization(id, data) {
     return response.data;
 }
 
-async function deleteOrganization(id) {
+async function deleteOrganization(id: number): Promise<void> {
     const { backendAPI } = config;
 
     try {
@@ -2043,7 +2042,7 @@ async function updateOrganizationMembership(membershipId, data) {
     return response.data;
 }
 
-async function deleteOrganizationMembership(membershipId) {
+async function deleteOrganizationMembership(membershipId: number): Promise<void> {
     const { backendAPI } = config;
 
     try {
