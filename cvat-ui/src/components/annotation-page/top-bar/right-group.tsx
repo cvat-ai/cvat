@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Col } from 'antd/lib/grid';
 import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
@@ -13,12 +13,13 @@ import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 
 import {
-    FilterIcon, FullscreenIcon, GuideIcon, InfoIcon,
+    FilterIcon, FullscreenIcon, GuideIcon, InfoIcon, JobPreviewIcon,
 } from 'icons';
 import { DimensionType } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
 
 import MDEditor from '@uiw/react-md-editor';
+import { jobPreviewActions } from '../../../actions/jobPreview-actions';
 
 interface Props {
     workspace: Workspace;
@@ -36,12 +37,28 @@ function RightGroup(props: Props): JSX.Element {
         jobInstance,
         showFilters,
     } = props;
+    const timelineShowed = useSelector((state: CombinedState) => state.jobPreview.showed);
 
     const annotationFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
     const filters = annotationFilters.length;
+    const dispatch = useDispatch();
 
     return (
         <Col className='cvat-annotation-header-right-group'>
+            <Button
+                type='link'
+                className='cvat-annotation-header-fullscreen-button cvat-annotation-header-button'
+                onClick={(): void => {
+                    if (timelineShowed) {
+                        dispatch(jobPreviewActions.closePreviewModal());
+                    } else {
+                        dispatch(jobPreviewActions.openPreviewModal());
+                    }
+                }}
+            >
+                <JobPreviewIcon />
+                Timeline
+            </Button>
             <Button
                 type='link'
                 className='cvat-annotation-header-fullscreen-button cvat-annotation-header-button'

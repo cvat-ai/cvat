@@ -18,10 +18,12 @@ import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-wo
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
-import { Workspace } from 'reducers';
+import { CombinedState, Workspace} from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import './styles.scss';
 import Button from 'antd/lib/button';
+import { useSelector } from 'react-redux';
+import FramelineComponent from '../job-timeline/job-timeline';
 
 interface Props {
     job: any | null | undefined;
@@ -40,7 +42,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     } = props;
     const prevJob = usePrevious(job);
     const prevFetching = usePrevious(fetching);
-
+    const timelineShowed = useSelector((state: CombinedState) => state.jobPreview.showed)
     const history = useHistory();
     useEffect(() => {
         saveLogs();
@@ -141,6 +143,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 <AnnotationTopBarContainer />
             </Layout.Header>
             <Layout.Content className='cvat-annotation-layout-content'>
+                {timelineShowed && <FramelineComponent job={job} />}
                 {workspace === Workspace.STANDARD3D && <StandardWorkspace3DComponent />}
                 {workspace === Workspace.STANDARD && <StandardWorkspaceComponent />}
                 {workspace === Workspace.ATTRIBUTE_ANNOTATION && <AttributeAnnotationWorkspace />}

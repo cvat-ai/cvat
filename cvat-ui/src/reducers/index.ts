@@ -100,6 +100,10 @@ export interface JobsState {
     };
 }
 
+export interface JobPreviewState {
+    showed: boolean;
+}
+
 export interface TasksState {
     initialized: boolean;
     fetching: boolean;
@@ -718,6 +722,7 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
         statesSources: number[];
+        allObjectsForJob: any[];
         states: any[];
         filters: any[];
         resetGroupFlag: boolean;
@@ -939,6 +944,7 @@ export interface CombinedState {
     organizations: OrganizationState;
     webhooks: WebhooksState;
     analytics: AnalyticsState;
+    jobPreview: JobPreviewState;
 }
 
 export interface Indexable {

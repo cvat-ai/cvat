@@ -69,6 +69,7 @@ import SVGFrameCountIcon from './assets/frame-count-icon.svg';
 import SVGFramesIcon from './assets/frames-icon.svg';
 import SVGConflictIcon from './assets/conflict.svg';
 import SVGShowGroundTruthIcon from './assets/show-gt-icon.svg';
+import { FundOutlined } from '@ant-design/icons';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
@@ -103,6 +104,7 @@ export const ForwardJumpIcon = React.memo((): JSX.Element => <SVGForwardJumpIcon
 export const LastIcon = React.memo((): JSX.Element => <SVGLastIcon />);
 export const InfoIcon = React.memo((): JSX.Element => <SVGInfoIcon />);
 export const FullscreenIcon = React.memo((): JSX.Element => <SVGFullscreenIcon />);
+export const JobPreviewIcon = React.memo((): JSX.Element => <FundOutlined />);
 export const ObjectOutsideIcon = React.memo((): JSX.Element => <SVGObjectOutsideIcon />);
 export const BackgroundIcon = React.memo((): JSX.Element => <SVGBackgroundIcon />);
 export const ForegroundIcon = React.memo((): JSX.Element => <SVGForegroundIcon />);

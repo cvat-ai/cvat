@@ -1003,6 +1003,13 @@ export function getJobAsync(
 
             loadJobEvent.close(await jobInfoGenerator(job));
 
+            // this takes "a lot" of time. need to optimize
+            let allObjectsForJob = [];
+            for (let i = job.startFrame; i <= job.stopFrame; i++) {
+                const statess = await job.annotations.get(i);
+                allObjectsForJob = allObjectsForJob.concat(statess);
+            }
+
             const openTime = Date.now();
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_SUCCESS,
@@ -1022,6 +1029,7 @@ export function getJobAsync(
                     filters,
                     minZ,
                     maxZ,
+                    allObjectsForJob,
                 },
             });
 

@@ -88,6 +88,7 @@ const defaultState: AnnotationState = {
         activatedElementID: null,
         activatedAttributeID: null,
         highlightedConflict: null,
+        allObjectsForJob: [],
         saving: {
             forceExit: false,
             uploading: false,
@@ -156,6 +157,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 maxZ,
                 groundTruthJobId,
                 groundTruthJobFramesMeta,
+                allObjectsForJob,
             } = action.payload;
 
             const isReview = job.stage === JobStage.REVIEW;
@@ -194,6 +196,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     states,
                     filters,
+                    allObjectsForJob,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
