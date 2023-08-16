@@ -133,6 +133,10 @@ REPLACEMENT_RULES = [
         re.compile(r'^VERSION="[\d.]+"$', re.M),
         lambda v, m: f'VERSION="{v.major}.{v.minor}.{v.patch}"'),
 
+    ReplacementRule('cvat/schema.yml',
+        re.compile(r"^  version: [\d.]+$", re.M),
+        lambda v, m:  f'  version: {v.major}.{v.minor}.{v.patch}'),
+
     ReplacementRule('cvat-cli/src/cvat_cli/version.py',
         re.compile(r'^VERSION = "[\d.]+"$', re.M),
         lambda v, m: f'VERSION = "{v.major}.{v.minor}.{v.patch}"'),
