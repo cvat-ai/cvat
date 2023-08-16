@@ -1,6 +1,7 @@
 import argparse
 import functools
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Match, Pattern
@@ -88,7 +89,7 @@ class ReplacementRule:
     pattern: Pattern[str]
     replacement: Callable[[Version, Match[str]], str]
 
-    def apply(self, new_version: Version) -> None:
+    def apply(self, new_version: Version) -> bool:
         path = REPO_ROOT_DIR / self.rel_path
         text = path.read_text()
 
@@ -96,13 +97,16 @@ class ReplacementRule:
             functools.partial(self.replacement, new_version), text)
 
         if not num_replacements:
-            raise RuntimeError('Cannot match version pattern')
+            print(f'{FAIL_CHAR} {self.rel_path}: failed to match version pattern')
+            return False
 
         if text == new_text:
             print(f'{SUCCESS_CHAR} {self.rel_path}: no need to update.')
         else:
             path.write_text(new_text)
             print(f'{SUCCESS_CHAR} {self.rel_path}: updated.')
+
+        return True
 
 REPLACEMENT_RULES = [
     ReplacementRule(CVAT_INIT_PY_REL_PATH, CVAT_VERSION_PATTERN,
@@ -177,8 +181,13 @@ def main() -> None:
 
     print(f'{SUCCESS_CHAR} Bump version to {version}\n')
 
+    success = True
+
     for rule in REPLACEMENT_RULES:
-        rule.apply(version)
+        if not rule.apply(version):
+            success = False
+
+    sys.exit(0 if success else 1)
 
 if __name__ == '__main__':
     main()
