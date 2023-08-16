@@ -23,13 +23,13 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
 
     return (
         <>
-            <Row>
-                <Col>
-                    <Text strong>Automatic annotation</Text>
-                </Col>
-            </Row>
-            <Row justify='space-between'>
-                <Col span={22}>
+            <Row justify='space-between' align='bottom'>
+                <Col span={22} className='cvat-task-item-progress-wrapper'>
+                    <div>
+                        <Text strong type='secondary'>
+                            Automatic annotation
+                        </Text>
+                    </div>
                     <Progress
                         percent={Math.floor(activeInference.progress)}
                         strokeColor={{
