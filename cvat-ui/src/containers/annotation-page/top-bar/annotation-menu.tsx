@@ -92,9 +92,9 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         updateJob,
     } = props;
 
-    function nextJobsQuery(assignee: string, previousId: number): JobsQuery {
+    function nextJobsQuery(assignee: string, page: number): JobsQuery {
         return {
-            page: 1,
+            page,
             sort: null,
             search: null,
             filter: JSON.stringify({
@@ -105,7 +105,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
                                 { '==': [{ var: 'state' }, 'completed'] },
                                 { '==': [{ var: 'state' }, 'rejected'] },
                                 { '==': [{ var: 'stage' }, 'acceptance'] },
-                                { '==': [{ var: 'id' }, previousId] },
                             ],
                         },
                     },
@@ -120,19 +119,27 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     }
 
     const loadNextJob = async (): Promise<void> => {
+        const assignee = jobInstance.assignee.username;
+        const currentJobsQuery = nextJobsQuery(assignee, 1);
         try {
-            const assignee = jobInstance.assignee.username;
-            const query = nextJobsQuery(assignee, jobInstance.id);
-            const nextJobs = await core.jobs.get(filterNull(query));
-            if (nextJobs && nextJobs.length > 0) {
-                const nextJob = nextJobs[0];
-                history.push(`/tasks/${nextJob.taskId}/jobs/${nextJob.id}`);
-            } else {
-                const userFilter = makeUserFilter(assignee);
-                history.push(`/jobs?filter=${userFilter}`);
+            const currentPageJobs: any[] = await core.jobs.get(filterNull(currentJobsQuery));
+            if (currentPageJobs && currentPageJobs.length > 0) {
+                const nextPageJobsQuery = nextJobsQuery(assignee, 2);
+                try {
+                    const nextPageJobs = await core.jobs.get(filterNull(nextPageJobsQuery));
+                    if (nextPageJobs && nextPageJobs.length > 0) {
+                        const currentJobPosition = currentPageJobs.findIndex((job) => job.id === jobInstance.id);
+                        const nextJob = nextPageJobs[Math.max(0, currentJobPosition)];
+                        history.push(`/tasks/${nextJob.taskId}/jobs/${nextJob.id}`);
+                    }
+                } catch (error) {
+                    console.log(`Could not find next job page: ${error}. Returning to main page.`);
+                }
             }
+            const userFilter = makeUserFilter(assignee);
+            history.push(`/jobs?filter=${userFilter}`);
         } catch (error) {
-            console.error('Error when fetching next job:', error);
+            console.log(`Could not find current job page: ${error}. Returning to main page.`);
         }
     };
 
