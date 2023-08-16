@@ -136,6 +136,10 @@ REPLACEMENT_RULES = [
     ReplacementRule('cvat-cli/src/cvat_cli/version.py',
         re.compile(r'^VERSION = "[\d.]+"$', re.M),
         lambda v, m: f'VERSION = "{v.major}.{v.minor}.{v.patch}"'),
+
+    ReplacementRule('cvat-cli/requirements/base.txt',
+        re.compile(r'^cvat-sdk~=[\d.]+$', re.M),
+        lambda v, m: f'cvat-sdk~={v.major}.{v.minor}.{v.patch}'),
 ]
 
 def get_current_version() -> Version:
