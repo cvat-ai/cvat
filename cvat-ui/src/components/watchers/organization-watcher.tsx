@@ -13,7 +13,13 @@ function OrganizationWatcher(): JSX.Element {
     const organizationList = useSelector((state: CombinedState) => state.organizations.list);
 
     useEffect(() => {
-        core.config.onOrganizationChange = (newOrgId: number) => {
+        core.config.onOrganizationChange = (newOrgId: number | null) => {
+            if (newOrgId === null) {
+                localStorage.removeItem('currentOrganization');
+                window.location.reload();
+                return;
+            }
+
             const newOrganization = organizationList.find((org) => org.id === newOrgId);
             if (newOrganization) {
                 localStorage.setItem('currentOrganization', newOrganization.slug);
