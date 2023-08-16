@@ -197,7 +197,8 @@ def main() -> None:
         if not rule.apply(version):
             success = False
 
-    sys.exit(0 if success else 1)
+    if not success:
+        sys.exit("\nFailed to process one or more files!")
 
 if __name__ == '__main__':
     main()
