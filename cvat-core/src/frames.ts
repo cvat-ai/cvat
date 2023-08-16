@@ -3,28 +3,35 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { isBrowser, isNode } from 'browser-or-node';
-
-import * as cvatData from 'cvat-data';
-import { DimensionType } from 'enums';
+import _ from 'lodash';
+import {
+    FrameDecoder, BlockType, DimensionType, ChunkQuality, decodeContextImages, RequestOutdatedError,
+} from 'cvat-data';
 import PluginRegistry from './plugins';
 import serverProxy, { RawFramesMetaData } from './server-proxy';
-import {
-    Exception, ArgumentError, DataError, ServerError,
-} from './exceptions';
+import { Exception, ArgumentError, DataError } from './exceptions';
 
 // frame storage by job id
 const frameDataCache: Record<string, {
-    meta: RawFramesMetaData;
+    meta: Omit<RawFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> };
     chunkSize: number;
     mode: 'annotation' | 'interpolation';
     startFrame: number;
     stopFrame: number;
-    provider: cvatData.FrameProvider;
-    frameBuffer: FrameBuffer;
+    decodeForward: boolean;
+    forwardStep: number;
+    latestFrameDecodeRequest: number | null;
+    latestContextImagesRequest: number | null;
+    provider: FrameDecoder;
     decodedBlocksCacheSize: number;
-    activeChunkRequest: null;
-    nextChunkRequest: null;
+    activeChunkRequest: Promise<void> | null;
+    activeContextRequest: Promise<Record<number, ImageBitmap>> | null;
+    contextCache: Record<number, {
+        data: Record<number, ImageBitmap>;
+        timestamp: number;
+        size: number;
+    }>;
+    getChunk: (chunkNumber: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
 }> = {};
 
 export class FramesMetaData {
@@ -98,15 +105,20 @@ export class FramesMetaData {
 }
 
 export class FrameData {
+    public readonly filename: string;
+    public readonly width: number;
+    public readonly height: number;
+    public readonly number: number;
+    public readonly relatedFiles: number;
+    public readonly deleted: boolean;
+    public readonly jobID: number;
+
     constructor({
         width,
         height,
         name,
         jobID,
         frameNumber,
-        startFrame,
-        stopFrame,
-        decodeForward,
         deleted,
         related_files: relatedFiles,
     }) {
@@ -125,7 +137,7 @@ export class FrameData {
                     value: height,
                     writable: false,
                 },
-                jid: {
+                jobID: {
                     value: jobID,
                     writable: false,
                 },
@@ -137,18 +149,6 @@ export class FrameData {
                     value: relatedFiles,
                     writable: false,
                 },
-                startFrame: {
-                    value: startFrame,
-                    writable: false,
-                },
-                stopFrame: {
-                    value: stopFrame,
-                    writable: false,
-                },
-                decodeForward: {
-                    value: decodeForward,
-                    writable: false,
-                },
                 deleted: {
                     value: deleted,
                     writable: false,
@@ -157,233 +157,167 @@ export class FrameData {
         );
     }
 
-    async data(onServerRequest = () => {}) {
+    async data(onServerRequest = () => {}): Promise<ImageBitmap | Blob> {
         const result = await PluginRegistry.apiWrapper.call(this, FrameData.prototype.data, onServerRequest);
         return result;
     }
-
-    get imageData() {
-        return this._data.imageData;
-    }
-
-    set imageData(imageData) {
-        this._data.imageData = imageData;
-    }
 }
 
-FrameData.prototype.data.implementation = async function (onServerRequest) {
-    return new Promise((resolve, reject) => {
-        const resolveWrapper = (data) => {
-            this._data = {
-                imageData: data,
-                renderWidth: this.width,
-                renderHeight: this.height,
-            };
-            return resolve(this._data);
-        };
+Object.defineProperty(FrameData.prototype.data, 'implementation', {
+    value(this: FrameData, onServerRequest) {
+        return new Promise<{
+            renderWidth: number;
+            renderHeight: number;
+            imageData: ImageBitmap | Blob;
+        } | Blob>((resolve, reject) => {
+            const {
+                provider, chunkSize, stopFrame, decodeForward, forwardStep, decodedBlocksCacheSize,
+            } = frameDataCache[this.jobID];
 
-        if (this._data) {
-            resolve(this._data);
-            return;
-        }
+            const requestId = +_.uniqueId();
+            const chunkNumber = Math.floor(this.number / chunkSize);
+            const frame = provider.frame(this.number);
 
-        const { provider } = frameDataCache[this.jid];
-        const { chunkSize } = frameDataCache[this.jid];
-        const start = parseInt(this.number / chunkSize, 10) * chunkSize;
-        const stop = Math.min(this.stopFrame, (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1);
-        const chunkNumber = Math.floor(this.number / chunkSize);
-
-        const onDecodeAll = async (frameNumber) => {
-            if (
-                frameDataCache[this.jid].activeChunkRequest &&
-                chunkNumber === frameDataCache[this.jid].activeChunkRequest.chunkNumber
-            ) {
-                const callbackArray = frameDataCache[this.jid].activeChunkRequest.callbacks;
-                for (let i = callbackArray.length - 1; i >= 0; --i) {
-                    if (callbackArray[i].frameNumber === frameNumber) {
-                        const callback = callbackArray[i];
-                        callbackArray.splice(i, 1);
-                        callback.resolve(await provider.frame(callback.frameNumber));
-                    }
+            function findTheNextNotDecodedChunk(searchFrom: number): number {
+                let firstFrameInNextChunk = searchFrom + forwardStep;
+                let nextChunkNumber = Math.floor(firstFrameInNextChunk / chunkSize);
+                while (nextChunkNumber === chunkNumber) {
+                    firstFrameInNextChunk += forwardStep;
+                    nextChunkNumber = Math.floor(firstFrameInNextChunk / chunkSize);
                 }
-                if (callbackArray.length === 0) {
-                    frameDataCache[this.jid].activeChunkRequest = null;
+
+                if (provider.isChunkCached(nextChunkNumber)) {
+                    return findTheNextNotDecodedChunk(firstFrameInNextChunk);
                 }
+
+                return nextChunkNumber;
             }
-        };
 
-        const rejectRequestAll = () => {
-            if (
-                frameDataCache[this.jid].activeChunkRequest &&
-                chunkNumber === frameDataCache[this.jid].activeChunkRequest.chunkNumber
-            ) {
-                for (const r of frameDataCache[this.jid].activeChunkRequest.callbacks) {
-                    r.reject(r.frameNumber);
-                }
-                frameDataCache[this.jid].activeChunkRequest = null;
-            }
-        };
+            if (frame) {
+                if (decodeForward && decodedBlocksCacheSize > 1 && !frameDataCache[this.jobID].activeChunkRequest) {
+                    const nextChunkNumber = findTheNextNotDecodedChunk(this.number);
+                    const predecodeChunksMax = Math.floor(decodedBlocksCacheSize / 2);
+                    if (nextChunkNumber * chunkSize <= stopFrame &&
+                        nextChunkNumber <= chunkNumber + predecodeChunksMax) {
+                        provider.cleanup(1);
+                        frameDataCache[this.jobID].activeChunkRequest = new Promise((resolveForward) => {
+                            const releasePromise = (): void => {
+                                resolveForward();
+                                frameDataCache[this.jobID].activeChunkRequest = null;
+                            };
 
-        const makeActiveRequest = () => {
-            const taskDataCache = frameDataCache[this.jid];
-            const activeChunk = taskDataCache.activeChunkRequest;
-            activeChunk.request = serverProxy.frames
-                .getData(this.jid, activeChunk.chunkNumber)
-                .then((chunk) => {
-                    frameDataCache[this.jid].activeChunkRequest.completed = true;
-                    if (!taskDataCache.nextChunkRequest) {
-                        provider.requestDecodeBlock(
-                            chunk,
-                            taskDataCache.activeChunkRequest.start,
-                            taskDataCache.activeChunkRequest.stop,
-                            taskDataCache.activeChunkRequest.onDecodeAll,
-                            taskDataCache.activeChunkRequest.rejectRequestAll,
-                        );
-                    }
-                })
-                .catch((exception) => {
-                    if (exception instanceof Exception) {
-                        reject(exception);
-                    } else {
-                        reject(new Exception(exception.message));
-                    }
-                })
-                .finally(() => {
-                    if (taskDataCache.nextChunkRequest) {
-                        if (taskDataCache.activeChunkRequest) {
-                            for (const r of taskDataCache.activeChunkRequest.callbacks) {
-                                r.reject(r.frameNumber);
-                            }
-                        }
-                        taskDataCache.activeChunkRequest = taskDataCache.nextChunkRequest;
-                        taskDataCache.nextChunkRequest = null;
-                        makeActiveRequest();
-                    }
-                });
-        };
-
-        if (isNode) {
-            resolve('Dummy data');
-        } else if (isBrowser) {
-            provider
-                .frame(this.number)
-                .then((frame) => {
-                    if (frame === null) {
-                        onServerRequest();
-                        const activeRequest = frameDataCache[this.jid].activeChunkRequest;
-                        if (!provider.isChunkCached(start, stop)) {
-                            if (
-                                !activeRequest ||
-                                (activeRequest &&
-                                    activeRequest.completed &&
-                                    activeRequest.chunkNumber !== chunkNumber)
-                            ) {
-                                if (activeRequest && activeRequest.rejectRequestAll) {
-                                    activeRequest.rejectRequestAll();
-                                }
-                                frameDataCache[this.jid].activeChunkRequest = {
-                                    request: null,
-                                    chunkNumber,
-                                    start,
-                                    stop,
-                                    onDecodeAll,
-                                    rejectRequestAll,
-                                    completed: false,
-                                    callbacks: [
-                                        {
-                                            resolve: resolveWrapper,
-                                            reject,
-                                            frameNumber: this.number,
-                                        },
-                                    ],
-                                };
-                                makeActiveRequest();
-                            } else if (activeRequest.chunkNumber === chunkNumber) {
-                                if (!activeRequest.onDecodeAll && !activeRequest.rejectRequestAll) {
-                                    activeRequest.onDecodeAll = onDecodeAll;
-                                    activeRequest.rejectRequestAll = rejectRequestAll;
-                                }
-                                activeRequest.callbacks.push({
-                                    resolve: resolveWrapper,
-                                    reject,
-                                    frameNumber: this.number,
-                                });
-                            } else {
-                                if (frameDataCache[this.jid].nextChunkRequest) {
-                                    const { callbacks } = frameDataCache[this.jid].nextChunkRequest;
-                                    for (const r of callbacks) {
-                                        r.reject(r.frameNumber);
-                                    }
-                                }
-                                frameDataCache[this.jid].nextChunkRequest = {
-                                    request: null,
-                                    chunkNumber,
-                                    start,
-                                    stop,
-                                    onDecodeAll,
-                                    rejectRequestAll,
-                                    completed: false,
-                                    callbacks: [
-                                        {
-                                            resolve: resolveWrapper,
-                                            reject,
-                                            frameNumber: this.number,
-                                        },
-                                    ],
-                                };
-                            }
-                        } else {
-                            activeRequest.callbacks.push({
-                                resolve: resolveWrapper,
-                                reject,
-                                frameNumber: this.number,
+                            frameDataCache[this.jobID].getChunk(
+                                nextChunkNumber, ChunkQuality.COMPRESSED,
+                            ).then((chunk: ArrayBuffer) => {
+                                provider.requestDecodeBlock(
+                                    chunk,
+                                    nextChunkNumber * chunkSize,
+                                    Math.min(stopFrame, (nextChunkNumber + 1) * chunkSize - 1),
+                                    () => {},
+                                    releasePromise,
+                                    releasePromise,
+                                );
+                            }).catch(() => {
+                                releasePromise();
                             });
-                            provider.requestDecodeBlock(null, start, stop, onDecodeAll, rejectRequestAll);
-                        }
-                    } else {
-                        if (
-                            this.number % chunkSize > chunkSize / 4 &&
-                            provider.decodedBlocksCacheSize > 1 &&
-                            this.decodeForward &&
-                            !provider.isNextChunkExists(this.number)
-                        ) {
-                            const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
-                            if (nextChunkNumber * chunkSize < this.stopFrame) {
-                                provider.setReadyToLoading(nextChunkNumber);
-                                const nextStart = nextChunkNumber * chunkSize;
-                                const nextStop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
-                                if (!provider.isChunkCached(nextStart, nextStop)) {
-                                    if (!frameDataCache[this.jid].activeChunkRequest) {
-                                        frameDataCache[this.jid].activeChunkRequest = {
-                                            request: null,
-                                            chunkNumber: nextChunkNumber,
-                                            start: nextStart,
-                                            stop: nextStop,
-                                            onDecodeAll: null,
-                                            rejectRequestAll: null,
-                                            completed: false,
-                                            callbacks: [],
-                                        };
-                                        makeActiveRequest();
-                                    }
-                                } else {
-                                    provider.requestDecodeBlock(null, nextStart, nextStop, null, null);
-                                }
-                            }
-                        }
-                        resolveWrapper(frame);
+                        });
                     }
-                })
-                .catch((exception) => {
-                    if (exception instanceof Exception) {
-                        reject(exception);
-                    } else {
-                        reject(new Exception(exception.message));
-                    }
+                }
+
+                resolve({
+                    renderWidth: this.width,
+                    renderHeight: this.height,
+                    imageData: frame,
                 });
-        }
-    });
-};
+                return;
+            }
+
+            onServerRequest();
+            frameDataCache[this.jobID].latestFrameDecodeRequest = requestId;
+            (frameDataCache[this.jobID].activeChunkRequest || Promise.resolve()).finally(() => {
+                if (frameDataCache[this.jobID].latestFrameDecodeRequest !== requestId) {
+                    // not relevant request anymore
+                    reject(this.number);
+                    return;
+                }
+
+                // it might appear during decoding, so, check again
+                const currentFrame = provider.frame(this.number);
+                if (currentFrame) {
+                    resolve({
+                        renderWidth: this.width,
+                        renderHeight: this.height,
+                        imageData: currentFrame,
+                    });
+                    return;
+                }
+
+                frameDataCache[this.jobID].activeChunkRequest = new Promise<void>((
+                    resolveLoadAndDecode,
+                ) => {
+                    let wasResolved = false;
+                    frameDataCache[this.jobID].getChunk(
+                        chunkNumber, ChunkQuality.COMPRESSED,
+                    ).then((chunk: ArrayBuffer) => {
+                        try {
+                            provider
+                                .requestDecodeBlock(
+                                    chunk,
+                                    chunkNumber * chunkSize,
+                                    Math.min(stopFrame, (chunkNumber + 1) * chunkSize - 1),
+                                    (_frame: number, bitmap: ImageBitmap | Blob) => {
+                                        if (decodeForward) {
+                                            // resolve immediately only if is not playing
+                                            return;
+                                        }
+
+                                        if (frameDataCache[this.jobID].latestFrameDecodeRequest === requestId &&
+                                            this.number === _frame
+                                        ) {
+                                            wasResolved = true;
+                                            resolve({
+                                                renderWidth: this.width,
+                                                renderHeight: this.height,
+                                                imageData: bitmap,
+                                            });
+                                        }
+                                    }, () => {
+                                        frameDataCache[this.jobID].activeChunkRequest = null;
+                                        resolveLoadAndDecode();
+                                        const decodedFrame = provider.frame(this.number);
+                                        if (decodeForward) {
+                                            // resolve after decoding everything if playing
+                                            resolve({
+                                                renderWidth: this.width,
+                                                renderHeight: this.height,
+                                                imageData: decodedFrame,
+                                            });
+                                        } else if (!wasResolved) {
+                                            reject(this.number);
+                                        }
+                                    }, (error: Error | RequestOutdatedError) => {
+                                        frameDataCache[this.jobID].activeChunkRequest = null;
+                                        resolveLoadAndDecode();
+                                        if (error instanceof RequestOutdatedError) {
+                                            reject(this.number);
+                                        } else {
+                                            reject(error);
+                                        }
+                                    },
+                                );
+                        } catch (error) {
+                            reject(error);
+                        }
+                    }).catch((error) => {
+                        reject(error);
+                        resolveLoadAndDecode(error);
+                    });
+                });
+            });
+        });
+    },
+    writable: false,
+});
 
 function getFrameMeta(jobID, frame): RawFramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
@@ -403,284 +337,81 @@ function getFrameMeta(jobID, frame): RawFramesMetaData['frames'][0] {
     return frameMeta;
 }
 
-class FrameBuffer {
-    constructor(size, chunkSize, stopFrame, jobID) {
-        this._size = size;
-        this._buffer = {};
-        this._contextImage = {};
-        this._requestedChunks = {};
-        this._chunkSize = chunkSize;
-        this._stopFrame = stopFrame;
-        this._activeFillBufferRequest = false;
-        this._jobID = jobID;
-    }
-
-    addContextImage(frame, data): void {
-        const promise = new Promise<void>((resolve, reject) => {
-            data.then((resolvedData) => {
-                const meta = getFrameMeta(this._jobID, frame);
-                return cvatData
-                    .decodeZip(resolvedData, 0, meta.related_files, cvatData.DimensionType.DIMENSION_2D);
-            }).then((decodedData) => {
-                this._contextImage[frame] = decodedData;
-                resolve();
-            }).catch((error: Error) => {
-                if (error instanceof ServerError && (error as any).code === 404) {
-                    this._contextImage[frame] = {};
-                    resolve();
-                } else {
-                    reject(error);
-                }
-            });
-        });
-
-        this._contextImage[frame] = promise;
-    }
-
-    isContextImageAvailable(frame): boolean {
-        return frame in this._contextImage;
-    }
-
-    getContextImage(frame): Promise<ImageBitmap[]> {
-        return new Promise((resolve) => {
-            if (frame in this._contextImage) {
-                if (this._contextImage[frame] instanceof Promise) {
-                    this._contextImage[frame].then(() => {
-                        resolve(this.getContextImage(frame));
-                    });
-                } else {
-                    resolve({ ...this._contextImage[frame] });
-                }
-            } else {
-                resolve([]);
-            }
-        });
-    }
-
-    getFreeBufferSize() {
-        let requestedFrameCount = 0;
-        for (const chunk of Object.values(this._requestedChunks)) {
-            requestedFrameCount += chunk.requestedFrames.size;
+export function getContextImage(jobID: number, frame: number): Promise<Record<string, ImageBitmap>> {
+    return new Promise<Record<string, ImageBitmap>>((resolve, reject) => {
+        if (!(jobID in frameDataCache)) {
+            reject(new Error(
+                'Frame data was not initialized for this job. Try first requesting any frame.',
+            ));
         }
+        const frameData = frameDataCache[jobID];
+        const requestId = frame;
+        const { startFrame } = frameData;
+        const { related_files: relatedFiles } = frameData.meta.frames[frame - startFrame];
 
-        return this._size - Object.keys(this._buffer).length - requestedFrameCount;
-    }
-
-    requestOneChunkFrames(chunkIdx) {
-        return new Promise((resolve, reject) => {
-            this._requestedChunks[chunkIdx] = {
-                ...this._requestedChunks[chunkIdx],
-                resolve,
-                reject,
-            };
-            for (const frame of this._requestedChunks[chunkIdx].requestedFrames.entries()) {
-                const requestedFrame = frame[1];
-                const frameMeta = getFrameMeta(this._jobID, requestedFrame);
-                const frameData = new FrameData({
-                    ...frameMeta,
-                    jobID: this._jobID,
-                    frameNumber: requestedFrame,
-                    startFrame: frameDataCache[this._jobID].startFrame,
-                    stopFrame: frameDataCache[this._jobID].stopFrame,
-                    decodeForward: false,
-                    deleted: requestedFrame in frameDataCache[this._jobID].meta,
-                });
-
-                frameData
-                    .data()
-                    .then(() => {
-                        if (
-                            !(chunkIdx in this._requestedChunks) ||
-                            !this._requestedChunks[chunkIdx].requestedFrames.has(requestedFrame)
-                        ) {
-                            reject(chunkIdx);
-                        } else {
-                            this._requestedChunks[chunkIdx].requestedFrames.delete(requestedFrame);
-                            this._requestedChunks[chunkIdx].buffer[requestedFrame] = frameData;
-                            if (this._requestedChunks[chunkIdx].requestedFrames.size === 0) {
-                                const bufferedframes = Object.keys(this._requestedChunks[chunkIdx].buffer).map(
-                                    (f) => +f,
-                                );
-                                this._requestedChunks[chunkIdx].resolve(new Set(bufferedframes));
-                            }
-                        }
-                    })
-                    .catch(() => {
-                        reject(chunkIdx);
-                    });
-            }
-        });
-    }
-
-    fillBuffer(startFrame, frameStep = 1, count = null) {
-        const freeSize = this.getFreeBufferSize();
-        const requestedFrameCount = count ? count * frameStep : freeSize * frameStep;
-        const stopFrame = Math.min(startFrame + requestedFrameCount, this._stopFrame + 1);
-
-        for (let i = startFrame; i < stopFrame; i += frameStep) {
-            const chunkIdx = Math.floor(i / this._chunkSize);
-            if (!(chunkIdx in this._requestedChunks)) {
-                this._requestedChunks[chunkIdx] = {
-                    requestedFrames: new Set(),
-                    resolve: null,
-                    reject: null,
-                    buffer: {},
-                };
-            }
-            this._requestedChunks[chunkIdx].requestedFrames.add(i);
-        }
-
-        let bufferedFrames = new Set();
-
-        // if we send one request to get frame 1 with filling the buffer
-        // then quicky send one more request to get frame 1
-        // frame 1 will be already decoded and written to buffer
-        // the second request gets frame 1 from the buffer, removes it from there and returns
-        // after the first request finishes decoding it tries to get frame 1, but failed
-        // because frame 1 was already removed from the buffer by the second request
-        // to prevent this behavior we do not write decoded frames to buffer till the end of decoding all chunks
-        const buffersToBeCommited = [];
-        const commitBuffers = () => {
-            for (const buffer of buffersToBeCommited) {
-                this._buffer = {
-                    ...this._buffer,
-                    ...buffer,
-                };
-            }
-        };
-
-        // Need to decode chunks in sequence
-        // eslint-disable-next-line no-async-promise-executor
-        return new Promise(async (resolve, reject) => {
-            for (const chunkIdx of Object.keys(this._requestedChunks)) {
-                try {
-                    const chunkFrames = await this.requestOneChunkFrames(chunkIdx);
-                    if (chunkIdx in this._requestedChunks) {
-                        bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
-
-                        buffersToBeCommited.push(this._requestedChunks[chunkIdx].buffer);
-                        delete this._requestedChunks[chunkIdx];
-                        if (Object.keys(this._requestedChunks).length === 0) {
-                            commitBuffers();
-                            resolve(bufferedFrames);
-                        }
-                    } else {
-                        commitBuffers();
-                        reject(chunkIdx);
-                        break;
-                    }
-                } catch (error) {
-                    commitBuffers();
-                    reject(error);
-                    break;
-                }
-            }
-        });
-    }
-
-    async makeFillRequest(start, step, count = null) {
-        if (!this._activeFillBufferRequest) {
-            this._activeFillBufferRequest = true;
-            try {
-                await this.fillBuffer(start, step, count);
-                this._activeFillBufferRequest = false;
-            } catch (error) {
-                if (typeof error === 'number' && error in this._requestedChunks) {
-                    this._activeFillBufferRequest = false;
-                }
-                throw error;
-            }
-        }
-    }
-
-    async require(frameNumber: number, jobID: number, fillBuffer: boolean, frameStep: number): FrameData {
-        for (const frame in this._buffer) {
-            if (+frame < frameNumber || +frame >= frameNumber + this._size * frameStep) {
-                delete this._buffer[frame];
-            }
-        }
-
-        this._required = frameNumber;
-        const frameMeta = getFrameMeta(jobID, frameNumber);
-        let frame = new FrameData({
-            ...frameMeta,
-            jobID,
-            frameNumber,
-            startFrame: frameDataCache[jobID].startFrame,
-            stopFrame: frameDataCache[jobID].stopFrame,
-            decodeForward: !fillBuffer,
-            deleted: frameNumber in frameDataCache[jobID].meta.deleted_frames,
-        });
-
-        if (frameNumber in this._buffer) {
-            frame = this._buffer[frameNumber];
-            delete this._buffer[frameNumber];
-            const cachedFrames = this.cachedFrames();
-            if (
-                fillBuffer &&
-                !this._activeFillBufferRequest &&
-                this._size > this._chunkSize &&
-                cachedFrames.length < (this._size * 3) / 4
-            ) {
-                const maxFrame = cachedFrames ? Math.max(...cachedFrames) : frameNumber;
-                if (maxFrame < this._stopFrame) {
-                    this.makeFillRequest(maxFrame + 1, frameStep).catch((e) => {
-                        if (e !== 'not needed') {
-                            throw e;
-                        }
-                    });
-                }
-            }
-        } else if (fillBuffer) {
-            this.clear();
-            await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
-            frame = this._buffer[frameNumber];
+        if (relatedFiles === 0) {
+            resolve({});
+        } else if (frame in frameData.contextCache) {
+            resolve(frameData.contextCache[frame].data);
         } else {
-            this.clear();
-        }
+            frameData.latestContextImagesRequest = requestId;
+            const executor = (): void => {
+                if (frameData.latestContextImagesRequest !== requestId) {
+                    reject(frame);
+                } else if (frame in frameData.contextCache) {
+                    resolve(frameData.contextCache[frame].data);
+                } else {
+                    frameData.activeContextRequest = serverProxy.frames.getImageContext(jobID, frame)
+                        .then((encodedImages) => decodeContextImages(encodedImages, 0, relatedFiles));
+                    frameData.activeContextRequest.then((images) => {
+                        const size = Object.values(images)
+                            .reduce((acc, image) => acc + image.width * image.height * 4, 0);
+                        const totalSize = Object.values(frameData.contextCache)
+                            .reduce((acc, item) => acc + item.size, 0);
+                        if (totalSize > 512 * 1024 * 1024) {
+                            const [leastTimestampFrame] = Object.entries(frameData.contextCache)
+                                .sort(([, item1], [, item2]) => item1.timestamp - item2.timestamp)[0];
+                            delete frameData.contextCache[leastTimestampFrame];
+                        }
 
-        return frame;
-    }
+                        frameData.contextCache[frame] = {
+                            data: images,
+                            timestamp: Date.now(),
+                            size,
+                        };
 
-    clear() {
-        for (const chunkIdx in this._requestedChunks) {
-            if (
-                Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx) &&
-                this._requestedChunks[chunkIdx].reject
-            ) {
-                this._requestedChunks[chunkIdx].reject('not needed');
+                        if (frameData.latestContextImagesRequest !== requestId) {
+                            reject(frame);
+                        } else {
+                            resolve(images);
+                        }
+                    }).finally(() => {
+                        frameData.activeContextRequest = null;
+                    });
+                }
+            };
+
+            if (!frameData.activeContextRequest) {
+                executor();
+            } else {
+                const checkAndExecute = (): void => {
+                    if (frameData.activeContextRequest) {
+                        // if we just execute in finally
+                        // it might raise multiple server requests for context images
+                        // if the promise was pending before and several requests came for the same frame
+                        // all these requests will stuck on "finally"
+                        // and when the promise fullfilled, it will run all the microtasks
+                        // since they all have the same request id, all they will perform in executor()
+                        frameData.activeContextRequest.finally(() => setTimeout(checkAndExecute));
+                    } else {
+                        executor();
+                    }
+                };
+
+                setTimeout(checkAndExecute);
             }
         }
-        this._activeFillBufferRequest = false;
-        this._requestedChunks = {};
-        this._buffer = {};
-    }
-
-    cachedFrames() {
-        return Object.keys(this._buffer).map((f) => +f);
-    }
-}
-
-async function getImageContext(jobID, frame) {
-    return new Promise((resolve, reject) => {
-        serverProxy.frames
-            .getImageContext(jobID, frame)
-            .then((result) => {
-                resolve(result);
-            })
-            .catch((error) => {
-                reject(error);
-            });
     });
-}
-
-export async function getContextImage(jobID, frame) {
-    if (frameDataCache[jobID].frameBuffer.isContextImageAvailable(frame)) {
-        return frameDataCache[jobID].frameBuffer.getContextImage(frame);
-    }
-    const response = getImageContext(jobID, frame);
-    await frameDataCache[jobID].frameBuffer.addContextImage(frame, response);
-    return frameDataCache[jobID].frameBuffer.getContextImage(frame);
 }
 
 export function decodePreview(preview: Blob): Promise<string> {
@@ -707,60 +438,73 @@ export async function getFrame(
     isPlaying: boolean,
     step: number,
     dimension: DimensionType,
-) {
+    getChunk: (chunkNumber: number, quality: ChunkQuality) => Promise<ArrayBuffer>,
+): Promise<FrameData> {
     if (!(jobID in frameDataCache)) {
-        const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO : cvatData.BlockType.ARCHIVE;
+        const blockType = chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
         const meta = await serverProxy.frames.getMeta('job', jobID);
-        meta.deleted_frames = Object.fromEntries(meta.deleted_frames.map((_frame) => [_frame, true]));
-        const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
+        const updatedMeta = {
+            ...meta,
+            deleted_frames: Object.fromEntries(meta.deleted_frames.map((_frame) => [_frame, true])),
+        };
+        const mean = updatedMeta.frames.reduce((a, b) => a + b.width * b.height, 0) / updatedMeta.frames.length;
         const stdDev = Math.sqrt(
-            meta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
-                meta.frames.length,
+            updatedMeta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
+            updatedMeta.frames.length,
         );
 
         // limit of decoded frames cache by 2GB
-        const decodedBlocksCacheSize = Math.floor(2147483648 / (mean + stdDev) / 4 / chunkSize) || 1;
-
+        const decodedBlocksCacheSize = Math.min(
+            Math.floor((2048 * 1024 * 1024) / ((mean + stdDev) * 4 * chunkSize)) || 1, 10,
+        );
         frameDataCache[jobID] = {
-            meta,
+            meta: updatedMeta,
             chunkSize,
             mode,
             startFrame,
             stopFrame,
-            provider: new cvatData.FrameProvider(
+            decodeForward: isPlaying,
+            forwardStep: step,
+            provider: new FrameDecoder(
                 blockType,
                 chunkSize,
-                Math.max(decodedBlocksCacheSize, 9),
                 decodedBlocksCacheSize,
-                1,
                 dimension,
-            ),
-            frameBuffer: new FrameBuffer(
-                Math.min(180, decodedBlocksCacheSize * chunkSize),
-                chunkSize,
-                stopFrame,
-                jobID,
             ),
             decodedBlocksCacheSize,
             activeChunkRequest: null,
-            nextChunkRequest: null,
+            activeContextRequest: null,
+            latestFrameDecodeRequest: null,
+            latestContextImagesRequest: null,
+            contextCache: {},
+            getChunk,
         };
-
-        const frameMeta = getFrameMeta(jobID, frame);
-        frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     }
 
-    return frameDataCache[jobID].frameBuffer.require(frame, jobID, isPlaying, step);
+    const frameMeta = getFrameMeta(jobID, frame);
+    frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
+    frameDataCache[jobID].decodeForward = isPlaying;
+    frameDataCache[jobID].forwardStep = step;
+
+    return new FrameData({
+        width: frameMeta.width,
+        height: frameMeta.height,
+        name: frameMeta.name,
+        related_files: frameMeta.related_files,
+        frameNumber: frame,
+        deleted: frame in frameDataCache[jobID].meta.deleted_frames,
+        jobID,
+    });
 }
 
-export async function getDeletedFrames(instanceType, id) {
+export async function getDeletedFrames(instanceType: 'job' | 'task', id) {
     if (instanceType === 'job') {
         const { meta } = frameDataCache[id];
         return meta.deleted_frames;
     }
 
     if (instanceType === 'task') {
-        const meta = await serverProxy.frames.getMeta('job', id);
+        const meta = await serverProxy.frames.getMeta('task', id);
         meta.deleted_frames = Object.fromEntries(meta.deleted_frames.map((_frame) => [_frame, true]));
         return meta;
     }
@@ -768,19 +512,19 @@ export async function getDeletedFrames(instanceType, id) {
     throw new Exception(`getDeletedFrames is not implemented for ${instanceType}`);
 }
 
-export function deleteFrame(jobID, frame) {
+export function deleteFrame(jobID: number, frame: number): void {
     const { meta } = frameDataCache[jobID];
     meta.deleted_frames[frame] = true;
 }
 
-export function restoreFrame(jobID, frame) {
+export function restoreFrame(jobID: number, frame: number): void {
     const { meta } = frameDataCache[jobID];
     if (frame in meta.deleted_frames) {
         delete meta.deleted_frames[frame];
     }
 }
 
-export async function patchMeta(jobID) {
+export async function patchMeta(jobID: number): Promise<void> {
     const { meta } = frameDataCache[jobID];
     const newMeta = await serverProxy.frames.saveMeta('job', jobID, {
         deleted_frames: Object.keys(meta.deleted_frames),
@@ -799,7 +543,9 @@ export async function patchMeta(jobID) {
     frameDataCache[jobID].meta.deleted_frames = prevDeletedFrames;
 }
 
-export async function findFrame(jobID, frameFrom, frameTo, filters) {
+export async function findFrame(
+    jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean },
+): Promise<number | null> {
     const offset = filters.offset || 1;
     let meta;
     if (!frameDataCache[jobID]) {
@@ -836,23 +582,16 @@ export async function findFrame(jobID, frameFrom, frameTo, filters) {
     return lastUndeletedFrame;
 }
 
-export function getRanges(jobID) {
+export function getCachedChunks(jobID): number[] {
     if (!(jobID in frameDataCache)) {
-        return {
-            decoded: [],
-            buffered: [],
-        };
+        return [];
     }
 
-    return {
-        decoded: frameDataCache[jobID].provider.cachedFrames,
-        buffered: frameDataCache[jobID].frameBuffer.cachedFrames(),
-    };
+    return frameDataCache[jobID].provider.cachedChunks(true);
 }
 
-export function clear(jobID) {
+export function clear(jobID: number): void {
     if (jobID in frameDataCache) {
-        frameDataCache[jobID].frameBuffer.clear();
         delete frameDataCache[jobID];
     }
 }

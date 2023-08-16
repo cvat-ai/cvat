@@ -85,8 +85,8 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-workspace-settings'>
-            <Row>
-                <Col>
+            <Row className='cvat-player-setting'>
+                <Col span={24}>
                     <Checkbox
                         className='cvat-text-color cvat-workspace-settings-auto-save'
                         checked={autoSave}
@@ -97,11 +97,10 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         Enable auto save
                     </Checkbox>
                 </Col>
-            </Row>
-            <Row>
                 <Col className='cvat-workspace-settings-auto-save-interval'>
                     <Text type='secondary'> Auto save every </Text>
                     <InputNumber
+                        size='small'
                         min={minAutoSaveInterval}
                         max={maxAutoSaveInterval}
                         step={1}
@@ -117,7 +116,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'> minutes </Text>
                 </Col>
             </Row>
-            <Row>
+            <Row className='cvat-player-setting'>
                 <Col span={12} className='cvat-workspace-settings-show-interpolated'>
                     <Row>
                         <Checkbox
@@ -135,7 +134,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     </Row>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-show-text-always'>
+            <Row className='cvat-workspace-settings-show-text-always cvat-player-setting'>
                 <Col span={24}>
                     <Checkbox
                         className='cvat-text-color'
@@ -153,7 +152,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     </Text>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-text-settings'>
+            <Row className='cvat-workspace-settings-text-settings cvat-player-setting'>
                 <Col span={24}>
                     <Text>Content of a text</Text>
                 </Col>
@@ -172,7 +171,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-text-settings'>
+            <Row className='cvat-workspace-settings-text-settings cvat-player-setting'>
                 <Col span={12}>
                     <Text>Position of a text</Text>
                 </Col>
@@ -199,7 +198,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-autoborders'>
+            <Row className='cvat-workspace-settings-autoborders cvat-player-setting'>
                 <Col span={24}>
                     <Checkbox
                         className='cvat-text-color'
@@ -217,7 +216,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     </Text>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-intelligent-polygon-cropping'>
+            <Row className='cvat-workspace-settings-intelligent-polygon-cropping cvat-player-setting'>
                 <Col span={24}>
                     <Checkbox
                         className='cvat-text-color'
@@ -233,7 +232,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'>Try to crop polygons automatically when editing</Text>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-show-frame-tags'>
+            <Row className='cvat-workspace-settings-show-frame-tags cvat-player-setting'>
                 <Col span={24}>
                     <Checkbox
                         className='cvat-text-color'
@@ -249,7 +248,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'>Show frame tags in the corner of the workspace</Text>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-aam-zoom-margin'>
+            <Row className='cvat-workspace-settings-aam-zoom-margin cvat-player-setting'>
                 <Col>
                     <Text className='cvat-text-color'> Attribute annotation mode (AAM) zoom margin </Text>
                     <InputNumber
@@ -264,7 +263,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-control-points-size'>
+            <Row className='cvat-workspace-settings-control-points-size cvat-player-setting'>
                 <Col>
                     <Text className='cvat-text-color'> Control points size </Text>
                     <InputNumber
@@ -281,7 +280,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-approx-poly-threshold'>
+            <Row className='cvat-workspace-settings-approx-poly-threshold cvat-player-setting'>
                 <Col>
                     <Text className='cvat-text-color'>Default number of points in polygon approximation</Text>
                 </Col>
@@ -296,7 +295,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         marks={marks}
                     />
                 </Col>
-                <Col span={24}>
+                <Col>
                     <Text type='secondary'>Works for serverless interactors and OpenCV scissors</Text>
                 </Col>
             </Row>

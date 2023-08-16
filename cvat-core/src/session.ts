@@ -210,8 +210,8 @@ function buildDuplicatedAPI(prototype) {
                         prototype.frames.save,
                     );
                 },
-                async ranges() {
-                    const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.ranges);
+                async cachedChunks() {
+                    const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.cachedChunks);
                     return result;
                 },
                 async preview() {
@@ -233,6 +233,15 @@ function buildDuplicatedAPI(prototype) {
                         this,
                         prototype.frames.contextImage,
                         frameId,
+                    );
+                    return result;
+                },
+                async chunk(chunkNumber, quality) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.frames.chunk,
+                        chunkNumber,
+                        quality,
                     );
                     return result;
                 },
@@ -320,6 +329,7 @@ export class Job extends Session {
     public readonly taskId: number;
     public readonly dimension: DimensionType;
     public readonly dataChunkType: ChunkType;
+    public readonly dataChunkSize: number;
     public readonly bugTracker: string | null;
     public readonly mode: TaskMode;
     public readonly labels: Label[];
@@ -360,10 +370,11 @@ export class Job extends Session {
         delete: CallableFunction;
         restore: CallableFunction;
         save: CallableFunction;
-        ranges: CallableFunction;
+        cachedChunks: CallableFunction;
         preview: CallableFunction;
         contextImage: CallableFunction;
         search: CallableFunction;
+        chunk: CallableFunction;
     };
 
     public logger: {
@@ -563,10 +574,11 @@ export class Job extends Session {
             delete: Object.getPrototypeOf(this).frames.delete.bind(this),
             restore: Object.getPrototypeOf(this).frames.restore.bind(this),
             save: Object.getPrototypeOf(this).frames.save.bind(this),
-            ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
+            cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
+            chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
         };
 
         this.logger = {
@@ -673,10 +685,11 @@ export class Task extends Session {
         delete: CallableFunction;
         restore: CallableFunction;
         save: CallableFunction;
-        ranges: CallableFunction;
+        cachedChunks: CallableFunction;
         preview: CallableFunction;
         contextImage: CallableFunction;
         search: CallableFunction;
+        chunk: CallableFunction;
     };
 
     public logger: {
@@ -744,6 +757,11 @@ export class Task extends Session {
         data.progress = {
             completedJobs: initialData?.jobs?.completed || 0,
             totalJobs: initialData?.jobs?.count || 0,
+            validationJobs: initialData?.jobs?.validation || 0,
+            annotationJobs:
+                (initialData?.jobs?.count || 0) -
+                (initialData?.jobs?.validation || 0) -
+                (initialData?.jobs?.completed || 0),
         };
 
         data.files = Object.freeze({
@@ -1089,10 +1107,11 @@ export class Task extends Session {
             delete: Object.getPrototypeOf(this).frames.delete.bind(this),
             restore: Object.getPrototypeOf(this).frames.restore.bind(this),
             save: Object.getPrototypeOf(this).frames.save.bind(this),
-            ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
+            cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
             preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             search: Object.getPrototypeOf(this).frames.search.bind(this),
+            chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
         };
 
         this.logger = {

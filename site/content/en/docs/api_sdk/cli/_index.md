@@ -30,7 +30,7 @@ To install an [official release of CVAT CLI](https://pypi.org/project/cvat-cli/)
 pip install cvat-cli
 ```
 
-We support Python versions 3.7 - 3.9.
+We support Python versions 3.8 and higher.
 
 ## Usage
 
@@ -235,23 +235,51 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
 
 This command provides a command-line interface
 to the [auto-annotation API](/docs/api_sdk/sdk/auto-annotation).
-To use it, create a Python module that implements the AA function protocol.
 
-In other words, this module must define the required attributes on the module level.
-For example:
+It can auto-annotate using AA functions implemented in one of the following ways:
 
-```python
-import cvat_sdk.auto_annotation as cvataa
+1. As a Python module directly implementing the AA function protocol.
+   Such a module must define the required attributes at the module level.
 
-spec = cvataa.DetectionFunctionSpec(...)
+   For example:
 
-def detect(context, image):
-    ...
-```
+   ```python
+   import cvat_sdk.auto_annotation as cvataa
 
-- Annotate the task with id 137 with the predefined YOLOv8 function:
+   spec = cvataa.DetectionFunctionSpec(...)
+
+   def detect(context, image):
+       ...
+   ```
+
+1. As a Python module implementing a factory function named `create`.
+   This function must return an object implementing the AA function protocol.
+   Any parameters specified on the command line using the `-p` option
+   will be passed to `create`.
+
+   For example:
+
+   ```python
+   import cvat_sdk.auto_annotation as cvataa
+
+   class _MyFunction:
+       def __init__(...):
+           ...
+
+       spec = cvataa.DetectionFunctionSpec(...)
+
+       def detect(context, image):
+           ...
+
+   def create(...) -> cvataa.DetectionFunction:
+       return _MyFunction(...)
+   ```
+
+- Annotate the task with id 137 with the predefined torchvision detection function,
+  which is parameterized:
   ```bash
-  cvat-cli auto-annotate 137 --function-module cvat_sdk.auto_annotation.functions.yolov8n
+  cvat-cli auto-annotate 137 --function-module cvat_sdk.auto_annotation.functions.torchvision_detection \
+      -p model_name=str:fasterrcnn_resnet50_fpn_v2 -p box_score_thresh=float:0.5
   ```
 
 - Annotate the task with id 138 with an AA function defined in `my_func.py`:
