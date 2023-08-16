@@ -119,6 +119,14 @@ REPLACEMENT_RULES = [
     ReplacementRule('helm-chart/values.yaml',
         re.compile(r'(^    image: cvat/(?:ui|server)\n    tag: )([\w.]+)', re.M),
         lambda v, m: m[1] + v.compose_repr()),
+
+    ReplacementRule('cvat-sdk/gen/generate.sh',
+        re.compile(r'^VERSION="[\d.]+"$', re.M),
+        lambda v, m: f'VERSION="{v.major}.{v.minor}.{v.patch}"'),
+
+    ReplacementRule('cvat-cli/src/cvat_cli/version.py',
+        re.compile(r'^VERSION = "[\d.]+"$', re.M),
+        lambda v, m: f'VERSION = "{v.major}.{v.minor}.{v.patch}"'),
 ]
 
 def get_current_version() -> Version:
