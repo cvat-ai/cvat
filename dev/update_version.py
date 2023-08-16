@@ -14,7 +14,7 @@ FAIL_CHAR = '\u2716'
 
 CVAT_VERSION_PATTERN = re.compile(r'VERSION\s*=\s*\((\d+),\s*(\d*),\s*(\d+),\s*[\',\"](\w+)[\',\"],\s*(\d+)\)')
 
-REPO_ROOT_DIR = Path(__file__).resolve().parents[2]
+REPO_ROOT_DIR = Path(__file__).resolve().parents[1]
 
 CVAT_INIT_PY_REL_PATH = 'cvat/__init__.py'
 CVAT_INIT_PY_PATH = REPO_ROOT_DIR / CVAT_INIT_PY_REL_PATH
