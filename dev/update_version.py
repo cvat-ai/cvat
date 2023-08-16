@@ -91,7 +91,7 @@ class ReplacementRule:
     pattern: Pattern[str]
     replacement: Callable[[Version, Match[str]], str]
 
-    def apply(self, new_version: Version) -> bool:
+    def apply(self, new_version: Version, *, verify_only: bool) -> bool:
         path = REPO_ROOT_DIR / self.rel_path
         text = path.read_text()
 
@@ -99,14 +99,21 @@ class ReplacementRule:
             functools.partial(self.replacement, new_version), text)
 
         if not num_replacements:
-            print(f'{FAIL_CHAR} {self.rel_path}: failed to match version pattern')
+            print(f'{FAIL_CHAR} {self.rel_path}: failed to match version pattern.')
             return False
 
         if text == new_text:
-            print(f'{SUCCESS_CHAR} {self.rel_path}: no need to update.')
+            if verify_only:
+                print(f'{SUCCESS_CHAR} {self.rel_path}: verified.')
+            else:
+                print(f'{SUCCESS_CHAR} {self.rel_path}: no need to update.')
         else:
-            path.write_text(new_text)
-            print(f'{SUCCESS_CHAR} {self.rel_path}: updated.')
+            if verify_only:
+                print(f'{FAIL_CHAR} {self.rel_path}: verification failed.')
+                return False
+            else:
+                path.write_text(new_text)
+                print(f'{SUCCESS_CHAR} {self.rel_path}: updated.')
 
         return True
 
@@ -159,14 +166,20 @@ def main() -> None:
 
     action_group.add_argument('--current', '--show-current',
         action='store_true', help='Display current version')
+    action_group.add_argument('--verify-current',
+        action='store_true', help='Check that all version numbers are consistent')
 
     args = parser.parse_args()
 
     version = get_current_version()
+    verify_only = False
 
     if args.current:
         print(version)
         return
+
+    elif args.verify_current:
+        verify_only = True
 
     elif args.prerelease_number:
         version.increment_prerelease_number()
@@ -189,16 +202,23 @@ def main() -> None:
     else:
         assert False, "Unreachable code"
 
-    print(f'{SUCCESS_CHAR} Bump version to {version}\n')
+    if verify_only:
+        print(f'Verifying that version is {version}...')
+    else:
+        print(f'Bumping version to {version}...')
+    print()
 
     success = True
 
     for rule in REPLACEMENT_RULES:
-        if not rule.apply(version):
+        if not rule.apply(version, verify_only=verify_only):
             success = False
 
     if not success:
-        sys.exit("\nFailed to process one or more files!")
+        if verify_only:
+            sys.exit("\nFailed to verify one or more files!")
+        else:
+            sys.exit("\nFailed to update one or more files!")
 
 if __name__ == '__main__':
     main()
