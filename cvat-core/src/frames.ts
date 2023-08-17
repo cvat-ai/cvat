@@ -514,7 +514,7 @@ export async function getFrame(
 
         // limit of decoded frames cache by 2GB
         const decodedBlocksCacheSize = Math.min(
-            Math.floor((2048 * 1024 * 1024) / ((mean + stdDev) * 4 * chunkSize)) || 1, 2,
+            Math.floor((2048 * 1024 * 1024) / ((mean + stdDev) * 4 * chunkSize)) || 1, 10,
         );
         frameDataCache[jobID] = {
             meta: updatedMeta,
