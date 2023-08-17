@@ -68,7 +68,7 @@ module.exports = (env) => {
                 {
                     context: (param) =>
                         param.match(
-                            /\/api\/.*|git\/.*|opencv\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                            /\/api\/.*|git\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
                         ),
                     target: env && env.API_URL,
                     secure: false,

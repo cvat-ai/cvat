@@ -146,7 +146,7 @@ To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label
   cvat:
     labels:
       - traefik.http.routers.cvat.rule=(Host(`example1.com`) || Host(`example2.com`)) &&
-          PathPrefix(`/api/`, `/git/`, `/opencv/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+          PathPrefix(`/api/`, `/git/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
 
   cvat_ui:
     labels:
