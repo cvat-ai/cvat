@@ -699,6 +699,7 @@ Cypress.Commands.add('updateAttributes', (attributes) => {
                 .should('not.be.checked')
                 .check();
             cy.get('.cvat-attribute-mutable-checkbox')
+                .find('[type="checkbox"]')
                 .should('be.checked');
         }
     });
