@@ -33,9 +33,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
 });
 
 Cypress.Commands.add('logout', () => {
-    cy.get('.cvat-right-header').within(() => {
-        cy.get('.cvat-header-menu-user-dropdown-user').trigger('mouseover');
-    });
+    cy.get('.cvat-header-menu-user-dropdown-user').trigger('mouseover');
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
     cy.visit('/auth/login');
@@ -576,7 +574,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
 });
 
 Cypress.Commands.add('openSettings', () => {
-    cy.get('.cvat-right-header').find('.cvat-header-menu-user-dropdown').trigger('mouseover', { which: 1 });
+    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
     cy.get('.anticon-setting').should('exist').and('be.visible').click();
     cy.get('.cvat-settings-modal').should('be.visible');
 });
