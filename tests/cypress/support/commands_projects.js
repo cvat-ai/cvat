@@ -78,7 +78,7 @@ Cypress.Commands.add('openProject', (projectName) => {
     cy.get('.cvat-project-details').should('exist');
 });
 
-Cypress.Commands.add('projectActions', (projectName) => {
+Cypress.Commands.add('openProjectActions', (projectName) => {
     cy.contains('.cvat-projects-project-item-title', projectName)
         .parents('.cvat-projects-project-item-card')
         .within(() => {
@@ -88,9 +88,22 @@ Cypress.Commands.add('projectActions', (projectName) => {
         });
 });
 
+Cypress.Commands.add('clickInProjectMenu', (item, fromProjectPage, projectName = '') => {
+    if (fromProjectPage) {
+        cy.get('.cvat-project-top-bar-actions').trigger('mouseover');
+    } else {
+        cy.openProjectActions(projectName);
+    }
+
+    cy.get('.cvat-project-actions-menu')
+        .should('exist')
+        .and('be.visible')
+        .contains(item)
+        .click();
+});
+
 Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 'success') => {
-    cy.projectActions(projectName);
-    cy.get('.cvat-project-actions-menu').contains('Delete').click();
+    cy.clickInProjectMenu('Delete', false, projectName);
     cy.get('.cvat-modal-confirm-remove-project')
         .should('contain', `The project ${projectID} will be deleted`)
         .within(() => {
@@ -106,8 +119,7 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
 Cypress.Commands.add('exportProject', ({
     projectName, type, dumpType, archiveCustomName,
 }) => {
-    cy.projectActions(projectName);
-    cy.get('.cvat-project-actions-menu').contains('Export dataset').click();
+    cy.clickInProjectMenu('Export dataset', false, projectName);
     cy.get('.cvat-modal-export-project').should('be.visible').find('.cvat-modal-export-select').click();
     cy.contains('.cvat-modal-export-option-item', dumpType).should('be.visible').click();
     cy.get('.cvat-modal-export-select').should('contain.text', dumpType);
@@ -125,8 +137,7 @@ Cypress.Commands.add('exportProject', ({
 Cypress.Commands.add('importProject', ({
     projectName, format, archive,
 }) => {
-    cy.projectActions(projectName);
-    cy.get('.cvat-project-actions-menu').contains('Import dataset').click();
+    cy.clickInProjectMenu('Import dataset', false, projectName);
     cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
     if (format === 'Sly Point Cloud Format') {
         cy.get('.ant-select-dropdown')
@@ -152,8 +163,7 @@ Cypress.Commands.add(
         targetStorage = null,
         useDefaultLocation = true,
     ) => {
-        cy.projectActions(projectName);
-        cy.get('.cvat-project-actions-menu').contains('Backup Project').click();
+        cy.clickInProjectMenu('Backup Project', false, projectName);
         cy.get('.cvat-modal-export-project').should('be.visible');
         if (backupFileName) {
             cy.get('.cvat-modal-export-project').find('.cvat-modal-export-filename-input').type(backupFileName);
@@ -254,10 +264,7 @@ Cypress.Commands.add('waitForDownload', () => {
 });
 
 Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
-    cy.get('.cvat-project-top-bar-actions').trigger('mouseover');
-    cy.get('.cvat-project-actions-menu').within(() => {
-        cy.contains('[role="menuitem"]', 'Delete').click();
-    });
+    cy.clickInProjectMenu('Delete', true);
     cy.get('.cvat-modal-confirm-remove-project').within(() => {
         cy.contains('button', 'Delete').click();
     });
@@ -266,7 +273,8 @@ Cypress.Commands.add('deleteProjectViaActions', (projectName) => {
 
 Cypress.Commands.add('assignProjectToUser', (user) => {
     cy.get('.cvat-project-details').within(() => {
-        cy.get('.cvat-user-search-field').click().type(user);
+        cy.get('.cvat-user-search-field').click();
+        cy.get('.cvat-user-search-field').type(user);
     });
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
@@ -280,18 +288,8 @@ Cypress.Commands.add('closeNotification', (className) => {
     cy.get(className).should('not.exist');
 });
 
-Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, labelMappingTo, fromTask) => {
-    if (fromTask) {
-        cy.contains('.cvat-text-color', 'Actions').click();
-    } else {
-        cy.contains('strong', taskName).parents('.cvat-tasks-list-item').find('.cvat-menu-icon').click();
-    }
-    cy.get('.cvat-actions-menu')
-        .should('be.visible')
-        .find('[role="menuitem"]')
-        .filter(':contains("Move to project")')
-        .last()
-        .click();
+Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, labelMappingTo, fromTaskPage) => {
+    cy.clickInTaskMenu('Move to project', fromTaskPage, taskName);
     cy.get('.cvat-task-move-modal').find('.cvat-project-search-field').click();
     cy.get('.ant-select-dropdown')
         .last()
