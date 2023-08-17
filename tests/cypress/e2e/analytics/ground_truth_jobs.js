@@ -109,13 +109,7 @@ context('Ground truth jobs', () => {
     }
 
     function openQualityTab() {
-        cy.get('.cvat-task-page-actions-button').click();
-        cy.get('.cvat-actions-menu')
-            .should('be.visible')
-            .find('[role="menuitem"]')
-            .filter(':contains("View analytics")')
-            .last()
-            .click();
+        cy.clickInTaskMenu('View analytics', true);
         cy.get('.cvat-task-analytics-tabs')
             .within(() => {
                 cy.contains('span', 'Quality').click();
