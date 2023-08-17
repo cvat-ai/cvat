@@ -34,11 +34,12 @@ interface Props {
     datasets: HistogramDataset[];
     title: string;
     size?: number;
+    entryName?: string;
 }
 
 function HistogramView(props: Props): JSX.Element | null {
     const {
-        datasets, labels, title,
+        datasets, labels, title, entryName,
     } = props;
 
     const data = {
@@ -60,7 +61,11 @@ function HistogramView(props: Props): JSX.Element | null {
     };
 
     return (
-        <div style={{ height: '100%', width: '100%' }}>
+        <div
+            style={{ height: '100%', width: '100%' }}
+            className='cvat-performance-histogram-card'
+            data-entry-name={entryName}
+        >
             <Bar options={options} data={data} />
         </div>
     );
