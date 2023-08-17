@@ -138,7 +138,7 @@
             "fields": [],
             "filters": [],
             "groupBy": [
-              "user_id"
+              "user_name"
             ],
             "metrics": [
               {
@@ -164,7 +164,7 @@
               "fields": [],
               "filters": [],
               "groupBy": [
-                "user_id"
+                "user_name"
               ],
               "metrics": [
                 {
@@ -181,7 +181,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, toString(user_id), count() as User\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY time, user_id\r\nORDER BY time ASC, user_id ASC",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, toString(user_name), count() as User\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY time, user_name\r\nORDER BY time ASC, user_name ASC",
           "refId": "A"
         }
       ],
@@ -367,7 +367,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n  user_id as User,\r\n  project_id as Project,\r\n  task_id as Task,\r\n  job_id as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user_id IN (${users})\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND task_id IN (${tasks})\r\n  AND job_id IN (${jobs})\r\n  AND source = 'client'\r\nGROUP BY user_id, project_id, task_id, job_id",
+          "rawSql": "SELECT\r\n  user_name as User,\r\n  project_id as Project,\r\n  task_id as Task,\r\n  job_id as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user_name IN (${users})\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND task_id IN (${tasks})\r\n  AND job_id IN (${jobs})\r\n  AND source = 'client'\r\nGROUP BY user_name, project_id, task_id, job_id",
           "refId": "A"
         }
       ],
@@ -395,14 +395,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
+        "definition": "SELECT DISTINCT user_name\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
         "hide": 0,
         "includeAll": true,
         "label": "User",
         "multi": true,
         "name": "users",
         "options": [],
-        "query": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
+        "query": "SELECT DISTINCT user_name\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND source = 'client'",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
