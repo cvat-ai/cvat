@@ -79,52 +79,43 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         // Count number of jobs and performed jobs
         const numOfJobs = taskInstance.progress.totalJobs;
         const numOfCompleted = taskInstance.progress.completedJobs;
+        const numOfValidation = taskInstance.progress.validationJobs;
+        const numOfAnnotation = taskInstance.progress.annotationJobs;
 
         // Progress appearance depends on number of jobs
-        let progressColor = null;
-        let progressText = null;
-        if (numOfCompleted && numOfCompleted === numOfJobs) {
-            progressColor = 'cvat-task-completed-progress';
-            progressText = (
-                <Text strong className={progressColor}>
-                    Completed
-                </Text>
-            );
-        } else if (numOfCompleted) {
-            progressColor = 'cvat-task-progress-progress';
-            progressText = (
-                <Text strong className={progressColor}>
-                    In Progress
-                </Text>
-            );
-        } else {
-            progressColor = 'cvat-task-pending-progress';
-            progressText = (
-                <Text strong className={progressColor}>
-                    Pending
-                </Text>
-            );
-        }
+        const jobsProgress = ((numOfCompleted + numOfValidation) * 100) / numOfJobs;
 
-        const jobsProgress = numOfCompleted / numOfJobs;
         return (
-            <Col span={6}>
-                <Row justify='space-between' align='top'>
-                    <Col>
-                        <svg height='8' width='8' className={progressColor}>
-                            <circle cx='4' cy='4' r='4' strokeWidth='0' />
-                        </svg>
-                        {progressText}
-                    </Col>
-                    <Col>
-                        <Text type='secondary'>{`${numOfCompleted} of ${numOfJobs} jobs`}</Text>
-                    </Col>
-                </Row>
+            <Col span={7}>
                 <Row>
-                    <Col span={24}>
+                    <Col span={24} className='cvat-task-item-progress-wrapper'>
+                        <div>
+                            { numOfCompleted > 0 && (
+                                <Text strong className='cvat-task-completed-progress'>
+                                    {`\u2022 ${numOfCompleted} done `}
+                                </Text>
+                            )}
+
+                            { numOfValidation > 0 && (
+                                <Text strong className='cvat-task-validation-progress'>
+                                    {`\u2022 ${numOfValidation} on review `}
+                                </Text>
+                            )}
+
+                            { numOfAnnotation > 0 && (
+                                <Text strong className='cvat-task-annotation-progress'>
+                                    {`\u2022 ${numOfAnnotation} annotating `}
+                                </Text>
+                            )}
+                            <Text strong type='secondary'>
+                                {`\u2022 ${numOfJobs} total`}
+                            </Text>
+                        </div>
                         <Progress
-                            className={`${progressColor} cvat-task-progress`}
-                            percent={jobsProgress * 100}
+                            percent={jobsProgress}
+                            success={{
+                                percent: (numOfCompleted * 100) / numOfJobs,
+                            }}
                             strokeColor='#1890FF'
                             showInfo={false}
                             strokeWidth={5}
@@ -149,7 +140,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         };
 
         return (
-            <Col span={4}>
+            <Col span={3}>
                 <Row justify='end'>
                     <Col>
                         <Button

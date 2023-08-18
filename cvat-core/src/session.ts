@@ -757,6 +757,11 @@ export class Task extends Session {
         data.progress = {
             completedJobs: initialData?.jobs?.completed || 0,
             totalJobs: initialData?.jobs?.count || 0,
+            validationJobs: initialData?.jobs?.validation || 0,
+            annotationJobs:
+                (initialData?.jobs?.count || 0) -
+                (initialData?.jobs?.validation || 0) -
+                (initialData?.jobs?.completed || 0),
         };
 
         data.files = Object.freeze({
