@@ -379,11 +379,6 @@ ingress:
 #          service:
 #            name: backend-service
 #            port: 8080
-#        - path: /opencv
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
 #        - path: /profiler
 #          pathType: "Prefix"
 #          service:

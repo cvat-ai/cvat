@@ -17,15 +17,16 @@ interface Props {
     tooltip?: JSX.Element;
     bottomElement?: JSX.Element;
     rightElement?: JSX.Element;
+    entryName?: string;
 }
 
 function AnalyticsCard(props: Props): JSX.Element {
     const {
-        title, size, className, value, tooltip, bottomElement, rightElement,
+        title, size, className, value, tooltip, bottomElement, rightElement, entryName,
     } = props;
 
     return (
-        <Col span={size || 24} className={className || ''}>
+        <Col span={size || 24} className={className || 'cvat-analytics-card'} data-entry-name={entryName}>
             <Card>
                 <Row justify='space-between' align='middle'>
                     <Col>

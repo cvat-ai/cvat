@@ -5,7 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[Unreleased]
+## \[Unreleased\]
+### Added
+
+- More information about task progress on tasks page (<https://github.com/opencv/cvat/pull/5723>)
+
+### Changed
+
+- TBD
+
+### Deprecated
+
+- TBD
+
+### Removed
+
+- TBD
+
+### Fixed
+
+- TBD
+
+### Security
+
+- TBD
+
+## \[2.6.0\] - 2023-08-11
 
 ### Added
 
@@ -32,10 +57,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6556>)
 - Improved memory optimization and code in the decoding module (<https://github.com/opencv/cvat/pull/6585>)
 
-### Deprecated
-
-- TDB
-
 ### Removed
 
 - Removed the YOLOv5 serverless function
@@ -46,10 +67,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Corrected an issue where the prebuilt FFmpeg bundled in PyAV
   was being used instead of the custom build.
 - Fixed the filename for labels in the CamVid format (<https://github.com/opencv/cvat/pull/6600>)
-
-### Security
-
-- TDB
 
 ## \[2.5.2\] - 2023-07-27
 
