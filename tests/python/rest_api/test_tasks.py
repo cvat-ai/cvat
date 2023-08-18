@@ -1650,7 +1650,6 @@ class TestTaskBackups:
             assert exc.status == HTTPStatus.BAD_REQUEST
             assert "Backup of a task without data is not allowed" == exc.body.encode()
 
-
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
         task_json = next(t for t in tasks if t["mode"] == mode)

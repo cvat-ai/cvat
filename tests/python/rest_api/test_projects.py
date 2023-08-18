@@ -314,7 +314,9 @@ class TestGetProjectBackup:
         project = next((p for p in projects if 0 < p["tasks"]["count"]))
 
         # add empty task to project
-        response = post_method("admin1", "tasks", {"name": "empty_task", "project_id": project["id"]})
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+        )
         assert response.status_code == HTTPStatus.CREATED
 
         self._test_can_get_project_backup("admin1", project["id"])
@@ -323,10 +325,14 @@ class TestGetProjectBackup:
         project = next((p for p in projects if 0 == p["tasks"]["count"]))
 
         # add empty tasks to empty project
-        response = post_method("admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]})
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+        )
         assert response.status_code == HTTPStatus.CREATED
 
-        response = post_method("admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]})
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+        )
         assert response.status_code == HTTPStatus.CREATED
 
         self._test_can_get_project_backup("admin1", project["id"])
@@ -736,7 +742,9 @@ class TestImportExportDatasetProject:
         project = next((p for p in projects if 0 < p["tasks"]["count"]))
 
         # add empty task to project
-        response = post_method("admin1", "tasks", {"name": "empty_task", "project_id": project["id"]})
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+        )
         assert response.status_code == HTTPStatus.CREATED
 
         self._test_export_project("admin1", project["id"], "COCO 1.0")
@@ -745,10 +753,14 @@ class TestImportExportDatasetProject:
         project = next((p for p in projects if 0 == p["tasks"]["count"]))
 
         # add empty tasks to empty project
-        response = post_method("admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]})
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+        )
         assert response.status_code == HTTPStatus.CREATED
 
-        response = post_method("admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]})
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+        )
         assert response.status_code == HTTPStatus.CREATED
 
         self._test_export_project("admin1", project["id"], "COCO 1.0")
