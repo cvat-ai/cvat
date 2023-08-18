@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- TBD
+- Exporting project when its tasks has not data (<https://github.com/opencv/cvat/pull/6658>)
 
 ### Security
 
