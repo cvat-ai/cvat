@@ -280,8 +280,7 @@ Axios.interceptors.request.use((reqConfig) => {
 
 Axios.interceptors.response.use((response) => {
     if (isResourceURL(response.config.url) &&
-        response.data &&
-        'organization' in response.data
+        'organization' in (response.data || {})
     ) {
         const newOrg: number | null = response.data.organization;
         if (config.organization.organizationID !== newOrg) {

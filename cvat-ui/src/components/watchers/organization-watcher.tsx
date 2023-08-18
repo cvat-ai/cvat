@@ -16,15 +16,11 @@ function OrganizationWatcher(): JSX.Element {
         core.config.onOrganizationChange = (newOrgId: number | null) => {
             if (newOrgId === null) {
                 localStorage.removeItem('currentOrganization');
-                window.location.reload();
-                return;
-            }
-
-            const newOrganization = organizationList.find((org) => org.id === newOrgId);
-            if (newOrganization) {
+            } else {
+                const newOrganization = organizationList.find((org) => org.id === newOrgId);
                 localStorage.setItem('currentOrganization', newOrganization.slug);
-                window.location.reload();
             }
+            window.location.reload();
         };
     }, []);
 
