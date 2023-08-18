@@ -21,7 +21,7 @@ from typing import List, Optional
 import pytest
 from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
-from cvat_sdk.api_client.api_client import ApiClient, Endpoint, ApiException
+from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
