@@ -6362,7 +6362,7 @@ components:
           maxLength: 40
         secret_key:
           type: string
-          maxLength: 44
+          maxLength: 64
         connection_string:
           type: string
           maxLength: 440
@@ -8304,7 +8304,7 @@ components:
           maxLength: 40
         secret_key:
           type: string
-          maxLength: 44
+          maxLength: 64
         connection_string:
           type: string
           maxLength: 440
