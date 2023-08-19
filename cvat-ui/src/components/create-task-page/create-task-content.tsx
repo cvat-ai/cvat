@@ -867,6 +867,11 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             if (status.startsWith(RQStatus.QUEUED)) {
                 return (<Alert message='The task was queued to import. You can close the window.' />);
             }
+
+            if (status.startsWith(RQStatus.STARTED)) {
+                return (<Alert message={`${status}. You can close the window.`} />);
+            }
+
             return (<Alert message={status} />);
         }
         return (
