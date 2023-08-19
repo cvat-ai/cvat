@@ -273,11 +273,13 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
 
         try {
-            const savedTask = await taskInstance.save((status: string, progress: number, message: string): void => {
+            const savedTask = await taskInstance.save((status: RQStatus, progress: number, message: string): void => {
                 if (status === RQStatus.UNKNOWN) {
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
+                } else if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
+                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. You can close the window.`);
                 } else {
-                    onProgress?.(`${status}: ${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
+                    onProgress?.(`${status}: ${message}`);
                 }
             });
             dispatch(updateTaskInState(savedTask));
