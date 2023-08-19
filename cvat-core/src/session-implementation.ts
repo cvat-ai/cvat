@@ -523,6 +523,17 @@ export function implementTask(Task) {
         });
     };
 
+    Task.prototype.listenToCreate.implementation = async function (
+        onUpdate: (state: string, progress: number, message: string) => void = () => {},
+    ): Promise<TaskClass> {
+        if (Number.isInteger(this.id) && this.size === 0) {
+            const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);
+            return new Task(serializedTask);
+        }
+
+        return this;
+    };
+
     Task.prototype.delete.implementation = async function () {
         const result = await serverProxy.tasks.delete(this.id);
         return result;

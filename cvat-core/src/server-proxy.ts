@@ -644,6 +644,7 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
             Object.defineProperty(results, 'count', {
                 value: 1,
             });
+
             return results as SerializedTask[] & { count: number };
         }
 
@@ -1065,48 +1066,87 @@ async function restoreProject(storage: Storage, file: File | string) {
     return wait();
 }
 
-async function createTask(taskSpec, taskDataSpec, onUpdate) {
+const listenToCreateCallbacks: Record<number, {
+    promise: Promise<SerializedTask>;
+    onUpdate: ((state: string, progress: number, message: string) => void)[];
+}> = {};
+
+function listenToCreateTask(
+    id, onUpdate: (state: string, progress: number, message: string) => void,
+): Promise<SerializedTask> {
+    if (id in listenToCreateCallbacks) {
+        listenToCreateCallbacks[id].onUpdate.push(onUpdate);
+        // to avoid extra status check requests we do not create any more promises
+        return listenToCreateCallbacks[id].promise;
+    }
+
+    const promise = new Promise<SerializedTask>((resolve, reject) => {
+        const { backendAPI } = config;
+        const params = enableOrganization();
+        async function checkStatus(): Promise<void> {
+            try {
+                const response = await Axios.get(`${backendAPI}/tasks/${id}/status`, { params });
+                if (['Queued', 'Started'].includes(response.data.state)) {
+                    // notify all the subscribtions when data status changed
+                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                        callback(
+                            response.data.state,
+                            response.data.progress || 0,
+                            response.data.state === 'Queued' ?
+                                'The task was queued to import' : response.data.message,
+                        );
+                    });
+
+                    setTimeout(checkStatus, 2000);
+                } else if (response.data.state === 'Finished') {
+                    const [createdTask] = await getTasks({ id, ...params });
+                    resolve(createdTask);
+                } else if (response.data.state === 'Failed') {
+                    const failMessage = 'Data processing failed';
+                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                        callback(response.data.state, 0, failMessage);
+                    });
+                    const message = `Could not create task. ${failMessage}. ${response.data.message}`;
+                    reject(new ServerError(message, 400));
+                } else {
+                    const failMessage = 'Unknown status received';
+                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                        callback(response.data.state || 'Unknown', 0, failMessage);
+                    });
+                    reject(
+                        new ServerError(
+                            `Could not create task. ${failMessage}: ${response.data.state}`,
+                            500,
+                        ),
+                    );
+                }
+            } catch (errorData) {
+                listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                    callback('Failed', 0, 'Server request failed');
+                });
+                reject(generateError(errorData));
+            }
+        }
+
+        setTimeout(checkStatus, 500);
+    });
+
+    listenToCreateCallbacks[id] = {
+        promise,
+        onUpdate: [onUpdate],
+    };
+    promise.finally(() => delete listenToCreateCallbacks[id]);
+    return promise;
+}
+
+async function createTask(
+    taskSpec: Partial<SerializedTask>,
+    taskDataSpec: any,
+    onUpdate: (state: string, progress: number, message: string) => void,
+): Promise<SerializedTask> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
     const params = enableOrganization();
-
-    async function wait(id) {
-        return new Promise((resolve, reject) => {
-            async function checkStatus() {
-                try {
-                    const response = await Axios.get(`${backendAPI}/tasks/${id}/status`, { params });
-                    if (['Queued', 'Started'].includes(response.data.state)) {
-                        if (response.data.message !== '') {
-                            onUpdate(response.data.message, response.data.progress || 0);
-                        }
-                        setTimeout(checkStatus, 1000);
-                    } else if (response.data.state === 'Finished') {
-                        resolve();
-                    } else if (response.data.state === 'Failed') {
-                        // If request has been successful, but task hasn't been created
-                        // Then passed data is wrong and we can pass code 400
-                        const message = `
-                            Could not create the task on the server. ${response.data.message}.
-                        `;
-                        reject(new ServerError(message, 400));
-                    } else {
-                        // If server has another status, it is unexpected
-                        // Therefore it is server error and we can pass code 500
-                        reject(
-                            new ServerError(
-                                `Unknown task state has been received: ${response.data.state}`,
-                                500,
-                            ),
-                        );
-                    }
-                } catch (errorData) {
-                    reject(generateError(errorData));
-                }
-            }
-
-            setTimeout(checkStatus, 1000);
-        });
-    }
 
     const chunkSize = config.uploadChunkSize * 1024 * 1024;
     const clientFiles = taskDataSpec.client_files;
@@ -1137,7 +1177,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
 
     let response = null;
 
-    onUpdate('The task is being created on the server..', null);
+    onUpdate('Creating', 0, 'CVAT creates your task');
     try {
         response = await Axios.post(`${backendAPI}/tasks`, taskSpec, {
             params,
@@ -1146,7 +1186,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
         throw generateError(errorData);
     }
 
-    onUpdate('The data are being uploaded to the server..', null);
+    onUpdate('Uploading', 0, 'CVAT uploads task data to the server');
 
     async function bulkUpload(taskId, files) {
         const fileBulks = files.reduce((fileGroups, file) => {
@@ -1166,7 +1206,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
                 taskData.append(`client_files[${idx}]`, element);
             }
             const percentage = totalSentSize / totalSize;
-            onUpdate('The data are being uploaded to the server', percentage);
+            onUpdate('Uploading', percentage, 'CVAT uploads task data to the server');
             await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
                 ...params,
                 headers: { 'Upload-Multiple': true },
@@ -1188,7 +1228,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
         const uploadConfig = {
             endpoint: `${origin}${backendAPI}/tasks/${response.data.id}/data/`,
             onUpdate: (percentage) => {
-                onUpdate('The data are being uploaded to the server', percentage);
+                onUpdate('Uploading', percentage, 'CVAT uploads task data to the server');
             },
             chunkSize,
             totalSize,
@@ -1215,15 +1255,12 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
     }
 
     try {
-        await wait(response.data.id);
+        const createdTask = await listenToCreateTask(response.data.id, onUpdate);
+        return createdTask;
     } catch (createException) {
         await deleteTask(response.data.id, params.org || null);
         throw createException;
     }
-
-    // to be able to get the task after it was created, pass frozen params
-    const createdTask = await getTasks({ id: response.data.id, ...params });
-    return createdTask[0];
 }
 
 async function getJobs(
@@ -2355,6 +2392,7 @@ export default Object.freeze({
         get: getTasks,
         save: saveTask,
         create: createTask,
+        listenToCreate: listenToCreateTask,
         delete: deleteTask,
         exportDataset: exportDataset('tasks'),
         getPreview: getPreview('tasks'),

@@ -103,7 +103,6 @@ export interface JobsState {
 export interface TasksState {
     initialized: boolean;
     fetching: boolean;
-    hideEmpty: boolean;
     moveTask: {
         modalVisible: boolean;
         taskId: number | null;

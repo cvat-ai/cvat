@@ -864,6 +864,9 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
 
         if (status === 'FAILED' || loading) {
+            if (status.startsWith('Queued:')) {
+                return (<Alert message='The task was queued to import. You can close the window.' />);
+            }
             return (<Alert message={status} />);
         }
         return (

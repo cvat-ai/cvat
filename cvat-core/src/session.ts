@@ -1129,6 +1129,13 @@ export class Task extends Session {
         return result;
     }
 
+    async listenToCreate(
+        onUpdate: (state: string, progress: number, message: string) => void = () => {},
+    ): Promise<Task> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, onUpdate);
+        return result;
+    }
+
     async delete(): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.delete);
         return result;
