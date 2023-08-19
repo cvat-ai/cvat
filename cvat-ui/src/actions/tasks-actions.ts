@@ -6,7 +6,9 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { TasksQuery, StorageLocation } from 'reducers';
-import { getCore, Storage, Task } from 'cvat-core-wrapper';
+import {
+    getCore, RQStatus, Storage, Task,
+} from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { getInferenceStatusAsync } from './models-actions';
 
@@ -272,7 +274,11 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
         try {
             const savedTask = await taskInstance.save((status: string, progress: number, message: string): void => {
-                onProgress?.(`${status}: ${message} ${Math.floor(progress * 100)}%`);
+                if (status === RQStatus.UNKNOWN) {
+                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
+                } else {
+                    onProgress?.(`${status}: ${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
+                }
             });
             dispatch(updateTaskInState(savedTask));
             dispatch(getTaskPreviewAsync(savedTask));

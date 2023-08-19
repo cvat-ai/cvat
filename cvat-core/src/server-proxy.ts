@@ -1093,7 +1093,7 @@ function listenToCreateTask(
                             response.data.state.toLowerCase(),
                             response.data.progress || 0,
                             response.data.state === 'Queued' ?
-                                'The task was queued to import' : response.data.message,
+                                'CVAT queued the task to import' : response.data.message,
                         );
                     });
 
@@ -1177,7 +1177,7 @@ async function createTask(
 
     let response = null;
 
-    onUpdate('Creating', 0, 'CVAT creates your task');
+    onUpdate(RQStatus.UNKNOWN, 0, 'CVAT is creating your task');
     try {
         response = await Axios.post(`${backendAPI}/tasks`, taskSpec, {
             params,
@@ -1186,7 +1186,7 @@ async function createTask(
         throw generateError(errorData);
     }
 
-    onUpdate('Uploading', 0, 'CVAT uploads task data to the server');
+    onUpdate(RQStatus.UNKNOWN, 0, 'CVAT is uploading task data to the server');
 
     async function bulkUpload(taskId, files) {
         const fileBulks = files.reduce((fileGroups, file) => {
@@ -1206,7 +1206,7 @@ async function createTask(
                 taskData.append(`client_files[${idx}]`, element);
             }
             const percentage = totalSentSize / totalSize;
-            onUpdate('Uploading', percentage, 'CVAT uploads task data to the server');
+            onUpdate(RQStatus.UNKNOWN, percentage, 'CVAT is uploading task data to the server');
             await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
                 ...params,
                 headers: { 'Upload-Multiple': true },
@@ -1228,7 +1228,7 @@ async function createTask(
         const uploadConfig = {
             endpoint: `${origin}${backendAPI}/tasks/${response.data.id}/data/`,
             onUpdate: (percentage) => {
-                onUpdate('Uploading', percentage, 'CVAT uploads task data to the server');
+                onUpdate(RQStatus.UNKNOWN, percentage, 'CVAT is uploading task data to the server');
             },
             chunkSize,
             totalSize,
