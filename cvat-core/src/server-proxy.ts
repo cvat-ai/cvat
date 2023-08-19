@@ -111,13 +111,12 @@ function fetchAll(url, filter = {}): Promise<any> {
     });
 }
 
-async function chunkUpload(file: File, uploadConfig) {
+async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: number; filename: string }> {
     const params = enableOrganization();
     const {
-        endpoint, chunkSize, totalSize, onUpdate, metadata,
+        endpoint, chunkSize, totalSize, onUpdate, metadata, totalSentSize,
     } = uploadConfig;
-    const { totalSentSize } = uploadConfig;
-    const uploadResult = { totalSentSize };
+    const uploadResult = { uploadSentSize: 0, filename: file.name };
     return new Promise((resolve, reject) => {
         const upload = new tus.Upload(file, {
             endpoint,
@@ -152,8 +151,10 @@ async function chunkUpload(file: File, uploadConfig) {
                 if (uploadFilename) uploadResult.filename = uploadFilename;
             },
             onSuccess() {
-                if (totalSentSize) uploadResult.totalSentSize += file.size;
-                resolve(uploadResult);
+                resolve({
+                    ...uploadResult,
+                    uploadSentSize: file.size,
+                });
             },
         });
         upload.start();
@@ -843,7 +844,7 @@ async function importDataset(
                     params,
                     headers: { 'Upload-Start': true },
                 });
-            await chunkUpload(file, uploadConfig);
+            await chunkUpload(file as File, uploadConfig);
             const response = await Axios.post(url,
                 new FormData(), {
                     params,
@@ -949,7 +950,7 @@ async function restoreTask(storage: Storage, file: File | string) {
                 params,
                 headers: { 'Upload-Start': true },
             });
-        const { filename } = await chunkUpload(file, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         response = await Axios.post(url,
             new FormData(), {
                 params: { ...params, filename },
@@ -1056,7 +1057,7 @@ async function restoreProject(storage: Storage, file: File | string) {
                 params,
                 headers: { 'Upload-Start': true },
             });
-        const { filename } = await chunkUpload(file, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         response = await Axios.post(url,
             new FormData(), {
                 params: { ...params, filename },
@@ -1235,7 +1236,8 @@ async function createTask(
             totalSentSize,
         };
         for (const file of chunkFiles) {
-            uploadConfig.totalSentSize += await chunkUpload(file, uploadConfig);
+            const { uploadSentSize } = await chunkUpload(file, uploadConfig);
+            uploadConfig.totalSentSize += uploadSentSize;
         }
         if (bulkFiles.length > 0) {
             await bulkUpload(response.data.id, bulkFiles);
@@ -1724,7 +1726,7 @@ async function uploadAnnotations(
                     params,
                     headers: { 'Upload-Start': true },
                 });
-            await chunkUpload(file, uploadConfig);
+            await chunkUpload(file as File, uploadConfig);
             const response = await Axios.post(url,
                 new FormData(), {
                     params,
