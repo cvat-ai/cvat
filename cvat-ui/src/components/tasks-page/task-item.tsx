@@ -15,7 +15,7 @@ import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
 import moment from 'moment';
 
-import { Task } from 'cvat-core-wrapper';
+import { Task, RQStatus } from 'cvat-core-wrapper';
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import Preview from 'components/common/preview';
 import { ActiveInference, PluginComponent } from 'reducers';
@@ -32,7 +32,7 @@ export interface TaskItemProps {
 
 interface State {
     importingState: {
-        state: string;
+        state: RQStatus;
         message: string;
         progress: number;
     } | null;
@@ -47,7 +47,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         this.#isUnmounted = false;
         this.state = {
             importingState: taskInstance.size > 0 ? null : {
-                state: 'Waiting',
+                state: RQStatus.UNKNOWN,
                 message: 'Request current progress',
                 progress: 0,
             },
@@ -59,7 +59,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { importingState } = this.state;
 
         if (importingState !== null) {
-            taskInstance.listenToCreate((state: string, progress: number, message: string) => {
+            taskInstance.listenToCreate((state: RQStatus, progress: number, message: string) => {
                 if (!this.#isUnmounted) {
                     this.setState({
                         importingState: {
@@ -138,14 +138,20 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { importingState } = this.state;
 
         if (importingState) {
+            let textType: 'success' | 'danger' = 'success';
+            if (importingState.state === RQStatus.FAILED) {
+                textType = 'danger';
+            }
+
             return (
                 <Col span={7}>
                     <Row>
                         <Col span={24} className='cvat-task-item-progress-wrapper'>
                             <div>
-                                <Text strong>
+                                <Text strong type={importingState.state === RQStatus.UNKNOWN ? undefined : textType}>
                                     {`\u2022 ${importingState.message || importingState.state}`}
-                                    <LoadingOutlined />
+                                    { [RQStatus.QUEUED, RQStatus.STARTED]
+                                        .includes(importingState.state) && <LoadingOutlined /> }
                                 </Text>
                             </div>
                             <Progress

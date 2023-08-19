@@ -15,7 +15,7 @@ import Alert from 'antd/lib/alert';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
 import { StorageLocation } from 'reducers';
-import { getCore, Storage } from 'cvat-core-wrapper';
+import { getCore, Storage, RQStatus } from 'cvat-core-wrapper';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
 import { RemoteFile } from 'components/file-manager/remote-browser';
@@ -864,7 +864,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const { uploadFileErrorMessage, loading, statusInProgressTask: status } = this.state;
 
         if (status === 'FAILED' || loading) {
-            if (status.startsWith('Queued:')) {
+            if (status.startsWith(RQStatus.QUEUED)) {
                 return (<Alert message='The task was queued to import. You can close the window.' />);
             }
             return (<Alert message={status} />);

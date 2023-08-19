@@ -18,7 +18,7 @@ import {
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
 import { Storage } from './storage';
-import { StorageLocation, WebhookSourceType } from './enums';
+import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
@@ -1072,7 +1072,7 @@ const listenToCreateCallbacks: Record<number, {
 }> = {};
 
 function listenToCreateTask(
-    id, onUpdate: (state: string, progress: number, message: string) => void,
+    id, onUpdate: (state: RQStatus, progress: number, message: string) => void,
 ): Promise<SerializedTask> {
     if (id in listenToCreateCallbacks) {
         listenToCreateCallbacks[id].onUpdate.push(onUpdate);
@@ -1090,7 +1090,7 @@ function listenToCreateTask(
                     // notify all the subscribtions when data status changed
                     listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
                         callback(
-                            response.data.state,
+                            response.data.state.toLowerCase(),
                             response.data.progress || 0,
                             response.data.state === 'Queued' ?
                                 'The task was queued to import' : response.data.message,
@@ -1104,14 +1104,14 @@ function listenToCreateTask(
                 } else if (response.data.state === 'Failed') {
                     const failMessage = 'Data processing failed';
                     listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
-                        callback(response.data.state, 0, failMessage);
+                        callback(response.data.state.toLowerCase(), 0, failMessage);
                     });
                     const message = `Could not create task. ${failMessage}. ${response.data.message}`;
                     reject(new ServerError(message, 400));
                 } else {
                     const failMessage = 'Unknown status received';
                     listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
-                        callback(response.data.state || 'Unknown', 0, failMessage);
+                        callback(response.data.state.toLowerCase() || 'unknown', 0, failMessage);
                     });
                     reject(
                         new ServerError(
@@ -1122,7 +1122,7 @@ function listenToCreateTask(
                 }
             } catch (errorData) {
                 listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
-                    callback('Failed', 0, 'Server request failed');
+                    callback('failed', 0, 'Server request failed');
                 });
                 reject(generateError(errorData));
             }
@@ -1142,7 +1142,7 @@ function listenToCreateTask(
 async function createTask(
     taskSpec: Partial<SerializedTask>,
     taskDataSpec: any,
-    onUpdate: (state: string, progress: number, message: string) => void,
+    onUpdate: (state: RQStatus, progress: number, message: string) => void,
 ): Promise<SerializedTask> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request

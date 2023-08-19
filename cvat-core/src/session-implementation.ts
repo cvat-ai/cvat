@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ArgumentError } from './exceptions';
-import { HistoryActions, JobType } from './enums';
+import { HistoryActions, JobType, RQStatus } from './enums';
 import { Storage } from './storage';
 import { Task as TaskClass, Job as JobClass } from './session';
 import loggerStorage from './logger-storage';
@@ -524,7 +524,7 @@ export function implementTask(Task) {
     };
 
     Task.prototype.listenToCreate.implementation = async function (
-        onUpdate: (state: string, progress: number, message: string) => void = () => {},
+        onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {},
     ): Promise<TaskClass> {
         if (Number.isInteger(this.id) && this.size === 0) {
             const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);

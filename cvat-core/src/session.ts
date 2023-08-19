@@ -6,7 +6,7 @@
 import _ from 'lodash';
 import {
     ChunkType, DimensionType, JobStage,
-    JobState, JobType, StorageLocation, TaskMode, TaskStatus,
+    JobState, JobType, RQStatus, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
 
@@ -1130,7 +1130,7 @@ export class Task extends Session {
     }
 
     async listenToCreate(
-        onUpdate: (state: string, progress: number, message: string) => void = () => {},
+        onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {},
     ): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, onUpdate);
         return result;
