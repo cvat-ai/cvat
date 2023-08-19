@@ -1098,7 +1098,7 @@ function listenToCreateTask(
                         );
                     });
 
-                    setTimeout(checkStatus, 2000);
+                    setTimeout(checkStatus, response.data.state === 'Queued' ? 20000 : 5000);
                 } else if (response.data.state === 'Finished') {
                     const [createdTask] = await getTasks({ id, ...params });
                     resolve(createdTask);
@@ -1129,7 +1129,7 @@ function listenToCreateTask(
             }
         }
 
-        setTimeout(checkStatus, 500);
+        setTimeout(checkStatus, 100);
     });
 
     listenToCreateCallbacks[id] = {
