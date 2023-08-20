@@ -1136,7 +1136,9 @@ function listenToCreateTask(
         promise,
         onUpdate: [onUpdate],
     };
-    promise.finally(() => delete listenToCreateCallbacks[id]);
+    promise.catch(() => {
+        // do nothing, avoid uncaught promise exceptions
+    }).finally(() => delete listenToCreateCallbacks[id]);
     return promise;
 }
 
