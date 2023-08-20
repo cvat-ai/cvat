@@ -15,7 +15,6 @@ export enum OrganizationActionsTypes {
     GET_ORGANIZATIONS_FAILED = 'GET_ORGANIZATIONS_FAILED',
     ACTIVATE_ORGANIZATION_SUCCESS = 'ACTIVATE_ORGANIZATION_SUCCESS',
     ACTIVATE_ORGANIZATION_FAILED = 'ACTIVATE_ORGANIZATION_FAILED',
-    CREATE_ORGANIZATION = 'CREATE_ORGANIZATION',
     CREATE_ORGANIZATION_SUCCESS = 'CREATE_ORGANIZATION_SUCCESS',
     CREATE_ORGANIZATION_FAILED = 'CREATE_ORGANIZATION_FAILED',
     UPDATE_ORGANIZATION = 'UPDATE_ORGANIZATION',
@@ -46,7 +45,6 @@ const organizationActions = {
         OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS, { list },
     ),
     getOrganizationsFailed: (error: any) => createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED, { error }),
-    createOrganization: () => createAction(OrganizationActionsTypes.CREATE_ORGANIZATION),
     createOrganizationSuccess: (organization: any) => createAction(
         OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS, { organization },
     ),
@@ -147,8 +145,6 @@ export function createOrganizationAsync(
     return async function (dispatch) {
         const { slug } = organizationData;
         const organization = new core.classes.Organization(organizationData);
-        dispatch(organizationActions.createOrganization());
-
         try {
             const createdOrganization = await organization.save();
             dispatch(organizationActions.createOrganizationSuccess(createdOrganization));
