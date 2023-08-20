@@ -742,12 +742,14 @@ Cypress.Commands.add('openTaskMenu', (taskName, fromTaskPage) => {
 
 Cypress.Commands.add('clickInTaskMenu', (item, fromTaskPage, taskName = '') => {
     cy.openTaskMenu(taskName, fromTaskPage);
-    cy.get('.cvat-actions-menu')
-        .should('be.visible')
-        .find('[role="menuitem"]')
-        .filter(`:contains("${item}")`)
-        .last()
-        .click();
+    cy.get('.ant-dropdown').not('.ant-dropdown-hidden').within(() => {
+        cy.get('.cvat-actions-menu')
+            .should('be.visible')
+            .find('[role="menuitem"]')
+            .filter(`:contains("${item}")`)
+            .last()
+            .click();
+    });
 });
 
 Cypress.Commands.add('deleteTask', (taskName) => {
