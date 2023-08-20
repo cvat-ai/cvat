@@ -142,6 +142,7 @@ export function getOrganizationsAsync(): ThunkAction {
 export function createOrganizationAsync(
     organizationData: Store,
     onCreateSuccess?: (createdSlug: string) => void,
+    onCreateFailed?: () => void,
 ): ThunkAction {
     return async function (dispatch) {
         const { slug } = organizationData;
@@ -153,6 +154,7 @@ export function createOrganizationAsync(
             dispatch(organizationActions.createOrganizationSuccess(createdOrganization));
             if (onCreateSuccess) onCreateSuccess(createdOrganization.slug);
         } catch (error) {
+            if (onCreateFailed) onCreateFailed();
             dispatch(organizationActions.createOrganizationFailed(slug, error));
         }
     };
