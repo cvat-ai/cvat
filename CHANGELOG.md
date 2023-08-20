@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- TBD
+- Organization now opened immediately after it is created (<https://github.com/opencv/cvat/pull/6705>)
 
 ### Deprecated
 
