@@ -37,7 +37,6 @@ export default function CreateTaskPage(props: Props): JSX.Element {
     const handleCreate: typeof onCreate = (...onCreateParams) => onCreate(...onCreateParams)
         .catch((err) => {
             setError(err.toString());
-            throw err;
         });
 
     useEffect(() => {
