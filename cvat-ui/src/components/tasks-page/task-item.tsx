@@ -221,6 +221,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     private renderNavigation(): JSX.Element {
+        const { importingState } = this.state;
         const { taskInstance, history } = this.props;
         const { id } = taskInstance;
 
@@ -233,6 +234,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 <Row justify='end'>
                     <Col>
                         <Button
+                            disabled={!!importingState}
                             className='cvat-item-open-task-button'
                             type='primary'
                             size='large'
