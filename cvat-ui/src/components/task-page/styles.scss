@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-task-details-wrapper {
     overflow-y: auto;
@@ -65,6 +65,8 @@
 }
 
 .cvat-dataset-repository-url {
+    margin-bottom: 16px;
+
     > a {
         margin-right: $grid-unit-size;
     }

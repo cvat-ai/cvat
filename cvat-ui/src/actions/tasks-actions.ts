@@ -277,7 +277,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 if (status === RQStatus.UNKNOWN) {
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
                 } else if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
-                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. You may close the window.`);
+                    const helperMessage = data.advanced.repository ?
+                        'Do not leave the page' : 'You may close the window.';
+                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
                 } else {
                     onProgress?.(`${status}: ${message}`);
                 }
