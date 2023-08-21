@@ -4172,7 +4172,7 @@ custom-error-instance@2.1.1:
     svg.select.js "3.0.1"
 
 "cvat-core@link:./cvat-core":
-  version "11.0.0"
+  version "11.0.1"
   dependencies:
     "@types/lodash" "^4.14.191"
     axios "^0.27.2"
@@ -8798,21 +8798,21 @@ onnx-proto@^4.0.4:
   dependencies:
     protobufjs "^6.8.8"
 
-onnxruntime-common@~1.15.1:
-  version "1.15.1"
-  resolved "https://registry.yarnpkg.com/onnxruntime-common/-/onnxruntime-common-1.15.1.tgz#1b8af102409b5465811a7faef31cf438bded5425"
-  integrity sha512-Y89eJ8QmaRsPZPWLaX7mfqhj63ny47rSkQe80hIo+lvBQdrdXYR9VO362xvZulk9DFkCnXmGidprvgJ07bKsIQ==
+onnxruntime-common@~1.14.0:
+  version "1.14.0"
+  resolved "https://registry.yarnpkg.com/onnxruntime-common/-/onnxruntime-common-1.14.0.tgz#2bb5dac5261269779aa5fb6536ca379657de8bf6"
+  integrity sha512-3LJpegM2iMNRX2wUmtYfeX/ytfOzNwAWKSq1HbRrKc9+uqG/FsEA0bbKZl1btQeZaXhC26l44NWpNUeXPII7Ew==
 
-onnxruntime-web@1.15.1:
-  version "1.15.1"
-  resolved "https://registry.yarnpkg.com/onnxruntime-web/-/onnxruntime-web-1.15.1.tgz#483fcde978fb89b139f60ed9025595dff778be33"
-  integrity sha512-Ky4AXFLFyiGRu5KQJdDcbhdNcO0f2ND/8IPmTEwcKKIHpCwH6/Q9UoMpcoFz78lxGvnmmy+FFgA/Bs1HjdM6LA==
+onnxruntime-web@1.14.0:
+  version "1.14.0"
+  resolved "https://registry.yarnpkg.com/onnxruntime-web/-/onnxruntime-web-1.14.0.tgz#c8cee538781b1d4c1c6b043934f4a3e6ddf1466e"
+  integrity sha512-Kcqf43UMfW8mCydVGcX9OMXI2VN17c0p6XvR7IPSZzBf/6lteBzXHvcEVWDPmCKuGombl997HgLqj91F11DzXw==
   dependencies:
     flatbuffers "^1.12.0"
     guid-typescript "^1.0.9"
     long "^4.0.0"
     onnx-proto "^4.0.4"
-    onnxruntime-common "~1.15.1"
+    onnxruntime-common "~1.14.0"
     platform "^1.3.6"
 
 open@^8.0.9:
