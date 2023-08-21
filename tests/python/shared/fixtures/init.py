@@ -279,7 +279,7 @@ def docker_restore_data_volumes():
         CVAT_DB_DIR / "cvat_data.tar.bz2",
         f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
     )
-    docker_exec(Container.SERVER, "tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
+    docker_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 
 def kube_restore_data_volumes():
@@ -403,7 +403,7 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
     wait_for_services()
 
-    docker_exec(Container.SERVER, "python manage.py loaddata /tmp/data.json")
+    docker_exec_cvat("python manage.py loaddata /tmp/data.json")
     docker_exec(
         Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
     )
@@ -455,7 +455,7 @@ def session_finish(session):
 
         docker_exec(Container.DB, "dropdb --if-exists cvat")
         docker_exec(Container.DB, "createdb cvat")
-        docker_exec(Container.SERVER, "python manage.py migrate")
+        docker_exec_cvat("python manage.py migrate")
 
 
 def collect_code_coverage_from_containers():
