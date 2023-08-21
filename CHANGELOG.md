@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Removing job assignee (<https://github.com/opencv/cvat/pull/6712>)
+- Fixed switching from organization to sandbox while getting a resource (<https://github.com/opencv/cvat/pull/6689>)
 
 ### Security
 

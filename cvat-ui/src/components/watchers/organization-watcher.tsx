@@ -13,12 +13,14 @@ function OrganizationWatcher(): JSX.Element {
     const organizationList = useSelector((state: CombinedState) => state.organizations.list);
 
     useEffect(() => {
-        core.config.onOrganizationChange = (newOrgId: number) => {
-            const newOrganization = organizationList.find((org) => org.id === newOrgId);
-            if (newOrganization) {
+        core.config.onOrganizationChange = (newOrgId: number | null) => {
+            if (newOrgId === null) {
+                localStorage.removeItem('currentOrganization');
+            } else {
+                const newOrganization = organizationList.find((org) => org.id === newOrgId);
                 localStorage.setItem('currentOrganization', newOrganization.slug);
-                window.location.reload();
             }
+            window.location.reload();
         };
     }, []);
 
