@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Increased max length of secret access key id to 64 (<https://github.com/opencv/cvat/pull/6701>)
+- Organization now opened immediately after it is created (<https://github.com/opencv/cvat/pull/6705>)
 
 ### Deprecated
 
@@ -25,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- TBD
+- Fixed switching from organization to sandbox while getting a resource (<https://github.com/opencv/cvat/pull/6689>)
 
 ### Security
 
