@@ -68,7 +68,7 @@ module.exports = (env) => {
                 {
                     context: (param) =>
                         param.match(
-                            /\/api\/.*|git\/.*|opencv\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                            /\/api\/.*|git\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
                         ),
                     target: env && env.API_URL,
                     secure: false,
@@ -209,6 +209,14 @@ module.exports = (env) => {
                         from: '../node_modules/onnxruntime-web/dist/*.wasm',
                         to  : 'assets/[name][ext]',
                     },
+                    {
+                        from: 'src/assets/opencv*.js',
+                        to  : 'assets/opencv.js',
+                    },
+                    {
+                        from: 'plugins/**/assets/*.(onnx|js)',
+                        to  : 'assets/[name][ext]',
+                    }
                 ],
             }),
             ...(sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
