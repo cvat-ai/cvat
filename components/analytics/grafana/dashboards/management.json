@@ -114,7 +114,7 @@
                     "mode": "single",
                     "sort": "none"
                 },
-                "xTickLabelRotation": 0,
+                "xTickLabelRotation": -45,
                 "xTickLabelSpacing": 0
             },
             "targets": [
@@ -143,7 +143,7 @@
                         }
                     },
                     "queryType": "sql",
-                    "rawSql": "SELECT DATE_TRUNC('day', timestamp) as time,\r\n       COUNT(CASE WHEN obj_val = 'completed' THEN 1 END) as completed,\r\n       COUNT(CASE WHEN obj_val = 'rejected' THEN 1 END) as rejected\r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND (scope = 'update:job')\r\n    AND (obj_name = 'status')\r\n    AND (obj_val IN ('completed', 'rejected'))\r\n    AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time\r\nORDER BY time\r\n",
+                    "rawSql": "SELECT DATE_TRUNC('day', timestamp) as time,\r\n       COUNT(CASE WHEN obj_val = 'completed' THEN 1 END) as \"Jobs completed per day\",\r\n       COUNT(CASE WHEN obj_val = 'rejected' THEN 1 END) as \"Jobs rejected per day\"\r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND (scope = 'update:job')\r\n    AND (obj_name = 'status')\r\n    AND (obj_val IN ('completed', 'rejected'))\r\n    AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time\r\nORDER BY time\r\n",
                     "refId": "A"
                 }
             ],
@@ -224,7 +224,7 @@
                     "mode": "single",
                     "sort": "none"
                 },
-                "xTickLabelRotation": 0,
+                "xTickLabelRotation": -45,
                 "xTickLabelSpacing": 0
             },
             "targets": [
@@ -242,7 +242,7 @@
                         }
                     },
                     "queryType": "sql",
-                    "rawSql": "SELECT DATE_TRUNC('day', timestamp) as time, user_name as user,\r\n       COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) as done_by\r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND (scope = 'update:job')\r\n    AND (obj_name = 'status')\r\n    AND (obj_val IN ('completed', 'rejected'))\r\n    AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time, user\r\nORDER BY time, user",
+                    "rawSql": "SELECT DATE_TRUNC('day', timestamp) as time, user_name as user,\r\n       COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) as \"Done by\"\r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND (scope = 'update:job')\r\n    AND (obj_name = 'status')\r\n    AND (obj_val IN ('completed', 'rejected'))\r\n    AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time, user\r\nORDER BY time, user",
                     "refId": "A"
                 }
             ],
@@ -343,7 +343,7 @@
                         }
                     },
                     "queryType": "sql",
-                    "rawSql": "SELECT DATE_TRUNC('hour', timestamp) as time,\r\n       COUNT(CASE WHEN obj_val = 'completed' THEN 1 END) as completed,\r\n       COUNT(CASE WHEN obj_val = 'rejected' THEN 1 END) as rejected\r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND (scope = 'update:job')\r\n    AND (obj_name = 'status')\r\n    AND (obj_val IN ('completed', 'rejected'))\r\n    AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time\r\nORDER BY time\r\n",
+                    "rawSql": "SELECT DATE_TRUNC('hour', timestamp) as time,\r\n       COUNT(CASE WHEN obj_val = 'completed' THEN 1 END) as \"Jobs completed per hour\",\r\n       COUNT(CASE WHEN obj_val = 'rejected' THEN 1 END) as \"Jobs rejected per hour\"\r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND (scope = 'update:job')\r\n    AND (obj_name = 'status')\r\n    AND (obj_val IN ('completed', 'rejected'))\r\n    AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time\r\nORDER BY time\r\n",
                     "refId": "A"
                 }
             ],
@@ -444,7 +444,7 @@
                         }
                     },
                     "queryType": "sql",
-                    "rawSql": "SELECT DATE_TRUNC('hour', timestamp) as time, user_name as user,\r\n       COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) as done_by\r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND (scope = 'update:job')\r\n    AND (obj_name = 'status')\r\n    AND (obj_val IN ('completed', 'rejected'))\r\n    AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time, user\r\nORDER BY time, user",
+                    "rawSql": "SELECT DATE_TRUNC('hour', timestamp) as time, user_name as user,\r\n       COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) as \"Done by\"\r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND (scope = 'update:job')\r\n    AND (obj_name = 'status')\r\n    AND (obj_val IN ('completed', 'rejected'))\r\n    AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time, user\r\nORDER BY time, user",
                     "refId": "A"
                 }
             ],
@@ -525,7 +525,7 @@
                     "mode": "single",
                     "sort": "none"
                 },
-                "xTickLabelRotation": 0,
+                "xTickLabelRotation": -45,
                 "xTickLabelSpacing": 0
             },
             "targets": [
@@ -543,7 +543,7 @@
                         }
                     },
                     "queryType": "sql",
-                    "rawSql": "WITH user_activity AS (\r\n    SELECT DISTINCT DATE_TRUNC('hour', timestamp) AS time,\r\n           toString(user_name) AS user\r\n    FROM events\r\n    WHERE $__timeFilter(timestamp)\r\n        AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n),\r\nuser_jobs AS (\r\n    SELECT DATE_TRUNC('hour', timestamp) AS time,\r\n           user_name AS user,\r\n           COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) AS done_by\r\n    FROM events \r\n    WHERE $__timeFilter(timestamp)\r\n        AND (scope = 'update:job')\r\n        AND (obj_name = 'status')\r\n        AND (obj_val IN ('completed', 'rejected'))\r\n        AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n    GROUP BY time, user\r\n)\r\nSELECT DATE_TRUNC('day', ua.time) as time,\r\n       COALESCE(SUM(uj.done_by) / COUNT(ua.time), 0) AS avg_jobs_completed_per_hour\r\nFROM user_activity ua\r\nLEFT JOIN user_jobs uj ON ua.time = uj.time AND ua.user = uj.user\r\nGROUP BY time\r\nORDER BY time;\r\n",
+                    "rawSql": "WITH user_activity AS (\r\n    SELECT DISTINCT DATE_TRUNC('hour', timestamp) AS time,\r\n           toString(user_name) AS user\r\n    FROM events\r\n    WHERE $__timeFilter(timestamp)\r\n        AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n),\r\nuser_jobs AS (\r\n    SELECT DATE_TRUNC('hour', timestamp) AS time,\r\n           user_name AS user,\r\n           COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) AS done_by\r\n    FROM events \r\n    WHERE $__timeFilter(timestamp)\r\n        AND (scope = 'update:job')\r\n        AND (obj_name = 'status')\r\n        AND (obj_val IN ('completed', 'rejected'))\r\n        AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n    GROUP BY time, user\r\n)\r\nSELECT DATE_TRUNC('day', ua.time) as time,\r\n       COALESCE(SUM(uj.done_by) / COUNT(ua.time), 0) AS \"Average jobs completed per hour\"\r\nFROM user_activity ua\r\nLEFT JOIN user_jobs uj ON ua.time = uj.time AND ua.user = uj.user\r\nGROUP BY time\r\nORDER BY time;\r\n",
                     "refId": "A"
                 }
             ],
@@ -625,6 +625,119 @@
                     "mode": "single",
                     "sort": "none"
                 },
+                "xTickLabelRotation": -45,
+                "xTickLabelSpacing": 0
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PDEE91DDB90597936"
+                    },
+                    "format": 0,
+                    "meta": {
+                        "builderOptions": {
+                            "fields": [],
+                            "limit": 100,
+                            "mode": "list"
+                        }
+                    },
+                    "queryType": "sql",
+                    "rawSql": "WITH user_activity AS (\r\n    SELECT DISTINCT DATE_TRUNC('hour', timestamp) AS time,\r\n           toString(user_name) AS user\r\n    FROM events\r\n    WHERE $__timeFilter(timestamp)\r\n        AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n),\r\nuser_jobs AS (\r\n    SELECT DATE_TRUNC('hour', timestamp) AS time,\r\n           user_name AS user,\r\n           COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) AS done_by\r\n    FROM events \r\n    WHERE $__timeFilter(timestamp)\r\n        AND (scope = 'update:job')\r\n        AND (obj_name = 'status')\r\n        AND (obj_val IN ('completed', 'rejected'))\r\n        AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n    GROUP BY time, user\r\n)\r\nSELECT DATE_TRUNC('day', ua.time) as time,\r\n       ua.user,\r\n       COALESCE(uj.done_by / COUNT(ua.time), 0) AS \"Average jobs completed per active hour by\"\r\nFROM user_activity ua\r\nLEFT JOIN user_jobs uj ON ua.time = uj.time AND ua.user = uj.user\r\nGROUP BY time, ua.user, uj.done_by\r\nORDER BY time, ua.user;\r\n",
+                    "refId": "A"
+                }
+            ],
+            "title": "Average Jobs per active hour and user (daily)",
+            "type": "barchart"
+        },
+        {
+            "collapsed": false,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 25
+            },
+            "id": 27,
+            "panels": [],
+            "title": "Time to Complete Jobs",
+            "type": "row"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PDEE91DDB90597936"
+            },
+            "description": "Overall time from job opening to job completion",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 26
+            },
+            "id": 17,
+            "options": {
+                "barRadius": 0,
+                "barWidth": 0.97,
+                "groupWidth": 0.7,
+                "legend": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "auto",
+                "stacking": "none",
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                },
+                "xField": "time",
                 "xTickLabelRotation": 0,
                 "xTickLabelSpacing": 0
             },
@@ -643,603 +756,684 @@
                         }
                     },
                     "queryType": "sql",
-                    "rawSql": "WITH user_activity AS (\r\n    SELECT DISTINCT DATE_TRUNC('hour', timestamp) AS time,\r\n           toString(user_name) AS user\r\n    FROM events\r\n    WHERE $__timeFilter(timestamp)\r\n        AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n),\r\nuser_jobs AS (\r\n    SELECT DATE_TRUNC('hour', timestamp) AS time,\r\n           user_name AS user,\r\n           COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) AS done_by\r\n    FROM events \r\n    WHERE $__timeFilter(timestamp)\r\n        AND (scope = 'update:job')\r\n        AND (obj_name = 'status')\r\n        AND (obj_val IN ('completed', 'rejected'))\r\n        AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n    GROUP BY time, user\r\n)\r\nSELECT DATE_TRUNC('day', ua.time) as time,\r\n       ua.user,\r\n       COALESCE(uj.done_by / COUNT(ua.time), 0) AS avg_jobs_completed_per_hour\r\nFROM user_activity ua\r\nLEFT JOIN user_jobs uj ON ua.time = uj.time AND ua.user = uj.user\r\nGROUP BY time, ua.user, uj.done_by\r\nORDER BY time, ua.user;\r\n",
+                    "rawSql": "SELECT\r\n     DATE_TRUNC('day', e2.timestamp) as time,\r\n    AVG(TIMESTAMPDIFF(MINUTE, e1.timestamp, e2.timestamp)) AS \"Overall average minutes to complete a job\"\r\nFROM events e1\r\nLEFT JOIN events e2 ON e1.job_id = e2.job_id\r\nWHERE\r\n    $__timeFilter(e1.timestamp) AND e1.scope = 'load:job'\r\n    AND (($__timeFilter(e2.timestamp) AND e2.scope = 'update:job' AND (e2.obj_val = 'completed' OR e2.obj_val = 'rejected')))\r\n    AND e1.timestamp < e2.timestamp\r\n    AND e1.user_name = e2.user_name\r\n    AND (e1.user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time\r\nORDER BY time",
                     "refId": "A"
                 }
             ],
-            "title": "Average Jobs per active hour and user (daily)",
+            "timeFrom": "30d",
+            "title": "Avg time [m] from opening to completing a job",
             "type": "barchart"
         },
         {
-            "collapsed": true,
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PDEE91DDB90597936"
+            },
+            "description": "Minutes  from job opening to job completion",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 10,
+                "w": 24,
+                "x": 0,
+                "y": 36
+            },
+            "id": 16,
+            "options": {
+                "barRadius": 0,
+                "barWidth": 0.97,
+                "groupWidth": 0.7,
+                "legend": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "auto",
+                "stacking": "none",
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                },
+                "xField": "time",
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PDEE91DDB90597936"
+                    },
+                    "format": 0,
+                    "meta": {
+                        "builderOptions": {
+                            "fields": [],
+                            "limit": 100,
+                            "mode": "list"
+                        }
+                    },
+                    "queryType": "sql",
+                    "rawSql": "SELECT\r\n     DATE_TRUNC('day', e2.timestamp) as time,\r\n    e2.user_name AS user,\r\n    AVG(TIMESTAMPDIFF(MINUTE, e1.timestamp, e2.timestamp)) AS \"Avg minutes from opening to completing job by\"\r\nFROM events e1\r\nLEFT JOIN events e2 ON e1.job_id = e2.job_id\r\nWHERE\r\n    $__timeFilter(e1.timestamp) AND e1.scope = 'load:job'\r\n    AND (($__timeFilter(e2.timestamp) AND e2.scope = 'update:job' AND (e2.obj_val = 'completed' OR e2.obj_val = 'rejected')))\r\n    AND e1.timestamp < e2.timestamp\r\n    AND e1.user_name = e2.user_name\r\n    AND (e1.user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time, user\r\nORDER BY time, user",
+                    "refId": "A"
+                }
+            ],
+            "timeFrom": "30d",
+            "title": "Avg time [m] from opening to completing job per user",
+            "type": "barchart"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PDEE91DDB90597936"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 46
+            },
+            "id": 31,
+            "options": {
+                "barRadius": 0,
+                "barWidth": 0.5,
+                "groupWidth": 0.7,
+                "legend": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "auto",
+                "stacking": "none",
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PDEE91DDB90597936"
+                    },
+                    "format": 0,
+                    "meta": {
+                        "builderOptions": {
+                            "fields": [],
+                            "limit": 100,
+                            "mode": "list"
+                        }
+                    },
+                    "queryType": "sql",
+                    "rawSql": "WITH time_per_job AS (\r\n    SELECT\r\n        user_name as user,\r\n        job_id as job,\r\n        sum(JSONExtractUInt(payload, 'working_time')) / 1000 as time_per_job\r\n    FROM events\r\n    WHERE JSONHas(payload, 'working_time')\r\n      AND $__timeFilter(timestamp)\r\n      AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n      AND source = 'client'\r\n    GROUP BY user_name, job_id\r\n),\r\n     completed_jobs AS (\r\n         SELECT DATE_TRUNC('day', timestamp) AS time,\r\n                user_name AS user,\r\n                job_id as job,\r\n                COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) AS done_by\r\n         FROM events\r\n         WHERE $__timeFilter(timestamp)\r\n           AND (scope = 'update:job')\r\n           AND (obj_name = 'status')\r\n           AND (obj_val IN ('completed', 'rejected'))\r\n           AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n         GROUP BY time, user, job_id\r\n     )\r\nSELECT DATE_TRUNC('day', completed.time) as time,\r\n       AVG(job_time.time_per_job) AS \"Average seconds to complete job\"\r\nFROM completed_jobs AS completed\r\n         LEFT JOIN time_per_job AS job_time ON completed.job = job_time.job AND completed.user = job_time.user\r\nGROUP BY time\r\nORDER BY time;",
+                    "refId": "A"
+                }
+            ],
+            "title": "Avg time [s] to complete a job per working time",
+            "type": "barchart"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PDEE91DDB90597936"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "fillOpacity": 80,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineWidth": 1,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 8,
+                "w": 24,
+                "x": 0,
+                "y": 54
+            },
+            "id": 29,
+            "options": {
+                "barRadius": 0,
+                "barWidth": 0.97,
+                "groupWidth": 0.7,
+                "legend": {
+                    "calcs": [
+                        "mean"
+                    ],
+                    "displayMode": "table",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "orientation": "auto",
+                "showValue": "auto",
+                "stacking": "none",
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                },
+                "xTickLabelRotation": 0,
+                "xTickLabelSpacing": 0
+            },
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PDEE91DDB90597936"
+                    },
+                    "format": 0,
+                    "meta": {
+                        "builderOptions": {
+                            "fields": [],
+                            "limit": 100,
+                            "mode": "list"
+                        }
+                    },
+                    "queryType": "sql",
+                    "rawSql": "WITH time_per_job AS (\r\n    SELECT\r\n        user_name as user,\r\n        job_id as job,\r\n        sum(JSONExtractUInt(payload, 'working_time')) / 1000 as time_per_job\r\n    FROM events\r\n    WHERE JSONHas(payload, 'working_time')\r\n      AND $__timeFilter(timestamp)\r\n      AND user_name IN (${users})\r\n      AND source = 'client'\r\n    GROUP BY user_name, job_id\r\n),\r\ncompleted_jobs AS (\r\n    SELECT DATE_TRUNC('day', timestamp) AS time,\r\n           user_name AS user,\r\n           job_id as job,\r\n           COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) AS done_by\r\n    FROM events\r\n    WHERE $__timeFilter(timestamp)\r\n        AND (scope = 'update:job')\r\n        AND (obj_name = 'status')\r\n        AND (obj_val IN ('completed', 'rejected'))\r\n        AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\n    GROUP BY time, user, job_id\r\n)\r\nSELECT DATE_TRUNC('day', completed.time) as time,\r\n       completed.user as user,\r\n       AVG(job_time.time_per_job) AS \"Average seconds to complete job by\"\r\nFROM completed_jobs AS completed\r\n         LEFT JOIN time_per_job AS job_time ON completed.job = job_time.job AND completed.user = job_time.user\r\nGROUP BY time, completed.user\r\nORDER BY time, completed.user;\r\n",
+                    "refId": "A"
+                }
+            ],
+            "title": "Average time [s] to complete job per working time",
+            "type": "barchart"
+        },
+        {
+            "collapsed": false,
             "gridPos": {
                 "h": 1,
                 "w": 24,
                 "x": 0,
-                "y": 25
+                "y": 62
             },
-            "id": 27,
-            "panels": [
-                {
-                    "datasource": {
-                        "type": "grafana-clickhouse-datasource",
-                        "uid": "PDEE91DDB90597936"
-                    },
-                    "description": "Minutes  from job opening to job completion",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "mode": "palette-classic"
-                            },
-                            "custom": {
-                                "axisCenteredZero": false,
-                                "axisColorMode": "text",
-                                "axisLabel": "",
-                                "axisPlacement": "auto",
-                                "fillOpacity": 80,
-                                "gradientMode": "none",
-                                "hideFrom": {
-                                    "legend": false,
-                                    "tooltip": false,
-                                    "viz": false
-                                },
-                                "lineWidth": 1,
-                                "scaleDistribution": {
-                                    "type": "linear"
-                                },
-                                "thresholdsStyle": {
-                                    "mode": "off"
-                                }
-                            },
-                            "mappings": [],
-                            "thresholds": {
-                                "mode": "absolute",
-                                "steps": [
-                                    {
-                                        "color": "green",
-                                        "value": null
-                                    },
-                                    {
-                                        "color": "red",
-                                        "value": 80
-                                    }
-                                ]
-                            }
-                        },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 10,
-                        "w": 24,
-                        "x": 0,
-                        "y": 26
-                    },
-                    "id": 16,
-                    "options": {
-                        "barRadius": 0,
-                        "barWidth": 0.97,
-                        "groupWidth": 0.7,
-                        "legend": {
-                            "calcs": [
-                                "mean"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom",
-                            "showLegend": true
-                        },
-                        "orientation": "auto",
-                        "showValue": "auto",
-                        "stacking": "none",
-                        "tooltip": {
-                            "mode": "single",
-                            "sort": "none"
-                        },
-                        "xField": "time",
-                        "xTickLabelRotation": 0,
-                        "xTickLabelSpacing": 0
-                    },
-                    "targets": [
-                        {
-                            "datasource": {
-                                "type": "grafana-clickhouse-datasource",
-                                "uid": "PDEE91DDB90597936"
-                            },
-                            "format": 0,
-                            "meta": {
-                                "builderOptions": {
-                                    "fields": [],
-                                    "limit": 100,
-                                    "mode": "list"
-                                }
-                            },
-                            "queryType": "sql",
-                            "rawSql": "SELECT\r\n     DATE_TRUNC('day', e2.timestamp) as time,\r\n    e2.user_name AS user,\r\n    AVG(TIMESTAMPDIFF(MINUTE, e1.timestamp, e2.timestamp)) AS minutes_to_complete\r\nFROM events e1\r\nLEFT JOIN events e2 ON e1.job_id = e2.job_id\r\nWHERE\r\n    $__timeFilter(e1.timestamp) AND e1.scope = 'load:job'\r\n    AND (($__timeFilter(e2.timestamp) AND e2.scope = 'update:job' AND (e2.obj_val = 'completed' OR e2.obj_val = 'rejected')))\r\n    AND e1.timestamp < e2.timestamp\r\n    AND e1.user_name = e2.user_name\r\n    AND (e1.user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time, user\r\nORDER BY time, user",
-                            "refId": "A"
-                        }
-                    ],
-                    "timeFrom": "30d",
-                    "title": "Minutes to complete job",
-                    "type": "barchart"
-                },
-                {
-                    "datasource": {
-                        "type": "grafana-clickhouse-datasource",
-                        "uid": "PDEE91DDB90597936"
-                    },
-                    "description": "Overall time from job opening to job completion",
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "mode": "palette-classic"
-                            },
-                            "custom": {
-                                "axisCenteredZero": false,
-                                "axisColorMode": "text",
-                                "axisLabel": "",
-                                "axisPlacement": "auto",
-                                "fillOpacity": 80,
-                                "gradientMode": "none",
-                                "hideFrom": {
-                                    "legend": false,
-                                    "tooltip": false,
-                                    "viz": false
-                                },
-                                "lineWidth": 1,
-                                "scaleDistribution": {
-                                    "type": "linear"
-                                },
-                                "thresholdsStyle": {
-                                    "mode": "off"
-                                }
-                            },
-                            "mappings": [],
-                            "thresholds": {
-                                "mode": "absolute",
-                                "steps": [
-                                    {
-                                        "color": "green",
-                                        "value": null
-                                    },
-                                    {
-                                        "color": "red",
-                                        "value": 80
-                                    }
-                                ]
-                            }
-                        },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 10,
-                        "w": 24,
-                        "x": 0,
-                        "y": 36
-                    },
-                    "id": 17,
-                    "options": {
-                        "barRadius": 0,
-                        "barWidth": 0.97,
-                        "groupWidth": 0.7,
-                        "legend": {
-                            "calcs": [
-                                "mean"
-                            ],
-                            "displayMode": "table",
-                            "placement": "bottom",
-                            "showLegend": true
-                        },
-                        "orientation": "auto",
-                        "showValue": "auto",
-                        "stacking": "none",
-                        "tooltip": {
-                            "mode": "single",
-                            "sort": "none"
-                        },
-                        "xField": "time",
-                        "xTickLabelRotation": 0,
-                        "xTickLabelSpacing": 0
-                    },
-                    "targets": [
-                        {
-                            "datasource": {
-                                "type": "grafana-clickhouse-datasource",
-                                "uid": "PDEE91DDB90597936"
-                            },
-                            "format": 0,
-                            "meta": {
-                                "builderOptions": {
-                                    "fields": [],
-                                    "limit": 100,
-                                    "mode": "list"
-                                }
-                            },
-                            "queryType": "sql",
-                            "rawSql": "SELECT\r\n     DATE_TRUNC('day', e2.timestamp) as time,\r\n    AVG(TIMESTAMPDIFF(MINUTE, e1.timestamp, e2.timestamp)) AS minutes_to_complete\r\nFROM events e1\r\nLEFT JOIN events e2 ON e1.job_id = e2.job_id\r\nWHERE\r\n    $__timeFilter(e1.timestamp) AND e1.scope = 'load:job'\r\n    AND (($__timeFilter(e2.timestamp) AND e2.scope = 'update:job' AND (e2.obj_val = 'completed' OR e2.obj_val = 'rejected')))\r\n    AND e1.timestamp < e2.timestamp\r\n    AND e1.user_name = e2.user_name\r\n    AND (e1.user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time\r\nORDER BY time",
-                            "refId": "A"
-                        }
-                    ],
-                    "timeFrom": "30d",
-                    "title": "Avg minutes  to complete job",
-                    "type": "barchart"
-                }
-            ],
-            "title": "Time to Complete Jobs",
+            "id": 25,
+            "panels": [],
+            "title": "Activity",
             "type": "row"
         },
         {
-            "collapsed": true,
-            "gridPos": {
-                "h": 1,
-                "w": 24,
-                "x": 0,
-                "y": 26
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PDEE91DDB90597936"
             },
-            "id": 25,
-            "panels": [
-                {
-                    "datasource": {
-                        "type": "grafana-clickhouse-datasource",
-                        "uid": "PDEE91DDB90597936"
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "continuous-GrYlRd"
                     },
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "mode": "continuous-GrYlRd"
-                            },
-                            "custom": {
-                                "axisCenteredZero": false,
-                                "axisColorMode": "text",
-                                "axisLabel": "",
-                                "axisPlacement": "auto",
-                                "barAlignment": 0,
-                                "drawStyle": "bars",
-                                "fillOpacity": 90,
-                                "gradientMode": "scheme",
-                                "hideFrom": {
-                                    "legend": false,
-                                    "tooltip": false,
-                                    "viz": false
-                                },
-                                "lineInterpolation": "linear",
-                                "lineWidth": 1,
-                                "pointSize": 5,
-                                "scaleDistribution": {
-                                    "type": "linear"
-                                },
-                                "showPoints": "auto",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                },
-                                "thresholdsStyle": {
-                                    "mode": "off"
-                                }
-                            },
-                            "mappings": [],
-                            "thresholds": {
-                                "mode": "absolute",
-                                "steps": [
-                                    {
-                                        "color": "green",
-                                        "value": null
-                                    },
-                                    {
-                                        "color": "red",
-                                        "value": 80
-                                    }
-                                ]
-                            }
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "bars",
+                        "fillOpacity": 90,
+                        "gradientMode": "scheme",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
                         },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 7,
-                        "w": 24,
-                        "x": 0,
-                        "y": 54
-                    },
-                    "id": 4,
-                    "options": {
-                        "legend": {
-                            "calcs": [],
-                            "displayMode": "list",
-                            "placement": "bottom",
-                            "showLegend": true
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
                         },
-                        "tooltip": {
-                            "mode": "single",
-                            "sort": "none"
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
                         }
                     },
-                    "targets": [
-                        {
-                            "builderOptions": {
-                                "fields": [],
-                                "filters": [
-                                    {
-                                        "condition": "AND",
-                                        "filterType": "custom",
-                                        "key": "user_name",
-                                        "operator": "IN",
-                                        "type": "Nullable(String)",
-                                        "value": [
-                                            "kyle",
-                                            "rpalugod@sewerai.com",
-                                            "rswords@sewerai.com"
-                                        ]
-                                    }
-                                ],
-                                "limit": 100,
-                                "metrics": [
-                                    {
-                                        "aggregation": "count",
-                                        "alias": "Count",
-                                        "field": "*"
-                                    }
-                                ],
-                                "mode": "trend",
-                                "orderBy": [],
-                                "table": "events",
-                                "timeField": "timestamp",
-                                "timeFieldType": "DateTime64(3, 'Etc/UTC')"
-                            },
-                            "datasource": {
-                                "type": "grafana-clickhouse-datasource",
-                                "uid": "PDEE91DDB90597936"
-                            },
-                            "format": 0,
-                            "queryType": "builder",
-                            "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) Count FROM events WHERE $__timeFilter(timestamp) AND   ( user_name IN ('kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com' ) ) GROUP BY time ORDER BY time ASC LIMIT 100",
-                            "refId": "A"
-                        }
-                    ],
-                    "title": "Overall Activity",
-                    "type": "timeseries"
-                },
-                {
-                    "datasource": {
-                        "type": "grafana-clickhouse-datasource",
-                        "uid": "PDEE91DDB90597936"
-                    },
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "mode": "palette-classic"
-                            },
-                            "custom": {
-                                "axisCenteredZero": false,
-                                "axisColorMode": "text",
-                                "axisLabel": "",
-                                "axisPlacement": "auto",
-                                "barAlignment": 0,
-                                "drawStyle": "line",
-                                "fillOpacity": 25,
-                                "gradientMode": "none",
-                                "hideFrom": {
-                                    "legend": false,
-                                    "tooltip": false,
-                                    "viz": false
-                                },
-                                "lineInterpolation": "smooth",
-                                "lineStyle": {
-                                    "fill": "solid"
-                                },
-                                "lineWidth": 1,
-                                "pointSize": 5,
-                                "scaleDistribution": {
-                                    "type": "linear"
-                                },
-                                "showPoints": "never",
-                                "spanNulls": false,
-                                "stacking": {
-                                    "group": "A",
-                                    "mode": "none"
-                                },
-                                "thresholdsStyle": {
-                                    "mode": "off"
-                                }
-                            },
-                            "mappings": [],
-                            "thresholds": {
-                                "mode": "absolute",
-                                "steps": [
-                                    {
-                                        "color": "green",
-                                        "value": null
-                                    },
-                                    {
-                                        "color": "red",
-                                        "value": 80
-                                    }
-                                ]
-                            }
-                        },
-                        "overrides": [
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
                             {
-                                "__systemRef": "hideSeriesFrom",
-                                "matcher": {
-                                    "id": "byNames",
-                                    "options": {
-                                        "mode": "exclude",
-                                        "names": [
-                                            "User kyle"
-                                        ],
-                                        "prefix": "All except:",
-                                        "readOnly": true
-                                    }
-                                },
-                                "properties": [
-                                    {
-                                        "id": "custom.hideFrom",
-                                        "value": {
-                                            "legend": false,
-                                            "tooltip": false,
-                                            "viz": true
-                                        }
-                                    }
-                                ]
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
                             }
                         ]
-                    },
-                    "gridPos": {
-                        "h": 9,
-                        "w": 24,
-                        "x": 0,
-                        "y": 61
-                    },
-                    "id": 6,
-                    "options": {
-                        "legend": {
-                            "calcs": [],
-                            "displayMode": "list",
-                            "placement": "bottom",
-                            "showLegend": true
-                        },
-                        "tooltip": {
-                            "mode": "single",
-                            "sort": "none"
-                        }
-                    },
-                    "pluginVersion": "9.3.6",
-                    "targets": [
-                        {
-                            "builderOptions": {
-                                "fields": [],
-                                "filters": [],
-                                "groupBy": [
-                                    "user_name"
-                                ],
-                                "metrics": [
-                                    {
-                                        "aggregation": "count",
-                                        "alias": "value",
-                                        "field": "*"
-                                    }
-                                ],
-                                "mode": "trend",
-                                "orderBy": [],
-                                "table": "events",
-                                "timeField": "timestamp",
-                                "timeFieldType": "DateTime64(3, 'Etc/UTC')"
-                            },
-                            "datasource": {
-                                "type": "grafana-clickhouse-datasource",
-                                "uid": "PDEE91DDB90597936"
-                            },
-                            "format": 0,
-                            "hide": false,
-                            "meta": {
-                                "builderOptions": {
-                                    "fields": [],
-                                    "filters": [],
-                                    "groupBy": [
-                                        "user_name"
-                                    ],
-                                    "metrics": [
-                                        {
-                                            "aggregation": "count",
-                                            "alias": "value",
-                                            "field": "*"
-                                        }
-                                    ],
-                                    "mode": "trend",
-                                    "orderBy": [],
-                                    "table": "events",
-                                    "timeField": "timestamp",
-                                    "timeFieldType": "DateTime64(3, 'Etc/UTC')"
-                                }
-                            },
-                            "queryType": "sql",
-                            "rawSql": "SELECT DATE_TRUNC('hour', timestamp) as time, toString(user_name), count() as User\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nAND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time, user_name\r\nORDER BY time ASC, user_name ASC",
-                            "refId": "A"
-                        }
-                    ],
-                    "title": "User Activity",
-                    "transformations": [],
-                    "type": "timeseries"
+                    }
                 },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 7,
+                "w": 24,
+                "x": 0,
+                "y": 63
+            },
+            "id": 4,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "targets": [
+                {
+                    "builderOptions": {
+                        "fields": [],
+                        "filters": [
+                            {
+                                "condition": "AND",
+                                "filterType": "custom",
+                                "key": "user_name",
+                                "operator": "IN",
+                                "type": "Nullable(String)",
+                                "value": [
+                                    "kyle",
+                                    "rpalugod@sewerai.com",
+                                    "rswords@sewerai.com"
+                                ]
+                            }
+                        ],
+                        "limit": 100,
+                        "metrics": [
+                            {
+                                "aggregation": "count",
+                                "alias": "\"Number of activities\"",
+                                "field": "*"
+                            }
+                        ],
+                        "mode": "trend",
+                        "orderBy": [],
+                        "table": "events",
+                        "timeField": "timestamp",
+                        "timeFieldType": "DateTime64(3, 'Etc/UTC')"
+                    },
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PDEE91DDB90597936"
+                    },
+                    "format": 0,
+                    "queryType": "builder",
+                    "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) \"Number_of_activities\" FROM events WHERE $__timeFilter(timestamp) AND   ( user_name IN ('kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com' ) ) GROUP BY time ORDER BY time ASC LIMIT 100",
+                    "refId": "A"
+                }
+            ],
+            "title": "Overall Activity",
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PDEE91DDB90597936"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 25,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "lineInterpolation": "smooth",
+                        "lineStyle": {
+                            "fill": "solid"
+                        },
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "never",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": [
+                    {
+                        "__systemRef": "hideSeriesFrom",
+                        "matcher": {
+                            "id": "byNames",
+                            "options": {
+                                "mode": "exclude",
+                                "names": [
+                                    "User kyle"
+                                ],
+                                "prefix": "All except:",
+                                "readOnly": true
+                            }
+                        },
+                        "properties": [
+                            {
+                                "id": "custom.hideFrom",
+                                "value": {
+                                    "legend": false,
+                                    "tooltip": false,
+                                    "viz": true
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 24,
+                "x": 0,
+                "y": 70
+            },
+            "id": 6,
+            "options": {
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
+                },
+                "tooltip": {
+                    "mode": "single",
+                    "sort": "none"
+                }
+            },
+            "pluginVersion": "9.3.6",
+            "targets": [
+                {
+                    "builderOptions": {
+                        "fields": [],
+                        "filters": [],
+                        "groupBy": [
+                            "user_name"
+                        ],
+                        "metrics": [
+                            {
+                                "aggregation": "count",
+                                "alias": "value",
+                                "field": "*"
+                            }
+                        ],
+                        "mode": "trend",
+                        "orderBy": [],
+                        "table": "events",
+                        "timeField": "timestamp",
+                        "timeFieldType": "DateTime64(3, 'Etc/UTC')"
+                    },
+                    "datasource": {
+                        "type": "grafana-clickhouse-datasource",
+                        "uid": "PDEE91DDB90597936"
+                    },
+                    "format": 0,
+                    "hide": false,
+                    "meta": {
+                        "builderOptions": {
+                            "fields": [],
+                            "filters": [],
+                            "groupBy": [
+                                "user_name"
+                            ],
+                            "metrics": [
+                                {
+                                    "aggregation": "count",
+                                    "alias": "value",
+                                    "field": "*"
+                                }
+                            ],
+                            "mode": "trend",
+                            "orderBy": [],
+                            "table": "events",
+                            "timeField": "timestamp",
+                            "timeFieldType": "DateTime64(3, 'Etc/UTC')"
+                        }
+                    },
+                    "queryType": "sql",
+                    "rawSql": "SELECT DATE_TRUNC('hour', timestamp) as time, toString(user_name), count() as User\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nAND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time, user_name\r\nORDER BY time ASC, user_name ASC",
+                    "refId": "A"
+                }
+            ],
+            "title": "User Activity",
+            "transformations": [],
+            "type": "timeseries"
+        },
+        {
+            "datasource": {
+                "type": "grafana-clickhouse-datasource",
+                "uid": "PDEE91DDB90597936"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "custom": {
+                        "align": "auto",
+                        "displayMode": "auto",
+                        "filterable": false,
+                        "inspect": true
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 13,
+                "w": 24,
+                "x": 0,
+                "y": 79
+            },
+            "id": 2,
+            "options": {
+                "footer": {
+                    "enablePagination": true,
+                    "fields": [
+                        "Working time(h)",
+                        "Activity"
+                    ],
+                    "reducer": [
+                        "sum"
+                    ],
+                    "show": true
+                },
+                "showHeader": true,
+                "sortBy": []
+            },
+            "pluginVersion": "9.3.6",
+            "targets": [
                 {
                     "datasource": {
                         "type": "grafana-clickhouse-datasource",
                         "uid": "PDEE91DDB90597936"
                     },
-                    "fieldConfig": {
-                        "defaults": {
-                            "color": {
-                                "mode": "thresholds"
-                            },
-                            "custom": {
-                                "align": "auto",
-                                "displayMode": "auto",
-                                "filterable": false,
-                                "inspect": true
-                            },
-                            "mappings": [],
-                            "thresholds": {
-                                "mode": "absolute",
-                                "steps": [
-                                    {
-                                        "color": "green",
-                                        "value": null
-                                    },
-                                    {
-                                        "color": "red",
-                                        "value": 80
-                                    }
-                                ]
-                            }
-                        },
-                        "overrides": []
-                    },
-                    "gridPos": {
-                        "h": 13,
-                        "w": 24,
-                        "x": 0,
-                        "y": 70
-                    },
-                    "id": 2,
-                    "options": {
-                        "footer": {
-                            "enablePagination": true,
-                            "fields": [
-                                "Working time(h)",
-                                "Activity"
-                            ],
-                            "reducer": [
-                                "sum"
-                            ],
-                            "show": true
-                        },
-                        "showHeader": true,
-                        "sortBy": []
-                    },
-                    "pluginVersion": "9.3.6",
-                    "targets": [
-                        {
-                            "datasource": {
-                                "type": "grafana-clickhouse-datasource",
-                                "uid": "PDEE91DDB90597936"
-                            },
-                            "format": 1,
-                            "meta": {
-                                "builderOptions": {
-                                    "fields": [],
-                                    "limit": 100,
-                                    "mode": "list"
-                                }
-                            },
-                            "queryType": "sql",
-                            "rawSql": "SELECT\r\n  user_name as User,\r\n  project_id as Project,\r\n  task_id as Task,\r\n  job_id as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user_name IN (${users})\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND task_id IN (${tasks})\r\n  AND job_id IN (${jobs})\r\n  AND source = 'client'\r\nGROUP BY user_name, project_id, task_id, job_id",
-                            "refId": "A"
+                    "format": 1,
+                    "meta": {
+                        "builderOptions": {
+                            "fields": [],
+                            "limit": 100,
+                            "mode": "list"
                         }
-                    ],
-                    "title": "Working time",
-                    "type": "table"
+                    },
+                    "queryType": "sql",
+                    "rawSql": "SELECT\r\n  user_name as User,\r\n  project_id as Project,\r\n  task_id as Task,\r\n  job_id as Job, sum(JSONExtractUInt(payload, 'working_time')) / 1000 / 3600 as \"Working time(h)\",\r\n  count() as Activity\r\nFROM events\r\nWHERE JSONHas(payload, 'working_time')\r\n  AND $__timeFilter(timestamp)\r\n  AND user_name IN (${users})\r\n  AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n  AND task_id IN (${tasks})\r\n  AND job_id IN (${jobs})\r\n  AND source = 'client'\r\nGROUP BY user_name, project_id, task_id, job_id",
+                    "refId": "A"
                 }
             ],
-            "title": "Activity",
-            "type": "row"
+            "title": "Working time",
+            "type": "table"
         }
     ],
     "refresh": false,
@@ -1361,13 +1555,13 @@
         ]
     },
     "time": {
-        "from": "now-7d",
+        "from": "now-30d",
         "to": "now"
     },
     "timepicker": {},
     "timezone": "",
     "title": "Management",
     "uid": "w0if6WAVz",
-    "version": 3,
+    "version": 4,
     "weekStart": ""
 }
