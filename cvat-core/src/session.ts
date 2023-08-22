@@ -317,7 +317,7 @@ function buildDuplicatedAPI(prototype) {
 export class Session {}
 
 export class Job extends Session {
-    public assignee: User;
+    public assignee: User | null;
     public stage: JobStage;
     public state: JobState;
     public readonly id: number;
