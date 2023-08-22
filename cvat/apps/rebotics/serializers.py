@@ -81,7 +81,6 @@ class GIStartSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=40)
     task_size = serializers.IntegerField(default=100)
     job_size = serializers.IntegerField(default=20)
-    stop_at = serializers.IntegerField(default=-1)
 
 
 class GIUpdateSerializer(serializers.Serializer):

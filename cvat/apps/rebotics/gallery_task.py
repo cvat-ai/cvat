@@ -2,11 +2,11 @@ import os
 import sys
 import random
 import requests
-import json
 from urllib import parse as urlparse, request as urlrequest
 from .serializers import DetectionImageSerializer, DetectionImageListSerializer
-from .models import GalleryImportProgress, GIStatusSuccess, GIStatusFailed, GIInstanceLocal, \
-    SHAPE_RECTANGLE, SHAPE_POLYGON, SHAPE_LINE, ALL_UPC
+from .models import GalleryImportProgress, GIStatusSuccess, GIStatusFailed, \
+    GIInstanceLocal, GIInstanceR3cn, SHAPE_RECTANGLE, SHAPE_POLYGON, SHAPE_LINE, \
+    ALL_UPC
 
 import django_rq
 from rq.job import JobStatus, Job as RqJob
@@ -121,7 +121,6 @@ class ShapesImporter:
 
     def _import_annotation(self, item: dict) -> None:
         label = self._get_label(item['detection_class']['title'])
-        slogger.glob.info(item)
         if item['type'] == SHAPE_RECTANGLE:
             shape = ShapeType.RECTANGLE
             points = [item['lowerx'], item['lowery'], item['upperx'], item['uppery']]
@@ -214,6 +213,21 @@ class ShapesImporter:
         self._save()
 
 
+def _get_data(gi_instance, token, gi_id=None):
+    if gi_instance == GIInstanceLocal:
+        url = 'http://localhost:8003/api/v1/detection-images'
+    else:
+        domain = 'cn' if gi_instance == GIInstanceR3cn else 'net'
+        url = f'https://{gi_instance}-imggal.rebotics.{domain}/api/v1/detection-images'
+
+    if gi_id is not None:
+        url += f'/{gi_id}'
+
+    headers = {'Authorization': f'Token {token}'}
+    request = requests.get(url, headers=headers)
+    return request.json()
+
+
 def _preload_images(gi_instance, token):
     gi_data = GalleryImportProgress.objects.filter(instance=gi_instance)
     if gi_data.exists():
@@ -222,14 +236,7 @@ def _preload_images(gi_instance, token):
     else:
         slogger.glob.info('Preloading list of images.')
 
-        if gi_instance == GIInstanceLocal:
-            url = 'http://localhost:8003/api/v1/detection-images'
-        else:
-            url = f'https://{gi_instance}-imggal.rebotics.net/api/v1/detection-images'
-        headers = {'Authorization': f'Token {token}'}
-
-        request = requests.get(url, headers=headers)
-        data = request.json()
+        data = _get_data(gi_instance, token)
 
         serializer = DetectionImageListSerializer(data=data, many=True)
         serializer.is_valid(raise_exception=True)
@@ -340,7 +347,7 @@ def _create_task(project, gi_data, gi_instance, frame, size, segment_size):
     GalleryImportProgress.objects.bulk_update(data, ('task', 'frame',))
 
 
-def _start(gi_instance, token, task_size, job_size, stop_at):
+def _start(gi_instance, token, task_size, job_size):
     gi_data = _preload_images(gi_instance, token)
 
     if len(gi_data) < 1:
@@ -350,7 +357,7 @@ def _start(gi_instance, token, task_size, job_size, stop_at):
     user = _get_user()
     organization = _get_organization()
     project = _get_project(gi_instance, user, organization)
-    total = len(gi_data) if stop_at < 0 else stop_at
+    total = len(gi_data)
 
     frame = 0
     while frame < total:
@@ -363,20 +370,8 @@ def _start(gi_instance, token, task_size, job_size, stop_at):
 
 
 @transaction.atomic
-def _import_annotations(gi_instance, token, gi_item, importer):
-    if gi_instance == GIInstanceLocal:
-        url = f'http://localhost:8003/api/v1/detection-images/{gi_item.gi_id}'
-    else:
-        url = f'https://{gi_instance}-imggal.rebotics.net/api/v1/detection-images/{gi_item.gi_id}'
-    headers = {'Authorization': f'Token {token}'}
-
-    request = requests.get(url, headers=headers)
-    data = request.json()
-
-    serializer = DetectionImageSerializer(data=data)
-    serializer.is_valid(raise_exception=True)
-
-    importer.perform_import(gi_item, data)
+def _import_annotations(gi_item, gi_data, importer):
+    importer.perform_import(gi_item, gi_data)
 
     gi_item.status = GIStatusSuccess
     gi_item.save()
@@ -393,7 +388,13 @@ def _update(gi_instance, token):
 
     importer = ShapesImporter()
     for item in gi_data:
-        _import_annotations(gi_instance, token, item, importer)
+        data = _get_data(gi_instance, token, gi_id=item.gi_id)
+
+        serializer = DetectionImageSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        slogger.glob.info(f'Task {item.task_id} frame {item.frame}')
+        _import_annotations(item, serializer.validated_data, importer)
 
 
 def update(instance, token):
@@ -425,7 +426,7 @@ def update(instance, token):
         return "import is in progress"
 
 
-def start(instance, token, task_size, job_size, stop_at):
+def start(instance, token, task_size, job_size):
     slogger.glob.info(f'Starting import from {instance}-imggal.')
 
     job_id = f'gi_{instance}_start'
@@ -436,7 +437,7 @@ def start(instance, token, task_size, job_size, stop_at):
     if job is None or job.is_finished or job.is_failed:
         q.enqueue_call(
             _start,
-            args=(instance, token, task_size, job_size, stop_at),
+            args=(instance, token, task_size, job_size),
             job_id=job_id,
         )
         return "ok"
@@ -491,11 +492,3 @@ def get_job_status(instance):
             'exc_info': update_exc,
         },
     }
-
-
-def _delete_task(task_id):
-    try:
-        task = Task.objects.get(pk=task_id)
-        task.data.delete()
-    except Task.DoesNotExist:
-        pass
