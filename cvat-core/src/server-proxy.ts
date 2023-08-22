@@ -1087,36 +1087,37 @@ function listenToCreateTask(
         async function checkStatus(): Promise<void> {
             try {
                 const response = await Axios.get(`${backendAPI}/tasks/${id}/status`, { params });
-                if (['Queued', 'Started'].includes(response.data.state)) {
+                const state = response.data.state?.toLowerCase();
+                if ([RQStatus.QUEUED, RQStatus.STARTED].includes(state)) {
                     // notify all the subscribtions when data status changed
                     listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
                         callback(
-                            response.data.state.toLowerCase(),
+                            state,
                             response.data.progress || 0,
-                            response.data.state === 'Queued' ?
+                            state === RQStatus.QUEUED ?
                                 'CVAT queued the task to import' : response.data.message,
                         );
                     });
 
-                    setTimeout(checkStatus, response.data.state === 'Queued' ? 20000 : 5000);
-                } else if (response.data.state === 'Finished') {
+                    setTimeout(checkStatus, state === RQStatus.QUEUED ? 20000 : 5000);
+                } else if (state === RQStatus.FINISHED) {
                     const [createdTask] = await getTasks({ id, ...params });
                     resolve(createdTask);
-                } else if (response.data.state === 'Failed') {
+                } else if (state === RQStatus.FAILED) {
                     const failMessage = 'Data processing failed';
                     listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
-                        callback(response.data.state.toLowerCase(), 0, failMessage);
+                        callback(state, 0, failMessage);
                     });
                     const message = `Could not create task. ${failMessage}. ${response.data.message}`;
                     reject(new ServerError(message, 400));
                 } else {
                     const failMessage = 'Unknown status received';
                     listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
-                        callback(response.data.state.toLowerCase() || 'unknown', 0, failMessage);
+                        callback(state || RQStatus.UNKNOWN, 0, failMessage);
                     });
                     reject(
                         new ServerError(
-                            `Could not create task. ${failMessage}: ${response.data.state}`,
+                            `Could not create task. ${failMessage}: ${state}`,
                             500,
                         ),
                     );
