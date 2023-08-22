@@ -90,8 +90,8 @@ class GIUpdateSerializer(serializers.Serializer):
 
 
 class _DetectionClassSerializer(serializers.Serializer):
-    title = serializers.CharField(max_length=256)
-    code = serializers.CharField(max_length=256)
+    title = serializers.CharField(max_length=200)
+    code = serializers.CharField(max_length=200)
 
 
 class _DetectionAnnotationSerializer(serializers.Serializer):
@@ -105,7 +105,7 @@ class _DetectionAnnotationSerializer(serializers.Serializer):
 
 
 class _DetectionTagSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=256)
+    name = serializers.CharField(max_length=200)
 
 
 class DetectionImageSerializer(serializers.Serializer):
