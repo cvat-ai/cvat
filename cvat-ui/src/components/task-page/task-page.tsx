@@ -34,7 +34,6 @@ function TaskPageComponent(): JSX.Element {
     const mounted = useRef(false);
 
     const deletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
-    dispatch(getInferenceStatusAsync());
 
     const receieveTask = (): void => {
         if (Number.isInteger(id)) {
@@ -66,6 +65,7 @@ function TaskPageComponent(): JSX.Element {
 
     useEffect(() => {
         receieveTask();
+        dispatch(getInferenceStatusAsync());
         mounted.current = true;
         return () => {
             mounted.current = false;
