@@ -51,7 +51,6 @@ context('Webhooks pipeline.', () => {
         cy.visit('auth/login');
         cy.login();
         cy.createOrganization(organizationParams);
-        cy.activateOrganization(organizationParams.shortName);
         cy.visit('/projects');
         cy.createProjects(
             project.name,
