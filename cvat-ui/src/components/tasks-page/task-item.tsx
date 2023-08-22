@@ -139,7 +139,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         if (importingState) {
             let textType: 'success' | 'danger' = 'success';
-            if (importingState.state === RQStatus.FAILED) {
+            if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(importingState.state)) {
                 textType = 'danger';
             }
 
@@ -148,7 +148,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     <Row>
                         <Col span={24} className='cvat-task-item-progress-wrapper'>
                             <div>
-                                <Text strong type={importingState.state === RQStatus.UNKNOWN ? undefined : textType}>
+                                <Text strong type={importingState.state === RQStatus.QUEUED ? undefined : textType}>
                                     {`\u2022 ${importingState.message || importingState.state}`}
                                     { [RQStatus.QUEUED, RQStatus.STARTED]
                                         .includes(importingState.state) && <LoadingOutlined /> }
