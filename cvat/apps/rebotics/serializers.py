@@ -5,6 +5,8 @@ from rest_framework.exceptions import ValidationError
 from cvat.apps.organizations.models import Organization
 from cvat.apps.engine.serializers import RqStatusSerializer
 
+from cvat.apps.rebotics.models import GIInstanceChoices
+
 
 class _BaseImportSerializer(serializers.Serializer):
 
@@ -72,3 +74,25 @@ class ImportResponseSerializer(_BaseImportSerializer):
     images = serializers.ListSerializer(child=_ImportResponseImageSerializer(),
                                         allow_null=True, default=None)
     status = RqStatusSerializer(allow_null=True, default=None)
+
+
+class GIStartSerializer(serializers.Serializer):
+    instance = serializers.ChoiceField(choices=GIInstanceChoices)
+    token = serializers.CharField(max_length=40)
+    task_size = serializers.IntegerField(default=100)
+    job_size = serializers.IntegerField(default=20)
+    stop_at = serializers.IntegerField(default=-1)
+
+
+class GIUpdateSerializer(serializers.Serializer):
+    instance = serializers.ChoiceField(choices=GIInstanceChoices)
+    token = serializers.CharField(max_length=40)
+
+
+class DetectionImageSerializer(serializers.Serializer):
+    pass
+
+
+class DetectionImageListSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    image = serializers.CharField(max_length=2500)
