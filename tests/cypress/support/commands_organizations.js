@@ -174,7 +174,7 @@ Cypress.Commands.add('inviteMembersToOrganization', (members) => {
             .click();
         addedMembers++;
         if (addedMembers !== Object.keys(members).length) {
-            cy.contains('button', 'Invite more').click();
+            cy.contains('button', 'Add line').click();
         }
     }
     cy.get('.cvat-organization-invitation-modal')
