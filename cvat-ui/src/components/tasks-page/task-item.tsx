@@ -32,7 +32,7 @@ export interface TaskItemProps {
 
 interface State {
     importingState: {
-        state: RQStatus;
+        state: RQStatus | null;
         message: string;
         progress: number;
     } | null;
@@ -47,7 +47,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         this.#isUnmounted = false;
         this.state = {
             importingState: taskInstance.size > 0 ? null : {
-                state: RQStatus.UNKNOWN,
+                state: null,
                 message: 'Request current progress',
                 progress: 0,
             },
@@ -139,7 +139,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         if (importingState) {
             let textType: 'success' | 'danger' = 'success';
-            if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(importingState.state)) {
+            if (!!importingState.state && [RQStatus.FAILED, RQStatus.UNKNOWN].includes(importingState.state)) {
                 textType = 'danger';
             }
 
@@ -148,9 +148,12 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     <Row>
                         <Col span={24} className='cvat-task-item-progress-wrapper'>
                             <div>
-                                <Text strong type={importingState.state === RQStatus.QUEUED ? undefined : textType}>
+                                <Text
+                                    strong
+                                    type={[RQStatus.QUEUED, null].includes(importingState.state) ? undefined : textType}
+                                >
                                     {`\u2022 ${importingState.message || importingState.state}`}
-                                    { [RQStatus.QUEUED, RQStatus.STARTED]
+                                    { !!importingState.state && [RQStatus.QUEUED, RQStatus.STARTED]
                                         .includes(importingState.state) && <LoadingOutlined /> }
                                 </Text>
                             </div>
