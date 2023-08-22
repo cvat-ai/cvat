@@ -105,7 +105,7 @@
                         }
                     },
                     "queryType": "sql",
-                    "rawSql": "SELECT toDate(timestamp) as time, user_name as user,\r\n       COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) as \"Done by\"\r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND (scope = 'update:job')\r\n    AND (obj_name = 'status')\r\n    AND (obj_val IN ('completed', 'rejected'))\r\n    AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com', 'skall'])\r\nGROUP BY time, user\r\nORDER BY time, user",
+                    "rawSql": "SELECT toDate(timestamp) as time, user_name as user,\r\n       COUNT(CASE WHEN obj_val IN ('completed', 'rejected') THEN 1 END) as \"Done by\"\r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND (scope = 'update:job')\r\n    AND (obj_name = 'status')\r\n    AND (obj_val IN ('completed', 'rejected'))\r\n    AND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com'])\r\nGROUP BY time, user\r\nORDER BY time, user",
                     "refId": "A"
                 }
             ],
