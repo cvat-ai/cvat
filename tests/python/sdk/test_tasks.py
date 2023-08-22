@@ -298,16 +298,28 @@ class TestTaskUsecases:
         assert self.stdout.getvalue() == ""
 
     def test_can_delete_tasks_by_ids(self, fxt_new_task: Task):
-        task_id = fxt_new_task.id
-        old_tasks = self.client.tasks.list()
+        import time
+        with open('/tmp/test.log', 'a') as log:
+            task_id = fxt_new_task.id
 
-        self.client.tasks.remove_by_ids([task_id])
+            before = time.perf_counter()
+            old_tasks = self.client.tasks.list()
+            after = time.perf_counter()
 
-        new_tasks = self.client.tasks.list()
-        assert any(t.id == task_id for t in old_tasks)
-        assert all(t.id != task_id for t in new_tasks)
-        assert self.logger_stream.getvalue(), f".*Task ID {task_id} deleted.*"
-        assert self.stdout.getvalue() == ""
+            print(f"First: {after - before}", file=log)
+
+            self.client.tasks.remove_by_ids([task_id])
+
+            before = time.perf_counter()
+            new_tasks = self.client.tasks.list()
+            after = time.perf_counter()
+
+            print(f"Second: {after - before}", file=log)
+
+            assert any(t.id == task_id for t in old_tasks)
+            assert all(t.id != task_id for t in new_tasks)
+            assert self.logger_stream.getvalue(), f".*Task ID {task_id} deleted.*"
+            assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("include_images", (True, False))
     def test_can_download_dataset(self, fxt_new_task: Task, include_images: bool):
