@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Response code for empty cloud storage preview 204 -> 404 (<https://github.com/opencv/cvat/pull/6727>)
 - Organization now opened immediately after it is created (<https://github.com/opencv/cvat/pull/6705>)
 
 ### Deprecated
