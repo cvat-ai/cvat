@@ -166,7 +166,7 @@ jobs:
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
-          pytest tests/python/sdk/test_tasks.py::TestTaskUsecases::test_can_delete_tasks_by_ids --cov --cov-report=json
+          pytest tests/python/ --cov --cov-report=json
 
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v3.1.1
