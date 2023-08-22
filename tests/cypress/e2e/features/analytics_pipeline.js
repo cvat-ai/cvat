@@ -181,14 +181,15 @@ context('Analytics pipeline', () => {
             cy.goCheckFrameNumber(0);
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
-                .type(`${secondLabelName}{Enter}`)
+                .type(`${secondLabelName}{Enter}`);
+            cy.get('#cvat-objects-sidebar-state-item-1')
+                .find('.cvat-objects-sidebar-state-item-label-selector')
                 .trigger('mouseout');
             cy.saveJob();
 
             cy.goToNextFrame(1);
-            cy.get('#cvat_canvas_shape_2')
-                .trigger('mousemove')
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_2').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_2').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{del}');
             cy.get('#cvat_canvas_shape_2').should('not.exist');
             cy.saveJob();

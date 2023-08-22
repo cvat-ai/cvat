@@ -4,6 +4,7 @@
 
 import logging
 import os
+import shlex
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
@@ -103,12 +104,13 @@ def _run(command, capture_output=True):
             proc = run(_command)  # nosec
         return stdout, stderr
     except CalledProcessError as exc:
-        stderr = exc.stderr.decode() or exc.stdout.decode() if capture_output else "see above"
-        pytest.exit(
-            f"Command failed: {command}.\n"
-            f"Error message: {stderr}.\n"
-            "Add `-s` option to see more details"
-        )
+        message = f"Command failed: {' '.join(map(shlex.quote, _command))}."
+        message += f"\nExit code: {exc.returncode}"
+        if capture_output:
+            message += f"\nStandard output:\n{exc.stdout.decode()}"
+            message += f"\nStandard error:\n{exc.stderr.decode()}"
+
+        pytest.exit(message)
 
 
 def _kube_get_server_pod_name():

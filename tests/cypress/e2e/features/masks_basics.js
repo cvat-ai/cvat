@@ -42,7 +42,8 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 const { value } = instruction;
                 cy.get('.cvat-brush-tools-brush').click();
                 cy.get('.cvat-brush-tools-brush-size').within(() => {
-                    cy.get('input').clear().type(`${value}`);
+                    cy.get('input').clear();
+                    cy.get('input').type(`${value}`);
                 });
             } else {
                 const { coordinates } = instruction;
