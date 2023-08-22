@@ -145,7 +145,6 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
         });
 
         it('First user assign the job to the third user. Logout', () => {
-            // test commit
             cy.assignJobToUser(0, thirdUserName);
             cy.logout();
         });
