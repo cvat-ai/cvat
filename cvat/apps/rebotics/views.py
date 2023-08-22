@@ -12,8 +12,11 @@ from django.urls import resolve, Resolver404
 from django.views.decorators.common import no_append_slash
 
 from .authentication import RetailerAuthentication
-from .serializers import ImportSerializer, ImportResponseSerializer
+from .serializers import ImportSerializer, ImportResponseSerializer, \
+    GIStartSerializer, GIUpdateSerializer
+from cvat.apps.engine.log import slogger
 from cvat.apps.rebotics import task as task_api
+from cvat.apps.rebotics import gallery_task as gi_task_api
 
 
 @extend_schema(tags=['retailer_import'])
@@ -66,3 +69,48 @@ def index_view(request, url, *args, **kwargs):
             if getattr(match.func, 'should_append_slash', True):
                 return HttpResponsePermanentRedirect('%s/' % request.path)
     return render(request, 'index.html')
+
+
+class GalleryImportViewset(GenericViewSet):
+    # this is a one-time code, and will be deleted once all data is imported
+
+    def create(self, request, *args, **kwargs):
+        # load images and create tasks split by task_size.
+        # continue to import images, if there is no bg job present
+        # and there are images available
+        serializer = GIStartSerializer(data=request.data)
+        if serializer.is_valid():
+            gi_instance = serializer.validated_data['instance']
+            token = serializer.validated_data['token']
+            task_size = serializer.validated_data['task_size']
+            job_size = serializer.validated_data['job_size']
+            gi_msg = gi_task_api.start(gi_instance, token, task_size, job_size)
+
+            slogger.glob.info('Gallery import: starting')
+            return Response({'status': gi_msg}, status=status.HTTP_200_OK)
+        else:
+            slogger.glob.error(str(serializer.errors))
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        # import annotations for existing images
+        # assuming tasks already created.
+        serializer = GIUpdateSerializer(data={
+            'token': request.data['token'],
+            'instance': self.kwargs.get('pk')
+        })
+        if serializer.is_valid():
+            gi_instance = serializer.validated_data['instance']
+            token = serializer.validated_data['token']
+            gi_msg = gi_task_api.update(gi_instance, token)
+
+            slogger.glob.info('Gallery import: updating')
+            return Response({'status': gi_msg}, status=status.HTTP_200_OK)
+        else:
+            slogger.glob.error(str(serializer.errors))
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance=self.kwargs.get('pk')
+        result = gi_task_api.get_job_status(instance)
+        return Response(result)
