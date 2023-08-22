@@ -115,6 +115,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
+            cy.assignJobToUser(0, secondUserName);
             cy.openJob();
             // Getting the task and job id
             cy.url().then((url) => {
@@ -140,6 +141,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
             cy.openTask(taskName);
+            cy.assignJobToUser(0, null);
             cy.assignJobToUser(0, thirdUserName);
             cy.logout();
         });

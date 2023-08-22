@@ -1,4 +1,4 @@
-av==9.2.0 --no-binary=av  # Pinned for the whole CVAT
+av==9.2.0  # Pinned for the whole CVAT
 opencv-python-headless>=4.4.0.42
 Pillow==9.3.0
 tqdm>=4.58.0

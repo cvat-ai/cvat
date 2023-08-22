@@ -6,8 +6,6 @@
 #    pip-compile-multi
 #
 -r base.txt
---no-binary av
-
 astroid==2.11.7
     # via pylint
 autopep8==2.0.2

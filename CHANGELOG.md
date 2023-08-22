@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - More information about task progress on tasks page (<https://github.com/opencv/cvat/pull/5723>)
+- Prefetching next chunk when user navigates by frames manually (<https://github.com/opencv/cvat/pull/6695>)
 
 ### Changed
 
-- TBD
+- Organization now opened immediately after it is created (<https://github.com/opencv/cvat/pull/6705>)
 
 ### Deprecated
 
@@ -25,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Exporting project when its tasks has not data (<https://github.com/opencv/cvat/pull/6658>)
+- Removing job assignee (<https://github.com/opencv/cvat/pull/6712>)
+- Fixed switching from organization to sandbox while getting a resource (<https://github.com/opencv/cvat/pull/6689>)
 
 ### Security
 
