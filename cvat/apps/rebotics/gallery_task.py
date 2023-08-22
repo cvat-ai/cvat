@@ -2,47 +2,57 @@ import os
 import sys
 import random
 import requests
+import json
 from urllib import parse as urlparse, request as urlrequest
 from .serializers import DetectionImageSerializer, DetectionImageListSerializer
-from .models import GalleryImportProgress, GIStatusSuccess, GIStatusFailed, GIInstanceLocal
+from .models import GalleryImportProgress, GIStatusSuccess, GIStatusFailed, GIInstanceLocal, \
+    SHAPE_RECTANGLE, SHAPE_POLYGON, SHAPE_LINE, ALL_UPC
 
 import django_rq
 from rq.job import JobStatus, Job as RqJob
 from django.db import transaction
-from django.utils.timezone import now
 from django.contrib.auth import get_user_model
 
 from cvat.apps.engine import task as task_api
 from cvat.apps.engine.models import Project, Task, Data, Job, RemoteFile, \
-    S3File, Label, LabeledShape, AttributeSpec, LabeledShapeAttributeVal, \
+    Label, LabeledImage, LabeledShape, AttributeSpec, LabeledShapeAttributeVal, \
     ModeChoice, ShapeType, SourceType, AttributeType, StorageMethodChoice, \
     SortingMethod
 from cvat.apps.organizations.models import Organization
-from cvat.apps.engine.views import TaskViewSet
 from cvat.apps.engine.media_extractors import sort
 from cvat.apps.engine.log import slogger
-from cvat.rebotics.s3_client import s3_client
 
 from utils.dataset_manifest import S3ManifestManager
 
 User = get_user_model()
 
-# for incoming data reference see rebotics/example_import.json
+
+def _fix_points(points, width, height):
+    for i in range(0, len(points), 2):
+        x, y = points[i], points[i + 1]
+        if x < 0:
+            x = 0
+        if x > width:
+            x = width
+        if y < 0:
+            y = 0
+        if y > height:
+            y = height
+        points[i] = x
+        points[i + 1] = y
 
 
-def _fix_coordinates(item, width, height):
-    if item['lowerx'] > item['upperx']:
-        item['lowerx'], item['upperx'] = item['upperx'], item['lowerx']
-    if item['lowery'] > item['uppery']:
-        item['lowery'], item['uppery'] = item['uppery'], item['lowery']
-    if item['lowerx'] < 0:
-        item['lowerx'] = 0
-    if item['upperx'] > width:
-        item['upperx'] = width
-    if item['lowery'] < 0:
-        item['lowery'] = 0
-    if item['uppery'] > height:
-        item['uppery'] = height
+def _fix_rect(points, width, height):
+    _fix_points(points, width, height)
+    x1, y1, x2, y2 = points
+    if x1 > x2:
+        x1, x2 = x2, x1
+        points[0] = x1
+        points[2] = x2
+    if y1 > y2:
+        y1, y2 = y2, y1
+        points[1] = y1
+        points[3] = y2
 
 
 def _rand_color():
@@ -65,44 +75,30 @@ def _get_file_name(url):
 
 class ShapesImporter:
     def __init__(self):
+        self.gi_item = None
         self.task = None
         self.labels = {}    # Labels
         self.specs = {}     # AttributeSpecs
         self.shapes = None  # LabeledShapes
         self.vals = None    # AttributeVals
+        self.tags = None    # LabeledImages
         self.jobs = None
-        self.job_n = None
+        self.job = None
         self.files = None
         self.image_data = None
+        self.image_size = None
 
-    def _get_label(self, item: dict) -> Label:
-        if item['label'] in self.labels:
-            label = self.labels[item['label']]
+    def _get_label(self, name: str) -> Label:
+        if name in self.labels:
+            label = self.labels[name]
         else:
             label, _ = Label.objects.get_or_create(
                 project_id=self.task.project_id,
-                name=item['label'],
+                name=name,
                 defaults={'color': _rand_color()}
             )
-            self.labels[item['label']] = label
-
+            self.labels[name] = label
         return label
-
-    # TODO: remove this, once fix for
-    #  https://retech.atlassian.net/browse/REB3-11338
-    #  is deployed.
-    def _filter_price_tags(self, items: list) -> list:
-        filtered = {}
-        for item in items:
-            box = (item['lowerx'], item['lowery'], item['upperx'], item['uppery'])
-            if any(value is None for value in box):
-                slogger.glob.warning(f'Phantom price tag skipped.')
-                continue
-            if box in filtered:
-                slogger.glob.warning(f'Duplicate price tag skipped.')
-                continue
-            filtered[box] = item
-        return list(filtered.values())
 
     def _get_spec(self, label: Label, text: str) -> AttributeSpec:
         if label.name in self.specs:
@@ -123,96 +119,99 @@ class ShapesImporter:
 
         return spec
 
-    def _import_item(self, item: dict, frame: int, group: int, image_size: tuple) -> None:
-        _fix_coordinates(item, *image_size)
-        label = self._get_label(item)
+    def _import_annotation(self, item: dict) -> None:
+        label = self._get_label(item['detection_class']['title'])
+        slogger.glob.info(item)
+        if item['type'] == SHAPE_RECTANGLE:
+            shape = ShapeType.RECTANGLE
+            points = [item['lowerx'], item['lowery'], item['upperx'], item['uppery']]
+            _fix_rect(points, *self.image_size)
+        elif item['type'] == SHAPE_POLYGON:
+            shape = ShapeType.POLYGON
+            points = [float(i) for i in item['points'].replace(',', '').split()]
+            _fix_points(points, *self.image_size)
+        elif item['type'] == SHAPE_LINE:
+            shape = ShapeType.POLYLINE
+            points = [item['lowerx'], item['lowery'], item['upperx'], item['uppery']]
+            _fix_points(points, *self.image_size)
+        else:
+            slogger.glob(f'Unknown annotation type: {item["type"]}')
+            return
 
-        # annotation shape
         self.shapes.append(LabeledShape(
-            job=self.jobs[self.job_n],
+            job=self.job,
             label=label,
-            frame=frame,
-            group=group,
-            type=ShapeType.RECTANGLE,
+            frame=self.gi_item.frame,
+            group=0,
+            type=shape,
             source=SourceType.AUTO,
-            points=[item['lowerx'], item['lowery'], item['upperx'], item['uppery']],
+            points=points,
         ))
 
-        # related upc text
-        upc = item.get('upc', None)
-        if upc:
-            spec = self._get_spec(label, 'UPC')
-            self.vals.append(LabeledShapeAttributeVal(
-                shape_id=0,
-                spec=spec,
-                value=upc,
-            ))
-        else:
-            self.vals.append(None)
+        val = None
+        if item['detection_class']['title'] == ALL_UPC:
+            upc = item['detection_class']['code']
+            if upc:
+                spec = self._get_spec(label, 'UPC')
+                val = LabeledShapeAttributeVal(
+                    shape_id=0,
+                    spec=spec,
+                    value=upc,
+                )
+        self.vals.append(val)
 
-    def _import_price_tag(self, item: dict, frame: int, group: int, image_size: tuple) -> None:
-        if any(item[key] is None for key in ('lowerx', 'upperx', 'lowery', 'uppery')):
-            slogger.glob.warning(f'Phantom price tag skipped.')
-        else:
-            self._import_item(item, frame, group, image_size)
+    def _import_tag(self, item: dict) -> None:
+        label = self._get_label(item['name'])
+        self.tags.append(LabeledImage(
+            job=self.job,
+            label=label,
+            frame=self.gi_item.frame,
+            group=0,
+            source=SourceType.AUTO,
+        ))
 
     def _save(self) -> None:
+        LabeledImage.objects.bulk_create(self.tags)
         LabeledShape.objects.bulk_create(self.shapes)
         save_vals = []
         for i, shape in enumerate(self.shapes):
-            if self.vals[i] is not None:
-                self.vals[i].shape_id = shape.pk
-                save_vals.append(self.vals[i])
+            val = self.vals[i]
+            if val is not None:
+                val.shape_id = shape.pk
+                save_vals.append(val)
         LabeledShapeAttributeVal.objects.bulk_create(save_vals)
 
-    def _get_image_data(self) -> dict:
+    def _set_image_data(self) -> None:
         manifest_manager = S3ManifestManager(self.task.data.get_s3_manifest_path())
         manifest_manager.init_index()
-        return {f'{props["name"]}{props["extension"]}': (props['width'], props['height'])
-                      for _, props in manifest_manager}
+        self.image_data = {f'{props["name"]}{props["extension"]}': (props['width'], props['height'])
+                           for _, props in manifest_manager}
 
-    def _get_image_size(self, file: S3File) -> tuple:
-        return self.image_data.get(file.meta['name'], (sys.maxsize, sys.maxsize))
-
-    def _next_job(self, frame: int) -> None:
-        if frame > self.jobs[self.job_n].segment.stop_frame:
-            self.job_n += 1
-
-    @property
-    def _sorted_files(self):
-        return sort(
-            self.files,
-            sorting_method=SortingMethod.LEXICOGRAPHICAL,
-            func=lambda f: f.meta['name'],
-        )
+    def _set_image_size(self) -> None:
+        self.image_size = self.image_data.get(self.gi_item.name, (sys.maxsize, sys.maxsize))
 
     def _reset(self) -> None:
-        self.files = self.task.data.s3_files.all()
-        self.image_data = self._get_image_data()
-        self.jobs = Job.objects.filter(segment__task=self.task).select_related('segment')
-        self.job_n = 0
+        if self.task is None or self.task.pk != self.gi_item.task_id:
+            self.task = self.gi_item.task
+            self.jobs = Job.objects.filter(segment__task=self.task).select_related('segment')
+            self._set_image_data()
         self.shapes = []
         self.vals = []
+        self.tags = []
+        self.job = self.jobs[self.gi_item.frame // self.task.segment_size]
+        self._set_image_size()
 
-    def _clean_meta(self) -> None:
-        for file in self.files:
-            file.meta.pop('items')
-            file.meta.pop('price_tags')
-        S3File.objects.bulk_update(self.files, fields=('meta',))
-
-    def perform_import(self, gi_item: GalleryImportProgress, data) -> None:
+    def perform_import(self, gi_item: GalleryImportProgress, data: dict) -> None:
+        self.gi_item = gi_item
         self._reset()
 
-        for frame, file in enumerate(self._sorted_files):
-            image_size = self._get_image_size(file)
-            self._next_job(frame)
-            for item in file.meta['items']:
-                self._import_item(item, frame, 0, image_size)
-            for item in self._filter_price_tags(file.meta['price_tags']):
-                self._import_price_tag(item, frame, 1, image_size)
+        for item in data['annotations']:
+            self._import_annotation(item)
+
+        for item in data['tags']:
+            self._import_tag(item)
 
         self._save()
-        self._clean_meta()
 
 
 def _preload_images(gi_instance, token):
@@ -374,7 +373,7 @@ def _import_annotations(gi_instance, token, gi_item, importer):
     request = requests.get(url, headers=headers)
     data = request.json()
 
-    serializer = DetectionImageSerializer(data=data, many=True)
+    serializer = DetectionImageSerializer(data=data)
     serializer.is_valid(raise_exception=True)
 
     importer.perform_import(gi_item, data)
@@ -500,4 +499,3 @@ def _delete_task(task_id):
         task.data.delete()
     except Task.DoesNotExist:
         pass
-

@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from cvat.apps.organizations.models import Organization
 from cvat.apps.engine.serializers import RqStatusSerializer
 
-from cvat.apps.rebotics.models import GIInstanceChoices
+from cvat.apps.rebotics.models import GIInstanceChoices, SHAPE_CHOICES
 
 
 class _BaseImportSerializer(serializers.Serializer):
@@ -89,8 +89,30 @@ class GIUpdateSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=40)
 
 
+class _DetectionClassSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=256)
+    code = serializers.CharField(max_length=256)
+
+
+class _DetectionAnnotationSerializer(serializers.Serializer):
+    lowerx = serializers.FloatField()
+    lowery = serializers.FloatField()
+    upperx = serializers.FloatField()
+    uppery = serializers.FloatField()
+    type = serializers.ChoiceField(choices=SHAPE_CHOICES)
+    points = serializers.CharField(max_length=2000, allow_null=True)
+    detection_class = _DetectionClassSerializer()
+
+
+class _DetectionTagSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=256)
+
+
 class DetectionImageSerializer(serializers.Serializer):
-    pass
+    id = serializers.IntegerField()
+    image = serializers.CharField(max_length=2500)
+    annotations = _DetectionAnnotationSerializer(many=True)
+    tags = _DetectionTagSerializer(many=True)
 
 
 class DetectionImageListSerializer(serializers.Serializer):

@@ -1,22 +1,18 @@
 from django.db import models
 from cvat.apps.engine.models import Task, S3File
 
-
 GIStatusSuccess = 'SUCCESS'
 GIStatusFailed = 'FAILED'
-
 
 GIStatusChoices = (
     (GIStatusSuccess, 'Success'),
     (GIStatusFailed, 'Failed'),
 )
 
-
 GIInstanceR3dev = 'r3dev'
 GIInstanceR3us = 'r3us'
 GIInstanceR3cn = 'r3cn'
 GIInstanceLocal = 'local'
-
 
 GIInstanceChoices = (
     (GIInstanceR3dev, 'r3dev'),
@@ -24,6 +20,18 @@ GIInstanceChoices = (
     (GIInstanceR3cn, 'r3cn'),
     (GIInstanceLocal, 'local')
 )
+
+SHAPE_RECTANGLE = 'RECTANGLE'
+SHAPE_POLYGON = 'POLYGON'
+SHAPE_LINE = 'LINE'
+
+SHAPE_CHOICES = (
+    (SHAPE_RECTANGLE, 'rectangle'),
+    (SHAPE_POLYGON, 'polygon'),
+    (SHAPE_LINE, 'line')
+)
+
+ALL_UPC = 'All UPC'
 
 
 class GalleryImportProgress(models.Model):

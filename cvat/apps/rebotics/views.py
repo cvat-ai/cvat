@@ -96,7 +96,10 @@ class GalleryImportViewset(GenericViewSet):
     def update(self, request, *args, **kwargs):
         # import annotations for existing images
         # assuming tasks already created.
-        serializer = GIUpdateSerializer(data=request.data)
+        serializer = GIUpdateSerializer(data={
+            'token': request.data['token'],
+            'instance': self.kwargs.get('pk')
+        })
         if serializer.is_valid():
             gi_instance = serializer.validated_data['instance']
             token = serializer.validated_data['token']
