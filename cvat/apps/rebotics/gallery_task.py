@@ -267,7 +267,7 @@ def _get_user():
 
 
 def _get_organization():
-    default_organization_name = 'RetechLabs'
+    default_organization_name = 'GalleryImport'
     return Organization.objects.get(slug=default_organization_name)
 
 
