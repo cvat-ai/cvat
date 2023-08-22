@@ -32,7 +32,7 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
                 idWrapper.id = interception.response.body.id;
             });
     });
-
+    cy.get('.cvat-organization-page').should('exist').and('be.visible');
     return cy.wrap(idWrapper);
 });
 
