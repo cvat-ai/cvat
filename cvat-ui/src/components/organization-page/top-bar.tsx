@@ -391,7 +391,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 ))}
                                 <Form.Item>
                                     <Button className='cvat-invite-more-org-members-button' icon={<PlusCircleOutlined />} onClick={() => add()}>
-                                        Add line
+                                        Invite more
                                     </Button>
                                 </Form.Item>
                             </>
