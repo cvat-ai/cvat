@@ -6,7 +6,7 @@
 import _ from 'lodash';
 import {
     ChunkType, DimensionType, JobStage,
-    JobState, JobType, StorageLocation, TaskMode, TaskStatus,
+    JobState, JobType, RQStatus, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
 
@@ -1126,6 +1126,13 @@ export class Task extends Session {
 
     async save(onUpdate = () => {}): Promise<Task> {
         const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, onUpdate);
+        return result;
+    }
+
+    async listenToCreate(
+        onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {},
+    ): Promise<Task> {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.listenToCreate, onUpdate);
         return result;
     }
 

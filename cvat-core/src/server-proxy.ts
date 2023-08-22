@@ -18,7 +18,7 @@ import {
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
 import { Storage } from './storage';
-import { StorageLocation, WebhookSourceType } from './enums';
+import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
@@ -111,13 +111,12 @@ function fetchAll(url, filter = {}): Promise<any> {
     });
 }
 
-async function chunkUpload(file: File, uploadConfig) {
+async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: number; filename: string }> {
     const params = enableOrganization();
     const {
-        endpoint, chunkSize, totalSize, onUpdate, metadata,
+        endpoint, chunkSize, totalSize, onUpdate, metadata, totalSentSize,
     } = uploadConfig;
-    const { totalSentSize } = uploadConfig;
-    const uploadResult = { totalSentSize };
+    const uploadResult = { uploadSentSize: 0, filename: file.name };
     return new Promise((resolve, reject) => {
         const upload = new tus.Upload(file, {
             endpoint,
@@ -152,8 +151,10 @@ async function chunkUpload(file: File, uploadConfig) {
                 if (uploadFilename) uploadResult.filename = uploadFilename;
             },
             onSuccess() {
-                if (totalSentSize) uploadResult.totalSentSize += file.size;
-                resolve(uploadResult);
+                resolve({
+                    ...uploadResult,
+                    uploadSentSize: file.size,
+                });
             },
         });
         upload.start();
@@ -646,6 +647,7 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
             Object.defineProperty(results, 'count', {
                 value: 1,
             });
+
             return results as SerializedTask[] & { count: number };
         }
 
@@ -844,7 +846,7 @@ async function importDataset(
                     params,
                     headers: { 'Upload-Start': true },
                 });
-            await chunkUpload(file, uploadConfig);
+            await chunkUpload(file as File, uploadConfig);
             const response = await Axios.post(url,
                 new FormData(), {
                     params,
@@ -950,7 +952,7 @@ async function restoreTask(storage: Storage, file: File | string) {
                 params,
                 headers: { 'Upload-Start': true },
             });
-        const { filename } = await chunkUpload(file, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         response = await Axios.post(url,
             new FormData(), {
                 params: { ...params, filename },
@@ -1057,7 +1059,7 @@ async function restoreProject(storage: Storage, file: File | string) {
                 params,
                 headers: { 'Upload-Start': true },
             });
-        const { filename } = await chunkUpload(file, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         response = await Axios.post(url,
             new FormData(), {
                 params: { ...params, filename },
@@ -1067,48 +1069,90 @@ async function restoreProject(storage: Storage, file: File | string) {
     return wait();
 }
 
-async function createTask(taskSpec, taskDataSpec, onUpdate) {
+const listenToCreateCallbacks: Record<number, {
+    promise: Promise<SerializedTask>;
+    onUpdate: ((state: string, progress: number, message: string) => void)[];
+}> = {};
+
+function listenToCreateTask(
+    id, onUpdate: (state: RQStatus, progress: number, message: string) => void,
+): Promise<SerializedTask> {
+    if (id in listenToCreateCallbacks) {
+        listenToCreateCallbacks[id].onUpdate.push(onUpdate);
+        // to avoid extra status check requests we do not create any more promises
+        return listenToCreateCallbacks[id].promise;
+    }
+
+    const promise = new Promise<SerializedTask>((resolve, reject) => {
+        const { backendAPI } = config;
+        const params = enableOrganization();
+        async function checkStatus(): Promise<void> {
+            try {
+                const response = await Axios.get(`${backendAPI}/tasks/${id}/status`, { params });
+                const state = response.data.state?.toLowerCase();
+                if ([RQStatus.QUEUED, RQStatus.STARTED].includes(state)) {
+                    // notify all the subscribtions when data status changed
+                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                        callback(
+                            state,
+                            response.data.progress || 0,
+                            state === RQStatus.QUEUED ?
+                                'CVAT queued the task to import' : response.data.message,
+                        );
+                    });
+
+                    setTimeout(checkStatus, state === RQStatus.QUEUED ? 20000 : 5000);
+                } else if (state === RQStatus.FINISHED) {
+                    const [createdTask] = await getTasks({ id, ...params });
+                    resolve(createdTask);
+                } else if (state === RQStatus.FAILED) {
+                    const failMessage = 'Data processing failed';
+                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                        callback(state, 0, failMessage);
+                    });
+                    const message = `Could not create task. ${failMessage}. ${response.data.message}`;
+                    reject(new ServerError(message, 400));
+                } else {
+                    const failMessage = 'Unknown status received';
+                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                        callback(state || RQStatus.UNKNOWN, 0, failMessage);
+                    });
+                    reject(
+                        new ServerError(
+                            `Could not create task. ${failMessage}: ${state}`,
+                            500,
+                        ),
+                    );
+                }
+            } catch (errorData) {
+                listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                    callback('failed', 0, 'Server request failed');
+                });
+                reject(generateError(errorData));
+            }
+        }
+
+        setTimeout(checkStatus, 100);
+    });
+
+    listenToCreateCallbacks[id] = {
+        promise,
+        onUpdate: [onUpdate],
+    };
+    promise.catch(() => {
+        // do nothing, avoid uncaught promise exceptions
+    }).finally(() => delete listenToCreateCallbacks[id]);
+    return promise;
+}
+
+async function createTask(
+    taskSpec: Partial<SerializedTask>,
+    taskDataSpec: any,
+    onUpdate: (state: RQStatus, progress: number, message: string) => void,
+): Promise<SerializedTask> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
     const params = enableOrganization();
-
-    async function wait(id) {
-        return new Promise((resolve, reject) => {
-            async function checkStatus() {
-                try {
-                    const response = await Axios.get(`${backendAPI}/tasks/${id}/status`, { params });
-                    if (['Queued', 'Started'].includes(response.data.state)) {
-                        if (response.data.message !== '') {
-                            onUpdate(response.data.message, response.data.progress || 0);
-                        }
-                        setTimeout(checkStatus, 1000);
-                    } else if (response.data.state === 'Finished') {
-                        resolve();
-                    } else if (response.data.state === 'Failed') {
-                        // If request has been successful, but task hasn't been created
-                        // Then passed data is wrong and we can pass code 400
-                        const message = `
-                            Could not create the task on the server. ${response.data.message}.
-                        `;
-                        reject(new ServerError(message, 400));
-                    } else {
-                        // If server has another status, it is unexpected
-                        // Therefore it is server error and we can pass code 500
-                        reject(
-                            new ServerError(
-                                `Unknown task state has been received: ${response.data.state}`,
-                                500,
-                            ),
-                        );
-                    }
-                } catch (errorData) {
-                    reject(generateError(errorData));
-                }
-            }
-
-            setTimeout(checkStatus, 1000);
-        });
-    }
 
     const chunkSize = config.uploadChunkSize * 1024 * 1024;
     const clientFiles = taskDataSpec.client_files;
@@ -1139,7 +1183,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
 
     let response = null;
 
-    onUpdate('The task is being created on the server..', null);
+    onUpdate(RQStatus.UNKNOWN, 0, 'CVAT is creating your task');
     try {
         response = await Axios.post(`${backendAPI}/tasks`, taskSpec, {
             params,
@@ -1148,7 +1192,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
         throw generateError(errorData);
     }
 
-    onUpdate('The data are being uploaded to the server..', null);
+    onUpdate(RQStatus.UNKNOWN, 0, 'CVAT is uploading task data to the server');
 
     async function bulkUpload(taskId, files) {
         const fileBulks = files.reduce((fileGroups, file) => {
@@ -1168,7 +1212,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
                 taskData.append(`client_files[${idx}]`, element);
             }
             const percentage = totalSentSize / totalSize;
-            onUpdate('The data are being uploaded to the server', percentage);
+            onUpdate(RQStatus.UNKNOWN, percentage, 'CVAT is uploading task data to the server');
             await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
                 ...params,
                 headers: { 'Upload-Multiple': true },
@@ -1190,14 +1234,15 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
         const uploadConfig = {
             endpoint: `${origin}${backendAPI}/tasks/${response.data.id}/data/`,
             onUpdate: (percentage) => {
-                onUpdate('The data are being uploaded to the server', percentage);
+                onUpdate(RQStatus.UNKNOWN, percentage, 'CVAT is uploading task data to the server');
             },
             chunkSize,
             totalSize,
             totalSentSize,
         };
         for (const file of chunkFiles) {
-            uploadConfig.totalSentSize += await chunkUpload(file, uploadConfig);
+            const { uploadSentSize } = await chunkUpload(file, uploadConfig);
+            uploadConfig.totalSentSize += uploadSentSize;
         }
         if (bulkFiles.length > 0) {
             await bulkUpload(response.data.id, bulkFiles);
@@ -1217,15 +1262,12 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
     }
 
     try {
-        await wait(response.data.id);
+        const createdTask = await listenToCreateTask(response.data.id, onUpdate);
+        return createdTask;
     } catch (createException) {
         await deleteTask(response.data.id, params.org || null);
         throw createException;
     }
-
-    // to be able to get the task after it was created, pass frozen params
-    const createdTask = await getTasks({ id: response.data.id, ...params });
-    return createdTask[0];
 }
 
 async function getJobs(
@@ -1689,7 +1731,7 @@ async function uploadAnnotations(
                     params,
                     headers: { 'Upload-Start': true },
                 });
-            await chunkUpload(file, uploadConfig);
+            await chunkUpload(file as File, uploadConfig);
             const response = await Axios.post(url,
                 new FormData(), {
                     params,
@@ -2357,6 +2399,7 @@ export default Object.freeze({
         get: getTasks,
         save: saveTask,
         create: createTask,
+        listenToCreate: listenToCreateTask,
         delete: deleteTask,
         exportDataset: exportDataset('tasks'),
         getPreview: getPreview('tasks'),

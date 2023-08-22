@@ -21,7 +21,7 @@ import QualitySettings from 'cvat-core/src/quality-settings';
 import { FramesMetaData } from 'cvat-core/src/frames';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
-    JobStage, JobState,
+    JobStage, JobState, RQStatus,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -73,6 +73,7 @@ export {
     JobType,
     JobStage,
     JobState,
+    RQStatus,
     QualityReport,
     QualityConflict,
     QualitySettings,

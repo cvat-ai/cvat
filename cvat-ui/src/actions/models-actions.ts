@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import { ActiveInference, ModelsQuery } from 'reducers';
 import {
-    ActiveInference, RQStatus, ModelsQuery,
-} from 'reducers';
-import { getCore, MLModel, ModelProvider } from 'cvat-core-wrapper';
+    getCore, MLModel, ModelProvider, RQStatus,
+} from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
@@ -165,7 +165,7 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
     const { taskID, requestID, functionID } = inferenceMeta;
     core.lambda
         .listen(requestID, functionID, (status: RQStatus, progress: number, message: string) => {
-            if (status === RQStatus.failed || status === RQStatus.unknown) {
+            if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
                 dispatch(
                     modelsActions.getInferenceStatusFailed(
                         taskID,
