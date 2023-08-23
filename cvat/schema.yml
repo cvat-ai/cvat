@@ -2774,6 +2774,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/FunctionCall'
           description: ''
+    delete:
+      operationId: lambda_delete_requests
+      summary: Method cancels the request
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        description: Request id
+        required: true
+      tags:
+      - lambda
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/memberships:
     get:
       operationId: memberships_list
