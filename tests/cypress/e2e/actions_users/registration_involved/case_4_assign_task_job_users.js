@@ -130,6 +130,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
             cy.assignJobToUser(0, null);
+            // test comment
             cy.logout();
         });
 
