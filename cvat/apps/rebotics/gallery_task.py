@@ -235,27 +235,34 @@ def _get_data(gi_instance, token, gi_id=None):
 
 
 def _preload_images(gi_instance, token):
-    gi_data = GalleryImportProgress.objects.filter(instance=gi_instance)
+    slogger.glob.info('Preloading list of images.')
+
+    data = _get_data(gi_instance, token)
+    serializer = DetectionImageListSerializer(data=data, many=True)
+    serializer.is_valid(raise_exception=True)
+    data = sorted(serializer.validated_data, key=lambda i: i['id'])
+
+    gi_data = GalleryImportProgress.objects.filter(instance=gi_instance).order_by('gi_id')
     if gi_data.exists():
-        slogger.glob.info('Images already exist.')
-        gi_data = gi_data.filter(task_id__isnull=True)
+        for i in range(len(data)):
+            if gi_data[i].gi_id == data[i].id:
+                gi_data[i].url = data[i]['image']
+            else:
+                raise ValueError('Ids do not match!')
+
+        GalleryImportProgress.objects.bulk_update(gi_data, ('url', ))
     else:
-        slogger.glob.info('Preloading list of images.')
-
-        data = _get_data(gi_instance, token)
-
-        serializer = DetectionImageListSerializer(data=data, many=True)
-        serializer.is_valid(raise_exception=True)
-
-        gi_data = GalleryImportProgress.objects.bulk_create([
+        GalleryImportProgress.objects.bulk_create([
             GalleryImportProgress(
                 instance=gi_instance,
                 gi_id=item['id'],
                 url=item['image'],
                 name=_get_file_name(item['image']),
             )
-            for item in serializer.validated_data
+            for item in data
         ])
+
+    gi_data = GalleryImportProgress.objects.filter(instance=gi_instance, task_id__isnull=True)
     return sort(gi_data, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=lambda i: i.name)
 
 
