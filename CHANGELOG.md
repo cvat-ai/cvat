@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- TBD
+- Remote Code Execution (RCE) [SNYK-PYTHON-GITPYTHON-5840584](https://snyk.io/vuln/SNYK-PYTHON-GITPYTHON-5840584)
 
 ## \[2.6.0\] - 2023-08-11
 
