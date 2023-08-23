@@ -924,7 +924,7 @@ class FunctionViewSet(viewsets.ViewSet):
             '200': FunctionCallSerializer
         }
     ),
-    delete=extend_schema(
+    destroy=extend_schema(
         operation_id='lambda_delete_requests',
         summary='Method cancels the request',
         parameters=[
