@@ -32,6 +32,7 @@ SHAPE_CHOICES = (
 )
 
 ALL_UPC = 'All UPC'
+PRICE_TAG_OCR = 'Price tag OCR'
 
 
 class GalleryImportProgress(models.Model):

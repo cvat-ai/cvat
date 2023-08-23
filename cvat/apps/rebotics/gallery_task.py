@@ -6,7 +6,7 @@ from urllib import parse as urlparse, request as urlrequest
 from .serializers import DetectionImageSerializer, DetectionImageListSerializer
 from .models import GalleryImportProgress, GIStatusSuccess, GIStatusFailed, \
     GIInstanceLocal, GIInstanceR3cn, SHAPE_RECTANGLE, SHAPE_POLYGON, SHAPE_LINE, \
-    ALL_UPC
+    ALL_UPC, PRICE_TAG_OCR
 
 import django_rq
 from rq.job import JobStatus, Job as RqJob
@@ -100,22 +100,22 @@ class ShapesImporter:
             self.labels[name] = label
         return label
 
-    def _get_spec(self, label: Label, text: str) -> AttributeSpec:
+    def _get_spec(self, label: Label, name: str) -> AttributeSpec:
         if label.name in self.specs:
             specs = self.specs[label.name]
         else:
             specs = {}
             self.specs[label.name] = specs
 
-        if text in specs:
-            spec = specs[text]
+        if name in specs:
+            spec = specs[name]
         else:
             spec, _ = AttributeSpec.objects.get_or_create(
                 label=label,
-                name=text,
+                name=name,
                 defaults={'mutable': True, 'input_type': AttributeType.TEXT}
             )
-            specs[text] = spec
+            specs[name] = spec
 
         return spec
 
@@ -148,14 +148,16 @@ class ShapesImporter:
         ))
 
         val = None
-        if item['detection_class']['title'] == ALL_UPC:
-            upc = item['detection_class']['code']
-            if upc:
-                spec = self._get_spec(label, 'UPC')
+        title = item['detection_class']['title']
+        if title in [ALL_UPC, PRICE_TAG_OCR]:
+            code = item['detection_class']['code']
+            if code:
+                spec_name = 'UPC' if title == ALL_UPC else 'OCR'
+                spec = self._get_spec(label, spec_name)
                 val = LabeledShapeAttributeVal(
                     shape_id=0,
                     spec=spec,
-                    value=upc,
+                    value=code,
                 )
         self.vals.append(val)
 
