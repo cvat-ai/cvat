@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic annotation progress bar is invisible if the app initialized on the task page
  (<https://github.com/opencv/cvat/pull/6734>)
 - Extra status check requests for automatic annotation (<https://github.com/opencv/cvat/pull/6734>)
+- \[SDK\]: `FileExistsError` exception raised on Windows when a dataset is loaded from cache
+  (<https://github.com/opencv/cvat/pull/6722>)
 
 ### Security
 
