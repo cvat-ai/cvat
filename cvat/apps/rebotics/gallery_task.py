@@ -498,3 +498,12 @@ def get_job_status(instance):
             'exc_info': update_exc,
         },
     }
+
+
+def reset(instance):
+    GalleryImportProgress.objects.filter(instance=instance).update(
+        status=GIStatusFailed,
+        task_id=None
+    )
+
+    return 'ok'

@@ -111,6 +111,12 @@ class GalleryImportViewset(GenericViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, *args, **kwargs):
-        instance=self.kwargs.get('pk')
+        instance = self.kwargs.get('pk')
         result = gi_task_api.get_job_status(instance)
         return Response(result)
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.kwargs.get('pk')
+        slogger.glob.info(f'Resetting import progress for {instance}')
+        gi_msg = gi_task_api.reset(instance)
+        return Response({'status': gi_msg}, status=status.HTTP_200_OK)
