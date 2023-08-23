@@ -410,7 +410,7 @@ def _update(gi_instance, token):
         _import_annotations(item, serializer.validated_data, importer)
 
 
-def update(instance, token):
+def update(instance, token, force=False):
     slogger.glob.info(f'Starting annotations import from {instance}-imggal.')
 
     job_id = f'gi_{instance}_start'
@@ -424,22 +424,25 @@ def update(instance, token):
         q = django_rq.get_queue('default')
         job: RqJob = q.fetch_job(job_id)
 
-        if job is None or job.is_finished or job.is_failed:
-            q.enqueue_call(
-                _update,
-                args=(instance, token),
-                job_id=job_id,
-            )
-            return "ok"
-        else:
-            slogger.glob.info('Update is already in progress.')
-            return "update is in progress"
+        if not(job is None or job.is_finished or job.is_failed):
+            if force:
+                job.delete()
+            else:
+                slogger.glob.info('Update is already in progress.')
+                return "update is in progress"
+
+        q.enqueue_call(
+            _update,
+            args=(instance, token),
+            job_id=job_id,
+        )
+        return "ok"
     else:
         slogger.glob.info('Import is already in progress.')
         return "import is in progress"
 
 
-def start(instance, token, task_size, job_size):
+def start(instance, token, task_size, job_size, force=False):
     slogger.glob.info(f'Starting import from {instance}-imggal.')
 
     job_id = f'gi_{instance}_start'
@@ -447,16 +450,19 @@ def start(instance, token, task_size, job_size):
     q = django_rq.get_queue('default')
     job: RqJob = q.fetch_job(job_id)
 
-    if job is None or job.is_finished or job.is_failed:
-        q.enqueue_call(
-            _start,
-            args=(instance, token, task_size, job_size),
-            job_id=job_id,
-        )
-        return "ok"
-    else:
-        slogger.glob.info('Import is already in progress.')
-        return "import is in progress"
+    if not(job is None or job.is_finished or job.is_failed):
+        if force:
+            job.delete()
+        else:
+            slogger.glob.info('Import is already in progress.')
+            return "import is in progress"
+
+    q.enqueue_call(
+        _start,
+        args=(instance, token, task_size, job_size),
+        job_id=job_id,
+    )
+    return "ok"
 
 
 def get_job_status(instance):

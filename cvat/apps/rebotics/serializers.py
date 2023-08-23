@@ -81,11 +81,13 @@ class GIStartSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=40)
     task_size = serializers.IntegerField(default=100)
     job_size = serializers.IntegerField(default=20)
+    force = serializers.BooleanField(default=False)
 
 
 class GIUpdateSerializer(serializers.Serializer):
     instance = serializers.ChoiceField(choices=GIInstanceChoices)
     token = serializers.CharField(max_length=40)
+    force = serializers.BooleanField(default=False)
 
 
 class _DetectionClassSerializer(serializers.Serializer):
