@@ -951,8 +951,7 @@ class ProjectData(InstanceLabelData):
         self._db_tasks: OrderedDict[int, Task] = OrderedDict(
             (
                 (db_task.id, db_task)
-                for db_task in self._db_project.tasks.order_by("subset","id").all()
-                if db_task.data is not None
+                for db_task in self._db_project.tasks.exclude(data=None).order_by("subset","id").all()
             )
         )
 
