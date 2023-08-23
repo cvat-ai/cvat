@@ -118,5 +118,5 @@ class GalleryImportViewset(GenericViewSet):
     def delete(self, request, *args, **kwargs):
         instance = self.kwargs.get('pk')
         slogger.glob.info(f'Resetting import progress for {instance}')
-        gi_msg = gi_task_api.reset(instance)
+        gi_msg = gi_task_api.delete(instance)
         return Response({'status': gi_msg}, status=status.HTTP_200_OK)

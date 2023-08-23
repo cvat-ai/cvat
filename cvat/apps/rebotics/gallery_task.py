@@ -500,10 +500,7 @@ def get_job_status(instance):
     }
 
 
-def reset(instance):
-    GalleryImportProgress.objects.filter(instance=instance).update(
-        status=GIStatusFailed,
-        task_id=None
-    )
+def delete(instance):
+    GalleryImportProgress.objects.filter(instance=instance).delete()
 
     return 'ok'
