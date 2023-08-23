@@ -13,10 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Increased default guide assets limitations (30 assets, up to 10Mb each)
-  (<https://github.com/opencv/cvat/pull/6575>)
-- \[SDK\] Custom `ProgressReporter` implementations should now override `start2` instead of `start`
-  (<https://github.com/opencv/cvat/pull/6556>)
 - Bumped nuclio version to 1.11.24 and removed `/tmp` mounting in the nuclio container to adhere the update.
 - Response code for empty cloud storage preview 204 -> 404 (<https://github.com/opencv/cvat/pull/6727>)
 - Organization now opened immediately after it is created (<https://github.com/opencv/cvat/pull/6705>)
@@ -62,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Raised the default guide assets limitations to 30 assets,
   with a maximum size of 10MB each
-  (<https://github.com/opencv/cvat/pull/6575>)
+  (<>)
 - \[SDK\] Custom `ProgressReporter` implementations should now override `start2` instead of `start`
   The old implementation is still supported.
   (<https://github.com/opencv/cvat/pull/6556>)
