@@ -127,7 +127,11 @@ class ShapesImporter:
             _fix_rect(points, *self.image_size)
         elif item['type'] == SHAPE_POLYGON:
             shape = ShapeType.POLYGON
-            points = [float(i) for i in item['points'].replace(',', '').split()]
+            try:
+                points = [float(i) for i in item['points'].replace(',', ' ').split()]
+            except ValueError:
+                slogger.glob.error(f'Invalid polygon points: {item["points"]}')
+                return
             _fix_points(points, *self.image_size)
         elif item['type'] == SHAPE_LINE:
             shape = ShapeType.POLYLINE
