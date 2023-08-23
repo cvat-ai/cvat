@@ -339,7 +339,7 @@ def _create_task(project, gi_data, gi_instance, frame, size, segment_size):
         'storage_method': db_data.storage_method,
         'storage': db_data.storage,
         'sorting_method': db_data.sorting_method,
-    })
+    }, rename_files=True)
 
     for i, item in enumerate(data):
         item.task = task

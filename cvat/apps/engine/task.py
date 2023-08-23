@@ -302,15 +302,29 @@ def fix_filename(filename, file_path, db_file):
     return f'{name}{ext}'
 
 
-def _download_data(db_data: models.Data, upload_dir):
+def _check_filename_collisions(name, files, rename_files):
+    if name in files:
+        if rename_files:
+            name, ext = os.path.splitext(name)
+            i = 1
+            new_name = f'{name}_{i}{ext}'
+            while new_name in files:
+                i += 1
+                new_name = f'{name}_{i}{ext}'
+            name = new_name
+        else:
+            raise Exception("filename collision: {}".format(name))
+    return name
+
+
+def _download_data(db_data: models.Data, upload_dir, rename_files=False):
     job = rq.get_current_job()
     local_files = {}
     remote_files = db_data.remote_files.all()
     for file in remote_files:
         url = file.file
         name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
-        if name in local_files:
-            raise Exception("filename collision: {}".format(name))
+        name = _check_filename_collisions(name, local_files, rename_files)
         _validate_url(url)
         slogger.glob.info("Downloading: {}".format(url))
         job.meta['status'] = '{} is being downloaded..'.format(url)
@@ -336,7 +350,7 @@ def _download_data(db_data: models.Data, upload_dir):
     return list(local_files.values())
 
 
-def _download_s3_files(db_data: models.Data, upload_dir):
+def _download_s3_files(db_data: models.Data, upload_dir, rename_files=False):
     job = rq.get_current_job()
     local_files = {}
     s3_files = db_data.s3_files.all()
@@ -344,9 +358,7 @@ def _download_s3_files(db_data: models.Data, upload_dir):
     for file in s3_files:
         url = file.file.url
         name = os.path.basename(file.file.name)
-
-        if name in local_files:
-            raise Exception("filename collision: {}".format(name))
+        name = _check_filename_collisions(name, local_files, rename_files)
         _validate_url(url)
         slogger.glob.info("Downloading from s3: {}".format(name))
         job.meta['status'] = 'S3 {} is  being downloaded...'.format(url)
@@ -462,7 +474,7 @@ def _move_data_to_s3(db_task: models.Task, db_data: models.Data):
 
 
 @transaction.atomic
-def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
+def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False, rename_files=False):
     if isinstance(db_task, int):
         db_task = models.Task.objects.select_for_update().get(pk=db_task)
 
@@ -474,9 +486,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
     if data['remote_files'] and not isDatasetImport:
-        data['remote_files'] = _download_data(db_data, upload_dir)
+        data['remote_files'] = _download_data(db_data, upload_dir, rename_files=rename_files)
 
-    s3_files = _download_s3_files(db_data, upload_dir)
+    s3_files = _download_s3_files(db_data, upload_dir, rename_files=rename_files)
     if s3_files:
         data['remote_files'] = s3_files
 
