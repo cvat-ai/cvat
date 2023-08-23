@@ -245,7 +245,7 @@ def _preload_images(gi_instance, token):
     gi_data = GalleryImportProgress.objects.filter(instance=gi_instance).order_by('gi_id')
     if gi_data.exists():
         for i in range(len(data)):
-            if gi_data[i].gi_id == data[i].id:
+            if gi_data[i].gi_id == data[i]['id']:
                 gi_data[i].url = data[i]['image']
             else:
                 raise ValueError('Ids do not match!')
