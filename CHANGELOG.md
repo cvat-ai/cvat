@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removing job assignee (<https://github.com/opencv/cvat/pull/6712>)
 - Fixed switching from organization to sandbox while getting a resource (<https://github.com/opencv/cvat/pull/6689>)
+- You do not have permissions when user is cancelling automatic annotation (<https://github.com/opencv/cvat/pull/6734>)
 - Automatic annotation progress bar is invisible if the app initialized on the task page
  (<https://github.com/opencv/cvat/pull/6734>)
 - Extra status check requests for automatic annotation (<https://github.com/opencv/cvat/pull/6734>)
