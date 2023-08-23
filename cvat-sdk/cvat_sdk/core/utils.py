@@ -75,7 +75,7 @@ def atomic_writer(
     try:
         with tmp_file:
             yield tmp_file
-        os.rename(tmp_path, path)
+        os.replace(tmp_path, path)
     except:
         os.unlink(tmp_path)
         raise
