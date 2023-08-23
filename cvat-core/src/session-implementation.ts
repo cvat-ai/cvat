@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ArgumentError } from './exceptions';
-import { HistoryActions, JobType } from './enums';
+import { HistoryActions, JobType, RQStatus } from './enums';
 import { Storage } from './storage';
 import { Task as TaskClass, Job as JobClass } from './session';
 import loggerStorage from './logger-storage';
@@ -13,7 +13,7 @@ import {
     getFrame,
     deleteFrame,
     restoreFrame,
-    getRanges,
+    getCachedChunks,
     clear as clearFrames,
     findFrame,
     getContextImage,
@@ -129,6 +129,7 @@ export function implementJob(Job) {
             isPlaying,
             step,
             this.dimension,
+            (chunkNumber, quality) => this.frames.chunk(chunkNumber, quality),
         );
         return frameData;
     };
@@ -162,9 +163,9 @@ export function implementJob(Job) {
         return result;
     };
 
-    Job.prototype.frames.ranges.implementation = async function () {
-        const rangesData = await getRanges(this.id);
-        return rangesData;
+    Job.prototype.frames.cachedChunks.implementation = async function () {
+        const cachedChunks = await getCachedChunks(this.id);
+        return cachedChunks;
     };
 
     Job.prototype.frames.preview.implementation = async function (this: JobClass): Promise<string> {
@@ -176,6 +177,11 @@ export function implementJob(Job) {
 
     Job.prototype.frames.contextImage.implementation = async function (frameId) {
         const result = await getContextImage(this.id, frameId);
+        return result;
+    };
+
+    Job.prototype.frames.chunk.implementation = async function (chunkNumber, quality) {
+        const result = await serverProxy.frames.getData(this.id, chunkNumber, quality);
         return result;
     };
 
@@ -517,6 +523,17 @@ export function implementTask(Task) {
         });
     };
 
+    Task.prototype.listenToCreate.implementation = async function (
+        onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {},
+    ): Promise<TaskClass> {
+        if (Number.isInteger(this.id) && this.size === 0) {
+            const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);
+            return new Task(serializedTask);
+        }
+
+        return this;
+    };
+
     Task.prototype.delete.implementation = async function () {
         const result = await serverProxy.tasks.delete(this.id);
         return result;
@@ -564,21 +581,18 @@ export function implementTask(Task) {
             isPlaying,
             step,
             this.dimension,
+            (chunkNumber, quality) => job.frames.chunk(chunkNumber, quality),
         );
         return result;
     };
 
-    Task.prototype.frames.ranges.implementation = async function () {
-        const rangesData = {
-            decoded: [],
-            buffered: [],
-        };
+    Task.prototype.frames.cachedChunks.implementation = async function () {
+        let chunks = [];
         for (const job of this.jobs) {
-            const { decoded, buffered } = await getRanges(job.id);
-            rangesData.decoded.push(decoded);
-            rangesData.buffered.push(buffered);
+            const cachedChunks = await getCachedChunks(job.id);
+            chunks = chunks.concat(cachedChunks);
         }
-        return rangesData;
+        return Array.from(new Set(chunks));
     };
 
     Task.prototype.frames.preview.implementation = async function (this: TaskClass): Promise<string> {
@@ -654,6 +668,14 @@ export function implementTask(Task) {
         }
 
         return null;
+    };
+
+    Task.prototype.frames.contextImage.implementation = async function () {
+        throw new Error('Not implemented');
+    };
+
+    Task.prototype.frames.chunk.implementation = async function () {
+        throw new Error('Not implemented');
     };
 
     // TODO: Check filter for annotations

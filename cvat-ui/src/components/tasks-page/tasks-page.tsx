@@ -8,9 +8,6 @@ import { useDispatch } from 'react-redux';
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import Spin from 'antd/lib/spin';
-import Button from 'antd/lib/button';
-import message from 'antd/lib/message';
-import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
@@ -18,7 +15,7 @@ import { TasksQuery, Indexable } from 'reducers';
 import FeedbackComponent from 'components/feedback/feedback';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
-import { getTasksAsync, hideEmptyTasks } from 'actions/tasks-actions';
+import { getTasksAsync } from 'actions/tasks-actions';
 
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
@@ -28,12 +25,11 @@ interface Props {
     importing: boolean;
     query: TasksQuery;
     count: number;
-    countInvisible: number;
 }
 
 function TasksPageComponent(props: Props): JSX.Element {
     const {
-        query, fetching, importing, count, countInvisible,
+        query, fetching, importing, count,
     } = props;
 
     const dispatch = useDispatch();
@@ -61,28 +57,6 @@ function TasksPageComponent(props: Props): JSX.Element {
             });
         }
     }, [query]);
-
-    useEffect(() => {
-        if (countInvisible) {
-            message.destroy();
-            message.info(
-                <>
-                    <Text>Some tasks are temporary hidden because they are not fully created yet</Text>
-                    <Button
-                        className='cvat-show-all-tasks-button'
-                        type='link'
-                        onClick={(): void => {
-                            dispatch(hideEmptyTasks(false));
-                            message.destroy();
-                        }}
-                    >
-                        Show all
-                    </Button>
-                </>,
-                5,
-            );
-        }
-    }, [countInvisible]);
 
     const content = count ? (
         <>

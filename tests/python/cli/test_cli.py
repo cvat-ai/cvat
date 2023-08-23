@@ -328,3 +328,20 @@ class TestCLI:
 
         annotations = fxt_new_task.get_annotations()
         assert annotations.shapes
+
+    def test_auto_annotate_with_parameters(self, fxt_new_task: Task):
+        annotations = fxt_new_task.get_annotations()
+        assert not annotations.shapes
+
+        self.run_cli(
+            "auto-annotate",
+            str(fxt_new_task.id),
+            f"--function-module={__package__}.example_parameterized_function",
+            "-ps=str:string",
+            "-pi=int:123",
+            "-pf=float:5.5",
+            "-pb=bool:false",
+        )
+
+        annotations = fxt_new_task.get_annotations()
+        assert annotations.shapes

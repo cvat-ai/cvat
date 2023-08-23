@@ -13,6 +13,7 @@ from typing import (
     Dict,
     Generic,
     List,
+    Literal,
     Optional,
     Tuple,
     Type,
@@ -21,7 +22,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Literal, Self
+from typing_extensions import Self
 
 from cvat_sdk.api_client.model_utils import IModelData, ModelNormal, to_json
 from cvat_sdk.core.helpers import get_paginated_collection

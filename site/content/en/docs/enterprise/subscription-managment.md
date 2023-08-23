@@ -17,21 +17,22 @@ See:
 - [Billing](#billing)
   - [Pro plan](#pro-plan)
   - [Team plan](#team-plan)
-- [Change payment method](#change-payment-method)
+- [Payment methods](#payment-methods)
+  - [Paying with bank transfer](#paying-with-bank-transfer)
+  - [Change payment method on Pro plan](#change-payment-method-on-pro-plan)
+  - [Change payment method on Team plan](#change-payment-method-on-team-plan)
+- [Adding and removing team members](#adding-and-removing-team-members)
   - [Pro plan](#pro-plan-1)
   - [Team plan](#team-plan-1)
-- [Adding and removing team members](#adding-and-removing-team-members)
-  - [Pro plan](#pro-plan-2)
-  - [Team plan](#team-plan-2)
 - [Change plan](#change-plan)
 - [Can I subscribe to several plans?](#can-i-subscribe-to-several-plans)
 - [Cancel plan](#cancel-plan)
   - [What will happen to my data?](#what-will-happen-to-my-data)
+  - [Pro plan](#pro-plan-2)
+  - [Team plan](#team-plan-2)
+- [Plan renewal](#plan-renewal)
   - [Pro plan](#pro-plan-3)
   - [Team plan](#team-plan-3)
-- [Plan renewal](#plan-renewal)
-  - [Pro plan](#pro-plan-4)
-  - [Team plan](#team-plan-4)
 
 ## Billing
 
@@ -44,28 +45,50 @@ see: [Pricing Plans](https://www.cvat.ai/post/new-pricing-plans)
 ### Pro plan
 
 **Account/Month**: The **Pro** plan has a fixed price and is
-designed for personal use only.  It doesn't allow collaboration with team members,
+designed **for personal use only**. It doesn't allow collaboration with team members,
 but removes all the other limits of the **Free** plan.
 
+> **Note**: Although it allows the creation of an organization and
+> access for up to 3 members -- it is _for trial purposes_ only,
+> organization and members _will have all the limitations of the **Free** plan_.
 
 ### Team plan
 
-**Member/month**: The **Team** plan allows you to create
+**Member/ month**: The **Team** plan allows you to create
 an organization and add team members who can collaborate on projects.
 The **monthly payment for the plan depends on the number of team members you've added**.
 All limits of the **Free** plan will be removed.
 
-## Change payment method
+> **Note**: The organization owner is also part of the team.
+> So, if you have three annotators working, you'll need to pay
+> for 4 seats (3 annotators + 1 organization owner).
+
+## Payment methods
 
 This section describes how to change or add payment methods.
 
-### Pro plan
+### Paying with bank transfer
+
+> **Note** at the moment this method of payment
+> work only with US banks.
+
+To pay with bank transfer:
+
+1. Go to the **Upgrade to Pro**/**Team plan**> **Get started**.
+2. Click **US Bank Transfer**.
+3. Upon successful completion of the payment, the you will receive a receipt via email.
+
+> **Note** that the completion of the payment process may take up to three banking days.
+
+![Bank Transfer Payment](/images/bank_transfer_payment.jpg)
+
+### Change payment method on Pro plan
 
 Access Manage **Pro Plan** > **Manage** and click **+Add Payment Method**
 
 ![Payment pro](/images/update_payment_pro.png)
 
-### Team plan
+### Change payment method on Team plan
 
 Access **Manage Team Plan** > **Manage** and click **+Add Payment Method**.
 

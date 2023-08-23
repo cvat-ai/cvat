@@ -6,7 +6,8 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, ModelProvider, Organization, QualityReport, QualityConflict, QualitySettings, FramesMetaData,
+    Webhook, MLModel, ModelProvider, Organization,
+    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -103,7 +104,6 @@ export interface JobsState {
 export interface TasksState {
     initialized: boolean;
     fetching: boolean;
-    hideEmpty: boolean;
     moveTask: {
         modalVisible: boolean;
         taskId: number | null;
@@ -312,6 +312,9 @@ export interface PluginsState {
                 player: PluginComponent[];
             };
         };
+        settings: {
+            player: PluginComponent[],
+        }
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
     }
@@ -375,14 +378,6 @@ export enum JobStage {
     ANNOTATION = 'annotation',
     REVIEW = 'validation',
     ACCEPTANCE = 'acceptance',
-}
-
-export enum RQStatus {
-    unknown = 'unknown',
-    queued = 'queued',
-    started = 'started',
-    finished = 'finished',
-    failed = 'failed',
 }
 
 export interface ActiveInference {
@@ -692,6 +687,7 @@ export interface AnnotationState {
             delay: number;
             changeTime: number | null;
         };
+        ranges: string;
         navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];
@@ -870,7 +866,6 @@ export interface OrganizationState {
     current?: Organization | null;
     initialized: boolean;
     fetching: boolean;
-    creating: boolean;
     updating: boolean;
     inviting: boolean;
     leaving: boolean;

@@ -11,7 +11,6 @@ const defaultState: OrganizationState = {
     list: [],
     initialized: false,
     fetching: false,
-    creating: false,
     updating: false,
     inviting: false,
     leaving: false,
@@ -55,23 +54,10 @@ export default function (
                 fetching: false,
             };
         }
-        case OrganizationActionsTypes.CREATE_ORGANIZATION: {
-            return {
-                ...state,
-                creating: true,
-            };
-        }
         case OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS: {
             return {
                 ...state,
                 list: [...state.list, action.payload.organization],
-                creating: false,
-            };
-        }
-        case OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED: {
-            return {
-                ...state,
-                creating: false,
             };
         }
         case OrganizationActionsTypes.UPDATE_ORGANIZATION: {

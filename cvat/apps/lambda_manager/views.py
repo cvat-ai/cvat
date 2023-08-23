@@ -9,7 +9,6 @@ import base64
 import json
 import os
 import textwrap
-import glob
 from copy import deepcopy
 from enum import Enum
 from functools import wraps
@@ -38,7 +37,6 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
 )
-from cvat.apps.engine.utils import sendfile
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
@@ -1007,11 +1005,3 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         rq_job = queue.fetch_job(pk)
         rq_job.delete()
-
-def ONNXDetector(request):
-    dirname = os.path.join(settings.STATIC_ROOT, 'lambda_manager')
-    pattern = os.path.join(dirname, 'decoder.onnx')
-    path = glob.glob(pattern)[0]
-    response = sendfile(request, path)
-    response['Cache-Control'] = "public, max-age=604800"
-    return response

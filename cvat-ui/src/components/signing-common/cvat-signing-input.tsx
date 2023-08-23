@@ -19,7 +19,7 @@ interface SocialAccountLinkProps {
 
 export enum CVATInputType {
     TEXT = 'text',
-    PASSWORD = 'passord',
+    PASSWORD = 'password',
 }
 
 function CVATSigningInput(props: SocialAccountLinkProps): JSX.Element {

@@ -4,6 +4,7 @@
 
 import { InferenceSession, Tensor } from 'onnxruntime-web';
 import { LRUCache } from 'lru-cache';
+import { Job } from 'cvat-core-wrapper';
 import { PluginEntryPoint, APIWrapperEnterOptions, ComponentBuilder } from 'components/plugins-entrypoint';
 
 interface SAMPlugin {
@@ -132,7 +133,7 @@ function modelData(
 
 const samPlugin: SAMPlugin = {
     name: 'Segment Anything',
-    description: 'Plugin handles non-default SAM serverless function output',
+    description: 'Handles non-default SAM serverless function output',
     cvat: {
         jobs: {
             get: {
@@ -186,8 +187,9 @@ const samPlugin: SAMPlugin = {
                         return result;
                     }
 
-                    const job = Object.values(plugin.data.jobs)
-                        .find((_job) => _job.taskId === taskID);
+                    const job = Object.values(plugin.data.jobs).find((_job) => (
+                        _job.taskId === taskID && frame >= _job.startFrame && frame <= _job.stopFrame
+                    )) as Job;
                     if (!job) {
                         throw new Error('Could not find a job corresponding to the request');
                     }
@@ -267,7 +269,7 @@ const samPlugin: SAMPlugin = {
         core: null,
         jobs: {},
         modelID: 'pth-facebookresearch-sam-vit-h',
-        modelURL: '/api/lambda/sam_detector.onnx',
+        modelURL: '/assets/decoder.onnx',
         embeddings: new LRUCache({
             // float32 tensor [256, 64, 64] is 4 MB, max 512 MB
             max: 128,
@@ -287,7 +289,7 @@ const samPlugin: SAMPlugin = {
     },
 };
 
-const SAMModelPlugin: ComponentBuilder = ({ core }) => {
+const builder: ComponentBuilder = ({ core }) => {
     samPlugin.data.core = core;
     core.plugins.register(samPlugin);
     InferenceSession.create(samPlugin.data.modelURL).then((session) => {
@@ -295,7 +297,7 @@ const SAMModelPlugin: ComponentBuilder = ({ core }) => {
     });
 
     return {
-        name: 'Segment Anything model',
+        name: samPlugin.name,
         destructor: () => {},
     };
 };
@@ -303,7 +305,7 @@ const SAMModelPlugin: ComponentBuilder = ({ core }) => {
 function register(): void {
     if (Object.prototype.hasOwnProperty.call(window, 'cvatUI')) {
         (window as any as { cvatUI: { registerComponent: PluginEntryPoint } })
-            .cvatUI.registerComponent(SAMModelPlugin);
+            .cvatUI.registerComponent(builder);
     }
 }
 

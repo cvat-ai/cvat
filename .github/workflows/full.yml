@@ -160,7 +160,7 @@ jobs:
       - name: Install SDK
         run: |
           pip3 install -r ./tests/python/requirements.txt \
-            -e './cvat-sdk[pytorch,ultralytics]' -e ./cvat-cli
+            -e './cvat-sdk[pytorch]' -e ./cvat-cli
 
       - name: Running REST API and SDK tests
         id: run_tests
@@ -254,8 +254,8 @@ jobs:
       matrix:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
                 'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
-                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2', 'masks', 'skeletons']
+                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
+                'issues_prs', 'issues_prs2', 'features']
     steps:
       - uses: actions/checkout@v3
         with:
