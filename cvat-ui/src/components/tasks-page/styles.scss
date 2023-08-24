@@ -153,9 +153,14 @@
 .cvat-task-item-progress-wrapper {
     > div:first-child {
         margin-bottom: -$grid-unit-size;
+        margin-right: $grid-unit-size;
 
         > span {
             font-size: 12px;
+        }
+
+        span[role="img"] {
+            margin-left: $grid-unit-size;
         }
     }
 }

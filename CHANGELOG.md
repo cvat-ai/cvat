@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Response code for empty cloud storage preview 204 -> 404 (<https://github.com/opencv/cvat/pull/6727>)
 - Organization now opened immediately after it is created (<https://github.com/opencv/cvat/pull/6705>)
+- Improved message when invite more users to an organization (<https://github.com/opencv/cvat/pull/6731>)
 
 ### Deprecated
 
@@ -27,10 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removing job assignee (<https://github.com/opencv/cvat/pull/6712>)
 - Fixed switching from organization to sandbox while getting a resource (<https://github.com/opencv/cvat/pull/6689>)
+- \[SDK\]: `FileExistsError` exception raised on Windows when a dataset is loaded from cache
+  (<https://github.com/opencv/cvat/pull/6722>)
 
 ### Security
 
-- TBD
+- Remote Code Execution (RCE) [SNYK-PYTHON-GITPYTHON-5840584](https://snyk.io/vuln/SNYK-PYTHON-GITPYTHON-5840584)
 
 ## \[2.6.0\] - 2023-08-11
 
