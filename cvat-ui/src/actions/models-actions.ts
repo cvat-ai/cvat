@@ -63,9 +63,10 @@ export const modelsActions = {
             activeInference,
         })
     ),
-    getInferenceStatusFailed: (taskID: number, error: any) => (
+    getInferenceStatusFailed: (taskID: number, activeInference: ActiveInference, error: any) => (
         createAction(ModelsActionTypes.GET_INFERENCE_STATUS_FAILED, {
             taskID,
+            activeInference,
             error,
         })
     ),
@@ -169,6 +170,13 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
                 dispatch(
                     modelsActions.getInferenceStatusFailed(
                         taskID,
+                        {
+                            status,
+                            progress,
+                            functionID,
+                            error: message,
+                            id: requestID,
+                        },
                         new Error(`Inference status for the task ${taskID} is ${status}. ${message}`),
                     ),
                 );
@@ -189,12 +197,12 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
         .catch((error: Error) => {
             dispatch(
                 modelsActions.getInferenceStatusFailed(taskID, {
-                    status: 'unknown',
+                    status: RQStatus.UNKNOWN,
                     progress: 0,
                     error: error.toString(),
                     id: requestID,
                     functionID,
-                }),
+                }, error),
             );
         });
 }
