@@ -184,7 +184,7 @@ class JobFrameSelectionMethod(str, Enum):
 
 class AbstractArrayField(models.TextField):
     separator = ","
-    converter = lambda x: x
+    converter = staticmethod(lambda x: x)
 
     def __init__(self, *args, store_sorted:Optional[bool]=False, unique_values:Optional[bool]=False, **kwargs):
         self._store_sorted = store_sorted
