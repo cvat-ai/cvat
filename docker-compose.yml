@@ -7,6 +7,7 @@ services:
     container_name: cvat_db
     image: postgres:15-alpine
     restart: always
+    shm_size: 1g
     environment:
       POSTGRES_USER: root
       POSTGRES_DB: cvat
