@@ -342,6 +342,9 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
                 new_path = os.path.join(upload_dir, new_name)
                 os.rename(output_path, new_path)
         else:
+            slogger.glob.error(f'Failed to download {url}')
+            slogger.glob.error(f'Status: {response.status_code}')
+            slogger.glob.error(response.text)
             raise Exception("Failed to download " + url)
 
         local_files[name] = new_name
@@ -390,6 +393,9 @@ def _download_s3_files(db_data: models.Data, upload_dir, rename_files=False):
                                  f' Proceeding without deletion.')
                 file.delete()
         else:
+            slogger.glob.error(f'Failed to download {url}')
+            slogger.glob.error(f'Status: {response.status_code}')
+            slogger.glob.error(response.text)
             raise Exception("Failed to download " + url)
 
         local_files[name] = new_name

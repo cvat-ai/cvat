@@ -236,14 +236,20 @@ def _get_data(gi_instance, token, gi_id=None):
 
 def _preload_images(gi_instance, token):
     slogger.glob.info('Preloading list of images.')
-
     data = _get_data(gi_instance, token)
+
+    slogger.glob.info('Validating')
     serializer = DetectionImageListSerializer(data=data, many=True)
     serializer.is_valid(raise_exception=True)
+
+    slogger.glob.info('Sorting')
     data = sorted(serializer.validated_data, key=lambda i: i['id'])
 
+    slogger.glob.info('Checking existing data')
     gi_data = GalleryImportProgress.objects.filter(instance=gi_instance).order_by('gi_id')
+
     if gi_data.exists():
+        slogger.glob.info('Data exists, updating urls')
         for i in range(len(data)):
             if gi_data[i].gi_id == data[i]['id']:
                 gi_data[i].url = data[i]['image']
@@ -252,6 +258,7 @@ def _preload_images(gi_instance, token):
 
         GalleryImportProgress.objects.bulk_update(gi_data, ('url', ))
     else:
+        slogger.glob.info('Data does not exist, creating')
         GalleryImportProgress.objects.bulk_create([
             GalleryImportProgress(
                 instance=gi_instance,
@@ -262,8 +269,14 @@ def _preload_images(gi_instance, token):
             for item in data
         ])
 
+    slogger.glob.info('Retrieving data')
     gi_data = GalleryImportProgress.objects.filter(instance=gi_instance, task_id__isnull=True)
-    return sort(gi_data, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=lambda i: i.name)
+
+    slogger.glob.info('Sorting')
+    gi_data = sort(gi_data, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=lambda i: i.name)
+
+    slogger.glob.info('Done')
+    return gi_data
 
 
 def _get_user():
