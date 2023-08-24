@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { getCore } from 'cvat-core-wrapper';
+import { User, getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -17,7 +17,7 @@ const asyncFetchUsers = async (search: string | null): Promise<{
     });
 
     return {
-        values: users.map((user: any) => ({
+        values: users.map((user: User) => ({
             value: user.username, title: user.username,
         })),
         hasMore: false,

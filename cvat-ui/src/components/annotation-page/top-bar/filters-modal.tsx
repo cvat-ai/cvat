@@ -242,9 +242,10 @@ function FiltersModalComponent(): JSX.Element {
                     }
 
                     return { tree, queryString: null, filter };
-                }).filter(({ queryString }) => !!queryString)
+                })
+                .filter(({ queryString }) => !!queryString)
                 .map(({ filter, tree, queryString }) => (
-                    <Menu.Item key={filter.id} onClick={() => setImmutableTree(tree)}>
+                    <Menu.Item key={filter.id} onClick={() => setImmutableTree(tree as ImmutableTree)}>
                         {queryString}
                     </Menu.Item>
                 ))}
