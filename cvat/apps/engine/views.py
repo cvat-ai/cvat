@@ -2764,7 +2764,7 @@ class AssetsViewSet(
         instance = self.get_object()
         if instance.guide.is_public:
             return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
-        return Response(status=HTTPStatus.NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance):
         full_path = os.path.join(instance.get_asset_dir(), instance.filename)
