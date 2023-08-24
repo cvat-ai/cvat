@@ -21,7 +21,7 @@ from typing import List, Optional
 import pytest
 from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
-from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
@@ -1637,6 +1637,18 @@ class TestTaskBackups:
 
         assert filename.is_file()
         assert filename.stat().st_size > 0
+
+    def test_cannot_export_backup_for_task_without_data(self, tasks):
+        task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+
+        with pytest.raises(ApiException) as exc:
+            task.download_backup(filename)
+
+            assert exc.status == HTTPStatus.BAD_REQUEST
+            assert "Backup of a task without data is not allowed" == exc.body.encode()
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):

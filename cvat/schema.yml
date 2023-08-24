@@ -4917,6 +4917,8 @@ paths:
           description: Output backup file is ready for downloading
         '202':
           description: Creating a backup file has been started
+        '400':
+          description: Backup of a task without data is not allowed
   /api/tasks/{id}/data/:
     get:
       operationId: tasks_retrieve_data
