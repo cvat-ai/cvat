@@ -4,6 +4,7 @@
 
 import logging
 import os
+import shlex
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
@@ -103,12 +104,13 @@ def _run(command, capture_output=True):
             proc = run(_command)  # nosec
         return stdout, stderr
     except CalledProcessError as exc:
-        stderr = exc.stderr.decode() or exc.stdout.decode() if capture_output else "see above"
-        pytest.exit(
-            f"Command failed: {command}.\n"
-            f"Error message: {stderr}.\n"
-            "Add `-s` option to see more details"
-        )
+        message = f"Command failed: {' '.join(map(shlex.quote, _command))}."
+        message += f"\nExit code: {exc.returncode}"
+        if capture_output:
+            message += f"\nStandard output:\n{exc.stdout.decode()}"
+            message += f"\nStandard error:\n{exc.stderr.decode()}"
+
+        pytest.exit(message)
 
 
 def _kube_get_server_pod_name():
@@ -279,7 +281,7 @@ def docker_restore_data_volumes():
         CVAT_DB_DIR / "cvat_data.tar.bz2",
         f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
     )
-    docker_exec(Container.SERVER, "tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
+    docker_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 
 def kube_restore_data_volumes():
@@ -403,7 +405,7 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
     wait_for_services()
 
-    docker_exec(Container.SERVER, "python manage.py loaddata /tmp/data.json")
+    docker_exec_cvat("python manage.py loaddata /tmp/data.json")
     docker_exec(
         Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
     )
@@ -455,7 +457,7 @@ def session_finish(session):
 
         docker_exec(Container.DB, "dropdb --if-exists cvat")
         docker_exec(Container.DB, "createdb cvat")
-        docker_exec(Container.SERVER, "python manage.py migrate")
+        docker_exec_cvat("python manage.py migrate")
 
 
 def collect_code_coverage_from_containers():

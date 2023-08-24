@@ -8,7 +8,5 @@
 -r development.txt
 -r production.txt
 -r testing.txt
---no-binary av
-
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -27,7 +27,6 @@ from django.db.models import Count, Q
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
-from http import HTTPStatus
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -2593,7 +2592,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if not db_storage.has_at_least_one_manifest:
                 result = cache.get_cloud_preview_with_mime(db_storage)
                 if not result:
-                    return HttpResponse(status=HTTPStatus.NO_CONTENT)
+                    return HttpResponseNotFound('Cloud storage preview not found')
                 return HttpResponse(result[0], result[1])
 
             preview, mime = cache.get_or_set_cloud_preview_with_mime(db_storage)

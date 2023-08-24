@@ -104,12 +104,17 @@ Cypress.Commands.add('clickInProjectMenu', (item, fromProjectPage, projectName =
 
 Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 'success') => {
     cy.clickInProjectMenu('Delete', false, projectName);
+    const interceptorName = `deleteProject_${projectID}`;
+    cy.intercept('DELETE', `/api/projects/${projectID}**`).as(interceptorName);
     cy.get('.cvat-modal-confirm-remove-project')
         .should('contain', `The project ${projectID} will be deleted`)
         .within(() => {
             cy.contains('button', 'Delete').click();
         });
     if (expectedResult === 'success') {
+        cy.wait(`@${interceptorName}`).then((interseption) => {
+            expect(interseption.response.statusCode).to.be.equal(204);
+        });
         cy.get('.cvat-projects-project-item-card').should('have.css', 'opacity', '0.5');
     } else if (expectedResult === 'fail') {
         cy.get('.cvat-projects-project-item-card').should('not.have.css', 'opacity', '0.5');
