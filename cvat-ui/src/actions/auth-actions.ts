@@ -11,6 +11,7 @@ import isReachable from 'utils/url-checker';
 const cvat = getCore();
 
 export enum AuthActionTypes {
+    AUTHORIZED_REQUEST = 'AUTHORIZED_REQUEST',
     AUTHORIZED_SUCCESS = 'AUTHORIZED_SUCCESS',
     AUTHORIZED_FAILED = 'AUTHORIZED_FAILED',
     LOGIN = 'LOGIN',
@@ -38,6 +39,7 @@ export enum AuthActionTypes {
 }
 
 export const authActions = {
+    authorizeRequest: () => createAction(AuthActionTypes.AUTHORIZED_REQUEST),
     authorizeSuccess: (user: any) => createAction(AuthActionTypes.AUTHORIZED_SUCCESS, { user }),
     authorizeFailed: (error: any) => createAction(AuthActionTypes.AUTHORIZED_FAILED, { error }),
     login: () => createAction(AuthActionTypes.LOGIN),
@@ -128,8 +130,8 @@ export const logoutAsync = (): ThunkAction => async (dispatch) => {
 
 export const authorizedAsync = (): ThunkAction => async (dispatch) => {
     try {
+        dispatch(authActions.authorizeRequest());
         const result = await cvat.server.authorized();
-
         if (result) {
             const userInstance = (await cvat.users.get({ self: true }))[0];
             dispatch(authActions.authorizeSuccess(userInstance));
