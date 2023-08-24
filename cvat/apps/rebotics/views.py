@@ -84,8 +84,7 @@ class GalleryImportViewset(GenericViewSet):
             token = serializer.validated_data['token']
             task_size = serializer.validated_data['task_size']
             job_size = serializer.validated_data['job_size']
-            force = serializer.validated_data['force']
-            gi_msg = gi_task_api.start(gi_instance, token, task_size, job_size, force=force)
+            gi_msg = gi_task_api.start(gi_instance, token, task_size, job_size)
 
             slogger.glob.info('Gallery import: starting')
             return Response({'status': gi_msg}, status=status.HTTP_200_OK)
@@ -103,8 +102,7 @@ class GalleryImportViewset(GenericViewSet):
         if serializer.is_valid():
             gi_instance = serializer.validated_data['instance']
             token = serializer.validated_data['token']
-            force = serializer.validated_data['force']
-            gi_msg = gi_task_api.update(gi_instance, token, force=force)
+            gi_msg = gi_task_api.update(gi_instance, token)
 
             slogger.glob.info('Gallery import: updating')
             return Response({'status': gi_msg}, status=status.HTTP_200_OK)
