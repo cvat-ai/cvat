@@ -780,7 +780,8 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 
     def _write_tasks(self, zip_object):
         for idx, db_task in enumerate(self._db_project.tasks.all().order_by('id')):
-            TaskExporter(db_task.id, self._version).export_to(zip_object, self.TASKNAME_TEMPLATE.format(idx))
+            if db_task.data is not None:
+                TaskExporter(db_task.id, self._version).export_to(zip_object, self.TASKNAME_TEMPLATE.format(idx))
 
     def _write_manifest(self, zip_object):
         def serialize_project():

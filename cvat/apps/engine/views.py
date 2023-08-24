@@ -876,9 +876,15 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': OpenApiResponse(description='Download of file started'),
             '201': OpenApiResponse(description='Output backup file is ready for downloading'),
             '202': OpenApiResponse(description='Creating a backup file has been started'),
+            '400': OpenApiResponse(description='Backup of a task without data is not allowed'),
         })
     @action(methods=['GET'], detail=True, url_path='backup')
     def export_backup(self, request, pk=None):
+        if self.get_object().data is None:
+            return Response(
+                data='Backup of a task without data is not allowed',
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return self.serialize(request, backup.export)
 
     @transaction.atomic

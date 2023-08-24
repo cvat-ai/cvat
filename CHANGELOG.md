@@ -13,8 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bumped nuclio version to 1.11.24 and removed `/tmp` mounting in the nuclio container to adhere the update.
 - Response code for empty cloud storage preview 204 -> 404 (<https://github.com/opencv/cvat/pull/6727>)
 - Organization now opened immediately after it is created (<https://github.com/opencv/cvat/pull/6705>)
+- More responsive automatic annotation progress bar (<https://github.com/opencv/cvat/pull/6734>)
 - Improved message when invite more users to an organization (<https://github.com/opencv/cvat/pull/6731>)
 
 ### Deprecated
@@ -27,8 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Exporting project when its tasks has not data (<https://github.com/opencv/cvat/pull/6658>)
 - Removing job assignee (<https://github.com/opencv/cvat/pull/6712>)
 - Fixed switching from organization to sandbox while getting a resource (<https://github.com/opencv/cvat/pull/6689>)
+- You do not have permissions when user is cancelling automatic annotation (<https://github.com/opencv/cvat/pull/6734>)
+- Automatic annotation progress bar is invisible if the app initialized on the task page
+ (<https://github.com/opencv/cvat/pull/6734>)
+- Extra status check requests for automatic annotation (<https://github.com/opencv/cvat/pull/6734>)
 - \[SDK\]: `FileExistsError` exception raised on Windows when a dataset is loaded from cache
   (<https://github.com/opencv/cvat/pull/6722>)
 
