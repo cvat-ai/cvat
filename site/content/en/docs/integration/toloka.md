@@ -190,7 +190,7 @@ To reject the annotated job, do the following:
 
 2. Review the result of the annotation and in case something is wrong,
    on the top menu, click **Reject**.
-3. Add comment.
+3. Add comment why this work was rejected
 
    ![Toloka Project](/images/toloka15.jpg)
 
