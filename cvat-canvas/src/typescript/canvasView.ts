@@ -2580,7 +2580,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 cy = +shape.attr('y') + +shape.attr('height') / 2;
             } else if (shape.type === 'g') {
                 ({ cx, cy } = shape.bbox());
-            } else if (['ellipse'].includes(shape.type)) {
+            } else if (shape.type === 'ellipse') {
                 // even simpler for ellipses
                 cx = +shape.attr('cx');
                 cy = +shape.attr('cy');
