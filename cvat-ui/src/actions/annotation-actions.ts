@@ -985,12 +985,7 @@ export function getJobAsync(
             try {
                 await frameData.data();
             } catch (error) {
-                dispatch({
-                    type: AnnotationActionTypes.GET_DATA_FAILED,
-                    payload: {
-                        error,
-                    },
-                });
+                // do nothing, user will be notified when data request is done
             }
 
             const states = await job.annotations.get(

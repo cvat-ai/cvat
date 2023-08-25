@@ -22,7 +22,11 @@ interface ModelProxy {
 }
 
 class LambdaManager {
-    private listening: any;
+    private listening: Record<number, {
+        onUpdate: ((status: RQStatus, progress: number, message?: string) => void)[];
+        functionID: string;
+        timeout: number | null;
+    }>;
     private cachedList: any;
 
     constructor() {
@@ -114,41 +118,65 @@ class LambdaManager {
         await LambdaManager.getModelProxy(model).cancel(requestID);
     }
 
-    async listen(requestID, functionID, onUpdate): Promise<void> {
+    async listen(
+        requestID: string,
+        functionID: string,
+        callback: (status: RQStatus, progress: number, message?: string) => void,
+    ): Promise<void> {
         const model = this.cachedList.find((_model) => _model.id === functionID);
         if (!model) {
-            throw new ArgumentError('Incorrect Function Id provided');
+            throw new ArgumentError('Incorrect function Id provided');
         }
-        const timeoutCallback = async (): Promise<void> => {
-            try {
-                this.listening[requestID].timeout = null;
-                const response = await LambdaManager.getModelProxy(model).status(requestID);
 
-                if (response.status === RQStatus.QUEUED || response.status === RQStatus.STARTED) {
-                    onUpdate(response.status, response.progress || 0);
-                    this.listening[requestID].timeout = setTimeout(timeoutCallback, 20000);
-                } else {
-                    if (response.status === RQStatus.FINISHED) {
-                        onUpdate(response.status, response.progress || 100);
+        if (requestID in this.listening) {
+            this.listening[requestID].onUpdate.push(callback);
+            // already listening, avoid sending extra requests
+            return;
+        }
+
+        const timeoutCallback = (): void => {
+            LambdaManager.getModelProxy(model).status(requestID).then((response) => {
+                const { status } = response;
+                if (requestID in this.listening) {
+                    // check it was not cancelled
+                    const { onUpdate } = this.listening[requestID];
+                    if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
+                        onUpdate.forEach((update) => update(status, response.progress || 0));
+                        this.listening[requestID].timeout = window
+                            .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 30000 : 10000);
                     } else {
-                        onUpdate(response.status, response.progress || 0, response.exc_info || '');
+                        delete this.listening[requestID];
+                        if (status === RQStatus.FINISHED) {
+                            onUpdate
+                                .forEach((update) => update(status, response.progress || 100));
+                        } else {
+                            onUpdate
+                                .forEach((update) => update(status, response.progress || 0, response.exc_info || ''));
+                        }
                     }
-
-                    delete this.listening[requestID];
                 }
-            } catch (error) {
-                onUpdate(
-                    RQStatus.UNKNOWN,
-                    0,
-                    `Could not get a status of the request ${requestID}. ${error.toString()}`,
-                );
-            }
+            }).catch((error) => {
+                if (requestID in this.listening) {
+                    // check it was not cancelled
+                    const { onUpdate } = this.listening[requestID];
+                    onUpdate
+                        .forEach((update) => update(
+                            RQStatus.UNKNOWN,
+                            0,
+                            `Could not get a status of the request ${requestID}. ${error.toString()}`,
+                        ));
+                }
+            }).finally(() => {
+                if (requestID in this.listening) {
+                    this.listening[requestID].timeout = null;
+                }
+            });
         };
 
         this.listening[requestID] = {
-            onUpdate,
+            onUpdate: [callback],
             functionID,
-            timeout: setTimeout(timeoutCallback, 20000),
+            timeout: window.setTimeout(timeoutCallback),
         };
     }
 

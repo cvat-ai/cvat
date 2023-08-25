@@ -38,7 +38,7 @@ def export_project(project_id, dst_file, format_name,
 class ProjectAnnotationAndData:
     def __init__(self, pk: int):
         self.db_project = models.Project.objects.get(id=pk)
-        self.db_tasks = models.Task.objects.filter(project__id=pk).order_by('id')
+        self.db_tasks = models.Task.objects.filter(project__id=pk).exclude(data=None).order_by('id')
 
         self.task_annotations: dict[int, TaskAnnotation] = dict()
         self.annotation_irs: dict[int, AnnotationIR] = dict()
@@ -98,7 +98,7 @@ class ProjectAnnotationAndData:
         data['server_files'] = list(map(split_name, data['server_files']))
 
         create_task(db_task, data, isDatasetImport=True)
-        self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).order_by('id')
+        self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).exclude(data=None).order_by('id')
         self.init_from_db()
         if project_data is not None:
             project_data.new_tasks.add(db_task.id)

@@ -161,6 +161,7 @@ function JobForm(props: Props): JSX.Element {
                                     rules={[{ required: true, message: 'Please, specify quantity' }]}
                                 >
                                     <InputNumber
+                                        className='cvat-input-frame-quantity'
                                         min={1}
                                         max={100}
                                         size='middle'
@@ -187,6 +188,7 @@ function JobForm(props: Props): JSX.Element {
                                             rules={[{ required: true, message: 'Please, specify frame count' }]}
                                         >
                                             <InputNumber
+                                                className='cvat-input-frame-count'
                                                 min={1}
                                                 max={taskSize}
                                                 size='middle'
@@ -201,7 +203,10 @@ function JobForm(props: Props): JSX.Element {
                                     name='seed'
                                     label='Seed'
                                 >
-                                    <InputNumber size='middle' />
+                                    <InputNumber
+                                        className='cvat-input-seed'
+                                        size='middle'
+                                    />
                                 </Form.Item>
                             </Col>
                         </Row>
