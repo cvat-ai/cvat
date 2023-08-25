@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased\]
 ### Added
+- TDB
+
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- TDB
+
+### Security
+- TDB
+
+## \[2.6.1\] - 2023-08-25
+### Added
 
 - More information about task progress on tasks page (<https://github.com/opencv/cvat/pull/5723>)
 - Prefetching next chunk when user navigates by frames manually (<https://github.com/opencv/cvat/pull/6695>)
@@ -18,14 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Organization now opened immediately after it is created (<https://github.com/opencv/cvat/pull/6705>)
 - More responsive automatic annotation progress bar (<https://github.com/opencv/cvat/pull/6734>)
 - Improved message when invite more users to an organization (<https://github.com/opencv/cvat/pull/6731>)
-
-### Deprecated
-
-- TBD
-
-### Removed
-
-- TBD
 
 ### Fixed
 
