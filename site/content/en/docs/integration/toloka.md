@@ -161,7 +161,7 @@ To change started Toloka pool, you need to stop it first.
 
 In case the jobs you've created are not in the **Accept solutions automatically**
 mode, you will need to manually review and accept them
-within time limits that were defined in the task setting.
+within time limits that were defined in the Toloka pool settings.
 
 To approve or reject the job, use the **Accept** and **Reject** buttons.
 
