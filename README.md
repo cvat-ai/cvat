@@ -77,7 +77,7 @@ to 10 tasks there and upload up to 500Mb of data to annotate. It will only be
 visible to you or the people you assign to it.
 
 For now, it does not have [analytics features](https://opencv.github.io/cvat/docs/administration/advanced/analytics/)
-like management and monitoring the data annotation team.
+like management and monitoring the data annotation team. It also does not allow exporting images, just the annotations.
 
 We plan to enhance [cvat.ai](https://cvat.ai) with new powerful features. Stay tuned!
 
@@ -95,7 +95,6 @@ The images have been downloaded more than 1M times so far.
 Here are some screencasts showing how to use CVAT.
 
 <!--lint disable maximum-line-length-->
-
 [Computer Vision Annotation Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN):
 we introduce our course series designed to help you annotate data faster and better
 using CVAT. This course is about CVAT deployment and integrations, it includes

@@ -48,7 +48,9 @@ context('Correct behaviour of fit when navigating between frames with different 
     });
 
     beforeEach(() => {
+        cy.intercept('GET', `/tasks/${taskID}/jobs/${jobID}`).as('visitAnnotationView');
         cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+        cy.wait('@visitAnnotationView');
         cy.get('.cvat-canvas-container').should('exist').and('be.visible');
     });
 
