@@ -174,7 +174,7 @@ To accept the annotated job, do the following:
 1. Go to the Toloka task and open the job.
 2. Review the result of annotation and in case all is fine, on the top menu,
    click **Accept**.
-3. Add comment.
+3. Optionally, you may add comment.
 
    ![Toloka Project](/images/toloka14.jpg)
 
