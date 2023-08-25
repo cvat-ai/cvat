@@ -8,6 +8,8 @@ To have your dataset annotated through Toloka, simply establish
 a project in CVAT set the pricing, and let Toloka annotators
 take care of the annotations for you.
 
+To get acc
+
 See:
 
 - [Glossary](#glossary)
@@ -27,12 +29,13 @@ See:
 This page contains several terms used to describe interactions between systems and actors.
 Refer to the table below for clarity on how we define and use them.
 
+
 <!--lint disable maximum-line-length-->
 
 | Term      | Explanation                                                                                                                                                                                                                                                                   |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Toloka    | Toloka  is a crowdsourcing platform that allows users to assign tasks to a broad group of participants, often termed "crowd workers". In the context of this article, when we mention Toloka, we are specifically referring to one of its UI interfaces. |
-| CVAT      | CVAT, developed by OpenCV, is a tool designed for annotating video and image data for computer vision tasks. In this article's context, when we reference CVAT, we mean one of its UI interfaces.                                                               |
+| CVAT      | CVAT is a tool designed for annotating video and image data for computer vision tasks. In this article's context, when we reference CVAT, we mean one of its UI interfaces.                                                               |
 | Requester | An individual who establishes an annotation project within CVAT determines the price, creates tasks and jobs within the project, and then releases it on Toloka.                                                                                        |
 | Toloker   |  A person who annotates the Requester's dataset. |
 
@@ -45,6 +48,8 @@ Actor: Requester.
 Requester must have a [CVAT account](/docs/manual/basics/registration/)
 and [Toloka Requester account](https://platform.toloka.ai/auth?role=REQUESTER&retpath=%2Fsignup%2Frequester).
 
+To get access to the feature in CVAT, send request to [CVAT Support](mailto:support@cvat.ai)
+
 ## Creating Toloka project
 
 The requester can set up a project within CVAT and subsequently
@@ -54,6 +59,8 @@ To initiate your Toloka project, proceed with the following steps:
 
 1. [Log in to CVAT](/docs/manual/basics/registration/#account-access)
    and [initiate a new Project](/docs/manual/advanced/projects/).
+   <br>Here you can can setup user guide which will be shown on Toloka platform,
+   see [Adding instructions for annotators to the Toloka project](#adding-instructions-for-annotators-to-the-toloka-project).
 2. Navigate to the project page and select **Actions** > **Setup crowdsourcing project**.
 
    ![Setting Up Toloka Project](/images/toloka01.png)
@@ -78,6 +85,20 @@ To initiate your Toloka project, proceed with the following steps:
 In CVAT, all projects related to Toloka will be labeled as **Toloka**.
 
 ![Toloka Label on Project](/images/toloka06.png)
+
+The status indicator changes based on the
+state of the project and pool.
+
+For projects:
+
+- Green - active
+- Dark grey - archived
+
+For pools:
+
+- Green - open for annotating
+-  Light gray - closed
+-  Dark grey - archived
 
 ## Adding tasks and jobs to the Toloka project
 
@@ -121,19 +142,21 @@ To set up the Toloka pool, do the following:
    - **Sensible content**: Switch this toggle if your dataset
      contains images intended for an adult audience.
    - **Accept solutions automatically**: Enable this if you
-     wish for completed jobs to be automatically accepted.
+     wish for completed pools to be automatically accepted.
    - **Close pool after completion, sec**: Enter the time limit, in seconds,
      within which each job should be completed. You can also click on the
      field to select from one of the predefined periods.
    - **Time per task suite, sec**: Enter the time allowed for completing a task suite,
-     in seconds. Uncompleted tasks are redistributed to other Tolokers.
+     in seconds. The Toloker will see the deadline in the task information on the main Toloka page
+     and also in CVAT interface. Uncompleted tasks are redistributed to other Tolokers.
    - **Days for manual review by requester**: Specify the Review period in days —
      the number of days for the review (from 1 to 21 days from the task completion date).
      The Toloker will see the deadline in the task information on the main Toloka page.
    - **Audience**: Add rules to make jobs available only to Tolokers who meet certain criteria.
      For example, you might require Tolokers to be proficient in English and have higher education.
      These rules operate based on filter principles. For more information,
-     see [Filters](http://localhost:1313/docs/manual/advanced/filter/) documentation
+     see [Toloks Filters](https://toloka.ai/docs/guide/filters/#:~:text=You%20can%20use%20filters%20to,faster%20and%20spend%20less%20money.)
+     documentation, [CVAT Filters](/docs/manual/advanced/filter/) documentation
      or [CVAT Filters](https://www.youtube.com/watch?v=lj6KLIFn24A) video tutorial.
    - ![Toloka Rules](/images/toloka10.jpg)
 
@@ -159,7 +182,7 @@ To change started Toloka pool, you need to stop it first.
 
 ## Reviewing annotated jobs
 
-In case the jobs you've created are not in the **Accept solutions automatically**
+In case the pool you've created are not in the **Accept solutions automatically**
 mode, you will need to manually review and accept them
 within time limits that were defined in the Toloka pool settings.
 
