@@ -139,7 +139,7 @@ To set up the Toloka pool, do the following:
 
 3. Click **Submit**. You will see the **Toloka task was created** pop-up and the **Update pool** form.
 
-   ![Update Project](/images/toloka11.jpg)
+   ![Update pool](/images/toloka11.jpg)
 
    - ![Open pool in Toloka](/images/toloka04.png) opens pool in Toloka.
    - ![Open task in CVAT](/images/toloka05.png) opens task in CVAT.
