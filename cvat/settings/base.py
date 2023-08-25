@@ -535,17 +535,18 @@ LOGGING = {
             'database_path': EVENTS_LOCAL_DB_FILE,
         }
     },
+    'root': {
+        'handlers': ['console', 'server_file'],
+    },
     'loggers': {
         'cvat': {
-            'handlers': ['console', 'server_file'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
 
         'django': {
-            'handlers': ['console', 'server_file'],
             'level': 'INFO',
-            'propagate': True
         },
+
         'vector': {
             'handlers': [],
             'level': 'INFO',

@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory leak in the logging system (<https://github.com/opencv/cvat/pull/6804>)
 - A race condition during initial `secret_key.py` creation
   (<https://github.com/opencv/cvat/pull/6775>)
+- Duplicate log entries from the CVAT server
+  (<https://github.com/opencv/cvat/pull/6766>)
 
 ### Security
 - TDB
