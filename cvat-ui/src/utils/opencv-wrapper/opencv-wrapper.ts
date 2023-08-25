@@ -8,6 +8,7 @@ import HistogramEqualizationImplementation, { HistogramEqualization } from './hi
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 import { OpenCVTracker } from './opencv-interfaces';
+import GammaCorrectionImplementation, { GammaCorrection } from './gamma-correciton';
 
 const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);
@@ -32,6 +33,7 @@ export interface Contours {
 
 export interface ImgProc {
     hist: () => HistogramEqualization;
+    gamma: () => GammaCorrection;
 }
 
 export interface Tracking {
@@ -105,7 +107,7 @@ export class OpenCVWrapper {
 
         const global = window as any;
 
-        this.cv = await global.cv;
+        this.cv = global.cv;
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {
@@ -220,6 +222,7 @@ export class OpenCVWrapper {
         this.checkInitialization();
         return {
             hist: () => new HistogramEqualizationImplementation(this.cv),
+            gamma: () => new GammaCorrectionImplementation(this.cv),
         };
     }
 

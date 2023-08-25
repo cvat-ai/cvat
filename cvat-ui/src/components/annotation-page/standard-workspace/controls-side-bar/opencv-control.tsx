@@ -702,6 +702,30 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                             <AreaChartOutlined />
                         </Button>
                     </CVATTooltip>
+                    <CVATTooltip title='Gamma correction' className='cvat-opencv-image-tool'>
+                        <Button
+                            className={
+                                this.imageModifier('gamma') ?
+                                    'cvat-opencv-histogram-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-histogram-tool-button'
+                            }
+                            onClick={(e: React.MouseEvent<HTMLElement>) => {
+                                const modifier = this.imageModifier('gamma');
+                                if (!modifier) {
+                                    this.enableImageModifier(openCVWrapper.imgproc.gamma(), 'gamma');
+                                } else {
+                                    const button = e.target as HTMLElement;
+                                    button.blur();
+                                    this.disableImageModifier('gamma');
+                                    const { changeFrame } = this.props;
+                                    const { frame } = this.props;
+                                    this.enableCanvasForceUpdate();
+                                    changeFrame(frame, false, 1, true);
+                                }
+                            }}
+                        >
+                            <AreaChartOutlined />
+                        </Button>
+                    </CVATTooltip>
                 </Col>
             </Row>
         );
