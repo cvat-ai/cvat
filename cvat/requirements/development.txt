@@ -58,7 +58,7 @@ tomli==2.0.1
     #   pylint
 tomlkit==0.12.1
     # via pylint
-tornado==6.3.2
+tornado==6.3.3
     # via snakeviz
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: '2.7'
+  version: 2.7.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2774,6 +2774,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/FunctionCall'
           description: ''
+    delete:
+      operationId: lambda_delete_requests
+      summary: Method cancels the request
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        description: Request id
+        required: true
+      tags:
+      - lambda
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/memberships:
     get:
       operationId: memberships_list
@@ -4917,6 +4938,8 @@ paths:
           description: Output backup file is ready for downloading
         '202':
           description: Creating a backup file has been started
+        '400':
+          description: Backup of a task without data is not allowed
   /api/tasks/{id}/data/:
     get:
       operationId: tasks_retrieve_data
