@@ -2575,7 +2575,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             let cx = 0;
             let cy = 0;
             if (['rect', 'image'].includes(shape.type)) {
-                // for rectangle finding a center is simple
+                // for rectangle/mask finding a center is simple
                 cx = +shape.attr('x') + +shape.attr('width') / 2;
                 cy = +shape.attr('y') + +shape.attr('height') / 2;
             } else if (shape.type === 'g') {
