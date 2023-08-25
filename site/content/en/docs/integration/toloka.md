@@ -65,7 +65,7 @@ To initiate your Toloka project, proceed with the following steps:
 
    - **Provider**: Choose Toloka as your provider.
    - **Environment**: Select either **Sandbox** for a testing environment or **Production** for a live environment.
-   - **Authorization key**: Enter the [Requester Authentication Key](https://toloka.ai/docs/toloka-kit/registration/).
+   - **API key**: Enter the [Requester API key](https://toloka.ai/docs/toloka-kit/registration/).
    - **Project description** (Optional): Provide a brief description of your project.
 
 4. Click **Submit**.
