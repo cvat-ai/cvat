@@ -168,7 +168,7 @@ To set up the Toloka pool, do the following:
    - ![Open task in CVAT](/images/toloka05.png) opens task in CVAT.
 
 4. Open Toloka task, go to **Actions** > **Start Toloka pool**.
-   <br>Project, that you created will show up in Toloka.</br>
+   <br>Project, that you created will now be visible to Tolokers.</br>
 
    ![Toloka Project](/images/toloka12.jpg)
 
