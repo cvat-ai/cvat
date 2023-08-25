@@ -204,6 +204,9 @@ To accept the annotated job, do the following:
 
 ### Rejecting job
 
+> Note, that Toloker can open dispute and appeal the rejected
+> job on the Toloka platform.
+
 To reject the annotated job, do the following:
 
 1. Go to the Toloka task and open the job.
@@ -219,13 +222,16 @@ To reject the annotated job, do the following:
 4. Click **OK**.
 
 After you reject the job, the menu bar will change and only the **Accept**
-button will be active, so you can accept the job when changes are made.
+button will be active.
+
+Rejected job can be accepted later.
 
 ## Moving Toloka project to archive
 
 After annotation is completed, you can move the Toloka project to the archive.
 
 > Note that all jobs must be complete.
+> <br>Tasks must not have active assignments or assignments that are being disputed.</br> > <br>All project pools must be closed/archived.<br>
 
 1. Open Toloka project, go to **Actions** > **Archive Toloka project**.
 
