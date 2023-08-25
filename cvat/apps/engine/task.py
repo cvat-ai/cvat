@@ -40,6 +40,7 @@ from utils.dataset_manifest.utils import detect_related_images
 from .cloud_provider import db_storage_to_storage_instance
 
 from cvat.rebotics.s3_client import s3_client
+from cvat.apps.rebotics.serializers import DetectionImageSerializer
 
 
 ############################# Low Level server API
@@ -323,6 +324,20 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
     remote_files = db_data.remote_files.all()
     for file in remote_files:
         url = file.file
+        if 'gi_id' in file.meta:
+            token = file.meta.pop('token')
+            headers = {'Authorization': f'Token {token}'}
+            response = requests.get(url, headers=headers)
+            data = response.json()
+
+            serializer = DetectionImageSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+
+            file.meta['annotations'] = serializer.validated_data['annotations']
+            file.meta['tags'] = serializer.validated_data['tags']
+
+            url = serializer.validated_data['image']
+
         name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
         name = _check_filename_collisions(name, local_files, rename_files)
         _validate_url(url)
@@ -348,8 +363,8 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
             raise Exception("Failed to download " + url)
 
         local_files[name] = new_name
-        file.file = new_name
-    models.RemoteFile.objects.bulk_update(remote_files, fields=('file',))
+        file.meta['name'] = new_name
+    models.RemoteFile.objects.bulk_update(remote_files, fields=('meta', ))
     return list(local_files.values())
 
 
@@ -447,7 +462,7 @@ def _move_remote_files_to_s3(db_data: models.Data):
     upload_dirname = db_data.get_upload_dirname()
     remote_files = db_data.remote_files.all()
     for remote_file in remote_files:
-        path = os.path.join(upload_dirname, remote_file.file)
+        path = os.path.join(upload_dirname, remote_file.meta['name'])
         _move_file_to_s3(path, db_data, remote_file.meta)
     remote_files.delete()
 

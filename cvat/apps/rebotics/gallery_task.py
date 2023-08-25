@@ -3,7 +3,7 @@ import sys
 import random
 import requests
 from urllib import parse as urlparse, request as urlrequest
-from .serializers import DetectionImageSerializer, DetectionImageListSerializer
+from .serializers import DetectionImageListSerializer
 from .models import GalleryImportProgress, GIStatusSuccess, GIStatusFailed, \
     GIInstanceLocal, GIInstanceR3cn, SHAPE_RECTANGLE, SHAPE_POLYGON, SHAPE_LINE, \
     ALL_UPC, PRICE_TAG_OCR
@@ -85,6 +85,7 @@ class ShapesImporter:
         self.jobs = None
         self.job = None
         self.files = None
+        self.file = None
         self.image_data = None
         self.image_size = None
 
@@ -185,41 +186,42 @@ class ShapesImporter:
                 val.shape_id = shape.pk
                 save_vals.append(val)
         LabeledShapeAttributeVal.objects.bulk_create(save_vals)
+        self.file.save()
 
-    def _set_image_data(self) -> None:
-        manifest_manager = S3ManifestManager(self.task.data.get_s3_manifest_path())
-        manifest_manager.init_index()
-        self.image_data = {f'{props["name"]}{props["extension"]}': (props['width'], props['height'])
-                           for _, props in manifest_manager}
-
-    def _set_image_size(self) -> None:
-        self.image_size = self.image_data.get(self.gi_item.name, (sys.maxsize, sys.maxsize))
-
-    def _reset(self) -> None:
+    def _reset(self, gi_item) -> None:
+        self.gi_item = gi_item
         if self.task is None or self.task.pk != self.gi_item.task_id:
             self.task = self.gi_item.task
             self.jobs = Job.objects.filter(segment__task=self.task).select_related('segment')
-            self._set_image_data()
+            self.files = sort(
+                self.task.data.s3_files.all(),
+                sorting_method=SortingMethod.LEXICOGRAPHICAL,
+                func=lambda i: i.meta['name'],
+            )
+            manifest_manager = S3ManifestManager(self.task.data.get_s3_manifest_path())
+            manifest_manager.init_index()
+            self.image_data = {f'{props["name"]}{props["extension"]}': (props['width'], props['height'])
+                               for _, props in manifest_manager}
+        self.job = self.jobs[self.gi_item.frame // self.task.segment_size]
+        self.file = self.files[self.gi_item.frame]
         self.shapes = []
         self.vals = []
         self.tags = []
-        self.job = self.jobs[self.gi_item.frame // self.task.segment_size]
-        self._set_image_size()
+        self.image_size = self.image_data.get(self.file.meta['name'], (sys.maxsize, sys.maxsize))
 
-    def perform_import(self, gi_item: GalleryImportProgress, data: dict) -> None:
-        self.gi_item = gi_item
-        self._reset()
+    def perform_import(self, gi_item: GalleryImportProgress) -> None:
+        self._reset(gi_item)
 
-        for item in data['annotations']:
+        meta = self.file.meta
+        for item in meta.pop('annotations'):
             self._import_annotation(item)
-
-        for item in data['tags']:
+        for item in meta.pop('tags'):
             self._import_tag(item)
 
         self._save()
 
 
-def _get_data(gi_instance, token, gi_id=None):
+def _get_url(gi_instance, gi_id=None):
     if gi_instance == GIInstanceLocal:
         url = 'http://localhost:8003/api/v1/detection-images'
     else:
@@ -229,54 +231,28 @@ def _get_data(gi_instance, token, gi_id=None):
     if gi_id is not None:
         url += f'/{gi_id}'
 
-    headers = {'Authorization': f'Token {token}'}
-    request = requests.get(url, headers=headers)
-    return request.json()
+    return url
 
 
 def _preload_images(gi_instance, token):
-    slogger.glob.info('Preloading list of images.')
-    data = _get_data(gi_instance, token)
+    gi_data = GalleryImportProgress.objects.filter(instance=gi_instance)
+    if not gi_data.exists():
+        url = _get_url(gi_instance)
+        headers = {'Authorization': f'Token {token}'}
+        request = requests.get(url, headers=headers)
+        data = request.json()
 
-    slogger.glob.info('Validating')
-    serializer = DetectionImageListSerializer(data=data, many=True)
-    serializer.is_valid(raise_exception=True)
+        serializer = DetectionImageListSerializer(data=data, many=True)
+        serializer.is_valid(raise_exception=True)
 
-    slogger.glob.info('Sorting')
-    data = sorted(serializer.validated_data, key=lambda i: i['id'])
-
-    slogger.glob.info('Checking existing data')
-    gi_data = GalleryImportProgress.objects.filter(instance=gi_instance).order_by('gi_id')
-
-    if gi_data.exists():
-        slogger.glob.info('Data exists, updating urls')
-        for i in range(len(data)):
-            if gi_data[i].gi_id == data[i]['id']:
-                gi_data[i].url = data[i]['image']
-            else:
-                raise ValueError('Ids do not match!')
-
-        GalleryImportProgress.objects.bulk_update(gi_data, ('url', ))
-    else:
-        slogger.glob.info('Data does not exist, creating')
         GalleryImportProgress.objects.bulk_create([
             GalleryImportProgress(
                 instance=gi_instance,
                 gi_id=item['id'],
-                url=item['image'],
                 name=_get_file_name(item['image']),
             )
-            for item in data
-        ])
-
-    slogger.glob.info('Retrieving data')
-    gi_data = GalleryImportProgress.objects.filter(instance=gi_instance, task_id__isnull=True)
-
-    slogger.glob.info('Sorting')
-    gi_data = sort(gi_data, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=lambda i: i.name)
-
-    slogger.glob.info('Done')
-    return gi_data
+            for item in serializer.validated_data
+        ], batch_size=1000)
 
 
 def _get_user():
@@ -315,7 +291,7 @@ def _get_project(gi_instance, user, organization):
 
 
 @transaction.atomic
-def _create_task(project, gi_data, gi_instance, frame, size, segment_size):
+def _create_task(project, gi_data, gi_instance, frame, size, segment_size, token):
     stop_frame = frame + size
     data = gi_data[frame:stop_frame]
 
@@ -341,8 +317,11 @@ def _create_task(project, gi_data, gi_instance, frame, size, segment_size):
     files = RemoteFile.objects.bulk_create([
         RemoteFile(
             data=db_data,
-            file=item.url,
-            meta={'gi_id': item.gi_id}
+            file=_get_url(gi_instance, gi_id=item.gi_id),
+            meta={
+                'gi_id': item.gi_id,
+                'token': token,
+            }
         )
         for item in data
     ])
@@ -373,91 +352,61 @@ def _create_task(project, gi_data, gi_instance, frame, size, segment_size):
     GalleryImportProgress.objects.bulk_update(data, ('task', 'frame',))
 
 
-def _start(gi_instance, token, task_size, job_size):
-    gi_data = _preload_images(gi_instance, token)
+def _create_tasks(gi_instance, token, task_size, job_size):
+    gi_data = sort(
+        GalleryImportProgress.objects.filter(instance=gi_instance, task_id__isnull=True),
+        sorting_method=SortingMethod.LEXICOGRAPHICAL,
+        func=lambda i: i.name
+    )
 
-    if len(gi_data) < 1:
-        slogger.glob.info('All is imported')
-        return
+    if len(gi_data) > 0:
+        user = _get_user()
+        organization = _get_organization()
+        project = _get_project(gi_instance, user, organization)
+        total = len(gi_data)
 
-    user = _get_user()
-    organization = _get_organization()
-    project = _get_project(gi_instance, user, organization)
-    total = len(gi_data)
-
-    frame = 0
-    while frame < total:
-        if frame + task_size > total:
-            _create_task(project, gi_data, gi_instance, frame, total - frame, job_size)
-            frame = total
-        else:
-            _create_task(project, gi_data, gi_instance, frame, task_size, job_size)
-            frame += task_size
+        frame = 0
+        while frame < total:
+            if frame + task_size > total:
+                _create_task(project, gi_data, gi_instance, frame, total - frame, job_size, token)
+                frame = total
+            else:
+                _create_task(project, gi_data, gi_instance, frame, task_size, job_size, token)
+                frame += task_size
 
 
 @transaction.atomic
-def _import_annotations(gi_item, gi_data, importer):
-    importer.perform_import(gi_item, gi_data)
+def _import_frame(gi_item, importer):
+    importer.perform_import(gi_item)
 
     gi_item.status = GIStatusSuccess
     gi_item.save()
 
 
-def _update(gi_instance, token):
-    gi_data = GalleryImportProgress.objects\
-        .filter(status=GIStatusFailed, task_id__isnull=False)\
-        .select_related('task')
+def _import_annotations(gi_instance):
+    gi_data = GalleryImportProgress.objects \
+        .filter(instance=gi_instance, status=GIStatusFailed, task_id__isnull=False) \
+        .order_by('task_id', 'frame')
 
-    if len(gi_data) < 1:
-        slogger.glob.info('All annotations are imported')
-        return
-
-    importer = ShapesImporter()
-    for item in gi_data:
-        data = _get_data(gi_instance, token, gi_id=item.gi_id)
-
-        serializer = DetectionImageSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-
-        slogger.glob.info(f'Task {item.task_id} frame {item.frame}')
-        _import_annotations(item, serializer.validated_data, importer)
+    if len(gi_data) > 0:
+        importer = ShapesImporter()
+        for item in gi_data:
+            slogger.glob.info(f'Task {item.task_id} frame {item.frame}')
+            _import_frame(item, importer)
 
 
-def update(instance, token):
-    slogger.glob.info(f'Starting annotations import from {instance}-imggal.')
-
-    job_id = f'gi_{instance}_start'
-
-    q = django_rq.get_queue('default')
-    job: RqJob = q.fetch_job(job_id)
-
-    if job is None or job.is_finished or job.is_failed:
-        job_id = f'gi_{instance}_update'
-
-        q = django_rq.get_queue('default')
-        job: RqJob = q.fetch_job(job_id)
-
-        if job is None or job.is_finished or job.is_failed:
-            q.enqueue_call(
-                _update,
-                args=(instance, token),
-                job_id=job_id,
-            )
-            return "ok"
-        else:
-            slogger.glob.info('Update is already in progress.')
-            return "update is in progress"
-    else:
-        slogger.glob.info('Import is already in progress.')
-        return "import is in progress"
+def _start(gi_instance, token, task_size, job_size):
+    slogger.glob.info('Preloading images')
+    _preload_images(gi_instance, token)
+    slogger.glob.info('Creating tasks')
+    _create_tasks(gi_instance, token, task_size, job_size)
+    slogger.glob.info('Importing annotations')
+    _import_annotations(gi_instance)
 
 
 def start(instance, token, task_size, job_size):
-    slogger.glob.info(f'Starting import from {instance}-imggal.')
-
-    job_id = f'gi_{instance}_start'
-
     q = django_rq.get_queue('default')
+    job_id = f'gi_{instance}_import'
     job: RqJob = q.fetch_job(job_id)
 
     if job is None or job.is_finished or job.is_failed:
@@ -468,30 +417,20 @@ def start(instance, token, task_size, job_size):
         )
         return "ok"
     else:
-        slogger.glob.info('Import is already in progress.')
         return "import is in progress"
 
 
 def get_job_status(instance):
     q = django_rq.get_queue('default')
 
-    start_id = f'gi_{instance}_start'
-    start_job: RqJob = q.fetch_job(start_id)
-    start_exc = None
-    start_status = None
-    if start_job is not None:
-        start_status = start_job.get_status()
-        if start_status == JobStatus.FAILED:
-            start_exc = start_job.exc_info
-
-    update_id = f'gi_{instance}_update'
-    update_job: RqJob = q.fetch_job(update_id)
-    update_exc = None
-    update_status = None
-    if update_job is not None:
-        update_status = update_job.get_status()
-        if update_status == JobStatus.FAILED:
-            update_exc = update_job.exc_info
+    job_id = f'gi_{instance}_import'
+    job: RqJob = q.fetch_job(job_id)
+    exc_info = None
+    job_status = None
+    if job is not None:
+        job_status = job.get_status()
+        if job_status == JobStatus.FAILED:
+            exc_info = job.exc_info
 
     success_count = GalleryImportProgress.objects.filter(instance=instance, status=GIStatusSuccess).count()
     started_count = GalleryImportProgress.objects.filter(
@@ -500,27 +439,13 @@ def get_job_status(instance):
     failed_count = GalleryImportProgress.objects.filter(
         instance=instance, status=GIStatusFailed, task__isnull=True
     ).count()
-    total = success_count + started_count + failed_count
 
     return {
         'success': success_count,
         'started': started_count,
         'failed': failed_count,
-        'total': total,
-        'start_job': {
-            'id': start_id,
-            'status': start_status,
-            'exc_info': start_exc,
-        },
-        'update_job': {
-            'id': update_id,
-            'status': update_status,
-            'exc_info': update_exc,
-        },
+        'total': success_count + started_count + failed_count,
+        'job_id': job_id,
+        'job_status': job_status,
+        'exc_info': exc_info,
     }
-
-
-def delete(instance):
-    GalleryImportProgress.objects.filter(instance=instance).delete()
-
-    return 'ok'

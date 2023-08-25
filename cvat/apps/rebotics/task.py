@@ -49,16 +49,6 @@ def _rand_color():
     return color
 
 
-def _get_file_name(url):
-    return os.path.basename(
-        urlrequest.url2pathname(
-            urlparse.urlparse(
-                url
-            ).path
-        )
-    )
-
-
 class ShapesImporter:
     def __init__(self, task_id):
         self.task = Task.objects.get(pk=task_id)
@@ -274,15 +264,9 @@ def create(data: dict, retailer: User):
 
         remote_files = []
         for image_data in images:
-            url = image_data.pop('image')
-            filename = _get_file_name(url)
-            scan_id = image_data.get('processing_action_id')
-            if scan_id is not None:
-                filename = f'scan_{scan_id}_{filename}'
-            image_data['name'] = filename
             remote_files.append(RemoteFile(
                 data=db_data,
-                file=url,
+                file=image_data.pop('image'),
                 meta=image_data,
             ))
         RemoteFile.objects.bulk_create(remote_files)

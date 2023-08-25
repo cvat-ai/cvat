@@ -38,7 +38,6 @@ PRICE_TAG_OCR = 'Price tag OCR'
 class GalleryImportProgress(models.Model):
     instance = models.CharField(max_length=5, choices=GIInstanceChoices)
     gi_id = models.IntegerField()
-    url = models.CharField(max_length=3000)
     name = models.CharField(max_length=1000, null=True, default=None)
     status = models.CharField(max_length=7, choices=GIStatusChoices, default=GIStatusFailed)
     task = models.ForeignKey(Task, null=True, on_delete=models.SET_NULL, default=None)
