@@ -114,7 +114,7 @@ To set up the Toloka pool, do the following:
    ![Set up Toloka pool](/images/toloka09.jpg)
 
    - **Price per job**: Specify the payment amount for completing
-     one ощи within the project.
+     one job within the project.
    - **Use project description**: Switch this toggle if you want
      to use the overarching project description for individual tasks.
    - **Description**: Provide details about the project.
