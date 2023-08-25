@@ -2558,7 +2558,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (!shape) return;
 
         if (text.node.style.display === 'none') return; // wrong transformation matrix
-        const { textFontSize, textPosition } = this.configuration;
+        const { textFontSize } = this.configuration;
+        let { textPosition } = this.configuration;
+        if (shape.type === 'circle') {
+            // force auto for skeleton elements
+            textPosition = 'auto';
+        }
 
         text.untransform();
         text.style({ 'font-size': `${textFontSize}px` });
@@ -2569,11 +2574,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (textPosition === 'center') {
             let cx = 0;
             let cy = 0;
-            if (shape.type === 'rect') {
+            if (['rect', 'image'].includes(shape.type)) {
                 // for rectangle finding a center is simple
                 cx = +shape.attr('x') + +shape.attr('width') / 2;
                 cy = +shape.attr('y') + +shape.attr('height') / 2;
-            } else if (shape.type === 'ellipse') {
+            } else if (shape.type === 'g') {
+                ({ cx, cy } = shape.bbox());
+            } else if (['ellipse'].includes(shape.type)) {
                 // even simpler for ellipses
                 cx = +shape.attr('cx');
                 cy = +shape.attr('cy');
