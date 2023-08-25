@@ -364,7 +364,8 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
 
         local_files[name] = new_name
         file.meta['name'] = new_name
-    models.RemoteFile.objects.bulk_update(remote_files, fields=('meta', ))
+        file.save()  # meta is too large for bulk updates.
+    # models.RemoteFile.objects.bulk_update(remote_files, fields=('meta', ), batch_size=10)
     return list(local_files.values())
 
 
