@@ -182,7 +182,7 @@ To accept the annotated job, do the following:
 
 ### Rejecting job
 
-To accept the annotated job, do the following:
+To reject the annotated job, do the following:
 
 1. Go to the Toloka task and open the job.
    <br>On the top menu, you will see **Accept** and **Reject** buttons.
