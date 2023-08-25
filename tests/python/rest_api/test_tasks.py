@@ -23,6 +23,7 @@ from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
+from cvat_sdk.core.progress import NullProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
@@ -2179,7 +2180,11 @@ class TestImportTaskAnnotations:
             required_time = 60
             uploader._tus_start_upload(url, query_params=params)
             uploader._upload_file_data_with_tus(
-                url, filename, meta=params, logger=self.client.logger.debug
+                url,
+                filename,
+                meta=params,
+                logger=self.client.logger.debug,
+                pbar=NullProgressReporter(),
             )
 
         sleep(required_time)
@@ -2206,7 +2211,11 @@ class TestImportTaskAnnotations:
         uploader = Uploader(self.client)
         uploader._tus_start_upload(url, query_params=params)
         uploader._upload_file_data_with_tus(
-            url, filename, meta=params, logger=self.client.logger.debug
+            url,
+            filename,
+            meta=params,
+            logger=self.client.logger.debug,
+            pbar=NullProgressReporter(),
         )
         number_of_files = 1
         sleep(30)  # wait when the cleaning job from rq worker will be started
