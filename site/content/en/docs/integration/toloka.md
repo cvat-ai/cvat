@@ -22,7 +22,10 @@ See:
 - [Reviewing annotated jobs](#reviewing-annotated-jobs)
   - [Accepting job](#accepting-job)
   - [Rejecting job](#rejecting-job)
+- [Moving Toloka pool to archive](#moving-toloka-pool-to-archive)
 - [Moving Toloka project to archive](#moving-toloka-project-to-archive)
+- [Resource sync between CVAT and Toloka](#resource-sync-between-cvat-and-toloka)
+  - [Acceptance/Rejection synchronization](#acceptancerejection-synchronization)
 
 ## Glossary
 
@@ -142,11 +145,11 @@ To set up the Toloka pool, do the following:
      contains images intended for an adult audience.
    - **Accept solutions automatically**: Enable this if you
      wish for completed pools to be automatically accepted.
-   - **Close pool after completion, sec**: Enter the time limit, in seconds,
-     within which each job should be completed. You can also click on the
-     field to select from one of the predefined periods.
-   - **Time per task suite, sec**: Enter the time allowed for completing a task suite,
-     in seconds. The Toloker will see the deadline in the task information on the main Toloka page
+   - **Close pool after completion, sec**: The interval during which the pool will
+     remain open from the moment all tasks are completed.
+     Minimum — 0, maximum — 259200 seconds (three days).
+   - **Time per task suite, sec**: Enter the time limit, in seconds, within which each job ьгые be completed.
+     The Toloker will see the deadline in the task information on the main Toloka page
      and also in CVAT interface. Uncompleted tasks are redistributed to other Tolokers.
    - **Days for manual review by requester**: Specify the Review period in days —
      the number of days for the review (from 1 to 21 days from the task completion date).
@@ -166,7 +169,7 @@ To set up the Toloka pool, do the following:
    - ![Open pool in Toloka](/images/toloka04.png) opens pool in Toloka.
    - ![Open task in CVAT](/images/toloka05.png) opens task in CVAT.
 
-4. Open Toloka task, go to **Actions** > **Start Toloka pool**.
+4. Open the CVAT task that was published to Toloka, go to **Actions** > **Start Toloka pool**.
    <br>Project, that you created will now be visible to Tolokers.</br>
 
    ![Toloka Project](/images/toloka12.jpg)
@@ -226,15 +229,59 @@ button will be active.
 
 Rejected job can be accepted later.
 
+## Moving Toloka pool to archive
+
+After annotation is complete, you can move
+the Toloka pools to archive without
+archiving the whole Project.
+
+> **Note**, that to archive pool, all jobs within task
+> must be in the Complete state.
+
+> **Note**, that pool must accepted and
+> without active assignments on the Toloka
+> side.
+
+> Keep in mind, that if you
+> **Rejected** the job, it will not become
+> unassigned immediately, to give
+> Toloker time to open a dispute.
+
+To archive complete jobs, do the following:
+
+1. Open Toloka task, and go to **Actions**.
+2. (Optional) If the task is ongoing, select **Stop Toloka pool**.
+3. Select **Archive Toloka pool**
+4. In the pop-up click **OK**.
+
 ## Moving Toloka project to archive
 
 After annotation is completed, you can move the Toloka project to the archive.
 
 > Note that all jobs must be complete.
-> <br>Tasks must not have active assignments or assignments that are being disputed.</br> > <br>All project pools must be closed/archived.<br>
+> Tasks must not have active assignments or assignments that are being disputed.
+> All project pools must be closed/archived.
 
 1. Open Toloka project, go to **Actions** > **Archive Toloka project**.
 
    ![Toloka Project](/images/toloka16.jpg)
 
 2. In the pop-up, click **Yes**.
+
+## Resource sync between CVAT and Toloka
+
+There are two types of synchronization between CVAT and Toloka:
+
+- **Explicit synchronization**: Triggered manually by the requester
+  by clicking the **Sync Toloka project**/**Sync Toloka pool** button within the CVAT interface.
+- **Implicit Synchronization**: Occurs automatically at predetermined intervals.
+  Resources that have been requested by users will be synchronized
+  without any manual intervention.
+
+### Acceptance/Rejection synchronization
+
+In addition to project and pool synchronization, it is essential to synchronize
+the status of assignments. If a requester accepts or rejects an assignment
+through Toloka's client interface, this action automatically
+synchronizes with CVAT to ensure that the data remains
+current and consistent across both platforms.
