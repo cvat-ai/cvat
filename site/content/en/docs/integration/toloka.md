@@ -73,7 +73,7 @@ To initiate your Toloka project, proceed with the following steps:
 
    ![Project Update Form](/images/toloka03.png)
 
-   - ![Open Project in Toloka](/images/toloka04.png) will take you to the project in Toloka.
+   - ![Open Project in Toloka](/images/toloka04.png) will take you to the published project in Toloka.
    - ![Open Project in CVAT](/images/toloka05.png) will take you back to the project in CVAT.
 
 In CVAT, all projects related to Toloka will be labeled as **Toloka**.
