@@ -117,7 +117,7 @@ To set up the Toloka pool, do the following:
      one job within the project.
    - **Use project description**: Switch this toggle if you want
      to use the overarching project description for individual tasks.
-   - **Description**: Provide details about the project.
+   - **Description**: Provide details about the pool.
      This field is visible only when the **Use project description** toggle is off.
    - **Sensible content**: Switch this toggle if your dataset
      contains images intended for an adult audience.
