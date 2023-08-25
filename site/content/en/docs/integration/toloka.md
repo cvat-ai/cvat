@@ -43,8 +43,7 @@ Refer to the table below for clarity on how we define and use them.
 Actor: Requester.
 
 Requester must have a [CVAT account](/docs/manual/basics/registration/)
-and [Toloka Requester](https://platform.toloka.ai/auth?role=REQUESTER&retpath=%2Fsignup%2Frequester)
-account.
+and [Toloka Requester account](https://platform.toloka.ai/auth?role=REQUESTER&retpath=%2Fsignup%2Frequester).
 
 ## Creating Toloka project
 
