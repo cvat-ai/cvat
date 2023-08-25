@@ -29,15 +29,14 @@ See:
 This page contains several terms used to describe interactions between systems and actors.
 Refer to the table below for clarity on how we define and use them.
 
-
 <!--lint disable maximum-line-length-->
 
-| Term      | Explanation                                                                                                                                                                                                                                                                   |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Toloka    | Toloka  is a crowdsourcing platform that allows users to assign tasks to a broad group of participants, often termed "crowd workers". In the context of this article, when we mention Toloka, we are specifically referring to one of its UI interfaces. |
-| CVAT      | CVAT is a tool designed for annotating video and image data for computer vision tasks. In this article's context, when we reference CVAT, we mean one of its UI interfaces.                                                               |
+| Term      | Explanation                                                                                                                                                                                                                                             |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Toloka    | Toloka is a crowdsourcing platform that allows users to assign tasks to a broad group of participants, often termed "crowd workers". In the context of this article, when we mention Toloka, we are specifically referring to one of its UI interfaces. |
+| CVAT      | CVAT is a tool designed for annotating video and image data for computer vision tasks. In this article's context, when we reference CVAT, we mean one of its UI interfaces.                                                                             |
 | Requester | An individual who establishes an annotation project within CVAT determines the price, creates tasks and jobs within the project, and then releases it on Toloka.                                                                                        |
-| Toloker   |  A person who annotates the Requester's dataset. |
+| Toloker   | A person who annotates the Requester's dataset.                                                                                                                                                                                                         |
 
 <!--lint enable maximum-line-length-->
 
@@ -97,8 +96,8 @@ For projects:
 For pools:
 
 - Green - open for annotating
--  Light gray - closed
--  Dark grey - archived
+- Light gray - closed
+- Dark grey - archived
 
 ## Adding tasks and jobs to the Toloka project
 
