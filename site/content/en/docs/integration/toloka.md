@@ -31,10 +31,10 @@ Refer to the table below for clarity on how we define and use them.
 
 | Term      | Explanation                                                                                                                                                                                                                                                                   |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Toloka    | Toloka, developed by Yandex, is a crowdsourcing platform that allows users to assign tasks to a broad group of participants, often termed "crowd workers". In the context of this article, when we mention Toloka, we are specifically referring to one of its UI interfaces. |
+| Toloka    | Toloka  is a crowdsourcing platform that allows users to assign tasks to a broad group of participants, often termed "crowd workers". In the context of this article, when we mention Toloka, we are specifically referring to one of its UI interfaces. |
 | CVAT      | CVAT, developed by OpenCV, is a visualization tool designed for annotating video and image data for computer vision tasks. In this article's context, when we reference CVAT, we mean one of its UI interfaces.                                                               |
-| Requester | CVAT and Toloka user. An individual who establishes an annotation project within CVAT determines the price, creates tasks and jobs within the project, and then releases it on Toloka.                                                                                        |
-| Toloker   | Toloka user. A person who annotates the Requester's dataset using the Toloka interface.                                                                                                                                                                                       |
+| Requester | An individual who establishes an annotation project within CVAT determines the price, creates tasks and jobs within the project, and then releases it on Toloka.                                                                                        |
+| Toloker   |  A person who annotates the Requester's dataset. |
 
 <!--lint enable maximum-line-length-->
 
