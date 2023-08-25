@@ -77,7 +77,8 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             expect(skeletonSize).to.be.equal(skeleton.points.length);
             cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
             cy.intercept('/api/tasks?**').as('taskPost');
-            cy.contains('Submit & Open').scrollIntoView().click();
+            cy.contains('Submit & Open').scrollIntoView();
+            cy.contains('Submit & Open').click();
             cy.wait('@taskPost').then((interception) => {
                 taskID = interception.response.body.id;
                 expect(interception.response.statusCode).to.be.equal(201);
@@ -125,7 +126,8 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             cy.get('body').click();
             cy.get('#cvat_canvas_shape_1').within(($el) => {
                 cy.get('.cvat_canvas_skeleton_wrapping_rect').should('exist').and('not.be.visible');
-                cy.wrap($el).trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+                cy.wrap($el).trigger('mousemove');
+                cy.wrap($el).should('have.class', 'cvat_canvas_shape_activated');
                 cy.get('.cvat_canvas_skeleton_wrapping_rect').should('exist').and('be.visible');
             });
 
@@ -160,7 +162,8 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             });
             cy.get('body').trigger('keydown', { keyCode: 78, code: 'KeyN', shiftKey: true });
             cy.get('.cvat-canvas-container')
-                .click(skeletonPosition.xtl + REDRAW_MARGIN, skeletonPosition.ytl + REDRAW_MARGIN)
+                .click(skeletonPosition.xtl + REDRAW_MARGIN, skeletonPosition.ytl + REDRAW_MARGIN);
+            cy.get('.cvat-canvas-container')
                 .click(skeletonPosition.xbr + REDRAW_MARGIN, skeletonPosition.ybr + REDRAW_MARGIN);
             cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
             cy.get('#cvat_canvas_shape_1').within(() => {
@@ -186,7 +189,8 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             cy.goCheckFrameNumber(splittingFrame);
 
             cy.get('.cvat-split-track-control').click();
-            cy.get('#cvat_canvas_shape_1').click().click();
+            cy.get('#cvat_canvas_shape_1').click();
+            cy.get('#cvat_canvas_shape_1').click();
 
             // check objects after splitting
             cy.get('#cvat_canvas_shape_1').should('not.exist');

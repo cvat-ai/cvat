@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
+import { ActiveInference, ModelsQuery } from 'reducers';
 import {
-    ActiveInference, RQStatus, ModelsQuery,
-} from 'reducers';
-import { getCore, MLModel, ModelProvider } from 'cvat-core-wrapper';
+    getCore, MLModel, ModelProvider, RQStatus,
+} from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 
 const cvat = getCore();
@@ -63,9 +63,10 @@ export const modelsActions = {
             activeInference,
         })
     ),
-    getInferenceStatusFailed: (taskID: number, error: any) => (
+    getInferenceStatusFailed: (taskID: number, activeInference: ActiveInference, error: any) => (
         createAction(ModelsActionTypes.GET_INFERENCE_STATUS_FAILED, {
             taskID,
+            activeInference,
             error,
         })
     ),
@@ -165,10 +166,17 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
     const { taskID, requestID, functionID } = inferenceMeta;
     core.lambda
         .listen(requestID, functionID, (status: RQStatus, progress: number, message: string) => {
-            if (status === RQStatus.failed || status === RQStatus.unknown) {
+            if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
                 dispatch(
                     modelsActions.getInferenceStatusFailed(
                         taskID,
+                        {
+                            status,
+                            progress,
+                            functionID,
+                            error: message,
+                            id: requestID,
+                        },
                         new Error(`Inference status for the task ${taskID} is ${status}. ${message}`),
                     ),
                 );
@@ -189,12 +197,12 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
         .catch((error: Error) => {
             dispatch(
                 modelsActions.getInferenceStatusFailed(taskID, {
-                    status: 'unknown',
+                    status: RQStatus.UNKNOWN,
                     progress: 0,
                     error: error.toString(),
                     id: requestID,
                     functionID,
-                }),
+                }, error),
             );
         });
 }

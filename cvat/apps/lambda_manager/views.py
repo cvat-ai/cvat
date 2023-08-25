@@ -924,7 +924,7 @@ class FunctionViewSet(viewsets.ViewSet):
             '200': FunctionCallSerializer
         }
     ),
-    delete=extend_schema(
+    destroy=extend_schema(
         operation_id='lambda_delete_requests',
         summary='Method cancels the request',
         parameters=[
@@ -1000,7 +1000,7 @@ class RequestViewSet(viewsets.ViewSet):
         return response_serializer.data
 
     @return_response(status.HTTP_204_NO_CONTENT)
-    def delete(self, request, pk):
+    def destroy(self, request, pk):
         self.check_object_permissions(request, pk)
         queue = LambdaQueue()
         rq_job = queue.fetch_job(pk)

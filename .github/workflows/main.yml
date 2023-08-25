@@ -28,6 +28,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Verify version consistency
+        run: ./dev/update_version.py --verify-current
+
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
         with:
@@ -269,9 +272,8 @@ jobs:
       matrix:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
                 'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
-                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2', 'masks', 'skeletons',
-                'analytics']
+                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
+                'issues_prs', 'issues_prs2', 'features']
     steps:
       - uses: actions/checkout@v3
 
