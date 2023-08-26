@@ -74,7 +74,7 @@ def _get_file_name(url):
 
 
 class ShapesImporter:
-    def __init__(self):
+    def __init__(self, task=None):
         self.gi_item = None
         self.task = None
         self.labels = {}    # Labels
@@ -88,6 +88,8 @@ class ShapesImporter:
         self.file = None
         self.image_data = None
         self.image_size = None
+        if task is not None:
+            self._reset_task(task)
 
     def _get_label(self, name: str) -> Label:
         if name in self.labels:
@@ -188,20 +190,23 @@ class ShapesImporter:
         LabeledShapeAttributeVal.objects.bulk_create(save_vals)
         self.file.save()
 
-    def _reset(self, gi_item) -> None:
+    def _reset_task(self, task) -> None:
+        self.task = task
+        self.jobs = Job.objects.filter(segment__task=self.task).select_related('segment')
+        self.files = sort(
+            self.task.data.s3_files.all(),
+            sorting_method=SortingMethod.LEXICOGRAPHICAL,
+            func=lambda i: i.meta['name'],
+        )
+        manifest_manager = S3ManifestManager(self.task.data.get_s3_manifest_path())
+        manifest_manager.init_index()
+        self.image_data = {f'{props["name"]}{props["extension"]}': (props['width'], props['height'])
+                           for _, props in manifest_manager}
+
+    def _reset_frame(self, gi_item) -> None:
         self.gi_item = gi_item
         if self.task is None or self.task.pk != self.gi_item.task_id:
-            self.task = self.gi_item.task
-            self.jobs = Job.objects.filter(segment__task=self.task).select_related('segment')
-            self.files = sort(
-                self.task.data.s3_files.all(),
-                sorting_method=SortingMethod.LEXICOGRAPHICAL,
-                func=lambda i: i.meta['name'],
-            )
-            manifest_manager = S3ManifestManager(self.task.data.get_s3_manifest_path())
-            manifest_manager.init_index()
-            self.image_data = {f'{props["name"]}{props["extension"]}': (props['width'], props['height'])
-                               for _, props in manifest_manager}
+            self._reset_task(self.gi_item.task)
         self.job = self.jobs[self.gi_item.frame // self.task.segment_size]
         self.file = self.files[self.gi_item.frame]
         self.shapes = []
@@ -210,7 +215,7 @@ class ShapesImporter:
         self.image_size = self.image_data.get(self.file.meta['name'], (sys.maxsize, sys.maxsize))
 
     def perform_import(self, gi_item: GalleryImportProgress) -> None:
-        self._reset(gi_item)
+        self._reset_frame(gi_item)
 
         meta = self.file.meta
         for item in meta.pop('annotations'):
@@ -290,10 +295,22 @@ def _get_project(gi_instance, user, organization):
     return project
 
 
+def _create_task_annotations(gi_data, task):
+    slogger.glob.info('Creating task annotations')
+
+    importer = ShapesImporter(task)
+    for item in gi_data:
+        slogger.glob.info(f'Task {item.task_id} frame {item.frame}')
+        _import_frame(item, importer)
+
+
 @transaction.atomic
 def _create_task(project, gi_data, gi_instance, frame, size, segment_size, token):
     stop_frame = frame + size
     data = gi_data[frame:stop_frame]
+
+    task_name = f'{gi_instance}-imggal import | {data[0].name[:25]} | {data[-1].name[:25]}'
+    slogger.glob.info(f'Creating task {task_name}')
 
     db_data = Data.objects.create(
         image_quality=70,
@@ -307,7 +324,7 @@ def _create_task(project, gi_data, gi_instance, frame, size, segment_size, token
     task = Task.objects.create(
         project=project,
         data=db_data,
-        name=f'{gi_instance}-imggal import | {data[0].name[:25]} | {data[-1].name[:25]}',
+        name=task_name,
         owner=project.owner,
         organization=project.organization,
         mode=ModeChoice.ANNOTATION,
@@ -351,6 +368,8 @@ def _create_task(project, gi_data, gi_instance, frame, size, segment_size, token
         item.frame = i
     GalleryImportProgress.objects.bulk_update(data, ('task', 'frame',))
 
+    return data, task
+
 
 def _create_tasks(gi_instance, token, task_size, job_size):
     gi_data = sort(
@@ -368,11 +387,12 @@ def _create_tasks(gi_instance, token, task_size, job_size):
         frame = 0
         while frame < total:
             if frame + task_size > total:
-                _create_task(project, gi_data, gi_instance, frame, total - frame, job_size, token)
+                data, task = _create_task(project, gi_data, gi_instance, frame, total - frame, job_size, token)
                 frame = total
             else:
-                _create_task(project, gi_data, gi_instance, frame, task_size, job_size, token)
+                data, task = _create_task(project, gi_data, gi_instance, frame, task_size, job_size, token)
                 frame += task_size
+            _create_task_annotations(data, task)
 
 
 @transaction.atomic
@@ -414,6 +434,7 @@ def start(instance, token, task_size, job_size):
             _start,
             args=(instance, token, task_size, job_size),
             job_id=job_id,
+            job_timeout=172800,
         )
         return "ok"
     else:
