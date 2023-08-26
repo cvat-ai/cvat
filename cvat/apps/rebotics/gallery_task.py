@@ -434,7 +434,7 @@ def start(instance, token, task_size, job_size):
             _start,
             args=(instance, token, task_size, job_size),
             job_id=job_id,
-            job_timeout=172800,
+            timeout=172800,
         )
         return "ok"
     else:
