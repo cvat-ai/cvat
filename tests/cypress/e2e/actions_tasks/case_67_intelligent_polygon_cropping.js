@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +8,7 @@
 import { taskName, labelName } from '../../support/const';
 
 context('Settings "Intelligent polygon cropping".', () => {
-    const caseId = '59';
+    const caseId = '67';
     const createPolygonShape = {
         redraw: false,
         type: 'Shape',
@@ -43,8 +44,8 @@ context('Settings "Intelligent polygon cropping".', () => {
         cy.contains('[role="tab"]', 'Workspace').click();
         if (uncheck) {
             cy.get('.cvat-workspace-settings-intelligent-polygon-cropping').find('[type="checkbox"]');
-            cy.get('.cvat-workspace-settings-intelligent-polygon-cropping').uncheck();
-            cy.get('.cvat-workspace-settings-intelligent-polygon-cropping').should('not.be.checked');
+            cy.get('.cvat-workspace-settings-intelligent-polygon-cropping').find('[type="checkbox"]').uncheck();
+            cy.get('.cvat-workspace-settings-intelligent-polygon-cropping').find('[type="checkbox"]').should('not.be.checked');
         } else {
             cy
                 .get('.cvat-workspace-settings-intelligent-polygon-cropping')

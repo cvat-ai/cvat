@@ -62,11 +62,7 @@ context('Mutable attribute.', () => {
             cy.get('#cvat_canvas_shape_1').trigger('mousemove', { scrollBehavior: false });
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             [
-                [
-                    0,
-                    `${additionalAttrsLabelShape[0].name}: ${
-                        additionalAttrsLabelShape[0].values}`,
-                ],
+                [0, `${additionalAttrsLabelShape[0].name}: ${additionalAttrsLabelShape[0].values}`],
                 [1, `${additionalAttrsLabelShape[0].name}: ${attrValueSecondFrame}`],
                 [2, `${additionalAttrsLabelShape[0].name}: ${attrValueThirdFrame}`],
                 [3, `${additionalAttrsLabelShape[0].name}: ${attrValueThirdFrame}`],

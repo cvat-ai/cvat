@@ -9,15 +9,15 @@ module.exports = defineConfig({
     downloadsFolder: 'cypress/fixtures',
     env: {
         user: 'admin',
-        email: 'admin@localhost.company',
-        password: '12qwaszx',
+        email: '',
+        password: 'nimda760',
     },
     e2e: {
         setupNodeEvents(on, config) {
             return plugins(on, config);
         },
         testIsolation: false,
-        baseUrl: 'http://localhost:8080',
+        baseUrl: 'http://localhost:3000',
         specPattern: [
             'cypress/e2e/auth_page.js',
             'cypress/e2e/features/*.js',
