@@ -11,9 +11,6 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers';
 
-// Probably it is a temporary solution
-// Overriding existing components IMHO is not the best approach
-// Better to hide them and add some more
 const storage = {
     SAVE_ANNOTATION_BUTTON: (props: any & {
         isSaving: boolean;

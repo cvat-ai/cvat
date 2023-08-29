@@ -5,7 +5,6 @@
 import { Config } from '@react-awesome-query-builder/antd';
 import asyncFetchUsers from 'components/resource-sorting-filtering/request-users';
 
-// TODO: Do we actually need one more file with filters configuration for jobs?
 export const config: Partial<Config> = {
     fields: {
         state: {
