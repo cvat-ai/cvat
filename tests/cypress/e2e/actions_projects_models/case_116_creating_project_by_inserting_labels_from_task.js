@@ -49,10 +49,9 @@ context('Creating a project by inserting labels from a task.', { browser: '!fire
         it('Copying a labels from the task from the raw editor.', () => {
             cy.openTask(task.name);
             cy.contains('[role="tab"]', 'Raw').click();
-            cy.get('.cvat-raw-labels-viewer')
-                .focus()
-                .realPress(['ControlLeft', 'a'])
-                .realPress(['ControlLeft', 'c']);
+            cy.get('.cvat-raw-labels-viewer').focus();
+            cy.get('.cvat-raw-labels-viewer').realPress(['ControlLeft', 'a']);
+            cy.get('.cvat-raw-labels-viewer').realPress(['ControlLeft', 'c']);
         });
 
         it('Creating a project with copying labels from the task.', () => {
@@ -61,10 +60,9 @@ context('Creating a project by inserting labels from a task.', { browser: '!fire
             cy.get('.cvat-create-project-button').click();
             cy.get('#name').type(projectName);
             cy.contains('[role="tab"]', 'Raw').click();
-            cy.get('.cvat-raw-labels-viewer')
-                .focus()
-                .clear()
-                .realPress(['ControlLeft', 'v']);
+            cy.get('.cvat-raw-labels-viewer').focus();
+            cy.get('.cvat-raw-labels-viewer').clear();
+            cy.get('.cvat-raw-labels-viewer').realPress(['ControlLeft', 'v']);
             cy.get('.cvat-raw-labels-viewer').then((raw) => {
                 expect(raw.text()).not.contain('"id":');
             });

@@ -30,11 +30,10 @@ context('Mutable attribute.', () => {
 
     function testChangingAttributeValue(expectedValue, value) {
         cy.get('.cvat-player-next-button').click();
-        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper')
-            .find('textarea')
-            .should('have.value', expectedValue)
-            .clear()
-            .type(value);
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').find('textarea');
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').should('have.value', expectedValue);
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').clear();
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').type(value);
     }
 
     function checkObjectDetailValue(frameNum, expectedValue) {
@@ -60,9 +59,8 @@ context('Mutable attribute.', () => {
 
         it('Go to Standard mode. The object details have correct values on the corresponding frames.', () => {
             cy.changeWorkspace('Standard');
-            cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove', { scrollBehavior: false })
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { scrollBehavior: false });
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             [
                 [
                     0,
@@ -98,10 +96,9 @@ context('Mutable attribute.', () => {
                 });
 
             cy.get('body').click(); // deactivate
-            cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove')
-                .trigger('mouseover')
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         });
     });
 });

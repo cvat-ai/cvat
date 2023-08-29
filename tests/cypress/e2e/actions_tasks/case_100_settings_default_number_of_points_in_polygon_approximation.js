@@ -36,7 +36,9 @@ context('Settings. Default number of points in polygon approximation.', () => {
             testOpenSettingsWorkspace();
             cy.get('.cvat-workspace-settings-approx-poly-threshold')
                 .find('[role="slider"]')
-                .type(generateString(4, 'rightarrow'))
+                .type(generateString(4, 'rightarrow'));
+            cy.get('.cvat-workspace-settings-approx-poly-threshold')
+                .find('[role="slider"]')
                 .then((slider) => {
                     const sliderAttrValueNow = slider.attr('aria-valuenow');
                     const sliderAttrValuemin = slider.attr('aria-valuemin');

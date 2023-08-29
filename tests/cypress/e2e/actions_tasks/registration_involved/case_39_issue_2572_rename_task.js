@@ -35,7 +35,8 @@ context('Rename a task.', () => {
         cy.get('.cvat-task-details-task-name').within(() => {
             cy.get('[aria-label="edit"]').click();
         });
-        cy.contains('.cvat-text-color', myTaskName).click().type(newValue);
+        cy.contains('.cvat-text-color', myTaskName).click();
+        cy.contains('.cvat-text-color', myTaskName).type(newValue);
         cy.get('.cvat-spinner').should('not.exist');
     }
 

@@ -192,7 +192,8 @@ context('Filtering, sorting jobs.', () => {
             testSetJobSorting({ column: 'Stage' });
             cy.get('.cvat-job-item-stage').each((element) => {
                 sortStage.push(element.text());
-            }).then(() => {
+            });
+            cy.get('.cvat-job-item-stage').then(() => {
                 expect(sortStage).to.deep.equal(['annotation', 'annotation', 'validation']);
             });
             testSetJobSorting({ column: 'Stage', reset: true });
@@ -203,7 +204,8 @@ context('Filtering, sorting jobs.', () => {
             testSetJobSorting({ column: 'State' });
             cy.get('.cvat-job-item-state').each((element) => {
                 sortState.push(element.text());
-            }).then(() => {
+            });
+            cy.get('.cvat-job-item-state').then(() => {
                 expect(sortState).to.deep.equal(['Completed', 'New', 'New']);
             });
             testSetJobSorting({ column: 'State', reset: true });
@@ -214,7 +216,8 @@ context('Filtering, sorting jobs.', () => {
             testSetJobSorting({ column: 'Assignee' });
             cy.get('.cvat-job-assignee-selector').find('input').each((element) => {
                 sortAssignee.push(element.val());
-            }).then(() => {
+            });
+            cy.get('.cvat-job-assignee-selector').find('input').then(() => {
                 expect(sortAssignee).to.deep.equal([secondUserName, secondUserName, '']);
             });
         });
