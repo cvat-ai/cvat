@@ -82,7 +82,8 @@ context('Cannot read property label of undefined', { browser: ['!chrome', '!fire
 
         it('Go to another frame. During this procedure open context menu for a shape.', () => {
             cy.get('body').type('f');
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').rightclick();
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').rightclick();
         });
 
         it('Page with the error is missing', () => {

@@ -34,7 +34,8 @@ context('First part of a split track is visible', () => {
         });
         it('Split track', () => {
             cy.get('body').type('{alt}m');
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { button: 0 }).trigger('click', { button: 0 });
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { button: 0 });
+            cy.get('#cvat_canvas_shape_1').trigger('click', { button: 0 });
         });
         it('Go to previous frame', () => {
             cy.get('.cvat-player-previous-button').click();

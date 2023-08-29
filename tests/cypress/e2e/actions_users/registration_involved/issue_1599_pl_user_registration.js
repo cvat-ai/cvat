@@ -25,11 +25,13 @@ context('Issue 1599 (Polish alphabet).', () => {
 
     describe('User registration using the Polish alphabet.', () => {
         it('Filling in the placeholder "First name"', () => {
-            cy.get('#firstName').type(firstName).should('not.have.class', 'has-error');
+            cy.get('#firstName').type(firstName);
+            cy.get('#firstName').should('not.have.class', 'has-error');
         });
 
         it('Filling in the placeholder "Last name"', () => {
-            cy.get('#lastName').type(lastName).should('not.have.class', 'has-error');
+            cy.get('#lastName').type(lastName);
+            cy.get('#lastName').should('not.have.class', 'has-error');
         });
 
         it('Filling in the placeholder "Username"', () => {

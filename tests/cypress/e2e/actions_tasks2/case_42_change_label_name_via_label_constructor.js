@@ -34,14 +34,16 @@ context('Changing a label name via label constructor.', () => {
 
         it('Change label name to any other correct value. Press "Cancel". Label name is not changed.', () => {
             cy.get('.cvat-constructor-viewer-item').find('[aria-label="edit"]').click();
-            cy.get('[placeholder="Label name"]').clear().type(secondLabelName);
+            cy.get('[placeholder="Label name"]').clear();
+            cy.get('[placeholder="Label name"]').type(secondLabelName);
             cy.contains('[type="button"]', 'Cancel').click();
             cy.get('.cvat-constructor-viewer-item').should('exist').and('have.text', firstLabelName);
         });
 
         it('Change label name to any other correct value. Press "Done". Label name changed.', () => {
             cy.get('.cvat-constructor-viewer-item').find('[aria-label="edit"]').click();
-            cy.get('[placeholder="Label name"]').clear().type(secondLabelName);
+            cy.get('[placeholder="Label name"]').clear();
+            cy.get('[placeholder="Label name"]').type(secondLabelName);
             cy.contains('[type="submit"]', 'Done').click();
             cy.get('.cvat-constructor-viewer-item')
                 .should('exist')

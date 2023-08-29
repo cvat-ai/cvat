@@ -34,9 +34,8 @@ context(
                     .contains(attrName)
                     .parents('.cvat-object-item-attribute-wrapper')
                     .within(() => {
-                        cy.get('.cvat-object-item-text-attribute')
-                            .type('{leftarrow}{leftarrow}ee')
-                            .should('have.value', textDefaultValue.replace('Text', 'Teeext'));
+                        cy.get('.cvat-object-item-text-attribute').type('{leftarrow}{leftarrow}ee');
+                        cy.get('.cvat-object-item-text-attribute').should('have.value', textDefaultValue.replace('Text', 'Teeext'));
                     });
             });
         });

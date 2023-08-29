@@ -41,7 +41,9 @@ context('Check if UI not fails with shape dragging over sidebar', () => {
         it('Shape dragging over sidebar.', () => {
             /* To reproduce the error, move the any shape under any
                #cvat-objects-sidebar-state-item-*. */
-            cy.get('#cvat_canvas_shape_2').trigger('mousemove').trigger('mouseover').trigger('mousedown', { which: 1 });
+            cy.get('#cvat_canvas_shape_2').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_2').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_2').trigger('mousedown', { which: 1 });
         });
         it('There is no error like "Canvas is busy. Action: drag" in the console', () => {
             cy.get('body')

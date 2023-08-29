@@ -20,9 +20,8 @@ context('Extra instances on canvas when grouping.', () => {
 
         it('Start drawing a group region and press "G". Group region not exist', () => {
             cy.get('.cvat-group-control').click();
-            cy.get('.cvat-canvas-container')
-                .trigger('mousedown', 250, 250, { button: 0 })
-                .trigger('mousemove', 500, 500);
+            cy.get('.cvat-canvas-container').trigger('mousedown', 250, 250, { button: 0 });
+            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 500);
             cy.get('body').type('g');
             cy.get('.cvat_canvas_shape_grouping').should('not.exist');
         });

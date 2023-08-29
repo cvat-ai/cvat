@@ -23,7 +23,8 @@ context('Canvas 3D functionality. Delete a cuboid.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Delete a cuboid.', () => {
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200).click(300, 200); // Deactivate the cuboid
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200);
+            cy.get('.cvat-canvas3d-perspective').click(300, 200); // Deactivate the cuboid
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.have.class', 'cvat-objects-sidebar-state-active-item');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
             cy.get('#cvat-objects-sidebar-state-item-1').should('have.class', 'cvat-objects-sidebar-state-active-item');

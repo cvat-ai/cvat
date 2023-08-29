@@ -24,7 +24,8 @@ context('Canvas grid feature', () => {
         });
         it('Set "Grid size" to 50.', () => {
             cy.get('.cvat-image-setups-grid-size-input').within(() => {
-                cy.get('[role="spinbutton"]').clear().type(settingsGridSize);
+                cy.get('[role="spinbutton"]').clear();
+                cy.get('[role="spinbutton"]').type(settingsGridSize);
             });
         });
         it('Set "Grid color" to black.', () => {

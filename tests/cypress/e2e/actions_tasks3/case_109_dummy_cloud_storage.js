@@ -72,7 +72,8 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
     }
 
     function testGoToCSUpdatePage() {
-        cy.get('.cvat-cloud-storage-item-menu-button').trigger('mousemove').trigger('mouseover');
+        cy.get('.cvat-cloud-storage-item-menu-button').trigger('mousemove');
+        cy.get('.cvat-cloud-storage-item-menu-button').trigger('mouseover');
         cy.get('.ant-dropdown')
             .not('.ant-dropdown-hidden')
             .within(() => {

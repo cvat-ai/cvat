@@ -26,11 +26,10 @@ context('Check hide functionality (H)', () => {
         it('Object is hidden', () => {
             const keyCodeH = 72;
             cy.createRectangle(createRectangleShape2Points);
-            cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove')
-                .trigger('mouseover')
-                .trigger('keydown', { keyCode: keyCodeH, code: 'KeyH' })
-                .should('be.hidden');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_1').trigger('keydown', { keyCode: keyCodeH, code: 'KeyH' });
+            cy.get('#cvat_canvas_shape_1').should('be.hidden');
         });
     });
 });

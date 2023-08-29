@@ -40,9 +40,8 @@ context('Canvas brightness/contrast/saturation feature', () => {
                     cy.wrap($el)
                         .get($el)
                         .within(() => {
-                            cy.get('[role=slider]')
-                                .type(stringAction)
-                                .should('have.attr', 'aria-valuenow', expectedResultInSetting);
+                            cy.get('[role=slider]').type(stringAction);
+                            cy.get('[role=slider]').should('have.attr', 'aria-valuenow', expectedResultInSetting);
                         });
                 });
             });

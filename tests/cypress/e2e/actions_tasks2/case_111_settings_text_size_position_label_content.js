@@ -113,12 +113,10 @@ context('Settings. Text size/position. Text labels content.', () => {
             cy.openSettings();
 
             // Change the text size to 16
-            cy.get('.cvat-workspace-settings-text-size')
-                .find('input')
-                .should('have.attr', 'value', '14')
-                .clear()
-                .type('10')
-                .should('have.attr', 'value', '10');
+            cy.get('.cvat-workspace-settings-text-size').find('input').should('have.attr', 'value', '14');
+            cy.get('.cvat-workspace-settings-text-size').find('input').clear();
+            cy.get('.cvat-workspace-settings-text-size').find('input').type('10');
+            cy.get('.cvat-workspace-settings-text-size').find('input').should('have.attr', 'value', '10');
             cy.closeSettings();
             cy.get('.cvat_canvas_text').should('have.attr', 'style', 'font-size: 10px;');
         });

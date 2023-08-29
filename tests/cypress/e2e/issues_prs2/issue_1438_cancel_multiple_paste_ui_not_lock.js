@@ -25,8 +25,12 @@ context('Cancel "multiple paste". UI is not locked.', () => {
     describe(`Testing issue "${issueId}"`, () => {
         it('Copy, paste opject. Cancel pasting.', () => {
             cy.createRectangle(createRectangleShape2Points);
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').trigger('mouseover');
-            cy.get('body').type('{ctrl}c').type('{ctrl}v').click({ ctrlKey: true }).type('{esc}');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+            cy.get('body').type('{ctrl}c');
+            cy.get('body').type('{ctrl}v');
+            cy.get('body').click({ ctrlKey: true });
+            cy.get('body').type('{esc}');
         });
         it('UI is not locked.', () => {
             cy.get('.cvat-draw-rectangle-control').click();

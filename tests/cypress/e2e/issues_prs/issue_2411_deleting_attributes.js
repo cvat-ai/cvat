@@ -45,7 +45,8 @@ context('Wrong attribute is removed in label constructor.', () => {
         });
         it('Go to Raw labels editor. Insert values.', () => {
             cy.get('[role="tab"]').contains('Raw').click();
-            cy.get('#labels').clear().type(JSON.stringify(taskRaw), { parseSpecialCharSequences: false });
+            cy.get('#labels').clear();
+            cy.get('#labels').type(JSON.stringify(taskRaw), { parseSpecialCharSequences: false });
             cy.contains('Done').click();
         });
         it('Go to constructor tab. The label "person" appeared there.', () => {

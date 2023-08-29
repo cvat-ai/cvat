@@ -43,7 +43,8 @@ context('Canvas 3D functionality. Cancel drawing.', () => {
         it('Repeat draw.', () => {
             cy.get('body').type('n');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 450, 250).dblclick(450, 250);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 450, 250);
+            cy.get('.cvat-canvas3d-perspective').dblclick(450, 250);
             cy.get('.cvat-objects-sidebar-state-item').then((sidebarStateItems) => {
                 expect(sidebarStateItems.length).to.be.equal(1);
             });

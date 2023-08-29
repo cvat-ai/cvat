@@ -27,7 +27,9 @@ context('Check if the UI fails by moving to the next frame while dragging the ob
             cy.createRectangle(createRectangleShape2Points);
         });
         it('Start object dragging and go to next frame (F).', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').trigger('mouseover').trigger('mousedown', { which: 1 });
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_1').trigger('mousedown', { which: 1 });
             cy.get('body').type('f');
         });
         it('Page with the error is missing', () => {
