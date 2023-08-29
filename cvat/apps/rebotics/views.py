@@ -92,24 +92,6 @@ class GalleryImportViewset(GenericViewSet):
             slogger.glob.error(str(serializer.errors))
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def update(self, request, *args, **kwargs):
-        # import annotations for existing images
-        # assuming tasks already created.
-        serializer = GIUpdateSerializer(data={
-            'token': request.data['token'],
-            'instance': self.kwargs.get('pk')
-        })
-        if serializer.is_valid():
-            gi_instance = serializer.validated_data['instance']
-            token = serializer.validated_data['token']
-            gi_msg = gi_task_api.update(gi_instance, token)
-
-            slogger.glob.info('Gallery import: updating')
-            return Response({'status': gi_msg}, status=status.HTTP_200_OK)
-        else:
-            slogger.glob.error(str(serializer.errors))
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def retrieve(self, request, *args, **kwargs):
         instance = self.kwargs.get('pk')
         result = gi_task_api.get_job_status(instance)
@@ -117,6 +99,6 @@ class GalleryImportViewset(GenericViewSet):
 
     def delete(self, request, *args, **kwargs):
         instance = self.kwargs.get('pk')
-        slogger.glob.info(f'Resetting import progress for {instance}')
-        gi_msg = gi_task_api.delete(instance)
+        slogger.glob.info(f'Cleaning lost job for {instance}')
+        gi_msg = gi_task_api.clean(instance)
         return Response({'status': gi_msg}, status=status.HTTP_200_OK)

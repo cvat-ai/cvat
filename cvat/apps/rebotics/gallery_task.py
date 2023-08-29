@@ -476,3 +476,14 @@ def get_job_status(instance):
         'job_status': job_status,
         'exc_info': exc_info,
     }
+
+
+def clean(gi_instance):
+    q = django_rq.get_queue('default')
+
+    job_id = f'gi_{gi_instance}_import'
+    job: RqJob = q.fetch_job(job_id)
+
+    job.delete()
+
+    return 'ok'
