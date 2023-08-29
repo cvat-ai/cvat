@@ -218,9 +218,9 @@ class ShapesImporter:
         self._reset_frame(gi_item)
 
         meta = self.file.meta
-        for item in meta.pop('annotations'):
+        for item in meta.pop('annotations', default=[]):
             self._import_annotation(item)
-        for item in meta.pop('tags'):
+        for item in meta.pop('tags', default=[]):
             self._import_tag(item)
 
         self._save()

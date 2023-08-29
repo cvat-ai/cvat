@@ -111,7 +111,7 @@ class DetectionImageSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     image = serializers.CharField(max_length=2500)
     annotations = _DetectionAnnotationSerializer(many=True)
-    tags = _DetectionTagSerializer(many=True)
+    tags = _DetectionTagSerializer(many=True, required=False, default=None)
 
 
 class DetectionImageListSerializer(serializers.Serializer):
