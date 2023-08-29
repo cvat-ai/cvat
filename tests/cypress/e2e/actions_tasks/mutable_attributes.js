@@ -31,9 +31,9 @@ context('Mutable attribute.', () => {
     function testChangingAttributeValue(expectedValue, value) {
         cy.get('.cvat-player-next-button').click();
         cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').find('textarea');
-        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').should('have.value', expectedValue);
-        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').clear();
-        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').type(value);
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').find('textarea').should('have.value', expectedValue);
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').find('textarea').clear();
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').find('textarea').type(value);
     }
 
     function checkObjectDetailValue(frameNum, expectedValue) {

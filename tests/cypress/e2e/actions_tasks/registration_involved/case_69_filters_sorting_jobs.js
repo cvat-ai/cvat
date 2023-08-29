@@ -68,7 +68,19 @@ context('Filtering, sorting jobs.', () => {
             cy.get('.cvat-resource-page-filters-builder').within(() => {
                 cy.contains('button', 'Add rule').click();
                 cy.contains('.ant-select-selector', 'Select field').get('input').last().type(`${column}{enter}`);
-                cy.get('.ant-select-selector').last().get('input').last().type(`${menuItem}{enter}`);
+                cy.get('.ant-select-selector').last().get('input').last().type(`${menuItem}`);
+                if (column !== 'Assignee') {
+                    cy.get('.ant-select-selector').last().get('input').last().type('{enter}');
+                }
+            });
+
+            if (column === 'Assignee') {
+                cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
+                    cy.get('.ant-select-item-option-content').contains(menuItem).click();
+                });
+            }
+
+            cy.get('.cvat-resource-page-filters-builder').within(() => {
                 cy.contains('button', 'Apply').click();
             });
         }

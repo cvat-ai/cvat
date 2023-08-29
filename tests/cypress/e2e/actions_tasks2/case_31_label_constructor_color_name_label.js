@@ -151,8 +151,8 @@ context('Label constructor. Color label. Label name editing', () => {
                         .should('be.visible')
                         .within(() => {
                             cy.contains('hex').prev();
-                            cy.contains('hex').clear();
-                            cy.contains('hex').type(labelColor.yellowHex);
+                            cy.contains('hex').prev().clear();
+                            cy.contains('hex').prev().type(labelColor.yellowHex);
                             cy.contains('button', 'Cancel').click();
                         });
                     cy.get('.cvat-label-color-picker').should('be.hidden');

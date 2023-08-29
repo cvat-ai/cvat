@@ -6,8 +6,10 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-    Builder, Config, ImmutableTree, JsonLogicTree, Query, Utils as QbUtils, AntdConfig,
+    Builder, Config, ImmutableTree, JsonLogicTree, Query, Utils as QbUtils, AntdConfig, AntdWidgets,
 } from '@react-awesome-query-builder/antd';
+
+import { omit } from 'lodash';
 import { DownOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Menu from 'antd/lib/menu';
@@ -16,6 +18,8 @@ import Modal from 'antd/lib/modal';
 import { CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
 import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
+
+const { FieldDropdown } = AntdWidgets;
 
 const FILTERS_HISTORY = 'annotationFiltersHistory';
 const defaultTree = QbUtils.loadTree({ type: 'group', id: QbUtils.uuid() });
@@ -155,6 +159,14 @@ function FiltersModalComponent(): JSX.Element {
                         treeSelectOnlyLeafs: true,
                     },
                 },
+            },
+            settings: {
+                ...AntdConfig.settings,
+                renderField: (_props: any) => (
+                    <FieldDropdown {...omit(_props)} customProps={omit(_props.customProps, 'showSearch')} />
+                ),
+                // using FieldDropdown because we cannot use antd because of antd-related bugs
+                // https://github.com/ukrbublik/react-awesome-query-builder/issues/224
             },
         };
 

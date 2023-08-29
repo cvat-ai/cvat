@@ -23,7 +23,7 @@ export const config: Partial<Config> = {
             label: 'Owner',
             type: 'select',
             valueSources: ['value'],
-            operators: ['equal'],
+            operators: ['select_equals'],
             fieldSettings: {
                 useAsyncSearch: true,
                 forceAsyncSearch: true,

@@ -50,8 +50,8 @@ context('Drawing with predefined number of points.', () => {
             .should('be.visible')
             .within(() => {
                 cy.get('.cvat-draw-shape-popover-points-selector').type(`${pointsCount - 1}`);
-                cy.get('.cvat-draw-shape-popover-points-selector').focused();
-                cy.get('.cvat-draw-shape-popover-points-selector').blur();
+                // eslint-disable-next-line cypress/unsafe-to-chain-command
+                cy.focused().blur();
                 cy.get('[role="spinbutton"]').should('have.attr', 'aria-valuenow', pointsCount);
             });
     }

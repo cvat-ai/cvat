@@ -202,7 +202,7 @@ context('Object make a copy.', () => {
             const keyCodeC = 67;
             const keyCodeV = 86;
             cy.get('.cvat_canvas_shape').first().trigger('mousemove');
-            cy.get('.cvat_canvas_shape').first().should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('.cvat_canvas_shape').last().should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{ctrl}', { release: false }); // Hold
             cy.get('body').trigger('keydown', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true });
             cy.get('body').trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true });

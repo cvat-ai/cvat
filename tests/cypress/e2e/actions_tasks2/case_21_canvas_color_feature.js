@@ -27,8 +27,7 @@ context('Canvas color feature', () => {
                 .then((colorPicker) => {
                     for (let i = 0; i < colorPicker.length; i++) {
                         cy.get(colorPicker[i]).click();
-                        cy.get(colorPicker[i]).should('have.css', 'background-color');
-                        cy.get(colorPicker[i]).then((colorPickerBgValue) => {
+                        cy.get(colorPicker[i]).should('have.css', 'background-color').then((colorPickerBgValue) => {
                             cy.get('.cvat-canvas-grid-root')
                                 .should('have.css', 'background-color')
                                 .then((canvasBgColor) => {
