@@ -28,7 +28,8 @@ context('Delete unlock/lock object', () => {
     function deleteObjectViaShortcut(shortcut, stateLockObject) {
         if (stateLockObject === 'unlock') {
             cy.get('.cvat-canvas-container').within(() => {
-                cy.get('.cvat_canvas_shape').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+                cy.get('.cvat_canvas_shape').trigger('mousemove');
+                cy.get('.cvat_canvas_shape').should('have.class', 'cvat_canvas_shape_activated');
             });
         }
         cy.get('body').type(shortcut);
@@ -49,7 +50,8 @@ context('Delete unlock/lock object', () => {
 
     function deleteObjectViaGUIFromObject() {
         cy.get('.cvat-canvas-container').within(() => {
-            cy.get('.cvat_canvas_shape').trigger('mousemove').rightclick();
+            cy.get('.cvat_canvas_shape').trigger('mousemove');
+            cy.get('.cvat_canvas_shape').rightclick();
         });
         cy.get('.cvat-canvas-context-menu').within(() => {
             cy.get('.cvat-objects-sidebar-state-item').within(() => {

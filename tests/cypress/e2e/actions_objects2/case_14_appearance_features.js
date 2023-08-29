@@ -80,8 +80,8 @@ context('Appearance features', () => {
         });
 
         it('Set opacity level for shapes to 100. All shapes are filled.', () => {
+            cy.get('.cvat-appearance-opacity-slider').click('right');
             cy.get('.cvat-appearance-opacity-slider')
-                .click('right')
                 .within(() => {
                     cy.get('[role="slider"]')
                         .should('have.attr', 'aria-valuemax')
@@ -106,22 +106,21 @@ context('Appearance features', () => {
         });
 
         it('Set "Selected opacity" to 0.', () => {
-            cy.get('.cvat-appearance-selected-opacity-slider')
-                .click('left')
-                .within(() => {
-                    cy.get('[role="slider"]')
-                        .should('have.attr', 'aria-valuemin')
-                        .then(($ariaValuemin) => {
-                            ariaValuenow = $ariaValuemin;
-                            cy.get('[role="slider"]').should('have.attr', 'aria-valuenow', ariaValuenow);
-                        });
-                });
+            cy.get('.cvat-appearance-selected-opacity-slider').click('left');
+            cy.get('.cvat-appearance-selected-opacity-slider').within(() => {
+                cy.get('[role="slider"]')
+                    .should('have.attr', 'aria-valuemin')
+                    .then(($ariaValuemin) => {
+                        ariaValuenow = $ariaValuemin;
+                        cy.get('[role="slider"]').should('have.attr', 'aria-valuenow', ariaValuenow);
+                    });
+            });
         });
 
         it('Activate the rectangle, the polygon and the cuboid. Shapes are transparent during activated.', () => {
             for (const i of ['#cvat_canvas_shape_1', '#cvat_canvas_shape_2', '#cvat_canvas_shape_4']) {
+                cy.get(i).trigger('mousemove');
                 cy.get(i)
-                    .trigger('mousemove')
                     .should('have.class', 'cvat_canvas_shape_activated')
                     .and('have.css', 'fill-opacity', ariaValuenow);
             }
@@ -129,9 +128,8 @@ context('Appearance features', () => {
 
         it('Activate checkbox "show projections". Activated the cuboid. Projection lines are visible.', () => {
             cy.get('.cvat-appearance-cuboid-projections-checkbox').click();
-            cy.get('#cvat_canvas_shape_4')
-                .trigger('mousemove', { force: true })
-                .should('have.attr', 'projections', 'true');
+            cy.get('#cvat_canvas_shape_4').trigger('mousemove', { force: true });
+            cy.get('#cvat_canvas_shape_4').should('have.attr', 'projections', 'true');
             cy.get('.cvat_canvas_cuboid_projections').should('be.visible');
             // Deactivate all objects
             cy.get('.cvat-canvas-container').click(500, 500);

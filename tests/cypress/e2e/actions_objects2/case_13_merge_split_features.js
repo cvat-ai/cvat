@@ -135,7 +135,8 @@ context('Merge/split features', () => {
         it('Split a track with "split" button. Previous track became invisible (has "outside" flag). One more track and it is visible.', () => {
             cy.pressSplitControl();
             // A single click does not reproduce the split a track scenario in cypress test.
-            cy.get('#cvat_canvas_shape_3').click().click();
+            cy.get('#cvat_canvas_shape_3').click();
+            cy.get('#cvat_canvas_shape_3').click();
             cy.get('#cvat_canvas_shape_4').should('exist').and('be.hidden');
             cy.get('#cvat-objects-sidebar-state-item-4')
                 .should('contain', '4')
