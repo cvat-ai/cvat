@@ -15,3 +15,5 @@ for key in RQ_QUEUES:
 # https://github.com/moggers87/django-sendfile2
 SENDFILE_BACKEND = 'django_sendfile.backends.nginx'
 SENDFILE_URL = '/'
+
+CACHES['media']['LOCATION'] = f"redis://{os.getenv('CVAT_REDIS_HOST', 'cvat_redis')}:6379"
