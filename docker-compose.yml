@@ -46,7 +46,7 @@ services:
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
       SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
-    entrypoint: /home/django/backend_entrypoint.sh
+    command: init run server
     labels:
       - traefik.enable=true
       - traefik.http.services.cvat.loadbalancer.server.port=8080
@@ -79,7 +79,7 @@ services:
       DJANGO_LOG_SERVER_PORT: 80
       no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
       NUMPROCS: 1
-    command: -c supervisord/utils.conf
+    command: run utils
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -102,7 +102,7 @@ services:
       no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
       NUMPROCS: 2
       SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
-    command: -c supervisord/worker.import.conf
+    command: run worker.import
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -125,7 +125,7 @@ services:
       DJANGO_LOG_SERVER_PORT: 80
       no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
       NUMPROCS: 2
-    command: -c supervisord/worker.export.conf
+    command: run worker.export
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -148,7 +148,7 @@ services:
       DJANGO_LOG_SERVER_PORT: 80
       no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
       NUMPROCS: 1
-    command: -c supervisord/worker.annotation.conf
+    command: run worker.annotation
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -172,7 +172,7 @@ services:
       no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
       NUMPROCS: 1
       SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
-    command: -c supervisord/worker.webhooks.conf
+    command: run worker.webhooks
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -194,7 +194,7 @@ services:
       DJANGO_LOG_SERVER_PORT: 80
       no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
       NUMPROCS: 1
-    command: -c supervisord/worker.quality_reports.conf
+    command: run worker.quality_reports
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -217,7 +217,7 @@ services:
       CLICKHOUSE_HOST: clickhouse
       no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
       NUMPROCS: 2
-    command: -c supervisord/worker.analytics_reports.conf
+    command: run worker.analytics_reports
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys

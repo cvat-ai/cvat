@@ -125,10 +125,11 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.logout();
         });
 
-        it('Second user login. The task can be opened. Logout', () => {
+        it('Second user login. The task can be opened. Remove job assignee. Logout', () => {
             cy.login(secondUserName, secondUser.password);
             cy.contains('strong', taskName).should('exist');
             cy.openTask(taskName);
+            cy.assignJobToUser(0, null);
             cy.logout();
         });
 
@@ -141,7 +142,6 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
         it('First user login and assign the job to the third user. Logout', () => {
             cy.login();
             cy.openTask(taskName);
-            cy.assignJobToUser(0, null);
             cy.assignJobToUser(0, thirdUserName);
             cy.logout();
         });
