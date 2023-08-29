@@ -218,10 +218,16 @@ class ShapesImporter:
         self._reset_frame(gi_item)
 
         meta = self.file.meta
-        for item in meta.pop('annotations', default=[]):
-            self._import_annotation(item)
-        for item in meta.pop('tags', default=[]):
-            self._import_tag(item)
+
+        annotations = meta.pop('annotations', None)
+        if annotations is not None:
+            for item in annotations:
+                self._import_annotation(item)
+
+        tags = meta.pop('tags', None)
+        if tags is not None:
+            for item in tags:
+                self._import_tag(item)
 
         self._save()
 
