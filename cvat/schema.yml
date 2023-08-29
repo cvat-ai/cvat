@@ -176,6 +176,32 @@ paths:
       responses:
         '204':
           description: The asset has been deleted
+  /api/assets/{uuid}/public:
+    get:
+      operationId: assets_retrieve_public
+      parameters:
+      - in: path
+        name: uuid
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this asset.
+        required: true
+      tags:
+      - assets
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AssetRead'
+          description: ''
   /api/auth/login:
     post:
       operationId: auth_create_login
@@ -2652,7 +2678,6 @@ paths:
             application/vnd.cvat+json:
               schema:
                 type: object
-                additionalProperties: {}
           description: Information about the function
     post:
       operationId: lambda_create_functions
@@ -3746,7 +3771,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''id'', ''frame'',
-          ''type'', ''job_id'', ''task_id'', ''severity'']'
+          ''type'', ''job_id'', ''task_id'', ''severity''].'
         schema:
           type: string
       - name: frame
@@ -3849,7 +3874,7 @@ paths:
         required: false
         in: query
         description: 'A filter term. Available filter_fields: [''id'', ''job_id'',
-          ''created_date'', ''gt_last_updated'', ''target_last_updated'', ''parent_id'']'
+          ''created_date'', ''gt_last_updated'', ''target_last_updated'', ''parent_id''].'
         schema:
           type: string
       - name: job_id
@@ -4012,7 +4037,6 @@ paths:
             application/vnd.cvat+json:
               schema:
                 type: object
-                additionalProperties: {}
           description: ''
   /api/quality/settings:
     get:
@@ -4027,7 +4051,7 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''id'', ''task_id'']'
+        description: 'A filter term. Available filter_fields: [''id'', ''task_id''].'
         schema:
           type: string
       - name: org
@@ -4269,19 +4293,15 @@ paths:
             application/vnd.oai.openapi:
               schema:
                 type: object
-                additionalProperties: {}
             application/yaml:
               schema:
                 type: object
-                additionalProperties: {}
             application/vnd.oai.openapi+json:
               schema:
                 type: object
-                additionalProperties: {}
             application/json:
               schema:
                 type: object
-                additionalProperties: {}
           description: ''
   /api/server/about:
     get:
@@ -7078,7 +7098,6 @@ components:
           type: object
           additionalProperties:
             type: object
-            additionalProperties: {}
           description: Label mapping from the model to the task labels
         max_distance:
           type: integer
@@ -7893,7 +7912,6 @@ components:
           readOnly: true
         contact:
           type: object
-          additionalProperties: {}
           readOnly: true
         owner:
           allOf:
@@ -7916,7 +7934,6 @@ components:
           type: string
         contact:
           type: object
-          additionalProperties: {}
       required:
       - slug
     PaginatedAnnotationConflictList:
@@ -8470,7 +8487,6 @@ components:
           type: string
         contact:
           type: object
-          additionalProperties: {}
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -9762,11 +9778,9 @@ components:
           readOnly: true
         request:
           type: object
-          additionalProperties: {}
           readOnly: true
         response:
           type: object
-          additionalProperties: {}
           readOnly: true
     WebhookRead:
       type: object
