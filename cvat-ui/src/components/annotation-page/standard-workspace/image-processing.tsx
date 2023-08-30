@@ -5,9 +5,10 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState, ImageFilter } from 'reducers';
 import notification from 'antd/lib/notification';
+import { changeFrameAsync } from 'actions/annotation-actions';
 
 export default function ImageProcessingComponent(): JSX.Element | null {
     const filtersRef = useRef<ImageFilter[]>([]);
@@ -22,6 +23,8 @@ export default function ImageProcessingComponent(): JSX.Element | null {
     const curZOrder = useSelector((state: CombinedState) => state.annotation.annotations.zLayer.cur);
     const frameData = useSelector((state: CombinedState) => state.annotation.player.frame.data);
     const filters = useSelector((state: CombinedState) => state.settings.imageProcessing.filters);
+
+    const dispatch = useDispatch();
 
     const getCanvasImageData = ():ImageData => {
         const canvas: HTMLCanvasElement | null = window.document.getElementById('cvat_canvas_background') as
@@ -42,6 +45,7 @@ export default function ImageProcessingComponent(): JSX.Element | null {
         try {
             const currentFilters = filtersRef.current;
             const currentFrame = frame.current;
+            console.log('run image modifier', currentFilters);
             if (
                 currentFilters && currentFrame !== null &&
                 currentFilters.length !== 0 &&
@@ -77,7 +81,7 @@ export default function ImageProcessingComponent(): JSX.Element | null {
         } finally {
             canvasInstance.configure({ forceFrameUpdate: false });
         }
-    }, [canvasInstance, filters]);
+    }, [canvasInstance]);
 
     useEffect(() => {
         if (canvasInstance) {
@@ -89,7 +93,13 @@ export default function ImageProcessingComponent(): JSX.Element | null {
     }, []);
 
     useEffect(() => {
-        runImageModifier();
+        if (filters.length !== 0) {
+            runImageModifier();
+        } else if (frame.current !== null) {
+            console.log('changeframe');
+            canvasInstance.configure({ forceFrameUpdate: true });
+            dispatch(changeFrameAsync(frame.current, false, 1, true));
+        }
     }, [filters]);
     return null;
 }

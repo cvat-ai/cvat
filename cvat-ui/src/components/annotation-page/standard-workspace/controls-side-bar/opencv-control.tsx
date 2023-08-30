@@ -52,6 +52,7 @@ interface Props {
     frameData: any;
     toolsBlockerState: ToolsBlockerState;
     activeControl: ActiveControl;
+    filters: ImageFilter[];
 }
 
 interface DispatchToProps {
@@ -82,7 +83,7 @@ interface State {
     mode: 'interaction' | 'tracking';
     trackedShapes: TrackedShape[];
     activeTracker: OpenCVTracker | null;
-    trackers: OpenCVTracker[]
+    trackers: OpenCVTracker[];
 }
 
 interface ImageModifier {
@@ -108,6 +109,7 @@ function mapStateToProps(state: CombinedState): Props {
         },
         settings: {
             workspace: { defaultApproxPolyAccuracy, toolsBlockerState },
+            imageProcessing: { filters },
         },
     } = state;
 
@@ -123,6 +125,7 @@ function mapStateToProps(state: CombinedState): Props {
         frame,
         frameData,
         toolsBlockerState,
+        filters,
     };
 }
 
@@ -705,40 +708,22 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                 //     this.enableCanvasForceUpdate();
                                 //     changeFrame(frame, false, 1, true);
                                 // }
-                                const { addImageFilter } = this.props;
-                                addImageFilter({
-                                    modifier: openCVWrapper.imgproc.hist(),
-                                    alias: 'opencv.histogram',
-                                });
-                            }}
-                        >
-                            <AreaChartOutlined />
-                        </Button>
-                    </CVATTooltip>
-                    {/* <CVATTooltip title='Gamma correction' className='cvat-opencv-image-tool'>
-                        <Button
-                            className={
-                                this.imageModifier('gamma') ?
-                                    'cvat-opencv-histogram-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-histogram-tool-button'
-                            }
-                            onClick={(e: React.MouseEvent<HTMLElement>) => {
-                                const modifier = this.imageModifier('gamma');
-                                if (!modifier) {
-                                    this.enableImageModifier(openCVWrapper.imgproc.gamma(), 'gamma');
+                                const { addImageFilter, removeImageFilter, filters } = this.props;
+                                const filterActive = filters.some((filter) => filter.alias === 'opencv.histogram');
+                                console.log(filters);
+                                if (!filterActive) {
+                                    addImageFilter({
+                                        modifier: openCVWrapper.imgproc.hist(),
+                                        alias: 'opencv.histogram',
+                                    });
                                 } else {
-                                    const button = e.target as HTMLElement;
-                                    button.blur();
-                                    this.disableImageModifier('gamma');
-                                    const { changeFrame } = this.props;
-                                    const { frame } = this.props;
-                                    this.enableCanvasForceUpdate();
-                                    changeFrame(frame, false, 1, true);
+                                    removeImageFilter('opencv.histogram');
                                 }
                             }}
                         >
                             <AreaChartOutlined />
                         </Button>
-                    </CVATTooltip> */}
+                    </CVATTooltip>
                 </Col>
             </Row>
         );
