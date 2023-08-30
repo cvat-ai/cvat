@@ -8,7 +8,7 @@ import HistogramEqualizationImplementation, { HistogramEqualization } from './hi
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 import { OpenCVTracker } from './opencv-interfaces';
-import GammaCorrectionImplementation, { GammaCorrection } from './gamma-correciton';
+import GammaCorrectionImplementation, { GammaCorrection } from '../fabric-wrapper/gamma-correciton';
 
 const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);
