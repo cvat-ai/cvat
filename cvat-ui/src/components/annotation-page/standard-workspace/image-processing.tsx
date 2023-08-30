@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+    useCallback, useEffect, useRef,
+} from 'react';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { useSelector, useDispatch } from 'react-redux';
 import { CombinedState, ImageFilter } from 'reducers';
@@ -96,7 +98,6 @@ export default function ImageProcessingComponent(): JSX.Element | null {
         if (filters.length !== 0) {
             runImageModifier();
         } else if (frame.current !== null) {
-            console.log('changeframe');
             canvasInstance.configure({ forceFrameUpdate: true });
             dispatch(changeFrameAsync(frame.current, false, 1, true));
         }
