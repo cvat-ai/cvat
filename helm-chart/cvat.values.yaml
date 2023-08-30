@@ -51,3 +51,8 @@ ingress:
             port: 80
 traefik:
   enabled: true
+  logs:
+    general:
+      level: DEBUG
+    access:
+      enabled: true

@@ -239,6 +239,10 @@ keydb:
   multiMaster: false
   activeReplicas: false
   nodes: 1
+  configExtraArgs:
+  - storage-provider: ["flash", "/data/flash"]
+  - maxmemory: "100M"
+  - maxmemory-policy: "allkeys-lfu"
 
 nuclio:
   enabled: false
