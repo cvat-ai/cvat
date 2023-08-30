@@ -53,18 +53,18 @@ spec:
           {{- end }}
           args: ["-c", "supervisord/worker.annotation.conf"]
           env:
-          {{- if .Values.redis.enabled }}
+          {{- if .Values.keydb.enabled }}
           - name: CVAT_REDIS_HOST
-            value: "{{ .Release.Name }}-redis-master"
+            value: "{{ .Release.Name }}-keydb"
           {{- else }}
           - name: CVAT_REDIS_HOST
-            value: "{{ .Values.redis.external.host }}"
+            value: "{{ .Values.keydb.external.host }}"
           {{- end }}
           - name: CVAT_REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: "{{ tpl (.Values.redis.secret.name) . }}"
-                key: redis-password
+                name: "{{ tpl (.Values.keydb.secret.name) . }}"
+                key: password
          {{- if .Values.postgresql.enabled }}
           - name: CVAT_POSTGRES_HOST
             value: "{{ .Release.Name }}-postgresql"

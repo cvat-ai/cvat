@@ -551,12 +551,7 @@ CACHES = {
    'media' : {
        'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
        "LOCATION": "redis://localhost:6379",
-    #    'LOCATION' : CACHE_ROOT,
-    #    'TIMEOUT' : None,
-    #    'SHARDS': 32,
-    #    'OPTIONS' : {
-    #         'size_limit' : 2 ** 40, # 1 Tb
-    #    }
+       'TIMEOUT' : None,
    }
 }
 
