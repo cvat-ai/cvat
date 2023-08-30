@@ -60,6 +60,9 @@ const defaultState: SettingsState = {
         contrastLevel: 100,
         saturationLevel: 100,
     },
+    imageProcessing: {
+        filters: [],
+    },
     showDialog: false,
 };
 
@@ -391,6 +394,33 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     showTagsOnFrame: action.payload.showTagsOnFrame,
+                },
+            };
+        }
+        case SettingsActionTypes.ADD_IMAGE_FILTER: {
+            return {
+                ...state,
+                imageProcessing: {
+                    ...state.imageProcessing,
+                    filters: [
+                        ...state.imageProcessing.filters,
+                        action.payload.filter,
+                    ],
+                },
+            };
+        }
+        case SettingsActionTypes.REMOVE_IMAGE_FILTER: {
+            const { filterAlias } = action.payload;
+            const filters = [...state.imageProcessing.filters];
+            const index = filters.findIndex((imageModifier) => imageModifier.alias === filterAlias);
+            if (index !== -1) {
+                filters.splice(index, 1);
+            }
+            return {
+                ...state,
+                imageProcessing: {
+                    ...state.imageProcessing,
+                    filters,
                 },
             };
         }

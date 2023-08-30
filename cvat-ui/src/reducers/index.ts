@@ -11,7 +11,7 @@ import {
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
-import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
+import { ImageProcessing, OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 
 export type StringObject = {
     [index: string]: string;
@@ -119,6 +119,11 @@ export interface TasksState {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
         };
     };
+}
+
+export interface ImageFilter {
+    modifier: ImageProcessing,
+    alias: string
 }
 
 export interface ExportState {
@@ -826,6 +831,9 @@ export interface SettingsState {
     shapes: ShapesSettingsState;
     workspace: WorkspaceSettingsState;
     player: PlayerSettingsState;
+    imageProcessing: {
+        filters: ImageFilter[]
+    };
     showDialog: boolean;
 }
 

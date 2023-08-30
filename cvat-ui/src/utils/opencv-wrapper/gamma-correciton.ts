@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { fabric } from 'fabric';
 import { ImageProcessing } from './opencv-interfaces';
 
 export interface GammaCorrection extends ImageProcessing {
@@ -24,15 +25,23 @@ export default class GammaCorrectionImplementation implements GammaCorrection {
         for (let i = 0; i < 256; i++) {
             lut[i] = Math.floor(255 * ((i / 255) ** inverseGamma));
         }
+        const f = new fabric.Image.filters.Gamma({
+            gamma: [0.5, 0.5, 0.5],
+        });
+        console.log(f);
+        const r = f.applyTo2d({
+            imageData: src,
+        });
+        console.log(r);
         // const { cv } = this;
         // console.log(cv.getBuildInformation());
         // let matImage = null;
         // matImage = cv.matFromImageData(src);
-        for (let i = 0; i < src.data.length; i += 4) {
-            src.data[i + 0] = lut[src.data[i + 0]];
-            src.data[i + 1] = lut[src.data[i + 1]];
-            src.data[i + 2] = lut[src.data[i + 2]];
-        }
+        // for (let i = 0; i < src.data.length; i += 4) {
+        //     src.data[i + 0] = lut[src.data[i + 0]];
+        //     src.data[i + 1] = lut[src.data[i + 1]];
+        //     src.data[i + 2] = lut[src.data[i + 2]];
+        // }
         // matImage = new cv.Mat();
         // const lut = new cv.Mat.zeros(256, 4, cv.CV_8S);
         // const out = new cv.Mat();

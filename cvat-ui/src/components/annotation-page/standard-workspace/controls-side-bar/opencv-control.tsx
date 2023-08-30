@@ -21,7 +21,7 @@ import { getCore } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
-    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType, ToolsBlockerState,
+    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType, ToolsBlockerState, ImageFilter,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -37,7 +37,7 @@ import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { ImageProcessing, OpenCVTracker, TrackerModel } from 'utils/opencv-wrapper/opencv-interfaces';
-import { switchToolsBlockerState } from 'actions/settings-actions';
+import { addImageFilter as addImageFilterAction, removeImageFilter as removeImageFilterAction, switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -62,6 +62,8 @@ interface DispatchToProps {
     changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void;
     switchNavigationBlocked(navigationBlocked: boolean): void;
+    addImageFilter(filter: ImageFilter): void;
+    removeImageFilter(filterAlias: string): void;
 }
 
 interface TrackedShape {
@@ -132,6 +134,8 @@ const mapDispatchToProps = {
     changeFrame: changeFrameAsync,
     onSwitchToolsBlockerState: switchToolsBlockerState,
     switchNavigationBlocked: switchNavigationBlockedAction,
+    addImageFilter: addImageFilterAction,
+    removeImageFilter: removeImageFilterAction,
 };
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
@@ -572,6 +576,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private disableImageModifier(alias: string):void {
+        const { removeImageFilter } = this.props;
         const { activeImageModifiers } = this.state;
         const index = activeImageModifiers.findIndex((imageModifier) => imageModifier.alias === alias);
         if (index !== -1) {
@@ -580,15 +585,18 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 activeImageModifiers: [...activeImageModifiers],
             });
         }
+        removeImageFilter(alias);
     }
 
     private enableImageModifier(modifier: ImageProcessing, alias: string): void {
+        const { addImageFilter } = this.props;
         this.setState((prev: State) => ({
             ...prev,
             activeImageModifiers: [...prev.activeImageModifiers, { modifier, alias }],
         }), () => {
             this.runImageModifier();
         });
+        addImageFilter({ modifier, alias });
     }
 
     private enableCanvasForceUpdate():void {
@@ -702,7 +710,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                             <AreaChartOutlined />
                         </Button>
                     </CVATTooltip>
-                    <CVATTooltip title='Gamma correction' className='cvat-opencv-image-tool'>
+                    {/* <CVATTooltip title='Gamma correction' className='cvat-opencv-image-tool'>
                         <Button
                             className={
                                 this.imageModifier('gamma') ?
@@ -725,7 +733,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         >
                             <AreaChartOutlined />
                         </Button>
-                    </CVATTooltip>
+                    </CVATTooltip> */}
                 </Col>
             </Row>
         );

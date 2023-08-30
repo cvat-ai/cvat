@@ -4,7 +4,7 @@
 
 import { AnyAction } from 'redux';
 import {
-    GridColor, ColorBy, SettingsState, ToolsBlockerState,
+    GridColor, ColorBy, SettingsState, ToolsBlockerState, ImageFilter,
 } from 'reducers';
 
 export enum SettingsActionTypes {
@@ -45,6 +45,8 @@ export enum SettingsActionTypes {
     SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
     SWITCH_SHOWING_DELETED_FRAMES = 'SWITCH_SHOWING_DELETED_FRAMES',
     SWITCH_SHOWING_TAGS_ON_FRAME = 'SWITCH_SHOWING_TAGS_ON_FRAME',
+    ADD_IMAGE_FILTER = 'ADD_IMAGE_FILTER',
+    REMOVE_IMAGE_FILTER = 'REMOVE_IMAGE_FILTER',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -377,6 +379,24 @@ export function switchShowingTagsOnFrame(showTagsOnFrame: boolean): AnyAction {
         type: SettingsActionTypes.SWITCH_SHOWING_TAGS_ON_FRAME,
         payload: {
             showTagsOnFrame,
+        },
+    };
+}
+
+export function addImageFilter(filter: ImageFilter): AnyAction {
+    return {
+        type: SettingsActionTypes.ADD_IMAGE_FILTER,
+        payload: {
+            filter,
+        },
+    };
+}
+
+export function removeImageFilter(filterAlias: string): AnyAction {
+    return {
+        type: SettingsActionTypes.REMOVE_IMAGE_FILTER,
+        payload: {
+            filterAlias,
         },
     };
 }
