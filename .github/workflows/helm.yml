@@ -50,6 +50,17 @@ jobs:
         cd ..
         helm upgrade -n default release-${{ github.run_id }}-${{ github.run_attempt }} -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/cvat.values.yaml -f helm-chart/test.values.yaml
 
+    - name: Generate SDK
+      run: |
+        pip3 install --user -r cvat-sdk/gen/requirements.txt
+        ./cvat-sdk/gen/generate.sh
+
+    - name: Install test requirements
+      run: |
+        pip3 install --user cvat-sdk/
+        pip3 install --user cvat-cli/
+        pip3 install --user -r tests/python/requirements.txt
+
     - name: Update test config
       run: |
         sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
@@ -65,17 +76,10 @@ jobs:
         kubectl get pods
         kubectl logs $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}')
 
-
-    - name: Generate SDK
-      run: |
-        pip3 install --user -r cvat-sdk/gen/requirements.txt
-        ./cvat-sdk/gen/generate.sh
-
-    - name: Install test requirements
-      run: |
-        pip3 install --user cvat-sdk/
-        pip3 install --user cvat-cli/
-        pip3 install --user -r tests/python/requirements.txt
+        if [[ max_tries -le 0 ]]; then
+          echo "CVAT failed to become ready in the expected time period"
+          exit 1
+        fi
 
     - name: REST API and SDK tests
       # We don't have external services in Helm tests, so we ignore corresponding cases
