@@ -167,7 +167,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentDidMount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
-        canvasInstance.html().addEventListener('canvas.setup', this.runImageModifier);
+        // canvasInstance.html().addEventListener('canvas.setup', this.runImageModifier);
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
@@ -213,7 +213,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
-        canvasInstance.html().removeEventListener('canvas.setup', this.runImageModifier);
+        // canvasInstance.html().removeEventListener('canvas.setup', this.runImageModifier);
         openCVWrapper.removeProgressCallback();
     }
 
@@ -693,18 +693,23 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                     'cvat-opencv-histogram-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-histogram-tool-button'
                             }
                             onClick={(e: React.MouseEvent<HTMLElement>) => {
-                                const modifier = this.imageModifier('histogram');
-                                if (!modifier) {
-                                    this.enableImageModifier(openCVWrapper.imgproc.hist(), 'histogram');
-                                } else {
-                                    const button = e.target as HTMLElement;
-                                    button.blur();
-                                    this.disableImageModifier('histogram');
-                                    const { changeFrame } = this.props;
-                                    const { frame } = this.props;
-                                    this.enableCanvasForceUpdate();
-                                    changeFrame(frame, false, 1, true);
-                                }
+                                // const modifier = this.imageModifier('histogram');
+                                // if (!modifier) {
+                                //     this.enableImageModifier(openCVWrapper.imgproc.hist(), 'histogram');
+                                // } else {
+                                //     const button = e.target as HTMLElement;
+                                //     button.blur();
+                                //     this.disableImageModifier('histogram');
+                                //     const { changeFrame } = this.props;
+                                //     const { frame } = this.props;
+                                //     this.enableCanvasForceUpdate();
+                                //     changeFrame(frame, false, 1, true);
+                                // }
+                                const { addImageFilter } = this.props;
+                                addImageFilter({
+                                    modifier: openCVWrapper.imgproc.hist(),
+                                    alias: 'opencv.histogram',
+                                });
                             }}
                         >
                             <AreaChartOutlined />
