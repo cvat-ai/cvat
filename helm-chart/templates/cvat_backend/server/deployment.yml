@@ -51,7 +51,7 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          command: ["/home/django/backend_entrypoint.sh"]
+          args: ["init", "run", "server"]
           env:
           - name: ALLOWED_HOSTS
             value: {{ .Values.cvat.backend.server.envs.ALLOWED_HOSTS | squote}}

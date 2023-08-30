@@ -51,7 +51,7 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["-c", "supervisord/worker.quality_reports.conf"]
+          args: ["run", "worker.quality_reports"]
           env:
           {{- if .Values.keydb.enabled }}
           - name: CVAT_REDIS_HOST

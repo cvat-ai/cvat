@@ -40,6 +40,27 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
         }
     }, [resolved]);
 
+    useEffect(() => {
+        if (ref.current) {
+            const { current } = ref;
+            const listener = (event: WheelEvent): void => {
+                event.stopPropagation();
+                if (event.deltaX > 0) {
+                    current.parentElement?.appendChild(current);
+                } else {
+                    current.parentElement?.prepend(current);
+                }
+            };
+
+            current.addEventListener('wheel', listener);
+            return () => {
+                current.removeEventListener('wheel', listener);
+            };
+        }
+
+        return () => {};
+    }, [ref.current]);
+
     const elementID = `cvat-hidden-issue-label-${id}`;
     return ReactDOM.createPortal(
         <CVATTooltip title={comments[0]?.message || 'Messages not found'}>
@@ -49,16 +70,6 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                 onClick={onClick}
                 onMouseEnter={highlight}
                 onMouseLeave={blur}
-                onWheel={(event: React.WheelEvent) => {
-                    if (ref.current !== null) {
-                        const selfElement = ref.current;
-                        if (event.deltaX > 0) {
-                            selfElement.parentElement?.appendChild(selfElement);
-                        } else {
-                            selfElement.parentElement?.prepend(selfElement);
-                        }
-                    }
-                }}
                 style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
                 className='cvat-hidden-issue-label'
             >

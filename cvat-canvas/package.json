@@ -1,6 +1,6 @@
 {
   "name": "cvat-canvas",
-  "version": "2.17.4",
+  "version": "2.17.5",
   "description": "Part of Computer Vision Annotation Tool which presents its canvas library",
   "main": "src/canvas.ts",
   "scripts": {

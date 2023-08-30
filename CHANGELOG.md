@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Zooming canvas when scrooling comments list in an issue (<https://github.com/opencv/cvat/pull/6758>)
+- Issues can be created many times when initial submit (<https://github.com/opencv/cvat/pull/6758>)
 
 ### Security
 - TDB
