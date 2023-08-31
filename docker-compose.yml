@@ -31,7 +31,6 @@ services:
     networks:
       - cvat
 
-
   cvat_server:
     container_name: cvat_server
     image: cvat/server:${CVAT_VERSION:-dev}
