@@ -20,12 +20,10 @@ import {
     changeContrastLevel,
     changeSaturationLevel,
     changeGridSize,
-    addImageFilter,
-    removeImageFilter,
 } from 'actions/settings-actions';
 import { clamp } from 'utils/math';
 import { GridColor, CombinedState, PlayerSettingsState } from 'reducers';
-import GammaCorrectionImplementation from 'utils/fabric-wrapper/gamma-correciton';
+import ImageFilters from './image-filters';
 
 const minGridSize = 5;
 const maxGridSize = 1000;
@@ -188,31 +186,7 @@ export default function ImageSetupsContent(): JSX.Element {
                     </Row>
                 </Col>
             </Row>
-            <Text>Color settings</Text>
-            <hr />
-            <Row justify='space-around'>
-                <Col span={24}>
-                    <Row className='cvat-image-setups-brightness'>
-                        <Col span={6}>
-                            <Text className='cvat-text-color'> Gamma </Text>
-                        </Col>
-                        <Col span={12}>
-                            <Checkbox
-                                onChange={(e: CheckboxChangeEvent) => {
-                                    if (e.target.checked) {
-                                        dispatch(addImageFilter({
-                                            modifier: new GammaCorrectionImplementation(),
-                                            alias: 'fabric.gamma',
-                                        }));
-                                    } else {
-                                        dispatch(removeImageFilter('fabric.gamma'));
-                                    }
-                                }}
-                            />
-                        </Col>
-                    </Row>
-                </Col>
-            </Row>
+            <ImageFilters />
         </div>
     );
 }

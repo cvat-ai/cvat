@@ -8,9 +8,10 @@ import React, {
 } from 'react';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { useSelector, useDispatch } from 'react-redux';
-import { CombinedState, ImageFilter } from 'reducers';
+import { CombinedState } from 'reducers';
 import notification from 'antd/lib/notification';
 import { changeFrameAsync } from 'actions/annotation-actions';
+import { ImageFilter } from 'utils/image-processing';
 
 export default function ImageProcessingComponent(): JSX.Element | null {
     const filtersRef = useRef<ImageFilter[]>([]);
