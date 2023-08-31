@@ -51,7 +51,7 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["-c", "supervisord/worker.analytics_reports.conf"]
+          args: ["run", "worker.analytics_reports"]
           env:
           {{- if .Values.redis.enabled }}
           - name: CVAT_REDIS_HOST

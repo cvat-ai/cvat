@@ -7,28 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased\]
 ### Added
+- TDB
+
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- Zooming canvas when scrooling comments list in an issue (<https://github.com/opencv/cvat/pull/6758>)
+- Issues can be created many times when initial submit (<https://github.com/opencv/cvat/pull/6758>)
+
+### Security
+- TDB
+
+## \[2.6.1\] - 2023-08-25
+### Added
 
 - More information about task progress on tasks page (<https://github.com/opencv/cvat/pull/5723>)
 - Prefetching next chunk when user navigates by frames manually (<https://github.com/opencv/cvat/pull/6695>)
 
 ### Changed
 
+- Bumped nuclio version to 1.11.24 and removed `/tmp` mounting in the nuclio container to adhere the update.
 - Response code for empty cloud storage preview 204 -> 404 (<https://github.com/opencv/cvat/pull/6727>)
 - Organization now opened immediately after it is created (<https://github.com/opencv/cvat/pull/6705>)
+- More responsive automatic annotation progress bar (<https://github.com/opencv/cvat/pull/6734>)
 - Improved message when invite more users to an organization (<https://github.com/opencv/cvat/pull/6731>)
-
-### Deprecated
-
-- TBD
-
-### Removed
-
-- TBD
 
 ### Fixed
 
+- Exporting project when its tasks has not data (<https://github.com/opencv/cvat/pull/6658>)
 - Removing job assignee (<https://github.com/opencv/cvat/pull/6712>)
+- UI fail when select a mask or a skeleton with center-aligned text (<https://github.com/opencv/cvat/pull/6753>)
 - Fixed switching from organization to sandbox while getting a resource (<https://github.com/opencv/cvat/pull/6689>)
+- You do not have permissions when user is cancelling automatic annotation (<https://github.com/opencv/cvat/pull/6734>)
+- Automatic annotation progress bar is invisible if the app initialized on the task page
+ (<https://github.com/opencv/cvat/pull/6734>)
+- Extra status check requests for automatic annotation (<https://github.com/opencv/cvat/pull/6734>)
 - \[SDK\]: `FileExistsError` exception raised on Windows when a dataset is loaded from cache
   (<https://github.com/opencv/cvat/pull/6722>)
 

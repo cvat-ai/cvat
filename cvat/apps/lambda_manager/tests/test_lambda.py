@@ -434,9 +434,9 @@ class LambdaTestCases(_LambdaTestCaseBase):
         response = self._post_request(f'{LAMBDA_REQUESTS_PATH}', self.admin, data)
         id_request = response.data["id"]
         response = self._delete_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.user)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.user)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
     @skip("Fail: add mock")
