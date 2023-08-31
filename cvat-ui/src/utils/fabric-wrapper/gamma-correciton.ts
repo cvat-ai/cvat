@@ -12,10 +12,13 @@ export interface GammaFilterOptions {
 export default class GammaCorrection extends FabricFilter {
     constructor(options: GammaFilterOptions) {
         super();
+
         const { gamma } = options;
         if (!Array.isArray(gamma) || gamma.length !== 3) {
-            throw Error('icorrect gamma');
+            throw Error(`Incorrect option for gamma filter, expected array: [R, G, B] got ${gamma}`);
         }
+
+        // @ts-ignore: Some filters are not typed yet https://github.com/DefinitelyTyped/DefinitelyTyped/issues/62371
         this.filter = new fabric.Image.filters.Gamma({
             gamma,
         });
