@@ -2,11 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-export interface ImageProcessing {
-    processImage: (src: ImageData, frameNumber: number) => ImageData;
-    currentProcessedImage: number | null;
-}
-
 export interface TrackingResult {
     updated: boolean;
     points: number[];

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { fabric } from 'fabric';
-import { ImageProcessing } from '../opencv-wrapper/opencv-interfaces';
+import { ImageProcessing } from 'utils/image-processing';
 
 export interface GammaCorrection extends ImageProcessing {
     processImage: (src: ImageData, frameNumber: number) => ImageData;

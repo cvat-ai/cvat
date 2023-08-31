@@ -21,7 +21,7 @@ import { getCore } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import {
-    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType, ToolsBlockerState, ImageFilter,
+    CombinedState, ActiveControl, OpenCVTool, ObjectType, ShapeType, ToolsBlockerState,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -38,6 +38,7 @@ import ApproximationAccuracy, {
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { OpenCVTracker, TrackerModel } from 'utils/opencv-wrapper/opencv-interfaces';
 import { addImageFilter as addImageFilterAction, removeImageFilter as removeImageFilterAction, switchToolsBlockerState } from 'actions/settings-actions';
+import { ImageFilter, ImageFilterAlias, filterActive } from 'utils/image-processing';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -138,14 +139,12 @@ const mapDispatchToProps = {
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
     private latestPoints: number[];
-    private canvasForceUpdateWasEnabled: boolean;
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels, defaultApproxPolyAccuracy } = props;
         this.activeTool = null;
         this.latestPoints = [];
-        this.canvasForceUpdateWasEnabled = false;
 
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
@@ -524,11 +523,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         return points;
     }
 
-    private filterActive(alias: string): boolean {
-        const { filters } = this.props;
-        return filters.some((filter) => filter.alias === alias);
-    }
-
     private async initializeOpenCV():Promise<void> {
         try {
             this.setState({
@@ -599,26 +593,26 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private renderImageContent():JSX.Element {
+        const { addImageFilter, removeImageFilter, filters } = this.props;
         return (
             <Row justify='start'>
                 <Col>
                     <CVATTooltip title='Histogram equalization' className='cvat-opencv-image-tool'>
                         <Button
                             className={
-                                this.filterActive('opencv.histogram') ?
+                                filterActive(filters, ImageFilterAlias.HISTOGRAM_EQUALIZATION) ?
                                     'cvat-opencv-histogram-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-histogram-tool-button'
                             }
                             onClick={(e: React.MouseEvent<HTMLElement>) => {
-                                const { addImageFilter, removeImageFilter } = this.props;
-                                if (!this.filterActive('opencv.histogram')) {
+                                if (!filterActive(filters, ImageFilterAlias.HISTOGRAM_EQUALIZATION)) {
                                     addImageFilter({
                                         modifier: openCVWrapper.imgproc.hist(),
-                                        alias: 'opencv.histogram',
+                                        alias: ImageFilterAlias.HISTOGRAM_EQUALIZATION,
                                     });
                                 } else {
                                     const button = e.target as HTMLElement;
                                     button.blur();
-                                    removeImageFilter('opencv.histogram');
+                                    removeImageFilter(ImageFilterAlias.HISTOGRAM_EQUALIZATION);
                                 }
                             }}
                         >
