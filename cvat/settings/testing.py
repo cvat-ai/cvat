@@ -62,6 +62,7 @@ for logger in LOGGING["loggers"].values():
 
 LOGGING["handlers"]["server_file"] = LOGGING["handlers"]["console"]
 
+CACHES["media"]["BACKEND"] = "django.core.cache.backends.filebased.FileBasedCache"
 CACHES["media"]["LOCATION"] = CACHE_ROOT
 
 PASSWORD_HASHERS = (
