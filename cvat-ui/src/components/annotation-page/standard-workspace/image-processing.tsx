@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) CVAT.ai corp
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -79,17 +79,16 @@ export default function ImageProcessingComponent(): JSX.Element | null {
         } catch (error: any) {
             notification.error({
                 description: error.toString(),
-                message: 'OpenCV.js processing error occurred',
-                className: 'cvat-notification-notice-opencv-processing-error',
+                message: 'Image processing error occurred',
+                className: 'cvat-notification-notice-image-processing-error',
             });
         } finally {
-            // canvasInstance.configure({ forceFrameUpdate: false });
+            canvasInstance.configure({ forceFrameUpdate: false });
         }
     }, [canvasInstance]);
 
     useEffect(() => {
         if (canvasInstance) {
-            canvasInstance.configure({ forceFrameUpdate: true });
             canvasInstance.html().addEventListener('canvas.setup', runImageModifier);
         }
         return () => {
@@ -98,13 +97,8 @@ export default function ImageProcessingComponent(): JSX.Element | null {
     }, []);
 
     useEffect(() => {
-        if (frame.current !== null && filters.length !== 0) {
-            // runImageModifier();
-            // canvasInstance.configure({ forceFrameUpdate: true });
-            dispatch(changeFrameAsync(frame.current, false, 1, true));
-        } else if (frame.current !== null) {
-            // filter disabled -> change frame and runImageModifier applies other filters by 'canvas.setup'
-            // canvasInstance.configure({ forceFrameUpdate: true });
+        if (frame.current !== null) {
+            canvasInstance.configure({ forceFrameUpdate: true });
             dispatch(changeFrameAsync(frame.current, false, 1, true));
         }
     }, [filters]);
