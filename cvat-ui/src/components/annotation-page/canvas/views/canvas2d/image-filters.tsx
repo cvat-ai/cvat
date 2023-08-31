@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import { CombinedState } from 'reducers';
@@ -13,14 +13,25 @@ import Slider from 'antd/lib/slider';
 import {
     addImageFilter,
     removeImageFilter,
+    setupImageFilter,
 } from 'actions/settings-actions';
-import GammaCorrectionImplementation from 'utils/fabric-wrapper/gamma-correciton';
+import GammaCorrection from 'utils/fabric-wrapper/gamma-correciton';
 import { ImageFilterAlias, filterActive } from 'utils/image-processing';
 
 export default function ImageFilters(): JSX.Element {
     const dispatch = useDispatch();
-    const [gamma, setGamma] = useState<number[]>([1, 1, 1]);
+    const [gamma, setGamma] = useState<number[]>([1.5, 1.5, 1.5]);
     const filters = useSelector((state: CombinedState) => state.settings.imageProcessing.filters);
+    const onChange = useCallback((value) => {
+        setGamma([value, gamma[1], gamma[2]]);
+        console.log(filterActive(filters, ImageFilterAlias.GAMMA_CORRECTION));
+        if (filterActive(filters, ImageFilterAlias.GAMMA_CORRECTION)) {
+            dispatch(setupImageFilter(
+                ImageFilterAlias.GAMMA_CORRECTION,
+                { gamma: [value, gamma[1], gamma[2]] },
+            ));
+        }
+    }, [filters]);
 
     return (
         <>
@@ -37,11 +48,11 @@ export default function ImageFilters(): JSX.Element {
                                 onChange={(e: CheckboxChangeEvent) => {
                                     if (e.target.checked) {
                                         dispatch(addImageFilter({
-                                            modifier: new GammaCorrectionImplementation(),
-                                            alias: 'fabric.gamma',
+                                            modifier: new GammaCorrection({ gamma }),
+                                            alias: ImageFilterAlias.GAMMA_CORRECTION,
                                         }));
                                     } else {
-                                        dispatch(removeImageFilter('fabric.gamma'));
+                                        dispatch(removeImageFilter(ImageFilterAlias.GAMMA_CORRECTION));
                                     }
                                 }}
                             />
@@ -54,12 +65,8 @@ export default function ImageFilters(): JSX.Element {
                                 min={0.2}
                                 max={2.2}
                                 value={gamma[0]}
-                                onChange={(value: number): void => {
-                                    setGamma([value, gamma[1], gamma[2]]);
-                                    if (filterActive(filters, ImageFilterAlias.GAMMA_CORRECTION)) {
-                                        dispatch(changeSaturationLevel(value as number));
-                                    }
-                                }}
+                                step={0.01}
+                                onChange={onChange}
                             />
                         </Col>
                     </Row>

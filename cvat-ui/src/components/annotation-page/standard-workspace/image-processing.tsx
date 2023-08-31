@@ -48,7 +48,6 @@ export default function ImageProcessingComponent(): JSX.Element | null {
         try {
             const currentFilters = filtersRef.current;
             const currentFrame = frame.current;
-            console.log('run image modifier', currentFilters);
             if (currentFilters.length === 0 || currentFrame === null) {
                 return;
             }

@@ -3,27 +3,21 @@
 // SPDX-License-Identifier: MIT
 
 import { fabric } from 'fabric';
-import { ImageProcessing } from 'utils/image-processing';
+import FabricFilter from './fabric-wrapper';
 
-export interface GammaCorrection extends ImageProcessing {
-    processImage: (src: ImageData, frameNumber: number) => ImageData;
+export interface GammaFilterOptions {
+    gamma: number[];
 }
 
-export default class GammaCorrectionImplementation implements GammaCorrection {
-    public currentProcessedImage: number | null = null;
-
-    public processImage(src: ImageData, frameNumber: number): ImageData {
-        console.log('Gamma called');
-        const f = new fabric.Image.filters.Gamma({
-            gamma: [0.5, 0.5, 0.5],
+export default class GammaCorrection extends FabricFilter {
+    constructor(options: GammaFilterOptions) {
+        super();
+        const { gamma } = options;
+        if (!Array.isArray(gamma) || gamma.length !== 3) {
+            throw Error('icorrect gamma');
+        }
+        this.filter = new fabric.Image.filters.Gamma({
+            gamma,
         });
-        // f.setOptions({
-        //     gamma: [1, 1, 1],
-        // });
-        f.applyTo2d({
-            imageData: src,
-        });
-        this.currentProcessedImage = frameNumber;
-        return src;
     }
 }

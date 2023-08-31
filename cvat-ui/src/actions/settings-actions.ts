@@ -4,8 +4,9 @@
 
 import { AnyAction } from 'redux';
 import {
-    GridColor, ColorBy, SettingsState, ToolsBlockerState, ImageFilter,
+    GridColor, ColorBy, SettingsState, ToolsBlockerState,
 } from 'reducers';
+import { ImageFilter, ImageFilterAlias } from 'utils/image-processing';
 
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',
@@ -47,6 +48,7 @@ export enum SettingsActionTypes {
     SWITCH_SHOWING_TAGS_ON_FRAME = 'SWITCH_SHOWING_TAGS_ON_FRAME',
     ADD_IMAGE_FILTER = 'ADD_IMAGE_FILTER',
     REMOVE_IMAGE_FILTER = 'REMOVE_IMAGE_FILTER',
+    SETUP_IMAGE_FILTER = 'SETUP_IMAGE_FILTER',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -392,11 +394,21 @@ export function addImageFilter(filter: ImageFilter): AnyAction {
     };
 }
 
-export function removeImageFilter(filterAlias: string): AnyAction {
+export function removeImageFilter(filterAlias: ImageFilterAlias): AnyAction {
     return {
         type: SettingsActionTypes.REMOVE_IMAGE_FILTER,
         payload: {
             filterAlias,
+        },
+    };
+}
+
+export function setupImageFilter(filterAlias: ImageFilterAlias, options: object): AnyAction {
+    return {
+        type: SettingsActionTypes.SETUP_IMAGE_FILTER,
+        payload: {
+            filterAlias,
+            options,
         },
     };
 }
