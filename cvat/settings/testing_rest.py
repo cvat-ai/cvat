@@ -24,3 +24,5 @@ IMPORT_CACHE_CLEAN_DELAY = timedelta(seconds=30)
 HEALTH_CHECK = {
     'DISK_USAGE_MAX': 100,  # percent
 }
+
+CACHES["media"]["TIMEOUT"] = 1
