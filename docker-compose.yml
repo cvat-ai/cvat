@@ -23,9 +23,11 @@ services:
     command: [
       "keydb-server",
       "/etc/keydb/keydb.conf",
-      "--storage-provider", "flash", "/flash",
-      "--maxmemory", "100M",
-      "--maxmemory-policy", "allkeys-lru"]
+      "--storage-provider", "flash", "/data/flash",
+      "--maxmemory", "5G",
+      "--maxmemory-policy", "allkeys-lfu"]
+    volumes:
+      - cvat_cache_db:/data
     networks:
       - cvat
 
@@ -387,6 +389,7 @@ volumes:
   cvat_keys:
   cvat_logs:
   cvat_events_db:
+  cvat_cache_db:
 
 networks:
   cvat:

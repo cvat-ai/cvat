@@ -551,7 +551,7 @@ CACHES = {
    'media' : {
        'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
        "LOCATION": "redis://localhost:6379",
-       'TIMEOUT' : None,
+       'TIMEOUT' : 3600 * 24, # 1 day
    }
 }
 

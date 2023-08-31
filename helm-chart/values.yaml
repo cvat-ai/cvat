@@ -229,8 +229,8 @@ postgresql:
 # https://artifacthub.io/packages/helm/enapter/keydb
 keydb:
   enabled: true
-  # external:
-  #     host: 127.0.0.1
+  external:
+    host: 127.0.0.1
   existingSecret: "cvat-keydb-secret"
   secret:
     create: true
@@ -241,7 +241,7 @@ keydb:
   nodes: 1
   configExtraArgs:
   - storage-provider: ["flash", "/data/flash"]
-  - maxmemory: "100M"
+  - maxmemory: "5G"
   - maxmemory-policy: "allkeys-lfu"
 
 nuclio:
