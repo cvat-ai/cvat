@@ -394,7 +394,7 @@ export function addImageFilter(filter: ImageFilter): AnyAction {
     };
 }
 
-export function removeImageFilter(filterAlias: ImageFilterAlias): AnyAction {
+export function removeImageFilter(filterAlias: ImageFilterAlias | null): AnyAction {
     return {
         type: SettingsActionTypes.REMOVE_IMAGE_FILTER,
         payload: {

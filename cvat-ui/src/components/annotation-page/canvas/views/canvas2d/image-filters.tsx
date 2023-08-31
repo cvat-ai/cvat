@@ -18,33 +18,36 @@ import {
 import GammaCorrection from 'utils/fabric-wrapper/gamma-correciton';
 import { ImageFilterAlias, filterActive } from 'utils/image-processing';
 
+import './image-setups.scss';
+
 export default function ImageFilters(): JSX.Element {
     const dispatch = useDispatch();
     const [gamma, setGamma] = useState<number[]>([1.5, 1.5, 1.5]);
     const filters = useSelector((state: CombinedState) => state.settings.imageProcessing.filters);
-    const onChange = useCallback((value) => {
-        setGamma([value, gamma[1], gamma[2]]);
-        console.log(filterActive(filters, ImageFilterAlias.GAMMA_CORRECTION));
-        if (filterActive(filters, ImageFilterAlias.GAMMA_CORRECTION)) {
+    const gammaFilterActive = filterActive(filters, ImageFilterAlias.GAMMA_CORRECTION);
+    const onChangeGamma = useCallback((newGamma) => {
+        setGamma(newGamma);
+        if (gammaFilterActive) {
             dispatch(setupImageFilter(
                 ImageFilterAlias.GAMMA_CORRECTION,
-                { gamma: [value, gamma[1], gamma[2]] },
+                { gamma: newGamma },
             ));
         }
     }, [filters]);
 
     return (
-        <>
+        <div className='cvat-image-setups-filters'>
             <Text>Image filters</Text>
             <hr />
             <Row justify='space-around'>
                 <Col span={24}>
-                    <Row className='cvat-image-setups-brightness'>
+                    <Row className='cvat-image-setups-gamma'>
                         <Col span={6}>
                             <Text className='cvat-text-color'> Gamma </Text>
                         </Col>
-                        <Col span={12}>
+                        <Col>
                             <Checkbox
+                                checked={gammaFilterActive}
                                 onChange={(e: CheckboxChangeEvent) => {
                                     if (e.target.checked) {
                                         dispatch(addImageFilter({
@@ -57,21 +60,51 @@ export default function ImageFilters(): JSX.Element {
                                 }}
                             />
                         </Col>
-
                     </Row>
                     <Row>
+                        <Col span={6}>
+                            <Text>Red:</Text>
+                        </Col>
                         <Col span={12}>
                             <Slider
                                 min={0.2}
                                 max={2.2}
                                 value={gamma[0]}
                                 step={0.01}
-                                onChange={onChange}
+                                onChange={(value) => onChangeGamma([value, gamma[1], gamma[2]])}
+                            />
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col span={6}>
+                            <Text>Green:</Text>
+                        </Col>
+                        <Col span={12}>
+                            <Slider
+                                min={0.2}
+                                max={2.2}
+                                value={gamma[1]}
+                                step={0.01}
+                                onChange={(value) => onChangeGamma([gamma[0], value, gamma[2]])}
+                            />
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col span={6}>
+                            <Text>Blue:</Text>
+                        </Col>
+                        <Col span={12}>
+                            <Slider
+                                min={0.2}
+                                max={2.2}
+                                value={gamma[2]}
+                                step={0.01}
+                                onChange={(value) => onChangeGamma([gamma[0], gamma[1], value])}
                             />
                         </Col>
                     </Row>
                 </Col>
             </Row>
-        </>
+        </div>
     );
 }

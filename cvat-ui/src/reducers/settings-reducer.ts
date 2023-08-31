@@ -412,19 +412,28 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         }
         case SettingsActionTypes.REMOVE_IMAGE_FILTER: {
             const { filterAlias } = action.payload;
-            const filters = [...state.imageProcessing.filters];
-            const index = filters.findIndex((imageFilter) => imageFilter.alias === filterAlias);
-            if (index !== -1) {
-                filters.splice(index, 1);
+            if (filterAlias) {
+                const filters = [...state.imageProcessing.filters];
+                const index = filters.findIndex((imageFilter) => imageFilter.alias === filterAlias);
+                if (index !== -1) {
+                    filters.splice(index, 1);
+                }
+                filters.forEach((imageFilter) => {
+                    imageFilter.modifier.currentProcessedImage = null;
+                });
+                return {
+                    ...state,
+                    imageProcessing: {
+                        ...state.imageProcessing,
+                        filters,
+                    },
+                };
             }
-            filters.forEach((imageFilter) => {
-                imageFilter.modifier.currentProcessedImage = null;
-            });
             return {
                 ...state,
                 imageProcessing: {
                     ...state.imageProcessing,
-                    filters,
+                    filters: [],
                 },
             };
         }

@@ -20,6 +20,7 @@ import {
     changeContrastLevel,
     changeSaturationLevel,
     changeGridSize,
+    removeImageFilter,
 } from 'actions/settings-actions';
 import { clamp } from 'utils/math';
 import { GridColor, CombinedState, PlayerSettingsState } from 'reducers';
@@ -169,24 +170,25 @@ export default function ImageSetupsContent(): JSX.Element {
                             />
                         </Col>
                     </Row>
-                    <Row className='cvat-image-setups-reset-color-settings' justify='space-around'>
-                        <Col>
-                            <Button
-                                className='cvat-image-setups-reset-color-settings-button'
-                                onClick={() => {
-                                    const defaultValue = 100;
-                                    dispatch(changeBrightnessLevel(defaultValue));
-                                    dispatch(changeContrastLevel(defaultValue));
-                                    dispatch(changeSaturationLevel(defaultValue));
-                                }}
-                            >
-                                Reset color settings
-                            </Button>
-                        </Col>
-                    </Row>
                 </Col>
             </Row>
             <ImageFilters />
+            <Row className='cvat-image-setups-reset-color-settings' justify='space-around'>
+                <Col>
+                    <Button
+                        className='cvat-image-setups-reset-color-settings-button'
+                        onClick={() => {
+                            const defaultValue = 100;
+                            dispatch(changeBrightnessLevel(defaultValue));
+                            dispatch(changeContrastLevel(defaultValue));
+                            dispatch(changeSaturationLevel(defaultValue));
+                            dispatch(removeImageFilter(null));
+                        }}
+                    >
+                        Reset image settings
+                    </Button>
+                </Col>
+            </Row>
         </div>
     );
 }
