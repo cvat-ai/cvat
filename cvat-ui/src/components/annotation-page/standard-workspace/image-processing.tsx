@@ -48,11 +48,13 @@ export default function ImageProcessingComponent(): JSX.Element | null {
             const currentFilters = filtersRef.current;
             const currentFrame = frame.current;
             console.log('run image modifier', currentFilters);
-            if (
-                currentFilters && currentFrame !== null &&
-                currentFilters.length !== 0 &&
-                currentFilters[0].modifier.currentProcessedImage !== currentFrame
-            ) {
+            if (currentFilters.length === 0 || currentFrame === null) {
+                return;
+            }
+            const imageIsNotProcessed = currentFilters.some((imageFilter: ImageFilter) => (
+                imageFilter.modifier.currentProcessedImage !== currentFrame
+            ));
+            if (imageIsNotProcessed) {
                 canvasInstance.configure({ forceFrameUpdate: true });
                 const imageData = getCanvasImageData();
                 const newImageData = currentFilters
@@ -81,12 +83,13 @@ export default function ImageProcessingComponent(): JSX.Element | null {
                 className: 'cvat-notification-notice-opencv-processing-error',
             });
         } finally {
-            canvasInstance.configure({ forceFrameUpdate: false });
+            // canvasInstance.configure({ forceFrameUpdate: false });
         }
     }, [canvasInstance]);
 
     useEffect(() => {
         if (canvasInstance) {
+            canvasInstance.configure({ forceFrameUpdate: true });
             canvasInstance.html().addEventListener('canvas.setup', runImageModifier);
         }
         return () => {
@@ -95,10 +98,13 @@ export default function ImageProcessingComponent(): JSX.Element | null {
     }, []);
 
     useEffect(() => {
-        if (filters.length !== 0) {
-            runImageModifier();
+        if (frame.current !== null && filters.length !== 0) {
+            // runImageModifier();
+            // canvasInstance.configure({ forceFrameUpdate: true });
+            dispatch(changeFrameAsync(frame.current, false, 1, true));
         } else if (frame.current !== null) {
-            canvasInstance.configure({ forceFrameUpdate: true });
+            // filter disabled -> change frame and runImageModifier applies other filters by 'canvas.setup'
+            // canvasInstance.configure({ forceFrameUpdate: true });
             dispatch(changeFrameAsync(frame.current, false, 1, true));
         }
     }, [filters]);

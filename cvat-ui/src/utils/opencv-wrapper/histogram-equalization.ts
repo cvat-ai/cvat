@@ -18,7 +18,7 @@ export default class HistogramEqualizationImplementation implements HistogramEqu
     private readonly bufferSize: number = 20;
     private cv:any;
     private histHash: HashedImage[];
-    public currentProcessedImage: number | undefined;
+    public currentProcessedImage: number | null = null;
 
     constructor(cv:any) {
         this.cv = cv;

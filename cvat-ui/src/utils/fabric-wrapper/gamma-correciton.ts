@@ -10,7 +10,7 @@ export interface GammaCorrection extends ImageProcessing {
 }
 
 export default class GammaCorrectionImplementation implements GammaCorrection {
-    public currentProcessedImage: number | undefined;
+    public currentProcessedImage: number | null = null;
 
     public processImage(src: ImageData, frameNumber: number): ImageData {
         console.log('Gamma called');
