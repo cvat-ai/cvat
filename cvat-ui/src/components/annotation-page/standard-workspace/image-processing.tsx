@@ -101,5 +101,6 @@ export default function ImageProcessingComponent(): JSX.Element | null {
             dispatch(changeFrameAsync(frame.current, false, 1, true));
         }
     }, [filters]);
-    return null;
+
+    return <></>;
 }
