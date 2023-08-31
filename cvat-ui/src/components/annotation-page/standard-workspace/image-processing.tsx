@@ -54,7 +54,6 @@ export default function ImageProcessingComponent(): JSX.Element | null {
                 imageFilter.modifier.currentProcessedImage !== currentFrame
             ));
             if (imageIsNotProcessed) {
-                canvasInstance.configure({ forceFrameUpdate: true });
                 const imageData = getCanvasImageData();
                 const newImageData = currentFilters
                     .reduce((oldImageData, activeImageModifier) => activeImageModifier
