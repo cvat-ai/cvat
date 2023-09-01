@@ -86,6 +86,7 @@ class GIStartSerializer(serializers.Serializer):
 class GIUpdateSerializer(serializers.Serializer):
     instance = serializers.ChoiceField(choices=GIInstanceChoices)
     token = serializers.CharField(max_length=40)
+    tags = serializers.ListSerializer(child=serializers.CharField(max_length=200))
 
 
 class _DetectionClassSerializer(serializers.Serializer):

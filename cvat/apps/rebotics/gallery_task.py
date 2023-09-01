@@ -3,10 +3,10 @@ import sys
 import random
 import requests
 from urllib import parse as urlparse, request as urlrequest
-from .serializers import DetectionImageListSerializer
+from .serializers import DetectionImageListSerializer, DetectionImageSerializer
 from .models import GalleryImportProgress, GIStatusSuccess, GIStatusFailed, \
     GIInstanceLocal, GIInstanceR3cn, SHAPE_RECTANGLE, SHAPE_POLYGON, SHAPE_LINE, \
-    ALL_UPC, PRICE_TAG_OCR
+    SPECS
 
 import django_rq
 from rq.job import JobStatus, Job as RqJob
@@ -156,10 +156,10 @@ class ShapesImporter:
 
         val = None
         title = item['detection_class']['title']
-        if title in [ALL_UPC, PRICE_TAG_OCR]:
+        if title in SPECS:
             code = item['detection_class']['code']
             if code:
-                spec_name = 'UPC' if title == ALL_UPC else 'OCR'
+                spec_name = SPECS['title']
                 spec = self._get_spec(label, spec_name)
                 val = LabeledShapeAttributeVal(
                     shape_id=0,
@@ -230,6 +230,45 @@ class ShapesImporter:
                 self._import_tag(item)
 
         self._save()
+
+    def reload_labels(self, gi_item: GalleryImportProgress, labels, gi_instance, token) -> None:
+        annotations = LabeledShape.objects.filter(
+            job__segment__task=gi_item.task,
+            frame=gi_item.frame,
+            label__name__in=labels,
+        )
+        tags = LabeledImage.objects.filter(
+            job__segment__task=gi_item.task,
+            frame=gi_item.frame,
+            label__name__in=labels,
+        )
+        if annotations.exists() or tags.exists():
+            annotations.delete()
+            tags.delete()
+
+            self._reset_frame(gi_item)
+
+            url = _get_url(gi_instance, gi_id=gi_item.gi_id)
+            headers = {'Authorization': f'Token {token}'}
+            request = requests.get(url, headers=headers)
+            data = request.json()
+
+            serializer = DetectionImageSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+
+            meta = serializer.validated_data
+
+            annotations = meta.get('annotations', None)
+            if annotations is not None:
+                for item in annotations:
+                    self._import_annotation(item)
+
+            tags = meta.get('tags', None)
+            if tags is not None:
+                for item in tags:
+                    self._import_tag(item)
+
+            self._save()
 
 
 def _get_url(gi_instance, gi_id=None):
@@ -476,6 +515,41 @@ def get_job_status(instance):
         'job_status': job_status,
         'exc_info': exc_info,
     }
+
+
+@transaction.atomic
+def _reload_frame(importer, item, instance, token, tags):
+    importer.reload_labels(item, tags, instance, token)
+
+    item.status = GIStatusFailed
+    item.save()
+
+
+def _reload_labels(instance, token, tags):
+    gi_data = GalleryImportProgress.objects.filter(instance=instance, status=GIStatusSuccess)
+    importer = ShapesImporter()
+
+    slogger.glob.info('Reloading annotations')
+    for item in gi_data:
+        slogger.glob.info(f'Task {item.task_id} frame {item.frame}')
+        _reload_frame(importer, item, instance, token, tags)
+
+
+def reload_labels(instance, token, tags):
+    q = django_rq.get_queue('default')
+    job_id = f'gi_{instance}_import'
+    job: RqJob = q.fetch_job(job_id)
+
+    if job is None or job.is_finished or job.is_failed:
+        q.enqueue_call(
+            _reload_labels,
+            args=(instance, token, tags),
+            job_id=job_id,
+            timeout=172800,
+        )
+        return "ok"
+    else:
+        return "import is in progress"
 
 
 def clean(gi_instance):

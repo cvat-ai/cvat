@@ -97,6 +97,23 @@ class GalleryImportViewset(GenericViewSet):
         result = gi_task_api.get_job_status(instance)
         return Response(result)
 
+    def update(self, request, *args, **kwargs):
+        serializer = GIUpdateSerializer(data={
+            **request.data,
+            'instance': self.kwargs.get('pk'),
+        })
+        if serializer.is_valid():
+            instance = serializer.validated_data['instance']
+            token = serializer.validated_data['token']
+            tags = serializer.validated_data['tags']
+            gi_msg = gi_task_api.reload_labels(instance, token, tags)
+
+            slogger.glob.info('Gallery import: reloading labels')
+            return Response({'status': gi_msg}, status=status.HTTP_200_OK)
+        else:
+            slogger.glob.error(str(serializer.errors))
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, *args, **kwargs):
         instance = self.kwargs.get('pk')
         slogger.glob.info(f'Cleaning lost job for {instance}')
