@@ -25,7 +25,8 @@ services:
       "/etc/keydb/keydb.conf",
       "--storage-provider", "flash", "/data/flash",
       "--maxmemory", "5G",
-      "--maxmemory-policy", "allkeys-lfu"]
+      "--maxmemory-policy", "allkeys-lfu",
+    ]
     volumes:
       - cvat_cache_db:/data
     networks:
