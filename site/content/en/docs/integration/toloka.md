@@ -137,7 +137,7 @@ To set up the Toloka pool, do the following:
    - **Sensible content**: Switch this toggle if your dataset
      contains images intended for an adult audience.
    - **Accept solutions automatically**: Enable this if you
-     wish for completed pools to be automatically accepted.
+     wish for completed jobs to be automatically accepted.
    - **Close pool after completion, sec**: The interval during which the pool will
      remain open from the moment all tasks are completed.
      Minimum — 0, maximum — 259200 seconds (three days).
