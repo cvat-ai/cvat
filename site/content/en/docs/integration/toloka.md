@@ -87,9 +87,7 @@ In CVAT, all projects related to Toloka will be labeled as **Toloka**.
 ![Toloka Label on Project](/images/toloka06.png)
 
 The status indicator changes based on the
-state of the project and pool.
-
-For projects:
+state of the project:
 
 - Green - active
 - Dark grey - archived
