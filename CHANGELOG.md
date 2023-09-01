@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Changed
-- TDB
+- Using KeyDB with FLASH to cache data chunk instead of diskcache (<https://github.com/opencv/cvat/pull/6773>)
 
 ### Deprecated
 - TDB
