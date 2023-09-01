@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Zooming canvas when scrooling comments list in an issue (<https://github.com/opencv/cvat/pull/6758>)
 - Issues can be created many times when initial submit (<https://github.com/opencv/cvat/pull/6758>)
+- Cosmetic issues with the AWS credential fields in the cloud storage creation form
+  (<https://github.com/opencv/cvat/pull/6783>)
 
 ### Security
 - TDB
