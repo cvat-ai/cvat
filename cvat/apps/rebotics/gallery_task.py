@@ -159,7 +159,7 @@ class ShapesImporter:
         if title in SPECS:
             code = item['detection_class']['code']
             if code:
-                spec_name = SPECS['title']
+                spec_name = SPECS[title]
                 spec = self._get_spec(label, spec_name)
                 val = LabeledShapeAttributeVal(
                     shape_id=0,
@@ -237,14 +237,8 @@ class ShapesImporter:
             frame=gi_item.frame,
             label__name__in=labels,
         )
-        tags = LabeledImage.objects.filter(
-            job__segment__task=gi_item.task,
-            frame=gi_item.frame,
-            label__name__in=labels,
-        )
-        if annotations.exists() or tags.exists():
+        if annotations.exists():
             annotations.delete()
-            tags.delete()
 
             self._reset_frame(gi_item)
 
@@ -261,12 +255,8 @@ class ShapesImporter:
             annotations = meta.get('annotations', None)
             if annotations is not None:
                 for item in annotations:
-                    self._import_annotation(item)
-
-            tags = meta.get('tags', None)
-            if tags is not None:
-                for item in tags:
-                    self._import_tag(item)
+                    if item['detection_class']['title'] in labels:
+                        self._import_annotation(item)
 
             self._save()
 
