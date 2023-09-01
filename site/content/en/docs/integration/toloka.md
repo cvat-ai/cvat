@@ -141,7 +141,7 @@ To set up the Toloka pool, do the following:
    - **Close pool after completion, sec**: The interval during which the pool will
      remain open from the moment all tasks are completed.
      Minimum — 0, maximum — 259200 seconds (three days).
-   - **Time per task suite, sec**: Enter the time limit, in seconds, within which each job ьгые be completed.
+   - **Time per task suite, sec**: Enter the time limit, in seconds, within which each job must be completed.
      The Toloker will see the deadline in the task information on the main Toloka page
      and also in CVAT interface. Uncompleted tasks are redistributed to other Tolokers.
    - **Days for manual review by requester**: Specify the Review period in days —
