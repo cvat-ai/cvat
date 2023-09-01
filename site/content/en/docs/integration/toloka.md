@@ -94,11 +94,6 @@ For projects:
 - Green - active
 - Dark grey - archived
 
-For pools:
-
-- Green - open for annotating
-- Light gray - closed
-- Dark grey - archived
 
 ## Adding tasks and jobs to the Toloka project
 
@@ -171,6 +166,14 @@ To set up the Toloka pool, do the following:
    <br>Project, that you created will now be visible to Tolokers.</br>
 
    ![Toloka Project](/images/toloka12.jpg)
+
+
+Pools status indicator has the following states:
+
+- Green - open for annotating
+- Light gray - closed
+- Dark grey - archived
+
 
 ## Changing Toloka pool
 
