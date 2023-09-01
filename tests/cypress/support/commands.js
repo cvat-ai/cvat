@@ -266,13 +266,11 @@ Cypress.Commands.add('headlessLogin', (username = Cypress.env('user'), password 
 
 Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
     cy.window().then(async ($win) => {
-        cy.log('11');
         const task = new $win.cvat.classes.Task({
             ...taskSpec,
             ...dataSpec,
         });
 
-        cy.log('12');
         if (dataSpec.server_files) {
             task.serverFiles = dataSpec.server_files;
         }
@@ -285,14 +283,7 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
             task.remoteFiles = dataSpec.remote_files;
         }
 
-        cy.log('13');
-        let result = null;
-        try {
-            result = await task.save();
-        } catch (error) {
-            cy.log(error);
-        }
-        cy.log('14');
+        const result = await task.save();
         return cy.wrap({ taskID: result.id, jobID: result.jobs.map((job) => job.id) });
     });
 });
