@@ -142,7 +142,7 @@ def kube_cp(source, target):
 
 
 def docker_exec(container, command, capture_output=True):
-    return _run(f"docker exec -u root {PREFIX}_{container}_1 {command}", capture_output)
+    return _run(f"docker exec -u django {PREFIX}_{container}_1 {command}", capture_output)
 
 
 def docker_exec_cvat(command: Union[List[str], str]):
