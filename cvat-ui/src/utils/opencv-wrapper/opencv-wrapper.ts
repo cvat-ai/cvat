@@ -64,7 +64,7 @@ export class OpenCVWrapper {
     }
 
     private async inject(): Promise<void> {
-        const response = await fetch(`${baseURL}/opencv/opencv.js`);
+        const response = await fetch(`${baseURL}/assets/opencv.js`);
         if (response.status !== 200) {
             throw new Error(`Response status ${response.status}. ${response.statusText}`);
         }

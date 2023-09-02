@@ -6,8 +6,6 @@
 #    pip-compile-multi
 #
 -r base.txt
---no-binary av
-
 anyio==3.7.1
     # via watchfiles
 coverage==7.2.3

@@ -61,6 +61,10 @@
             }
         }
 
+        :nth-child(4n) {
+            border-right: 0;
+        }
+
         .cvat-jobs-page-job-item-card-preview-wrapper {
             height: 100%;
             width: 100%;

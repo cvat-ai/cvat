@@ -87,7 +87,7 @@ export interface SerializedTask {
     dimension: DimensionType;
     id: number;
     image_quality: number;
-    jobs: { count: 1; completed: 0; url: string; };
+    jobs: { count: 1; completed: 0; url: string; validation: 0 };
     labels: { count: number; url: string; };
     mode: TaskMode | '';
     name: string;
