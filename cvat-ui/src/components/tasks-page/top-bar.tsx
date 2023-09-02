@@ -22,6 +22,8 @@ import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
 
+import dimensions from '../projects-page/dimensions';
+
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
 );
@@ -51,7 +53,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
 
     return (
         <Row className='cvat-tasks-page-top-bar' justify='center' align='middle'>
-            <Col md={22} lg={18} xl={16} xxl={14}>
+            <Col {...dimensions}>
                 <div className='cvat-tasks-page-filters-wrapper'>
                     <Input.Search
                         enterButton
