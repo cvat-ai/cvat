@@ -5,7 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[Unreleased]
+## \[Unreleased\]
+### Added
+- TDB
+
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- Zooming canvas when scrooling comments list in an issue (<https://github.com/opencv/cvat/pull/6758>)
+- Issues can be created many times when initial submit (<https://github.com/opencv/cvat/pull/6758>)
+- Paddings on tasks/projects/models pages (<https://github.com/opencv/cvat/pull/6778>)
+
+### Security
+- TDB
+
+## \[2.6.1\] - 2023-08-25
+### Added
+
+- More information about task progress on tasks page (<https://github.com/opencv/cvat/pull/5723>)
+- Prefetching next chunk when user navigates by frames manually (<https://github.com/opencv/cvat/pull/6695>)
+
+### Changed
+
+- Bumped nuclio version to 1.11.24 and removed `/tmp` mounting in the nuclio container to adhere the update.
+- Response code for empty cloud storage preview 204 -> 404 (<https://github.com/opencv/cvat/pull/6727>)
+- Organization now opened immediately after it is created (<https://github.com/opencv/cvat/pull/6705>)
+- More responsive automatic annotation progress bar (<https://github.com/opencv/cvat/pull/6734>)
+- Improved message when invite more users to an organization (<https://github.com/opencv/cvat/pull/6731>)
+
+### Fixed
+
+- Exporting project when its tasks has not data (<https://github.com/opencv/cvat/pull/6658>)
+- Removing job assignee (<https://github.com/opencv/cvat/pull/6712>)
+- UI fail when select a mask or a skeleton with center-aligned text (<https://github.com/opencv/cvat/pull/6753>)
+- Fixed switching from organization to sandbox while getting a resource (<https://github.com/opencv/cvat/pull/6689>)
+- You do not have permissions when user is cancelling automatic annotation (<https://github.com/opencv/cvat/pull/6734>)
+- Automatic annotation progress bar is invisible if the app initialized on the task page
+ (<https://github.com/opencv/cvat/pull/6734>)
+- Extra status check requests for automatic annotation (<https://github.com/opencv/cvat/pull/6734>)
+- \[SDK\]: `FileExistsError` exception raised on Windows when a dataset is loaded from cache
+  (<https://github.com/opencv/cvat/pull/6722>)
+
+### Security
+
+- Remote Code Execution (RCE) [SNYK-PYTHON-GITPYTHON-5840584](https://snyk.io/vuln/SNYK-PYTHON-GITPYTHON-5840584)
+
+## \[2.6.0\] - 2023-08-11
 
 ### Added
 
@@ -33,10 +85,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6556>)
 - Improved memory optimization and code in the decoding module (<https://github.com/opencv/cvat/pull/6585>)
 
-### Deprecated
-
-- TDB
-
 ### Removed
 
 - Removed the YOLOv5 serverless function
@@ -47,10 +95,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Corrected an issue where the prebuilt FFmpeg bundled in PyAV
   was being used instead of the custom build.
 - Fixed the filename for labels in the CamVid format (<https://github.com/opencv/cvat/pull/6600>)
-
-### Security
-
-- TDB
 
 ## \[2.5.2\] - 2023-07-27
 

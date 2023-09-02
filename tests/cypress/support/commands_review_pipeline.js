@@ -21,16 +21,21 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
         cy.get('.cvat-jobs-list')
             .contains('a', `Job #${$job}`)
             .parents('.cvat-job-item')
-            .find('.cvat-job-assignee-selector')
-            .click();
+            .find('.cvat-job-assignee-selector input')
+            .click()
+            .clear();
     });
 
     cy.intercept('PATCH', '/api/jobs/**').as('patchJobAssignee');
-    cy.get('.ant-select-dropdown')
-        .should('be.visible')
-        .not('.ant-select-dropdown-hidden')
-        .contains(new RegExp(`^${user}$`, 'g'))
-        .click();
+    if (user) {
+        cy.get('.ant-select-dropdown')
+            .should('be.visible')
+            .not('.ant-select-dropdown-hidden')
+            .contains(new RegExp(`^${user}$`, 'g'))
+            .click();
+    } else {
+        cy.get('body').type('{Enter}');
+    }
 
     cy.wait('@patchJobAssignee').its('response.statusCode').should('equal', 200);
     cy.get('.cvat-spinner').should('not.exist');

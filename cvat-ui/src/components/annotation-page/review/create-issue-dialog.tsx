@@ -2,29 +2,31 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { ReactPortal } from 'react';
+import React, { useState, ReactPortal } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch } from 'react-redux';
 import Form from 'antd/lib/form';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import { Row, Col } from 'antd/lib/grid';
+import { Store } from 'antd/lib/form/interface';
 
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
-import { Store } from 'antd/lib/form/interface';
+import { useIsMounted } from 'utils/hooks';
 
 interface FormProps {
     top: number;
     left: number;
     angle: number;
     scale: number;
+    fetching: boolean;
     submit(message: string): void;
     cancel(): void;
 }
 
 function MessageForm(props: FormProps): JSX.Element {
     const {
-        top, left, angle, scale, submit, cancel,
+        top, left, angle, scale, fetching, submit, cancel,
     } = props;
 
     function handleSubmit(values: Store): void {
@@ -37,17 +39,31 @@ function MessageForm(props: FormProps): JSX.Element {
             style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
             onFinish={(values: Store) => handleSubmit(values)}
         >
-            <Form.Item name='issue_description' rules={[{ required: true, message: 'Please, fill out the field' }]}>
+            <Form.Item
+                name='issue_description'
+                rules={[{ required: true, message: 'Please, fill out the field' }]}
+            >
                 <Input autoComplete='off' placeholder='Please, describe the issue' />
             </Form.Item>
             <Row justify='space-between'>
                 <Col>
-                    <Button onClick={cancel} type='ghost' className='cvat-create-issue-dialog-cancel-button'>
+                    <Button
+                        onClick={cancel}
+                        disabled={fetching}
+                        type='ghost'
+                        className='cvat-create-issue-dialog-cancel-button'
+                    >
                         Cancel
                     </Button>
                 </Col>
                 <Col>
-                    <Button type='primary' htmlType='submit' className='cvat-create-issue-dialog-submit-button'>
+                    <Button
+                        loading={fetching}
+                        disabled={fetching}
+                        type='primary'
+                        htmlType='submit'
+                        className='cvat-create-issue-dialog-submit-button'
+                    >
                         Submit
                     </Button>
                 </Col>
@@ -64,6 +80,8 @@ interface Props {
 }
 
 export default function CreateIssueDialog(props: Props): ReactPortal {
+    const [fetching, setFetching] = useState(false);
+    const isMounted = useIsMounted();
     const dispatch = useDispatch();
     const {
         top, left, angle, scale,
@@ -75,8 +93,14 @@ export default function CreateIssueDialog(props: Props): ReactPortal {
             left={left}
             angle={angle}
             scale={scale}
+            fetching={fetching}
             submit={(message: string) => {
-                dispatch(finishIssueAsync(message));
+                setFetching(true);
+                dispatch(finishIssueAsync(message)).finally(() => {
+                    if (isMounted()) {
+                        setFetching(false);
+                    }
+                });
             }}
             cancel={() => {
                 dispatch(reviewActions.cancelIssue());

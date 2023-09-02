@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-models-page {
     padding-top: $grid-unit-size * 2;
@@ -70,6 +70,11 @@
 .cvat-models-page-top-bar {
     margin: $grid-unit-size * 3 0;
 
+    .cvat-models-page-search-bar {
+        width: $grid-unit-size * 32;
+        padding-left: $grid-unit-size * 0.5;
+    }
+
     > div {
         display: flex;
     }
@@ -114,12 +119,16 @@
 
 .cvat-models-item-card {
     width: 25%;
-    border-width: 4px;
+    border-width: $grid-unit-size * 0.5;
     height: $grid-unit-size * 28;
     overflow: hidden;
 
     .ant-card-meta-title {
         margin-bottom: 0 !important;
+    }
+
+    &:nth-child(4n) {
+        border-right: 0;
     }
 }
 

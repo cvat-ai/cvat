@@ -132,7 +132,6 @@ context('New organization pipeline.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('The first user creates an organization and activates it.', () => {
             cy.createOrganization(organizationParams);
-            cy.activateOrganization(organizationParams.shortName);
         });
 
         it('Open the organization settings. Invite members.', () => {

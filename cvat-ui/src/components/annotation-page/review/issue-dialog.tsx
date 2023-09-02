@@ -68,13 +68,28 @@ export default function IssueDialog(props: Props): JSX.Element {
         }
     }, [resolved]);
 
+    useEffect(() => {
+        const listener = (event: WheelEvent): void => {
+            event.stopPropagation();
+        };
+
+        if (ref.current) {
+            const { current } = ref;
+            current.addEventListener('wheel', listener);
+            return () => {
+                current.removeEventListener('wheel', listener);
+            };
+        }
+        return () => {};
+    }, [ref.current]);
+
     const onDeleteIssue = useCallback((): void => {
         Modal.confirm({
-            title: `The issue${id >= 0 ? ` #${id}` : ''} will be deleted.`,
+            title: `The issue${typeof id === 'number' ? ` #${id}` : ''} will be deleted.`,
             className: 'cvat-modal-confirm-remove-issue',
             onOk: () => {
                 collapse();
-                dispatch(deleteIssueAsync(id));
+                dispatch(deleteIssueAsync(id as number));
             },
             okButtonProps: {
                 type: 'primary',
@@ -116,10 +131,14 @@ export default function IssueDialog(props: Props): JSX.Element {
     );
 
     return ReactDOM.createPortal(
-        <div style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }} ref={ref} className='cvat-issue-dialog'>
+        <div
+            style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
+            ref={ref}
+            className='cvat-issue-dialog'
+        >
             <Row className='cvat-issue-dialog-header' justify='space-between'>
                 <Col>
-                    <Title level={4}>{id >= 0 ? `Issue #${id}` : 'Issue'}</Title>
+                    <Title level={4}>{typeof id === 'number' ? `Issue #${id}` : 'Issue'}</Title>
                 </Col>
                 <Col>
                     <CVATTooltip title='Collapse the chat'>
@@ -135,7 +154,7 @@ export default function IssueDialog(props: Props): JSX.Element {
             <Row className='cvat-issue-dialog-input' justify='start'>
                 <Col span={24}>
                     <Input
-                        placeholder='Print a comment here..'
+                        placeholder='Type a comment here..'
                         value={currentText}
                         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                             setCurrentText(event.target.value);

@@ -43,7 +43,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                             onApplySearch(phrase);
                         }}
                         defaultValue={query.search || ''}
-                        className='cvat-webhooks-page-search-bar'
+                        className='cvat-models-page-search-bar'
                         placeholder='Search ...'
                     />
                     <div>

@@ -43,7 +43,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
     const layout: any = [];
     let histogramCount = 0;
     let numericCount = 0;
-    const views: any = [];
+    const views: { view: React.JSX.Element, key: string }[] = [];
     report.statistics.forEach((entry) => {
         const tooltip = (
             <div className='cvat-analytics-tooltip-inner'>
@@ -71,6 +71,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                             tooltip={tooltip}
                             value={typeof value === 'number' ? value.toFixed(1) : 0}
                             key={entry.name}
+                            entryName={entry.name}
                         />
                     ),
                     key: entry.name,
@@ -123,6 +124,7 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
                             labels={dateLabels}
                             title={entry.title}
                             key={entry.name}
+                            entryName={entry.name}
                         />
                     ),
                     key: entry.name,

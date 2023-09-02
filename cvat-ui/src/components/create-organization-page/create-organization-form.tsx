@@ -2,26 +2,24 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import Form from 'antd/lib/form';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
 import { Store } from 'antd/lib/form/interface';
 import { useForm } from 'antd/lib/form/Form';
-import notification from 'antd/lib/notification';
 
 import { createOrganizationAsync } from 'actions/organization-actions';
 import validationPatterns from 'utils/validation-patterns';
-import { CombinedState } from 'reducers';
 
 function CreateOrganizationForm(): JSX.Element {
     const [form] = useForm<Store>();
     const dispatch = useDispatch();
     const history = useHistory();
-    const creating = useSelector((state: CombinedState) => state.organizations.creating);
+    const [creating, setCreating] = useState(false);
     const MAX_SLUG_LEN = 16;
     const MAX_NAME_LEN = 64;
 
@@ -36,11 +34,12 @@ function CreateOrganizationForm(): JSX.Element {
             ...(location ? { location } : {}),
         };
 
+        setCreating(true);
         dispatch(
             createOrganizationAsync(rest, (createdSlug: string): void => {
-                form.resetFields();
-                notification.info({ message: `Organization ${createdSlug} has been successfully created` });
-            }),
+                localStorage.setItem('currentOrganization', createdSlug);
+                (window as Window).location = '/organization';
+            }, () => setCreating(false)),
         );
     };
 
