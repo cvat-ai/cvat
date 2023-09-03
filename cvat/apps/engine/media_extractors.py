@@ -662,7 +662,12 @@ class ZipChunkWriter(IChunkWriter):
                 output = io.BytesIO()
                 if self._dimension == DimensionType.DIM_2D:
                     pil_image = rotate_within_exif(Image.open(image))
-                    pil_image.save(output, format=pil_image.format if pil_image.format else self.IMAGE_EXT, quality=100, subsampling=0)
+                    try:
+                        pil_image.save(output, format=pil_image.format if pil_image.format else self.IMAGE_EXT, quality=95, subsampling=0)
+                    except ValueError:
+                        # try to save without additional settings if image writer does not support them
+                        # for example tiff format supports quality only with jpeg compression
+                        pil_image.save(output, format=pil_image.format)
                 else:
                     output, ext = self._write_pcd_file(image)[0:2]
                 arcname = '{:06d}.{}'.format(idx, ext)
