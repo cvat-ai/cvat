@@ -84,14 +84,7 @@ def get_membership(request, organization):
         is_active=True
     ).first()
 
-def get_iam_context(request, obj):
-    organization = get_organization(request, obj)
-    membership = get_membership(request, organization)
-
-    # TODO
-    # if organization and not request.user.is_superuser and membership is None:
-    #     raise PermissionDenied({'message': 'You should be an active member in the organization'})
-
+def build_iam_context(request, organization: Optional[Organization], membership: Optional[Membership]) -> Dict:
     return {
         'user_id': request.user.id,
         'group_name': request.iam_context['privilege'],
@@ -102,6 +95,20 @@ def get_iam_context(request, obj):
         'org_role': getattr(membership, 'role', None),
     }
 
+def get_iam_context(request, obj):
+    organization = get_organization(request, obj)
+    membership = get_membership(request, organization)
+
+    iam_context = dict()
+    for builder_func_path in settings.IAM_CONTEXT_BUILDERS:
+        package, attr = builder_func_path.rsplit('.', 1)
+        builder_func = getattr(import_module(package), attr)
+        iam_context.update(builder_func(request, organization, membership))
+
+    if organization and not request.user.is_superuser and membership is None and not iam_context.get('is_crowdsourcing', False):
+        raise PermissionDenied({'message': 'You should be an active member in the organization'})
+
+    return iam_context
 
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
     url: str
