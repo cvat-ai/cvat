@@ -34,7 +34,7 @@ DC_FILES = CONTAINER_NAME_FILES + [
 ]
 
 TEST_EXTRAS_HOST_DIR = CVAT_ROOT_DIR / "tests" / "extras"
-TEST_EXTRAS_MOUNT_DIR = "/home/django/test_extras"
+TEST_EXTRAS_MOUNT_DIR = "/home/django"  # django can't import CVAT from other dirs
 
 
 class Container(str, Enum):
@@ -213,12 +213,10 @@ def kube_restore_clickhouse_db():
 def docker_clear_rq():
     docker_exec_cvat(
         [
-            "python",
-            f"{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
-            "--host",
-            "${CVAT_REDIS_HOST}",
-            "--password",
-            "${CVAT_REDIS_PASSWORD}",
+            "/bin/sh",
+            "-c",
+            'python %s/clear_rq.py --host "${CVAT_REDIS_HOST}" --password "${CVAT_REDIS_PASSWORD}"'
+            % (TEST_EXTRAS_MOUNT_DIR,),
         ]
     )
 
@@ -226,12 +224,10 @@ def docker_clear_rq():
 def kube_clear_rq():
     kube_exec_cvat(
         [
-            "python",
-            f"'{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py'",
-            "--host",
-            "'${CVAT_REDIS_HOST}'",
-            "--password",
-            "'${CVAT_REDIS_PASSWORD}'",
+            "/bin/sh",
+            "-c",
+            'python %s/clear_rq.py --host "${CVAT_REDIS_HOST}" --password "${CVAT_REDIS_PASSWORD}"'
+            % (TEST_EXTRAS_MOUNT_DIR,),
         ]
     )
 
@@ -432,7 +428,10 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     docker_restore_data_volumes()
     docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
-    docker_cp(TEST_EXTRAS_HOST_DIR, f"{PREFIX}_cvat_server_1:{TEST_EXTRAS_MOUNT_DIR}")
+    docker_cp(
+        TEST_EXTRAS_HOST_DIR / "clear_rq.py",
+        f"{PREFIX}_cvat_server_1:{TEST_EXTRAS_MOUNT_DIR}/clear_rq.py",
+    )
     wait_for_services()
 
     docker_exec_cvat("python manage.py loaddata /tmp/data.json")
@@ -541,22 +540,34 @@ def restore_cvat_data(request):
         kube_restore_data_volumes()
 
 
-@pytest.fixture(scope="class")
-def clear_rq_per_class(request):
+def clear_rq(request: pytest.FixtureRequest):
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_clear_rq()
     else:
         kube_clear_rq()
+
+
+@pytest.fixture(scope="class")
+def clear_rq_per_class(request):
+    clear_rq(request)
 
 
 @pytest.fixture(scope="function")
 def clear_rq_per_function(request):
-    platform = request.config.getoption("--platform")
-    if platform == "local":
-        docker_clear_rq()
-    else:
-        kube_clear_rq()
+    clear_rq(request)
+
+
+@pytest.fixture(scope="class")
+def clear_rq_after_class(request):
+    yield
+    clear_rq(request)
+
+
+@pytest.fixture(scope="function")
+def clear_rq_after_function(request):
+    yield
+    clear_rq(request)
 
 
 @pytest.fixture(scope="function")
