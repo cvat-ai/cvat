@@ -180,3 +180,8 @@ details > .code-toolbar {
         left: auto;
     }
 }
+
+/* Hide breadcrumbs, when on the root level
+   https://github.com/google/docsy/issues/944
+*/
+.td-breadcrumbs__single { display: none !important; }
