@@ -102,7 +102,7 @@ export default function QualitySettingsModal(props: Props): JSX.Element | null {
                         <>
                             <Text>The task is in a project, please check </Text>
                             <Link
-                                to={`/projects/${!redirectToProjectId}/analytics`}
+                                to={`/projects/${redirectToProjectId}/analytics`}
                                 onClick={onCancel}
                             >
                                 the&nbsp;project&nbsp;quality&nbsp;settings
