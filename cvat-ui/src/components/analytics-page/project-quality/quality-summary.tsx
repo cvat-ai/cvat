@@ -58,31 +58,30 @@ function QualitySummary(props: Props): JSX.Element {
 
     const downloadReportButton = (
         <div className='cvat-quality-summary-controls'>
-            <>
-                {
-                    projectReport ? (
-                        <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
-                            <a
-                                href={`${getCore().config.backendAPI}/quality/reports/${projectReport?.id}/data`}
-                                download={`quality-report-project_${projectId}-${projectReport?.id}.json`}
-                            >
-                                Quality Report
-                            </a>
-                        </Button>
-                    ) : null
-                }
-                <SettingOutlined
-                    className='cvat-quality-settings-switch ant-btn ant-btn-default'
-                    onClick={() => setQualitySettingsVisible(true)}
-                />
-                {
-                    projectReport ? (
-                        <div className='cvat-analytics-time-hint'>
-                            <Text type='secondary'>{projectReport?.createdDate ? moment(projectReport?.createdDate).fromNow() : ''}</Text>
-                        </div>
-                    ) : null
-                }
-            </>
+            {
+                projectReport ? (
+                    <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
+                        <a
+                            href={`${getCore().config.backendAPI}/quality/reports/${projectReport?.id}/data`}
+                            download={`quality-report-project_${projectId}-${projectReport?.id}.json`}
+                        >
+                            Quality Report
+                        </a>
+                    </Button>
+                ) : null
+            }
+
+            <SettingOutlined
+                className='cvat-quality-settings-switch ant-btn ant-btn-default'
+                onClick={() => setQualitySettingsVisible(true)}
+            />
+            {
+                projectReport ? (
+                    <div className='cvat-analytics-time-hint'>
+                        <Text type='secondary'>{projectReport?.createdDate ? moment(projectReport?.createdDate).fromNow() : ''}</Text>
+                    </div>
+                ) : null
+            }
         </div>
 
     );
