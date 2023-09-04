@@ -52,7 +52,7 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
     return children || <></>;
 }
 
-Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element): boolean {
+Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element, combo: string): boolean {
     // if the element has the class "mousetrap" then no need to stop
     if ((` ${(element as HTMLElement).className} `).indexOf(' mousetrap ') > -1) {
         return false;
@@ -62,7 +62,7 @@ Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element)
     const someModalsOpened = Array.from(
         window.document.getElementsByClassName('ant-modal'),
     ).some((el) => (el as HTMLElement).style.display !== 'none');
-    if (someModalsOpened) {
+    if (someModalsOpened && !['f1', 'f2'].includes(combo)) {
         return true;
     }
 
