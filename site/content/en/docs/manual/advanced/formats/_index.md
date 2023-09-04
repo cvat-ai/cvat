@@ -23,7 +23,7 @@ The table below outlines the available formats for data export in CVAT.
 
 | Format                              | Shapes                                                                                | Attributes          | Video Tracks  |
 | ----------------------------------- | ------------------------------------------------------------------------------------- | ------------------- | ------------- |
-| [CamVid](format-camvid)             | Bounding Boxes, Polygons                                                              | All attributes      | Not supported |
+| [CamVid](format-camvid)             | Bounding Boxes, Polygons                                                              | Not supported     | Not supported |
 | [Cityscapes](format-cityscapes)     | Polygons                                                                              | Specific attributes | Not supported |
 | [CVAT](format-cvat)                 | Bounding Boxes, Polygons, <br>Polylines, Points, Cuboids, <br>Skeletons, Tags, Tracks | All attributes      | Supported     |
 | [COCO](format-coco)                 | Bounding Boxes, Polygons, <br> Skeletons                                              | Specific attributes | Not supported |
@@ -51,7 +51,7 @@ To export a dataset from CVAT, follow these steps:
 
 1. Navigate to **Menu** > **Export job dataset**.
 
-   ![Export dataset](/images/export_data.png)
+   ![Export dataset](/images/export_job_as_dataset_menu.png)
 
 2. Choose the desired format from the list of available options.
 
@@ -59,7 +59,7 @@ To export a dataset from CVAT, follow these steps:
 
    > **Note**: The **Save images** option is a **paid feature**.
 
-   ![Save images option](/images/export_data_01.png)
+   ![Save images option](/images/export_job_as_dataset_dialog.png)
 
 4. Input a name for the resulting `.zip` archive.
 
