@@ -673,7 +673,11 @@ class ZipChunkWriter(IChunkWriter):
                 else:
                     output, ext = self._write_pcd_file(image)[0:2]
                 arcname = '{:06d}.{}'.format(idx, ext)
-                zip_chunk.writestr(arcname, output.getvalue())
+
+                if isinstance(output, io.BytesIO):
+                    zip_chunk.writestr(arcname, output.getvalue())
+                else:
+                    zip_chunk.write(filename=output, arcname=arcname)
         # return empty list because ZipChunkWriter write files as is
         # and does not decode it to know img size.
         return []
