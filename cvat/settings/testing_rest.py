@@ -25,4 +25,10 @@ HEALTH_CHECK = {
     'DISK_USAGE_MAX': 100,  # percent
 }
 
+# We don't really need to keep the cache for tests for a long time,
+# as this may cause some tests to fail due to the presence of data
+# in the cache when it is not expected.
+# We used to reset the cache every time we reset the data fixtures.
+# We can't set 0 timeouts as this will cause cache health checking to fail,
+# so let's set it to the lowest possible value.
 CACHES["media"]["TIMEOUT"] = 1
