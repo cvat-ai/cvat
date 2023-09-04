@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Removed
-- TDB
+- Outdated using of hostname when access git/opencv/analytics from UI (<https://github.com/opencv/cvat/pull/6799>)
 
 ### Fixed
 - Zooming canvas when scrooling comments list in an issue (<https://github.com/opencv/cvat/pull/6758>)
