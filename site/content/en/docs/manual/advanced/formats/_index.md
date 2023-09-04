@@ -32,7 +32,7 @@ The table below outlines the available formats for data export in CVAT.
 |[YOLO](format-yolo)|Bounding Boxes|No attributes|Not supported|
 |[TF detection API](format-tfrecord)|Bounding Boxes, Polygons|No attributes|Not supported|
 |[ICDAR13/15](format-icdar)|Labels, Bounding Boxes, Polygons|Specific attributes|Not supported|
-|[Cityscapes](format-cityscapes)|Polygons|Specific attributes|Not supported|
+
 
 <!--lint enable maximum-line-length-->
 
