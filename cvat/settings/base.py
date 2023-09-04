@@ -24,6 +24,7 @@ import sys
 from datetime import timedelta
 from distutils.util import strtobool
 from enum import Enum
+import urllib
 
 from corsheaders.defaults import default_headers
 from logstash_async.constants import constants as logstash_async_constants
@@ -39,6 +40,10 @@ BASE_DIR = str(Path(__file__).parents[2])
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
+
+REDIS_HOST = os.getenv('CVAT_REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('CVAT_REDIS_PORT', 6379)
+REDIS_PASSWORD = urllib.parse.quote(os.getenv('CVAT_REDIS_PASSWORD', ''))
 
 try:
     sys.path.append(BASE_DIR)
@@ -300,52 +305,60 @@ class CVAT_QUEUES(Enum):
 
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '4h'
+        'DEFAULT_TIMEOUT': '4h',
+        'PASSWORD': REDIS_PASSWORD,
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '4h'
+        'DEFAULT_TIMEOUT': '4h',
+        'PASSWORD': REDIS_PASSWORD,
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '24h'
+        'DEFAULT_TIMEOUT': '24h',
+        'PASSWORD': REDIS_PASSWORD,
     },
     CVAT_QUEUES.WEBHOOKS.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': '1h'
-    },
-    CVAT_QUEUES.NOTIFICATIONS.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': '1h'
-    },
-    CVAT_QUEUES.QUALITY_REPORTS.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h',
+        'PASSWORD': REDIS_PASSWORD,
+    },
+    CVAT_QUEUES.NOTIFICATIONS.value: {
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h',
+        'PASSWORD': REDIS_PASSWORD,
+    },
+    CVAT_QUEUES.QUALITY_REPORTS.value: {
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h',
+        'PASSWORD': REDIS_PASSWORD,
     },
     CVAT_QUEUES.ANALYTICS_REPORTS.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '1h'
+        'DEFAULT_TIMEOUT': '1h',
+        'PASSWORD': REDIS_PASSWORD,
     },
     CVAT_QUEUES.CLEANING.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '1h'
+        'DEFAULT_TIMEOUT': '1h',
+        'PASSWORD': REDIS_PASSWORD,
     },
 }
 
@@ -543,14 +556,13 @@ RESTRICTIONS = {
     'analytics_visibility': True,
 }
 
-# http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
 CACHES = {
    'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
    'media' : {
        'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
-       "LOCATION": "redis://localhost:6379",
+       "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
        'TIMEOUT' : 3600 * 24, # 1 day
    }
 }
