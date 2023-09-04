@@ -1309,6 +1309,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         project_path = db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
+        os.makedirs(project_path)
 
         LabelSerializer.create_labels(labels, parent_instance=db_project)
 
@@ -1810,6 +1811,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             cloud_storage_path = db_storage.get_storage_dirname()
             if os.path.isdir(cloud_storage_path):
                 shutil.rmtree(cloud_storage_path)
+            os.makedirs(cloud_storage_path)
 
             if temporary_file:
                 # so, gcs key file is valid and we need to set correct path to the file

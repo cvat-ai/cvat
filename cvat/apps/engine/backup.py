@@ -843,6 +843,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         project_path = self._db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
+        os.makedirs(project_path)
 
         self._labels_mapping = self._create_labels(db_project=self._db_project, labels=labels)
 
