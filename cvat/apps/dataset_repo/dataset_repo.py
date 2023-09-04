@@ -4,6 +4,7 @@
 
 import datetime
 import json
+import logging
 import math
 import os
 import re
@@ -20,10 +21,10 @@ from django.conf import settings
 from cvat.apps.dataset_manager.formats.registry import format_for
 from cvat.apps.dataset_manager.task import export_task
 from cvat.apps.dataset_repo.models import GitData, GitStatusChoice
-from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Job, Task, User
 from cvat.apps.engine.plugins import add_plugin
 
+slogger = logging.getLogger('cvat.server')
 
 def _have_no_access_exception(ex):
     if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:
@@ -106,7 +107,7 @@ class Git:
 
             return user, host, repos
         except Exception as ex:
-            slogger.glob.exception('URL parsing errors occurred', exc_info = True)
+            slogger.exception('URL parsing errors occurred', exc_info = True)
             raise ex
 
 
@@ -134,7 +135,7 @@ class Git:
 
     # Method setups a config file for current user
     def _update_config(self):
-        slogger.task[self._tid].info("User config initialization..")
+        slogger.info(f"task_id = {self._tid} - User config initialization..")
         with self._rep.config_writer() as cw:
             if not cw.has_section("user"):
                 cw.add_section("user")
@@ -162,7 +163,7 @@ class Git:
         ssh_url = self._ssh_url()
 
         # Cloning
-        slogger.task[self._tid].info("Cloning remote repository from {}..".format(ssh_url))
+        slogger.info(f"task_id = {self._tid} - Cloning remote repository from {ssh_url}..")
         self._rep = git.Repo.clone_from(ssh_url, self._cwd)
 
         # Initialization
@@ -222,15 +223,15 @@ class Git:
 
             # Check if remote URL is actual
             if self._ssh_url() != self._rep.git.remote('get-url', '--all', 'origin'):
-                slogger.task[self._tid].info("Local repository URL is obsolete.")
+                slogger.info(f"task_id = {self._tid} - Local repository URL is obsolete.")
                 # We need reinitialize repository if it's false
-                slogger.task[self._tid].info("Local repository initialization..")
+                slogger.info(f"task_id = {self._tid} - Local repository initialization..")
                 shutil.rmtree(self._cwd, True)
                 self._clone()
         except git.exc.GitError:
             if wo_remote:
-                slogger.task[self._tid].info("Local repository is failed")
-            slogger.task[self._tid].info("Local repository initialization..")
+                slogger.info(f"task_id = {self._tid} - Local repository is failed")
+            slogger.info(f"task_id = {self._tid} - Local repository initialization..")
             shutil.rmtree(self._cwd, True)
             self._clone()
 
@@ -390,7 +391,7 @@ def initial_create(tid, git_path, export_format, lfs, user):
         except git.exc.GitCommandError as ex:
             _have_no_access_exception(ex)
     except Exception as ex:
-        slogger.task[tid].exception('exception occurred during git initial_create', exc_info = True)
+        slogger.exception(f"task_id = {tid} - exception occurred during git initial_create", exc_info = True)
         raise ex
 
 
@@ -411,7 +412,7 @@ def push(tid, user, scheme, host):
         except git.exc.GitCommandError as ex:
             _have_no_access_exception(ex)
     except Exception as ex:
-        slogger.task[tid].exception('push to remote repository errors occurred', exc_info = True)
+        slogger.exception(f"task_id = {tid} - push to remote repository errors occurred", exc_info = True)
         raise ex
 
 
@@ -464,9 +465,8 @@ def update_states():
         try:
             get(db_git.task_id, db_user)
         except Exception:
-            slogger.glob.exception("Exception occurred during a status "
-                "updating for db_git with tid: {}".format(db_git.task_id),
-                exc_info=True)
+            slogger.exception(f"Exception occurred during a status "
+                "updating for db_git with tid: {db_git.task_id}", exc_info=True)
 
 @transaction.atomic
 def _onsave(jid, data, action):

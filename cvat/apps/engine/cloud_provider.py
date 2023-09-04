@@ -9,6 +9,7 @@ import os
 from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
+import logging
 from multiprocessing.pool import ThreadPool
 from typing import Dict, List, Optional
 
@@ -26,10 +27,10 @@ from google.cloud.exceptions import NotFound as GoogleCloudNotFound
 from PIL import Image, ImageFile
 from rest_framework.exceptions import (NotFound, PermissionDenied,
                                        ValidationError)
-
-from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 from cvat.apps.engine.utils import get_cpu_number
+
+slogger = logging.getLogger('cvat.server')
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -185,7 +186,7 @@ class _CloudStorage(ABC):
         else:
             buff = self.download_fileobj(key)
             image_size_in_bytes = len(buff.getvalue())
-            slogger.glob.warning(
+            slogger.warning(
                 f'The {chunk_size} bytes were not enough to parse "{key}" image. '
                 f'Image size was {image_size_in_bytes} bytes. Image resolution was {Image.open(buff).size}. '
                 f'Downloaded percent was {round(min(chunk_size, image_size_in_bytes) / image_size_in_bytes * 100)}')
@@ -203,7 +204,7 @@ class _CloudStorage(ABC):
             with ThreadPool(threads_number) as pool:
                 return pool.map(func, files)
         else:
-            slogger.glob.warning('Download files to memory in series in one thread.')
+            slogger.warning('Download files to memory in series in one thread.')
             return [func(f) for f in files]
 
     def bulk_download_to_dir(
@@ -217,7 +218,7 @@ class _CloudStorage(ABC):
             with ThreadPool(threads_number) as pool:
                 return pool.map(lambda x: self.download_file(*x), args)
         else:
-            slogger.glob.warning(f'Download files to {upload_dir} directory in series in one thread.')
+            slogger.warning(f'Download files to {upload_dir} directory in series in one thread.')
             for f, path in args:
                 self.download_file(f, path)
 
@@ -443,7 +444,7 @@ class AWS_S3(_CloudStorage):
             )
         except ClientError as ex:
             msg = str(ex)
-            slogger.glob.error(msg)
+            slogger.error(msg)
             raise Exception(msg)
 
 
@@ -494,10 +495,10 @@ class AWS_S3(_CloudStorage):
         except ClientError as ex:
             if 'InvalidRange' in str(ex):
                 if self._head_file(key).get('ContentLength') == 0:
-                    slogger.glob.info(f"Attempt to download empty file '{key}' from the '{self.name}' bucket.")
+                    slogger.info(f"Attempt to download empty file '{key}' from the '{self.name}' bucket.")
                     raise ValidationError(f'The {key} file is empty.')
                 else:
-                    slogger.glob.error(f"{str(ex)}. Key: {key}, bucket: {self.name}")
+                    slogger.error(f"{str(ex)}. Key: {key}, bucket: {self.name}")
             raise
 
     def create(self):
@@ -509,14 +510,14 @@ class AWS_S3(_CloudStorage):
                 },
                 ObjectLockEnabledForBucket=False
             )
-            slogger.glob.info(
+            slogger.info(
                 'Bucket {} has been created on {} region'.format(
                     self.name,
                     response['Location']
                 ))
         except Exception as ex:
             msg = str(ex)
-            slogger.glob.info(msg)
+            slogger.info(msg)
             raise Exception(msg)
 
     def delete_file(self, file_name: str):
@@ -524,7 +525,7 @@ class AWS_S3(_CloudStorage):
             self._client.delete_object(Bucket=self.name, Key=file_name)
         except Exception as ex:
             msg = str(ex)
-            slogger.glob.info(msg)
+            slogger.info(msg)
             raise
 
     @property
@@ -599,7 +600,7 @@ class AzureBlobContainer(_CloudStorage):
             )
         except ResourceExistsError:
             msg = f"{self._client.container_name} already exists"
-            slogger.glob.info(msg)
+            slogger.info(msg)
             raise Exception(msg)
 
     def _head(self):
@@ -814,7 +815,7 @@ class GoogleCloudStorage(_CloudStorage):
                 self.bucket,
                 location=self._bucket_location
             )
-            slogger.glob.info(
+            slogger.info(
                 'Bucket {} has been created at {} region for {}'.format(
                     self.name,
                     self.bucket.location,
@@ -822,7 +823,7 @@ class GoogleCloudStorage(_CloudStorage):
                 ))
         except Exception as ex:
             msg = str(ex)
-            slogger.glob.info(msg)
+            slogger.info(msg)
             raise Exception(msg)
 
     @validate_file_status

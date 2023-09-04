@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import logging
 import os
 import os.path as osp
 from PIL import Image
@@ -81,7 +82,6 @@ from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, Annota
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
-from .log import slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
@@ -89,6 +89,7 @@ from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.view_utils import tus_chunk_action
 
+slogger = logging.getLogger('cvat.server')
 
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
@@ -2490,15 +2491,15 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
+            slogger.error(message)
             return HttpResponseNotFound(message)
         except (ValidationError, PermissionDenied, NotFound) as ex:
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
-            slogger.cloud_storage[pk].info(msg)
+            slogger.info(f'cloud_storage_id = {pk}' + msg)
             return Response(data=msg, status=ex.status_code)
         except Exception as ex:
-            slogger.glob.error(str(ex))
+            slogger.error(str(ex))
             return Response("An internal error has occurred",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -2563,15 +2564,15 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
+            slogger.error(message)
             return HttpResponseNotFound(message)
         except (ValidationError, PermissionDenied, NotFound) as ex:
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
-            slogger.cloud_storage[pk].info(msg)
+            slogger.info(f'cloud_storage_id = {pk}' + msg)
             return Response(data=msg, status=ex.status_code)
         except Exception as ex:
-            slogger.glob.error(str(ex))
+            slogger.error(str(ex))
             return Response("An internal error has occurred",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -2599,15 +2600,15 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return HttpResponse(preview, mime)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
+            slogger.error(message)
             return HttpResponseNotFound(message)
         except (ValidationError, PermissionDenied, NotFound) as ex:
             msg = str(ex) if not isinstance(ex, ValidationError) else \
                 '\n'.join([str(d) for d in ex.detail])
-            slogger.cloud_storage[pk].info(msg)
+            slogger.info(f'cloud_storage_id = {pk}' + msg)
             return Response(data=msg, status=ex.status_code)
         except Exception as ex:
-            slogger.glob.error(str(ex))
+            slogger.error(str(ex))
             return Response("An internal error has occurred",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -2624,7 +2625,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(storage_status)
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
+            slogger.error(message)
             return HttpResponseNotFound(message)
         except Exception as ex:
             msg = str(ex)
@@ -2646,7 +2647,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return Response(actions, content_type="text/plain")
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
+            slogger.error(message)
             return HttpResponseNotFound(message)
         except Exception as ex:
             msg = str(ex)

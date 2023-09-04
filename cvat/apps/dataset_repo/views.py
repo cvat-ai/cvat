@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 import http.client
+import logging
 
 from django.http import HttpResponseBadRequest, HttpResponse
 from rules.contrib.views import permission_required, objectgetter
@@ -14,13 +15,14 @@ from rest_framework.decorators import api_view, permission_classes
 
 from drf_spectacular.utils import extend_schema
 
-from cvat.apps.engine.log import slogger
 from cvat.apps.engine import models
 from cvat.apps.dataset_repo.models import GitData
 import contextlib
 
 import cvat.apps.dataset_repo.dataset_repo as CVATGit
 import django_rq
+
+slogger = logging.getLogger('cvat.server')
 
 def _legacy_api_view(allowed_method_names=None):
     # Currently, the views in this file use the legacy permission-checking
@@ -51,7 +53,7 @@ def check_process(request, rq_id):
         else:
             return Response({"status": "unknown"})
     except Exception as ex:
-        slogger.glob.error("error occurred during checking repository request with rq id {}".format(rq_id), exc_info=True)
+        slogger.error(f"error occurred during checking repository request with rq id {rq_id}", exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 
@@ -60,7 +62,7 @@ def check_process(request, rq_id):
     fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def create(request: Request, tid):
     try:
-        slogger.task[tid].info("create repository request")
+        slogger.info(f"task_id = {tid} - create repository request")
         body = request.data
         path = body["path"]
         export_format = body.get("format")
@@ -71,14 +73,14 @@ def create(request: Request, tid):
         queue.enqueue_call(func = CVATGit.initial_create, args = (tid, path, export_format, lfs, request.user), job_id = rq_id)
         return Response({ "rq_id": rq_id })
     except Exception as ex:
-        slogger.glob.error("error occurred during initial cloning repository request with rq id {}".format(rq_id), exc_info=True)
+        slogger.error(f"error occurred during initial cloning repository request with rq id {rq_id}", exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 
 @_legacy_api_view()
 def push_repository(request: Request, tid):
     try:
-        slogger.task[tid].info("push repository request")
+        slogger.info(f"task_id = {tid} - push repository request")
 
         rq_id = "git.push.{}".format(tid)
         queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
@@ -87,7 +89,7 @@ def push_repository(request: Request, tid):
         return Response({ "rq_id": rq_id })
     except Exception as ex:
         with contextlib.suppress(Exception):
-            slogger.task[tid].error("error occurred during pushing repository request",
+            slogger.error(f"task_id = {tid} - error occurred during pushing repository request",
                 exc_info=True)
 
         return HttpResponseBadRequest(str(ex))
@@ -96,11 +98,11 @@ def push_repository(request: Request, tid):
 @_legacy_api_view()
 def get_repository(request: Request, tid):
     try:
-        slogger.task[tid].info("get repository request")
+        slogger.info(f"task_id = {tid} - get repository request")
         return Response(CVATGit.get(tid, request.user))
     except Exception as ex:
         with contextlib.suppress(Exception):
-            slogger.task[tid].error("error occurred during getting repository info request",
+            slogger.error(f"task_id = {tid} - error occurred during getting repository info request",
                 exc_info=True)
 
         return HttpResponseBadRequest(str(ex))
@@ -123,13 +125,13 @@ def update_git_repo(request: Request, tid):
         elif req_type == "format":
             git_data_obj.format = value
             git_data_obj.save(update_fields=["format"])
-            slogger.task[tid].info("get repository request")
+            slogger.info(f"task_id = {tid} - get repository request")
         return HttpResponse(
             status=http.HTTPStatus.OK,
         )
     except Exception as ex:
         with contextlib.suppress(Exception):
-            slogger.task[tid].error("error occurred during changing repository request", exc_info=True)
+            slogger.error(f"task_id = {tid} - error occurred during changing repository request", exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 
@@ -143,5 +145,5 @@ def get_meta_info(request):
 
         return Response(response)
     except Exception as ex:
-        slogger.glob.exception("error occurred during get meta request", exc_info = True)
+        slogger.exception("error occurred during get meta request", exc_info = True)
         return HttpResponseBadRequest(str(ex))

@@ -5,6 +5,7 @@
 
 import itertools
 import fnmatch
+import logging
 import os
 import sys
 from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Union
@@ -24,7 +25,6 @@ from datetime import datetime
 from pathlib import Path
 
 from cvat.apps.engine import models
-from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
 from cvat.apps.engine.utils import av_scan_paths, get_rq_job_meta
@@ -33,6 +33,8 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, i
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import detect_related_images
 from .cloud_provider import db_storage_to_storage_instance
+
+slogger = logging.getLogger('cvat.server')
 
 ############################# Low Level server API
 
@@ -158,7 +160,7 @@ def _save_task_to_db(db_task: models.Task, *, job_file_mapping: Optional[JobFile
     db_task.overlap = overlap
 
     for segment_idx, (start_frame, stop_frame) in enumerate(segments):
-        slogger.glob.info("New segment for task #{}: idx = {}, start_frame = {}, \
+        slogger.info("New segment for task #{}: idx = {}, start_frame = {}, \
             stop_frame = {}".format(db_task.id, segment_idx, start_frame, stop_frame))
 
         db_segment = models.Segment()
@@ -207,7 +209,7 @@ def _count_files(data):
             elif rel_path.endswith('.jsonl'):
                 continue
             else:
-                slogger.glob.warn("Skip '{}' file (its mime type doesn't "
+                slogger.warn("Skip '{}' file (its mime type doesn't "
                     "correspond to supported MIME file type)".format(full_path))
 
     counter = { media_type: [] for media_type in MEDIA_TYPES.keys() }
@@ -339,7 +341,7 @@ def _validate_manifest(
                         "This server doesn't allow to use cache for data. "
                         "Please turn 'use cache' off and try to recreate the task"
                     )
-                    slogger.glob.warning(cache_disabled_message)
+                    slogger.warning(cache_disabled_message)
 
                 raise ValidationError(
                     "A manifest file can only be used with the 'use cache' option "
@@ -370,7 +372,7 @@ def _download_data(urls, upload_dir):
             if name in local_files:
                 raise Exception("filename collision: {}".format(name))
             _validate_scheme(url)
-            slogger.glob.info("Downloading: {}".format(url))
+            slogger.info("Downloading: {}".format(url))
             job.meta['status'] = '{} is being downloaded..'.format(url)
             job.save_meta()
 
@@ -498,7 +500,7 @@ def _create_thread(
     if isinstance(db_task, int):
         db_task = models.Task.objects.select_for_update().get(pk=db_task)
 
-    slogger.glob.info("create task #{}".format(db_task.id))
+    slogger.info("create task #{}".format(db_task.id))
 
     job_file_mapping = _validate_job_file_mapping(db_task, data)
 
@@ -926,7 +928,7 @@ def _create_thread(
                                 base_msg = str(ex)
                             else:
                                 base_msg = 'Invalid manifest file was upload.'
-                                slogger.glob.warning(str(ex))
+                                slogger.warning(str(ex))
                             _update_status('{} Start prepare a valid manifest file.'.format(base_msg))
 
                     if not manifest_is_prepared:
@@ -1055,5 +1057,5 @@ def _create_thread(
         db_data.stop_frame = min(db_data.stop_frame, \
             db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step())
 
-    slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
+    slogger.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task, job_file_mapping=job_file_mapping)

@@ -7,6 +7,7 @@ import os
 import os.path as osp
 import tempfile
 from datetime import timedelta
+import logging
 
 import django_rq
 from datumaro.util.os_util import make_file_name
@@ -16,11 +17,12 @@ from django.conf import settings
 
 import cvat.apps.dataset_manager.task as task
 import cvat.apps.dataset_manager.project as project
-from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Project, Task, Job
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import current_function_name
+
+slogger = logging.getLogger('cvat.server')
 
 _MODULE_NAME = __package__ + '.' + osp.splitext(osp.basename(__file__))[0]
 def log_exception(logger=None, exc_info=True):
@@ -29,7 +31,6 @@ def log_exception(logger=None, exc_info=True):
     logger.exception("[%s @ %s]: exception occurred" % \
             (_MODULE_NAME, current_function_name(2)),
         exc_info=exc_info)
-
 
 def get_export_cache_dir(db_instance):
     base_dir = osp.abspath(db_instance.get_dirname())
@@ -47,17 +48,14 @@ JOB_CACHE_TTL = DEFAULT_CACHE_TTL
 def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=None, save_images=False):
     try:
         if task_id is not None:
-            logger = slogger.task[task_id]
             cache_ttl = TASK_CACHE_TTL
             export_fn = task.export_task
             db_instance = Task.objects.get(pk=task_id)
         elif project_id is not None:
-            logger = slogger.project[project_id]
             cache_ttl = PROJECT_CACHE_TTL
             export_fn = project.export_project
             db_instance = Project.objects.get(pk=project_id)
         else:
-            logger = slogger.job[job_id]
             cache_ttl = JOB_CACHE_TTL
             export_fn = task.export_job
             db_instance = Job.objects.get(pk=job_id)
@@ -90,8 +88,8 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
                 func=clear_export_cache,
                 file_path=output_path,
                 file_ctime=archive_ctime,
-                logger=logger)
-            logger.info(
+                logger=slogger)
+            slogger.info(
                 "The {} '{}' is exported as '{}' at '{}' "
                 "and available for downloading for the next {}. "
                 "Export cache cleaning job is enqueued, id '{}'".format(
@@ -103,7 +101,7 @@ def export(dst_format, project_id=None, task_id=None, job_id=None, server_url=No
 
         return output_path
     except Exception:
-        log_exception(logger)
+        log_exception(slogger)
         raise
 
 def export_job_annotations(job_id, dst_format=None, server_url=None):

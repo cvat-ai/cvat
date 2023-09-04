@@ -6,6 +6,7 @@
 import io
 import os
 from enum import Enum
+import logging
 import re
 import shutil
 import tempfile
@@ -30,7 +31,6 @@ from distutils.util import strtobool
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
-from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     JobWriteSerializer, LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
@@ -48,6 +48,8 @@ from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
+
+slogger = logging.getLogger('cvat.server')
 
 class Version(Enum):
     V1 = '1.0'
@@ -125,15 +127,15 @@ class _BackupBase():
     ANNOTATION_GUIDE_FILENAME = 'annotation_guide.md'
     ASSETS_DIRNAME = 'assets'
 
-    def __init__(self, *args, logger=None, **kwargs):
+    def __init__(self, *args, logger_prefix="", **kwargs):
         super().__init__(*args, **kwargs)
-        self._logger = logger
+        self._logger_prefix = logger_prefix
 
     def _prepare_meta(self, allowed_keys, meta):
         keys_to_drop = set(meta.keys()) - allowed_keys
         if keys_to_drop:
-            if self._logger:
-                self._logger.warning('the following keys are dropped {}'.format(keys_to_drop))
+            slogger.warning(self._logger_prefix +
+                'the following keys are dropped {keys_to_drop}')
             for key in keys_to_drop:
                 del meta[key]
 
@@ -322,7 +324,7 @@ class _ExporterBase():
 
 class TaskExporter(_ExporterBase, _TaskBackupBase):
     def __init__(self, pk, version=Version.V1):
-        super().__init__(logger=slogger.task[pk])
+        super().__init__(logger_prefix=f"task_id = {pk} - ")
         self._db_task = models.Task.objects.prefetch_related('data__images', 'annotation_guide__assets').select_related('data__video', 'annotation_guide').get(pk=pk)
         self._db_data = self._db_task.data
         self._version = version
@@ -544,7 +546,7 @@ class _ImporterBase():
 
 class TaskImporter(_ImporterBase, _TaskBackupBase):
     def __init__(self, file, user_id, org_id=None, project_id=None, subdir=None, label_mapping=None):
-        super().__init__(logger=slogger.glob)
+        super().__init__()
         self._file = file
         self._subdir = subdir
         self._user_id = user_id
@@ -767,7 +769,7 @@ class _ProjectBackupBase(_BackupBase):
 
 class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     def __init__(self, pk, version=Version.V1):
-        super().__init__(logger=slogger.project[pk])
+        super().__init__(logger_prefix=f"project_id = {pk} - ")
         self._db_project = models.Project.objects.prefetch_related('tasks', 'annotation_guide__assets').select_related('annotation_guide').get(pk=pk)
         self._version = version
 
@@ -813,7 +815,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
     TASKNAME_RE = r'task_(\d+)/'
 
     def __init__(self, filename, user_id, org_id=None):
-        super().__init__(logger=slogger.glob)
+        super().__init__()
         self._filename = filename
         self._user_id = user_id
         self._org_id = org_id
@@ -885,7 +887,7 @@ def _import_project(filename, user, org_id):
     db_project = project_importer.import_project()
     return db_project.id
 
-def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
+def _create_backup(db_instance, Exporter, output_path, cache_ttl):
     try:
         cache_dir = get_export_cache_dir(db_instance)
         output_path = os.path.join(cache_dir, output_path)
@@ -906,8 +908,8 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
                 func=clear_export_cache,
                 file_path=output_path,
                 file_ctime=archive_ctime,
-                logger=logger)
-            logger.info(
+                logger=slogger)
+            slogger.info(
                 "The {} '{}' is backuped at '{}' "
                 "and available for downloading for the next {}. "
                 "Export cache cleaning job is enqueued, id '{}'".format(
@@ -917,7 +919,7 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
 
         return output_path
     except Exception:
-        log_exception(logger)
+        log_exception(slogger)
         raise
 
 def export(db_instance, request, queue_name):
@@ -930,13 +932,11 @@ def export(db_instance, request, queue_name):
 
     if isinstance(db_instance, Task):
         obj_type = 'task'
-        logger = slogger.task[db_instance.pk]
         Exporter = TaskExporter
         cache_ttl = TASK_CACHE_TTL
         use_target_storage_conf = request.query_params.get('use_default_location', True)
     elif isinstance(db_instance, Project):
         obj_type = 'project'
-        logger = slogger.project[db_instance.pk]
         Exporter = ProjectExporter
         cache_ttl = PROJECT_CACHE_TTL
         use_target_storage_conf = request.query_params.get('use_default_location', True)
@@ -1013,7 +1013,7 @@ def export(db_instance, request, queue_name):
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     queue.enqueue_call(
         func=_create_backup,
-        args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
+        args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), cache_ttl),
         job_id=rq_id,
         meta=get_rq_job_meta(request=request, db_obj=db_instance),
         result_ttl=ttl, failure_ttl=ttl)

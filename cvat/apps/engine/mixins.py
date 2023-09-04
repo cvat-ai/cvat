@@ -5,6 +5,7 @@
 
 import base64
 import json
+import logging
 import os
 import os.path
 import uuid
@@ -20,12 +21,12 @@ from rest_framework import mixins, status
 from rest_framework.response import Response
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
-from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.utils import get_import_rq_id
 
+slogger = logging.getLogger('cvat.server')
 
 class TusFile:
     @dataclass
@@ -294,7 +295,7 @@ class UploadMixin:
                     path=path,
                     creation_time=Path(tus_file.file_path).stat().st_ctime
                 )
-                slogger.glob.info(
+                slogger.info(
                     f'The cleaning job {cleaning_job.id} is queued.'
                     f'The check that the file {path} is deleted will be carried out after '
                     f'{settings.IMPORT_CACHE_CLEAN_DELAY}.'

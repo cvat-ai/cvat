@@ -4,6 +4,7 @@
 
 import os
 import csv
+import logging
 from datetime import datetime, timedelta, timezone
 from dateutil import parser
 import uuid
@@ -17,8 +18,9 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 
 from cvat.apps.dataset_manager.views import clear_export_cache, log_exception
-from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import sendfile
+
+slogger = logging.getLogger('cvat.server')
 
 DEFAULT_CACHE_TTL = timedelta(hours=1)
 
@@ -74,14 +76,14 @@ def _create_csv(query_params, output_filename, cache_ttl):
             file_path=output_filename,
             file_ctime=archive_ctime,
         )
-        slogger.glob.info(
+        slogger.info(
             f"The {output_filename} is created "
             f"and available for downloading for the next {cache_ttl}. "
             f"Export cache cleaning job is enqueued, id '{cleaning_job.id}'"
         )
         return output_filename
     except Exception:
-        log_exception(slogger.glob)
+        log_exception(slogger)
         raise
 
 def export(request, filter_query, queue_name):

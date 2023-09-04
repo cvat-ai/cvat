@@ -12,6 +12,7 @@ from tempfile import NamedTemporaryFile
 from typing import Optional, Tuple
 
 import cv2
+import logging
 import PIL.Image
 import pytz
 from django.conf import settings
@@ -21,7 +22,6 @@ from rest_framework.exceptions import NotFound, ValidationError
 from cvat.apps.engine.cloud_provider import (Credentials,
                                              db_storage_to_storage_instance,
                                              get_cloud_storage_instance)
-from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (ImageDatasetManifestReader,
                                                Mpeg4ChunkWriter,
                                                Mpeg4CompressedChunkWriter,
@@ -34,6 +34,7 @@ from cvat.apps.engine.models import (DataChoice, DimensionType, Job, Image,
 from cvat.apps.engine.utils import md5_hash
 from utils.dataset_manifest import ImageManifestManager
 
+slogger = logging.getLogger('cvat.server')
 
 class MediaCache:
     def __init__(self, dimension=DimensionType.DIM_2D):
@@ -41,13 +42,13 @@ class MediaCache:
         self._cache = caches['media']
 
     def _get_or_set_cache_item(self, key, create_function):
-        slogger.glob.info(f'Starting to get chunk from cache: key {key}')
+        slogger.info(f'Starting to get chunk from cache: key {key}')
         item = self._cache.get(key)
-        slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
+        slogger.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
         if not item:
-            slogger.glob.info(f'Starting to prepare chunk: key {key}')
+            slogger.info(f'Starting to prepare chunk: key {key}')
             item = create_function()
-            slogger.glob.info(f'Ending to prepare chunk: key {key}')
+            slogger.info(f'Ending to prepare chunk: key {key}')
             if item[0]:
                 self._cache.set(key, item)
 
@@ -170,9 +171,9 @@ class MediaCache:
                         temp_file.flush()
                         checksum = item.get('checksum', None)
                         if not checksum:
-                            slogger.cloud_storage[db_cloud_storage.id].warning('A manifest file does not contain checksum for image {}'.format(item.get('name')))
+                            slogger.warning(f'cloud_storage_id = {db_cloud_storage.id} - A manifest file does not contain checksum for image {item.get("name")}')
                         if checksum and not md5_hash(source_path) == checksum:
-                            slogger.cloud_storage[db_cloud_storage.id].warning('Hash sums of files {} do not match'.format(file_name))
+                            slogger.warning(f'cloud_storage_id = {db_cloud_storage.id} - Hash sums of files {file_name} do not match')
                         images.append((source_path, source_path, None))
             else:
                 for item in reader:
@@ -276,7 +277,7 @@ class MediaCache:
             break
         if not preview_path:
             msg = 'Cloud storage {} does not contain any images'.format(db_storage.pk)
-            slogger.cloud_storage[db_storage.pk].info(msg)
+            slogger.info(f'cloud_storage_id = {db_storage.pk} - ' + msg)
             raise NotFound(msg)
 
         buff = storage.download_fileobj(preview_path)

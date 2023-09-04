@@ -5,6 +5,7 @@
 
 from copy import copy
 from inspect import isclass
+import logging
 import os
 import re
 import shutil
@@ -20,11 +21,11 @@ from django.db import transaction
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
-from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
+slogger = logging.getLogger('cvat.server')
 
 class WriteOnceMixin:
     """
@@ -320,7 +321,7 @@ class LabelSerializer(SublabelSerializer):
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
     ) -> Optional[models.Label]:
-        parent_info, logger = cls._get_parent_info(parent_instance)
+        parent_info, logger_prefix = cls._get_parent_info(parent_instance)
 
         attributes = validated_data.pop('attributespec_set', [])
 
@@ -335,7 +336,8 @@ class LabelSerializer(SublabelSerializer):
             updated_type = validated_data.get('type') or db_label.type
             if str(models.LabelType.SKELETON) in [db_label.type, updated_type]:
                 # do not permit changing types from/to skeleton
-                logger.warning("Label id {} ({}): an attempt to change label type from {} to {}. "
+                slogger.warning(logger_prefix +
+                    "Label id {} ({}): an attempt to change label type from {} to {}. "
                     "Changing from or to '{}' is not allowed, the type won't be changed.".format(
                     db_label.id,
                     db_label.name,
@@ -348,7 +350,8 @@ class LabelSerializer(SublabelSerializer):
 
             db_label.name = validated_data.get('name') or db_label.name
 
-            logger.info("Label id {} ({}) was updated".format(db_label.id, db_label.name))
+            slogger.info(logger_prefix +
+                "Label id {} ({}) was updated".format(db_label.id, db_label.name))
         else:
             try:
                 db_label = models.Label.create(
@@ -359,7 +362,7 @@ class LabelSerializer(SublabelSerializer):
                 )
             except models.InvalidLabel as exc:
                 raise exceptions.ValidationError(str(exc)) from exc
-            logger.info("New {} label was created".format(db_label.name))
+            slogger.info(logger_prefix + "New {db_label.name} label was created")
 
             cls.update_labels(sublabels, parent_instance=parent_instance, parent_label=db_label)
 
@@ -370,7 +373,7 @@ class LabelSerializer(SublabelSerializer):
                         f'data-label-id="{db_sublabel.id}"'
                     )
                 db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-                logger.info(
+                slogger.info(logger_prefix +
                     f'label:update Skeleton id:{db_skeleton.id} for label_id:{db_label.id}'
                 )
 
@@ -398,10 +401,12 @@ class LabelSerializer(SublabelSerializer):
                 label=db_label, name=attr['name'], defaults=attr
             )
             if created:
-                logger.info("New {} attribute for {} label was created"
+                slogger.info(logger_prefix +
+                    "New {} attribute for {} label was created"
                     .format(db_attr.name, db_label.name))
             else:
-                logger.info("{} attribute for {} label was updated"
+                slogger.info(logger_prefix +
+                    "{} attribute for {} label was updated"
                     .format(db_attr.name, db_label.name))
 
                 # FIXME: need to update only "safe" fields
@@ -421,7 +426,7 @@ class LabelSerializer(SublabelSerializer):
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
     ):
-        parent_info, logger = cls._get_parent_info(parent_instance)
+        parent_info, logger_prefix = cls._get_parent_info(parent_instance)
 
         label_colors = list()
 
@@ -441,7 +446,7 @@ class LabelSerializer(SublabelSerializer):
                 db_label = models.Label.create(**label, **parent_info, parent=parent_label)
             except models.InvalidLabel as exc:
                 raise exceptions.ValidationError(str(exc)) from exc
-            logger.info(
+            slogger.info(logger_prefix +
                 f'label:create Label id:{db_label.id} for spec:{label} '
                 f'with sublabels:{sublabels}, parent_label:{parent_label}'
             )
@@ -455,7 +460,8 @@ class LabelSerializer(SublabelSerializer):
                         f'data-label-id="{db_sublabel.id}"'
                     )
                 db_skeleton = models.Skeleton.objects.create(root=db_label, svg=svg)
-                logger.info(f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
+                slogger.info(logger_prefix +
+                    f'label:create Skeleton id:{db_skeleton.id} for label_id:{db_label.id}')
 
             for attr in attributes:
                 if attr.get('id', None):
@@ -470,7 +476,7 @@ class LabelSerializer(SublabelSerializer):
         parent_instance: Union[models.Project, models.Task],
         parent_label: Optional[models.Label] = None
     ):
-        _, logger = cls._get_parent_info(parent_instance)
+        _, logger_prefix = cls._get_parent_info(parent_instance)
 
         for label in labels:
             sublabels = label.pop('sublabels', [])
@@ -479,12 +485,12 @@ class LabelSerializer(SublabelSerializer):
                 parent_instance=parent_instance, parent_label=parent_label
             )
             if db_label:
-                logger.info(
+                slogger.info(logger_prefix +
                     f'label:update Label id:{db_label.id} for spec:{label} '
                     f'with sublabels:{sublabels}, parent_label:{parent_label}'
                 )
             else:
-                logger.info(
+                slogger.info(logger_prefix +
                     f'label:delete label:{label} with '
                     f'sublabels:{sublabels}, parent_label:{parent_label}'
                 )
@@ -494,14 +500,14 @@ class LabelSerializer(SublabelSerializer):
         parent_info = {}
         if isinstance(parent_instance, models.Project):
             parent_info['project'] = parent_instance
-            logger = slogger.project[parent_instance.id]
+            logger_prefix = f'project_id = {parent_instance.id} - '
         elif isinstance(parent_instance, models.Task):
             parent_info['task'] = parent_instance
-            logger = slogger.task[parent_instance.id]
+            logger_prefix = f'task_id = {parent_instance.id} - '
         else:
             raise TypeError(f"Unexpected parent instance type {type(parent_instance).__name__}")
 
-        return parent_info, logger
+        return parent_info, logger_prefix
 
     def update(self, instance, validated_data):
         if not self._local:
@@ -1786,7 +1792,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             try:
                 storage.create()
             except Exception as ex:
-                slogger.glob.warning("Failed with creating storage\n{}".format(str(ex)))
+                slogger.warning(f"Failed with creating storage\n{str(ex)}")
                 raise
 
         storage_status = storage.get_status()
@@ -1826,7 +1832,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
         if temporary_file:
             os.remove(temporary_file)
-        slogger.glob.error(message)
+        slogger.error(message)
         raise serializers.ValidationError({field: message})
 
     # pylint: disable=no-self-use
@@ -1896,7 +1902,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
         if temporary_file:
             os.remove(temporary_file)
-        slogger.glob.error(message)
+        slogger.error(message)
         raise serializers.ValidationError({field: message})
 
 

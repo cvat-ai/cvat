@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
 from pathlib import Path
 from time import time
 from django.conf import settings
-from cvat.apps.engine.log import slogger
 
+slogger = logging.getLogger('cvat.server')
 
 def clear_import_cache(path: Path, creation_time: float) -> None:
     """
@@ -19,4 +20,4 @@ def clear_import_cache(path: Path, creation_time: float) -> None:
     """
     if path.is_file() and (time() - creation_time + 1) >= settings.IMPORT_CACHE_CLEAN_DELAY.total_seconds():
         path.unlink()
-        slogger.glob.warning(f"The file {str(path)} was removed from cleaning job.")
+        slogger.warning(f"The file {str(path)} was removed from cleaning job.")
