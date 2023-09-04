@@ -12,7 +12,7 @@ well as the intended future use of the dataset.
 See:
 
 - [Data export formats](#data-export-formats)
-- [Exporting Dataset in CVAT](#exporting-dataset-in-cvat)
+- [Exporting dataset in CVAT](#exporting-dataset-in-cvat)
 - [Data export video tutorial](#data-export-video-tutorial)
 
 ## Data export formats
@@ -44,7 +44,7 @@ The table below outlines the available formats for data export in CVAT.
 
 <!--lint enable maximum-line-length-->
 
-## Exporting Dataset in CVAT
+## Exporting dataset in CVAT
 
 To export a dataset from CVAT, follow these steps:
 
