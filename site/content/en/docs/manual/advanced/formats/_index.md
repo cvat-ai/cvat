@@ -1,8 +1,8 @@
 ---
-title: 'Formats'
-linkTitle: 'Formats'
+title: 'Data export formats'
+linkTitle: 'Data export formats'
 weight: 20
-description: 'List of annotation formats supported by CVAT.'
+description: 'List of data export formats formats supported by CVAT.'
 ---
 
 In CVAT, you have the option to export data in various formats.
