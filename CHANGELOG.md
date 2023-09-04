@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Changed
+- \[Helm\] Database migrations now run in a separate job instead of the server pod,
+  in order to avoid data corruption when multiple replicas of the server are used
+  (<https://github.com/opencv/cvat/pull/6780>)
 - Using KeyDB with FLASH to cache data chunk instead of diskcache (<https://github.com/opencv/cvat/pull/6773>)
 
 ### Deprecated
@@ -21,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Zooming canvas when scrooling comments list in an issue (<https://github.com/opencv/cvat/pull/6758>)
 - Issues can be created many times when initial submit (<https://github.com/opencv/cvat/pull/6758>)
+- Paddings on tasks/projects/models pages (<https://github.com/opencv/cvat/pull/6778>)
 
 ### Security
 - TDB

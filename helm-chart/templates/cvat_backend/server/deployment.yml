@@ -51,7 +51,7 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["init", "run", "server"]
+          args: ["run", "server"]
           env:
           - name: ALLOWED_HOSTS
             value: {{ .Values.cvat.backend.server.envs.ALLOWED_HOSTS | squote}}
