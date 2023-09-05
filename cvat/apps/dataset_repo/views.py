@@ -14,13 +14,15 @@ from rest_framework.decorators import api_view, permission_classes
 
 from drf_spectacular.utils import extend_schema
 
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine import models
 from cvat.apps.dataset_repo.models import GitData
 import contextlib
 
 import cvat.apps.dataset_repo.dataset_repo as CVATGit
 import django_rq
+
+slogger = ServerLogManager(__name__)
 
 def _legacy_api_view(allowed_method_names=None):
     # Currently, the views in this file use the legacy permission-checking

@@ -20,12 +20,13 @@ from rest_framework import mixins, status
 from rest_framework.response import Response
 
 from cvat.apps.engine.location import StorageType, get_location_configuration
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.utils import get_import_rq_id
 
+slogger = ServerLogManager(__name__)
 
 class TusFile:
     @dataclass
