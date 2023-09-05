@@ -16,4 +16,7 @@ module.exports = {
         project: './tsconfig.json',
         tsconfigRootDir: __dirname,
     },
+    rules: {
+        'import/no-extraneous-dependencies': ['error', { packageDir: ['.', '../'] }],
+    },
 };

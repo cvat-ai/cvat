@@ -13,4 +13,7 @@ module.exports = {
         'node_modules/**',
         'dist/**',
     ],
+    rules: {
+        'import/no-extraneous-dependencies': ['error', { packageDir: ['.', '../'] }],
+    },
 };

@@ -15,4 +15,7 @@ module.exports = {
         tsconfigRootDir: __dirname,
     },
     plugins: ['jest'],
+    rules: {
+        'import/no-extraneous-dependencies': ['error', { packageDir: ['.', '../'] }],
+    },
 };
