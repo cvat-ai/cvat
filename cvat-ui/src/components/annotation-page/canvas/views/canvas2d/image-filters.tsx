@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import { CombinedState } from 'reducers';
@@ -39,6 +39,12 @@ export default function ImageFilters(): JSX.Element {
                     alias: ImageFilterAlias.GAMMA_CORRECTION,
                 }));
             }
+        }
+    }, [filters]);
+
+    useEffect(() => {
+        if (filters.length === 0) {
+            setGamma(1);
         }
     }, [filters]);
 
