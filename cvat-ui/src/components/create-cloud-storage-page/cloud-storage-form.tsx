@@ -332,9 +332,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             return (
                 <>
                     <Form.Item
-                        label='ACCESS KEY ID'
+                        label='Access key ID'
                         name='key'
-                        rules={[{ required: true, message: 'Please, specify your access_key_id' }]}
+                        rules={[{ required: true, message: 'Please, specify your access key ID' }]}
                         {...internalCommonProps}
                     >
                         <Input.Password
@@ -346,9 +346,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         />
                     </Form.Item>
                     <Form.Item
-                        label='SECRET ACCESS KEY ID'
+                        label='Secret access key'
                         name='secret_key'
-                        rules={[{ required: true, message: 'Please, specify your secret_access_key_id' }]}
+                        rules={[{ required: true, message: 'Please, specify your secret access key' }]}
                         {...internalCommonProps}
                     >
                         <Input.Password

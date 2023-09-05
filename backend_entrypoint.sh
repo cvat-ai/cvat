@@ -33,7 +33,7 @@ cmd_run() {
 
     echo "waiting for migrations to complete..."
     while ! ~/manage.py migrate --check; do
-        sleep 1
+        sleep 10
     done
 
     exec supervisord -c "supervisord/$1.conf"
