@@ -9,6 +9,15 @@ fullnameOverride: ""
 
 cvat:
   backend:
+    initializer:
+      labels: {}
+      annotations: {}
+      resources: {}
+      affinity: {}
+      tolerations: []
+      additionalEnv: []
+      additionalVolumes: []
+      additionalVolumeMounts: []
     server:
       replicas: 1
       labels: {}

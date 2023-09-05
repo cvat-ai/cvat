@@ -18,8 +18,7 @@ from django.core.handlers.asgi import ASGIHandler
 
 import cvat.utils.remote_debugger as debug
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cvat.settings.{}" \
-    .format(os.environ.get("DJANGO_CONFIGURATION", "development")))
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cvat.settings.development")
 
 application = get_asgi_application()
 
