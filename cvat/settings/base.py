@@ -41,9 +41,9 @@ BASE_DIR = str(Path(__file__).parents[2])
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
 
-REDIS_HOST = os.getenv('CVAT_REDIS_HOST', 'localhost')
-REDIS_PORT = os.getenv('CVAT_REDIS_PORT', 6379)
-REDIS_PASSWORD = urllib.parse.quote(os.getenv('CVAT_REDIS_PASSWORD', ''))
+redis_host = os.getenv('CVAT_REDIS_HOST', 'localhost')
+redis_port = os.getenv('CVAT_REDIS_PORT', 6379)
+redis_password = os.getenv('CVAT_REDIS_PASSWORD', '')
 
 try:
     sys.path.append(BASE_DIR)
@@ -305,60 +305,60 @@ class CVAT_QUEUES(Enum):
 
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
-        'HOST': REDIS_HOST,
-        'PORT': REDIS_PORT,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
         'DEFAULT_TIMEOUT': '4h',
-        'PASSWORD': REDIS_PASSWORD,
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
-        'HOST': REDIS_HOST,
-        'PORT': REDIS_PORT,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
         'DEFAULT_TIMEOUT': '4h',
-        'PASSWORD': REDIS_PASSWORD,
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
-        'HOST': REDIS_HOST,
-        'PORT': REDIS_PORT,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
         'DEFAULT_TIMEOUT': '24h',
-        'PASSWORD': REDIS_PASSWORD,
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.WEBHOOKS.value: {
-        'HOST': REDIS_HOST,
-        'PORT': REDIS_PORT,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': REDIS_PASSWORD,
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
-        'HOST': REDIS_HOST,
-        'PORT': REDIS_PORT,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': REDIS_PASSWORD,
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.QUALITY_REPORTS.value: {
-        'HOST': REDIS_HOST,
-        'PORT': REDIS_PORT,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': REDIS_PASSWORD,
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.ANALYTICS_REPORTS.value: {
-        'HOST': REDIS_HOST,
-        'PORT': REDIS_PORT,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': REDIS_PASSWORD,
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.CLEANING.value: {
-        'HOST': REDIS_HOST,
-        'PORT': REDIS_PORT,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': REDIS_PASSWORD,
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
 }
 
@@ -562,7 +562,7 @@ CACHES = {
     },
    'media' : {
        'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
-       "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}",
+       "LOCATION": f"redis://:{urllib.parse.quote(redis_password)}@{redis_host}:{redis_port}",
        'TIMEOUT' : 3600 * 24, # 1 day
    }
 }
