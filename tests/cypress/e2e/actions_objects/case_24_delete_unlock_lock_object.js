@@ -76,6 +76,7 @@ context('Delete unlock/lock object', () => {
         cy.get('.cvat-modal-confirm').should('exist');
         cy.get('.cvat-modal-confirm').within(() => {
             cy.contains('Cancel').click();
+            cy.get('.cvat-modal-confirm').should('not.be.visible');
         });
     }
 
