@@ -15,7 +15,6 @@ import notification from 'antd/lib/notification';
 import { CombinedState, Indexable } from 'reducers';
 import DeployedModelsList, { PAGE_SIZE } from './deployed-models-list';
 import EmptyListComponent from './empty-list';
-import FeedbackComponent from '../feedback/feedback';
 import TopBar from './top-bar';
 
 function ModelsPageComponent(): JSX.Element {
@@ -98,7 +97,6 @@ function ModelsPageComponent(): JSX.Element {
                     <Spin size='large' className='cvat-spinner' />
                 </div>
             ) : content }
-            <FeedbackComponent />
         </div>
     );
 }
