@@ -175,7 +175,7 @@ class FrameProvider:
         else:
             preview, _ = self.get_frame(frame_number, self.Quality.COMPRESSED, self.Type.PIL)
 
-        preview = rotate_within_exif(preview)[0]
+        preview = rotate_within_exif(preview)
         preview.thumbnail(PREVIEW_SIZE)
 
         output_buf = BytesIO()

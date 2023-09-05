@@ -80,6 +80,9 @@ def image_size_within_orientation(img: Image):
         return img.height, img.width
     return img.width, img.height
 
+def has_exif_rotation(img: Image):
+    return img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL) != ORIENTATION.NORMAL_HORIZONTAL
+
 def rotate_within_exif(img: Image):
     orientation = img.getexif().get(ORIENTATION_EXIF_TAG,  ORIENTATION.NORMAL_HORIZONTAL)
     if orientation in [ORIENTATION.NORMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
@@ -94,7 +97,7 @@ def rotate_within_exif(img: Image):
     ]:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
 
-    return img, orientation > 1
+    return img
 
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
@@ -124,7 +127,7 @@ class IMediaReader(ABC):
             preview = Image.open(obj)
         else:
             preview = obj
-        preview = rotate_within_exif(preview)[0]
+        preview = rotate_within_exif(preview)
         # TODO - Check if the other formats work. I'm only interested in I;16 for now. Sorry @:-|
         # Summary:
         # Images in the Format I;16 definitely don't work. Most likely I;16B/L/N won't work as well.
@@ -602,7 +605,7 @@ class IChunkWriter(ABC):
     @staticmethod
     def _compress_image(image_path, quality):
         image = image_path.to_image() if isinstance(image_path, av.VideoFrame) else Image.open(image_path)
-        image = rotate_within_exif(image)[0]
+        image = rotate_within_exif(image)
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
             # Image mode is 32bit integer pixels.
@@ -661,15 +664,17 @@ class ZipChunkWriter(IChunkWriter):
                 ext = os.path.splitext(path)[1].replace('.', '')
                 output = io.BytesIO()
                 if self._dimension == DimensionType.DIM_2D:
-                    pil_image, rotated = rotate_within_exif(Image.open(image))
-                    if not rotated:
-                        output = image
-                    elif pil_image.format == 'TIFF':
-                        # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
-                        # use loseless lzw compression for tiff images
-                        pil_image.save(output, format='TIFF', compression='tiff_lzw')
+                    pil_image = Image.open(image)
+                    if has_exif_rotation(pil_image):
+                        rot_image = rotate_within_exif(pil_image)
+                        if rot_image.format == 'TIFF':
+                            # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
+                            # use loseless lzw compression for tiff images
+                            rot_image.save(output, format='TIFF', compression='tiff_lzw')
+                        else:
+                            rot_image.save(output, format=rot_image.format if rot_image.format else self.IMAGE_EXT, quality=100, subsampling=0)
                     else:
-                        pil_image.save(output, format=pil_image.format if pil_image.format else self.IMAGE_EXT, quality=100, subsampling=0)
+                        output = image
                 else:
                     output, ext = self._write_pcd_file(image)[0:2]
                 arcname = '{:06d}.{}'.format(idx, ext)
