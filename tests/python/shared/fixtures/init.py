@@ -181,6 +181,7 @@ def kube_exec_redis_db(command):
     pod_name = _kube_get_redis_pod_name()
     _run(["kubectl", "exec", pod_name, "--"] + command)
 
+
 def docker_restore_db():
     docker_exec(
         Container.DB, "psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql"
@@ -222,7 +223,7 @@ def docker_restore_redis_db():
         [
             "/bin/sh",
             "-c",
-            'keydb-cli flushall',
+            "keydb-cli flushall",
         ]
     )
 
@@ -232,9 +233,10 @@ def kube_restore_redis_db():
         [
             "/bin/sh",
             "-c",
-            'keydb-cli flushall',
+            "keydb-cli flushall",
         ]
     )
+
 
 def running_containers():
     return [cn for cn in _run("docker ps --format {{.Names}}")[0].split("\n") if cn]
@@ -558,6 +560,7 @@ def restore_clickhouse_db_per_class(request):
         docker_restore_clickhouse_db()
     else:
         kube_restore_clickhouse_db()
+
 
 @pytest.fixture(scope="function")
 def restore_redis_db_per_function(request):
