@@ -2033,7 +2033,7 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
             markdown = guide.markdown
 
             # pylint: disable=anomalous-backslash-in-string
-            pattern = re.compile('\(\/api\/assets\/([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})\)')
+            pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
             results = re.findall(pattern, markdown)
 
             for asset_id in results:
