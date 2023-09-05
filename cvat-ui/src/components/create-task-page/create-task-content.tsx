@@ -50,8 +50,6 @@ enum SupportedShareTypes {
 interface Props {
     onCreate: (data: CreateTaskData, onProgress?: (status: string, progress?: number) => void) => Promise<any>;
     projectId: number | null;
-    installedGit: boolean;
-    dumpers:[];
     many: boolean;
 }
 
@@ -71,7 +69,6 @@ const defaultState: State = {
     },
     subset: '',
     advanced: {
-        lfs: false,
         useZipChunks: true,
         useCache: true,
         sortingMethod: SortingMethod.LEXICOGRAPHICAL,
@@ -815,7 +812,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderAdvancedBlock(): JSX.Element {
-        const { installedGit, dumpers } = this.props;
         const { activeFileManagerTab, projectId } = this.state;
 
         const {
@@ -835,8 +831,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 <Collapse className='cvat-advanced-configuration-wrapper'>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
-                            dumpers={dumpers}
-                            installedGit={installedGit}
                             activeFileManagerTab={activeFileManagerTab}
                             ref={this.advancedConfigurationComponent}
                             onSubmit={this.handleSubmitAdvancedConfiguration}

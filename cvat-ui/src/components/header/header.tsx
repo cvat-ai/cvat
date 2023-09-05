@@ -69,7 +69,6 @@ interface StateToProps {
     renderChangePasswordItem: boolean;
     isAnalyticsPluginActive: boolean;
     isModelsPluginActive: boolean;
-    isGitPluginActive: boolean;
     organizationsFetching: boolean;
     organizationsList: any[];
     currentOrganization: any | null;
@@ -123,7 +122,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         renderChangePasswordItem,
         isAnalyticsPluginActive: list.ANALYTICS,
         isModelsPluginActive: list.MODELS,
-        isGitPluginActive: list.GIT_INTEGRATION,
         organizationsFetching,
         currentOrganization,
         organizationsList,
