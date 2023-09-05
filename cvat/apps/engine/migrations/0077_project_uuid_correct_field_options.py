@@ -6,7 +6,7 @@ import uuid
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("engine", "0077_project_uuid_generate_default_values"),
+        ("engine", "0076_project_uuid_generate_default_values"),
     ]
 
     operations = [

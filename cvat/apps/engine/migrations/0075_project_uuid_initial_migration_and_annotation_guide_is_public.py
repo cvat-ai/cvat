@@ -9,8 +9,13 @@ class Migration(migrations.Migration):
         ("engine", "0075_annotationguide_is_public"),
     ]
 
-    # https://docs.djangoproject.com/en/3.2/howto/writing-migrations/#migrations-that-add-unique-fields
     operations = [
+        migrations.AddField(
+            model_name="annotationguide",
+            name="is_public",
+            field=models.BooleanField(default=False),
+        ),
+        # https://docs.djangoproject.com/en/3.2/howto/writing-migrations/#migrations-that-add-unique-fields
         migrations.AddField(
             model_name="project",
             name="uuid",

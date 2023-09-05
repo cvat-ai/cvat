@@ -12,7 +12,7 @@ def generate_project_uuid(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("engine", "0076_project_uuid_initial_migration"),
+        ("engine", "0075_project_uuid_initial_migration_and_annotation_guide_is_public"),
     ]
 
     operations = [
