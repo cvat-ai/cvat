@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import { CombinedState } from 'reducers';
@@ -17,13 +17,15 @@ import GammaCorrection from 'utils/fabric-wrapper/gamma-correciton';
 import { ImageFilterAlias, hasFilter } from 'utils/image-processing';
 
 import './image-setups.scss';
+import debounce from 'lodash/debounce';
 
 export default function GammaFilter(): JSX.Element {
     const dispatch = useDispatch();
     const [gamma, setGamma] = useState<number>(1);
     const filters = useSelector((state: CombinedState) => state.settings.imageFilters);
     const gammaFilter = hasFilter(filters, ImageFilterAlias.GAMMA_CORRECTION);
-    const onChangeGamma = useCallback((newGamma) => {
+
+    const onChangeGamma = debounce((newGamma) => {
         setGamma(newGamma);
         if (newGamma === 1) {
             if (gammaFilter) {
@@ -40,7 +42,7 @@ export default function GammaFilter(): JSX.Element {
                 }));
             }
         }
-    }, [filters]);
+    }, 250);
 
     useEffect(() => {
         if (filters.length === 0) {
@@ -62,7 +64,7 @@ export default function GammaFilter(): JSX.Element {
                                 max={2.6}
                                 value={gamma}
                                 step={0.01}
-                                onChange={(value) => onChangeGamma(value)}
+                                onChange={onChangeGamma}
                             />
                         </Col>
                     </Row>
