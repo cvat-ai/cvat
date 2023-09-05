@@ -5,8 +5,9 @@
 from pathlib import Path
 from time import time
 from django.conf import settings
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 
+slogger = ServerLogManager(__name__)
 
 def clear_import_cache(path: Path, creation_time: float) -> None:
     """

@@ -2163,13 +2163,6 @@
     "@types/history" "^4.7.11"
     "@types/react" "*"
 
-"@types/react-share@^3.0.3":
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/@types/react-share/-/react-share-3.0.3.tgz#d75514902b0a3a77800b3bea0395f7add463b228"
-  integrity sha512-GpKAVNbwMBgad0995uVLkOdKWp3CjCrvIeUt4qZcsrgLtf7SMR7gIfMgC9X2rsfLgN6saT/nr2T4QLJE9cCZiA==
-  dependencies:
-    "@types/react" "*"
-
 "@types/react@*", "@types/react@^16.14.15", "@types/react@^17.0.30":
   version "17.0.64"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.64.tgz#468162c66c33ddb4548eb1a0e36682028d9e9a62"
@@ -3508,7 +3501,7 @@ cjs-module-lexer@^1.0.0:
   resolved "https://registry.yarnpkg.com/cjs-module-lexer/-/cjs-module-lexer-1.2.2.tgz#9f84ba3244a512f3a54e5277e8eef4c489864e40"
   integrity sha512-cOU9usZw8/dXIXKtwa8pM0OTJQuJkxMN6w30csNRUerHfeQ5R6U3kkU/FtJeIf3M202OHfY2U8ccInBG7/xogA==
 
-classnames@2.x, classnames@^2.2.1, classnames@^2.2.3, classnames@^2.2.5, classnames@^2.2.6, classnames@^2.3.1, classnames@^2.3.2:
+classnames@2.x, classnames@^2.2.1, classnames@^2.2.3, classnames@^2.2.5, classnames@^2.2.6, classnames@^2.3.1:
   version "2.3.2"
   resolved "https://registry.yarnpkg.com/classnames/-/classnames-2.3.2.tgz#351d813bf0137fcc6a76a16b88208d2560a0d924"
   integrity sha512-CSbhY4cFEJRe6/GQzIk5qXZ4Jeg5pcsP7b5peFSDpffpe1cqjASH/n9UTjBwOp6XpMSTwQ8Za2K5V02ueA7Tmw==
@@ -4010,7 +4003,7 @@ custom-error-instance@2.1.1:
     three "^0.126.1"
 
 "cvat-canvas@link:./cvat-canvas":
-  version "2.17.3"
+  version "2.17.5"
   dependencies:
     "@types/fabric" "^4.5.7"
     "@types/polylabel" "^1.0.5"
@@ -4023,7 +4016,7 @@ custom-error-instance@2.1.1:
     svg.select.js "3.0.1"
 
 "cvat-core@link:./cvat-core":
-  version "11.0.2"
+  version "11.0.3"
   dependencies:
     "@types/lodash" "^4.14.191"
     axios "^0.27.2"
@@ -4069,7 +4062,7 @@ dayjs@1.x:
   resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.11.7.tgz#4b296922642f70999544d1144a2c25730fce63e2"
   integrity sha512-+Yw9U6YO5TQohxLcIkrXBeY73WP3ejHWVvx8XCk3gxvQDCTEmS48ZrSZCKciI7Bhl/uCMyxYtE9UqRILmFphkQ==
 
-debug@2.6.9, debug@^2.1.3:
+debug@2.6.9:
   version "2.6.9"
   resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.9.tgz#5d128515df134ff327e90a4c93f4e077a536341f"
   integrity sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==
@@ -7027,13 +7020,6 @@ json5@^2.0.0, json5@^2.1.2, json5@^2.2.2, json5@^2.2.3:
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/json5/-/json5-2.2.3.tgz#78cd6f1a19bdc12b73db5ad0c61efd66c1e29283"
   integrity sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==
-
-jsonp@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/jsonp/-/jsonp-0.2.1.tgz#a65b4fa0f10bda719a05441ea7b94c55f3e15bae"
-  integrity sha512-pfog5gdDxPdV4eP7Kg87M8/bHgshlZ5pybl+yKxAnCZ5O7lCIn7Ixydj03wOlnDQesky2BPyA91SQ+5Y/mNwzw==
-  dependencies:
-    debug "^2.1.3"
 
 "jsx-ast-utils@^2.4.1 || ^3.0.0", jsx-ast-utils@^3.3.3:
   version "3.3.3"
@@ -10099,14 +10085,6 @@ react-router@5.3.4, react-router@^5.1.0:
     react-is "^16.6.0"
     tiny-invariant "^1.0.2"
     tiny-warning "^1.0.0"
-
-react-share@^4.4.0:
-  version "4.4.1"
-  resolved "https://registry.yarnpkg.com/react-share/-/react-share-4.4.1.tgz#4bfb0b512e26afedfea2fb66eb13c95c28fb216a"
-  integrity sha512-AJ9m9RiJssqvYg7MoJUc9J0D7b/liWrsfQ99ndKc5vJ4oVHHd4Fy87jBlKEQPibT40oYA3AQ/a9/oQY6/yaigw==
-  dependencies:
-    classnames "^2.3.2"
-    jsonp "^0.2.1"
 
 react-sortable-hoc@^2.0.0:
   version "2.0.0"

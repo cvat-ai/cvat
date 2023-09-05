@@ -30,7 +30,7 @@ from distutils.util import strtobool
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     JobWriteSerializer, LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
@@ -48,6 +48,8 @@ from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
+
+slogger = ServerLogManager(__name__)
 
 class Version(Enum):
     V1 = '1.0'
@@ -661,7 +663,6 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        os.makedirs(self._db_task.get_task_logs_dirname())
         os.makedirs(self._db_task.get_task_artifacts_dirname())
 
         if not self._labels_mapping:
@@ -842,7 +843,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         project_path = self._db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
-        os.makedirs(self._db_project.get_project_logs_dirname())
+        os.makedirs(project_path)
 
         self._labels_mapping = self._create_labels(db_project=self._db_project, labels=labels)
 
