@@ -57,6 +57,7 @@ import {
 import { reviewActions } from 'actions/review-actions';
 
 import { filterAnnotations } from 'utils/filter-annotations';
+import { ImageFilter } from 'utils/image-processing';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
 
@@ -113,6 +114,7 @@ interface StateToProps {
     showGroundTruth: boolean;
     highlightedConflict: QualityConflict | null;
     groundTruthJobFramesMeta: FramesMetaData | null;
+    imageFilters: ImageFilter[];
 }
 
 interface DispatchToProps {
@@ -194,6 +196,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections, showGroundTruth,
             },
+            imageFilters,
         },
         shortcuts: { keyMap },
         review: { conflicts },
@@ -253,6 +256,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showGroundTruth,
         highlightedConflict,
         groundTruthJobFramesMeta,
+        imageFilters,
     };
 }
 
@@ -445,6 +449,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             statesSources,
             showGroundTruth,
             highlightedConflict,
+            imageFilters,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -531,10 +536,17 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (
+            prevProps.imageFilters !== imageFilters
+        ) {
+            canvasInstance.configure({ forceFrameUpdate: true });
+        }
+
+        if (
             prevProps.annotations !== annotations ||
             prevProps.statesSources !== statesSources ||
             prevProps.frameData !== frameData ||
-            prevProps.curZLayer !== curZLayer
+            prevProps.curZLayer !== curZLayer ||
+            prevProps.imageFilters !== imageFilters
         ) {
             this.updateCanvas();
         }
@@ -897,9 +909,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateCanvas(): void {
         const {
-            curZLayer, annotations, frameData, canvasInstance, statesSources,
-            workspace, groundTruthJobFramesMeta, frame,
+            curZLayer, annotations, frameData, statesSources,
+            workspace, groundTruthJobFramesMeta, frame, imageFilters,
         } = this.props;
+        const { canvasInstance } = this.props as { canvasInstance: Canvas };
+
         if (frameData !== null && canvasInstance) {
             const filteredAnnotations = filterAnnotations(annotations, {
                 statesSources,
@@ -908,12 +922,48 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 workspace,
                 exclude: [ObjectType.TAG],
             });
+            const proxy = new Proxy(frameData, {
+                get: (_frameData, prop, receiver) => {
+                    if (prop === 'data') {
+                        return async () => {
+                            const originalImage = await _frameData.data();
+                            if (imageFilters.length === 0 || frame === null) {
+                                return originalImage;
+                            }
+                            const imageIsNotProcessed = imageFilters.some((imageFilter: ImageFilter) => (
+                                imageFilter.modifier.currentProcessedImage !== frame
+                            ));
+                            if (imageIsNotProcessed) {
+                                const { renderWidth, renderHeight, imageData: imageBitmap } = originalImage;
 
+                                const offscreen = new OffscreenCanvas(renderWidth, renderHeight);
+                                const ctx = offscreen.getContext('2d');
+                                ctx?.drawImage(imageBitmap, 0, 0);
+                                const imageData = ctx.getImageData(0, 0, renderWidth, renderHeight);
+
+                                const newImageData = imageFilters
+                                    .reduce((oldImageData, activeImageModifier) => activeImageModifier
+                                        .modifier.processImage(oldImageData, frame), imageData);
+                                const _imageBitmap = await createImageBitmap(newImageData);
+                                return {
+                                    renderWidth,
+                                    renderHeight,
+                                    imageData: _imageBitmap,
+                                };
+                            }
+                            return originalImage;
+                        };
+                    }
+
+                    return Reflect.get(_frameData, prop, receiver);
+                },
+            });
             canvasInstance.setup(
-                frameData,
+                proxy,
                 frameData.deleted ? [] : filteredAnnotations,
                 curZLayer,
             );
+            canvasInstance.configure({ forceFrameUpdate: false });
         }
     }
 

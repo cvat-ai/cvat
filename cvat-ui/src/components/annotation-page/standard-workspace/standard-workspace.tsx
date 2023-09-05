@@ -16,7 +16,6 @@ import CanvasPointContextMenuComponent from 'components/annotation-page/canvas/v
 import IssueAggregatorComponent from 'components/annotation-page/review/issues-aggregator';
 import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
 import PropagateConfirmComponent from 'components/annotation-page/standard-workspace/propagate-confirm';
-import ImageProcessingComponent from './image-processing';
 
 export default function StandardWorkspaceComponent(): JSX.Element {
     return (
@@ -29,7 +28,6 @@ export default function StandardWorkspaceComponent(): JSX.Element {
             <CanvasPointContextMenuComponent />
             <IssueAggregatorComponent />
             <RemoveConfirmComponent />
-            <ImageProcessingComponent />
         </Layout>
     );
 }
