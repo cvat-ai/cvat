@@ -341,17 +341,8 @@ class Project(models.Model):
     def get_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
 
-    def get_project_logs_dirname(self):
-        return os.path.join(self.get_dirname(), 'logs')
-
     def get_tmp_dirname(self):
         return os.path.join(self.get_dirname(), "tmp")
-
-    def get_client_log_path(self):
-        return os.path.join(self.get_project_logs_dirname(), "client.log")
-
-    def get_log_path(self):
-        return os.path.join(self.get_project_logs_dirname(), "project.log")
 
     def is_job_staff(self, user_id):
         if self.owner == user_id:
@@ -451,15 +442,6 @@ class Task(models.Model):
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
-
-    def get_task_logs_dirname(self):
-        return os.path.join(self.get_dirname(), 'logs')
-
-    def get_client_log_path(self):
-        return os.path.join(self.get_task_logs_dirname(), "client.log")
-
-    def get_log_path(self):
-        return os.path.join(self.get_task_logs_dirname(), "task.log")
 
     def get_task_artifacts_dirname(self):
         return os.path.join(self.get_dirname(), 'artifacts')
@@ -1132,12 +1114,6 @@ class CloudStorage(models.Model):
 
     def get_storage_dirname(self):
         return os.path.join(settings.CLOUD_STORAGE_ROOT, str(self.id))
-
-    def get_storage_logs_dirname(self):
-        return os.path.join(self.get_storage_dirname(), 'logs')
-
-    def get_log_path(self):
-        return os.path.join(self.get_storage_logs_dirname(), "storage.log")
 
     def get_specific_attributes(self):
         return parse_specific_attributes(self.specific_attributes)
