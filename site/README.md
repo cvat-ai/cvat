@@ -1,6 +1,6 @@
-## Basic manual for website editing
+## Basic manual
 
-### Edit or add documentation pages
+### How to edit or add documentation pages online
 
 To edit and/or add documentation, you need to have a [GitHub](https://github.com/login) account.
 To change documentation files or add a documentation page,
@@ -15,65 +15,94 @@ Read how to edit files for github ([GitHub docs](https://docs.github.com/en/gith
 Please note that files have a markup for correct display on the site: the title, the title of the link,
 the weight (affects the order of files display on the sidebar) and description (optional):
 
-    ---
-    title: "Title"
-    linkTitle: "Link Title"
-    weight: 1
-    description: >
-        Description
-    ---
+```
+---
+title: "Title"
+linkTitle: "Link Title"
+weight: 1
+description: >
+    Description
+---
+```
 
-### Start site localy
 
-To start the site locally, you need a recent [extended version hugo](https://github.com/gohugoio/hugo/releases)
-(recommend version 0.110.0).
-Open the most recent release and scroll down until you find a list of Extended versions. [Read more](https://gohugo.io/getting-started/installing/#quick-install)
+### How to start the site locally
 
-Add a path to "hugo" in the "Path" environment variable.
+#### Installation
+
+1. Get the code
 
 Clone a repository branch containing the site. For example, using a git command:
 
-    git clone --branch <branchname> <remote-repo-url>
+```bash
+git clone --branch <branchname> <remote-repo-url>
+```
 
 If you want to build and/or serve your site locally, you also need to get local copies of the theme’s own submodules:
 
-    git submodule update --init --recursive
+```bash
+git submodule update --init --recursive
+```
 
-To build and preview your site locally, use:
+2. Install Hugo
 
-    cd <your local directory>/cvat/site/
-    hugo server
+Get the [v110.0-extended release of hugo](https://github.com/gohugoio/hugo/releases/tag/v0.110.0).
+Expand the Assets section of the release on GitHub and and scroll down
+until you find a list of Extended versions.
+[Read more](https://gohugo.io/getting-started/installing/#quick-install)
 
-By default, your site will be available at <http://localhost:1313/docs/>.
+Add a path to "hugo" in the "Path" environment variable.
 
-Instead of a "hugo server" command, you can use the "hugo" command that generates the site into a "public" folder.
+3. Install the Docsy theme dependencies
 
 To build or update your site’s CSS resources you will need [PostCSS](https://postcss.org/) to create final assets.
 To install it you must have a recent version of [NodeJS](https://nodejs.org/en/) installed on your machine,
-so you can use npm, the Node package manager.
+so you can use npm, the Node package manager, or nvm.
 By default npm installs tools under the directory where you run [npm install](https://docs.npmjs.com/cli/v6/commands/npm-install#description):
 
-    cd <your local directory>/cvat/site/
-    npm ci
+```bash
+(cd site/ && npm ci)
+```
 
-Then you can build a website in the "public" folder:
+Full documentation is [here](https://www.docsy.dev/docs/get-started/other-options/#for-an-existing-site).
 
-    hugo
+4. To preview your site locally, use:
+
+```bash
+cd site/
+hugo server
+```
+
+By default, your site will be available at <http://localhost:1313/docs/>.
+
+#### How to build and run for production
+
+Use the command that generates the site in the `public/` folder:
+
+```bash
+hugo
+```
 
 [Read more](https://www.docsy.dev/docs/getting-started/)
 
-### Update the submodule of the docsy theme
+### How to update the submodule of the docsy theme
 
 To update the submodule of the docsy theme you need to have a repository clone. While in the repository folder,
 use the git command:
 
-    git submodule update --remote
+```bash
+git submodule update --remote
+```
 
 Add and then commit the change to project:
 
-    git add themes/
-    git commit -m "Updating theme submodule"
+```bash
+git add themes/
+git commit -m "Updating theme submodule"
+```
 
 Push the commit to project repo. For example, run:
 
-    git push
+```bash
+git push
+```
