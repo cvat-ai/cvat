@@ -57,8 +57,13 @@ To create an organization, do the following:
 
 <!--lint enable maximum-line-length-->
 
-The created organization will be available
-at you **Username** > **Organization**
+Upon creation, the organization page will open automatically.
+
+For future access to your organization,
+navigate to **Username** > **Organization**
+
+> **Note**, that if you've created more than 10 organizations,
+> a **Switch organization** line will appear in the drop-down menu.
 
 ### Switching between organizations
 
@@ -73,8 +78,8 @@ Follow these steps:
 
 ![](/images/image233_1.jpg)
 
-Note, that if you've created more than 10 organizations,
-a **Switch organization** line will appear in the drop-down menu.
+> **Note**, that if you've created more than 10 organizations,
+> a **Switch organization** line will appear in the drop-down menu.
 
 ![](/images/switch_org.png)
 
@@ -95,7 +100,6 @@ and manage **Organization** members.
 > Without activation, the organization page will remain inaccessible.
 > <br>An organization is considered activated when it's ticked in the drop-down menu
 > and its name is visible in the top-right corner under the username.
-
 
 To go to the **Organization page**, do the following:
 
@@ -124,7 +128,7 @@ The **Invite Members** form has the following fields:
 
 | Field               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Email**           | Specifies the email address of the user who is being added to the **Organization**.  <br><br>**Note**, that the user you're inviting must already have a CVAT account (on the same instance) registered to the email address you're sending the invitation to.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Email**           | Specifies the email address of the user who is being added to the **Organization**. <br><br>**Note**, that the user you're inviting must already have a CVAT account (on the same instance) registered to the email address you're sending the invitation to.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Role drop-down list | Defines the role of the user which sets the level of access within the **Organization**: <br><li>**Worker**: Has access only to the tasks, projects, and jobs assigned to them. <li>**Supervisor**: Can create and assign jobs, tasks, and projects to the **Organization** members. <li>**Maintainer**: Has the same capabilities as the **Supervisor**, but with additional visibility over all tasks and projects created by other members, complete access to **Cloud Storages**, and the ability to modify members and their roles. <li>**Owner**: role assigned to the creator of the organization by default. Has maximum capabilities and cannot be changed or assigned to the other user. |
 | **Invite more**     | Button to add another user to the **Organization**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
