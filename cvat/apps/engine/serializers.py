@@ -20,11 +20,12 @@ from django.db import transaction
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
+slogger = ServerLogManager(__name__)
 
 class WriteOnceMixin:
     """
@@ -1103,7 +1104,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        os.makedirs(db_task.get_task_logs_dirname())
         os.makedirs(db_task.get_task_artifacts_dirname())
 
         LabelSerializer.create_labels(labels, parent_instance=db_task)
@@ -1304,7 +1304,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         project_path = db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
-        os.makedirs(db_project.get_project_logs_dirname())
+        os.makedirs(project_path)
 
         LabelSerializer.create_labels(labels, parent_instance=db_project)
 
@@ -1806,8 +1806,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             cloud_storage_path = db_storage.get_storage_dirname()
             if os.path.isdir(cloud_storage_path):
                 shutil.rmtree(cloud_storage_path)
+            os.makedirs(cloud_storage_path)
 
-            os.makedirs(db_storage.get_storage_logs_dirname(), exist_ok=True)
             if temporary_file:
                 # so, gcs key file is valid and we need to set correct path to the file
                 real_path_to_key_file = db_storage.get_key_file_path()

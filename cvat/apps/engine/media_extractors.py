@@ -80,6 +80,9 @@ def image_size_within_orientation(img: Image):
         return img.height, img.width
     return img.width, img.height
 
+def has_exif_rotation(img: Image):
+    return img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL) != ORIENTATION.NORMAL_HORIZONTAL
+
 def rotate_within_exif(img: Image):
     orientation = img.getexif().get(ORIENTATION_EXIF_TAG,  ORIENTATION.NORMAL_HORIZONTAL)
     if orientation in [ORIENTATION.NORMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
@@ -661,12 +664,25 @@ class ZipChunkWriter(IChunkWriter):
                 ext = os.path.splitext(path)[1].replace('.', '')
                 output = io.BytesIO()
                 if self._dimension == DimensionType.DIM_2D:
-                    pil_image = rotate_within_exif(Image.open(image))
-                    pil_image.save(output, format=pil_image.format if pil_image.format else self.IMAGE_EXT, quality=100, subsampling=0)
+                    pil_image = Image.open(image)
+                    if has_exif_rotation(pil_image):
+                        rot_image = rotate_within_exif(pil_image)
+                        if rot_image.format == 'TIFF':
+                            # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
+                            # use loseless lzw compression for tiff images
+                            rot_image.save(output, format='TIFF', compression='tiff_lzw')
+                        else:
+                            rot_image.save(output, format=rot_image.format if rot_image.format else self.IMAGE_EXT, quality=100, subsampling=0)
+                    else:
+                        output = image
                 else:
                     output, ext = self._write_pcd_file(image)[0:2]
                 arcname = '{:06d}.{}'.format(idx, ext)
-                zip_chunk.writestr(arcname, output.getvalue())
+
+                if isinstance(output, io.BytesIO):
+                    zip_chunk.writestr(arcname, output.getvalue())
+                else:
+                    zip_chunk.write(filename=output, arcname=arcname)
         # return empty list because ZipChunkWriter write files as is
         # and does not decode it to know img size.
         return []
