@@ -4,9 +4,25 @@
 
 import { fabric } from 'fabric';
 
+export type ConfigurableFilterType = fabric.IBaseFilter;
 export interface ImageProcessing {
-    processImage: (src: ImageData, frameNumber: number) => ImageData;
+    filter: ConfigurableFilterType | null;
     currentProcessedImage: number | null;
+
+    processImage: (src: ImageData, frameNumber: number) => ImageData;
+    configure: (options: object) => void;
+}
+
+/* eslint @typescript-eslint/no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
+export class BaseImageFilter implements ImageProcessing {
+    public filter: fabric.IBaseFilter | null = null;
+    public currentProcessedImage: number | null = null;
+
+    processImage(_r: ImageData, _frameNumber: number): ImageData {
+        throw new Error('Process image is not implemented');
+    }
+
+    configure(_options: object): void {}
 }
 
 export interface ImageFilter {
@@ -25,10 +41,4 @@ export function hasFilter(filters: ImageFilter[], alias: ImageFilterAlias): Imag
         return filters[index];
     }
     return null;
-}
-
-export type ConfigurableFilterType = fabric.IBaseFilter;
-export interface ConfigurableFilter extends ImageProcessing {
-    filter: ConfigurableFilterType | null;
-    configure: (options: object) => void;
 }

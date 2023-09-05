@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ImageProcessing } from 'utils/image-processing';
+import { BaseImageFilter, ImageProcessing } from 'utils/image-processing';
 
 export interface HistogramEqualization extends ImageProcessing{
     processImage: (src: ImageData, frameNumber: number) => ImageData;
@@ -15,13 +15,13 @@ interface HashedImage{
     timestamp: number,
 }
 
-export default class HistogramEqualizationImplementation implements HistogramEqualization {
+export default class HistogramEqualizationImplementation extends BaseImageFilter {
     private readonly bufferSize: number = 20;
     private cv:any;
     private histHash: HashedImage[];
-    public currentProcessedImage: number | null = null;
 
     constructor(cv:any) {
+        super();
         this.cv = cv;
         this.histHash = [];
     }

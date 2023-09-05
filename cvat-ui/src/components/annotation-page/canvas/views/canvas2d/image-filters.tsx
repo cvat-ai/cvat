@@ -21,7 +21,7 @@ import './image-setups.scss';
 export default function ImageFilters(): JSX.Element {
     const dispatch = useDispatch();
     const [gamma, setGamma] = useState<number>(1);
-    const filters = useSelector((state: CombinedState) => state.settings.imageProcessing.filters);
+    const filters = useSelector((state: CombinedState) => state.settings.imageFilters);
     const gammaFilter = hasFilter(filters, ImageFilterAlias.GAMMA_CORRECTION);
     const onChangeGamma = useCallback((newGamma) => {
         setGamma(newGamma);

@@ -16,7 +16,7 @@ export default function ImageProcessingComponent(): JSX.Element | null {
     const filtersRef = useRef<ImageFilter[]>([]);
     const frame = useRef<number | null>(null);
     useSelector((state: CombinedState) => {
-        filtersRef.current = state.settings.imageProcessing.filters;
+        filtersRef.current = state.settings.imageFilters;
         frame.current = state.annotation.player.frame.number;
     });
 
@@ -24,7 +24,7 @@ export default function ImageProcessingComponent(): JSX.Element | null {
     const states = useSelector((state: CombinedState) => state.annotation.annotations.states);
     const curZOrder = useSelector((state: CombinedState) => state.annotation.annotations.zLayer.cur);
     const frameData = useSelector((state: CombinedState) => state.annotation.player.frame.data);
-    const filters = useSelector((state: CombinedState) => state.settings.imageProcessing.filters);
+    const filters = useSelector((state: CombinedState) => state.settings.imageFilters);
 
     const dispatch = useDispatch();
 

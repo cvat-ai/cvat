@@ -13,7 +13,6 @@ import {
     SettingsState, GridColor, FrameSpeed, ColorBy,
 } from 'reducers';
 import { ObjectState, ShapeType, DimensionType } from 'cvat-core-wrapper';
-import FabricFilter from 'utils/fabric-wrapper/fabric-wrapper';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -61,9 +60,7 @@ const defaultState: SettingsState = {
         contrastLevel: 100,
         saturationLevel: 100,
     },
-    imageProcessing: {
-        filters: [],
-    },
+    imageFilters: [],
     showDialog: false,
 };
 
@@ -405,10 +402,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
             const index = filters.findIndex((imageFilter) => imageFilter.alias === alias);
             if (options && index !== -1) {
                 const enabledFilter = filters[index];
-                if (enabledFilter.modifier instanceof FabricFilter) {
-                    enabledFilter.modifier.currentProcessedImage = null;
-                    enabledFilter.modifier.configure(options);
-                }
+                enabledFilter.modifier.currentProcessedImage = null;
+                enabledFilter.modifier.configure(options);
                 return {
                     ...state,
                     imageFilters: filters,

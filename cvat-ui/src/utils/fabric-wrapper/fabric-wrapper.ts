@@ -2,13 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { IBaseFilter } from 'fabric/fabric-impl';
-import { ConfigurableFilter } from 'utils/image-processing';
+import { BaseImageFilter } from 'utils/image-processing';
 
-export default class FabricFilter implements ConfigurableFilter {
-    public filter: IBaseFilter | null = null;
-    public currentProcessedImage: number | null = null;
-
+export default class FabricFilter extends BaseImageFilter {
     public processImage(src: ImageData, frameNumber: number): ImageData {
         if (this.filter) {
             this.filter.applyTo2d({

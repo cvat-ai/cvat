@@ -105,7 +105,7 @@ function mapStateToProps(state: CombinedState): Props {
         },
         settings: {
             workspace: { defaultApproxPolyAccuracy, toolsBlockerState },
-            imageProcessing: { filters },
+            imageFilters: filters,
         },
     } = state;
 
