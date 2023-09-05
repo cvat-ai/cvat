@@ -3,14 +3,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { getCore } from 'cvat-core-wrapper';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 import { OpenCVTracker } from './opencv-interfaces';
-
-const core = getCore();
-const baseURL = core.config.backendAPI.slice(0, -7);
 
 export interface Segmentation {
     intelligentScissorsFactory: (onChangeToolsBlockerState:(event:string)=>void) => IntelligentScissors;
@@ -64,7 +60,7 @@ export class OpenCVWrapper {
     }
 
     private async inject(): Promise<void> {
-        const response = await fetch(`${baseURL}/assets/opencv.js`);
+        const response = await fetch('/assets/opencv.js');
         if (response.status !== 200) {
             throw new Error(`Response status ${response.status}. ${response.statusText}`);
         }
