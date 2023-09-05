@@ -669,7 +669,7 @@ class ZipChunkWriter(IChunkWriter):
                         # use loseless lzw compression for tiff images
                         pil_image.save(output, format='TIFF', compression='tiff_lzw')
                     else:
-                        pil_image.save(output, format=pil_image.format if pil_image.format else self.IMAGE_EXT, quality=95, subsampling=0)
+                        pil_image.save(output, format=pil_image.format if pil_image.format else self.IMAGE_EXT, quality=100, subsampling=0)
                 else:
                     output, ext = self._write_pcd_file(image)[0:2]
                 arcname = '{:06d}.{}'.format(idx, ext)
