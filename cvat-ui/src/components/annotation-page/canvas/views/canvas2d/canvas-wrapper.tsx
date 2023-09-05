@@ -9,6 +9,7 @@ import Slider from 'antd/lib/slider';
 import Spin from 'antd/lib/spin';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
+import notification from 'antd/lib/notification';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
@@ -930,28 +931,37 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                             const imageIsNotProcessed = imageFilters.some((imageFilter: ImageFilter) => (
                                 imageFilter.modifier.currentProcessedImage !== frame
                             ));
+
                             if (imageIsNotProcessed) {
-                                const { renderWidth, renderHeight, imageData: imageBitmap } = originalImage;
+                                try {
+                                    const { renderWidth, renderHeight, imageData: imageBitmap } = originalImage;
 
-                                const offscreen = new OffscreenCanvas(renderWidth, renderHeight);
-                                const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D;
-                                ctx.drawImage(imageBitmap, 0, 0);
-                                const imageData = ctx.getImageData(0, 0, renderWidth, renderHeight);
+                                    const offscreen = new OffscreenCanvas(renderWidth, renderHeight);
+                                    const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D;
+                                    ctx.drawImage(imageBitmap, 0, 0);
+                                    const imageData = ctx.getImageData(0, 0, renderWidth, renderHeight);
 
-                                const newImageData = imageFilters
-                                    .reduce((oldImageData, activeImageModifier) => activeImageModifier
-                                        .modifier.processImage(oldImageData, frame), imageData);
-                                const newImageBitmap = await createImageBitmap(newImageData);
-                                return {
-                                    renderWidth,
-                                    renderHeight,
-                                    imageData: newImageBitmap,
-                                };
+                                    const newImageData = imageFilters
+                                        .reduce((oldImageData, activeImageModifier) => activeImageModifier
+                                            .modifier.processImage(oldImageData, frame), imageData);
+                                    const newImageBitmap = await createImageBitmap(newImageData);
+                                    return {
+                                        renderWidth,
+                                        renderHeight,
+                                        imageData: newImageBitmap,
+                                    };
+                                } catch (error: any) {
+                                    notification.error({
+                                        description: error.toString(),
+                                        message: 'Image processing error occurred',
+                                        className: 'cvat-notification-notice-image-processing-error',
+                                    });
+                                }
                             }
+
                             return originalImage;
                         };
                     }
-
                     return Reflect.get(_frameData, prop, receiver);
                 },
             });
