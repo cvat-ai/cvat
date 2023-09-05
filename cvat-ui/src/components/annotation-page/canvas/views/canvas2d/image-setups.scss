@@ -5,11 +5,5 @@
 @import 'base';
 
 .cvat-image-setups-filters {
-    margin: $grid-unit-size * 3 0;
-}
-
-.cvat-image-setups-gamma {
-    .ant-checkbox {
-        margin-left: $grid-unit-size * 0.5;
-    }
+    margin-bottom: $grid-unit-size * 3;
 }

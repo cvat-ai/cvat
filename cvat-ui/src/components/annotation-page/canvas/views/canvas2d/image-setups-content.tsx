@@ -25,7 +25,7 @@ import {
 } from 'actions/settings-actions';
 import { clamp } from 'utils/math';
 import { GridColor, CombinedState, PlayerSettingsState } from 'reducers';
-import ImageFilters from './image-filters';
+import GammaFilter from './gamma-filter';
 
 const minGridSize = 5;
 const maxGridSize = 1000;
@@ -173,7 +173,7 @@ export default function ImageSetupsContent(): JSX.Element {
                     </Row>
                 </Col>
             </Row>
-            <ImageFilters />
+            <GammaFilter />
             <Row className='cvat-image-setups-reset-color-settings' justify='space-around'>
                 <Col>
                     <Button
@@ -186,7 +186,7 @@ export default function ImageSetupsContent(): JSX.Element {
                             dispatch(resetImageFilters());
                         }}
                     >
-                        Reset image settings
+                        Reset color settings
                     </Button>
                 </Col>
             </Row>

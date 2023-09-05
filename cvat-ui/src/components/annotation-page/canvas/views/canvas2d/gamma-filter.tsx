@@ -18,7 +18,7 @@ import { ImageFilterAlias, hasFilter } from 'utils/image-processing';
 
 import './image-setups.scss';
 
-export default function ImageFilters(): JSX.Element {
+export default function GammaFilter(): JSX.Element {
     const dispatch = useDispatch();
     const [gamma, setGamma] = useState<number>(1);
     const filters = useSelector((state: CombinedState) => state.settings.imageFilters);
@@ -50,8 +50,6 @@ export default function ImageFilters(): JSX.Element {
 
     return (
         <div className='cvat-image-setups-filters'>
-            <Text>Image filters</Text>
-            <hr />
             <Row justify='space-around'>
                 <Col span={24}>
                     <Row className='cvat-image-setups-gamma'>
@@ -61,7 +59,7 @@ export default function ImageFilters(): JSX.Element {
                         <Col span={12}>
                             <Slider
                                 min={0.2}
-                                max={2.2}
+                                max={2.6}
                                 value={gamma}
                                 step={0.01}
                                 onChange={(value) => onChangeGamma(value)}
