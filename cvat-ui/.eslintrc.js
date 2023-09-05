@@ -30,6 +30,5 @@ module.exports = {
         'react/jsx-indent-props': ['warn', 4],
         'react/jsx-props-no-spreading': 0,
         'jsx-quotes': ['error', 'prefer-single'],
-        'import/no-extraneous-dependencies': ['error', { packageDir: ['.', '../'] }],
     },
 };

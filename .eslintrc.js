@@ -52,6 +52,15 @@ module.exports = {
         'security/detect-object-injection': 0, // the rule is relevant for user input data on the node.js environment
         'import/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
         'import/prefer-default-export': 0, // works incorrect with interfaces
+        'import/no-extraneous-dependencies': [
+            'error',
+            {
+                packageDir: [
+                    './cvat-ui/', './cvat-canvas/', './cvat-core/',
+                    './cvat-canvas3d/', './cvat-data/', './tests/', '.',
+                ]
+            },
+        ],
 
         '@typescript-eslint/ban-ts-comment': 0,
         '@typescript-eslint/no-explicit-any': 0,
