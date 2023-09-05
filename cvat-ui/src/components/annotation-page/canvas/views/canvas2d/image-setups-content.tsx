@@ -21,7 +21,7 @@ import {
     changeContrastLevel,
     changeSaturationLevel,
     changeGridSize,
-    removeImageFilter,
+    resetImageFilters,
 } from 'actions/settings-actions';
 import { clamp } from 'utils/math';
 import { GridColor, CombinedState, PlayerSettingsState } from 'reducers';
@@ -183,7 +183,7 @@ export default function ImageSetupsContent(): JSX.Element {
                             dispatch(changeBrightnessLevel(defaultValue));
                             dispatch(changeContrastLevel(defaultValue));
                             dispatch(changeSaturationLevel(defaultValue));
-                            dispatch(removeImageFilter(null));
+                            dispatch(resetImageFilters());
                         }}
                     >
                         Reset image settings

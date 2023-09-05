@@ -47,9 +47,9 @@ export enum SettingsActionTypes {
     SWITCH_TOOLS_BLOCKER_STATE = 'SWITCH_TOOLS_BLOCKER_STATE',
     SWITCH_SHOWING_DELETED_FRAMES = 'SWITCH_SHOWING_DELETED_FRAMES',
     SWITCH_SHOWING_TAGS_ON_FRAME = 'SWITCH_SHOWING_TAGS_ON_FRAME',
-    ADD_IMAGE_FILTER = 'ADD_IMAGE_FILTER',
-    REMOVE_IMAGE_FILTER = 'REMOVE_IMAGE_FILTER',
-    SETUP_IMAGE_FILTER = 'SETUP_IMAGE_FILTER',
+    ENABLE_IMAGE_FILTER = 'ENABLE_IMAGE_FILTER',
+    DISABLE_IMAGE_FILTER = 'DISABLE_IMAGE_FILTER',
+    RESET_IMAGE_FILTERS = 'RESET_IMAGE_FILTERS',
 }
 
 export function changeShapesOpacity(opacity: number): AnyAction {
@@ -386,30 +386,28 @@ export function switchShowingTagsOnFrame(showTagsOnFrame: boolean): AnyAction {
     };
 }
 
-export function addImageFilter(filter: ImageFilter): AnyAction {
+export function enableImageFilter(filter: ImageFilter, options: object | null = null): AnyAction {
     return {
-        type: SettingsActionTypes.ADD_IMAGE_FILTER,
+        type: SettingsActionTypes.ENABLE_IMAGE_FILTER,
         payload: {
             filter,
-        },
-    };
-}
-
-export function removeImageFilter(filterAlias: ImageFilterAlias | null): AnyAction {
-    return {
-        type: SettingsActionTypes.REMOVE_IMAGE_FILTER,
-        payload: {
-            filterAlias,
-        },
-    };
-}
-
-export function setupImageFilter(filterAlias: ImageFilterAlias, options: object): AnyAction {
-    return {
-        type: SettingsActionTypes.SETUP_IMAGE_FILTER,
-        payload: {
-            filterAlias,
             options,
         },
+    };
+}
+
+export function disableImageFilter(filterAlias: ImageFilterAlias): AnyAction {
+    return {
+        type: SettingsActionTypes.DISABLE_IMAGE_FILTER,
+        payload: {
+            filterAlias,
+        },
+    };
+}
+
+export function resetImageFilters(): AnyAction {
+    return {
+        type: SettingsActionTypes.RESET_IMAGE_FILTERS,
+        payload: {},
     };
 }

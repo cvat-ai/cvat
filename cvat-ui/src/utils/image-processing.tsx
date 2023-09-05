@@ -18,8 +18,12 @@ export enum ImageFilterAlias {
     GAMMA_CORRECTION = 'fabric.gammaCorrection',
 }
 
-export function filterActive(filters: ImageFilter[], alias: ImageFilterAlias): boolean {
-    return filters.some((filter: ImageFilter) => filter.alias === alias);
+export function hasFilter(filters: ImageFilter[], alias: ImageFilterAlias): ImageFilter | null {
+    const index = filters.findIndex((imageFilter) => imageFilter.alias === alias);
+    if (index !== -1) {
+        return filters[index];
+    }
+    return null;
 }
 
 export type ConfigurableFilterType = fabric.IBaseFilter;

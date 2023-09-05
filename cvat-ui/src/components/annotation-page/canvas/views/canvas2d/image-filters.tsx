@@ -10,12 +10,11 @@ import Text from 'antd/lib/typography/Text';
 import Slider from 'antd/lib/slider';
 
 import {
-    addImageFilter,
-    removeImageFilter,
-    setupImageFilter,
+    enableImageFilter,
+    disableImageFilter,
 } from 'actions/settings-actions';
 import GammaCorrection from 'utils/fabric-wrapper/gamma-correciton';
-import { ImageFilterAlias, filterActive } from 'utils/image-processing';
+import { ImageFilterAlias, hasFilter } from 'utils/image-processing';
 
 import './image-setups.scss';
 
@@ -23,23 +22,23 @@ export default function ImageFilters(): JSX.Element {
     const dispatch = useDispatch();
     const [gamma, setGamma] = useState<number>(1);
     const filters = useSelector((state: CombinedState) => state.settings.imageProcessing.filters);
-    const gammaFilterActive = filterActive(filters, ImageFilterAlias.GAMMA_CORRECTION);
+    const gammaFilter = hasFilter(filters, ImageFilterAlias.GAMMA_CORRECTION);
     const onChangeGamma = useCallback((newGamma) => {
         setGamma(newGamma);
         if (newGamma === 1) {
-            if (gammaFilterActive) {
-                dispatch(removeImageFilter(ImageFilterAlias.GAMMA_CORRECTION));
+            if (gammaFilter) {
+                dispatch(disableImageFilter(ImageFilterAlias.GAMMA_CORRECTION));
             }
-        } else if (gammaFilterActive) {
-            dispatch(setupImageFilter(
-                ImageFilterAlias.GAMMA_CORRECTION,
-                { gamma: [newGamma, newGamma, newGamma] },
-            ));
         } else {
-            dispatch(addImageFilter({
-                modifier: new GammaCorrection({ gamma: [newGamma, newGamma, newGamma] }),
-                alias: ImageFilterAlias.GAMMA_CORRECTION,
-            }));
+            const convertedGamma = [newGamma, newGamma, newGamma];
+            if (gammaFilter) {
+                dispatch(enableImageFilter(gammaFilter, { gamma: convertedGamma }));
+            } else {
+                dispatch(enableImageFilter({
+                    modifier: new GammaCorrection({ gamma: convertedGamma }),
+                    alias: ImageFilterAlias.GAMMA_CORRECTION,
+                }));
+            }
         }
     }, [filters]);
 
@@ -51,10 +50,8 @@ export default function ImageFilters(): JSX.Element {
                 <Col span={24}>
                     <Row className='cvat-image-setups-gamma'>
                         <Col span={6}>
-                            <Text className='cvat-text-color'> Gamma: </Text>
+                            <Text className='cvat-text-color'> Gamma </Text>
                         </Col>
-                    </Row>
-                    <Row>
                         <Col span={12}>
                             <Slider
                                 min={0.2}

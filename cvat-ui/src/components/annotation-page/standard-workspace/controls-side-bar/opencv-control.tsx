@@ -38,8 +38,8 @@ import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { OpenCVTracker, TrackerModel } from 'utils/opencv-wrapper/opencv-interfaces';
-import { addImageFilter as addImageFilterAction, removeImageFilter as removeImageFilterAction, switchToolsBlockerState } from 'actions/settings-actions';
-import { ImageFilter, ImageFilterAlias, filterActive } from 'utils/image-processing';
+import { enableImageFilter as enableImageFilterAction, disableImageFilter as disableImageFilterAction, switchToolsBlockerState } from 'actions/settings-actions';
+import { ImageFilter, ImageFilterAlias, hasFilter } from 'utils/image-processing';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -65,8 +65,8 @@ interface DispatchToProps {
     changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void;
     switchNavigationBlocked(navigationBlocked: boolean): void;
-    addImageFilter(filter: ImageFilter): void;
-    removeImageFilter(filterAlias: string): void;
+    enableImageFilter(filter: ImageFilter): void;
+    disableImageFilter(filterAlias: string): void;
 }
 
 interface TrackedShape {
@@ -133,8 +133,8 @@ const mapDispatchToProps = {
     changeFrame: changeFrameAsync,
     onSwitchToolsBlockerState: switchToolsBlockerState,
     switchNavigationBlocked: switchNavigationBlockedAction,
-    addImageFilter: addImageFilterAction,
-    removeImageFilter: removeImageFilterAction,
+    enableImageFilter: enableImageFilterAction,
+    disableImageFilter: disableImageFilterAction,
 };
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
@@ -594,26 +594,26 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private renderImageContent():JSX.Element {
-        const { addImageFilter, removeImageFilter, filters } = this.props;
+        const { enableImageFilter, disableImageFilter, filters } = this.props;
         return (
             <Row justify='start'>
                 <Col>
                     <CVATTooltip title='Histogram equalization' className='cvat-opencv-image-tool'>
                         <Button
                             className={
-                                filterActive(filters, ImageFilterAlias.HISTOGRAM_EQUALIZATION) ?
+                                hasFilter(filters, ImageFilterAlias.HISTOGRAM_EQUALIZATION) ?
                                     'cvat-opencv-histogram-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-histogram-tool-button'
                             }
                             onClick={(e: React.MouseEvent<HTMLElement>) => {
-                                if (!filterActive(filters, ImageFilterAlias.HISTOGRAM_EQUALIZATION)) {
-                                    addImageFilter({
+                                if (!hasFilter(filters, ImageFilterAlias.HISTOGRAM_EQUALIZATION)) {
+                                    enableImageFilter({
                                         modifier: openCVWrapper.imgproc.hist(),
                                         alias: ImageFilterAlias.HISTOGRAM_EQUALIZATION,
                                     });
                                 } else {
                                     const button = e.target as HTMLElement;
                                     button.blur();
-                                    removeImageFilter(ImageFilterAlias.HISTOGRAM_EQUALIZATION);
+                                    disableImageFilter(ImageFilterAlias.HISTOGRAM_EQUALIZATION);
                                 }
                             }}
                         >

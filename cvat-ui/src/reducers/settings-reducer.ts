@@ -398,29 +398,17 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
-        case SettingsActionTypes.ADD_IMAGE_FILTER: {
-            return {
-                ...state,
-                imageProcessing: {
-                    ...state.imageProcessing,
-                    filters: [
-                        ...state.imageProcessing.filters,
-                        action.payload.filter,
-                    ],
-                },
-            };
-        }
-        case SettingsActionTypes.REMOVE_IMAGE_FILTER: {
-            const { filterAlias } = action.payload;
-            if (filterAlias) {
-                const filters = [...state.imageProcessing.filters];
-                const index = filters.findIndex((imageFilter) => imageFilter.alias === filterAlias);
-                if (index !== -1) {
-                    filters.splice(index, 1);
+        case SettingsActionTypes.ENABLE_IMAGE_FILTER: {
+            const { filter, options } = action.payload;
+            const { alias } = filter;
+            const filters = [...state.imageProcessing.filters];
+            const index = filters.findIndex((imageFilter) => imageFilter.alias === alias);
+            if (options && index !== -1) {
+                const enabledFilter = filters[index];
+                if (enabledFilter.modifier instanceof FabricFilter) {
+                    enabledFilter.modifier.currentProcessedImage = null;
+                    enabledFilter.modifier.configure(options);
                 }
-                filters.forEach((imageFilter) => {
-                    imageFilter.modifier.currentProcessedImage = null;
-                });
                 return {
                     ...state,
                     imageProcessing: {
@@ -433,26 +421,37 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 imageProcessing: {
                     ...state.imageProcessing,
-                    filters: [],
+                    filters: [
+                        ...state.imageProcessing.filters,
+                        action.payload.filter,
+                    ],
                 },
             };
         }
-        case SettingsActionTypes.SETUP_IMAGE_FILTER: {
-            const { filterAlias, options } = action.payload;
+        case SettingsActionTypes.DISABLE_IMAGE_FILTER: {
+            const { filterAlias } = action.payload;
             const filters = [...state.imageProcessing.filters];
             const index = filters.findIndex((imageFilter) => imageFilter.alias === filterAlias);
             if (index !== -1) {
-                const filter = filters[index];
-                if (filter.modifier instanceof FabricFilter) {
-                    filter.modifier.currentProcessedImage = null;
-                    filter.modifier.configure(options);
-                }
+                filters.splice(index, 1);
             }
+            filters.forEach((imageFilter) => {
+                imageFilter.modifier.currentProcessedImage = null;
+            });
             return {
                 ...state,
                 imageProcessing: {
                     ...state.imageProcessing,
                     filters,
+                },
+            };
+        }
+        case SettingsActionTypes.RESET_IMAGE_FILTERS: {
+            return {
+                ...state,
+                imageProcessing: {
+                    ...state.imageProcessing,
+                    filters: [],
                 },
             };
         }
