@@ -827,9 +827,7 @@ export interface SettingsState {
     shapes: ShapesSettingsState;
     workspace: WorkspaceSettingsState;
     player: PlayerSettingsState;
-    imageProcessing: {
-        filters: ImageFilter[]
-    };
+    imageFilters: ImageFilter[];
     showDialog: boolean;
 }
 

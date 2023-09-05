@@ -6,7 +6,7 @@
 import { ImageProcessing } from 'utils/image-processing';
 
 export interface HistogramEqualization extends ImageProcessing{
-    processImage: (src:ImageData, frameNumber: number) => ImageData;
+    processImage: (src: ImageData, frameNumber: number) => ImageData;
 }
 
 interface HashedImage{
