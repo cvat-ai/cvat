@@ -11,7 +11,7 @@ from django.conf import settings
 
 class _LoggerAdapter(logging.LoggerAdapter):
     def process(self, msg: str, kwargs):
-        if msg_prefix := getattr(self.extra, "msg_prefix", None):
+        if msg_prefix := self.extra.get("msg_prefix"):
             msg = msg_prefix + msg
         return msg, kwargs
 
