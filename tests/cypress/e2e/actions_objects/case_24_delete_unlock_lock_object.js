@@ -60,7 +60,7 @@ context('Delete unlock/lock object', () => {
     }
 
     function actionOnConfirmWindow(textBuntton) {
-        cy.get('.cvat-modal-confirm').within(() => {
+        cy.get('.cvat-modal-confirm-remove-object').within(() => {
             cy.contains(new RegExp(`^${textBuntton}$`, 'g')).click();
         });
     }
@@ -73,10 +73,11 @@ context('Delete unlock/lock object', () => {
     function checkFailDeleteLockObject(shortcut) {
         deleteObjectViaShortcut(shortcut, 'lock');
         checkExistObject('exist');
-        cy.get('.cvat-modal-confirm').should('exist');
-        cy.get('.cvat-modal-confirm').within(() => {
+        cy.get('.cvat-modal-confirm-remove-object').should('exist');
+        cy.get('.cvat-modal-confirm-remove-object').within(() => {
             cy.contains('Cancel').click();
-            cy.get('.cvat-modal-confirm').should('not.be.visible');
+            cy.get('.cvat-modal-confirm-remove-object').should('not.exist');
+            cy.wait(100);
         });
     }
 

@@ -70,7 +70,8 @@ export default function RemoveConfirmComponent(): JSX.Element | null {
             visible={visible}
             onOk={onOk}
             onCancel={onCancel}
-            className='cvat-modal-confirm'
+            destroyOnClose
+            className='cvat-modal-confirm-remove-object'
         >
             <div>
                 {description}
