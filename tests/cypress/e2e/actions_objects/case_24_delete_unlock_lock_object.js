@@ -25,12 +25,10 @@ context('Delete unlock/lock object', () => {
         });
     }
 
-    function deleteObjectViaShortcut(shortcut, stateLockObject) {
-        if (stateLockObject === 'unlock') {
-            cy.get('.cvat-canvas-container').within(() => {
-                cy.get('.cvat_canvas_shape').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
-            });
-        }
+    function deleteObjectViaShortcut(shortcut) {
+        cy.get('body').click();
+        cy.get('.cvat-objects-sidebar-state-item').trigger('mouseover');
+        cy.get('.cvat-objects-sidebar-state-item').should('have.class', 'cvat-objects-sidebar-state-active-item');
         cy.get('body').type(shortcut);
     }
 
@@ -71,13 +69,12 @@ context('Delete unlock/lock object', () => {
     }
 
     function checkFailDeleteLockObject(shortcut) {
-        deleteObjectViaShortcut(shortcut, 'lock');
+        deleteObjectViaShortcut(shortcut);
         checkExistObject('exist');
         cy.get('.cvat-modal-confirm-remove-object').should('exist');
         cy.get('.cvat-modal-confirm-remove-object').within(() => {
             cy.contains('Cancel').click();
             cy.get('.cvat-modal-confirm-remove-object').should('not.exist');
-            cy.wait(100);
         });
     }
 
@@ -88,7 +85,7 @@ context('Delete unlock/lock object', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Create and delete object via "Delete" shortcut', () => {
             cy.createRectangle(createRectangleShape2Points);
-            deleteObjectViaShortcut('{del}', 'unlock');
+            deleteObjectViaShortcut('{del}');
             checkExistObject('not.exist');
         });
 
@@ -102,7 +99,7 @@ context('Delete unlock/lock object', () => {
             cy.createRectangle(createRectangleShape2Points);
             lockObject();
             checkFailDeleteLockObject('{del}');
-            deleteObjectViaShortcut('{shift}{del}', 'lock');
+            deleteObjectViaShortcut('{shift}{del}');
             checkExistObject('not.exist');
         });
 
