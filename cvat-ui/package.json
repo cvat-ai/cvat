@@ -36,8 +36,6 @@
     "@types/redux-logger": "^3.0.9",
     "@types/resize-observer-browser": "^0.1.6",
     "@uiw/react-md-editor": "^3.22.0",
-    "@types/fabric": "^4.5.7",
-    "fabric": "^5.2.1",
     "antd": "~4.18.9",
     "chart.js": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",
