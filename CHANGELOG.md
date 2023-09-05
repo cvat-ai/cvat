@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased\]
 ### Added
-- TDB
+- Ability to hide/show an object in review mode (<https://github.com/opencv/cvat/pull/6808>)
 
 ### Changed
 - \[Helm\] Database migrations now run in a separate job instead of the server pod,
