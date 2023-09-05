@@ -536,9 +536,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             });
         }
 
-        if (
-            prevProps.imageFilters !== imageFilters
-        ) {
+        if (prevProps.imageFilters !== imageFilters) {
             canvasInstance.configure({ forceFrameUpdate: true });
         }
 
@@ -970,7 +968,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 frameData.deleted ? [] : filteredAnnotations,
                 curZLayer,
             );
-            canvasInstance.configure({ forceFrameUpdate: false });
+            // canvasInstance.configure({ forceFrameUpdate: false });
         }
     }
 
