@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Removed
+- Outdated using of hostname when access git/opencv/analytics from UI (<https://github.com/opencv/cvat/pull/6799>)
 - Feedback/share component (<https://github.com/opencv/cvat/pull/6805>)
 
 ### Fixed
