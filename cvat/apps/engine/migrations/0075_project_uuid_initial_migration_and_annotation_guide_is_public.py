@@ -6,7 +6,7 @@ import uuid
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("engine", "0075_annotationguide_is_public"),
+        ("engine", "0074_alter_labeledimage_source_alter_labeledshape_source_and_more"),
     ]
 
     operations = [
