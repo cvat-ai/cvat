@@ -927,9 +927,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     if (prop === 'data') {
                         return async () => {
                             const originalImage = await _frameData.data();
-                            if (imageFilters.length === 0 || frame === null) {
-                                return originalImage;
-                            }
                             const imageIsNotProcessed = imageFilters.some((imageFilter: ImageFilter) => (
                                 imageFilter.modifier.currentProcessedImage !== frame
                             ));
@@ -937,18 +934,18 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                                 const { renderWidth, renderHeight, imageData: imageBitmap } = originalImage;
 
                                 const offscreen = new OffscreenCanvas(renderWidth, renderHeight);
-                                const ctx = offscreen.getContext('2d');
-                                ctx?.drawImage(imageBitmap, 0, 0);
+                                const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D;
+                                ctx.drawImage(imageBitmap, 0, 0);
                                 const imageData = ctx.getImageData(0, 0, renderWidth, renderHeight);
 
                                 const newImageData = imageFilters
                                     .reduce((oldImageData, activeImageModifier) => activeImageModifier
                                         .modifier.processImage(oldImageData, frame), imageData);
-                                const _imageBitmap = await createImageBitmap(newImageData);
+                                const newImageBitmap = await createImageBitmap(newImageData);
                                 return {
                                     renderWidth,
                                     renderHeight,
-                                    imageData: _imageBitmap,
+                                    imageData: newImageBitmap,
                                 };
                             }
                             return originalImage;
