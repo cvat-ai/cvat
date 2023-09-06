@@ -364,7 +364,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 
 class CanvasWrapperComponent extends React.PureComponent<Props> {
-    private debouncedUpdate = debounce(this.updateCanvas.bind(this), 750, { leading: true });
+    private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
 
     public componentDidMount(): void {
         const {
