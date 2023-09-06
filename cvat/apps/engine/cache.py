@@ -21,7 +21,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from cvat.apps.engine.cloud_provider import (Credentials,
                                              db_storage_to_storage_instance,
                                              get_cloud_storage_instance)
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (ImageDatasetManifestReader,
                                                Mpeg4ChunkWriter,
                                                Mpeg4CompressedChunkWriter,
@@ -34,6 +34,7 @@ from cvat.apps.engine.models import (DataChoice, DimensionType, Job, Image,
 from cvat.apps.engine.utils import md5_hash
 from utils.dataset_manifest import ImageManifestManager
 
+slogger = ServerLogManager(__name__)
 
 class MediaCache:
     def __init__(self, dimension=DimensionType.DIM_2D):

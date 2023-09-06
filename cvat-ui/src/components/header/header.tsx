@@ -30,43 +30,26 @@ import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 
-import { getCore } from 'cvat-core-wrapper';
 import config from 'config';
 
 import { CVATLogo } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
+import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
-import { CombinedState } from 'reducers';
+import { shortcutsActions } from 'actions/shortcuts-actions';
+import { AboutState, CombinedState } from 'reducers';
 import { usePlugins } from 'utils/hooks';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import SettingsModal from './settings-modal/settings-modal';
-
-const core = getCore();
-
-interface Tool {
-    name: string;
-    description: string;
-    server: {
-        host: string;
-        version: string;
-    };
-    core: {
-        version: string;
-    };
-    canvas: {
-        version: string;
-    };
-    ui: {
-        version: string;
-    };
-}
 
 interface StateToProps {
     user: any;
-    tool: Tool;
+    about: AboutState;
+    keyMap: KeyMap;
     switchSettingsShortcut: string;
-    settingsDialogShown: boolean;
+    settingsModalVisible: boolean;
+    shortcutsModalVisible: boolean;
     changePasswordDialogShown: boolean;
     changePasswordFetching: boolean;
     logoutFetching: boolean;
@@ -81,8 +64,9 @@ interface StateToProps {
 
 interface DispatchToProps {
     onLogout: () => void;
-    switchSettingsDialog: (show: boolean) => void;
-    switchChangePasswordDialog: (show: boolean) => void;
+    switchSettingsModalVisible: (visible: boolean) => void;
+    switchShortcutsModalVisible: (visible: boolean) => void;
+    switchChangePasswordModalVisible: (visible: boolean) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -95,33 +79,19 @@ function mapStateToProps(state: CombinedState): StateToProps {
             allowChangePassword: renderChangePasswordItem,
         },
         plugins: { list },
-        about: { server, packageVersion },
-        shortcuts: { normalizedKeyMap },
-        settings: { showDialog: settingsDialogShown },
+        about,
+        shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
+        settings: { showDialog: settingsModalVisible },
         organizations: { fetching: organizationsFetching, current: currentOrganization, list: organizationsList },
     } = state;
 
     return {
         user,
-        tool: {
-            name: server.name as string,
-            description: server.description as string,
-            server: {
-                host: core.config.backendAPI.slice(0, -7),
-                version: server.version as string,
-            },
-            canvas: {
-                version: packageVersion.canvas,
-            },
-            core: {
-                version: packageVersion.core,
-            },
-            ui: {
-                version: packageVersion.ui,
-            },
-        },
+        about,
         switchSettingsShortcut: normalizedKeyMap.SWITCH_SETTINGS,
-        settingsDialogShown,
+        keyMap,
+        settingsModalVisible,
+        shortcutsModalVisible,
         changePasswordDialogShown,
         changePasswordFetching,
         logoutFetching,
@@ -138,29 +108,39 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onLogout: (): void => dispatch(logoutAsync()),
-        switchSettingsDialog: (show: boolean): void => dispatch(switchSettingsDialogAction(show)),
-        switchChangePasswordDialog: (show: boolean): void => dispatch(authActions.switchChangePasswordDialog(show)),
+        switchShortcutsModalVisible: (visible: boolean): void => dispatch(
+            shortcutsActions.switchShortcutsModalVisible(visible),
+        ),
+        switchSettingsModalVisible: (visible: boolean): void => dispatch(
+            switchSettingsModalVisibleAction(visible),
+        ),
+        switchChangePasswordModalVisible: (visible: boolean): void => dispatch(
+            authActions.switchChangePasswordModalVisible(visible),
+        ),
     };
 }
 
 type Props = StateToProps & DispatchToProps;
 
-function HeaderContainer(props: Props): JSX.Element {
+function HeaderComponent(props: Props): JSX.Element {
     const {
         user,
-        tool,
+        about,
+        keyMap,
         logoutFetching,
         changePasswordFetching,
-        settingsDialogShown,
+        settingsModalVisible,
+        shortcutsModalVisible,
         switchSettingsShortcut,
-        switchSettingsDialog,
-        switchChangePasswordDialog,
         renderChangePasswordItem,
         isAnalyticsPluginActive,
         isModelsPluginActive,
         organizationsFetching,
         currentOrganization,
         organizationsList,
+        switchSettingsModalVisible,
+        switchShortcutsModalVisible,
+        switchChangePasswordModalVisible,
     } = props;
 
     const {
@@ -170,27 +150,47 @@ function HeaderContainer(props: Props): JSX.Element {
     const history = useHistory();
     const location = useLocation();
 
+    const subKeyMap = {
+        SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
+        SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
+    };
+
+    const handlers = {
+        SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            if (!settingsModalVisible) {
+                switchShortcutsModalVisible(!shortcutsModalVisible);
+            }
+        },
+        SWITCH_SETTINGS: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            if (!shortcutsModalVisible) {
+                switchSettingsModalVisible(!settingsModalVisible);
+            }
+        },
+    };
+
     const showAboutModal = useCallback((): void => {
         Modal.info({
-            title: `${tool.name}`,
+            title: `${about.server.name}`,
             content: (
                 <div>
-                    <p>{`${tool.description}`}</p>
+                    <p>{`${about.server.description}`}</p>
                     <p>
                         <Text strong>Server version:</Text>
-                        <Text type='secondary'>{` ${tool.server.version}`}</Text>
+                        <Text type='secondary'>{` ${about.server.version}`}</Text>
                     </p>
                     <p>
                         <Text strong>Core version:</Text>
-                        <Text type='secondary'>{` ${tool.core.version}`}</Text>
+                        <Text type='secondary'>{` ${about.packageVersion.core}`}</Text>
                     </p>
                     <p>
                         <Text strong>Canvas version:</Text>
-                        <Text type='secondary'>{` ${tool.canvas.version}`}</Text>
+                        <Text type='secondary'>{` ${about.packageVersion.canvas}`}</Text>
                     </p>
                     <p>
                         <Text strong>UI version:</Text>
-                        <Text type='secondary'>{` ${tool.ui.version}`}</Text>
+                        <Text type='secondary'>{` ${about.packageVersion.ui}`}</Text>
                     </p>
                     <Row justify='space-around'>
                         <Col>
@@ -223,10 +223,10 @@ function HeaderContainer(props: Props): JSX.Element {
                 },
             },
         });
-    }, [tool]);
+    }, [about]);
 
     const closeSettings = useCallback(() => {
-        switchSettingsDialog(false);
+        switchSettingsModalVisible(false);
     }, []);
 
     const resetOrganization = (): void => {
@@ -259,7 +259,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 icon={<ControlOutlined />}
                 key='admin_page'
                 onClick={(): void => {
-                    window.open(`${tool.server.host}/admin`, '_blank');
+                    window.open('/admin', '_blank');
                 }}
             >
                 Admin page
@@ -352,7 +352,7 @@ function HeaderContainer(props: Props): JSX.Element {
             icon={<SettingOutlined />}
             key='settings'
             title={`Press ${switchSettingsShortcut} to switch`}
-            onClick={() => switchSettingsDialog(true)}
+            onClick={() => switchSettingsModalVisible(true)}
         >
             Settings
         </Menu.Item>
@@ -370,7 +370,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 key='change_password'
                 icon={changePasswordFetching ? <LoadingOutlined /> : <EditOutlined />}
                 className='cvat-header-menu-change-password'
-                onClick={(): void => switchChangePasswordDialog(true)}
+                onClick={(): void => switchChangePasswordModalVisible(true)}
                 disabled={changePasswordFetching}
             >
                 Change password
@@ -414,6 +414,7 @@ function HeaderContainer(props: Props): JSX.Element {
 
     return (
         <Layout.Header className='cvat-header'>
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={CVATLogo} />
                 <Button
@@ -482,10 +483,10 @@ function HeaderContainer(props: Props): JSX.Element {
                     <Button
                         className={getButtonClassName('analytics')}
                         type='link'
-                        href={`${tool.server.host}/analytics`}
+                        href='/analytics'
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
-                            window.open(`${tool.server.host}/analytics`, '_blank');
+                            window.open('/analytics', '_blank');
                         }}
                     >
                         Analytics
@@ -540,23 +541,12 @@ function HeaderContainer(props: Props): JSX.Element {
                     </span>
                 </Dropdown>
             </div>
-            <SettingsModal visible={settingsDialogShown} onClose={closeSettings} />
-            {renderChangePasswordItem && <ChangePasswordDialog onClose={() => switchChangePasswordDialog(false)} />}
+            <SettingsModal visible={settingsModalVisible} onClose={closeSettings} />
+            {renderChangePasswordItem && (
+                <ChangePasswordDialog onClose={() => switchChangePasswordModalVisible(false)} />
+            )}
         </Layout.Header>
     );
 }
 
-function propsAreTheSame(prevProps: Props, nextProps: Props): boolean {
-    let equal = true;
-    for (const prop in nextProps) {
-        if (prop in prevProps && (prevProps as any)[prop] !== (nextProps as any)[prop]) {
-            if (prop !== 'tool') {
-                equal = false;
-            }
-        }
-    }
-
-    return equal;
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(React.memo(HeaderContainer, propsAreTheSame));
+export default connect(mapStateToProps, mapDispatchToProps)(React.memo(HeaderComponent));

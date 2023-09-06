@@ -27,9 +27,11 @@ from PIL import Image, ImageFile
 from rest_framework.exceptions import (NotFound, PermissionDenied,
                                        ValidationError)
 
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import CloudProviderChoice, CredentialsTypeChoice
 from cvat.apps.engine.utils import get_cpu_number
+
+slogger = ServerLogManager(__name__)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 

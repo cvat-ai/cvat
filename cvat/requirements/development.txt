@@ -8,7 +8,7 @@
 -r base.txt
 astroid==2.11.7
     # via pylint
-autopep8==2.0.2
+autopep8==2.0.4
     # via django-silk
 black==23.3.0
     # via -r cvat/requirements/development.in
@@ -30,11 +30,11 @@ mypy-extensions==1.0.0
     # via black
 pathspec==0.11.2
     # via black
-platformdirs==3.9.1
+platformdirs==3.10.0
     # via
     #   black
     #   pylint
-pycodestyle==2.10.0
+pycodestyle==2.11.0
     # via autopep8
 pylint==2.14.5
     # via

@@ -294,16 +294,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 
     private hideAllStates(hidden: boolean): void {
-        const { updateAnnotations, readonly } = this.props;
+        const { updateAnnotations } = this.props;
         const { filteredStates } = this.state;
 
-        if (!readonly) {
-            for (const objectState of filteredStates) {
-                objectState.hidden = hidden;
-            }
-
-            updateAnnotations(filteredStates);
+        for (const objectState of filteredStates) {
+            objectState.hidden = hidden;
         }
+
+        updateAnnotations(filteredStates);
     }
 
     private collapseAllStates(collapsed: boolean): void {
@@ -416,14 +414,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_ALL_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                if (!readonly) {
-                    this.hideAllStates(!statesHidden);
-                }
+                this.hideAllStates(!statesHidden);
             },
             SWITCH_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly) {
+                if (state) {
                     state.hidden = !state.hidden;
                     updateAnnotations([state]);
                 }
