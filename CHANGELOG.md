@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - \[Helm\] Database migrations now run in a separate job instead of the server pod,
   in order to avoid data corruption when multiple replicas of the server are used
   (<https://github.com/opencv/cvat/pull/6780>)
+- Repeated clicks on left sidebar icons now allow to close/reopen corresponding popovers
+ (<https://github.com/opencv/cvat/pull/6817>)
 
 ### Deprecated
 - TDB
