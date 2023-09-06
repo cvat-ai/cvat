@@ -60,6 +60,7 @@ const defaultState: SettingsState = {
         contrastLevel: 100,
         saturationLevel: 100,
     },
+    imageFilters: [],
     showDialog: false,
 };
 
@@ -394,6 +395,49 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.ENABLE_IMAGE_FILTER: {
+            const { filter, options } = action.payload;
+            const { alias } = filter;
+            const filters = [...state.imageFilters];
+            const index = filters.findIndex((imageFilter) => imageFilter.alias === alias);
+            if (options && index !== -1) {
+                const enabledFilter = filters[index];
+                enabledFilter.modifier.currentProcessedImage = null;
+                enabledFilter.modifier.configure(options);
+                return {
+                    ...state,
+                    imageFilters: filters,
+                };
+            }
+            return {
+                ...state,
+                imageFilters: [
+                    ...state.imageFilters,
+                    action.payload.filter,
+                ],
+            };
+        }
+        case SettingsActionTypes.DISABLE_IMAGE_FILTER: {
+            const { filterAlias } = action.payload;
+            const filters = [...state.imageFilters];
+            const index = filters.findIndex((imageFilter) => imageFilter.alias === filterAlias);
+            if (index !== -1) {
+                filters.splice(index, 1);
+            }
+            filters.forEach((imageFilter) => {
+                imageFilter.modifier.currentProcessedImage = null;
+            });
+            return {
+                ...state,
+                imageFilters: filters,
+            };
+        }
+        case SettingsActionTypes.RESET_IMAGE_FILTERS: {
+            return {
+                ...state,
+                imageFilters: [],
+            };
+        }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
@@ -433,6 +477,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                         } :
                         {}),
                 },
+                imageFilters: [],
             };
         }
         case AnnotationActionTypes.INTERACT_WITH_CANVAS: {

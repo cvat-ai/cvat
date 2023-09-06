@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Gamma correcton filter (<https://github.com/opencv/cvat/pull/6771>)
 - Introduced the feature to hide or show objects in review mode (<https://github.com/opencv/cvat/pull/6808>)
 
 ### Changed
