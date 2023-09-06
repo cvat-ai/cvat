@@ -1,5 +1,4 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,11 +20,9 @@ import {
     changeContrastLevel,
     changeSaturationLevel,
     changeGridSize,
-    resetImageFilters,
 } from 'actions/settings-actions';
 import { clamp } from 'utils/math';
 import { GridColor, CombinedState, PlayerSettingsState } from 'reducers';
-import GammaFilter from './gamma-filter';
 
 const minGridSize = 5;
 const maxGridSize = 1000;
@@ -171,23 +168,21 @@ export default function ImageSetupsContent(): JSX.Element {
                             />
                         </Col>
                     </Row>
-                </Col>
-            </Row>
-            <GammaFilter />
-            <Row className='cvat-image-setups-reset-color-settings' justify='space-around'>
-                <Col>
-                    <Button
-                        className='cvat-image-setups-reset-color-settings-button'
-                        onClick={() => {
-                            const defaultValue = 100;
-                            dispatch(changeBrightnessLevel(defaultValue));
-                            dispatch(changeContrastLevel(defaultValue));
-                            dispatch(changeSaturationLevel(defaultValue));
-                            dispatch(resetImageFilters());
-                        }}
-                    >
-                        Reset color settings
-                    </Button>
+                    <Row className='cvat-image-setups-reset-color-settings' justify='space-around'>
+                        <Col>
+                            <Button
+                                className='cvat-image-setups-reset-color-settings-button'
+                                onClick={() => {
+                                    const defaultValue = 100;
+                                    dispatch(changeBrightnessLevel(defaultValue));
+                                    dispatch(changeContrastLevel(defaultValue));
+                                    dispatch(changeSaturationLevel(defaultValue));
+                                }}
+                            >
+                                Reset color settings
+                            </Button>
+                        </Col>
+                    </Row>
                 </Col>
             </Row>
         </div>

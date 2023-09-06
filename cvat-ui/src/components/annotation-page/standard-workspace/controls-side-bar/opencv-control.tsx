@@ -1,5 +1,4 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,9 +36,8 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
-import { OpenCVTracker, TrackerModel } from 'utils/opencv-wrapper/opencv-interfaces';
-import { enableImageFilter as enableImageFilterAction, disableImageFilter as disableImageFilterAction, switchToolsBlockerState } from 'actions/settings-actions';
-import { ImageFilter, ImageFilterAlias, hasFilter } from 'utils/image-processing';
+import { ImageProcessing, OpenCVTracker, TrackerModel } from 'utils/opencv-wrapper/opencv-interfaces';
+import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -54,7 +52,6 @@ interface Props {
     frameData: any;
     toolsBlockerState: ToolsBlockerState;
     activeControl: ActiveControl;
-    filters: ImageFilter[];
 }
 
 interface DispatchToProps {
@@ -65,8 +62,6 @@ interface DispatchToProps {
     changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void;
     switchNavigationBlocked(navigationBlocked: boolean): void;
-    enableImageFilter(filter: ImageFilter): void;
-    disableImageFilter(filterAlias: string): void;
 }
 
 interface TrackedShape {
@@ -81,10 +76,16 @@ interface State {
     initializationProgress: number;
     activeLabelID: number;
     approxPolyAccuracy: number;
+    activeImageModifiers: ImageModifier[];
     mode: 'interaction' | 'tracking';
     trackedShapes: TrackedShape[];
     activeTracker: OpenCVTracker | null;
-    trackers: OpenCVTracker[];
+    trackers: OpenCVTracker[]
+}
+
+interface ImageModifier {
+    modifier: ImageProcessing,
+    alias: string
 }
 
 const core = getCore();
@@ -105,7 +106,6 @@ function mapStateToProps(state: CombinedState): Props {
         },
         settings: {
             workspace: { defaultApproxPolyAccuracy, toolsBlockerState },
-            imageFilters: filters,
         },
     } = state;
 
@@ -121,7 +121,6 @@ function mapStateToProps(state: CombinedState): Props {
         frame,
         frameData,
         toolsBlockerState,
-        filters,
     };
 }
 
@@ -133,19 +132,19 @@ const mapDispatchToProps = {
     changeFrame: changeFrameAsync,
     onSwitchToolsBlockerState: switchToolsBlockerState,
     switchNavigationBlocked: switchNavigationBlockedAction,
-    enableImageFilter: enableImageFilterAction,
-    disableImageFilter: disableImageFilterAction,
 };
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
     private latestPoints: number[];
+    private canvasForceUpdateWasEnabled: boolean;
 
     public constructor(props: Props & DispatchToProps) {
         super(props);
         const { labels, defaultApproxPolyAccuracy } = props;
         this.activeTool = null;
         this.latestPoints = [];
+        this.canvasForceUpdateWasEnabled = false;
 
         this.state = {
             libraryInitialized: openCVWrapper.isInitialized,
@@ -153,6 +152,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             initializationProgress: -1,
             approxPolyAccuracy: defaultApproxPolyAccuracy,
             activeLabelID: labels.length ? labels[0].id : null,
+            activeImageModifiers: [],
             mode: 'interaction',
             trackedShapes: [],
             trackers: openCVWrapper.isInitialized ? Object.values(openCVWrapper.tracking) : [],
@@ -163,6 +163,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentDidMount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().addEventListener('canvas.interacted', this.interactionListener);
+        canvasInstance.html().addEventListener('canvas.setup', this.runImageModifier);
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
@@ -208,6 +209,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
+        canvasInstance.html().removeEventListener('canvas.setup', this.runImageModifier);
         openCVWrapper.removeProgressCallback();
     }
 
@@ -381,6 +383,46 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
+    private runImageModifier = async ():Promise<void> => {
+        const { activeImageModifiers } = this.state;
+        const {
+            frameData, states, curZOrder, canvasInstance, frame,
+        } = this.props;
+
+        try {
+            if (activeImageModifiers.length !== 0 && activeImageModifiers[0].modifier.currentProcessedImage !== frame) {
+                this.enableCanvasForceUpdate();
+                const imageData = this.getCanvasImageData();
+                const newImageData = activeImageModifiers
+                    .reduce((oldImageData, activeImageModifier) => activeImageModifier
+                        .modifier.processImage(oldImageData, frame), imageData);
+                const imageBitmap = await createImageBitmap(newImageData);
+                const proxy = new Proxy(frameData, {
+                    get: (_frameData, prop, receiver) => {
+                        if (prop === 'data') {
+                            return async () => ({
+                                renderWidth: imageData.width,
+                                renderHeight: imageData.height,
+                                imageData: imageBitmap,
+                            });
+                        }
+
+                        return Reflect.get(_frameData, prop, receiver);
+                    },
+                });
+                canvasInstance.setup(proxy, states, curZOrder);
+            }
+        } catch (error: any) {
+            notification.error({
+                description: error.toString(),
+                message: 'OpenCV.js processing error occurred',
+                className: 'cvat-notification-notice-opencv-processing-error',
+            });
+        } finally {
+            this.disableCanvasForceUpdate();
+        }
+    };
+
     private applyTracking = (imageData: ImageData, shape: TrackedShape,
         objectState: any): Promise<void> => new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -524,6 +566,45 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         return points;
     }
 
+    private imageModifier(alias: string): ImageProcessing | null {
+        const { activeImageModifiers } = this.state;
+        return activeImageModifiers.find((imageModifier) => imageModifier.alias === alias)?.modifier || null;
+    }
+
+    private disableImageModifier(alias: string):void {
+        const { activeImageModifiers } = this.state;
+        const index = activeImageModifiers.findIndex((imageModifier) => imageModifier.alias === alias);
+        if (index !== -1) {
+            activeImageModifiers.splice(index, 1);
+            this.setState({
+                activeImageModifiers: [...activeImageModifiers],
+            });
+        }
+    }
+
+    private enableImageModifier(modifier: ImageProcessing, alias: string): void {
+        this.setState((prev: State) => ({
+            ...prev,
+            activeImageModifiers: [...prev.activeImageModifiers, { modifier, alias }],
+        }), () => {
+            this.runImageModifier();
+        });
+    }
+
+    private enableCanvasForceUpdate():void {
+        const { canvasInstance } = this.props;
+        canvasInstance.configure({ forceFrameUpdate: true });
+        this.canvasForceUpdateWasEnabled = true;
+    }
+
+    private disableCanvasForceUpdate():void {
+        if (this.canvasForceUpdateWasEnabled) {
+            const { canvasInstance } = this.props;
+            canvasInstance.configure({ forceFrameUpdate: false });
+            this.canvasForceUpdateWasEnabled = false;
+        }
+    }
+
     private async initializeOpenCV():Promise<void> {
         try {
             this.setState({
@@ -594,26 +675,27 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private renderImageContent():JSX.Element {
-        const { enableImageFilter, disableImageFilter, filters } = this.props;
         return (
             <Row justify='start'>
                 <Col>
                     <CVATTooltip title='Histogram equalization' className='cvat-opencv-image-tool'>
                         <Button
                             className={
-                                hasFilter(filters, ImageFilterAlias.HISTOGRAM_EQUALIZATION) ?
+                                this.imageModifier('histogram') ?
                                     'cvat-opencv-histogram-tool-button cvat-opencv-image-tool-active' : 'cvat-opencv-histogram-tool-button'
                             }
                             onClick={(e: React.MouseEvent<HTMLElement>) => {
-                                if (!hasFilter(filters, ImageFilterAlias.HISTOGRAM_EQUALIZATION)) {
-                                    enableImageFilter({
-                                        modifier: openCVWrapper.imgproc.hist(),
-                                        alias: ImageFilterAlias.HISTOGRAM_EQUALIZATION,
-                                    });
+                                const modifier = this.imageModifier('histogram');
+                                if (!modifier) {
+                                    this.enableImageModifier(openCVWrapper.imgproc.hist(), 'histogram');
                                 } else {
                                     const button = e.target as HTMLElement;
                                     button.blur();
-                                    disableImageFilter(ImageFilterAlias.HISTOGRAM_EQUALIZATION);
+                                    this.disableImageModifier('histogram');
+                                    const { changeFrame } = this.props;
+                                    const { frame } = this.props;
+                                    this.enableCanvasForceUpdate();
+                                    changeFrame(frame, false, 1, true);
                                 }
                             }}
                         >
