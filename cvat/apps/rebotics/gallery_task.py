@@ -432,10 +432,12 @@ def _create_tasks(gi_instance, token, task_size, job_size):
 
 @transaction.atomic
 def _import_frame(gi_item, importer):
-    importer.perform_import(gi_item)
-
-    gi_item.status = GIStatusSuccess
-    gi_item.save()
+    try:
+        importer.perform_import(gi_item)
+        gi_item.status = GIStatusSuccess
+        gi_item.save()
+    except IndexError as e:
+        slogger.glob.error(f'Missing frame: {e}')
 
 
 def _import_annotations(gi_instance):
