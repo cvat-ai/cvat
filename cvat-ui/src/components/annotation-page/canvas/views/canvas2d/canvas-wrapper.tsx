@@ -10,6 +10,7 @@ import Spin from 'antd/lib/spin';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
+import debounce from 'lodash/debounce';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
@@ -363,6 +364,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 
 class CanvasWrapperComponent extends React.PureComponent<Props> {
+    private debouncedUpdate = debounce(this.updateCanvas.bind(this), 750, { leading: true });
+
     public componentDidMount(): void {
         const {
             automaticBordering,
@@ -544,10 +547,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.annotations !== annotations ||
             prevProps.statesSources !== statesSources ||
             prevProps.frameData !== frameData ||
-            prevProps.curZLayer !== curZLayer ||
-            prevProps.imageFilters !== imageFilters
+            prevProps.curZLayer !== curZLayer
         ) {
             this.updateCanvas();
+        } else if (prevProps.imageFilters !== imageFilters) {
+            // In case of frequent image filters changes, we apply debounced canvas update
+            // that makes UI smoother
+            this.debouncedUpdate();
         }
 
         if (prevProps.showBitmap !== showBitmap) {

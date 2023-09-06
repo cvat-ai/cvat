@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import { CombinedState } from 'reducers';
@@ -17,7 +17,6 @@ import GammaCorrection from 'utils/fabric-wrapper/gamma-correciton';
 import { ImageFilterAlias, hasFilter } from 'utils/image-processing';
 
 import './image-setups.scss';
-import debounce from 'lodash/debounce';
 
 export default function GammaFilter(): JSX.Element {
     const dispatch = useDispatch();
@@ -25,7 +24,7 @@ export default function GammaFilter(): JSX.Element {
     const filters = useSelector((state: CombinedState) => state.settings.imageFilters);
     const gammaFilter = hasFilter(filters, ImageFilterAlias.GAMMA_CORRECTION);
 
-    const onChangeGamma = debounce((newGamma) => {
+    const onChangeGamma = useCallback((newGamma: number): void => {
         setGamma(newGamma);
         if (newGamma === 1) {
             if (gammaFilter) {
@@ -42,7 +41,7 @@ export default function GammaFilter(): JSX.Element {
                 }));
             }
         }
-    }, 250);
+    }, [gammaFilter]);
 
     useEffect(() => {
         if (filters.length === 0) {
