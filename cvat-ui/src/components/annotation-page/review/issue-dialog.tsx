@@ -93,8 +93,8 @@ export default function IssueDialog(props: Props): JSX.Element {
             },
             okButtonProps: {
                 type: 'primary',
-                danger: true,
             },
+            autoFocusButton: 'cancel',
             okText: 'Delete',
         });
     }, []);

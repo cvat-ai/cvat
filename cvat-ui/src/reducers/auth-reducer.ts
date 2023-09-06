@@ -99,10 +99,7 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
         case AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG:
             return {
                 ...state,
-                showChangePasswordDialog:
-                    typeof action.payload.showChangePasswordDialog === 'undefined' ?
-                        !state.showChangePasswordDialog :
-                        action.payload.showChangePasswordDialog,
+                showChangePasswordDialog: action.payload.visible,
             };
         case AuthActionTypes.REQUEST_PASSWORD_RESET:
             return {

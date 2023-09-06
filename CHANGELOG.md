@@ -29,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issues can be created many times when initial submit (<https://github.com/opencv/cvat/pull/6758>)
 - Running deep learning models on non-jpeg compressed tif images (<https://github.com/opencv/cvat/pull/6789>)
 - Paddings on tasks/projects/models pages (<https://github.com/opencv/cvat/pull/6778>)
+- Hotkeys handlers triggered instead of default behaviour with focus when modal windows opened
+ (<https://github.com/opencv/cvat/pull/6800>)
+- Need to move a mouse to get brush/eraser effect, just click not enough (<https://github.com/opencv/cvat/pull/6800>)
 - Memory leak in the logging system (<https://github.com/opencv/cvat/pull/6804>)
 - A race condition during initial `secret_key.py` creation
   (<https://github.com/opencv/cvat/pull/6775>)

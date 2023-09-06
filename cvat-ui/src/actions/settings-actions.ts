@@ -327,12 +327,10 @@ export function changeCanvasBackgroundColor(color: string): AnyAction {
     };
 }
 
-export function switchSettingsDialog(show?: boolean): AnyAction {
+export function switchSettingsModalVisible(visible: boolean): AnyAction {
     return {
         type: SettingsActionTypes.SWITCH_SETTINGS_DIALOG,
-        payload: {
-            show,
-        },
+        payload: { visible },
     };
 }
 
