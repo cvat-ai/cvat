@@ -477,6 +477,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                         } :
                         {}),
                 },
+                imageFilters: [],
             };
         }
         case AnnotationActionTypes.INTERACT_WITH_CANVAS: {
