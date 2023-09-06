@@ -109,6 +109,8 @@ interface CVATAppProps {
     userAgreementsInitialized: boolean;
     authActionsFetching: boolean;
     authActionsInitialized: boolean;
+    shortcutsModalVisible: boolean;
+    settingsModalVisible: boolean;
     notifications: NotificationsState;
     user: any;
     isModelPluginActive: boolean;
@@ -396,6 +398,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             organizationsInitialized,
             userAgreementsInitialized,
             authActionsInitialized,
+            shortcutsModalVisible,
+            settingsModalVisible,
             switchShortcutsDialog,
             switchSettingsDialog,
             pluginComponents,
@@ -428,13 +432,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const handlers = {
             SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
                 if (event) event.preventDefault();
-
-                switchShortcutsDialog();
+                if (!settingsModalVisible) {
+                    switchShortcutsDialog();
+                }
             },
             SWITCH_SETTINGS: (event: KeyboardEvent) => {
                 if (event) event.preventDefault();
-
-                switchSettingsDialog();
+                if (!shortcutsModalVisible) {
+                    switchSettingsDialog();
+                }
             },
         };
 

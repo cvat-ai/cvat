@@ -53,11 +53,6 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
 }
 
 Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element, combo: string): boolean {
-    // if the element has the class "mousetrap" then no need to stop
-    if ((` ${(element as HTMLElement).className} `).indexOf(' mousetrap ') > -1) {
-        return false;
-    }
-
     // stop when modals are opened
     const someModalsOpened = Array.from(
         window.document.getElementsByClassName('ant-modal'),

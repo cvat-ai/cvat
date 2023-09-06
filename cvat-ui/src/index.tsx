@@ -54,6 +54,8 @@ interface StateToProps {
     user: any;
     keyMap: KeyMap;
     isModelPluginActive: boolean;
+    shortcutsModalVisible: boolean;
+    settingsModalVisible: boolean;
     pluginComponents: PluginsState['components'];
 }
 
@@ -81,6 +83,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { userAgreements } = state;
     const { models } = state;
     const { organizations } = state;
+    const { settings } = state;
 
     return {
         userInitialized: auth.initialized,
@@ -106,6 +109,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap: shortcuts.keyMap,
         pluginComponents: plugins.components,
         isModelPluginActive: plugins.list.MODELS,
+        shortcutsModalVisible: shortcuts.visibleShortcutsHelp,
+        settingsModalVisible: settings.showDialog,
     };
 }
 
