@@ -126,5 +126,8 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/prettier": "2.4.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@types/fabric": "^4.5.7",
+    "fabric": "^5.2.1"
+  }
 }
