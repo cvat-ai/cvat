@@ -367,7 +367,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         case SettingsActionTypes.SWITCH_SETTINGS_DIALOG: {
             return {
                 ...state,
-                showDialog: typeof action.payload.show === 'undefined' ? !state.showDialog : action.payload.show,
+                showDialog: action.payload.visible,
             };
         }
         case SettingsActionTypes.SET_SETTINGS: {

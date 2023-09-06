@@ -35,10 +35,12 @@ import config from 'config';
 import { CVATLogo } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
+import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
+import { shortcutsActions } from 'actions/shortcuts-actions';
 import { CombinedState } from 'reducers';
 import { usePlugins } from 'utils/hooks';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import SettingsModal from './settings-modal/settings-modal';
 
 interface Tool {
@@ -61,8 +63,10 @@ interface Tool {
 interface StateToProps {
     user: any;
     tool: Tool;
+    keyMap: KeyMap;
     switchSettingsShortcut: string;
-    settingsDialogShown: boolean;
+    settingsModalVisible: boolean;
+    shortcutsModalVisible: boolean;
     changePasswordDialogShown: boolean;
     changePasswordFetching: boolean;
     logoutFetching: boolean;
@@ -77,8 +81,9 @@ interface StateToProps {
 
 interface DispatchToProps {
     onLogout: () => void;
-    switchSettingsDialog: (show: boolean) => void;
-    switchChangePasswordDialog: (show: boolean) => void;
+    switchSettingsModalVisible: (visible: boolean) => void;
+    switchShortcutsModalVisible: (visible: boolean) => void;
+    switchChangePasswordDialog: (visible: boolean) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -92,8 +97,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
         plugins: { list },
         about: { server, packageVersion },
-        shortcuts: { normalizedKeyMap },
-        settings: { showDialog: settingsDialogShown },
+        shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
+        settings: { showDialog: settingsModalVisible },
         organizations: { fetching: organizationsFetching, current: currentOrganization, list: organizationsList },
     } = state;
 
@@ -116,7 +121,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
             },
         },
         switchSettingsShortcut: normalizedKeyMap.SWITCH_SETTINGS,
-        settingsDialogShown,
+        keyMap,
+        settingsModalVisible,
+        shortcutsModalVisible,
         changePasswordDialogShown,
         changePasswordFetching,
         logoutFetching,
@@ -133,29 +140,39 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onLogout: (): void => dispatch(logoutAsync()),
-        switchSettingsDialog: (show: boolean): void => dispatch(switchSettingsDialogAction(show)),
-        switchChangePasswordDialog: (show: boolean): void => dispatch(authActions.switchChangePasswordDialog(show)),
+        switchShortcutsModalVisible: (visible: boolean): void => dispatch(
+            shortcutsActions.switchShortcutsModalVisible(visible),
+        ),
+        switchSettingsModalVisible: (visible: boolean): void => dispatch(
+            switchSettingsModalVisibleAction(visible),
+        ),
+        switchChangePasswordDialog: (visible: boolean): void => dispatch(
+            authActions.switchChangePasswordDialog(visible),
+        ),
     };
 }
 
 type Props = StateToProps & DispatchToProps;
 
-function HeaderContainer(props: Props): JSX.Element {
+function HeaderComponent(props: Props): JSX.Element {
     const {
         user,
         tool,
+        keyMap,
         logoutFetching,
         changePasswordFetching,
-        settingsDialogShown,
+        settingsModalVisible,
+        shortcutsModalVisible,
         switchSettingsShortcut,
-        switchSettingsDialog,
-        switchChangePasswordDialog,
         renderChangePasswordItem,
         isAnalyticsPluginActive,
         isModelsPluginActive,
         organizationsFetching,
         currentOrganization,
         organizationsList,
+        switchSettingsModalVisible,
+        switchShortcutsModalVisible,
+        switchChangePasswordDialog,
     } = props;
 
     const {
@@ -164,6 +181,26 @@ function HeaderContainer(props: Props): JSX.Element {
 
     const history = useHistory();
     const location = useLocation();
+
+    const subKeyMap = {
+        SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
+        SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
+    };
+
+    const handlers = {
+        SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            if (!settingsModalVisible) {
+                switchShortcutsModalVisible(!shortcutsModalVisible);
+            }
+        },
+        SWITCH_SETTINGS: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            if (!shortcutsModalVisible) {
+                switchSettingsModalVisible(!settingsModalVisible);
+            }
+        },
+    };
 
     const showAboutModal = useCallback((): void => {
         Modal.info({
@@ -221,7 +258,7 @@ function HeaderContainer(props: Props): JSX.Element {
     }, [tool]);
 
     const closeSettings = useCallback(() => {
-        switchSettingsDialog(false);
+        switchSettingsModalVisible(false);
     }, []);
 
     const resetOrganization = (): void => {
@@ -347,7 +384,7 @@ function HeaderContainer(props: Props): JSX.Element {
             icon={<SettingOutlined />}
             key='settings'
             title={`Press ${switchSettingsShortcut} to switch`}
-            onClick={() => switchSettingsDialog(true)}
+            onClick={() => switchSettingsModalVisible(true)}
         >
             Settings
         </Menu.Item>
@@ -409,6 +446,7 @@ function HeaderContainer(props: Props): JSX.Element {
 
     return (
         <Layout.Header className='cvat-header'>
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={CVATLogo} />
                 <Button
@@ -535,7 +573,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     </span>
                 </Dropdown>
             </div>
-            <SettingsModal visible={settingsDialogShown} onClose={closeSettings} />
+            <SettingsModal visible={settingsModalVisible} onClose={closeSettings} />
             {renderChangePasswordItem && <ChangePasswordDialog onClose={() => switchChangePasswordDialog(false)} />}
         </Layout.Header>
     );
@@ -554,4 +592,4 @@ function propsAreTheSame(prevProps: Props, nextProps: Props): boolean {
     return equal;
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(React.memo(HeaderContainer, propsAreTheSame));
+export default connect(mapStateToProps, mapDispatchToProps)(React.memo(HeaderComponent, propsAreTheSame));

@@ -13,8 +13,6 @@ import { authorizedAsync, loadAuthActionsAsync } from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
 import { getModelsAsync } from 'actions/models-actions';
 import { getPluginsAsync } from 'actions/plugins-actions';
-import { switchSettingsDialog } from 'actions/settings-actions';
-import { shortcutsActions } from 'actions/shortcuts-actions';
 import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
 import PluginsEntrypoint from 'components/plugins-entrypoint';
@@ -54,8 +52,6 @@ interface StateToProps {
     user: any;
     keyMap: KeyMap;
     isModelPluginActive: boolean;
-    shortcutsModalVisible: boolean;
-    settingsModalVisible: boolean;
     pluginComponents: PluginsState['components'];
 }
 
@@ -67,9 +63,7 @@ interface DispatchToProps {
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
-    switchShortcutsDialog: () => void;
     loadUserAgreements: () => void;
-    switchSettingsDialog: () => void;
     loadAuthActions: () => void;
     loadOrganizations: () => void;
 }
@@ -83,7 +77,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { userAgreements } = state;
     const { models } = state;
     const { organizations } = state;
-    const { settings } = state;
 
     return {
         userInitialized: auth.initialized,
@@ -109,8 +102,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap: shortcuts.keyMap,
         pluginComponents: plugins.components,
         isModelPluginActive: plugins.list.MODELS,
-        shortcutsModalVisible: shortcuts.visibleShortcutsHelp,
-        settingsModalVisible: settings.showDialog,
     };
 }
 
@@ -124,8 +115,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAbout: (): void => dispatch(getAboutAsync()),
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
-        switchShortcutsDialog: (): void => dispatch(shortcutsActions.switchShortcutsDialog()),
-        switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
         loadOrganizations: (): void => dispatch(getOrganizationsAsync()),
     };
