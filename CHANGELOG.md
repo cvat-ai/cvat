@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased\]
 ### Added
-- TDB
+- Ability to hide/show an object in review mode (<https://github.com/opencv/cvat/pull/6808>)
 
 ### Changed
 - \[Helm\] Database migrations now run in a separate job instead of the server pod,
   in order to avoid data corruption when multiple replicas of the server are used
   (<https://github.com/opencv/cvat/pull/6780>)
+- Repeated clicks on left sidebar icons now allow to close/reopen corresponding popovers
+ (<https://github.com/opencv/cvat/pull/6817>)
 
 ### Deprecated
 - TDB
@@ -30,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  (<https://github.com/opencv/cvat/pull/6800>)
 - Need to move a mouse to use brush/eraser, just click not enough (<https://github.com/opencv/cvat/pull/6800>)
 - Memory leak in the logging system (<https://github.com/opencv/cvat/pull/6804>)
+- A race condition during initial `secret_key.py` creation
+  (<https://github.com/opencv/cvat/pull/6775>)
 
 ### Security
 - TDB
