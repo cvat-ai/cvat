@@ -528,6 +528,14 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         restoreFrame(frameNumber);
     };
 
+    private changeWorkspace = (workspace: Workspace): void => {
+        const { changeWorkspace } = this.props;
+        changeWorkspace(workspace);
+        if (window.document.activeElement) {
+            (window.document.activeElement as HTMLElement).blur();
+        }
+    };
+
     private beforeUnloadCallback = (event: BeforeUnloadEvent): string | undefined => {
         const { jobInstance, forceExit, setForceExitAnnotationFlag } = this.props;
         if (jobInstance.annotations.hasUnsavedChanges() && !forceExit) {
@@ -645,7 +653,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             normalizedKeyMap,
             activeControl,
             searchAnnotations,
-            changeWorkspace,
             switchNavigationBlocked,
             toolsBlockerState,
         } = this.props;
@@ -765,7 +772,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     onURLIconClick={this.onURLIconClick}
                     onDeleteFrame={this.onDeleteFrame}
                     onRestoreFrame={this.onRestoreFrame}
-                    changeWorkspace={changeWorkspace}
+                    changeWorkspace={this.changeWorkspace}
                     switchNavigationBlocked={switchNavigationBlocked}
                     workspace={workspace}
                     playing={playing}
