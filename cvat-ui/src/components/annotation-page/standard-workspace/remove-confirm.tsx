@@ -68,6 +68,9 @@ export default function RemoveConfirmComponent(): JSX.Element | null {
             cancelText='Cancel'
             title={title}
             visible={visible}
+            cancelButtonProps={{
+                autoFocus: true,
+            }}
             onOk={onOk}
             onCancel={onCancel}
             destroyOnClose
