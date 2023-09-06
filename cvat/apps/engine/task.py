@@ -24,7 +24,7 @@ from datetime import datetime
 from pathlib import Path
 
 from cvat.apps.engine import models
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
 from cvat.apps.engine.utils import av_scan_paths, get_rq_job_meta
@@ -33,6 +33,8 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, i
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import detect_related_images
 from .cloud_provider import db_storage_to_storage_instance
+
+slogger = ServerLogManager(__name__)
 
 ############################# Low Level server API
 

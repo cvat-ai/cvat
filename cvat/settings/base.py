@@ -21,6 +21,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import timedelta
 from distutils.util import strtobool
 from enum import Enum
@@ -45,18 +46,42 @@ redis_host = os.getenv('CVAT_REDIS_HOST', 'localhost')
 redis_port = os.getenv('CVAT_REDIS_PORT', 6379)
 redis_password = os.getenv('CVAT_REDIS_PASSWORD', '')
 
-try:
-    sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
-except ImportError:
+def generate_secret_key():
+    """
+    Creates secret_key.py in such a way that multiple processes calling
+    this will all end up with the same key (assuming that they share the
+    same "keys" directory).
+    """
 
     from django.utils.crypto import get_random_string
     keys_dir = os.path.join(BASE_DIR, 'keys')
     if not os.path.isdir(keys_dir):
         os.mkdir(keys_dir)
-    with open(os.path.join(keys_dir, 'secret_key.py'), 'w') as f:
+
+    secret_key_fname = 'secret_key.py' # nosec
+
+    with tempfile.NamedTemporaryFile(
+        mode='wt', dir=keys_dir, prefix=secret_key_fname + ".",
+    ) as f:
         chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
         f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
+
+        # Make sure the file contents are written before we link to it
+        # from the final location.
+        f.flush()
+
+        try:
+            os.link(f.name, os.path.join(keys_dir, secret_key_fname))
+        except FileExistsError:
+            # Somebody else created the secret key first.
+            # Discard ours and use theirs.
+            pass
+
+try:
+    sys.path.append(BASE_DIR)
+    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
+except ModuleNotFoundError:
+    generate_secret_key()
     from keys.secret_key import SECRET_KEY
 
 
@@ -524,7 +549,7 @@ LOGGING = {
         }
     },
     'loggers': {
-        'cvat.server': {
+        'cvat': {
             'handlers': ['console', 'server_file'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },

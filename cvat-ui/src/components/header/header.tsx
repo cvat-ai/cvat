@@ -30,7 +30,6 @@ import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import Select from 'antd/lib/select';
 
-import { getCore } from 'cvat-core-wrapper';
 import config from 'config';
 
 import { CVATLogo } from 'icons';
@@ -42,13 +41,10 @@ import { CombinedState } from 'reducers';
 import { usePlugins } from 'utils/hooks';
 import SettingsModal from './settings-modal/settings-modal';
 
-const core = getCore();
-
 interface Tool {
     name: string;
     description: string;
     server: {
-        host: string;
         version: string;
     };
     core: {
@@ -107,7 +103,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             name: server.name as string,
             description: server.description as string,
             server: {
-                host: core.config.backendAPI.slice(0, -7),
                 version: server.version as string,
             },
             canvas: {
@@ -259,7 +254,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 icon={<ControlOutlined />}
                 key='admin_page'
                 onClick={(): void => {
-                    window.open(`${tool.server.host}/admin`, '_blank');
+                    window.open('/admin', '_blank');
                 }}
             >
                 Admin page
@@ -482,10 +477,10 @@ function HeaderContainer(props: Props): JSX.Element {
                     <Button
                         className={getButtonClassName('analytics')}
                         type='link'
-                        href={`${tool.server.host}/analytics`}
+                        href='/analytics'
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
-                            window.open(`${tool.server.host}/analytics`, '_blank');
+                            window.open('/analytics', '_blank');
                         }}
                     >
                         Analytics
