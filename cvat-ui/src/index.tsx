@@ -19,7 +19,6 @@ import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
-import { KeyMap } from 'utils/mousetrap-react';
 import createRootReducer from 'reducers/root-reducer';
 import { getOrganizationsAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from 'actions/notification-actions';
@@ -50,7 +49,6 @@ interface StateToProps {
     allowResetPassword: boolean;
     notifications: NotificationsState;
     user: any;
-    keyMap: KeyMap;
     isModelPluginActive: boolean;
     pluginComponents: PluginsState['components'];
 }
@@ -73,7 +71,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { auth } = state;
     const { formats } = state;
     const { about } = state;
-    const { shortcuts } = state;
     const { userAgreements } = state;
     const { models } = state;
     const { organizations } = state;
@@ -99,7 +96,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         allowResetPassword: auth.allowResetPassword,
         notifications: state.notifications,
         user: auth.user,
-        keyMap: shortcuts.keyMap,
         pluginComponents: plugins.components,
         isModelPluginActive: plugins.list.MODELS,
     };

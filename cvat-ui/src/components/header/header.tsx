@@ -38,31 +38,14 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
-import { CombinedState } from 'reducers';
+import { AboutState, CombinedState } from 'reducers';
 import { usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import SettingsModal from './settings-modal/settings-modal';
 
-interface Tool {
-    name: string;
-    description: string;
-    server: {
-        version: string;
-    };
-    core: {
-        version: string;
-    };
-    canvas: {
-        version: string;
-    };
-    ui: {
-        version: string;
-    };
-}
-
 interface StateToProps {
     user: any;
-    tool: Tool;
+    about: AboutState;
     keyMap: KeyMap;
     switchSettingsShortcut: string;
     settingsModalVisible: boolean;
@@ -96,7 +79,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             allowChangePassword: renderChangePasswordItem,
         },
         plugins: { list },
-        about: { server, packageVersion },
+        about,
         shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
         settings: { showDialog: settingsModalVisible },
         organizations: { fetching: organizationsFetching, current: currentOrganization, list: organizationsList },
@@ -104,22 +87,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         user,
-        tool: {
-            name: server.name as string,
-            description: server.description as string,
-            server: {
-                version: server.version as string,
-            },
-            canvas: {
-                version: packageVersion.canvas,
-            },
-            core: {
-                version: packageVersion.core,
-            },
-            ui: {
-                version: packageVersion.ui,
-            },
-        },
+        about,
         switchSettingsShortcut: normalizedKeyMap.SWITCH_SETTINGS,
         keyMap,
         settingsModalVisible,
@@ -157,7 +125,7 @@ type Props = StateToProps & DispatchToProps;
 function HeaderComponent(props: Props): JSX.Element {
     const {
         user,
-        tool,
+        about,
         keyMap,
         logoutFetching,
         changePasswordFetching,
@@ -204,25 +172,25 @@ function HeaderComponent(props: Props): JSX.Element {
 
     const showAboutModal = useCallback((): void => {
         Modal.info({
-            title: `${tool.name}`,
+            title: `${about.server.name}`,
             content: (
                 <div>
-                    <p>{`${tool.description}`}</p>
+                    <p>{`${about.server.description}`}</p>
                     <p>
                         <Text strong>Server version:</Text>
-                        <Text type='secondary'>{` ${tool.server.version}`}</Text>
+                        <Text type='secondary'>{` ${about.server.version}`}</Text>
                     </p>
                     <p>
                         <Text strong>Core version:</Text>
-                        <Text type='secondary'>{` ${tool.core.version}`}</Text>
+                        <Text type='secondary'>{` ${about.packageVersion.core}`}</Text>
                     </p>
                     <p>
                         <Text strong>Canvas version:</Text>
-                        <Text type='secondary'>{` ${tool.canvas.version}`}</Text>
+                        <Text type='secondary'>{` ${about.packageVersion.canvas}`}</Text>
                     </p>
                     <p>
                         <Text strong>UI version:</Text>
-                        <Text type='secondary'>{` ${tool.ui.version}`}</Text>
+                        <Text type='secondary'>{` ${about.packageVersion.ui}`}</Text>
                     </p>
                     <Row justify='space-around'>
                         <Col>
@@ -255,7 +223,7 @@ function HeaderComponent(props: Props): JSX.Element {
                 },
             },
         });
-    }, [tool]);
+    }, [about]);
 
     const closeSettings = useCallback(() => {
         switchSettingsModalVisible(false);
@@ -579,17 +547,4 @@ function HeaderComponent(props: Props): JSX.Element {
     );
 }
 
-function propsAreTheSame(prevProps: Props, nextProps: Props): boolean {
-    let equal = true;
-    for (const prop in nextProps) {
-        if (prop in prevProps && (prevProps as any)[prop] !== (nextProps as any)[prop]) {
-            if (prop !== 'tool') {
-                equal = false;
-            }
-        }
-    }
-
-    return equal;
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(React.memo(HeaderComponent, propsAreTheSame));
+export default connect(mapStateToProps, mapDispatchToProps)(React.memo(HeaderComponent));
