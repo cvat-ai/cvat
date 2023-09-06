@@ -9,8 +9,6 @@ import Slider from 'antd/lib/slider';
 import Spin from 'antd/lib/spin';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
-import notification from 'antd/lib/notification';
-import debounce from 'lodash/debounce';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
@@ -59,7 +57,6 @@ import {
 import { reviewActions } from 'actions/review-actions';
 
 import { filterAnnotations } from 'utils/filter-annotations';
-import { ImageFilter } from 'utils/image-processing';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
 
@@ -116,7 +113,6 @@ interface StateToProps {
     showGroundTruth: boolean;
     highlightedConflict: QualityConflict | null;
     groundTruthJobFramesMeta: FramesMetaData | null;
-    imageFilters: ImageFilter[];
 }
 
 interface DispatchToProps {
@@ -198,7 +194,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections, showGroundTruth,
             },
-            imageFilters,
         },
         shortcuts: { keyMap },
         review: { conflicts },
@@ -258,7 +253,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showGroundTruth,
         highlightedConflict,
         groundTruthJobFramesMeta,
-        imageFilters,
     };
 }
 
@@ -364,8 +358,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 
 class CanvasWrapperComponent extends React.PureComponent<Props> {
-    private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
-
     public componentDidMount(): void {
         const {
             automaticBordering,
@@ -453,7 +445,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             statesSources,
             showGroundTruth,
             highlightedConflict,
-            imageFilters,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -539,10 +530,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             });
         }
 
-        if (prevProps.imageFilters !== imageFilters) {
-            canvasInstance.configure({ forceFrameUpdate: true });
-        }
-
         if (
             prevProps.annotations !== annotations ||
             prevProps.statesSources !== statesSources ||
@@ -550,10 +537,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.curZLayer !== curZLayer
         ) {
             this.updateCanvas();
-        } else if (prevProps.imageFilters !== imageFilters) {
-            // In case of frequent image filters changes, we apply debounced canvas update
-            // that makes UI smoother
-            this.debouncedUpdate();
         }
 
         if (prevProps.showBitmap !== showBitmap) {
@@ -914,11 +897,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateCanvas(): void {
         const {
-            curZLayer, annotations, frameData, statesSources,
-            workspace, groundTruthJobFramesMeta, frame, imageFilters,
+            curZLayer, annotations, frameData, canvasInstance, statesSources,
+            workspace, groundTruthJobFramesMeta, frame,
         } = this.props;
-        const { canvasInstance } = this.props as { canvasInstance: Canvas };
-
         if (frameData !== null && canvasInstance) {
             const filteredAnnotations = filterAnnotations(annotations, {
                 statesSources,
@@ -927,54 +908,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 workspace,
                 exclude: [ObjectType.TAG],
             });
-            const proxy = new Proxy(frameData, {
-                get: (_frameData, prop, receiver) => {
-                    if (prop === 'data') {
-                        return async () => {
-                            const originalImage = await _frameData.data();
-                            const imageIsNotProcessed = imageFilters.some((imageFilter: ImageFilter) => (
-                                imageFilter.modifier.currentProcessedImage !== frame
-                            ));
 
-                            if (imageIsNotProcessed) {
-                                try {
-                                    const { renderWidth, renderHeight, imageData: imageBitmap } = originalImage;
-
-                                    const offscreen = new OffscreenCanvas(renderWidth, renderHeight);
-                                    const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D;
-                                    ctx.drawImage(imageBitmap, 0, 0);
-                                    const imageData = ctx.getImageData(0, 0, renderWidth, renderHeight);
-
-                                    const newImageData = imageFilters
-                                        .reduce((oldImageData, activeImageModifier) => activeImageModifier
-                                            .modifier.processImage(oldImageData, frame), imageData);
-                                    const newImageBitmap = await createImageBitmap(newImageData);
-                                    return {
-                                        renderWidth,
-                                        renderHeight,
-                                        imageData: newImageBitmap,
-                                    };
-                                } catch (error: any) {
-                                    notification.error({
-                                        description: error.toString(),
-                                        message: 'Image processing error occurred',
-                                        className: 'cvat-notification-notice-image-processing-error',
-                                    });
-                                }
-                            }
-
-                            return originalImage;
-                        };
-                    }
-                    return Reflect.get(_frameData, prop, receiver);
-                },
-            });
             canvasInstance.setup(
-                proxy,
+                frameData,
                 frameData.deleted ? [] : filteredAnnotations,
                 curZLayer,
             );
-            canvasInstance.configure({ forceFrameUpdate: false });
         }
     }
 

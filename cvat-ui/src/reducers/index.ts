@@ -12,7 +12,6 @@ import {
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
-import { ImageFilter } from 'utils/image-processing';
 
 export type StringObject = {
     [index: string]: string;
@@ -827,7 +826,6 @@ export interface SettingsState {
     shapes: ShapesSettingsState;
     workspace: WorkspaceSettingsState;
     player: PlayerSettingsState;
-    imageFilters: ImageFilter[];
     showDialog: boolean;
 }
 

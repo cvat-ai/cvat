@@ -1,9 +1,6 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
-
-const { join } = require('path');
 
 module.exports = {
     ignorePatterns: [
@@ -16,12 +13,4 @@ module.exports = {
         project: './tsconfig.json',
         tsconfigRootDir: __dirname,
     },
-    rules: {
-        'import/no-extraneous-dependencies': [
-            'error',
-            {
-                packageDir: [__dirname, join(__dirname, '../')]
-            },
-        ],
-    }
 };
