@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6780>)
 - Repeated clicks on left sidebar icons now allow to close/reopen corresponding popovers
  (<https://github.com/opencv/cvat/pull/6817>)
+- Using KeyDB with FLASH to cache data chunk instead of diskcache (<https://github.com/opencv/cvat/pull/6773>)
 
 ### Deprecated
 - TDB

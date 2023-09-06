@@ -113,23 +113,25 @@ def _run(command, capture_output=True):
         pytest.exit(message)
 
 
-def _kube_get_server_pod_name():
-    output, _ = _run("kubectl get pods -l component=server -o jsonpath={.items[0].metadata.name}")
+def _kube_get_pod_name(label_filter):
+    output, _ = _run(f"kubectl get pods -l {label_filter} -o jsonpath={{.items[0].metadata.name}}")
     return output
+
+
+def _kube_get_server_pod_name():
+    return _kube_get_pod_name("component=server")
 
 
 def _kube_get_db_pod_name():
-    output, _ = _run(
-        "kubectl get pods -l app.kubernetes.io/name=postgresql -o jsonpath={.items[0].metadata.name}"
-    )
-    return output
+    return _kube_get_pod_name("app.kubernetes.io/name=postgresql")
 
 
 def _kube_get_clichouse_pod_name():
-    output, _ = _run(
-        "kubectl get pods -l app.kubernetes.io/name=clickhouse -o jsonpath={.items[0].metadata.name}"
-    )
-    return output
+    return _kube_get_pod_name("app.kubernetes.io/name=clickhouse")
+
+
+def _kube_get_redis_pod_name():
+    return _kube_get_pod_name("app.kubernetes.io/name=keydb")
 
 
 def docker_cp(source, target):
@@ -171,6 +173,15 @@ def kube_exec_clickhouse_db(command):
     _run(["kubectl", "exec", pod_name, "--"] + command)
 
 
+def docker_exec_redis_db(command):
+    _run(["docker", "exec", f"{PREFIX}_cvat_redis_1"] + command)
+
+
+def kube_exec_redis_db(command):
+    pod_name = _kube_get_redis_pod_name()
+    _run(["kubectl", "exec", pod_name, "--"] + command)
+
+
 def docker_restore_db():
     docker_exec(
         Container.DB, "psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql"
@@ -203,6 +214,26 @@ def kube_restore_clickhouse_db():
             "/bin/sh",
             "-c",
             'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /bin/sh /docker-entrypoint-initdb.d/init.sh',
+        ]
+    )
+
+
+def docker_restore_redis_db():
+    docker_exec_redis_db(
+        [
+            "/bin/sh",
+            "-c",
+            "keydb-cli flushall",
+        ]
+    )
+
+
+def kube_restore_redis_db():
+    kube_exec_redis_db(
+        [
+            "/bin/sh",
+            "-c",
+            "keydb-cli flushall",
         ]
     )
 
@@ -529,3 +560,15 @@ def restore_clickhouse_db_per_class(request):
         docker_restore_clickhouse_db()
     else:
         kube_restore_clickhouse_db()
+
+
+@pytest.fixture(scope="function")
+def restore_redis_db_per_function(request):
+    # Note that autouse fixtures are executed first within their scope, so be aware of the order
+    # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
+    # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_db()
+    else:
+        kube_restore_redis_db()
