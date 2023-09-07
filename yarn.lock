@@ -4057,9 +4057,7 @@ custom-error-instance@2.1.1:
 "cvat-canvas@link:./cvat-canvas":
   version "2.17.5"
   dependencies:
-    "@types/fabric" "^4.5.7"
     "@types/polylabel" "^1.0.5"
-    fabric "^5.2.1"
     polylabel "^1.1.0"
     svg.draggable.js "2.2.2"
     svg.draw.js "^2.0.4"
