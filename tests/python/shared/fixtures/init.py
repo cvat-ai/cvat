@@ -359,7 +359,11 @@ def stop_services(dc_files, cvat_root_dir=CVAT_ROOT_DIR):
 
 
 def session_start(
-    session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR, extra_dc_files=None, waiting_time=300
+    session,
+    cvat_root_dir=CVAT_ROOT_DIR,
+    cvat_db_dir=CVAT_DB_DIR,
+    extra_dc_files=None,
+    waiting_time=300,
 ):
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
@@ -400,7 +404,9 @@ def session_start(
         kube_start(cvat_db_dir)
 
 
-def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files, waiting_time):
+def local_start(
+    start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files, waiting_time
+):
     if start and stop:
         raise Exception("--start-services and --stop-services are incompatible")
 
