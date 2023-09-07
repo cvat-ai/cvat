@@ -359,7 +359,7 @@ def stop_services(dc_files, cvat_root_dir=CVAT_ROOT_DIR):
 
 
 def session_start(
-    session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR, extra_dc_files=None
+    session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR, extra_dc_files=None, waiting_time=300
 ):
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
@@ -393,13 +393,14 @@ def session_start(
             cvat_root_dir,
             cvat_db_dir,
             extra_dc_files,
+            waiting_time
         )
 
     elif platform == "kube":
         kube_start(cvat_db_dir)
 
 
-def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files):
+def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files, waiting_time):
     if start and stop:
         raise Exception("--start-services and --stop-services are incompatible")
 
@@ -434,7 +435,8 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     docker_restore_data_volumes()
     docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
-    wait_for_services()
+
+    wait_for_services(waiting_time)
 
     docker_exec_cvat("python manage.py loaddata /tmp/data.json")
     docker_exec(
