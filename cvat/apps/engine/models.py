@@ -333,7 +333,6 @@ class Project(models.Model):
         blank=True, on_delete=models.SET_NULL, related_name='+')
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
-    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
 
     def get_labels(self):
         return self.label_set.filter(parent__isnull=True)
