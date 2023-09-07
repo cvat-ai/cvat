@@ -26,14 +26,14 @@ context('Save filtered object in AAM.', () => {
         cy.document().then((doc) => {
             // Getting list of labels and create a label if neccessary
             const labelsList = Array.from(doc.querySelectorAll('.cvat-constructor-viewer-item'));
-            if (labelsList.length < 2) {
+            if (labelsList.length < 3) {
                 cy.addNewLabel({ name: newLabelName });
             }
         });
         cy.document().then((doc) => {
             // Getting list of labels again
             const labelsList = Array.from(doc.querySelectorAll('.cvat-constructor-viewer-item')).map((el) => el.innerText);
-            [, secondLabel] = labelsList;
+            secondLabel = labelsList[labelsList.length - 1];
         });
         cy.openJob();
         cy.createCuboid(createCuboidShape2Points);
