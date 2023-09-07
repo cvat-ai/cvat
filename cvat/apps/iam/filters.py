@@ -69,6 +69,8 @@ class OrganizationFilterBackend(BaseFilterBackend):
 
         if (
             view.detail or not view.iam_organization_field or
+            # Allow crowdsourcing users to get labels/issues/comments related to specific job.
+            # Crowdsourcing user always has worker group and isn't a member of an organization.
             (
                 view.__class__.__name__ in ('LabelViewSet', 'IssueViewSet', 'CommentViewSet') and
                 request.query_params.get('job_id') and
