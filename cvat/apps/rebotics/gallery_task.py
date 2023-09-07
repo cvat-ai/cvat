@@ -141,7 +141,7 @@ class ShapesImporter:
             points = [item['lowerx'], item['lowery'], item['upperx'], item['uppery']]
             _fix_points(points, *self.image_size)
         else:
-            slogger.glob(f'Unknown annotation type: {item["type"]}')
+            slogger.glob.error(f'Unknown annotation type: {item["type"]}')
             return
 
         self.shapes.append(LabeledShape(
