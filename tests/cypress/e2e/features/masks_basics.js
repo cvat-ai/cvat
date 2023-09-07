@@ -35,68 +35,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
     let taskID = null;
     let jobID = null;
 
-    function drawMask(instructions) {
-        for (const instruction of instructions) {
-            const { method } = instruction;
-            if (method === 'brush-size') {
-                const { value } = instruction;
-                cy.get('.cvat-brush-tools-brush').click();
-                cy.get('.cvat-brush-tools-brush-size').within(() => {
-                    cy.get('input').clear();
-                    cy.get('input').type(`${value}`);
-                });
-            } else {
-                const { coordinates } = instruction;
-                if (['brush', 'eraser'].includes(method)) {
-                    if (method === 'eraser') {
-                        cy.get('.cvat-brush-tools-eraser').click();
-                    } else {
-                        cy.get('.cvat-brush-tools-brush').click();
-                    }
-
-                    cy.get('.cvat-canvas-container').then(([$canvas]) => {
-                        const [initX, initY] = coordinates[0];
-                        cy.wrap($canvas).trigger('mousemove', { clientX: initX, clientY: initY, bubbles: true });
-                        cy.wrap($canvas).trigger('mousedown', {
-                            clientX: initX, clientY: initY, button: 0, bubbles: true,
-                        });
-                        for (const coord of coordinates) {
-                            const [clientX, clientY] = coord;
-                            cy.wrap($canvas).trigger('mousemove', { clientX, clientY, bubbles: true });
-                        }
-                        cy.wrap($canvas).trigger('mousemove', { clientX: initX, clientY: initY, bubbles: true });
-                        cy.wrap($canvas).trigger('mouseup', { bubbles: true });
-                    });
-                } else if (['polygon-plus', 'polygon-minus'].includes(method)) {
-                    if (method === 'polygon-plus') {
-                        cy.get('.cvat-brush-tools-polygon-plus').click();
-                    } else {
-                        cy.get('.cvat-brush-tools-polygon-minus').click();
-                    }
-
-                    cy.get('.cvat-canvas-container').then(($canvas) => {
-                        for (const [x, y] of coordinates) {
-                            cy.wrap($canvas).click(x, y);
-                        }
-                    });
-                }
-            }
-        }
-    }
-
-    function startDrawing() {
-        cy.get('.cvat-draw-mask-control ').trigger('mouseover');
-        cy.get('.cvat-draw-mask-popover').should('exist').and('be.visible').within(() => {
-            cy.get('button').click();
-        });
-        cy.get('.cvat-brush-tools-toolbox').should('exist').and('be.visible');
-    }
-
-    function finishDrawing() {
-        cy.get('.cvat-brush-tools-brush').click();
-        cy.get('.cvat-brush-tools-finish').click();
-    }
-
     before(() => {
         cy.visit('auth/login');
         cy.login();
@@ -142,16 +80,16 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
 
     describe('Draw a couple of masks masks', () => {
         it('Drawing a couple of masks. Save job, reopen job, masks must exist', () => {
-            startDrawing();
-            drawMask(drawingActions);
+            cy.startMaskDrawing();
+            cy.drawMask(drawingActions);
             cy.get('.cvat-brush-tools-finish').click();
             cy.get('.cvat-brush-tools-continue').click();
             cy.get('.cvat-brush-tools-toolbox').should('exist').and('be.visible');
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
 
             // it is expected, that after clicking "continue", brush tools are still opened
-            drawMask(drawingActions);
-            finishDrawing();
+            cy.drawMask(drawingActions);
+            cy.finishMaskDrawing();
             cy.get('.cvat-brush-tools-toolbox').should('not.be.visible');
 
             cy.saveJob();
@@ -164,9 +102,9 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         });
 
         it('Propagate mask to another frame', () => {
-            startDrawing();
-            drawMask(drawingActions);
-            finishDrawing();
+            cy.startMaskDrawing();
+            cy.drawMask(drawingActions);
+            cy.finishMaskDrawing();
 
             cy.get('#cvat-objects-sidebar-state-item-1').find('[aria-label="more"]').trigger('mouseover');
             cy.get('.cvat-object-item-menu').within(() => {
@@ -182,9 +120,9 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         });
 
         it('Copy mask to another frame', () => {
-            startDrawing();
-            drawMask(drawingActions);
-            finishDrawing();
+            cy.startMaskDrawing();
+            cy.drawMask(drawingActions);
+            cy.finishMaskDrawing();
 
             cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
                 cy.get('[aria-label="more"]').trigger('mouseover');
@@ -196,16 +134,16 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         });
 
         it('Editing a drawn mask', () => {
-            startDrawing();
-            drawMask(drawingActions);
-            finishDrawing();
+            cy.startMaskDrawing();
+            cy.drawMask(drawingActions);
+            cy.finishMaskDrawing();
 
             cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
                 cy.get('[aria-label="more"]').trigger('mouseover');
             });
             cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Edit').click();
-            drawMask(editingActions);
-            finishDrawing();
+            cy.drawMask(editingActions);
+            cy.finishMaskDrawing();
         });
     });
 });
