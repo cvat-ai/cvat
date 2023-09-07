@@ -287,8 +287,8 @@ def delete_compose_files(container_name_files):
         filename.unlink(missing_ok=True)
 
 
-def wait_for_services():
-    for i in range(300):
+def wait_for_services(num_secs):
+    for i in range(num_secs):
         logger.debug(f"waiting for the server to load ... ({i})")
         response = requests.get(get_server_url("api/server/health/", format="json"))
         if response.status_code == HTTPStatus.OK:
@@ -303,7 +303,7 @@ def wait_for_services():
         sleep(1)
 
     raise Exception(
-        "Failed to reach the server during the specified period. Please check the configuration."
+        f"Failed to reach the server during {num_secs} seconds. Please check the configuration."
     )
 
 
