@@ -10,6 +10,7 @@ import {
     labelName,
     attrName,
     textDefaultValue,
+    skeleton,
 } from '../../support/const';
 
 context('Settings. Text size/position. Text labels content.', () => {
@@ -21,20 +22,32 @@ context('Settings. Text size/position. Text labels content.', () => {
         firstX: 100,
         firstY: 100,
         secondX: 500,
-        secondY: 300,
+        secondY: 200,
     };
     const polygonTrack = {
         reDraw: false,
         type: 'Track',
         labelName,
         pointsMap: [
-            { x: 100, y: 400 },
+            { x: 100, y: 210 },
+            { x: 550, y: 210 },
             { x: 550, y: 400 },
-            { x: 550, y: 700 },
-            { x: 100, y: 700 },
+            { x: 100, y: 400 },
         ],
         complete: true,
         numberOfPoints: null,
+    };
+
+    const maskDrawingActions = [{
+        method: 'brush',
+        coordinates: [[150, 600], [500, 600], [500, 800], [150, 800]],
+    }];
+
+    const skeletonPosition = {
+        xtl: 600,
+        ytl: 600,
+        xbr: 700,
+        ybr: 700,
     };
 
     function testTextPosition(shape, expectedPosition) {
@@ -44,8 +57,8 @@ context('Settings. Text size/position. Text labels content.', () => {
         let shapeHeight = 0;
         let textLeftPosition = 0;
         let textTopPosition = 0;
-        let getText;
 
+        cy.get(shape).trigger('mouseover');
         cy.get(shape).then(([shapeObj]) => {
             const shapeBBox = shapeObj.getBoundingClientRect();
             shapeLeftPosition = shapeBBox.left;
@@ -53,38 +66,28 @@ context('Settings. Text size/position. Text labels content.', () => {
             shapeWidth = shapeBBox.width;
             shapeHeight = shapeBBox.height;
 
-            if (shape === '#cvat_canvas_shape_1') {
-                getText = cy.get('.cvat_canvas_text').first();
-            } else {
-                getText = cy.get('.cvat_canvas_text').last();
-            }
+            const id = shape[shape.length - 1];
+            cy.get(`.cvat_canvas_text[data-client-id="${id}"]`)
+                .then(([textObj]) => {
+                    const textBBox = textObj.getBoundingClientRect();
+                    textLeftPosition = textBBox.left;
+                    textTopPosition = textBBox.top;
 
-            getText.then(([textObj]) => {
-                const textBBox = textObj.getBoundingClientRect();
-                textLeftPosition = textBBox.left;
-                textTopPosition = textBBox.top;
-
-                if (expectedPosition === 'outside') {
-                    // Text outside the shape of the right. Slightly below the shape upper edge.
-                    expect(+shapeLeftPosition + +shapeWidth).lessThan(+textLeftPosition);
-                    expect(+textTopPosition).to.be.within(+shapeTopPosition, +shapeTopPosition + 15);
-                } else {
-                    // Text inside the shape
-                    expect(+shapeLeftPosition + +shapeWidth / 2).greaterThan(+textLeftPosition);
-                    expect(+shapeTopPosition + +shapeHeight / 2).greaterThan(+textTopPosition);
-                }
-            });
+                    if (expectedPosition === 'outside') {
+                        // Text outside the shape of the right. Slightly below the shape upper edge.
+                        expect(+shapeLeftPosition + +shapeWidth).lessThan(+textLeftPosition);
+                        expect(+textTopPosition).to.be.within(+shapeTopPosition, +shapeTopPosition + 15);
+                    } else {
+                        // Text inside the shape
+                        expect(+shapeLeftPosition + +shapeWidth / 2).greaterThan(+textLeftPosition);
+                        expect(+shapeTopPosition + +shapeHeight / 2).greaterThan(+textTopPosition);
+                    }
+                });
         });
     }
 
     function testLabelTextContent(id) {
-        let getTextContent;
-        if (id === 1) {
-            getTextContent = cy.get('.cvat_canvas_text').first();
-        } else {
-            getTextContent = cy.get('.cvat_canvas_text').last();
-        }
-        getTextContent.then(($labelText) => {
+        cy.get(`.cvat_canvas_text[data-client-id="${id}"]`).then(($labelText) => {
             const labelText = $labelText.text();
             expect(labelText).include(`${labelName} ${id} (manual)`);
             expect(labelText).include(`${attrName}: ${textDefaultValue}`);
@@ -95,6 +98,14 @@ context('Settings. Text size/position. Text labels content.', () => {
         cy.openTaskJob(taskName);
         cy.createRectangle(rectangleShape2Points);
         cy.createPolygon(polygonTrack);
+        cy.startMaskDrawing();
+        cy.drawMask(maskDrawingActions);
+        cy.finishMaskDrawing();
+        cy.createSkeleton({
+            ...skeletonPosition,
+            labelName: skeleton.name,
+            type: `${skeleton.type[0].toUpperCase()}${skeleton.type.slice(1).toLowerCase()}`,
+        });
 
         // Always show object details
         cy.openSettings();
@@ -126,6 +137,8 @@ context('Settings. Text size/position. Text labels content.', () => {
         it('Text position.', () => {
             testTextPosition('#cvat_canvas_shape_1', 'outside');
             testTextPosition('#cvat_canvas_shape_2', 'outside');
+            testTextPosition('#cvat_canvas_shape_3', 'outside');
+            testTextPosition('#cvat_canvas_shape_4', 'outside');
 
             // Change the text position
             cy.openSettings();
@@ -140,6 +153,8 @@ context('Settings. Text size/position. Text labels content.', () => {
 
             testTextPosition('#cvat_canvas_shape_1', 'inside');
             testTextPosition('#cvat_canvas_shape_2', 'inside');
+            testTextPosition('#cvat_canvas_shape_3', 'inside');
+            testTextPosition('#cvat_canvas_shape_4', 'inside');
         });
 
         it('Text labels content.', () => {
@@ -175,7 +190,7 @@ context('Settings. Text size/position. Text labels content.', () => {
 
             testLabelTextContent(1);
             testLabelTextContent(2);
-            cy.get('.cvat_canvas_text_attribute').should('have.length', 4);
+            cy.get('.cvat_canvas_text_attribute').should('have.length', 6);
             cy.get('.cvat_canvas_text_description').should('not.exist');
         });
     });
