@@ -393,7 +393,7 @@ def session_start(
             cvat_root_dir,
             cvat_db_dir,
             extra_dc_files,
-            waiting_time
+            waiting_time,
         )
 
     elif platform == "kube":
