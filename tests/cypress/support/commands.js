@@ -177,6 +177,7 @@ Cypress.Commands.add(
         projectName,
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
+        skeleton = null,
     ) => {
         cy.url().then(() => {
             cy.get('.cvat-create-task-dropdown').click();
@@ -195,6 +196,10 @@ Cypress.Commands.add(
                     cy.updateAttributes(multiAttrParams);
                 }
                 cy.contains('button', 'Continue').click();
+                if (skeleton) {
+                    cy.contains('button', 'Cancel').click();
+                    cy.addNewSkeletonLabel(skeleton);
+                }
             } else {
                 if (attachToProject) {
                     cy.get('.cvat-project-search-field').click();
