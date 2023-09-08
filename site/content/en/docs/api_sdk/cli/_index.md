@@ -30,7 +30,7 @@ To install an [official release of CVAT CLI](https://pypi.org/project/cvat-cli/)
 pip install cvat-cli
 ```
 
-We support Python versions 3.7 - 3.9.
+We support Python versions 3.8 and higher.
 
 ## Usage
 
@@ -39,12 +39,12 @@ You can get help with `cvat-cli --help`.
 ```
 usage: cvat-cli [-h] [--version] [--insecure] [--auth USER:[PASS]] [--server-host SERVER_HOST]
                 [--server-port SERVER_PORT] [--organization SLUG] [--debug]
-                {create,delete,ls,frames,dump,upload,export,import} ...
+                {create,delete,ls,frames,dump,upload,export,import,auto-annotate} ...
 
 Perform common operations related to CVAT tasks.
 
 positional arguments:
-  {create,delete,ls,frames,dump,upload,export,import}
+  {create,delete,ls,frames,dump,upload,export,import,auto-annotate}
 
 options:
   -h, --help            show this help message and exit
@@ -229,4 +229,72 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
 - Import task from file "task_backup.zip":
   ```bash
   cvat-cli import task_backup.zip
+  ```
+
+### Auto-annotate
+
+This command provides a command-line interface
+to the [auto-annotation API](/docs/api_sdk/sdk/auto-annotation).
+
+It can auto-annotate using AA functions implemented in one of the following ways:
+
+1. As a Python module directly implementing the AA function protocol.
+   Such a module must define the required attributes at the module level.
+
+   For example:
+
+   ```python
+   import cvat_sdk.auto_annotation as cvataa
+
+   spec = cvataa.DetectionFunctionSpec(...)
+
+   def detect(context, image):
+       ...
+   ```
+
+1. As a Python module implementing a factory function named `create`.
+   This function must return an object implementing the AA function protocol.
+   Any parameters specified on the command line using the `-p` option
+   will be passed to `create`.
+
+   For example:
+
+   ```python
+   import cvat_sdk.auto_annotation as cvataa
+
+   class _MyFunction:
+       def __init__(...):
+           ...
+
+       spec = cvataa.DetectionFunctionSpec(...)
+
+       def detect(context, image):
+           ...
+
+   def create(...) -> cvataa.DetectionFunction:
+       return _MyFunction(...)
+   ```
+
+- Annotate the task with id 137 with the predefined torchvision detection function,
+  which is parameterized:
+  ```bash
+  cvat-cli auto-annotate 137 --function-module cvat_sdk.auto_annotation.functions.torchvision_detection \
+      -p model_name=str:fasterrcnn_resnet50_fpn_v2 -p box_score_thresh=float:0.5
+  ```
+
+- Annotate the task with id 138 with an AA function defined in `my_func.py`:
+  ```bash
+  cvat-cli auto-annotate 138 --function-file path/to/my_func.py
+  ```
+
+Note that this command does not modify the Python module search path.
+If your function module needs to import other local modules,
+you must add your module directory to the search path
+if it isn't there already.
+
+- Annotate the task with id 139 with a function defined in the `my_func` module
+  located in the `my-project` directory,
+  letting it import other modules from that directory.
+  ```bash
+  PYTHONPATH=path/to/my-project cvat-cli auto-annotate 139 --function-module my_func
   ```

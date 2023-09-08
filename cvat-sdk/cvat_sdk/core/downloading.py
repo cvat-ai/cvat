@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from cvat_sdk.api_client.api_client import Endpoint
-from cvat_sdk.core.progress import ProgressReporter
+from cvat_sdk.core.progress import NullProgressReporter, ProgressReporter
 from cvat_sdk.core.utils import atomic_writer
 
 if TYPE_CHECKING:
@@ -41,6 +41,9 @@ class Downloader:
 
         assert not output_path.exists()
 
+        if pbar is None:
+            pbar = NullProgressReporter()
+
         response = self._client.api_client.rest_client.GET(
             url,
             _request_timeout=timeout,
@@ -53,18 +56,15 @@ class Downloader:
             except ValueError:
                 file_size = None
 
-            with atomic_writer(output_path, "wb") as fd:
-                if pbar is not None:
-                    pbar.start(file_size, desc="Downloading")
-
+            with atomic_writer(output_path, "wb") as fd, pbar.task(
+                total=file_size, desc="Downloading", unit_scale=True, unit="B", unit_divisor=1024
+            ):
                 while True:
                     chunk = response.read(amt=CHUNK_SIZE, decode_content=False)
                     if not chunk:
                         break
 
-                    if pbar is not None:
-                        pbar.advance(len(chunk))
-
+                    pbar.advance(len(chunk))
                     fd.write(chunk)
 
     def prepare_and_download_file_from_endpoint(

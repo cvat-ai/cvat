@@ -14,7 +14,6 @@ import { TasksState } from '.';
 const defaultState: TasksState = {
     initialized: false,
     fetching: false,
-    hideEmpty: false,
     moveTask: {
         modalVisible: false,
         taskId: null,
@@ -46,7 +45,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 },
                 initialized: false,
                 fetching: true,
-                hideEmpty: true,
                 count: 0,
                 gettingQuery: action.payload.updateQuery ? {
                     ...defaultState.gettingQuery,
@@ -60,6 +58,18 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 fetching: false,
                 count: action.payload.count,
                 current: action.payload.array,
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_IN_STATE: {
+            const { task } = action.payload;
+            return {
+                ...state,
+                current: state.current.map((taskInstance) => {
+                    if (taskInstance.id === task.id) {
+                        return task;
+                    }
+                    return taskInstance;
+                }),
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
@@ -114,12 +124,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                         ...deletes,
                     },
                 },
-            };
-        }
-        case TasksActionTypes.HIDE_EMPTY_TASKS: {
-            return {
-                ...state,
-                hideEmpty: action.payload.hideEmpty,
             };
         }
         case TasksActionTypes.SWITCH_MOVE_TASK_MODAL_VISIBLE: {

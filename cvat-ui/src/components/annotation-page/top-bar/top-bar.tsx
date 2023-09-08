@@ -69,6 +69,7 @@ interface Props {
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
     jobInstance: any;
+    ranges: string;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -77,6 +78,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         undoAction,
         redoAction,
         playing,
+        ranges,
         frameNumber,
         frameFilename,
         frameDeleted,
@@ -168,6 +170,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             startFrame={startFrame}
             stopFrame={stopFrame}
             playing={playing}
+            ranges={ranges}
             frameNumber={frameNumber}
             frameFilename={frameFilename}
             frameDeleted={frameDeleted}

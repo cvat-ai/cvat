@@ -89,7 +89,6 @@ def create_db_task(data):
     db_task = Task.objects.create(**data)
     shutil.rmtree(db_task.get_dirname(), ignore_errors=True)
     os.makedirs(db_task.get_dirname())
-    os.makedirs(db_task.get_task_logs_dirname())
     os.makedirs(db_task.get_task_artifacts_dirname())
     db_task.data = db_data
     db_task.save()
@@ -126,7 +125,6 @@ def create_db_project(data):
     db_project = Project.objects.create(**data)
     shutil.rmtree(db_project.get_dirname(), ignore_errors=True)
     os.makedirs(db_project.get_dirname())
-    os.makedirs(db_project.get_project_logs_dirname())
 
     if not labels is None:
         for label_data in labels:

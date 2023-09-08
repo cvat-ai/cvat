@@ -44,11 +44,11 @@ jobs:
 
     - name: Deploy to minikube
       run: |
-        printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> tests/values.test.yaml
+        printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> helm-chart/test.values.yaml
         cd helm-chart
         helm dependency update
         cd ..
-        helm upgrade -n default release-${{ github.run_id }}-${{ github.run_attempt }} -i --create-namespace helm-chart -f helm-chart/values.yaml -f tests/values.test.yaml
+        helm upgrade -n default release-${{ github.run_id }}-${{ github.run_attempt }} -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/cvat.values.yaml -f helm-chart/test.values.yaml
 
     - name: Update test config
       run: |

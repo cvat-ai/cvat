@@ -18,11 +18,6 @@ BASE_DIR = _temp_dir.name
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
 os.makedirs(DATA_ROOT, exist_ok=True)
 
-EVENTS_LOCAL_DB = os.path.join(DATA_ROOT, 'events.db')
-os.makedirs(DATA_ROOT, exist_ok=True)
-if not os.path.exists(EVENTS_LOCAL_DB):
-    open(EVENTS_LOCAL_DB, 'w').close()
-
 MEDIA_DATA_ROOT = os.path.join(DATA_ROOT, 'data')
 os.makedirs(MEDIA_DATA_ROOT, exist_ok=True)
 
@@ -66,8 +61,6 @@ for logger in LOGGING["loggers"].values():
         logger["level"] = "ERROR"
 
 LOGGING["handlers"]["server_file"] = LOGGING["handlers"]["console"]
-
-CACHES["media"]["LOCATION"] = CACHE_ROOT
 
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',

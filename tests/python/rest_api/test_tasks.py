@@ -21,7 +21,7 @@ from typing import List, Optional
 import pytest
 from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
-from cvat_sdk.api_client.api_client import ApiClient, Endpoint
+from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
@@ -516,6 +516,22 @@ class TestPatchTaskAnnotations:
             )
 
         self._test_check_response(is_allow, response, data)
+
+    def test_remove_first_keyframe(self):
+        endpoint = "tasks/8/annotations"
+        shapes0 = [
+            {"type": "rectangle", "frame": 1, "points": [1, 2, 3, 4]},
+            {"type": "rectangle", "frame": 4, "points": [5, 6, 7, 8]},
+        ]
+
+        annotations = {"tracks": [{"label_id": 13, "frame": 0, "shapes": shapes0}]}
+
+        response = patch_method("admin1", endpoint, annotations, action="create")
+        assert response.status_code == HTTPStatus.OK, response.content
+
+        annotations["tracks"][0]["shapes"] = shapes0[1:]
+        response = patch_method("admin1", endpoint, annotations, action="update")
+        assert response.status_code == HTTPStatus.OK
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1545,6 +1561,7 @@ class TestPatchTaskLabel:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_redis_db_per_function")
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
@@ -1621,6 +1638,18 @@ class TestTaskBackups:
 
         assert filename.is_file()
         assert filename.stat().st_size > 0
+
+    def test_cannot_export_backup_for_task_without_data(self, tasks):
+        task_id = next(t for t in tasks if t["jobs"]["count"] == 0)["id"]
+        task = self.client.tasks.retrieve(task_id)
+
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+
+        with pytest.raises(ApiException) as exc:
+            task.download_backup(filename)
+
+            assert exc.status == HTTPStatus.BAD_REQUEST
+            assert "Backup of a task without data is not allowed" == exc.body.encode()
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):

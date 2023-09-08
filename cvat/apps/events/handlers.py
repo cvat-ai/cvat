@@ -402,7 +402,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
 
     vlogger.info(message)
 
-def handle_annotations_patch(instance, annotations, action, **kwargs):
+def handle_annotations_change(instance, annotations, action, **kwargs):
     _annotations = deepcopy(annotations)
     def filter_shape_data(shape):
         data = {

@@ -54,8 +54,8 @@ export const authActions = {
     changePassword: () => createAction(AuthActionTypes.CHANGE_PASSWORD),
     changePasswordSuccess: () => createAction(AuthActionTypes.CHANGE_PASSWORD_SUCCESS),
     changePasswordFailed: (error: any) => createAction(AuthActionTypes.CHANGE_PASSWORD_FAILED, { error }),
-    switchChangePasswordDialog: (showChangePasswordDialog: boolean) => (
-        createAction(AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG, { showChangePasswordDialog })
+    switchChangePasswordModalVisible: (visible: boolean) => (
+        createAction(AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG, { visible })
     ),
     requestPasswordReset: () => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET),
     requestPasswordResetSuccess: () => createAction(AuthActionTypes.REQUEST_PASSWORD_RESET_SUCCESS),

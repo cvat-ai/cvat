@@ -146,19 +146,15 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     };
 
     private show = (): void => {
-        const { objectState, readonly } = this.props;
-        if (!readonly) {
-            objectState.hidden = false;
-            this.commit();
-        }
+        const { objectState } = this.props;
+        objectState.hidden = false;
+        this.commit();
     };
 
     private hide = (): void => {
-        const { objectState, readonly } = this.props;
-        if (!readonly) {
-            objectState.hidden = true;
-            this.commit();
-        }
+        const { objectState } = this.props;
+        objectState.hidden = true;
+        this.commit();
     };
 
     private setOccluded = (): void => {
@@ -210,11 +206,8 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     };
 
     private commit(): void {
-        const { objectState, readonly, updateAnnotations } = this.props;
-
-        if (!readonly) {
-            updateAnnotations([objectState]);
-        }
+        const { objectState, updateAnnotations } = this.props;
+        updateAnnotations([objectState]);
     }
 
     private changeFrame(frame: number): void {

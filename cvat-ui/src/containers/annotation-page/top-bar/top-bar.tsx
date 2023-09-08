@@ -65,6 +65,7 @@ interface StateToProps {
     normalizedKeyMap: Record<string, string>;
     canvasInstance: Canvas | Canvas3d;
     forceExit: boolean;
+    ranges: string;
     activeControl: ActiveControl;
 }
 
@@ -91,6 +92,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             player: {
                 playing,
+                ranges,
                 frame: {
                     data: { deleted: frameIsDeleted },
                     filename: frameFilename,
@@ -142,6 +144,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance,
         forceExit,
         activeControl,
+        ranges,
     };
 }
 
@@ -525,6 +528,14 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         restoreFrame(frameNumber);
     };
 
+    private changeWorkspace = (workspace: Workspace): void => {
+        const { changeWorkspace } = this.props;
+        changeWorkspace(workspace);
+        if (window.document.activeElement) {
+            (window.document.activeElement as HTMLElement).blur();
+        }
+    };
+
     private beforeUnloadCallback = (event: BeforeUnloadEvent): string | undefined => {
         const { jobInstance, forceExit, setForceExitAnnotationFlag } = this.props;
         if (jobInstance.annotations.hasUnsavedChanges() && !forceExit) {
@@ -638,10 +649,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             workspace,
             canvasIsReady,
             keyMap,
+            ranges,
             normalizedKeyMap,
             activeControl,
             searchAnnotations,
-            changeWorkspace,
             switchNavigationBlocked,
             toolsBlockerState,
         } = this.props;
@@ -761,11 +772,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     onURLIconClick={this.onURLIconClick}
                     onDeleteFrame={this.onDeleteFrame}
                     onRestoreFrame={this.onRestoreFrame}
-                    changeWorkspace={changeWorkspace}
+                    changeWorkspace={this.changeWorkspace}
                     switchNavigationBlocked={switchNavigationBlocked}
                     workspace={workspace}
                     playing={playing}
                     saving={saving}
+                    ranges={ranges}
                     startFrame={startFrame}
                     stopFrame={stopFrame}
                     frameNumber={frameNumber}

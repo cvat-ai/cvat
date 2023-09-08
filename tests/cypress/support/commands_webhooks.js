@@ -37,9 +37,12 @@ Cypress.Commands.add('deleteWebhook', (description) => {
 });
 
 Cypress.Commands.add('setUpWebhook', (webhookData) => {
-    cy.get('#targetURL').clear().type(webhookData.targetURL);
-    cy.get('#description').clear().type(webhookData.description);
-    cy.get('#secret').clear().type(webhookData.secret);
+    cy.get('#targetURL').clear();
+    cy.get('#targetURL').type(webhookData.targetURL);
+    cy.get('#description').clear();
+    cy.get('#description').type(webhookData.description);
+    cy.get('#secret').clear();
+    cy.get('#secret').type(webhookData.secret);
     if (!webhookData.enableSSL) cy.get('#enableSSL').uncheck();
     if (!webhookData.isActive) cy.get('#isActive').uncheck();
 
@@ -72,10 +75,7 @@ Cypress.Commands.add('openOrganizationWebhooks', () => {
 });
 
 Cypress.Commands.add('openProjectWebhooks', () => {
-    cy.get('.cvat-project-page-actions-button').trigger('mouseover');
-    cy.get('.cvat-project-actions-menu').within(() => {
-        cy.contains('[role="menuitem"]', 'Setup webhooks').click();
-    });
+    cy.clickInProjectMenu('Setup webhooks', true);
     cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-webhooks-page').should('exist');
 });

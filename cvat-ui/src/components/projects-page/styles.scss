@@ -3,13 +3,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-projects-page {
     padding-top: $grid-unit-size * 2;
     padding-bottom: $grid-unit-size;
     height: 100%;
     width: 100%;
+    overflow: auto;
 
     .cvat-projects-page-top-bar {
         > div:nth-child(1) {
@@ -106,7 +107,7 @@
 }
 
 .ant-menu.cvat-project-actions-menu {
-    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 17px rgba(0, 0, 0, 20%);
 
     > li:hover {
         background-color: $hover-menu-color;
@@ -122,7 +123,8 @@
     padding-bottom: $grid-unit-size;
 
     .ant-ribbon-wrapper {
-        width: calc(25% - $grid-unit-size);
+        width: 25%;
+        border: $grid-unit-size * 0.5 solid #f0f0f0;
 
         .cvat-projects-project-item-card {
             .cvat-projects-project-item-card-preview-wrapper {
@@ -181,6 +183,10 @@
             display: flex;
             flex-direction: column;
         }
+
+        &:nth-child(4n) {
+            border-right: 0;
+        }
     }
 }
 
@@ -192,7 +198,6 @@
 .cvat-projects-list {
     display: flex;
     flex-wrap: wrap;
-    gap: $grid-unit-size;
 }
 
 .cvat-export-project-loading {

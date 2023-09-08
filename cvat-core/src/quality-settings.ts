@@ -2,25 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { SerializedQualitySettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-
-export interface SerializedQualitySettingsData {
-    id?: number;
-    task?: number;
-    iou_threshold?: number;
-    oks_sigma?: number;
-    line_thickness?: number;
-    low_overlap_threshold?: number;
-    compare_line_orientation?: boolean;
-    line_orientation_threshold?: number;
-    compare_groups?: boolean;
-    group_match_threshold?: number;
-    check_covered_annotations?: boolean;
-    object_visibility_threshold?: number;
-    panoptic_comparison?: boolean;
-    compare_attributes?: boolean;
-}
 
 export default class QualitySettings {
     #id: number;

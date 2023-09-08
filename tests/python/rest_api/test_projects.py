@@ -310,6 +310,37 @@ class TestGetProjectBackup:
 
         self._test_can_get_project_backup(user["username"], project["id"])
 
+    def test_can_get_backup_project_when_some_tasks_have_no_data(self, projects):
+        project = next((p for p in projects if 0 < p["tasks"]["count"]))
+
+        # add empty task to project
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        self._test_can_get_project_backup("admin1", project["id"])
+
+    def test_can_get_backup_project_when_all_tasks_have_no_data(self, projects):
+        project = next((p for p in projects if 0 == p["tasks"]["count"]))
+
+        # add empty tasks to empty project
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        self._test_can_get_project_backup("admin1", project["id"])
+
+    def test_can_get_backup_for_empty_project(self, projects):
+        empty_project = next((p for p in projects if 0 == p["tasks"]["count"]))
+        self._test_can_get_project_backup("admin1", empty_project["id"])
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPostProjects:
@@ -702,6 +733,37 @@ class TestImportExportDatasetProject:
         project_id = 11
 
         self._test_export_project(username, project_id, "COCO Keypoints 1.0")
+
+    def test_can_export_dataset_for_empty_project(self, projects):
+        empty_project = next((p for p in projects if 0 == p["tasks"]["count"]))
+        self._test_export_project("admin1", empty_project["id"], "COCO 1.0")
+
+    def test_can_export_project_dataset_when_some_tasks_have_no_data(self, projects):
+        project = next((p for p in projects if 0 < p["tasks"]["count"]))
+
+        # add empty task to project
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        self._test_export_project("admin1", project["id"], "COCO 1.0")
+
+    def test_can_export_project_dataset_when_all_tasks_have_no_data(self, projects):
+        project = next((p for p in projects if 0 == p["tasks"]["count"]))
+
+        # add empty tasks to empty project
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        self._test_export_project("admin1", project["id"], "COCO 1.0")
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
