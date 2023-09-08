@@ -85,16 +85,6 @@ def get_membership(request, organization):
         is_active=True
     ).first()
 
-def build_iam_context(request, organization: Optional[Organization], membership: Optional[Membership]) -> Dict:
-    return {
-        'user_id': request.user.id,
-        'group_name': request.iam_context['privilege'],
-        'org_id': getattr(organization, 'id', None),
-        'org_slug': getattr(organization, 'slug', None),
-        'org_owner_id': getattr(organization.owner, 'id', None)
-            if organization else None,
-        'org_role': getattr(membership, 'role', None),
-    }
 
 def get_iam_context(request, obj):
     organization = get_organization(request, obj)

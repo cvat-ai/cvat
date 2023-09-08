@@ -299,7 +299,7 @@ LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
 OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'request', 'server',]
-IAM_CONTEXT_BUILDERS = ['cvat.apps.iam.permissions.build_iam_context',]
+IAM_CONTEXT_BUILDERS = ['cvat.apps.iam.utils.build_iam_context',]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'

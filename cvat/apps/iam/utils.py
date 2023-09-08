@@ -16,3 +16,15 @@ def create_opa_bundle():
         for p in rules_paths:
             for f in p.glob('*[!.gen].rego'):
                 tar.add(name=f, arcname=f.relative_to(p.parent))
+
+
+def build_iam_context(request, organization, membership):
+    return {
+        'user_id': request.user.id,
+        'group_name': request.iam_context['privilege'],
+        'org_id': getattr(organization, 'id', None),
+        'org_slug': getattr(organization, 'slug', None),
+        'org_owner_id': getattr(organization.owner, 'id', None)
+            if organization else None,
+        'org_role': getattr(membership, 'role', None),
+    }
