@@ -1378,7 +1378,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         task = self.get_object()
         response = self._get_rq_response(
             queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-            job_id=f"create:task.id{pk}-by-{task.owner or ''}"
+            job_id=f"create:task.id{pk}"
         )
         serializer = RqStatusSerializer(data=response)
 
