@@ -2,6 +2,7 @@ import os
 import sys
 import random
 import requests
+import shutil
 from urllib import parse as urlparse, request as urlrequest
 from .serializers import DetectionImageListSerializer, DetectionImageSerializer
 from .models import GalleryImportProgress, GIStatusSuccess, GIStatusFailed, \
@@ -378,25 +379,29 @@ def _create_task(project, gi_data, gi_instance, frame, size, segment_size, token
         for item in data
     ])
 
-    task_api._create_thread(task.id, {
-        'chunk_size': db_data.chunk_size,
-        'size': db_data.size,
-        'image_quality': db_data.image_quality,
-        'start_frame': db_data.start_frame,
-        'stop_frame': db_data.stop_frame,
-        'frame_filter': db_data.frame_filter,
-        'compressed_chunk_type': db_data.compressed_chunk_type,
-        'original_chunk_type': db_data.original_chunk_type,
-        'client_files': [],
-        'server_files': [],
-        'remote_files': [file.file for file in files],
-        'use_zip_chunks': True,
-        'use_cache': True,
-        'copy_data': False,
-        'storage_method': db_data.storage_method,
-        'storage': db_data.storage,
-        'sorting_method': db_data.sorting_method,
-    }, rename_files=True)
+    try:
+        task_api._create_noatomic(task.id, {
+            'chunk_size': db_data.chunk_size,
+            'size': db_data.size,
+            'image_quality': db_data.image_quality,
+            'start_frame': db_data.start_frame,
+            'stop_frame': db_data.stop_frame,
+            'frame_filter': db_data.frame_filter,
+            'compressed_chunk_type': db_data.compressed_chunk_type,
+            'original_chunk_type': db_data.original_chunk_type,
+            'client_files': [],
+            'server_files': [],
+            'remote_files': [file.file for file in files],
+            'use_zip_chunks': True,
+            'use_cache': True,
+            'copy_data': False,
+            'storage_method': db_data.storage_method,
+            'storage': db_data.storage,
+            'sorting_method': db_data.sorting_method,
+        }, rename_files=True)
+    except Exception as e:
+        shutil.rmtree(db_data.get_data_dirname())
+        raise e
 
     for i, item in enumerate(data):
         item.task = task

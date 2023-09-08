@@ -21,6 +21,7 @@ import ipaddress
 import dns.resolver
 import django_rq
 import pytz
+from typing import Callable
 
 from django.conf import settings
 from django.db import transaction
@@ -318,6 +319,25 @@ def _check_filename_collisions(name, files, rename_files):
     return name
 
 
+def retry(func: Callable, args=None, kwargs=None, times: int = 1, exc_types=None):
+    if args is None:
+        args = ()
+    if kwargs is None:
+        kwargs = {}
+    if exc_types is None:
+        exc_types = (Exception, )
+
+    exc = None
+    while times > 0:
+        try:
+            return func(*args, **kwargs)
+        except exc_types as e:
+            exc = e
+
+    if exc is not None:
+        raise exc
+
+
 def _download_data(db_data: models.Data, upload_dir, rename_files=False):
     job = rq.get_current_job()
     local_files = {}
@@ -327,7 +347,7 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
         if 'gi_id' in file.meta:
             token = file.meta.pop('token')
             headers = {'Authorization': f'Token {token}'}
-            response = requests.get(url, headers=headers)
+            response = retry(requests.get, args=(url,), kwargs={'headers': headers, 'timeout': 10}, times=3)
             data = response.json()
 
             serializer = DetectionImageSerializer(data=data)
@@ -345,7 +365,7 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
         job.meta['status'] = '{} is being downloaded..'.format(url)
         job.save_meta()
 
-        response = requests.get(url, stream=True)
+        response = retry(requests.get, args=(url,), kwargs={'stream': True, 'timeout': 10}, times=5)
         if response.status_code == 200:
             response.raw.decode_content = True
             output_path = os.path.join(upload_dir, name)
@@ -382,7 +402,7 @@ def _download_s3_files(db_data: models.Data, upload_dir, rename_files=False):
         job.meta['status'] = 'S3 {} is  being downloaded...'.format(url)
         job.save_meta()
 
-        response = requests.get(url, stream=True)
+        response = retry(requests.get, args=(url,), kwargs={'stream': True, 'timeout': 10}, times=5)
         if response.status_code == 200:
             response.raw.decode_content = True
             output_path = os.path.join(upload_dir, name)
@@ -494,8 +514,7 @@ def _move_data_to_s3(db_task: models.Task, db_data: models.Data):
     slogger.glob.info('Done.')
 
 
-@transaction.atomic
-def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False, rename_files=False):
+def _create_noatomic(db_task, data, isBackupRestore=False, isDatasetImport=False, rename_files=False):
     if isinstance(db_task, int):
         db_task = models.Task.objects.select_for_update().get(pk=db_task)
 
@@ -908,3 +927,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False, 
 
     if settings.USE_S3:
         _move_data_to_s3(db_task, db_data)
+
+
+@transaction.atomic
+def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False, rename_files=False):
+    _create_noatomic(db_task, data, isBackupRestore=isBackupRestore,
+                     isDatasetImport=isDatasetImport, rename_files=rename_files)

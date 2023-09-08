@@ -1,7 +1,6 @@
 import os
 import sys
 import random
-from urllib import parse as urlparse, request as urlrequest
 
 import django_rq
 from django.db import transaction
@@ -204,7 +203,7 @@ class ShapesImporter:
 @transaction.atomic
 def _create_thread(task_id, cvat_data):
     # finish task creating
-    task_api._create_thread(task_id, cvat_data)
+    task_api._create_noatomic(task_id, cvat_data)
 
     # import annotations
     ShapesImporter(task_id).perform_import()
