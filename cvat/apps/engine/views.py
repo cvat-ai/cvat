@@ -1375,10 +1375,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         })
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
-        self.get_object() # force call of check_object_permissions()
+        task = self.get_object()
         response = self._get_rq_response(
             queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-            job_id=f"create:task.id{pk}-by-{request.user}"
+            job_id=f"create:task.id{pk}-by-{task.owner or ''}"
         )
         serializer = RqStatusSerializer(data=response)
 
