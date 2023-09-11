@@ -619,6 +619,7 @@ class IChunkWriter(ABC):
             image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
 
         converted_image = image.convert('RGB')
+        image.close()
         try:
             buf = io.BytesIO()
             converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
