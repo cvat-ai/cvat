@@ -62,14 +62,15 @@ class LambdaGateway:
             host or settings.NUCLIO['HOST'],
             port or settings.NUCLIO['PORT'])
         NUCLIO_FUNCTION_NAMESPACE = function_namespace or settings.NUCLIO['FUNCTION_NAMESPACE']
+        NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
         extra_headers = {
             'x-nuclio-project-name': 'cvat',
             'x-nuclio-function-namespace': NUCLIO_FUNCTION_NAMESPACE,
             'x-nuclio-invoke-via': 'domain-name',
+            'X-Nuclio-Invoke-Timeout': f"{NUCLIO_TIMEOUT}s",
         }
         if headers:
             extra_headers.update(headers)
-        NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
 
         if url:
             url = "{}{}".format(NUCLIO_GATEWAY, url)

@@ -27,7 +27,7 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                     animationDuration: '0s',
                     animationDelay: '0s',
                 }}
-                trigger={visible ? 'click' : 'hover'}
+                trigger={visible ? ['click'] : ['click', 'hover']}
                 overlayClassName={overlayClassNames.join(' ').trim()}
                 onVisibleChange={(_visible: boolean) => {
                     if (_visible) {

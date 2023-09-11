@@ -43,7 +43,7 @@ function MessageForm(props: FormProps): JSX.Element {
                 name='issue_description'
                 rules={[{ required: true, message: 'Please, fill out the field' }]}
             >
-                <Input autoComplete='off' placeholder='Please, describe the issue' />
+                <Input autoFocus autoComplete='off' placeholder='Please, describe the issue' />
             </Form.Item>
             <Row justify='space-between'>
                 <Col>

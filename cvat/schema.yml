@@ -1944,7 +1944,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -2013,7 +2013,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -2090,7 +2090,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -2335,7 +2335,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -3347,7 +3347,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -3422,7 +3422,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -3489,7 +3489,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -3564,7 +3564,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -3676,7 +3676,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -4631,7 +4631,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -4702,7 +4702,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -4896,7 +4896,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -5155,7 +5155,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -5291,7 +5291,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename

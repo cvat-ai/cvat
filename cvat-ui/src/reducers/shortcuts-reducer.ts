@@ -452,7 +452,7 @@ export default (state = defaultState, action: ShortcutsActions | BoundariesActio
         case ShortcutsActionsTypes.SWITCH_SHORTCUT_DIALOG: {
             return {
                 ...state,
-                visibleShortcutsHelp: !state.visibleShortcutsHelp,
+                visibleShortcutsHelp: action.payload.visible,
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

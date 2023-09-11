@@ -255,7 +255,13 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                             <NavigateLastKeyframe {...props} />
                         </Col>
                     </Row>
-                    {!readonly && (
+                    {readonly ? (
+                        <Row justify='space-around'>
+                            <Col>
+                                <SwitchHidden {...props} />
+                            </Col>
+                        </Row>
+                    ) : (
                         <Row justify='space-around'>
                             <Col>
                                 <SwitchOutside {...props} />
@@ -284,47 +290,55 @@ function ItemButtonsComponent(props: Props): JSX.Element {
         );
     }
 
-    if (readonly) {
-        return <div />;
-    }
-
-    if (objectType === ObjectType.TAG) {
+    if (objectType === ObjectType.SHAPE) {
         return (
             <Row align='middle' justify='space-around'>
                 <Col span={20} style={{ textAlign: 'center' }}>
-                    <Row justify='space-around'>
-                        <Col>
-                            <SwitchLock {...props} />
-                        </Col>
-                    </Row>
+                    { readonly ? (
+                        <Row justify='space-around'>
+                            <Col>
+                                <SwitchHidden {...props} />
+                            </Col>
+                        </Row>
+                    ) : (
+                        <Row justify='space-around'>
+                            { Number.isInteger(parentID) && (
+                                <Col>
+                                    <SwitchOutside {...props} />
+                                </Col>
+                            )}
+                            <Col>
+                                <SwitchLock {...props} />
+                            </Col>
+                            <Col>
+                                <SwitchOccluded {...props} />
+                            </Col>
+                            <Col>
+                                <SwitchHidden {...props} />
+                            </Col>
+                            {shapeType !== ShapeType.POINTS && (
+                                <Col>
+                                    <SwitchPinned {...props} />
+                                </Col>
+                            )}
+                        </Row>
+                    )}
                 </Col>
             </Row>
         );
+    }
+
+    if (readonly) {
+        return <div />;
     }
 
     return (
         <Row align='middle' justify='space-around'>
             <Col span={20} style={{ textAlign: 'center' }}>
                 <Row justify='space-around'>
-                    { Number.isInteger(parentID) && (
-                        <Col>
-                            <SwitchOutside {...props} />
-                        </Col>
-                    )}
                     <Col>
                         <SwitchLock {...props} />
                     </Col>
-                    <Col>
-                        <SwitchOccluded {...props} />
-                    </Col>
-                    <Col>
-                        <SwitchHidden {...props} />
-                    </Col>
-                    {shapeType !== ShapeType.POINTS && (
-                        <Col>
-                            <SwitchPinned {...props} />
-                        </Col>
-                    )}
                 </Row>
             </Col>
         </Row>

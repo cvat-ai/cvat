@@ -18,8 +18,17 @@ services:
 
   cvat_redis:
     container_name: cvat_redis
-    image: redis:7.0-alpine
+    image: eqalpha/keydb:x86_64_v6.3.2
     restart: always
+    command: [
+      "keydb-server",
+      "/etc/keydb/keydb.conf",
+      "--storage-provider", "flash", "/data/flash",
+      "--maxmemory", "5G",
+      "--maxmemory-policy", "allkeys-lfu",
+    ]
+    volumes:
+      - cvat_cache_db:/data
     networks:
       - cvat
 
@@ -380,6 +389,7 @@ volumes:
   cvat_keys:
   cvat_logs:
   cvat_events_db:
+  cvat_cache_db:
 
 networks:
   cvat:

@@ -110,18 +110,12 @@ function ObjectListHeader(props: Props): JSX.Element {
     return (
         <div className='cvat-objects-sidebar-states-header'>
             <Row justify='space-between' align='middle'>
-                {!readonly && (
-                    <>
-                        <LockAllSwitcher {...props} />
-                        <HideAllSwitcher {...props} />
-                    </>
+                {!readonly && <LockAllSwitcher {...props} />}
+                <HideAllSwitcher {...props} />
+                { workspace === Workspace.REVIEW_WORKSPACE && (
+                    <GTSwitcher {...props} />
                 )}
-                <Row>
-                    { workspace === Workspace.REVIEW_WORKSPACE && (
-                        <GTSwitcher {...props} />
-                    )}
-                    <CollapseAllSwitcher {...props} />
-                </Row>
+                <CollapseAllSwitcher {...props} />
                 <StatesOrderingSelector statesOrdering={statesOrdering} changeStatesOrdering={changeStatesOrdering} />
             </Row>
         </div>
