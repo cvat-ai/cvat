@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Invalid input validation in for `cloud_storage_id` (<https://github.com/opencv/cvat/pull/6825>)
+- Incorrect task progress report for 3rdparty users (<https://github.com/opencv/cvat/pull/6834>)
 
 ### Security
 - TDB
