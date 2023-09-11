@@ -263,12 +263,12 @@ jobs:
 
       - name: Generate SDK
         run: |
-          pip3 install -r cvat-sdk/gen/requirements.txt
+          pip3 install --user -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
       - name: Install SDK
         run: |
-          pip3 install -r ./tests/python/requirements.txt \
+          pip3 install --user -r ./tests/python/requirements.txt \
             -e './cvat-sdk[pytorch]' -e ./cvat-cli
 
       - name: REST API and SDK tests
