@@ -23,7 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Incorrect task progress report for 3rdparty users (<https://github.com/opencv/cvat/pull/6834>)
 
 ### Security
-- TDB
+- Security upgrade gitpython from 3.1.33 to 3.1.35 (<https://github.com/opencv/cvat/pull/6843>)
+- Security upgrade numpy from 1.22.0 to 1.22.4 (<https://github.com/opencv/cvat/pull/6843>)
 
 ## \[2.6.2\] - 2023-09-06
 
