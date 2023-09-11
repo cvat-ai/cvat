@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased\]
 ### Added
-- TDB
+
+- Admin actions for easy activation/deactivation of users (<https://github.com/opencv/cvat/pull/6314>)
 
 ### Changed
 - TDB
