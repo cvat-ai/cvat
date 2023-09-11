@@ -9,8 +9,13 @@ const JSZip = require('jszip');
 onmessage = (e) => {
     let errored = false;
     function handleError(error) {
-        errored = true;
-        postMessage({ error });
+        try {
+            if (!errored) {
+                postMessage({ error });
+            }
+        } finally {
+            errored = true;
+        }
     }
 
     try {
@@ -30,6 +35,7 @@ onmessage = (e) => {
                             .async('blob')
                             .then((fileData) => {
                                 if (!errored) {
+                                    // do not need to read the rest of block if an error already occured
                                     if (dimension === dimension2D) {
                                         createImageBitmap(fileData).then((img) => {
                                             postMessage({
