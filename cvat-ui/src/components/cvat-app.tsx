@@ -350,8 +350,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 description: error.length > 300 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
             });
 
-            // eslint-disable-next-line no-console
-            console.error(error);
+            setTimeout(() => {
+                // throw the error to be caught by global listener
+                throw _error;
+            });
         }
 
         const { notifications, resetErrors } = this.props;

@@ -1213,7 +1213,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     annotation: {
                         ...state.errors.annotation,
                         jobFetching: {
-                            message: 'Could not fetch frame data from the server',
+                            message: 'Could not receive image data',
                             reason: action.payload.error,
                             className: 'cvat-notification-notice-fetch-frame-data-from-the-server-failed',
                         },
