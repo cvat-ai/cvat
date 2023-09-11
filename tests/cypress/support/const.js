@@ -33,17 +33,6 @@ export const multiAttrParams = {
     values: 'Attr value 2',
     type: 'Text',
 };
-export const skeleton = {
-    name: 'skeleton',
-    type: 'shape',
-    points: [
-        { x: 0.55, y: 0.15 },
-        { x: 0.20, y: 0.35 },
-        { x: 0.43, y: 0.55 },
-        { x: 0.63, y: 0.38 },
-        { x: 0.27, y: 0.15 },
-    ],
-};
 
 it('Prepare to testing', () => {
     cy.visit('/');
@@ -67,12 +56,6 @@ it('Prepare to testing', () => {
                 archiveName,
                 multiAttrParams,
                 advancedConfigurationParams,
-                false,
-                false,
-                '',
-                'success',
-                'Test',
-                skeleton,
             );
         } else {
             cy.task('log', 'The task exist. Skipping creation.');
