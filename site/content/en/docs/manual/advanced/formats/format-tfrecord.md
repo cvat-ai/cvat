@@ -3,14 +3,18 @@ linkTitle: 'TFRecord'
 weight: 8
 ---
 
-# [TFRecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)
+The TFRecord format is tightly integrated with TensorFlow
+and is commonly used for training models within the TensorFlow ecosystem.
 
+TFRecord is an incredibly flexible data format.
+We strive to align our implementation with the
+format employed by the [TensorFlow Object Detection API](https://github.com/tensorflow/models/tree/master/research/object_detection),
+making only minimal changes as necessary.
+
+For more information, see:
+
+- [TFRecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/tf_detection_api_dataset)
-
-TFRecord is a very flexible format, but we try to correspond the
-format that used in
-[TF object detection](https://github.com/tensorflow/models/tree/master/research/object_detection)
-with minimal modifications.
 
 Used feature description:
 
@@ -32,7 +36,12 @@ image_feature_description = {
 
 ## TFRecord export
 
-Downloaded file: a zip archive with following structure:
+For export of images:
+
+- Supported annotations: Bounding Boxes, Polygons
+  (as masks, manually over [Datumaro](https://github.com/cvat-ai/datumaro/blob/develop/docs/user_manual.md))
+
+Downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -51,19 +60,21 @@ item {
 ...
 ```
 
-- supported annotations: Rectangles, Polygons (as masks, manually over [Datumaro](https://github.com/cvat-ai/datumaro/blob/develop/docs/user_manual.md))
-
 How to export masks:
+
 1. Export annotations in `Datumaro` format
 1. Apply `polygons_to_masks` and `boxes_to_masks` transforms
-  ```bash
-  datum transform -t polygons_to_masks -p path/to/proj -o ptm
-  datum transform -t boxes_to_masks -p ptm -o btm
-  ```
+
+```bash
+datum transform -t polygons_to_masks -p path/to/proj -o ptm
+datum transform -t boxes_to_masks -p ptm -o btm
+```
+
 1. Export in the `TF Detection API` format
-  ```bash
-  datum export -f tf_detection_api -p btm [-- --save-images]
-  ```
+
+```bash
+datum export -f tf_detection_api -p btm [-- --save-images]
+```
 
 ## TFRecord import
 
