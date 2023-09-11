@@ -5,16 +5,58 @@
 
 /// <reference types="cypress" />
 
-import {
-    taskName,
-    labelName,
-    attrName,
-    textDefaultValue,
-    skeleton,
-} from '../../support/const';
-
 context('Settings. Text size/position. Text labels content.', () => {
     const caseId = '111';
+    const taskName = 'Test text size/position task';
+    const labelName = 'Test label';
+    const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
+    const attrName = 'Attr for test label';
+    const textDefaultValue = 'Default attr for test label';
+    let taskID = null;
+    let jobID = null;
+
+    const skeletonLabel = {
+        name: 'skeleton',
+        attributes: [],
+        type: 'skeleton',
+        svg: '<line x1="41.89224624633789" y1="49.40426254272461" x2="22.661476135253906" y2="39.20359420776367" ' +
+             'stroke="black" data-type="edge" data-node-from="3" stroke-width="0.5" data-node-to="4"></line>' +
+             '<line x1="73.49759674072266" y1="36.36078643798828" x2="41.89224624633789" y2="49.40426254272461"' +
+             ' stroke="black" data-type="edge" data-node-from="2" stroke-width="0.5" data-node-to="3"></line>' +
+             '<line x1="28.34709358215332" y1="17.2972412109375" x2="73.49759674072266" y2="36.36078643798828"' +
+             ' stroke="black" data-type="edge" data-node-from="1" stroke-width="0.5" data-node-to="2"></line>' +
+             '<circle r="1.5" stroke="black" fill="#b3b3b3" cx="28.34709358215332" cy="17.2972412109375" ' +
+             'stroke-width="0.1" data-type="element node" data-element-id="1" data-node-id="1" data-label-name="1">' +
+             '</circle><circle r="1.5" stroke="black" fill="#b3b3b3" cx="73.49759674072266" cy="36.36078643798828"' +
+             ' stroke-width="0.1" data-type="element node" data-element-id="2" data-node-id="2" data-label-name="2">' +
+             '</circle><circle r="1.5" stroke="black" fill="#b3b3b3" cx="41.89224624633789" cy="49.40426254272461"' +
+             ' stroke-width="0.1" data-type="element node" data-element-id="3" data-node-id="3" data-label-name="3">' +
+             '</circle><circle r="1.5" stroke="black" fill="#b3b3b3" cx="22.661476135253906" cy="39.20359420776367" ' +
+             'stroke-width="0.1" data-type="element node" data-element-id="4" data-node-id="4" ' +
+             'data-label-name="4"></circle>',
+        sublabels: [
+            {
+                name: '1',
+                attributes: [],
+                type: 'points',
+            },
+            {
+                name: '2',
+                attributes: [],
+                type: 'points',
+            },
+            {
+                name: '3',
+                attributes: [],
+                type: 'points',
+            },
+            {
+                name: '4',
+                attributes: [],
+                type: 'points',
+            },
+        ],
+    };
     const rectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -43,6 +85,7 @@ context('Settings. Text size/position. Text labels content.', () => {
         coordinates: [[150, 600], [500, 600], [500, 800], [150, 800]],
     }];
 
+    const skeletonType = 'Shape';
     const skeletonPosition = {
         xtl: 600,
         ytl: 600,
@@ -95,27 +138,63 @@ context('Settings. Text size/position. Text labels content.', () => {
     }
 
     before(() => {
-        cy.openTaskJob(taskName);
-        cy.createRectangle(rectangleShape2Points);
-        cy.createPolygon(polygonTrack);
-        cy.startMaskDrawing();
-        cy.drawMask(maskDrawingActions);
-        cy.finishMaskDrawing();
-        cy.createSkeleton({
-            ...skeletonPosition,
-            labelName: skeleton.name,
-            type: `${skeleton.type[0].toUpperCase()}${skeleton.type.slice(1).toLowerCase()}`,
-        });
+        cy.visit('auth/login');
+        cy.login();
+        cy.get('.cvat-tasks-page').should('exist').and('be.visible');
 
-        // Always show object details
-        cy.openSettings();
-        cy.get('.cvat-settings-modal').within(() => {
-            cy.contains('Workspace').click();
-            cy.get('.cvat-workspace-settings-show-text-always').within(() => {
-                cy.get('[type="checkbox"]').check();
+        cy.headlessCreateTask({
+            labels: [
+                {
+                    name: labelName,
+                    attributes: [{
+                        name: attrName,
+                        mutable: false,
+                        input_type: 'text',
+                        default_value: textDefaultValue,
+                        values: [],
+                    }],
+                    type: 'any',
+                },
+                skeletonLabel,
+            ],
+            name: taskName,
+            project_id: null,
+            source_storage: { location: 'local' },
+            target_storage: { location: 'local' },
+        }, {
+            server_files: serverFiles,
+            image_quality: 70,
+            use_zip_chunks: true,
+            use_cache: true,
+            sorting_method: 'lexicographical',
+        }).then((response) => {
+            taskID = response.taskID;
+            [jobID] = response.jobID;
+        }).then(() => {
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+
+            cy.createRectangle(rectangleShape2Points);
+            cy.createPolygon(polygonTrack);
+            cy.startMaskDrawing();
+            cy.drawMask(maskDrawingActions);
+            cy.finishMaskDrawing();
+            cy.createSkeleton({
+                ...skeletonPosition,
+                labelName: skeletonLabel.name,
+                type: skeletonType,
             });
+
+            // Always show object details
+            cy.openSettings();
+            cy.get('.cvat-settings-modal').within(() => {
+                cy.contains('Workspace').click();
+                cy.get('.cvat-workspace-settings-show-text-always').within(() => {
+                    cy.get('[type="checkbox"]').check();
+                });
+            });
+            cy.closeSettings();
         });
-        cy.closeSettings();
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -190,7 +269,7 @@ context('Settings. Text size/position. Text labels content.', () => {
 
             testLabelTextContent(1);
             testLabelTextContent(2);
-            cy.get('.cvat_canvas_text_attribute').should('have.length', 6);
+            cy.get('.cvat_canvas_text_attribute').should('have.length', 3);
             cy.get('.cvat_canvas_text_description').should('not.exist');
         });
     });
