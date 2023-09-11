@@ -13,7 +13,6 @@ require('./commands_opencv');
 require('./commands_organizations');
 require('./commands_cloud_storages');
 require('./commands_webhooks');
-require('./commands_masks');
 require('@cypress/code-coverage/support');
 require('cypress-real-events/support');
 
