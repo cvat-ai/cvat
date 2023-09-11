@@ -298,7 +298,7 @@ jobs:
           kubectl get pods
           kubectl logs $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}')
           kubectl exec -i $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- \
-            python3 ~/manage.py migrate --check
+            /bin/bash -c "python3 /home/django/manage.py migrate --check"
 
       - name: Copy file share assets
         run: |
