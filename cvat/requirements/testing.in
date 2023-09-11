@@ -1,3 +1,4 @@
 -r development.in
-fakeredis==2.10.3
+
 coverage==7.2.3
+fakeredis==2.10.3
