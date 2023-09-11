@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -83,9 +84,12 @@ context('Autoborder feature.', () => {
             cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
             cy.get('body').type('{Ctrl}'); // Autoborder activation
             testAutoborderPointsCount(8); // 8 points at the rectangles
-            cy.get('.cvat-canvas-container').click(400, 350).click(450, 250).click(500, 350).click(500, 450);
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
-                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('.cvat-canvas-container').click(400, 350);
+            cy.get('.cvat-canvas-container').click(450, 250);
+            cy.get('.cvat-canvas-container').click(500, 350);
+            cy.get('.cvat-canvas-container').click(500, 450);
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
@@ -96,14 +100,13 @@ context('Autoborder feature.', () => {
             cy.interactControlButton('draw-polyline');
             cy.get('.cvat-draw-polyline-popover').find('[type="button"]').contains('Shape').click();
             testAutoborderPointsCount(12); // 8 points at the rectangles + 4 at the polygon
-            cy.get('.cvat-canvas-container') // Drawning
-                .click(600, 350)
-                .click(400, 450)
-                .click(550, 500)
-                .click(600, 450)
-                .click(600, 350);
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
-                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('.cvat-canvas-container').click(600, 350);
+            cy.get('.cvat-canvas-container').click(400, 450);
+            cy.get('.cvat-canvas-container').click(550, 500);
+            cy.get('.cvat-canvas-container').click(600, 450);
+            cy.get('.cvat-canvas-container').click(600, 350);
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates

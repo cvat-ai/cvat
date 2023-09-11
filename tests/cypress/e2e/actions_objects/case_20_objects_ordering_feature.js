@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -65,7 +66,8 @@ context('Objects ordering feature', () => {
         });
         it('Sort objects by "Updated time". Change something in the first object. This object now in the top', () => {
             cy.sidebarItemSortBy('Updated time');
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').rightclick();
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').rightclick();
             cy.get('.cvat-canvas-context-menu').within(() => {
                 cy.contains('.cvat-objects-sidebar-state-item-collapse', 'DETAILS').click();
                 cy.contains('.cvat-object-item-attribute-wrapper', attrName).within(() => {

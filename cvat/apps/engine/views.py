@@ -8,7 +8,7 @@ import os
 import os.path as osp
 from PIL import Image
 from types import SimpleNamespace
-from typing import Optional
+from typing import Optional, Any, Dict, List, cast
 import pytz
 import traceback
 import textwrap
@@ -16,7 +16,7 @@ from copy import copy
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, List, cast
+from textwrap import dedent
 
 import django_rq
 from django.apps import apps
@@ -785,6 +785,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'subset', 'mode', 'dimension', 'tracker_link'
     )
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
+    filter_description = dedent("""
+
+        There are few examples for complex filtering tasks:\n
+            - Get all tasks from 1,2,3 projects - { "and" : [{ "in" : [{ "var" : "project_id" }, [1, 2, 3]]}]}\n
+            - Get all completed tasks from 1 project - { "and": [{ "==": [{ "var" : "status" }, "completed"]}, { "==" : [{ "var" : "project_id"}, 1]}]}\n
+    """)
     simple_filters = list(search_fields) + ['project_id']
     ordering_fields = list(filter_fields)
     ordering = "-id"
@@ -2747,6 +2753,21 @@ class AssetsViewSet(
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
+
+    # FIXME: It should be done in another way. It is better to introduce a "public resource" concept and handle it
+    # properly in PolicyEnfocer. Looks like PolicyEnfocer should handle rest_framework.permissions.IsAuthenticated internally.
+    @action(methods=['GET'], detail=True, url_path='public', permission_classes=[])
+    def public_retrieve(self, request, *args, **kwargs):
+        # Note: It is not a good approach to implement one more endpoint for receiving public assets
+        # but it separated to 2 endpoints for better server API specification.
+        # It could be implemented via overwriting get_permissions func,
+        # but in that case the specification would contain incorrect security information.
+        # Note: we cannot move this logic to OPA because OPA permissions
+        # don't imply that the user will be anonymous.
+        instance = self.get_object()
+        if instance.guide.is_public:
+            return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance):
         full_path = os.path.join(instance.get_asset_dir(), instance.filename)

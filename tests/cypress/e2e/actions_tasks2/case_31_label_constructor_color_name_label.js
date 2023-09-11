@@ -110,7 +110,8 @@ context('Label constructor. Color label. Label name editing', () => {
             });
             cy.get('.cvat-change-task-label-color-button').click();
             cy.changeColorViaBadge(labelColor.yellowHex);
-            cy.get('[placeholder="Label name"]').clear().type(colorYellow); // Check PR 2806
+            cy.get('[placeholder="Label name"]').clear();
+            cy.get('[placeholder="Label name"]').type(colorYellow); // Check PR 2806
             cy.contains('button', 'Done').click();
         });
 
@@ -149,7 +150,9 @@ context('Label constructor. Color label. Label name editing', () => {
                         .not('.ant-popover-hidden')
                         .should('be.visible')
                         .within(() => {
-                            cy.contains('hex').prev().clear().type(labelColor.yellowHex);
+                            cy.contains('hex').prev();
+                            cy.contains('hex').prev().clear();
+                            cy.contains('hex').prev().type(labelColor.yellowHex);
                             cy.contains('button', 'Cancel').click();
                         });
                     cy.get('.cvat-label-color-picker').should('be.hidden');

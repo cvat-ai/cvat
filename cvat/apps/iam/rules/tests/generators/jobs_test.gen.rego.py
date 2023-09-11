@@ -1,4 +1,4 @@
-# Copyright (C) 2022 CVAT.ai Corporation
+# Copyright (C) 2022-2023 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -23,7 +23,7 @@ def read_rules(name):
             row["limit"] = row["limit"].replace("none", "None")
             found = False
             for col, val in row.items():
-                if col in ["limit", "method", "url", "resource"]:
+                if col in ["limit", "method", "url", "resource", "strict_privilege"]:
                     continue
                 complex_val = [v.strip() for v in val.split(",")]
                 if len(complex_val) > 1:
@@ -101,7 +101,16 @@ def eval_rule(scope, context, ownership, privilege, membership, data):
             rules,
         )
     )
-    rules = list(filter(lambda r: GROUPS.index(privilege) <= GROUPS.index(r["privilege"]), rules))
+    rules = list(
+        filter(
+            lambda r: (
+                GROUPS.index(privilege) <= GROUPS.index(r["privilege"])
+                if r["strict_privilege"] == "false"
+                else privilege == r["privilege"]
+            ),
+            rules,
+        )
+    )
     resource = data["resource"]
     rules = list(
         filter(lambda r: not r["limit"] or eval(r["limit"], {"resource": resource}), rules)

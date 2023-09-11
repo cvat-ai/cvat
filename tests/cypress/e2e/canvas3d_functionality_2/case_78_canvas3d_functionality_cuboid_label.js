@@ -34,10 +34,9 @@ context('Canvas 3D functionality. Interaction with cuboid via sidebar.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Activate a cuboid on sidear.', () => {
-            cy.get('#cvat-objects-sidebar-state-item-1')
-                .trigger('mouseover')
-                .should('have.class', 'cvat-objects-sidebar-state-active-item')
-                .wait(1000); // Wating for cuboid activation
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
+            cy.get('#cvat-objects-sidebar-state-item-1').should('have.class', 'cvat-objects-sidebar-state-active-item');
+            cy.wait(1000); // Wating for cuboid activation
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_activating_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_before_all.png`,

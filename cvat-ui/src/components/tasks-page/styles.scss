@@ -88,6 +88,14 @@
 .cvat-task-item-ribbon {
     padding: $grid-unit-size;
     height: unset;
+
+    > .ant-ribbon-text {
+        > div {
+            display: flex;
+            flex-direction: column;
+            gap: $grid-unit-size * 2;
+        }
+    }
 }
 
 .cvat-tasks-list-item {

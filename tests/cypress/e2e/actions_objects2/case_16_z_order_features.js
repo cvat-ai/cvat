@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -70,7 +71,8 @@ context('Actions on polygon', () => {
         });
 
         it('Activate first shape', () => {
-            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mousemove').trigger('mouseover');
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mousemove');
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         });
 

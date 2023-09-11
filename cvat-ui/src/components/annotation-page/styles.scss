@@ -460,21 +460,6 @@
             padding-top: $grid-unit-size * 2;
         }
 
-        .query-builder-container {
-            .query-builder > :first-child {
-                padding-right: 0;
-            }
-
-            .group-or-rule {
-                border-radius: $grid-unit-size * 0.25;
-            }
-
-            .group {
-                background: rgba(216, 233, 250, 50%);
-                border: 1px solid #d3e0ec;
-            }
-        }
-
         .ant-typography {
             display: block;
             padding: $grid-unit-size * 2 $grid-unit-size * 3 $grid-unit-size  $grid-unit-size * 2;

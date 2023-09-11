@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -47,7 +48,8 @@ context('Delete unlock/lock object', () => {
 
     function deleteObjectViaGUIFromObject() {
         cy.get('.cvat-canvas-container').within(() => {
-            cy.get('.cvat_canvas_shape').trigger('mousemove').rightclick();
+            cy.get('.cvat_canvas_shape').trigger('mousemove');
+            cy.get('.cvat_canvas_shape').rightclick();
         });
         cy.get('.cvat-canvas-context-menu').within(() => {
             cy.get('.cvat-objects-sidebar-state-item').within(() => {
