@@ -27,7 +27,7 @@ For export of images:
 
 - Supported annotations: Polygons (segmentation task)
 - Attributes:
-  - 'is_crowd' boolean, should be defined for labels as `checkbox`.
+  - `is_crowd` boolean, should be defined for labels as `checkbox`.
     Specifies if the annotation label can distinguish between different instances.
     If False, the annotation id field encodes the instance id.
 - Tracks: Not supported.
