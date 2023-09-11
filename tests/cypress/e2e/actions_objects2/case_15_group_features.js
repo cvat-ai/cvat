@@ -65,7 +65,6 @@ context('Group features', () => {
     });
 
     function testGroupObjects(objectsArray, cancelGrouping) {
-        cy.get('.cvat-extra-controls-control').click();
         cy.get('.cvat-group-control').click();
         for (const shapeToGroup of objectsArray) {
             cy.get(shapeToGroup).click().should('have.class', 'cvat_canvas_shape_grouping');
@@ -73,13 +72,11 @@ context('Group features', () => {
         if (cancelGrouping) {
             cy.get('body').type('{Esc}');
         } else {
-            cy.get('.cvat-extra-controls-control').click();
             cy.get('.cvat-group-control').click();
         }
     }
 
     function testUnGroupObjects() {
-        cy.get('.cvat-extra-controls-control').click();
         cy.get('.cvat-group-control').click();
         for (const shapeToGroup of shapeArray) {
             cy.get(shapeToGroup).click().should('have.class', 'cvat_canvas_shape_grouping');
@@ -171,7 +168,6 @@ context('Group features', () => {
             testUnGroupObjects(); // Ungroup
             testShapesFillEquality(true);
             // Start grouping. Cancel grouping via click to the same shape.
-            cy.get('.cvat-extra-controls-control').click();
             cy.get('.cvat-group-control').click();
             cy.get(shapeArray[0])
                 .click()
