@@ -1378,7 +1378,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self.get_object() # force call of check_object_permissions()
         response = self._get_rq_response(
             queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-            job_id=f"create:task.id{pk}-by-{request.user}"
+            job_id=f"create:task.id{pk}"
         )
         serializer = RqStatusSerializer(data=response)
 
