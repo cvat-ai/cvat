@@ -282,8 +282,11 @@ jobs:
           cd ..
           helm upgrade -n default release-${{ github.run_id }}-${{ github.run_attempt }} -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/cvat.values.yaml -f helm-chart/test.values.yaml
 
-      - name: Update config
+      - name: Update test config
         run: |
+          sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/cypress.config.js
+          sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/cypress_canvas3d.config.js
+          sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/nightly_cypress.config.js
           echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
 
       - name: Wait for CVAT to be ready
@@ -326,7 +329,7 @@ jobs:
       - name: Creating a log file from "cvat" container logs
         if: failure()
         run: |
-            docker logs cvat_server > ${{ github.workspace }}/tests/cvat_kube_${{ matrix.specs }}.log
+          kubectl logs $(kubectl get pods -l component=server -o 'jsonpath={.items[0].metadata.name}') > ${{ github.workspace }}/tests/cvat_kube_${{ matrix.specs }}.log
 
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
