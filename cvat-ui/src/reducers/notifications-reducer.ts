@@ -1215,6 +1215,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         jobFetching: {
                             message: 'Could not receive image data',
                             reason: action.payload.error,
+                            shouldLog: true,
                             className: 'cvat-notification-notice-fetch-frame-data-from-the-server-failed',
                         },
                     },

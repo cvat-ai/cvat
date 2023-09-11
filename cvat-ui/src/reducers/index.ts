@@ -417,6 +417,7 @@ export interface ModelsState {
 export interface ErrorState {
     message: string;
     reason: string;
+    shouldLog?: boolean;
     className?: string;
 }
 

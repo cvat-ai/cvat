@@ -60,7 +60,7 @@ import GuidePage from 'components/md-guide/guide-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { getCore } from 'cvat-core-wrapper';
-import { NotificationsState, PluginsState } from 'reducers';
+import { ErrorState, NotificationsState, PluginsState } from 'reducers';
 import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
     platformInfo,
@@ -338,7 +338,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private showErrors(): void {
-        function showError(title: string, _error: any, className?: string): void {
+        function showError(title: string, _error: any, shouldLog?: boolean, className?: string): void {
             const error = _error.toString();
             const dynamicProps = typeof className === 'undefined' ? {} : { className };
             notification.error({
@@ -350,10 +350,14 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 description: error.length > 300 ? 'Open the Browser Console to get details' : <ReactMarkdown>{error}</ReactMarkdown>,
             });
 
-            setTimeout(() => {
-                // throw the error to be caught by global listener
-                throw _error;
-            });
+            if (shouldLog) {
+                setTimeout(() => {
+                    // throw the error to be caught by global listener
+                    throw _error;
+                });
+            } else {
+                console.error(error);
+            }
         }
 
         const { notifications, resetErrors } = this.props;
@@ -361,10 +365,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         let shown = false;
         for (const where of Object.keys(notifications.errors)) {
             for (const what of Object.keys((notifications as any).errors[where])) {
-                const error = (notifications as any).errors[where][what];
+                const error = (notifications as any).errors[where][what] as ErrorState;
                 shown = shown || !!error;
                 if (error) {
-                    showError(error.message, error.reason, error.className);
+                    showError(error.message, error.reason, error.shouldLog, error.className);
                 }
             }
         }
