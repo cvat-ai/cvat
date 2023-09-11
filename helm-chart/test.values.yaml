@@ -24,8 +24,10 @@ cvat:
           value: cvat.settings.testing_rest
     # Images are already present in the node
     imagePullPolicy: Never
+    tag: local
   frontend:
     imagePullPolicy: Never
+    tag: local
 
 traefik:
   logs:
