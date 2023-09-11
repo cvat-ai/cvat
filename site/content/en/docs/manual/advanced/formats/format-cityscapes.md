@@ -20,18 +20,19 @@ For more information, see:
 - [Cityscapes format specification](https://github.com/mcordts/cityscapesScripts#the-cityscapes-dataset)
 - [Cityscapes dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cityscapes_dataset)
 
-- Supported annotations
-
-  - Polygons (segmentation task)
-
-- Supported attributes
-  - 'is_crowd' (boolean, should be defined for labels as `checkbox` -es)
-    Specifies if the annotation label can distinguish between different instances.
-    If False, the annotation id field encodes the instance id.
 
 # Cityscapes export
 
-Downloaded file: a zip archive of the following structure:
+For export of images:
+
+- Supported annotations: Polygons (segmentation task)
+- Attributes:
+  - 'is_crowd' boolean, should be defined for labels as `checkbox`.
+    Specifies if the annotation label can distinguish between different instances.
+    If False, the annotation id field encodes the instance id.
+
+
+Downloaded file is a .zip archive with the following structure:
 
 ```
 .

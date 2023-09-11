@@ -13,8 +13,8 @@ See:
 
 - [Data export formats](#data-export-formats)
 - [Exporting dataset in CVAT](#exporting-dataset-in-cvat)
-  - [Export dataset from Task](#export-dataset-from-task)
-  - [Export dataset from Job](#export-dataset-from-job)
+  - [Exporting dataset from Task](#exporting-dataset-from-task)
+  - [Exporting dataset from Job](#exporting-dataset-from-job)
 - [Data export video tutorial](#data-export-video-tutorial)
 
 ## Data export formats
@@ -35,7 +35,7 @@ The table below outlines the available formats for data export in CVAT.
 | [ICDAR](format-icdar)<br> Includes ICDAR Recognition 1.0, <br>ICDAR Detection 1.0, <br>and ICDAR Segmentation 1.0 <br>descriptions. | .txt          | Text recognition, <br>Text detection, <br>Text segmentation | EAST: Efficient and Accurate <br>Scene Text Detector, CRNN, Mask TextSpotter, TextSnake, <br>and others.                                                                   | Tags, Bounding Boxes, Polygons                                                         | Specific attributes  | Not supported |
 | [ImageNet 1.0](format-imagenet)                                                                                                     | .jpg <br>.txt | Semantic Segmentation, <br>Classification, <br>Detection    | VGG (VGG16, VGG19), Inception, YOLO, Faster R-CNN , U-Net, and others                                                                                                      | Tags                                                                                   | No attributes        | Not supported |
 | [KITTI](format-kitti)                                                                                                               | .txt          | Semantic Segmentation, Detection, 3D                        | PointPillars, SECOND, AVOD, YOLO, DeepSORT, PWC-Net, ORB-SLAM, and others.                                                                                                 | Bounding Boxes, Polygons                                                               | Specific attributes  | Not supported |
-| [LabelMe 3.0](format-labelme)                                                                                                       | .xml          | Compatibility, <br>Semantic Segmentation                    | U-Net, Mask R-CNN, Fast R-CNN,<br> Faster R-CNN, DeepLab, YOLO, <br>and other.                                                                                             | Bounding Boxes, Polygons                                                               | Supported (Polygons) | Not supported |
+| [LabelMe 3.0](format-labelme)                                                                                                       | .xml          | Compatibility, <br>Semantic Segmentation                    | U-Net, Mask R-CNN, Fast R-CNN,<br> Faster R-CNN, DeepLab, YOLO, <br>and others.                                                                                             | Bounding Boxes, Polygons                                                               | Supported (Polygons) | Not supported |
 | [LFW 1.0](format-lfw)                                                                                                               | .txt          | Verification, <br>Face recognition                          | OpenFace, VGGFace & VGGFace2, <br>FaceNet, ArcFace, <br>and others.                                                                                                        | Tags, Skeletons                                                                        | Specific attributes  | Not supported |
 | [Market-1501 1.0](format-market1501)                                                                                                | .txt          | Re-identification                                           | Triplet Loss Networks, <br>Deep ReID models, and others.                                                                                                                   | Bounding Boxes                                                                         | Specific attributes  | Not supported |
 | [MOT 1.0](format-mot)                                                                                                               | .txt          | Video Tracking, <br>Detection                               | SORT, MOT-Net, IOU Tracker, <br>and others.                                                                                                                                | Bounding Boxes, Tracks                                                                 | Specific attributes  | Supported     |
@@ -46,13 +46,13 @@ The table below outlines the available formats for data export in CVAT.
 | [TFRecord 1.0](format-tfrecord)                                                                                                     | .pbtxt        | Detection<br>Classification                                 | SSD, Faster R-CNN, YOLO, <br>GG16, ResNet, Inception, MobileNet, <br>and others.                                                                                           | Bounding Boxes, Polygons                                                               | No attributes        | Not supported |
 | [VGGFace2 1.0](format-vggface2)                                                                                                     | .csv          | Face recognition                                            | VGGFace, ResNet, Inception, <br> and others.                                                                                                                               | Bounding Boxes, Points                                                                 | No attributes        | Not supported |
 | [WIDER Face 1.0](format-widerface)                                                                                                  | .txt          | Detection                                                   | SSD (Single Shot MultiBox Detector), Faster R-CNN, YOLO, <br>and others.                                                                                                   | Bounding Boxes, Tags                                                                   | Specific attributes  | Not supported |
-| [YOLO](format-yolo)                                                                                                                 | .txt          | Detection                                                   | YOLOv1, YOLOv2 (YOLO9000), <br>YOLOv3, YOLOv4, and others.                                                                                                                 | Bounding Boxes                                                                         | No attributes        | Not supported |
+| [YOLO 1.0](format-yolo)                                                                                                                 | .txt          | Detection                                                   | YOLOv1, YOLOv2 (YOLO9000), <br>YOLOv3, YOLOv4, and others.                                                                                                                 | Bounding Boxes                                                                         | No attributes        | Not supported |
 
 <!--lint enable maximum-line-length-->
 
 ## Exporting dataset in CVAT
 
-### Export dataset from Task
+### Exporting dataset from Task
 
 To export dataset from task, follow these steps:
 
@@ -71,7 +71,7 @@ To export dataset from task, follow these steps:
 
 6. Click **OK** to initiate the export.
 
-### Export dataset from Job
+### Exporting dataset from Job
 
 To export a dataset from Job follow these steps:
 
