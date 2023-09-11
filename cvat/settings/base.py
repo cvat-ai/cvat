@@ -286,6 +286,9 @@ TEMPLATES = [
 IAM_TYPE = 'BASIC'
 IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
 
+# FIXME: There are several ways to "replace" default IAM role.
+# One of them is to assign groups when you create a user inside Crowdsourcing plugin and don't add more groups
+# if user.groups field isn't empty.
 # the function should be in uppercase to able get access from django.conf.settings
 def GET_IAM_DEFAULT_ROLES(user) -> list:
     return ['user']
@@ -299,6 +302,7 @@ LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
 OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'request', 'server',]
+# FIXME: It looks like an internal function of IAM app.
 IAM_CONTEXT_BUILDERS = ['cvat.apps.iam.utils.build_iam_context',]
 
 # ORG settings
