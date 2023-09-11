@@ -6,13 +6,18 @@ weight: 6
 Segmentation masks format is often used in the training of models for tasks
 like semantic segmentation, instance segmentation, and panoptic segmentation.
 
+Segmentation Mask in CVAT is
+created by CVAT format inside the [Pascal VOC](docs/manual/advanced/formats/format-voc/)
+
 ## Segmentation mask export
 
 For export of images:
 
-- Supported annotations: Bounding Boxes, Polygons
+- Supported annotations: Bounding Boxes, Polygons.
+- Attributes: Not supported.
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/

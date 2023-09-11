@@ -10,8 +10,8 @@ that are compatible with popular frameworks like TensorFlow or PyTorch.
 
 For more information, see:
 
-- [LabelMe](http://labelme.csail.mit.edu/Release3.0).
-- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/labelme_dataset).
+- [LabelMe](http://labelme.csail.mit.edu/Release3.0)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/labelme_dataset)
 
 ## LabelMe export
 
@@ -19,8 +19,9 @@ For export of images:
 
 - Supported annotations: Bounding Boxes, Polygons.
 - Attributes: Supported for Polygons.
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/

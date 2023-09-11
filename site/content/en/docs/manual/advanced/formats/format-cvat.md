@@ -21,7 +21,7 @@ For export of images:
 - Attributes: Supported.
 - Tracks: Supported (tracks are split by frames).
 
-Downloaded file is a zip archive with following structure:
+The downloaded file is a zip archive with following structure:
 
 ```bash
 taskname.zip/

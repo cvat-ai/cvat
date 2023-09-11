@@ -20,8 +20,9 @@ For export of images: any 2D shapes, tags
 
 - Supported annotations: Bounding Boxes, Polygons.
 - Attributes: Supported.
+- Tracks: Supported.
 
-Downloaded file is a zip archive with the following structure:
+The downloaded file is a zip archive with the following structure:
 
 ```bash
 taskname.zip/

@@ -39,8 +39,9 @@ For export of images:
     the bounding box associated with the mask.
     <br>`predicted_iou` must be defined for labels as `text` or `number`.
     Predicted IoU value with respect to the ground truth.
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```
 └─ taskname.zip/

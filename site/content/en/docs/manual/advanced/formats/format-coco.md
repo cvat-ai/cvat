@@ -30,7 +30,7 @@ For export of images and videos:
     section of the annotation.
 - Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```
 archive.zip/

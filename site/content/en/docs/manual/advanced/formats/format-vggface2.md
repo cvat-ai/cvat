@@ -16,9 +16,11 @@ For more information, see:
 
 For export of images:
 
-- Supported annotations: Bounding Boxes, Points (landmarks - groups of 5 points)
+- Supported annotations: Bounding Boxes, Points (landmarks - groups of 5 points).
+- Attributes: Not supported.
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/

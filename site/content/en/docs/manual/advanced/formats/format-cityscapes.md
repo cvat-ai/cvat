@@ -30,9 +30,10 @@ For export of images:
   - 'is_crowd' boolean, should be defined for labels as `checkbox`.
     Specifies if the annotation label can distinguish between different instances.
     If False, the annotation id field encodes the instance id.
+- Tracks: Not supported.
 
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```
 .

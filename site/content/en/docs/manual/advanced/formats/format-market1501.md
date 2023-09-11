@@ -17,9 +17,10 @@ For more information, see:
 For export of images:
 
 - Supported annotations: Bounding Boxes
-- Attributes: `query`, `person_id`, `camera_id`.
+- Attributes: `query` (checkbox), `person_id` (number), `camera_id`(number).
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+Th downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/

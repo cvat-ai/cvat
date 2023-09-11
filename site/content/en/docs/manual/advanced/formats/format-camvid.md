@@ -21,7 +21,7 @@ For export of images and videos:
 - Attributes: Not supported.
 - Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/

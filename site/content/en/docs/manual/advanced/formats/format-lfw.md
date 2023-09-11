@@ -25,8 +25,9 @@ For export of images:
     list of image names with mismatched persons.
   - `positive_pairs` (should be defined for labels as `text`):
     list of image names with matched persons.
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 <archive_name>.zip/

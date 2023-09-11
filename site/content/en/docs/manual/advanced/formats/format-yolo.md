@@ -17,8 +17,10 @@ For more information, see:
 For export of images:
 
 - Supported annotations: Bounding Boxes.
+- Attributes: Not supported.
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 archive.zip/

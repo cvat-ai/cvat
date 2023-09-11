@@ -9,7 +9,7 @@ the domains of pedestrian tracking, vehicle tracking, and more.
 The MOT sequence format essentially contains frames of video
 along with annotations that specify object locations and identities over time.
 
-This version encoded as .png.
+This version encoded as .png. Supports masks.
 
 For more information, see:
 
@@ -20,10 +20,11 @@ For more information, see:
 
 For export of images and videos:
 
-- Supported annotations: Bounding Boxes, Tracks
-- Attributes: `visibility` (number), `ignored` (checkbox)
+- Supported annotations: Bounding Boxes, Tracks.
+- Attributes: `visibility` (number), `ignored` (checkbox).
+- Tracks: Supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/

@@ -12,10 +12,10 @@ used with models that are designed or adapted for these types of tasks.
 
 For more information, see:
 
-- [KITTI site](http://www.cvlibs.net/datasets/kitti/).
-- [Format specification for KITTI detection](https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_object.zip).
-- [Format specification for KITTI segmentation](https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_semantics.zip).
-- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/kitti_dataset).
+- [KITTI site](http://www.cvlibs.net/datasets/kitti/)
+- [Format specification for KITTI detection](https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_object.zip)
+- [Format specification for KITTI segmentation](https://s3.eu-central-1.amazonaws.com/avg-kitti/devkit_semantics.zip)
+- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/kitti_dataset)
 
 ## KITTI annotations export
 
@@ -34,8 +34,9 @@ For export of images:
     using `checkboxes` for labels.
     Signifies that the annotation encapsulates
     multiple instances of the same object class.
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```
 └─ annotations.zip/

@@ -21,13 +21,16 @@ For export of images:
   - Supported annotations: Tag `icdar`
   - Attributes: `caption`.
 - **ICDAR Detection 1.0** (Text detection):
-  - Supported annotations: Bounding Boxes, Polygons with tag `icdar`.
+  - Supported annotations: Bounding Boxes, Polygons with lavel `icdar`
+    added in constructor.
   - Attributes: `text`.
 - **ICDAR Segmentation 1.0** (Text segmentation):
-  - Supported annotations: Bounding Boxes, Polygons with tag `icdar`
+  - Supported annotations: Bounding Boxes, Polygons with label `icdar`
+    added in constructor.
   - Attributes: `index`, `text`, `color`, `center`
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 # text recognition task

@@ -19,9 +19,11 @@ For more information, see:
 
 For export of images:
 
-- Supported annotations: Tags
+- Supported annotations: Tags.
+- Attributes: Not supported.
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 # if we save images:

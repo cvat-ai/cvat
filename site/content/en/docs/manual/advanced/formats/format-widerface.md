@@ -20,8 +20,9 @@ For export of images:
 - Attributes:
   - `blur`, `expression`, `illumination`, `pose`, `invalid`
   - `occluded` (both the annotation property & an attribute).
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/

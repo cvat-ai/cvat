@@ -23,10 +23,11 @@ For export of images:
   Tags (classification), Polygons (segmentations)
 - Attributes:
   - `occluded` as both UI option and a separate attribute.
-  - `truncated` and `difficult` must be defined for labels as `checkbox`/
-  - arbitrary attributes in the `attributes` section of XML files.
+  - `truncated` and `difficult` must be defined for labels as `checkbox`.
+  - Arbitrary attributes in the `attributes` section of XML files.
+- Tracks: Not supported.
 
-Downloaded file is a .zip archive with the following structure:
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/
