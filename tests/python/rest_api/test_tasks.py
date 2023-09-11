@@ -789,7 +789,7 @@ class TestPostTaskData:
             with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
                 assert len(zip_file.namelist()) == 1
                 name = zip_file.namelist()[0]
-                assert name == '000000.tif'
+                assert name == "000000.tif"
                 with zip_file.open(name) as zipped_img:
                     im = Image.open(zipped_img)
                     # raw image is horizontal 100x150 with -90 degrees rotation
@@ -801,7 +801,7 @@ class TestPostTaskData:
             with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
                 assert len(zip_file.namelist()) == 1
                 name = zip_file.namelist()[0]
-                assert name == '000000.jpeg'
+                assert name == "000000.jpeg"
                 with zip_file.open(name) as zipped_img:
                     im = Image.open(zipped_img)
                     # raw image is horizontal 100x150 with -90 degrees rotation
