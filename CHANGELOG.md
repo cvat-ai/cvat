@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Invalid input validation in for `cloud_storage_id` (<https://github.com/opencv/cvat/pull/6825>)
 
 ### Security
 - TDB
