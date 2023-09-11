@@ -285,8 +285,11 @@ jobs:
       - name: Update test config
         run: |
           sed -i -e 's$http://localhost:8080$http://cvat.local$g' tests/cypress.config.js
+          sed -i -e 's$defaultCommandTimeout: 25000$defaultCommandTimeout: 50000$g' tests/cypress.config.js
           sed -i -e 's$http://localhost:8080$http://cvat.local$g' tests/cypress_canvas3d.config.js
+          sed -i -e 's$defaultCommandTimeout: 25000$defaultCommandTimeout: 50000$g' tests/cypress_canvas3d.config.js
           sed -i -e 's$http://localhost:8080$http://cvat.local$g' tests/nightly_cypress.config.js
+          sed -i -e 's$defaultCommandTimeout: 25000$defaultCommandTimeout: 50000$g' tests/nightly_cypress.config.js
           echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
 
       - name: Wait for CVAT to be ready
@@ -303,6 +306,7 @@ jobs:
       - name: Copy file share assets
         run: |
           kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
+          kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=worker-import -o jsonpath='{.items[0].metadata.name}'):/home/django/share
 
       - name: Run E2E tests
         env:
