@@ -69,6 +69,8 @@ class OrganizationFilterBackend(BaseFilterBackend):
 
         if (
             view.detail or not view.iam_organization_field or
+            # FIXME:  It should be handled in another way. For example, if we try to get information for a specific job
+            # and org isn't specified, we need to return the full list of labels, issues, comments.
             # Allow crowdsourcing users to get labels/issues/comments related to specific job.
             # Crowdsourcing user always has worker group and isn't a member of an organization.
             (

@@ -96,6 +96,7 @@ def get_iam_context(request, obj):
         builder_func = getattr(import_module(package), attr)
         iam_context.update(builder_func(request, organization, membership))
 
+    # FIXME: The primary app should know nothing about is_crowdsourcing plugin.
     if organization and not request.user.is_superuser and membership is None and not iam_context.get('is_crowdsourcing', False):
         raise PermissionDenied({'message': 'You should be an active member in the organization'})
 

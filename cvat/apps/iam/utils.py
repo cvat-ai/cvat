@@ -9,6 +9,7 @@ def create_opa_bundle():
         bundle_path.unlink()
 
     rules_paths = [Path(settings.BASE_DIR) / 'cvat/apps/iam/rules']
+    # FIXME: Let's have OPA_RULES_PATH instead for the list of directories.
     if getattr(settings, 'EXTRA_RULES_PATHS', None):
         rules_paths.extend([Path(settings.BASE_DIR) / p for p in settings.EXTRA_RULES_PATHS])
 

@@ -2754,6 +2754,8 @@ class AssetsViewSet(
         instance = self.get_object()
         return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
 
+    # FIXME: It should be done in another way. It is better to introduce a "public resource" concept and handle it
+    # properly in PolicyEnfocer. Looks like PolicyEnfocer should handle rest_framework.permissions.IsAuthenticated internally.
     @action(methods=['GET'], detail=True, url_path='public', permission_classes=[])
     def public_retrieve(self, request, *args, **kwargs):
         # Note: It is not a good approach to implement one more endpoint for receiving public assets
