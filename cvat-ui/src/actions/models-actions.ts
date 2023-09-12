@@ -4,11 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ActiveInference, ModelsQuery } from 'reducers';
 import {
-    ActiveInference, RQStatus, ModelsQuery,
+    ActiveInference, ModelsQuery,
 } from 'reducers';
-import { getCore, MLModel, ModelProvider, RQStatus } from 'cvat-core-wrapper';
+import { getCore, MLModel, RQStatus } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 
 export enum ModelsActionTypes {
