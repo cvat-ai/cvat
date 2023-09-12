@@ -5,6 +5,7 @@
 
 import { AnyAction } from 'redux';
 
+import { ServerError } from 'cvat-core-wrapper';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { FormatsActionTypes } from 'actions/formats-actions';
 import { ModelsActionTypes } from 'actions/models-actions';
@@ -1215,7 +1216,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         jobFetching: {
                             message: 'Could not receive image data',
                             reason: action.payload.error,
-                            shouldLog: true,
+                            shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-fetch-frame-data-from-the-server-failed',
                         },
                     },
