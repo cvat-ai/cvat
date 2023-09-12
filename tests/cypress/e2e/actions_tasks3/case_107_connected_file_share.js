@@ -64,7 +64,6 @@ context('Connected file share.', () => {
             });
 
             cy.openJob();
-            cy.once('uncaught:exception', () => false); // thrown exception is expected
             cy.get('.cvat-annotation-header').should('exist');
             // Error: . No such file or directory <image_name>".
             cy.get('.cvat-notification-notice-fetch-frame-data-from-the-server-failed').should('exist');
