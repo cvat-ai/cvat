@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +19,8 @@ context('Settings. "Player speed" option.', () => {
     function changePlayerSpeed(speed) {
         cy.openSettings();
         cy.get('.cvat-player-settings-speed').within(() => {
-            cy.get('.cvat-player-settings-speed-select').click().wait(300); // Wait for the dropdown menu transition.
+            cy.get('.cvat-player-settings-speed-select').click();
+            cy.wait(300); // Wait for the dropdown menu transition.
         });
         cy.get(`.cvat-player-settings-speed-${speed}`).click();
         cy.get('.cvat-player-settings-speed-select').should(

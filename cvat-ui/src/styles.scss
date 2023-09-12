@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import './base.scss';
+@import './base';
 
 $highlight-color: #1890ff;
 $highlight-active: #40a9ff;
@@ -108,8 +108,8 @@ hr {
 }
 
 .cvat-advanced-configuration-wrapper {
-    .ant-collapse-header {
-        align-items: center !important;
+    .ant-collapse-item > .ant-collapse-header {
+        align-items: center;
     }
 
     .cvat-title {
@@ -129,5 +129,62 @@ hr {
 .ant-notification-notice {
     p {
         margin-bottom: 0;
+    }
+}
+
+.query-builder-container {
+    .query-builder {
+        margin: $grid-unit-size;
+
+        .group {
+            background: none !important;
+            border: none !important;
+        }
+
+        /* stylelint-disable selector-class-pattern */
+        .group--header {
+            display: flex;
+            justify-content: space-between;
+
+            &::before {
+                left: 10px !important;
+            }
+        }
+
+        .rule.group-or-rule {
+            display: flex;
+            background: none !important;
+            border: none !important;
+
+            .rule--body {
+                display: flex;
+                row-gap: $grid-unit-size;
+
+                .rule--field {
+                    > .ant-select {
+                        min-width: $grid-unit-size * 16 !important;
+                    }
+                }
+
+                .rule--operator {
+                    margin-right: $grid-unit-size;
+
+                    > .ant-select {
+                        width: $grid-unit-size * 7 !important;
+                    }
+                }
+
+                .rule--value {
+                    .ant-select {
+                        min-width: $grid-unit-size * 15 !important;
+                    }
+
+                    .ant-picker {
+                        width: $grid-unit-size * 15 !important;
+                    }
+                }
+            }
+            /* stylelint-enable selector-class-pattern */
+        }
     }
 }

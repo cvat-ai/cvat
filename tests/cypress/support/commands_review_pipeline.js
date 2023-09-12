@@ -10,7 +10,8 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
         if (user !== '') {
             cy.get('.cvat-user-search-field').find('input').type(`${user}{Enter}`);
         } else {
-            cy.get('.cvat-user-search-field').find('input').clear().type('{Enter}');
+            cy.get('.cvat-user-search-field').find('input').clear();
+            cy.get('.cvat-user-search-field').find('input').type('{Enter}');
         }
         cy.get('.cvat-spinner').should('not.exist');
     });
@@ -19,11 +20,11 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
 Cypress.Commands.add('assignJobToUser', (jobID, user) => {
     cy.getJobNum(jobID).then(($job) => {
         cy.get('.cvat-jobs-list')
-            .contains('a', `Job #${$job}`)
-            .parents('.cvat-job-item')
-            .find('.cvat-job-assignee-selector input')
-            .click()
-            .clear();
+            .contains('a', `Job #${$job}`).parents('.cvat-job-item')
+            .find('.cvat-job-assignee-selector input').click();
+        cy.get('.cvat-jobs-list')
+            .contains('a', `Job #${$job}`).parents('.cvat-job-item')
+            .find('.cvat-job-assignee-selector input').clear();
     });
 
     cy.intercept('PATCH', '/api/jobs/**').as('patchJobAssignee');
@@ -44,11 +45,12 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
 Cypress.Commands.add('reviewJobToUser', (jobID, user) => {
     cy.getJobNum(jobID).then(($job) => {
         cy.get('.cvat-task-jobs-table')
-            .contains('a', `Job #${$job}`)
-            .parents('.cvat-task-jobs-table-row')
-            .find('.cvat-job-reviewer-selector')
-            .find('[type="search"]')
-            .clear()
+            .contains('a', `Job #${$job}`).parents('.cvat-task-jobs-table-row')
+            .find('.cvat-job-reviewer-selector').find('[type="search"]')
+            .clear();
+        cy.get('.cvat-task-jobs-table')
+            .contains('a', `Job #${$job}`).parents('.cvat-task-jobs-table-row')
+            .find('.cvat-job-reviewer-selector').find('[type="search"]')
             .type(`${user}{Enter}`);
     });
 });
@@ -108,20 +110,18 @@ Cypress.Commands.add('checkIssueRegion', () => {
     const sccSelectorIssueRegionId = '#cvat_canvas_issue_region_';
     cy.collectIssueRegionId().then((issueRegionIdList) => {
         const maxId = Math.max(...issueRegionIdList);
-        cy.get(`${sccSelectorIssueRegionId}${maxId}`)
-            .trigger('mousemove')
-            .should('be.visible');
+        cy.get(`${sccSelectorIssueRegionId}${maxId}`).trigger('mousemove');
+        cy.get(`${sccSelectorIssueRegionId}${maxId}`).should('be.visible');
     });
 });
 
 Cypress.Commands.add('createIssueFromObject', (object, issueType, customeIssueDescription) => {
     cy.get(object).then(($object) => {
         const objectFillOpacity = $object.attr('fill-opacity');
-        cy.get($object)
-            .trigger('mousemove')
-            .trigger('mouseover')
-            .should('have.attr', 'fill-opacity', Number(objectFillOpacity) * 10)
-            .rightclick();
+        cy.get($object).trigger('mousemove');
+        cy.get($object).trigger('mouseover');
+        cy.get($object).should('have.attr', 'fill-opacity', Number(objectFillOpacity) * 10);
+        cy.get($object).rightclick();
     });
     cy.get('.cvat-canvas-context-menu').should('be.visible').within(() => {
         cy.contains('.cvat-context-menu-item', new RegExp(`^${issueType}$`)).click();
@@ -142,16 +142,18 @@ Cypress.Commands.add('createIssueFromObject', (object, issueType, customeIssueDe
 });
 
 Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
-    cy.get('.cvat-issue-control').click().should('have.class', 'cvat-active-canvas-control');
+    cy.get('.cvat-issue-control').click();
+    cy.get('.cvat-issue-control').should('have.class', 'cvat-active-canvas-control');
     if (createIssueParams.type === 'rectangle') {
         cy.get('.cvat-canvas-container')
-            .trigger('mousedown', createIssueParams.firstX, createIssueParams.firstY, { button: 0 })
-            .trigger('mousemove', createIssueParams.secondX, createIssueParams.secondY)
-            .trigger('mouseup');
+            .trigger('mousedown', createIssueParams.firstX, createIssueParams.firstY, { button: 0 });
+        cy.get('.cvat-canvas-container')
+            .trigger('mousemove', createIssueParams.secondX, createIssueParams.secondY);
+        cy.get('.cvat-canvas-container').trigger('mouseup');
     } else if (createIssueParams.type === 'point') {
         cy.get('.cvat-canvas-container')
-            .trigger('mousedown', createIssueParams.firstX, createIssueParams.firstY, { button: 0 })
-            .trigger('mouseup');
+            .trigger('mousedown', createIssueParams.firstX, createIssueParams.firstY, { button: 0 });
+        cy.get('.cvat-canvas-container').trigger('mouseup');
     }
     cy.intercept('POST', '/api/issues?*').as('issues');
     cy.get('.cvat-create-issue-dialog').within(() => {
@@ -204,7 +206,8 @@ Cypress.Commands.add('submitReview', (decision, user) => {
         if (decision === 'Review next') {
             cy.intercept('GET', `/api/users?search=${user}&limit=10&is_active=true`).as('searchUsers');
             cy.get('.cvat-user-search-field').within(() => {
-                cy.get('input[type="search"]').clear().type(`${user}`);
+                cy.get('input[type="search"]').clear();
+                cy.get('input[type="search"]').type(`${user}`);
                 cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);
                 cy.get('input[type="search"]').type('{Enter}');
             });

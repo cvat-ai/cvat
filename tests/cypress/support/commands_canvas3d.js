@@ -24,9 +24,8 @@ Cypress.Commands.add('create3DCuboid', (cuboidCreationParams) => {
     cy.interactControlButton('draw-cuboid');
     cy.switchLabel(labelName, 'draw-cuboid');
     cy.get('.cvat-draw-cuboid-popover').contains(objectType).click();
-    cy.get('.cvat-canvas3d-perspective')
-        .trigger('mousemove', x, y)
-        .dblclick(x, y);
+    cy.get('.cvat-canvas3d-perspective').trigger('mousemove', x, y);
+    cy.get('.cvat-canvas3d-perspective').dblclick(x, y);
     cy.wait(1000); // Waiting for a cuboid creation
     cy.get('.cvat-draw-cuboid-popover').should('be.hidden');
 });

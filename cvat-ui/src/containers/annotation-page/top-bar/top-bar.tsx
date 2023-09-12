@@ -664,7 +664,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         };
 
         const subKeyMap = {
-            SAVE_JOB: keyMap.SAVE_JOB,
             UNDO: keyMap.UNDO,
             REDO: keyMap.REDO,
             DELETE_FRAME: keyMap.DELETE_FRAME,
@@ -689,12 +688,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 preventDefault(event);
                 if (redoAction) {
                     this.redo();
-                }
-            },
-            SAVE_JOB: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                if (!saving) {
-                    this.onSaveAnnotation();
                 }
             },
             DELETE_FRAME: (event: KeyboardEvent | undefined) => {
@@ -786,7 +779,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     inputFrameRef={this.inputFrameRef}
                     undoAction={undoAction}
                     redoAction={redoAction}
-                    saveShortcut={normalizedKeyMap.SAVE_JOB}
                     undoShortcut={normalizedKeyMap.UNDO}
                     redoShortcut={normalizedKeyMap.REDO}
                     drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE}

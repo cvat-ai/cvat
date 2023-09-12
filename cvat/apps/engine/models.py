@@ -184,7 +184,7 @@ class JobFrameSelectionMethod(str, Enum):
 
 class AbstractArrayField(models.TextField):
     separator = ","
-    converter = lambda x: x
+    converter = staticmethod(lambda x: x)
 
     def __init__(self, *args, store_sorted:Optional[bool]=False, unique_values:Optional[bool]=False, **kwargs):
         self._store_sorted = store_sorted
@@ -1137,6 +1137,7 @@ class AnnotationGuide(models.Model):
     markdown = models.TextField(blank=True, default='')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+    is_public = models.BooleanField(default=False)
 
     @property
     def target(self):
