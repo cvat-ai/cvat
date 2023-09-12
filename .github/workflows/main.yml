@@ -313,15 +313,7 @@ jobs:
           DJANGO_SU_NAME: 'admin'
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
-          SKIPPED_TESTS: |
-            analytics_pipeline|
-            case_113_use_default_project_storage_for_import_export_annotations|
-            case_114_use_default_task_storage_for_import_export_annotations|
-            case_115_use_custom_storage_for_import_export_annotations|
-            case_118_multi_tasks|
-            case_117_backup_restore_project_to_various_storages|
-            case_91_canvas3d_functionality_dump_upload_annotation_point_cloud_format|
-            case_92_canvas3d_functionality_dump_upload_annotation_velodyne_points_format
+          SKIPPED_TESTS: 'analytics_pipeline|case_113_use_default_project_storage_for_import_export_annotations|case_114_use_default_task_storage_for_import_export_annotations|case_115_use_custom_storage_for_import_export_annotations|case_118_multi_tasks|case_117_backup_restore_project_to_various_storages|case_91_canvas3d_functionality_dump_upload_annotation_point_cloud_format|case_92_canvas3d_functionality_dump_upload_annotation_velodyne_points_format'
         run: |
           kubectl exec -i $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- \
             /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
