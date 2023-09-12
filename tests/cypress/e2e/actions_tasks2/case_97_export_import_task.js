@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,23 +44,21 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
-        cy.url().then((link) => {
+        cy.url().then((url) => {
+            const [link] = url.split('?');
             taskId = Number(link.split('/').slice(-1)[0]);
         });
-        cy.addNewLabel(newLabelName);
+        cy.addNewLabel({ name: newLabelName });
         cy.openJob();
         cy.createRectangle(createRectangleShape2Points).then(() => {
             Cypress.config('scrollBehavior', false);
         });
-        cy.get('#cvat_canvas_shape_1')
-            .trigger('mousemove')
-            .trigger('mouseover')
-            .should('have.class', 'cvat_canvas_shape_activated');
-        cy.get('.svg_select_points_rot')
-            .should('be.visible')
-            .and('have.length', 1)
-            .trigger('mousemove')
-            .trigger('mouseover');
+        cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+        cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+        cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+        cy.get('.svg_select_points_rot').should('be.visible').and('have.length', 1);
+        cy.get('.svg_select_points_rot').trigger('mousemove');
+        cy.get('.svg_select_points_rot').trigger('mouseover');
         cy.get('.svg_select_points_rot').trigger('mousedown', { button: 0 });
         cy.get('.cvat-canvas-container').trigger('mousemove', 345, 150);
         cy.get('.cvat-canvas-container').trigger('mouseup');
@@ -122,7 +121,8 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.contains('The task has been restored successfully. Click here to open').should('exist').and('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
             cy.openTask(taskName);
-            cy.url().then((link) => {
+            cy.url().then((url) => {
+                const [link] = url.split('?');
                 expect(Number(link.split('/').slice(-1)[0])).to.be.equal(taskId + 1);
             });
             cy.get('.cvat-constructor-viewer-item').then((labels) => {

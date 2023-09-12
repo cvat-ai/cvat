@@ -12,17 +12,15 @@ import Text from 'antd/lib/typography/Text';
 import Dropdown from 'antd/lib/dropdown';
 
 import AnnotationMenuContainer from 'containers/annotation-page/top-bar/annotation-menu';
-import {
-    MainMenuIcon, SaveIcon, UndoIcon, RedoIcon,
-} from 'icons';
+import { MainMenuIcon, UndoIcon, RedoIcon } from 'icons';
 import { ActiveControl, ToolsBlockerState } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import customizableComponents from 'components/customizable-components';
 
 interface Props {
     saving: boolean;
     undoAction?: string;
     redoAction?: string;
-    saveShortcut: string;
     undoShortcut: string;
     redoShortcut: string;
     drawShortcut: string;
@@ -41,7 +39,6 @@ function LeftGroup(props: Props): JSX.Element {
         saving,
         undoAction,
         redoAction,
-        saveShortcut,
         undoShortcut,
         redoShortcut,
         drawShortcut,
@@ -67,6 +64,7 @@ function LeftGroup(props: Props): JSX.Element {
         [ActiveControl.OPENCV_TOOLS, ActiveControl.AI_TOOLS].includes(activeControl) && toolsBlockerState.buttonVisible;
 
     const shouldEnableToolsBlockerOnClick = [ActiveControl.OPENCV_TOOLS].includes(activeControl);
+    const SaveButtonComponent = customizableComponents.SAVE_ANNOTATION_BUTTON;
 
     return (
         <>
@@ -81,17 +79,13 @@ function LeftGroup(props: Props): JSX.Element {
                         Menu
                     </Button>
                 </Dropdown>
-                <CVATTooltip overlay={`Save current changes ${saveShortcut}`}>
-                    <Button
-                        onClick={saving ? undefined : onSaveAnnotation}
-                        type='link'
-                        className={saving ? 'cvat-annotation-header-save-button cvat-annotation-disabled-header-button' :
-                            'cvat-annotation-header-save-button cvat-annotation-header-button'}
-                    >
-                        <Icon component={SaveIcon} />
-                        {saving ? 'Saving...' : 'Save'}
-                    </Button>
-                </CVATTooltip>
+                <SaveButtonComponent
+                    isSaving={saving}
+                    onClick={saving ? undefined : onSaveAnnotation}
+                    type='link'
+                    className={saving ? 'cvat-annotation-header-save-button cvat-annotation-disabled-header-button' :
+                        'cvat-annotation-header-save-button cvat-annotation-header-button'}
+                />
                 <CVATTooltip overlay={`Undo: ${undoAction} ${undoShortcut}`}>
                     <Button
                         style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}

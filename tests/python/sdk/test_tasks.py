@@ -4,6 +4,7 @@
 
 import io
 import json
+import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
@@ -65,6 +66,17 @@ class TestTaskUsecases:
         return task
 
     @pytest.fixture
+    def fxt_new_task_without_data(self):
+        task = self.client.tasks.create(
+            spec={
+                "name": "test_task",
+                "labels": [{"name": "car"}, {"name": "person"}],
+            },
+        )
+
+        return task
+
+    @pytest.fixture
     def fxt_task_with_shapes(self, fxt_new_task: Task):
         labels = fxt_new_task.get_labels()
         fxt_new_task.set_annotations(
@@ -118,7 +130,6 @@ class TestTaskUsecases:
         task = self.client.tasks.create_from_data(
             spec=task_spec,
             data_params=data_params,
-            resource_type=ResourceType.LOCAL,
             resources=task_files,
             pbar=pbar,
         )
@@ -126,6 +137,27 @@ class TestTaskUsecases:
         assert task.size == 7
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
+
+    def test_can_create_task_with_local_data_and_predefined_sorting(
+        self, fxt_new_task_without_data: Task
+    ):
+        task = fxt_new_task_without_data
+
+        task_files = generate_image_files(6)
+        task_filenames = []
+        for f in task_files:
+            fname = self.tmp_path / osp.basename(f.name)
+            fname.write_bytes(f.getvalue())
+            task_filenames.append(fname)
+
+        task_filenames = [task_filenames[i] for i in [2, 4, 1, 5, 0, 3]]
+
+        task.upload_data(
+            resources=task_filenames,
+            params={"sorting_method": "predefined"},
+        )
+
+        assert [f.name for f in task.get_frames_info()] == [f.name for f in task_filenames]
 
     def test_can_create_task_with_remote_data(self):
         task = self.client.tasks.create_from_data(
@@ -333,7 +365,12 @@ class TestTaskUsecases:
             filename_pattern="frame-{frame_id}{frame_ext}",
         )
 
-        assert (self.tmp_path / "frame-0.jpg").is_file()
+        if quality == "original":
+            expected_frame_ext = "png"
+        else:
+            expected_frame_ext = "jpg"
+
+        assert (self.tmp_path / f"frame-0.{expected_frame_ext}").is_file()
         assert self.stdout.getvalue() == ""
 
     @pytest.mark.parametrize("quality", ("compressed", "original"))
@@ -367,7 +404,7 @@ class TestTaskUsecases:
         assert task.id
         assert task.id != fxt_new_task.id
         assert task.size == fxt_new_task.size
-        assert "imported sucessfully" in self.logger_stream.getvalue()
+        assert "imported successfully" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 

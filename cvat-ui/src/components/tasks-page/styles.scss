@@ -1,10 +1,10 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
-@import '../../styles.scss';
+@import '../../base';
+@import '../../styles';
 
 .cvat-tasks-page {
     padding-top: $grid-unit-size * 2;
@@ -34,6 +34,7 @@
 
                 .cvat-tasks-page-search-bar {
                     width: $grid-unit-size * 32;
+                    padding-left: $grid-unit-size;
                 }
             }
         }
@@ -44,13 +45,13 @@
         padding-top: 10px;
     }
 
-    @media screen and (min-height: 900px) {
+    @media screen and (height >= 900px) {
         > div:nth-child(2) {
             height: 88%;
         }
     }
 
-    @media screen and (min-height: 1200px) {
+    @media screen and (height >= 1200px) {
         > div:nth-child(2) {
             height: 93%;
         }
@@ -78,6 +79,23 @@
 .cvat-tasks-list {
     height: 100%;
     overflow-y: auto;
+
+    .ant-ribbon-wrapper {
+        margin-left: $grid-unit-size;
+    }
+}
+
+.cvat-task-item-ribbon {
+    padding: $grid-unit-size;
+    height: unset;
+
+    > .ant-ribbon-text {
+        > div {
+            display: flex;
+            flex-direction: column;
+            gap: $grid-unit-size * 2;
+        }
+    }
 }
 
 .cvat-tasks-list-item {
@@ -127,24 +145,33 @@
 
 .cvat-task-completed-progress {
     color: $completed-progress-color;
-    fill: $completed-progress-color;
-    margin-right: 5px;
 }
 
 .cvat-task-completed-progress div.ant-progress-bg {
     background: $completed-progress-color !important;
 }
 
-.cvat-task-progress-progress {
-    color: $inprogress-progress-color;
-    fill: $inprogress-progress-color;
-    margin-right: 5px;
+.cvat-task-validation-progress {
+    color: $validation-progress-color;
 }
 
-.cvat-task-pending-progress {
-    color: $pending-progress-color;
-    fill: $pending-progress-color;
-    margin-right: 5px;
+.cvat-task-annotation-progress {
+    color: $annotation-progress-color;
+}
+
+.cvat-task-item-progress-wrapper {
+    > div:first-child {
+        margin-bottom: -$grid-unit-size;
+        margin-right: $grid-unit-size;
+
+        > span {
+            font-size: 12px;
+        }
+
+        span[role="img"] {
+            margin-left: $grid-unit-size;
+        }
+    }
 }
 
 .close-auto-annotation-icon {

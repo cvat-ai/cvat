@@ -1,0 +1,35 @@
+cvat:
+  backend:
+    defaultStorage:
+      accessModes:
+      - ReadWriteOnce
+    disableDistinctCachePerService: true
+    server:
+      additionalVolumeMounts:
+      - mountPath: /home/django/share
+        name: cvat-backend-data
+        subPath: share
+      additionalEnv:
+        - name: DJANGO_SETTINGS_MODULE
+          value: cvat.settings.testing_rest
+    worker:
+      import:
+        additionalVolumeMounts:
+        - mountPath: /home/django/share
+          name: cvat-backend-data
+          subPath: share
+    utils:
+      additionalEnv:
+        - name: DJANGO_SETTINGS_MODULE
+          value: cvat.settings.testing_rest
+    # Images are already present in the node
+    imagePullPolicy: Never
+  frontend:
+    imagePullPolicy: Never
+
+traefik:
+  logs:
+    general:
+      level: DEBUG
+    access:
+      enabled: true

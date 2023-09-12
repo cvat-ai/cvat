@@ -1,4 +1,14 @@
+x-allow-webhook-receiver: &allow-webhook-receiver
+  depends_on:
+    - webhook_receiver
+  volumes:
+    - ./tests/allow_webhooks_receiver.sh:/etc/cvat/init.d/allow_webhooks_receiver.sh:ro
+
 services:
+  cvat_worker_webhooks: *allow-webhook-receiver
+
+  cvat_server: *allow-webhook-receiver
+
   webhook_receiver:
     image: python:3.9-slim
     restart: always

@@ -7,18 +7,23 @@ import FormData from 'form-data';
 import store from 'store';
 import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
+import { ChunkQuality } from 'cvat-data';
+
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
-    SerializedProject, SerializedTask, TasksFilter, SerializedUser,
-    SerializedAbout, SerializedShare, SerializedUserAgreement,
-    SerializedRegister, JobsFilter, SerializedJob,
-} from 'server-response-types';
+    SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, FunctionsResponseBody,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
+} from './server-response-types';
+import { SerializedQualityReportData } from './quality-report';
+import { SerializedAnalyticsReport } from './analytics-report';
 import { Storage } from './storage';
-import { StorageLocation, WebhookSourceType } from './enums';
-import { isEmail } from './common';
+import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
+import { isEmail, isResourceURL } from './common';
 import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
+import { SerializedQualityConflictData } from './quality-conflict';
 
 type Params = {
     org: number | string,
@@ -31,7 +36,7 @@ type Params = {
 };
 
 function enableOrganization(): { org: string } {
-    return { org: config.organizationID || '' };
+    return { org: config.organization.organizationSlug || '' };
 }
 
 function configureStorage(storage: Storage, useDefaultLocation = false): Partial<Params> {
@@ -106,13 +111,12 @@ function fetchAll(url, filter = {}): Promise<any> {
     });
 }
 
-async function chunkUpload(file: File, uploadConfig) {
+async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: number; filename: string }> {
     const params = enableOrganization();
     const {
-        endpoint, chunkSize, totalSize, onUpdate, metadata,
+        endpoint, chunkSize, totalSize, onUpdate, metadata, totalSentSize,
     } = uploadConfig;
-    const { totalSentSize } = uploadConfig;
-    const uploadResult = { totalSentSize };
+    const uploadResult = { uploadSentSize: 0, filename: file.name };
     return new Promise((resolve, reject) => {
         const upload = new tus.Upload(file, {
             endpoint,
@@ -147,8 +151,10 @@ async function chunkUpload(file: File, uploadConfig) {
                 if (uploadFilename) uploadResult.filename = uploadFilename;
             },
             onSuccess() {
-                if (totalSentSize) uploadResult.totalSentSize += file.size;
-                resolve(uploadResult);
+                resolve({
+                    ...uploadResult,
+                    uploadSentSize: file.size,
+                });
             },
         });
         upload.start();
@@ -265,8 +271,25 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    if (isResourceURL(reqConfig.url)) {
+        return reqConfig;
+    }
+
     reqConfig.params = { ...organization, ...(reqConfig.params || {}) };
     return reqConfig;
+});
+
+Axios.interceptors.response.use((response) => {
+    if (isResourceURL(response.config.url) &&
+        'organization' in (response.data || {})
+    ) {
+        const newOrg: number | null = response.data.organization;
+        if (config.organization.organizationID !== newOrg) {
+            config?.onOrganizationChange(newOrg);
+        }
+    }
+
+    return response;
 });
 
 let token = store.get('token');
@@ -308,7 +331,7 @@ async function about(): Promise<SerializedAbout> {
     return response.data;
 }
 
-async function share(directoryArg: string): Promise<SerializedShare[]> {
+async function share(directoryArg: string): Promise<SerializedRemoteFile[]> {
     const { backendAPI } = config;
 
     let response = null;
@@ -639,6 +662,7 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
             Object.defineProperty(results, 'count', {
                 value: 1,
             });
+
             return results as SerializedTask[] & { count: number };
         }
 
@@ -730,7 +754,7 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
         const params: Params = {
             ...enableOrganization(),
             ...configureStorage(targetStorage, useDefaultSettings),
-            ...(name ? { filename: name.replace(/\//g, '_') } : {}),
+            ...(name ? { filename: name } : {}),
             format,
         };
 
@@ -782,13 +806,14 @@ async function importDataset(
     };
 
     const url = `${backendAPI}/projects/${id}/dataset`;
+    let rqId: string;
 
     async function wait() {
         return new Promise<void>((resolve, reject) => {
             async function requestStatus() {
                 try {
                     const response = await Axios.get(url, {
-                        params: { ...params, action: 'import_status' },
+                        params: { ...params, action: 'import_status', rq_id: rqId },
                     });
                     if (response.status === 202) {
                         if (response.data.message) {
@@ -811,10 +836,11 @@ async function importDataset(
 
     if (isCloudStorage) {
         try {
-            await Axios.post(url,
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -835,12 +861,13 @@ async function importDataset(
                     params,
                     headers: { 'Upload-Start': true },
                 });
-            await chunkUpload(file, uploadConfig);
-            await Axios.post(url,
+            await chunkUpload(file as File, uploadConfig);
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                     headers: { 'Upload-Finish': true },
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -940,7 +967,7 @@ async function restoreTask(storage: Storage, file: File | string) {
                 params,
                 headers: { 'Upload-Start': true },
             });
-        const { filename } = await chunkUpload(file, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         response = await Axios.post(url,
             new FormData(), {
                 params: { ...params, filename },
@@ -1047,7 +1074,7 @@ async function restoreProject(storage: Storage, file: File | string) {
                 params,
                 headers: { 'Upload-Start': true },
             });
-        const { filename } = await chunkUpload(file, uploadConfig);
+        const { filename } = await chunkUpload(file as File, uploadConfig);
         response = await Axios.post(url,
             new FormData(), {
                 params: { ...params, filename },
@@ -1057,48 +1084,90 @@ async function restoreProject(storage: Storage, file: File | string) {
     return wait();
 }
 
-async function createTask(taskSpec, taskDataSpec, onUpdate) {
+const listenToCreateCallbacks: Record<number, {
+    promise: Promise<SerializedTask>;
+    onUpdate: ((state: string, progress: number, message: string) => void)[];
+}> = {};
+
+function listenToCreateTask(
+    id, onUpdate: (state: RQStatus, progress: number, message: string) => void,
+): Promise<SerializedTask> {
+    if (id in listenToCreateCallbacks) {
+        listenToCreateCallbacks[id].onUpdate.push(onUpdate);
+        // to avoid extra status check requests we do not create any more promises
+        return listenToCreateCallbacks[id].promise;
+    }
+
+    const promise = new Promise<SerializedTask>((resolve, reject) => {
+        const { backendAPI } = config;
+        const params = enableOrganization();
+        async function checkStatus(): Promise<void> {
+            try {
+                const response = await Axios.get(`${backendAPI}/tasks/${id}/status`, { params });
+                const state = response.data.state?.toLowerCase();
+                if ([RQStatus.QUEUED, RQStatus.STARTED].includes(state)) {
+                    // notify all the subscribtions when data status changed
+                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                        callback(
+                            state,
+                            response.data.progress || 0,
+                            state === RQStatus.QUEUED ?
+                                'CVAT queued the task to import' : response.data.message,
+                        );
+                    });
+
+                    setTimeout(checkStatus, state === RQStatus.QUEUED ? 20000 : 5000);
+                } else if (state === RQStatus.FINISHED) {
+                    const [createdTask] = await getTasks({ id, ...params });
+                    resolve(createdTask);
+                } else if (state === RQStatus.FAILED) {
+                    const failMessage = 'Data processing failed';
+                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                        callback(state, 0, failMessage);
+                    });
+                    const message = `Could not create task. ${failMessage}. ${response.data.message}`;
+                    reject(new ServerError(message, 400));
+                } else {
+                    const failMessage = 'Unknown status received';
+                    listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                        callback(state || RQStatus.UNKNOWN, 0, failMessage);
+                    });
+                    reject(
+                        new ServerError(
+                            `Could not create task. ${failMessage}: ${state}`,
+                            500,
+                        ),
+                    );
+                }
+            } catch (errorData) {
+                listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
+                    callback('failed', 0, 'Server request failed');
+                });
+                reject(generateError(errorData));
+            }
+        }
+
+        setTimeout(checkStatus, 100);
+    });
+
+    listenToCreateCallbacks[id] = {
+        promise,
+        onUpdate: [onUpdate],
+    };
+    promise.catch(() => {
+        // do nothing, avoid uncaught promise exceptions
+    }).finally(() => delete listenToCreateCallbacks[id]);
+    return promise;
+}
+
+async function createTask(
+    taskSpec: Partial<SerializedTask>,
+    taskDataSpec: any,
+    onUpdate: (state: RQStatus, progress: number, message: string) => void,
+): Promise<SerializedTask> {
     const { backendAPI, origin } = config;
     // keep current default params to 'freeze" them during this request
     const params = enableOrganization();
-
-    async function wait(id) {
-        return new Promise((resolve, reject) => {
-            async function checkStatus() {
-                try {
-                    const response = await Axios.get(`${backendAPI}/tasks/${id}/status`, { params });
-                    if (['Queued', 'Started'].includes(response.data.state)) {
-                        if (response.data.message !== '') {
-                            onUpdate(response.data.message, response.data.progress || 0);
-                        }
-                        setTimeout(checkStatus, 1000);
-                    } else if (response.data.state === 'Finished') {
-                        resolve();
-                    } else if (response.data.state === 'Failed') {
-                        // If request has been successful, but task hasn't been created
-                        // Then passed data is wrong and we can pass code 400
-                        const message = `
-                            Could not create the task on the server. ${response.data.message}.
-                        `;
-                        reject(new ServerError(message, 400));
-                    } else {
-                        // If server has another status, it is unexpected
-                        // Therefore it is server error and we can pass code 500
-                        reject(
-                            new ServerError(
-                                `Unknown task state has been received: ${response.data.state}`,
-                                500,
-                            ),
-                        );
-                    }
-                } catch (errorData) {
-                    reject(generateError(errorData));
-                }
-            }
-
-            setTimeout(checkStatus, 1000);
-        });
-    }
 
     const chunkSize = config.uploadChunkSize * 1024 * 1024;
     const clientFiles = taskDataSpec.client_files;
@@ -1129,7 +1198,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
 
     let response = null;
 
-    onUpdate('The task is being created on the server..', null);
+    onUpdate(RQStatus.UNKNOWN, 0, 'CVAT is creating your task');
     try {
         response = await Axios.post(`${backendAPI}/tasks`, taskSpec, {
             params,
@@ -1138,7 +1207,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
         throw generateError(errorData);
     }
 
-    onUpdate('The data are being uploaded to the server..', null);
+    onUpdate(RQStatus.UNKNOWN, 0, 'CVAT is uploading task data to the server');
 
     async function bulkUpload(taskId, files) {
         const fileBulks = files.reduce((fileGroups, file) => {
@@ -1158,7 +1227,7 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
                 taskData.append(`client_files[${idx}]`, element);
             }
             const percentage = totalSentSize / totalSize;
-            onUpdate('The data are being uploaded to the server', percentage);
+            onUpdate(RQStatus.UNKNOWN, percentage, 'CVAT is uploading task data to the server');
             await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
                 ...params,
                 headers: { 'Upload-Multiple': true },
@@ -1180,14 +1249,15 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
         const uploadConfig = {
             endpoint: `${origin}${backendAPI}/tasks/${response.data.id}/data/`,
             onUpdate: (percentage) => {
-                onUpdate('The data are being uploaded to the server', percentage);
+                onUpdate(RQStatus.UNKNOWN, percentage, 'CVAT is uploading task data to the server');
             },
             chunkSize,
             totalSize,
             totalSentSize,
         };
         for (const file of chunkFiles) {
-            uploadConfig.totalSentSize += await chunkUpload(file, uploadConfig);
+            const { uploadSentSize } = await chunkUpload(file, uploadConfig);
+            uploadConfig.totalSentSize += uploadSentSize;
         }
         if (bulkFiles.length > 0) {
             await bulkUpload(response.data.id, bulkFiles);
@@ -1207,15 +1277,12 @@ async function createTask(taskSpec, taskDataSpec, onUpdate) {
     }
 
     try {
-        await wait(response.data.id);
+        const createdTask = await listenToCreateTask(response.data.id, onUpdate);
+        return createdTask;
     } catch (createException) {
         await deleteTask(response.data.id, params.org || null);
         throw createException;
     }
-
-    // to be able to get the task after it was created, pass frozen params
-    const createdTask = await getTasks({ id: response.data.id, ...params });
-    return createdTask[0];
 }
 
 async function getJobs(
@@ -1255,36 +1322,38 @@ async function getJobs(
     return response.data;
 }
 
-async function getJobIssues(jobID: number) {
+async function getIssues(filter) {
     const { backendAPI } = config;
 
     let response = null;
     try {
         const organization = enableOrganization();
         response = await fetchAll(`${backendAPI}/issues`, {
-            job_id: jobID,
+            ...filter,
             ...organization,
         });
 
-        const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
-            job_id: jobID,
-            ...organization,
-        });
+        if (filter.job_id) {
+            const commentsResponse = await fetchAll(`${backendAPI}/comments`, {
+                ...filter,
+                ...organization,
+            });
 
-        const issuesById = response.results.reduce((acc, val: { id: number }) => {
-            acc[val.id] = val;
-            return acc;
-        }, {});
+            const issuesById = response.results.reduce((acc, val: { id: number }) => {
+                acc[val.id] = val;
+                return acc;
+            }, {});
 
-        const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
-            acc[val.issue] = acc[val.issue] || [];
-            acc[val.issue].push(val);
-            return acc;
-        }, {});
+            const commentsByIssue = commentsResponse.results.reduce((acc, val) => {
+                acc[val.issue] = acc[val.issue] || [];
+                acc[val.issue].push(val);
+                return acc;
+            }, {});
 
-        for (const issue of Object.keys(commentsByIssue)) {
-            commentsByIssue[issue].sort((a, b) => a.id - b.id);
-            issuesById[issue].comments = commentsByIssue[issue];
+            for (const issue of Object.keys(commentsByIssue)) {
+                commentsByIssue[issue].sort((a, b) => a.id - b.id);
+                issuesById[issue].comments = commentsByIssue[issue];
+            }
         }
     } catch (errorData) {
         throw generateError(errorData);
@@ -1365,7 +1434,34 @@ async function saveJob(id: number, jobData: Partial<SerializedJob>): Promise<Ser
     return response.data;
 }
 
-async function getUsers(filter = { page_size: 'all' }) {
+async function createJob(jobData: Partial<SerializedJob>): Promise<SerializedJob> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        response = await Axios.post(`${backendAPI}/jobs`, jobData);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
+}
+
+async function deleteJob(jobID: number): Promise<void> {
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/jobs/${jobID}`, {
+            params: {
+                ...enableOrganization(),
+            },
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getUsers(filter = { page_size: 'all' }): Promise<SerializedUser[]> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1382,8 +1478,8 @@ async function getUsers(filter = { page_size: 'all' }) {
     return response.data.results;
 }
 
-function getPreview(instance) {
-    return async function (id: number) {
+function getPreview(instance: 'projects' | 'tasks' | 'jobs' | 'cloudstorages' | 'functions') {
+    return async function (id: number | string): Promise<Blob | null> {
         const { backendAPI } = config;
 
         let response = null;
@@ -1392,21 +1488,23 @@ function getPreview(instance) {
             response = await Axios.get(url, {
                 responseType: 'blob',
             });
+
+            return response.data;
         } catch (errorData) {
             const code = errorData.response ? errorData.response.status : errorData.code;
+            if (code === 404) {
+                return null;
+            }
             throw new ServerError(`Could not get preview for "${instance}/${id}"`, code);
         }
-
-        return response.data;
     };
 }
 
-async function getImageContext(jid, frame) {
+async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
-    let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/jobs/${jid}/data`, {
+        const response = await Axios.get(`${backendAPI}/jobs/${jid}/data`, {
             params: {
                 quality: 'original',
                 type: 'context_image',
@@ -1414,29 +1512,28 @@ async function getImageContext(jid, frame) {
             },
             responseType: 'arraybuffer',
         });
+
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
-
-    return response.data;
 }
 
-async function getData(tid, jid, chunk) {
+async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
-    const url = jid === null ? `tasks/${tid}/data` : `jobs/${jid}/data`;
-
-    let response = null;
     try {
-        response = await workerAxios.get(`${backendAPI}/${url}`, {
+        const response = await workerAxios.get(`${backendAPI}/jobs/${jid}/data`, {
             params: {
                 ...enableOrganization(),
-                quality: 'compressed',
+                quality,
                 type: 'chunk',
                 number: chunk,
             },
             responseType: 'arraybuffer',
         });
+
+        return response;
     } catch (errorData) {
         throw generateError({
             message: '',
@@ -1446,13 +1543,12 @@ async function getData(tid, jid, chunk) {
             },
         });
     }
-
-    return response;
 }
 
-export interface FramesMetaData {
+export interface RawFramesMetaData {
     chunk_size: number;
     deleted_frames: number[];
+    included_frames: number[];
     frame_filter: string;
     frames: {
         width: number;
@@ -1466,7 +1562,7 @@ export interface FramesMetaData {
     stop_frame: number;
 }
 
-async function getMeta(session, jid): Promise<FramesMetaData> {
+async function getMeta(session, jid): Promise<RawFramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1546,6 +1642,7 @@ async function uploadAnnotations(
         filename: typeof file === 'string' ? file : file.name,
         conv_mask_to_poly: options.convMaskToPoly,
     };
+    let rqId: string;
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;
     async function wait() {
@@ -1556,7 +1653,7 @@ async function uploadAnnotations(
                         url,
                         new FormData(),
                         {
-                            params,
+                            params: { ...params, rq_id: rqId },
                         },
                     );
                     if (response.status === 202) {
@@ -1575,10 +1672,11 @@ async function uploadAnnotations(
 
     if (isCloudStorage) {
         try {
-            await Axios.post(url,
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -1595,12 +1693,13 @@ async function uploadAnnotations(
                     params,
                     headers: { 'Upload-Start': true },
                 });
-            await chunkUpload(file, uploadConfig);
-            await Axios.post(url,
+            await chunkUpload(file as File, uploadConfig);
+            const response = await Axios.post(url,
                 new FormData(), {
                     params,
                     headers: { 'Upload-Finish': true },
                 });
+            rqId = response.data.rq_id;
         } catch (errorData) {
             throw generateError(errorData);
         }
@@ -1744,14 +1843,17 @@ async function getCloudStorages(filter = {}) {
     return response.data.results;
 }
 
-async function getCloudStorageContent(id, manifestPath) {
+async function getCloudStorageContent(id: number, path: string, nextToken?: string, manifestPath?: string):
+Promise<{ content: SerializedRemoteFile[], next: string | null }> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        const url = `${backendAPI}/cloudstorages/${id}/content`;
+        const url = `${backendAPI}/cloudstorages/${id}/content-v2`;
         response = await Axios.get(url, {
             params: {
+                prefix: path,
+                ...(nextToken ? { next_token: nextToken } : {}),
                 ...(manifestPath ? { manifest_path: manifestPath } : {}),
             },
         });
@@ -1799,7 +1901,7 @@ async function getOrganizations() {
     return response.results;
 }
 
-async function createOrganization(data) {
+async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1814,7 +1916,9 @@ async function createOrganization(data) {
     return response.data;
 }
 
-async function updateOrganization(id, data) {
+async function updateOrganization(
+    id: number, data: Partial<SerializedOrganization>,
+): Promise<SerializedOrganization> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1827,7 +1931,7 @@ async function updateOrganization(id, data) {
     return response.data;
 }
 
-async function deleteOrganization(id) {
+async function deleteOrganization(id: number): Promise<void> {
     const { backendAPI } = config;
 
     try {
@@ -1884,7 +1988,7 @@ async function updateOrganizationMembership(membershipId, data) {
     return response.data;
 }
 
-async function deleteOrganizationMembership(membershipId) {
+async function deleteOrganizationMembership(membershipId: number): Promise<void> {
     const { backendAPI } = config;
 
     try {
@@ -2027,6 +2131,139 @@ async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> 
     }
 }
 
+async function getGuide(id: number): Promise<SerializedGuide> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/guides/${id}`);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createGuide(data: Partial<SerializedGuide>): Promise<SerializedGuide> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/guides`, data);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateGuide(id: number, data: Partial<SerializedGuide>): Promise<SerializedGuide> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/guides/${id}`, data);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function createAsset(file: File, guideId: number): Promise<SerializedAsset> {
+    const { backendAPI } = config;
+    const form = new FormData();
+    form.append('file', file);
+    form.append('guide_id', guideId);
+
+    try {
+        const response = await Axios.post(`${backendAPI}/assets`, form, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getQualitySettings(taskID: number): Promise<SerializedQualitySettingsData> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/quality/settings`, {
+            params: {
+                task_id: taskID,
+            },
+        });
+
+        return response.data.results[0];
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateQualitySettings(
+    settingsID: number,
+    settingsData: SerializedQualitySettingsData,
+): Promise<SerializedQualitySettingsData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/quality/settings/${settingsID}`, settingsData, {
+            params,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getQualityConflicts(filter): Promise<SerializedQualityConflictData[]> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await fetchAll(`${backendAPI}/quality/conflicts`, {
+            ...params,
+            ...filter,
+        });
+
+        return response.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getQualityReports(filter): Promise<SerializedQualityReportData[]> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/quality/reports`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        return response.data.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getAnalyticsReports(filter): Promise<SerializedAnalyticsReport> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/analytics/reports`, {
+            params: {
+                ...filter,
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2064,6 +2301,7 @@ export default Object.freeze({
         get: getTasks,
         save: saveTask,
         create: createTask,
+        listenToCreate: listenToCreateTask,
         delete: deleteTask,
         exportDataset: exportDataset('tasks'),
         getPreview: getPreview('tasks'),
@@ -2081,6 +2319,8 @@ export default Object.freeze({
         get: getJobs,
         getPreview: getPreview('jobs'),
         save: saveJob,
+        create: createJob,
+        delete: deleteJob,
         exportDataset: exportDataset('jobs'),
     }),
 
@@ -2119,7 +2359,7 @@ export default Object.freeze({
     issues: Object.freeze({
         create: createIssue,
         update: updateIssue,
-        get: getJobIssues,
+        get: getIssues,
         delete: deleteIssue,
     }),
 
@@ -2156,5 +2396,29 @@ export default Object.freeze({
         delete: deleteWebhook,
         ping: pingWebhook,
         events: receiveWebhookEvents,
+    }),
+
+    guides: Object.freeze({
+        get: getGuide,
+        create: createGuide,
+        update: updateGuide,
+    }),
+
+    assets: Object.freeze({
+        create: createAsset,
+    }),
+
+    analytics: Object.freeze({
+        performance: Object.freeze({
+            reports: getAnalyticsReports,
+        }),
+        quality: Object.freeze({
+            reports: getQualityReports,
+            conflicts: getQualityConflicts,
+            settings: Object.freeze({
+                get: getQualitySettings,
+                update: updateQualitySettings,
+            }),
+        }),
     }),
 });

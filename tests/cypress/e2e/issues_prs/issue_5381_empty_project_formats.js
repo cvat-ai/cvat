@@ -23,8 +23,7 @@ context('List of export formats for a project without tasks is not empty', () =>
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Export formats list is not empty for empty project', () => {
-            cy.projectActions(project.name);
-            cy.get('.cvat-project-actions-menu').contains('Export dataset').click();
+            cy.clickInProjectMenu('Export dataset', false, project.name);
             cy.get('.cvat-modal-export-project').should('be.visible').find('.cvat-modal-export-select').click();
             cy.get('.cvat-modal-export-option-item').should('have.length.above', 0);
         });

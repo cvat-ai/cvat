@@ -259,7 +259,8 @@ class TaskExportTest(_DbTestBase):
                             "name": "parked",
                             "mutable": True,
                             "input_type": "checkbox",
-                            "default_value": False
+                            "default_value": "false",
+                            "values": [],
                         },
                     ]
                 },
@@ -561,7 +562,8 @@ class FrameMatchingTest(_DbTestBase):
                             "name": "parked",
                             "mutable": True,
                             "input_type": "checkbox",
-                            "default_value": False
+                            "default_value": "false",
+                            "values": [],
                         },
                     ]
                 },
@@ -723,7 +725,8 @@ class TaskAnnotationsImportTest(_DbTestBase):
                             "name": "parked",
                             "mutable": True,
                             "input_type": "checkbox",
-                            "default_value": False
+                            "default_value": "false",
+                            "values": [],
                         }
                     ]
                 },
@@ -923,8 +926,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             expected_ann = TaskAnnotation(task["id"])
             expected_ann.init_from_db()
 
-            dm.task.import_task_annotations(task["id"],
-                file_path, import_format, True)
+            dm.task.import_task_annotations(file_path, task["id"], import_format, True)
             actual_ann = TaskAnnotation(task["id"])
             actual_ann.init_from_db()
 
@@ -976,6 +978,6 @@ class TaskAnnotationsImportTest(_DbTestBase):
             task.update()
             task = self._create_task(task, images)
 
-            dm.task.import_task_annotations(task['id'], dataset_path, format_name, True)
+            dm.task.import_task_annotations(dataset_path, task['id'], format_name, True)
             self._test_can_import_annotations(task, format_name)
 

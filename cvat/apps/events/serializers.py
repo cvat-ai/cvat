@@ -35,7 +35,7 @@ class ClientEventsSerializer(serializers.Serializer):
 
     def to_internal_value(self, data):
         request = self.context.get("request")
-        org = request.iam_context['organization']
+        org = request.iam_context["organization"]
         org_id = getattr(org, "id", None)
         org_slug = getattr(org, "slug", None)
 

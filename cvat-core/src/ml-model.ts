@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
+import { decodePreview } from './frames';
 import { ModelProviders, ModelKind, ModelReturnType } from './enums';
 import {
     SerializedModel, ModelAttribute, ModelParams, ModelTip,
@@ -115,8 +117,8 @@ export default class MLModel {
         return result;
     }
 
-    public async getPreview(): Promise<string> {
-        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.getPreview);
+    public async preview(): Promise<string> {
+        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.preview);
         return result;
     }
 }
@@ -146,7 +148,7 @@ Object.defineProperties(MLModel.prototype.delete, {
     },
 });
 
-Object.defineProperties(MLModel.prototype.getPreview, {
+Object.defineProperties(MLModel.prototype.preview, {
     implementation: {
         writable: false,
         enumerable: false,

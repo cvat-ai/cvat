@@ -626,7 +626,7 @@ export default class Collection {
         }
     }
 
-    statistics(): Statistics {
+    statistics(filter): Statistics {
         const labels = {};
         const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
         const body = {
@@ -659,18 +659,32 @@ export default class Collection {
         fillBody(Object.values(this.labels).filter((label) => !label.hasParent));
 
         const scanTrack = (track, prefix = ''): void => {
+            const countInterpolatedFrames = (start: number, stop: number, lastIsKeyframe: boolean): number => {
+                let count = stop - start;
+                if (lastIsKeyframe) {
+                    count -= 1;
+                }
+                for (let i = start + 1; lastIsKeyframe ? i < stop : i <= stop; i++) {
+                    if (this.frameMeta.deleted_frames[i]) {
+                        count--;
+                    }
+                }
+                return count;
+            };
+
             const pref = prefix ? `${prefix}${sep}` : '';
             const label = `${pref}${track.label.name}`;
             labels[label][track.shapeType].track++;
             const keyframes = Object.keys(track.shapes)
                 .sort((a, b) => +a - +b)
-                .map((el) => +el);
+                .map((el) => +el)
+                .filter((frame) => !this.frameMeta.deleted_frames[frame]);
 
             let prevKeyframe = keyframes[0];
             let visible = false;
             for (const keyframe of keyframes) {
                 if (visible) {
-                    const interpolated = keyframe - prevKeyframe - 1;
+                    const interpolated = countInterpolatedFrames(prevKeyframe, keyframe, true);
                     labels[label].interpolated += interpolated;
                     labels[label].total += interpolated;
                 }
@@ -692,7 +706,7 @@ export default class Collection {
             }
 
             if (lastKey !== this.stopFrame && !track.get(lastKey).outside) {
-                const interpolated = this.stopFrame - lastKey;
+                const interpolated = countInterpolatedFrames(lastKey, this.stopFrame, false);
                 labels[label].interpolated += interpolated;
                 labels[label].total += interpolated;
             }
@@ -700,6 +714,10 @@ export default class Collection {
 
         for (const object of Object.values(this.objects)) {
             if (object.removed) {
+                continue;
+            }
+
+            if ((object.jobID && filter?.jobID) && object.jobID !== filter.jobID) {
                 continue;
             }
 
@@ -715,13 +733,13 @@ export default class Collection {
             }
 
             const { name: label } = object.label;
-            if (objectType === 'tag') {
+            if (objectType === 'tag' && !this.frameMeta.deleted_frames[object.frame]) {
                 labels[label].tag++;
                 labels[label].manually++;
                 labels[label].total++;
             } else if (objectType === 'track') {
                 scanTrack(object);
-            } else {
+            } else if (!this.frameMeta.deleted_frames[object.frame]) {
                 const { shapeType } = object as Shape;
                 labels[label][shapeType].shape++;
                 labels[label].manually++;
@@ -796,6 +814,7 @@ export default class Collection {
                     frame: state.frame,
                     label_id: state.label.id,
                     group: 0,
+                    source: state.source,
                 });
             } else {
                 checkObjectType('state occluded', state.occluded, 'boolean', null);
@@ -821,6 +840,7 @@ export default class Collection {
                         frame: state.frame,
                         group: 0,
                         label_id: state.label.id,
+                        outside: state.outside || false,
                         occluded: state.occluded || false,
                         points: state.shapeType === 'mask' ? (() => {
                             const { width, height } = this.frameMeta[state.frame];
@@ -885,7 +905,7 @@ export default class Collection {
                                     frame: state.frame,
                                     type: element.shapeType,
                                     points: [...element.points],
-                                    zOrder: state.zOrder,
+                                    z_order: state.zOrder,
                                     outside: element.outside || false,
                                     occluded: element.occluded || false,
                                     rotation: element.rotation || 0,

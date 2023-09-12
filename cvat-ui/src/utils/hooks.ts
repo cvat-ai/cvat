@@ -8,6 +8,7 @@ import {
     useRef, useEffect, useState, useCallback,
 } from 'react';
 import { useSelector } from 'react-redux';
+import { useHistory } from 'react-router';
 import { CombinedState, PluginComponent } from 'reducers';
 
 // eslint-disable-next-line import/prefer-default-export
@@ -60,8 +61,22 @@ export function usePlugins(
     return ref.current;
 }
 
+export function useGoBack(): () => void {
+    const history = useHistory();
+    const goBack = useCallback(() => {
+        if (history.action !== 'POP') {
+            history.goBack();
+        } else {
+            history.push('/');
+        }
+    }, []);
+
+    return goBack;
+}
+
 export interface ICardHeightHOC {
     numberOfRows: number;
+    minHeight: number;
     paddings: number;
     containerClassName: string;
     siblingClassNames: string[];
@@ -69,7 +84,7 @@ export interface ICardHeightHOC {
 
 export function useCardHeightHOC(params: ICardHeightHOC): () => string {
     const {
-        numberOfRows, paddings, containerClassName, siblingClassNames,
+        numberOfRows, minHeight, paddings, containerClassName, siblingClassNames,
     } = params;
 
     return (): string => {
@@ -92,7 +107,7 @@ export function useCardHeightHOC(params: ICardHeightHOC): () => string {
                     }, 0);
 
                     const cardHeight = (containerHeight - (othersHeight + paddings)) / numberOfRows;
-                    setHeight(`${Math.round(cardHeight)}px`);
+                    setHeight(`${Math.max(Math.round(cardHeight), minHeight)}px`);
                 }
             };
 

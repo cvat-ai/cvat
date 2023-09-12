@@ -10,6 +10,7 @@ import Project from './project';
 import { exportDataset, importDataset } from './annotations';
 import { SerializedLabel } from './server-response-types';
 import { Label } from './labels';
+import AnnotationGuide from './guide';
 
 export default function implementProject(projectClass) {
     projectClass.prototype.save.implementation = async function () {
@@ -82,10 +83,11 @@ export default function implementProject(projectClass) {
         return result;
     };
 
-    projectClass.prototype.preview.implementation = async function () {
+    projectClass.prototype.preview.implementation = async function (this: Project): Promise<string> {
+        if (this.id === null) return '';
         const preview = await serverProxy.projects.getPreview(this.id);
-        const decoded = await decodePreview(preview);
-        return decoded;
+        if (!preview) return '';
+        return decodePreview(preview);
     };
 
     projectClass.prototype.annotations.exportDataset.implementation = async function (
@@ -123,6 +125,15 @@ export default function implementProject(projectClass) {
     projectClass.restore.implementation = async function (storage: Storage, file: File | string) {
         const result = await serverProxy.projects.restore(storage, file);
         return result;
+    };
+
+    projectClass.prototype.guide.implementation = async function guide() {
+        if (this.guideId === null) {
+            return null;
+        }
+
+        const result = await serverProxy.guides.get(this.guideId);
+        return new AnnotationGuide(result);
     };
 
     return projectClass;

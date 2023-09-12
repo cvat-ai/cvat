@@ -20,10 +20,11 @@ from django.conf import settings
 from cvat.apps.dataset_manager.formats.registry import format_for
 from cvat.apps.dataset_manager.task import export_task
 from cvat.apps.dataset_repo.models import GitData, GitStatusChoice
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Task, User
 from cvat.apps.engine.plugins import add_plugin
 
+slogger = ServerLogManager(__name__)
 
 def _have_no_access_exception(ex):
     if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:
@@ -110,7 +111,7 @@ class Git:
             raise ex
 
 
-    # Method creates the main branch if repostory doesn't have any branches
+    # Method creates the main branch if repository doesn't have any branches
     def _create_master_branch(self):
         if len(self._rep.heads):
             raise Exception("Some heads already exists")

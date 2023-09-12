@@ -11,7 +11,7 @@ context('Mutable attribute.', () => {
     const labelName = 'car';
     const additionalAttrsLabelShape = [
         {
-            additionalAttrName: 'tree', additionalValue: 'birch tree', typeAttribute: 'Text', mutable: true,
+            name: 'tree', values: 'birch tree', type: 'Text', mutable: true,
         },
     ];
 
@@ -30,11 +30,10 @@ context('Mutable attribute.', () => {
 
     function testChangingAttributeValue(expectedValue, value) {
         cy.get('.cvat-player-next-button').click();
-        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper')
-            .find('[type="text"]')
-            .should('have.value', expectedValue)
-            .clear()
-            .type(value);
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').find('textarea');
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').find('textarea').should('have.value', expectedValue);
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').find('textarea').clear();
+        cy.get('.attribute-annotation-sidebar-attr-elem-wrapper').find('textarea').type(value);
     }
 
     function checkObjectDetailValue(frameNum, expectedValue) {
@@ -45,7 +44,7 @@ context('Mutable attribute.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(labelName, additionalAttrsLabelShape);
+        cy.addNewLabel({ name: labelName }, additionalAttrsLabelShape);
         cy.openJob();
         cy.createRectangle(createRectangleTrack2Points);
     });
@@ -54,24 +53,19 @@ context('Mutable attribute.', () => {
         it('Go to AAM. For the 2nd and 3rd frames, change the attribute value.', () => {
             cy.changeWorkspace('Attribute annotation');
             cy.changeLabelAAM(labelName);
-            testChangingAttributeValue(additionalAttrsLabelShape[0].additionalValue, attrValueSecondFrame);
+            testChangingAttributeValue(additionalAttrsLabelShape[0].values, attrValueSecondFrame);
             testChangingAttributeValue(attrValueSecondFrame, attrValueThirdFrame);
         });
 
         it('Go to Standard mode. The object details have correct values on the corresponding frames.', () => {
             cy.changeWorkspace('Standard');
-            cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove', { scrollBehavior: false })
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { scrollBehavior: false });
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             [
-                [
-                    0,
-                    `${additionalAttrsLabelShape[0].additionalAttrName}: ${
-                        additionalAttrsLabelShape[0].additionalValue}`,
-                ],
-                [1, `${additionalAttrsLabelShape[0].additionalAttrName}: ${attrValueSecondFrame}`],
-                [2, `${additionalAttrsLabelShape[0].additionalAttrName}: ${attrValueThirdFrame}`],
-                [3, `${additionalAttrsLabelShape[0].additionalAttrName}: ${attrValueThirdFrame}`],
+                [0, `${additionalAttrsLabelShape[0].name}: ${additionalAttrsLabelShape[0].values}`],
+                [1, `${additionalAttrsLabelShape[0].name}: ${attrValueSecondFrame}`],
+                [2, `${additionalAttrsLabelShape[0].name}: ${attrValueThirdFrame}`],
+                [3, `${additionalAttrsLabelShape[0].name}: ${attrValueThirdFrame}`],
             ].forEach(([num, val]) => {
                 checkObjectDetailValue(num, val);
             });
@@ -98,10 +92,9 @@ context('Mutable attribute.', () => {
                 });
 
             cy.get('body').click(); // deactivate
-            cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove')
-                .trigger('mouseover')
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         });
     });
 });

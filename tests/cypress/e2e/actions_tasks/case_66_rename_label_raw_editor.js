@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,7 +34,8 @@ context('Rename a label via raw editor.', () => {
                 label.color = newlabelColor;
             }
         });
-        cy.get('.cvat-raw-labels-viewer').clear().type(JSON.stringify(labels), { parseSpecialCharSequences: false });
+        cy.get('.cvat-raw-labels-viewer').clear();
+        cy.get('.cvat-raw-labels-viewer').type(JSON.stringify(labels), { parseSpecialCharSequences: false });
     }
 
     before(() => {
@@ -43,7 +45,7 @@ context('Rename a label via raw editor.', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
-        cy.addNewLabel(labelName);
+        cy.addNewLabel({ name: labelName });
     });
 
     after(() => {

@@ -58,6 +58,10 @@ def post_files_method(username, endpoint, data, files, **kwargs):
     )
 
 
+def put_method(username, endpoint, data, **kwargs):
+    return requests.put(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
+
+
 def server_get(username, endpoint, **kwargs):
     return requests.get(get_server_url(endpoint, **kwargs), auth=(username, USER_PASS))
 

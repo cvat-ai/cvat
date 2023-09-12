@@ -56,9 +56,10 @@ import WebhooksPage from 'components/webhooks-page/webhooks-page';
 import CreateWebhookPage from 'components/setup-webhook-pages/create-webhook-page';
 import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-page';
 
+import GuidePage from 'components/md-guide/guide-page';
+
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { getCore } from 'cvat-core-wrapper';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState, PluginsState } from 'reducers';
 import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
@@ -72,6 +73,9 @@ import EventRecorder from 'utils/controls-logger';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
+import CreateJobPage from './create-job-page/create-job-page';
+import OrganizationWatcher from './watchers/organization-watcher';
+import AnalyticsPage from './analytics-page/analytics-page';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -82,11 +86,8 @@ interface CVATAppProps {
     initModels: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
-    switchShortcutsDialog: () => void;
-    switchSettingsDialog: () => void;
     loadAuthActions: () => void;
     loadOrganizations: () => void;
-    keyMap: KeyMap;
     userInitialized: boolean;
     userFetching: boolean;
     organizationsFetching: boolean;
@@ -131,7 +132,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             HEALTH_CHECK_RETRIES, HEALTH_CHECK_PERIOD, HEALTH_CHECK_REQUEST_TIMEOUT, SERVER_UNAVAILABLE_COMPONENT,
             RESET_NOTIFICATIONS_PATHS,
         } = appConfig;
-        // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
         const userActivityCallback: (() => void)[] = [];
@@ -390,11 +390,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             organizationsInitialized,
             userAgreementsInitialized,
             authActionsInitialized,
-            switchShortcutsDialog,
-            switchSettingsDialog,
             pluginComponents,
             user,
-            keyMap,
             location,
             isModelPluginActive,
         } = this.props;
@@ -414,24 +411,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             )
         );
 
-        const subKeyMap = {
-            SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
-            SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
-        };
-
-        const handlers = {
-            SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
-                if (event) event.preventDefault();
-
-                switchShortcutsDialog();
-            },
-            SWITCH_SETTINGS: (event: KeyboardEvent) => {
-                if (event) event.preventDefault();
-
-                switchSettingsDialog();
-            },
-        };
-
         const routesToRender = pluginComponents.router
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
             .map(({ component: Component }) => Component());
@@ -449,55 +428,63 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <Header />
                                 <Layout.Content style={{ height: '100%' }}>
                                     <ShortcutsDialog />
-                                    <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
-                                        <Switch>
-                                            <Route exact path='/auth/logout' component={LogoutComponent} />
-                                            <Route exact path='/projects' component={ProjectsPageComponent} />
-                                            <Route exact path='/projects/create' component={CreateProjectPageComponent} />
-                                            <Route exact path='/projects/:id' component={ProjectPageComponent} />
-                                            <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
-                                            <Route exact path='/tasks' component={TasksPageContainer} />
-                                            <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
-                                            <Route exact path='/tasks/:id' component={TaskPageComponent} />
-                                            <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
-                                            <Route exact path='/jobs' component={JobsPageComponent} />
-                                            <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
+                                    <Switch>
+                                        <Route
+                                            exact
+                                            path='/auth/login-with-token/:token'
+                                            component={LoginWithTokenComponent}
+                                        />
+                                        <Route exact path='/auth/logout' component={LogoutComponent} />
+                                        <Route exact path='/projects' component={ProjectsPageComponent} />
+                                        <Route exact path='/projects/create' component={CreateProjectPageComponent} />
+                                        <Route exact path='/projects/:id' component={ProjectPageComponent} />
+                                        <Route exact path='/projects/:id/webhooks' component={WebhooksPage} />
+                                        <Route exact path='/projects/:id/guide' component={GuidePage} />
+                                        <Route exact path='/projects/:pid/analytics' component={AnalyticsPage} />
+                                        <Route exact path='/tasks' component={TasksPageContainer} />
+                                        <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
+                                        <Route exact path='/tasks/:id' component={TaskPageComponent} />
+                                        <Route exact path='/tasks/:tid/analytics' component={AnalyticsPage} />
+                                        <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
+                                        <Route exact path='/tasks/:id/guide' component={GuidePage} />
+                                        <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
+                                        <Route exact path='/tasks/:tid/jobs/:jid/analytics' component={AnalyticsPage} />
+                                        <Route exact path='/jobs' component={JobsPageComponent} />
+                                        <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
+                                        <Route
+                                            exact
+                                            path='/cloudstorages/create'
+                                            component={CreateCloudStoragePageComponent}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/cloudstorages/update/:id'
+                                            component={UpdateCloudStoragePageComponent}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/organizations/create'
+                                            component={CreateOrganizationComponent}
+                                        />
+                                        <Route exact path='/organization/webhooks' component={WebhooksPage} />
+                                        <Route exact path='/webhooks/create' component={CreateWebhookPage} />
+                                        <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
+                                        <Route exact path='/organization' component={OrganizationPage} />
+                                        { routesToRender }
+                                        {isModelPluginActive && (
                                             <Route
-                                                exact
-                                                path='/cloudstorages/create'
-                                                component={CreateCloudStoragePageComponent}
-                                            />
-                                            <Route
-                                                exact
-                                                path='/cloudstorages/update/:id'
-                                                component={UpdateCloudStoragePageComponent}
-                                            />
-                                            <Route
-                                                exact
-                                                path='/organizations/create'
-                                                component={CreateOrganizationComponent}
-                                            />
-                                            <Route exact path='/organization/webhooks' component={WebhooksPage} />
-                                            <Route exact path='/webhooks/create' component={CreateWebhookPage} />
-                                            <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
-                                            <Route exact path='/organization' component={OrganizationPage} />
-                                            { routesToRender }
-                                            {isModelPluginActive && (
-                                                <Route
-                                                    path='/models'
-                                                >
-                                                    <Switch>
-                                                        <Route exact path='/models' component={ModelsPageComponent} />
-                                                    </Switch>
-                                                </Route>
-                                            )}
-                                            <Redirect
-                                                push
-                                                to={new URLSearchParams(location.search).get('next') || '/tasks'}
-                                            />
-                                        </Switch>
-                                    </GlobalHotKeys>
-                                    {/* eslint-disable-next-line */}
+                                                path='/models'
+                                            >
+                                                <Switch>
+                                                    <Route exact path='/models' component={ModelsPageComponent} />
+                                                </Switch>
+                                            </Route>
+                                        )}
+                                        <Redirect
+                                            push
+                                            to={new URLSearchParams(location.search).get('next') || '/tasks'}
+                                        />
+                                    </Switch>
                                     <ExportDatasetModal />
                                     <ExportBackupModal />
                                     <ImportDatasetModal />
@@ -505,6 +492,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     { loggedInModals.map((Component, idx) => (
                                         <Component key={idx} targetProps={this.props} targetState={this.state} />
                                     ))}
+                                    <OrganizationWatcher />
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>

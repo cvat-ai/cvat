@@ -72,7 +72,16 @@ After that, it should be possible to use this directory as a CVAT share:
 
 ```yaml
 services:
-  cvat:
+  cvat_server:
+    volumes:
+      - cvat_share:/home/django/share:ro
+  cvat_worker_import:
+    volumes:
+      - cvat_share:/home/django/share:ro
+  cvat_worker_export:
+    volumes:
+      - cvat_share:/home/django/share:ro
+  cvat_worker_annotation:
     volumes:
       - cvat_share:/home/django/share:ro
 
@@ -137,7 +146,7 @@ To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label
   cvat:
     labels:
       - traefik.http.routers.cvat.rule=(Host(`example1.com`) || Host(`example2.com`)) &&
-          PathPrefix(`/api/`, `/git/`, `/opencv/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+          PathPrefix(`/api/`, `/git/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
 
   cvat_ui:
     labels:

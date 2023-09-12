@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,15 +9,15 @@ import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
 import { CloudStorage } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
-import CloudStorageFiles from './cloud-storages-files';
+import config from 'config';
+import CloudStorageBrowser, { RemoteFile } from './remote-browser';
 
 interface Props {
     formRef: any;
     cloudStorage: CloudStorage | null;
     searchPhrase: string;
     setSearchPhrase: (searchPhrase: string) => void;
-    selectedFiles: string[];
-    onSelectFiles: (files: string[]) => void;
+    onSelectFiles: (files: RemoteFile[]) => void;
     onSelectCloudStorage: (cloudStorageId: number | null) => void;
 }
 
@@ -26,25 +26,26 @@ const { Option } = Select;
 export default function CloudStorageTab(props: Props): JSX.Element {
     const { searchPhrase, setSearchPhrase } = props;
     const {
-        formRef, cloudStorage, selectedFiles, onSelectFiles, onSelectCloudStorage,
+        formRef, cloudStorage, onSelectFiles, onSelectCloudStorage,
     } = props;
-    const [selectedManifest, setSelectedManifest] = useState<string | null>(null);
+    const [selectedSource, setSelectedSource] = useState<string | null>(null);
 
     useEffect(() => {
         if (cloudStorage) {
-            setSelectedManifest(cloudStorage.manifests[0]);
+            const source = cloudStorage.manifests[0] || config.BUCKET_CONTENT_KEY;
+            setSelectedSource(source);
+            formRef.current.setFieldsValue({ manifestSelect: source });
         }
-    }, [cloudStorage]);
+    }, [cloudStorage?.id]);
 
     useEffect(() => {
-        if (selectedManifest) {
-            cloudStorage.manifestPath = selectedManifest;
+        if (cloudStorage) {
+            cloudStorage.manifestPath = (selectedSource !== config.BUCKET_CONTENT_KEY) ? selectedSource : null;
         }
-    }, [selectedManifest]);
+    }, [selectedSource]);
 
     return (
-        <Form ref={formRef} className='cvat-create-task-page-cloud-storages-tab-form' layout='vertical'>
-
+        <Form ref={formRef} layout='vertical'>
             <SelectCloudStorage
                 searchPhrase={searchPhrase}
                 cloudStorage={cloudStorage}
@@ -53,15 +54,15 @@ export default function CloudStorageTab(props: Props): JSX.Element {
             />
             {cloudStorage ? (
                 <Form.Item
-                    label='Select manifest file'
+                    label='Select data source'
                     name='manifestSelect'
-                    rules={[{ required: true, message: 'Please, specify a manifest file' }]}
-                    initialValue={cloudStorage.manifests[0]}
+                    rules={[{ required: true, message: 'Please, specify a data source' }]}
+                    initialValue={(cloudStorage.manifests?.length) ? cloudStorage.manifests[0] : null}
                 >
                     <Select
-                        onSelect={(value: string) => setSelectedManifest(value)}
+                        onSelect={(value: string) => setSelectedSource(value)}
                     >
-                        {cloudStorage.manifests.map(
+                        {cloudStorage.manifests.concat([config.BUCKET_CONTENT_KEY]).map(
                             (manifest: string): JSX.Element => (
                                 <Option key={manifest} value={manifest}>
                                     {manifest}
@@ -72,16 +73,15 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                 </Form.Item>
             ) : null}
 
-            {cloudStorage && selectedManifest ? (
+            {cloudStorage && selectedSource ? (
                 <Form.Item
                     label='Files'
                     name='cloudStorageFiles'
                     rules={[{ required: true, message: 'Please, select a files' }]}
                 >
-                    <CloudStorageFiles
-                        cloudStorage={cloudStorage}
-                        selectedManifest={selectedManifest}
-                        selectedFiles={selectedFiles}
+                    <CloudStorageBrowser
+                        resource={cloudStorage}
+                        manifestPath={selectedSource === config.BUCKET_CONTENT_KEY ? undefined : selectedSource}
                         onSelectFiles={onSelectFiles}
                     />
                 </Form.Item>

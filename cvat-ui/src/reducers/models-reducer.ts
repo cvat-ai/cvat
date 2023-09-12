@@ -113,11 +113,13 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_FAILED: {
             const { inferences } = state;
-            delete inferences[action.payload.taskID];
 
             return {
                 ...state,
-                inferences: { ...inferences },
+                inferences: {
+                    ...inferences,
+                    [action.payload.taskID]: action.payload.activeInference,
+                },
             };
         }
         case ModelsActionTypes.CANCEL_INFERENCE_SUCCESS: {

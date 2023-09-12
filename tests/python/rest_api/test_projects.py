@@ -40,9 +40,9 @@ class TestGetProjects:
             if is_project_staff(user["id"], p["id"]) == is_project_staff_flag:
                 return p["id"]
 
-    def _test_response_200(self, username, project_id, **kwargs):
+    def _test_response_200(self, username, project_id):
         with make_api_client(username) as api_client:
-            (project, response) = api_client.projects_api.retrieve(project_id, **kwargs)
+            (project, response) = api_client.projects_api.retrieve(project_id)
             assert response.status == HTTPStatus.OK
             assert project_id == project.id
 
@@ -122,7 +122,7 @@ class TestGetProjects:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
     @pytest.mark.parametrize("role", ("supervisor", "worker"))
     def test_if_org_member_supervisor_or_worker_can_see_project(
@@ -138,7 +138,22 @@ class TestGetProjects:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
+
+    def test_can_remove_owner_and_fetch_with_sdk(self, admin_user, projects):
+        # test for API schema regressions
+        source_project = next(
+            p for p in projects if p.get("owner") and p["owner"]["username"] != admin_user
+        ).copy()
+
+        with make_api_client(admin_user) as api_client:
+            api_client.users_api.destroy(source_project["owner"]["id"])
+
+            (_, response) = api_client.projects_api.retrieve(source_project["id"])
+            fetched_project = json.loads(response.data)
+
+        source_project["owner"] = None
+        assert DeepDiff(source_project, fetched_project, ignore_order=True) == {}
 
 
 class TestProjectsListFilters(CollectionSimpleFilterTestBase):
@@ -213,9 +228,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_cannot_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_cannot_get_project_backup(user["username"], project["id"])
 
     # Org worker that in [project:owner, project:assignee] can get project backup.
     def test_org_worker_can_get_project_backup(
@@ -231,9 +244,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
     # Org supervisor that in [project:owner, project:assignee] can get project backup.
     def test_org_supervisor_can_get_project_backup(
@@ -249,9 +260,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
     # Org supervisor that not in [project:owner, project:assignee] cannot get project backup.
     def test_org_supervisor_cannot_get_project_backup(
@@ -267,9 +276,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_cannot_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_cannot_get_project_backup(user["username"], project["id"])
 
     # Org maintainer that not in [project:owner, project:assignee] can get project backup.
     def test_org_maintainer_can_get_project_backup(
@@ -285,9 +292,7 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
-        )
+        self._test_can_get_project_backup(user["username"], project["id"])
 
     # Org owner that not in [project:owner, project:assignee] can get project backup.
     def test_org_owner_can_get_project_backup(
@@ -303,9 +308,38 @@ class TestGetProjectBackup:
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(
-            user["username"], project["id"], org_id=project["organization"]
+        self._test_can_get_project_backup(user["username"], project["id"])
+
+    def test_can_get_backup_project_when_some_tasks_have_no_data(self, projects):
+        project = next((p for p in projects if 0 < p["tasks"]["count"]))
+
+        # add empty task to project
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
         )
+        assert response.status_code == HTTPStatus.CREATED
+
+        self._test_can_get_project_backup("admin1", project["id"])
+
+    def test_can_get_backup_project_when_all_tasks_have_no_data(self, projects):
+        project = next((p for p in projects if 0 == p["tasks"]["count"]))
+
+        # add empty tasks to empty project
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        self._test_can_get_project_backup("admin1", project["id"])
+
+    def test_can_get_backup_for_empty_project(self, projects):
+        empty_project = next((p for p in projects if 0 == p["tasks"]["count"]))
+        self._test_can_get_project_backup("admin1", empty_project["id"])
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -315,12 +349,16 @@ class TestPostProjects:
             (_, response) = api_client.projects_api.create(spec, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
+        return response
+
     def _test_create_project_403(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
             (_, response) = api_client.projects_api.create(
                 spec, **kwargs, _parse_response=False, _check_status=False
             )
         assert response.status == HTTPStatus.FORBIDDEN
+
+        return response
 
     def test_if_worker_cannot_create_project(self, find_users):
         workers = find_users(privilege="worker")
@@ -402,10 +440,10 @@ class TestPostProjects:
             "name": "test cannot create project with same labels",
             "labels": [{"name": "l1"}, {"name": "l1"}],
         }
-        response = post_method(admin_user, "/projects", project_spec)
+        response = post_method(admin_user, "projects", project_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(admin_user, "/projects")
+        response = get_method(admin_user, "projects")
         assert response.status_code == HTTPStatus.OK
 
     def test_cannot_create_project_with_same_skeleton_sublabels(self, admin_user):
@@ -415,10 +453,10 @@ class TestPostProjects:
                 {"name": "s1", "type": "skeleton", "sublabels": [{"name": "1"}, {"name": "1"}]}
             ],
         }
-        response = post_method(admin_user, "/projects", project_spec)
+        response = post_method(admin_user, "projects", project_spec)
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
-        response = get_method(admin_user, "/projects")
+        response = get_method(admin_user, "projects")
         assert response.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize(
@@ -442,8 +480,20 @@ class TestPostProjects:
             },
         }
 
-        response = post_method(user, "/projects", project_spec)
+        response = post_method(user, "projects", project_spec)
         assert response.status_code == HTTPStatus.FORBIDDEN
+
+    def test_create_response_matches_get(self, admin_user):
+        username = admin_user
+
+        spec = {"name": "test create project", "labels": [{"name": "a"}]}
+
+        response = self._test_create_project_201(username, spec)
+        project = json.loads(response.data)
+
+        with make_api_client(username) as api_client:
+            (_, response) = api_client.projects_api.retrieve(project["id"])
+            assert DeepDiff(project, json.loads(response.data), ignore_order=True) == {}
 
 
 def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked):
@@ -485,11 +535,13 @@ class TestImportExportDatasetProject:
                 _content_type="multipart/form-data",
             )
             assert response.status == HTTPStatus.ACCEPTED
+            rq_id = json.loads(response.data).get("rq_id")
+            assert rq_id, "The rq_id was not found in the response"
 
             while True:
                 # TODO: It's better be refactored to a separate endpoint to get request status
                 (_, response) = api_client.projects_api.retrieve_dataset(
-                    project_id, action="import_status"
+                    project_id, action="import_status", rq_id=rq_id
                 )
                 if response.status == HTTPStatus.CREATED:
                     break
@@ -663,7 +715,7 @@ class TestImportExportDatasetProject:
 
         self._test_import_project(username, project_id, "CVAT 1.1", import_data)
 
-        response = get_method(username, f"/tasks", project_id=project_id)
+        response = get_method(username, f"tasks", project_id=project_id)
         assert response.status_code == HTTPStatus.OK
         tasks = response.json()["results"]
 
@@ -682,6 +734,37 @@ class TestImportExportDatasetProject:
 
         self._test_export_project(username, project_id, "COCO Keypoints 1.0")
 
+    def test_can_export_dataset_for_empty_project(self, projects):
+        empty_project = next((p for p in projects if 0 == p["tasks"]["count"]))
+        self._test_export_project("admin1", empty_project["id"], "COCO 1.0")
+
+    def test_can_export_project_dataset_when_some_tasks_have_no_data(self, projects):
+        project = next((p for p in projects if 0 < p["tasks"]["count"]))
+
+        # add empty task to project
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        self._test_export_project("admin1", project["id"], "COCO 1.0")
+
+    def test_can_export_project_dataset_when_all_tasks_have_no_data(self, projects):
+        project = next((p for p in projects if 0 == p["tasks"]["count"]))
+
+        # add empty tasks to empty project
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task1", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        response = post_method(
+            "admin1", "tasks", {"name": "empty_task2", "project_id": project["id"]}
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        self._test_export_project("admin1", project["id"], "COCO 1.0")
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchProjectLabel:
@@ -698,7 +781,7 @@ class TestPatchProjectLabel:
         label_payload = {"id": label["id"], "deleted": True}
 
         response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
+            admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
         assert response.status_code == HTTPStatus.OK, response.content
         assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
@@ -720,7 +803,7 @@ class TestPatchProjectLabel:
         label_payload = {"id": label["id"], "deleted": True}
 
         response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
+            admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
@@ -734,7 +817,7 @@ class TestPatchProjectLabel:
         project_labels[0].update({"name": "new name"})
 
         response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [project_labels[0]]}
+            admin_user, f'projects/{project["id"]}', {"labels": [project_labels[0]]}
         )
         assert response.status_code == HTTPStatus.OK
 
@@ -749,7 +832,7 @@ class TestPatchProjectLabel:
         label_payload = {"id": project_labels[0]["id"], "name": project_labels[0]["name"]}
 
         response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [label_payload]}
+            admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "All label names must be unique" in response.text
@@ -758,7 +841,7 @@ class TestPatchProjectLabel:
         project = list(projects)[0]
         new_label = deepcopy([l for l in labels if l.get("project_id") != project["id"]][0])
 
-        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.NOT_FOUND
         assert f"Not found label with id #{new_label['id']} to change" in response.text
 
@@ -766,7 +849,7 @@ class TestPatchProjectLabel:
         project = list(projects)[0]
         new_label = {"name": "new name"}
 
-        response = patch_method(admin_user, f'/projects/{project["id"]}', {"labels": [new_label]})
+        response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_label]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
@@ -792,9 +875,8 @@ class TestPatchProjectLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/projects/{project["id"]}',
+            f'projects/{project["id"]}',
             {"labels": [new_label]},
-            org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
@@ -821,9 +903,8 @@ class TestPatchProjectLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/projects/{project["id"]}',
+            f'projects/{project["id"]}',
             {"labels": [new_label]},
-            org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -846,9 +927,8 @@ class TestPatchProjectLabel:
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
-            f'/projects/{project["id"]}',
+            f'projects/{project["id"]}',
             {"labels": [new_label]},
-            org_id=project["organization"],
         )
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
@@ -869,9 +949,7 @@ class TestPatchProjectLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
-        response = patch_method(
-            admin_user, f'/projects/{project["id"]}', {"labels": [new_skeleton]}
-        )
+        response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_skeleton]})
         assert response.status_code == HTTPStatus.OK
         assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
 
@@ -994,7 +1072,7 @@ class TestGetProjectPreview:
             )
         )
 
-        self._test_response_200(user["username"], pid, org_id=user["org"])
+        self._test_response_200(user["username"], pid)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -1015,7 +1093,7 @@ class TestPatchProject:
         project_spec = {
             "name": f"Project with foreign cloud storage {storage_id} settings",
         }
-        response = post_method(user, "/projects", project_spec)
+        response = post_method(user, "projects", project_spec)
 
         updated_fields = {
             field: {
@@ -1025,5 +1103,5 @@ class TestPatchProject:
         }
         project_id = response.json()["id"]
 
-        response = patch_method(user, f"/projects/{project_id}", updated_fields)
+        response = patch_method(user, f"projects/{project_id}", updated_fields)
         assert response.status_code == HTTPStatus.FORBIDDEN

@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,7 +30,8 @@ context('Canvas 3D functionality. Add cuboid.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Add cuboid.', () => {
             cy.create3DCuboid(cuboidCreationParams);
-            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover').should('have.class', 'cvat-objects-sidebar-state-active-item');
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
+            cy.get('#cvat-objects-sidebar-state-item-1').should('have.class', 'cvat-objects-sidebar-state-active-item');
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_add_cuboid'); // The cuboid displayed
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_before_all.png`,
@@ -51,7 +53,8 @@ context('Canvas 3D functionality. Add cuboid.', () => {
         });
 
         it('Cuboid interaction by mouse.', () => {
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200).click(300, 200); // Deactivate the cuboid
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200);
+            cy.get('.cvat-canvas3d-perspective').click(300, 200); // Deactivate the cuboid
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_deactivate_cuboid');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
                 cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_deactivate_cuboid`);

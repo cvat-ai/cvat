@@ -4,17 +4,18 @@
 // SPDX-License-Identifier: MIT
 
 import { ArgumentError } from './exceptions';
-import { HistoryActions } from './enums';
+import { HistoryActions, JobType, RQStatus } from './enums';
 import { Storage } from './storage';
+import { Task as TaskClass, Job as JobClass } from './session';
 import loggerStorage from './logger-storage';
 import serverProxy from './server-proxy';
 import {
     getFrame,
     deleteFrame,
     restoreFrame,
-    getRanges,
+    getCachedChunks,
     clear as clearFrames,
-    findNotDeletedFrame,
+    findFrame,
     getContextImage,
     patchMeta,
     getDeletedFrames,
@@ -34,6 +35,7 @@ import {
     freezeHistory, clearActions, getActions,
     clearCache, getHistory,
 } from './annotations';
+import AnnotationGuide from './guide';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame) {
@@ -61,7 +63,7 @@ async function restoreFrameWrapper(jobID, frame) {
 }
 
 export function implementJob(Job) {
-    Job.prototype.save.implementation = async function () {
+    Job.prototype.save.implementation = async function (additionalData: any) {
         if (this.id) {
             const jobData = this._updateTrigger.getUpdated(this);
             if (jobData.assignee) {
@@ -73,11 +75,27 @@ export function implementJob(Job) {
             return new Job(data);
         }
 
-        throw new ArgumentError('Could not save job without id');
+        const jobSpec = {
+            ...(this.assignee ? { assignee: this.assignee.id } : {}),
+            ...(this.stage ? { stage: this.stage } : {}),
+            ...(this.state ? { stage: this.state } : {}),
+            type: this.type,
+            task_id: this.taskId,
+        };
+        const job = await serverProxy.jobs.create({ ...jobSpec, ...additionalData });
+        return new Job(job);
+    };
+
+    Job.prototype.delete.implementation = async function () {
+        if (this.type !== JobType.GROUND_TRUTH) {
+            throw new Error('Only ground truth job can be deleted');
+        }
+        const result = await serverProxy.jobs.delete(this.id);
+        return result;
     };
 
     Job.prototype.issues.implementation = async function () {
-        const result = await serverProxy.issues.get(this.id);
+        const result = await serverProxy.issues.get({ job_id: this.id });
         return result.map((issue) => new Issue(issue));
     };
 
@@ -111,6 +129,7 @@ export function implementJob(Job) {
             isPlaying,
             step,
             this.dimension,
+            (chunkNumber, quality) => this.frames.chunk(chunkNumber, quality),
         );
         return frameData;
     };
@@ -144,23 +163,25 @@ export function implementJob(Job) {
         return result;
     };
 
-    Job.prototype.frames.ranges.implementation = async function () {
-        const rangesData = await getRanges(this.id);
-        return rangesData;
+    Job.prototype.frames.cachedChunks.implementation = async function () {
+        const cachedChunks = await getCachedChunks(this.id);
+        return cachedChunks;
     };
 
-    Job.prototype.frames.preview.implementation = async function () {
-        if (this.id === null || this.taskId === null) {
-            return '';
-        }
-
+    Job.prototype.frames.preview.implementation = async function (this: JobClass): Promise<string> {
+        if (this.id === null || this.taskId === null) return '';
         const preview = await serverProxy.jobs.getPreview(this.id);
-        const decoded = await decodePreview(preview);
-        return decoded;
+        if (!preview) return '';
+        return decodePreview(preview);
     };
 
     Job.prototype.frames.contextImage.implementation = async function (frameId) {
         const result = await getContextImage(this.id, frameId);
+        return result;
+    };
+
+    Job.prototype.frames.chunk.implementation = async function (chunkNumber, quality) {
+        const result = await serverProxy.frames.getData(this.id, chunkNumber, quality);
         return result;
     };
 
@@ -180,14 +201,12 @@ export function implementJob(Job) {
         if (frameTo < this.startFrame || frameTo > this.stopFrame) {
             throw new ArgumentError('The stop frame is out of the job');
         }
-        if (filters.notDeleted) {
-            return findNotDeletedFrame(this.id, frameFrom, frameTo, filters.offset || 1);
-        }
-        return null;
+
+        return findFrame(this.id, frameFrom, frameTo, filters);
     };
 
     // TODO: Check filter for annotations
-    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
+    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters, groundTruthJobId) {
         if (!Array.isArray(filters)) {
             throw new ArgumentError('Filters must be an array');
         }
@@ -200,7 +219,7 @@ export function implementJob(Job) {
             throw new ArgumentError(`Frame ${frame} does not exist in the job`);
         }
 
-        const annotationsData = await getAnnotations(this, frame, allTracks, filters);
+        const annotationsData = await getAnnotations(this, frame, allTracks, filters, groundTruthJobId);
         const deletedFrames = await getDeletedFrames('job', this.id);
         if (frame in deletedFrames) {
             return [];
@@ -371,6 +390,15 @@ export function implementJob(Job) {
         return this;
     };
 
+    Job.prototype.guide.implementation = async function guide() {
+        if (this.guideId === null) {
+            return null;
+        }
+
+        const result = await serverProxy.guides.get(this.guideId);
+        return new AnnotationGuide(result);
+    };
+
     return Job;
 }
 
@@ -495,9 +523,25 @@ export function implementTask(Task) {
         });
     };
 
+    Task.prototype.listenToCreate.implementation = async function (
+        onUpdate: (state: RQStatus, progress: number, message: string) => void = () => {},
+    ): Promise<TaskClass> {
+        if (Number.isInteger(this.id) && this.size === 0) {
+            const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);
+            return new Task(serializedTask);
+        }
+
+        return this;
+    };
+
     Task.prototype.delete.implementation = async function () {
         const result = await serverProxy.tasks.delete(this.id);
         return result;
+    };
+
+    Task.prototype.issues.implementation = async function () {
+        const result = await serverProxy.issues.get({ task_id: this.id });
+        return result.map((issue) => new Issue(issue));
     };
 
     Task.prototype.backup.implementation = async function (
@@ -537,31 +581,25 @@ export function implementTask(Task) {
             isPlaying,
             step,
             this.dimension,
+            (chunkNumber, quality) => job.frames.chunk(chunkNumber, quality),
         );
         return result;
     };
 
-    Task.prototype.frames.ranges.implementation = async function () {
-        const rangesData = {
-            decoded: [],
-            buffered: [],
-        };
+    Task.prototype.frames.cachedChunks.implementation = async function () {
+        let chunks = [];
         for (const job of this.jobs) {
-            const { decoded, buffered } = await getRanges(job.id);
-            rangesData.decoded.push(decoded);
-            rangesData.buffered.push(buffered);
+            const cachedChunks = await getCachedChunks(job.id);
+            chunks = chunks.concat(cachedChunks);
         }
-        return rangesData;
+        return Array.from(new Set(chunks));
     };
 
-    Task.prototype.frames.preview.implementation = async function () {
-        if (this.id === null) {
-            return '';
-        }
-
+    Task.prototype.frames.preview.implementation = async function (this: TaskClass): Promise<string> {
+        if (this.id === null) return '';
         const preview = await serverProxy.tasks.getPreview(this.id);
-        const decoded = await decodePreview(preview);
-        return decoded;
+        if (!preview) return '';
+        return decodePreview(preview);
     };
 
     Task.prototype.frames.delete.implementation = async function (frame) {
@@ -621,17 +659,23 @@ export function implementTask(Task) {
             (frameFrom < _job.startFrame && frameTo > _job.stopFrame)
         ));
 
-        if (filters.notDeleted) {
-            for (const job of jobs) {
-                const result = await findNotDeletedFrame(
-                    job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame), 1,
-                );
+        for (const job of jobs) {
+            const result = await findFrame(
+                job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame), filters,
+            );
 
-                if (result !== null) return result;
-            }
+            if (result !== null) return result;
         }
 
         return null;
+    };
+
+    Task.prototype.frames.contextImage.implementation = async function () {
+        throw new Error('Not implemented');
+    };
+
+    Task.prototype.frames.chunk.implementation = async function () {
+        throw new Error('Not implemented');
     };
 
     // TODO: Check filter for annotations
@@ -808,6 +852,15 @@ export function implementTask(Task) {
             wait,
         );
         return result;
+    };
+
+    Task.prototype.guide.implementation = async function guide() {
+        if (this.guideId === null) {
+            return null;
+        }
+
+        const result = await serverProxy.guides.get(this.guideId);
+        return new AnnotationGuide(result);
     };
 
     return Task;

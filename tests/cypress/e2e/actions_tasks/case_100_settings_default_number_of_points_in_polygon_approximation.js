@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +37,9 @@ context('Settings. Default number of points in polygon approximation.', () => {
             testOpenSettingsWorkspace();
             cy.get('.cvat-workspace-settings-approx-poly-threshold')
                 .find('[role="slider"]')
-                .type(generateString(4, 'rightarrow'))
+                .type(generateString(4, 'rightarrow'));
+            cy.get('.cvat-workspace-settings-approx-poly-threshold')
+                .find('[role="slider"]')
                 .then((slider) => {
                     const sliderAttrValueNow = slider.attr('aria-valuenow');
                     const sliderAttrValuemin = slider.attr('aria-valuemin');

@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import config from './config';
 
 import PluginRegistry from './plugins';
@@ -15,6 +16,7 @@ import {
     checkFilter,
     checkExclusiveFields,
     checkObjectType,
+    filterFieldsToSnakeCase,
 } from './common';
 
 import User from './user';
@@ -24,6 +26,13 @@ import Project from './project';
 import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
+import { ArgumentError } from './exceptions';
+import { SerializedAsset } from './server-response-types';
+import QualityReport from './quality-report';
+import QualityConflict from './quality-conflict';
+import QualitySettings from './quality-settings';
+import { FramesMetaData } from './frames';
+import AnalyticsReport from './analytics-report';
 
 export default function implementAPI(cvat) {
     cvat.plugins.list.implementation = PluginRegistry.list;
@@ -46,7 +55,7 @@ export default function implementAPI(cvat) {
 
     cvat.server.share.implementation = async (directory) => {
         const result = await serverProxy.server.share(directory);
-        return result;
+        return result.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type }));
     };
 
     cvat.server.formats.implementation = async () => {
@@ -131,6 +140,15 @@ export default function implementAPI(cvat) {
 
     cvat.server.installedApps.implementation = async () => {
         const result = await serverProxy.server.installedApps();
+        return result;
+    };
+
+    cvat.assets.create.implementation = async (file: File, guideId: number): Promise<SerializedAsset> => {
+        if (!(file instanceof File)) {
+            throw new ArgumentError('Assets expect a file');
+        }
+
+        const result = await serverProxy.assets.create(file, guideId);
         return result;
     };
 
@@ -312,11 +330,17 @@ export default function implementAPI(cvat) {
 
     cvat.organizations.activate.implementation = (organization) => {
         checkObjectType('organization', organization, null, Organization);
-        config.organizationID = organization.slug;
+        config.organization = {
+            organizationID: organization.id,
+            organizationSlug: organization.slug,
+        };
     };
 
     cvat.organizations.deactivate.implementation = async () => {
-        config.organizationID = null;
+        config.organization = {
+            organizationID: null,
+            organizationSlug: null,
+        };
     };
 
     cvat.webhooks.get.implementation = async (filter) => {
@@ -330,26 +354,90 @@ export default function implementAPI(cvat) {
         });
 
         checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
-        const searchParams = {};
-        for (const key of Object.keys(filter)) {
-            if (['page', 'id', 'filter', 'search', 'sort'].includes(key)) {
-                searchParams[key] = filter[key];
-            }
-        }
 
-        if (filter.projectId) {
-            if (searchParams.filter) {
-                const parsed = JSON.parse(searchParams.filter);
-                searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
-            } else {
-                searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
-            }
-        }
+        const searchParams = filterFieldsToSnakeCase(filter, ['projectId']);
 
         const webhooksData = await serverProxy.webhooks.get(searchParams);
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
         webhooks.count = webhooksData.count;
         return webhooks;
+    };
+
+    cvat.analytics.quality.reports.implementation = async (filter) => {
+        let updatedParams: Record<string, string> = {};
+        if ('taskId' in filter) {
+            updatedParams = {
+                task_id: filter.taskId,
+                sort: '-created_date',
+                target: filter.target,
+            };
+        }
+        if ('jobId' in filter) {
+            updatedParams = {
+                job_id: filter.jobId,
+                sort: '-created_date',
+                target: filter.target,
+            };
+        }
+        const reportsData = await serverProxy.analytics.quality.reports(updatedParams);
+
+        return reportsData.map((report) => new QualityReport({ ...report }));
+    };
+
+    cvat.analytics.quality.conflicts.implementation = async (filter) => {
+        let updatedParams: Record<string, string> = {};
+        if ('reportId' in filter) {
+            updatedParams = {
+                report_id: filter.reportId,
+            };
+        }
+
+        const reportsData = await serverProxy.analytics.quality.conflicts(updatedParams);
+
+        return reportsData.map((conflict) => new QualityConflict({ ...conflict }));
+    };
+
+    cvat.analytics.quality.settings.get.implementation = async (taskID: number) => {
+        const settings = await serverProxy.analytics.quality.settings.get(taskID);
+        return new QualitySettings({ ...settings });
+    };
+
+    cvat.frames.getMeta.implementation = async (type, id) => {
+        const result = await serverProxy.frames.getMeta(type, id);
+        return new FramesMetaData({ ...result });
+    };
+
+    cvat.analytics.performance.reports.implementation = async (filter) => {
+        checkFilter(filter, {
+            jobID: isInteger,
+            taskID: isInteger,
+            projectID: isInteger,
+            startDate: isString,
+            endDate: isString,
+        });
+
+        checkExclusiveFields(filter, ['jobID', 'taskID', 'projectID'], ['startDate', 'endDate']);
+
+        const updatedParams: Record<string, string> = {};
+
+        if ('taskID' in filter) {
+            updatedParams.task_id = filter.taskID;
+        }
+        if ('jobID' in filter) {
+            updatedParams.job_id = filter.jobID;
+        }
+        if ('projectID' in filter) {
+            updatedParams.project_id = filter.projectID;
+        }
+        if ('startDate' in filter) {
+            updatedParams.start_date = filter.startDate;
+        }
+        if ('endDate' in filter) {
+            updatedParams.end_date = filter.endDate;
+        }
+
+        const reportData = await serverProxy.analytics.performance.reports(updatedParams);
+        return new AnalyticsReport(reportData);
     };
 
     return cvat;

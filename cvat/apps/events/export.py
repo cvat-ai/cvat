@@ -15,10 +15,12 @@ import clickhouse_connect
 
 from rest_framework import serializers, status
 from rest_framework.response import Response
-from django_sendfile import sendfile
 
 from cvat.apps.dataset_manager.views import clear_export_cache, log_exception
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
+from cvat.apps.engine.utils import sendfile
+
+slogger = ServerLogManager(__name__)
 
 DEFAULT_CACHE_TTL = timedelta(hours=1)
 
@@ -144,12 +146,11 @@ def export(request, filter_query, queue_name):
 
                 return sendfile(request, file_path, attachment=True,
                     attachment_filename=filename)
-
             else:
                 if os.path.exists(file_path):
                     return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed:
-            exc_info = str(rq_job.exc_info)
+            exc_info = rq_job.meta.get('formatted_exception', str(rq_job.exc_info))
             rq_job.delete()
             return Response(exc_info,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)

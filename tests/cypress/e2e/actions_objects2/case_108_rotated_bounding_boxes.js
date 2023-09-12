@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -119,7 +120,8 @@ context('Rotated bounding boxes.', () => {
             // Split tracks
             cy.pressSplitControl();
             // A single click does not reproduce the split a track scenario in cypress test.
-            cy.get('#cvat_canvas_shape_2').click().click();
+            cy.get('#cvat_canvas_shape_2').click();
+            cy.get('#cvat_canvas_shape_2').click();
 
             // Disabling outside for checking deg rotate correctly
             cy.get('#cvat-objects-sidebar-state-item-5').within(() => {
@@ -139,9 +141,8 @@ context('Rotated bounding boxes.', () => {
 
         it('Copy/paste a rotated shape.', () => {
             cy.get('.cvat-canvas-container').click(500, 385);
-            cy.get('#cvat_canvas_shape_5')
-                .trigger('mousemove')
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_5').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{ctrl}c');
             cy.get('.cvat-canvas-container').trigger('mousemove', 500, 385);
             cy.get('body').type('{ctrl}v');

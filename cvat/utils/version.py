@@ -14,7 +14,7 @@ import subprocess
 def get_version(version):
     """Return a PEP 440-compliant version number from VERSION."""
     # Now build the two parts of the version number:
-    # main = X.Y[.Z]
+    # main = X.Y.Z
     # sub = .devN - for pre-alpha releases
     #     | {a|b|rc}N - for alpha, beta, and rc releases
 
@@ -33,9 +33,8 @@ def get_version(version):
     return main + sub
 
 def get_main_version(version):
-    """Return main version (X.Y[.Z]) from VERSION."""
-    parts = 2 if version[2] == 0 else 3
-    return '.'.join(str(x) for x in version[:parts])
+    """Return main version (X.Y.Z) from VERSION."""
+    return '.'.join(str(x) for x in version[:3])
 
 def get_git_changeset():
     """Return a numeric identifier of the latest git changeset.

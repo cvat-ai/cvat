@@ -1,5 +1,5 @@
 metadata:
-  name: openvino-omz-semantic-segmentation-adas-0001
+  name: openvino-omz-intel-semantic-segmentation-adas-0001
   namespace: cvat
   annotations:
     name: Semantic segmentation for ADAS
@@ -32,43 +32,13 @@ metadata:
 
 spec:
   description: Segmentation network to classify each pixel into typical 20 classes for ADAS
-  runtime: 'python:3.6'
+  runtime: 'python:3.8'
   handler: main:handler
   eventTimeout: 30s
-  env:
-    - name: NUCLIO_PYTHON_EXE_PATH
-      value: /opt/nuclio/common/openvino/python3
-
-  volumes:
-    - volume:
-        name: openvino-common
-        configMap:
-          name: "cvat-nuclio-openvino-common"
-          defaultMode: 0750
-      volumeMount:
-        name: openvino-common
-        mountPath: /opt/nuclio/common/openvino
 
   build:
     image: cvat.openvino.omz.intel.semantic-segmentation-adas-0001
-    baseImage: openvino/ubuntu18_dev:2020.2
-
-    directives:
-      preCopy:
-        - kind: USER
-          value: root
-        - kind: WORKDIR
-          value: /opt/nuclio
-        - kind: RUN
-          value: ln -s /usr/bin/pip3 /usr/bin/pip
-        - kind: RUN
-          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name semantic-segmentation-adas-0001 -o /opt/nuclio/open_model_zoo
-
-      postCopy:
-        - kind: RUN
-          value: apt update && DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y python3-skimage
-        - kind: RUN
-          value: pip3 install "numpy<1.16.0" # workaround for skimage
+    baseImage: cvat.openvino.omz.intel.semantic-segmentation-adas-0001.base
 
   triggers:
     myHttpTrigger:

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 metadata:
-  name: pth.facebookresearch.sam.vit_h
+  name: pth-facebookresearch-sam-vit-h
   namespace: cvat
   annotations:
     name: Segment Anything

@@ -4,7 +4,7 @@
 
 import {
     ChunkType,
-    DimensionType, JobStage, JobState, ProjectStatus,
+    DimensionType, JobStage, JobState, JobType, ProjectStatus,
     ShareFileType, TaskMode, TaskStatus,
 } from 'enums';
 
@@ -54,6 +54,7 @@ export interface SerializedProject {
     dimension: DimensionType;
     name: string;
     organization: number | null;
+    guide_id: number | null;
     owner: SerializedUser;
     source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
     target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
@@ -79,7 +80,7 @@ export interface SerializedTask {
     dimension: DimensionType;
     id: number;
     image_quality: number;
-    jobs: { count: 1; completed: 0; url: string; };
+    jobs: { count: 1; completed: 0; url: string; validation: 0 };
     labels: { count: number; url: string; };
     mode: TaskMode | '';
     name: string;
@@ -87,6 +88,7 @@ export interface SerializedTask {
     overlap: number | null;
     owner: SerializedUser;
     project_id: number | null;
+    guide_id: number | null;
     segment_size: number;
     size: number;
     source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
@@ -108,12 +110,16 @@ export interface SerializedJob {
     labels: { count: number; url: string };
     mode: TaskMode;
     project_id: number | null;
+    guide_id: number | null;
     stage: JobStage;
     state: JobState;
-    startFrame: number;
-    stopFrame: number;
+    type: JobType;
+    frame_count: number;
+    start_frame: number;
+    stop_frame: number;
     task_id: number;
     updated_date: string;
+    created_date: string;
     url: string;
 }
 
@@ -145,7 +151,7 @@ export interface SerializedAbout {
     version: string;
 }
 
-export interface SerializedShare {
+export interface SerializedRemoteFile {
     name: string;
     type: ShareFileType;
     mime_type: string;
@@ -166,4 +172,56 @@ export interface SerializedRegister {
     first_name: string;
     last_name: string;
     username: string;
+}
+
+export interface SerializedGuide {
+    id?: number;
+    task_id: number | null;
+    project_id: number | null;
+    owner: SerializedUser;
+    created_date: string;
+    updated_date: string;
+    markdown: string;
+}
+
+export interface SerializedAsset {
+    uuid?: string;
+    guide?: number;
+    filename: string;
+    created_date: string;
+    owner: SerializedUser;
+}
+
+export interface SerializedOrganizationContact {
+    email?: string;
+    location?: string;
+    phoneNumber?: string
+}
+
+export interface SerializedOrganization {
+    id?: number,
+    slug?: string,
+    name?: string,
+    description?: string,
+    created_date?: string,
+    updated_date?: string,
+    owner?: any,
+    contact?: SerializedOrganizationContact,
+}
+
+export interface SerializedQualitySettingsData {
+    id?: number;
+    task?: number;
+    iou_threshold?: number;
+    oks_sigma?: number;
+    line_thickness?: number;
+    low_overlap_threshold?: number;
+    compare_line_orientation?: boolean;
+    line_orientation_threshold?: number;
+    compare_groups?: boolean;
+    group_match_threshold?: number;
+    check_covered_annotations?: boolean;
+    object_visibility_threshold?: number;
+    panoptic_comparison?: boolean;
+    compare_attributes?: boolean;
 }

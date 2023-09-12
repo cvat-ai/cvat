@@ -8,16 +8,18 @@
 */
 
 const path = require('path');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = (env) => {
     const defaultAppConfig = path.join(__dirname, 'src/config.tsx');
-    const defaultPlugins = [];
+    const defaultPlugins = ['plugins/sam'];
     const appConfigFile = process.env.UI_APP_CONFIG ? process.env.UI_APP_CONFIG : defaultAppConfig;
-    const pluginsList = process.env.CLIENT_PLUGINS ? process.env.CLIENT_PLUGINS.split(':')
-        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins
+    const pluginsList = process.env.CLIENT_PLUGINS ? [...defaultPlugins, ...process.env.CLIENT_PLUGINS.split(':')]
+        .map((s) => s.trim()).filter((s) => !!s) : defaultPlugins;
+    const sourceMapsToken = process.env.SOURCE_MAPS_TOKEN || '';
 
     const transformedPlugins = pluginsList
         .filter((plugin) => !!plugin).reduce((acc, _path, index) => ({
@@ -56,11 +58,17 @@ module.exports = (env) => {
             static: {
                 directory: path.join(__dirname, 'dist'),
             },
+            headers: {
+                // to enable SharedArrayBuffer and ONNX multithreading
+                // https://cloudblogs.microsoft.com/opensource/2021/09/02/onnx-runtime-web-running-your-machine-learning-model-in-browser/
+                'Cross-Origin-Opener-Policy': 'same-origin',
+                'Cross-Origin-Embedder-Policy': 'credentialless',
+            },
             proxy: [
                 {
                     context: (param) =>
                         param.match(
-                            /\/api\/.*|git\/.*|opencv\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                            /\/api\/.*|git\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
                         ),
                     target: env && env.API_URL,
                     secure: false,
@@ -122,7 +130,13 @@ module.exports = (env) => {
                         {
                             loader: 'postcss-loader',
                             options: {
-                                plugins: [require('postcss-preset-env')],
+                                postcssOptions: {
+                                    plugins: [
+                                        [
+                                            'postcss-preset-env', {},
+                                        ],
+                                    ],
+                                },
                             },
                         },
                         'sass-loader',
@@ -191,8 +205,24 @@ module.exports = (env) => {
                         from: '../cvat-data/src/ts/3rdparty/avc.wasm',
                         to: 'assets/3rdparty/',
                     },
+                    {
+                        from: '../node_modules/onnxruntime-web/dist/*.wasm',
+                        to  : 'assets/[name][ext]',
+                    },
+                    {
+                        from: 'src/assets/opencv*.js',
+                        to  : 'assets/opencv.js',
+                    },
+                    {
+                        from: 'plugins/**/assets/*.(onnx|js)',
+                        to  : 'assets/[name][ext]',
+                    }
                 ],
             }),
+            ...(sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
+                append: '\n',
+                filename: `${sourceMapsToken}/[file].map`,
+            })] : []),
         ],
     }
 };

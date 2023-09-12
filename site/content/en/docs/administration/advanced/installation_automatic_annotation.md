@@ -29,7 +29,7 @@ description: 'Information about the installation of components needed for semi-a
   ```
 
 - You have to install `nuctl` command line tool to build and deploy serverless
-  functions. Download [version 1.8.14](https://github.com/nuclio/nuclio/releases/tag/1.8.14).
+  functions. Download [version 1.11.24](https://github.com/nuclio/nuclio/releases/tag/1.11.24).
   It is important that the version you download matches the version in
   [docker-compose.serverless.yml](https://github.com/cvat-ai/cvat/blob/develop/components/serverless/docker-compose.serverless.yml).
   For example, using wget.
@@ -45,32 +45,15 @@ description: 'Information about the installation of components needed for semi-a
   sudo ln -sf $(pwd)/nuctl-<version>-linux-amd64 /usr/local/bin/nuctl
   ```
 
-- Create `cvat` project inside nuclio dashboard where you will deploy new serverless functions
-  and deploy a couple of DL models. Commands below should be run only after CVAT has been installed
+- Deploy a couple of functions.
+  This will automatically create a `cvat` Nuclio project to contain the functions.
+  Commands below should be run only after CVAT has been installed
   using `docker compose` because it runs nuclio dashboard which manages all serverless functions.
 
   ```bash
-  nuctl create project cvat
+  ./serverless/deploy_cpu.sh serverless/openvino/dextr
+  ./serverless/deploy_cpu.sh serverless/openvino/omz/public/yolo-v3-tf
   ```
-
-  ```bash
-  nuctl deploy --project-name cvat \
-    --path serverless/openvino/dextr/nuclio \
-    --volume `pwd`/serverless/common:/opt/nuclio/common \
-    --platform local
-  ```
-
-  ```bash
-  nuctl deploy --project-name cvat \
-    --path serverless/openvino/omz/public/yolo-v3-tf/nuclio \
-    --volume `pwd`/serverless/common:/opt/nuclio/common \
-    --platform local
-  ```
-
-  **Note:**
-
-  - See [deploy_cpu.sh](https://github.com/cvat-ai/cvat/blob/develop/serverless/deploy_cpu.sh)
-    for more examples.
 
   #### GPU Support
 
@@ -115,16 +98,16 @@ description: 'Information about the installation of components needed for semi-a
   cat << EOF > /tmp/input.json
   {"image": "$image"}
   EOF
-  cat /tmp/input.json | nuctl invoke openvino.omz.public.yolo-v3-tf -c 'application/json'
+  cat /tmp/input.json | nuctl invoke openvino-omz-public-yolo-v3-tf -c 'application/json'
   ```
 
   <details>
 
   ```bash
-  20.07.17 12:07:44.519    nuctl.platform.invoker (I) Executing function {"method": "POST", "url": "http://:57308", "headers": {"Content-Type":["application/json"],"X-Nuclio-Log-Level":["info"],"X-Nuclio-Target":["openvino.omz.public.yolo-v3-tf"]}}
+  20.07.17 12:07:44.519    nuctl.platform.invoker (I) Executing function {"method": "POST", "url": "http://:57308", "headers": {"Content-Type":["application/json"],"X-Nuclio-Log-Level":["info"],"X-Nuclio-Target":["openvino-omz-public-yolo-v3-tf"]}}
   20.07.17 12:07:45.275    nuctl.platform.invoker (I) Got response {"status": "200 OK"}
   20.07.17 12:07:45.275                     nuctl (I) >>> Start of function logs
-  20.07.17 12:07:45.275 ino.omz.public.yolo-v3-tf (I) Run yolo-v3-tf model {"worker_id": "0", "time": 1594976864570.9353}
+  20.07.17 12:07:45.275 ino-omz-public-yolo-v3-tf (I) Run yolo-v3-tf model {"worker_id": "0", "time": 1594976864570.9353}
   20.07.17 12:07:45.275                     nuctl (I) <<< End of function logs
 
   > Response headers:

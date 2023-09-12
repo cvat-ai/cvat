@@ -88,22 +88,6 @@ describe('Feature: delete/restore frame', () => {
     });
 });
 
-describe('Feature: get frame data', () => {
-    test('get frame data for a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
-        const frame = await task.frames.get(0);
-        const frameData = await frame.data();
-        expect(typeof frameData).toBe('string');
-    });
-
-    test('get frame data for a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
-        const frame = await job.frames.get(0);
-        const frameData = await frame.data();
-        expect(typeof frameData).toBe('string');
-    });
-});
-
 describe('Feature: get frame preview', () => {
     test('get frame preview for a task', async () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];

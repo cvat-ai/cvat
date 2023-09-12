@@ -37,12 +37,16 @@ def build_client(parsed_args: SimpleNamespace, logger: logging.Logger) -> Client
     if parsed_args.server_port:
         url += f":{parsed_args.server_port}"
 
-    return Client(
+    client = Client(
         url=url,
         logger=logger,
         config=config,
         check_server_version=False,  # version is checked after auth to support versions < 2.3
     )
+
+    client.organization_slug = parsed_args.organization
+
+    return client
 
 
 def main(args: List[str] = None):
@@ -55,6 +59,7 @@ def main(args: List[str] = None):
         "upload": CLI.tasks_upload,
         "export": CLI.tasks_export,
         "import": CLI.tasks_import,
+        "auto-annotate": CLI.tasks_auto_annotate,
     }
     parser = make_cmdline_parser()
     parsed_args = parser.parse_args(args)

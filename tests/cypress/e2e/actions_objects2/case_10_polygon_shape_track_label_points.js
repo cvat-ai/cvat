@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -80,7 +81,7 @@ context('Actions on polygon.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(newLabelName);
+        cy.addNewLabel({ name: newLabelName });
         cy.openJob();
     });
 
@@ -109,10 +110,9 @@ context('Actions on polygon.', () => {
                 x: 0,
                 y: 0,
             };
-            cy.get('#cvat_canvas_shape_4')
-                .trigger('mousemove', { scrollBehavior: false })
-                .trigger('mouseover', { scrollBehavior: false })
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_4').trigger('mousemove', { scrollBehavior: false });
+            cy.get('#cvat_canvas_shape_4').trigger('mouseover', { scrollBehavior: false });
+            cy.get('#cvat_canvas_shape_4').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('.svg_select_points').not('.cvat_canvas_first_poly_point').first().then((notFirtsPoint) => {
                 notFirtsPointCoords.x = notFirtsPoint.attr('cx');
                 notFirtsPointCoords.y = notFirtsPoint.attr('cy');
@@ -127,10 +127,9 @@ context('Actions on polygon.', () => {
 
         it('Change direction.', () => {
             let polyDirectionAttrDataAngle;
-            cy.get('#cvat_canvas_shape_4')
-                .trigger('mousemove', { scrollBehavior: false })
-                .trigger('mouseover', { scrollBehavior: false })
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_4').trigger('mousemove', { scrollBehavior: false });
+            cy.get('#cvat_canvas_shape_4').trigger('mouseover', { scrollBehavior: false });
+            cy.get('#cvat_canvas_shape_4').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('.cvat_canvas_poly_direction').then((polyDirection) => {
                 polyDirectionAttrDataAngle = polyDirection.attr('data-angle');
             }).click({ scrollBehavior: false });

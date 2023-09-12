@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-annotation-page.ant-layout {
     height: 100%;
@@ -57,7 +57,7 @@
     }
 
     > span[role='img'] {
-        font-size: 24px;
+        font-size: 20px;
     }
 
     &:hover > span[role='img'] {
@@ -102,7 +102,7 @@
     margin-right: 10px;
 
     > span {
-        font-size: 25px;
+        font-size: 20px;
         margin: 0 4px;
         color: $player-buttons-color;
 
@@ -119,18 +119,43 @@
 .cvat-player-controls {
     height: 100%;
     line-height: 27px;
+    padding-top: 16px;
 
     > div {
-        height: 50%;
+        height: 25%;
     }
 }
 
-.cvat-player-slider {
+.cvat-player-slider.ant-slider {
     width: 350px;
     margin: 0;
+    margin-top: $grid-unit-size * -0.5;
+
+    > .ant-slider-handle {
+        z-index: 100;
+        margin-top: -3.5px;
+    }
+
+    > .ant-slider-track {
+        background: none;
+    }
 
     > .ant-slider-rail {
+        height: $grid-unit-size;
         background-color: $player-slider-color;
+    }
+}
+
+.cvat-player-slider-progress {
+    width: 350px;
+    height: $grid-unit-size;
+    position: absolute;
+    top: 0;
+    pointer-events: none;
+
+    > rect {
+        transition: width 0.5s;
+        fill: #1890ff;
     }
 }
 
@@ -220,7 +245,7 @@
 
             .ant-table-thead {
                 > tr > th {
-                    padding: 5px 5px;
+                    padding: $grid-unit-size 0 $grid-unit-size $grid-unit-size * 0.5;
                 }
             }
         }
@@ -435,19 +460,9 @@
             padding-top: $grid-unit-size * 2;
         }
 
-        .query-builder-container {
-            .query-builder > :first-child {
-                padding-right: 0;
-            }
-
-            .group-or-rule {
-                border-radius: $grid-unit-size * 0.25;
-            }
-
-            .group {
-                background: rgba(216, 233, 250, 0.5);
-                border: 1px solid #d3e0ec;
-            }
+        .ant-typography {
+            display: block;
+            padding: $grid-unit-size * 2 $grid-unit-size * 3 $grid-unit-size  $grid-unit-size * 2;
         }
     }
 }

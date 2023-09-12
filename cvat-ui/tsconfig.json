@@ -16,5 +16,5 @@
     "jsx": "preserve",
     "baseUrl": "src"
   },
-  "include": ["./index.d.ts", "src/index.tsx", "src/assets/index.d.ts", "src"]
+  "include": ["./index.d.ts", "src/index.tsx", "src/assets/index.d.ts", "plugins/**/*", "src"]
 }

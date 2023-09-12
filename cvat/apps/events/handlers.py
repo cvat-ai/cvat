@@ -58,10 +58,7 @@ def organization_id(instance):
         return instance.id
 
     try:
-        oid = getattr(instance, "organization_id", None)
-        if oid is None:
-            return instance.get_organization_id()
-        return oid
+        return getattr(instance, "organization_id", None)
     except Exception:
         return None
 
@@ -405,7 +402,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
 
     vlogger.info(message)
 
-def handle_annotations_patch(instance, annotations, action, **kwargs):
+def handle_annotations_change(instance, annotations, action, **kwargs):
     _annotations = deepcopy(annotations)
     def filter_shape_data(shape):
         data = {

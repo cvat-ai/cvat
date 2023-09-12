@@ -23,6 +23,7 @@ import {
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { shift } from 'utils/math';
+import { Label, ObjectState } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
@@ -128,7 +129,34 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 type Props = StateToProps & DispatchToProps & OwnProps;
-class ObjectItemContainer extends React.PureComponent<Props> {
+interface State {
+    labels: Label[];
+    elements: number[];
+}
+
+class ObjectItemContainer extends React.PureComponent<Props, State> {
+    public constructor(props: Props) {
+        super(props);
+        this.state = {
+            labels: props.labels,
+            elements: props.objectState.elements.map((el: ObjectState) => el.clientID),
+        };
+    }
+
+    public static getDerivedStateFromProps(props: Readonly<Props>, state: Readonly<State>): State | null {
+        const { objectState, labels } = props;
+        const applicableLabels = filterApplicableLabels(objectState, labels);
+        if (state.labels.length !== applicableLabels.length ||
+            state.labels.some((label, idx) => label.id !== applicableLabels[idx].id)) {
+            return {
+                ...state,
+                labels: applicableLabels,
+            };
+        }
+
+        return null;
+    }
+
     private copy = (): void => {
         const { objectState, readonly, copyShape } = this.props;
         if (!readonly) {
@@ -312,9 +340,9 @@ class ObjectItemContainer extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
+        const { labels, elements } = this.state;
         const {
             objectState,
-            labels,
             attributes,
             activated,
             colorBy,
@@ -322,8 +350,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             readonly,
             jobInstance,
         } = this.props;
-
-        const applicableLabels = filterApplicableLabels(objectState, labels);
 
         return (
             <ObjectStateItemComponent
@@ -336,11 +362,12 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 serverID={objectState.serverID}
                 locked={objectState.lock}
                 labelID={objectState.label.id}
+                isGroundTruth={objectState.isGroundTruth}
                 color={getColor(objectState, colorBy)}
                 attributes={attributes}
-                elements={objectState.elements}
+                elements={elements}
                 normalizedKeyMap={normalizedKeyMap}
-                labels={applicableLabels}
+                labels={labels}
                 colorBy={colorBy}
                 activate={this.activate}
                 remove={this.remove}
@@ -353,7 +380,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 edit={this.edit}
-                resetCuboidPerspective={() => this.resetCuboidPerspective()}
+                resetCuboidPerspective={this.resetCuboidPerspective}
             />
         );
     }

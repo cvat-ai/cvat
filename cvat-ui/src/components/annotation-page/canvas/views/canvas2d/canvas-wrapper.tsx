@@ -9,20 +9,24 @@ import Slider from 'antd/lib/slider';
 import Spin from 'antd/lib/spin';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
+import notification from 'antd/lib/notification';
+import debounce from 'lodash/debounce';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
     ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType, ActiveControl, CombinedState,
 } from 'reducers';
 import { LogType } from 'cvat-logger';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas, HighlightSeverity } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { getCore } from 'cvat-core-wrapper';
+import {
+    AnnotationConflict, FramesMetaData, QualityConflict, getCore,
+} from 'cvat-core-wrapper';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
 import {
-    confirmCanvasReady,
+    confirmCanvasReadyAsync,
     dragCanvas,
     zoomCanvas,
     resetCanvas,
@@ -54,6 +58,8 @@ import {
 } from 'actions/settings-actions';
 import { reviewActions } from 'actions/review-actions';
 
+import { filterAnnotations } from 'utils/filter-annotations';
+import { ImageFilter } from 'utils/image-processing';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
 
@@ -66,6 +72,7 @@ interface StateToProps {
     activatedStateID: number | null;
     activatedElementID: number | null;
     activatedAttributeID: number | null;
+    statesSources: number[];
     annotations: any[];
     frameData: any;
     frameAngle: number;
@@ -105,6 +112,11 @@ interface StateToProps {
     switchableAutomaticBordering: boolean;
     keyMap: KeyMap;
     showTagsOnFrame: boolean;
+    conflicts: QualityConflict[];
+    showGroundTruth: boolean;
+    highlightedConflict: QualityConflict | null;
+    groundTruthJobFramesMeta: FramesMetaData | null;
+    imageFilters: ImageFilter[];
 }
 
 interface DispatchToProps {
@@ -143,7 +155,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             canvas: { activeControl, instance: canvasInstance, ready: canvasIsReady },
             drawing: { activeLabelID, activeObjectType },
-            job: { instance: jobInstance },
+            job: { instance: jobInstance, groundTruthJobFramesMeta },
             player: {
                 frame: { data: frameData, number: frame },
                 frameAngles,
@@ -153,7 +165,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 activatedAttributeID,
+                statesSources,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
+                highlightedConflict,
             },
             workspace,
         },
@@ -182,10 +196,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 textContent,
             },
             shapes: {
-                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
+                opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections, showGroundTruth,
             },
+            imageFilters,
         },
         shortcuts: { keyMap },
+        review: { conflicts },
     } = state;
 
     return {
@@ -237,13 +253,19 @@ function mapStateToProps(state: CombinedState): StateToProps {
             activeControl === ActiveControl.DRAW_POLYLINE ||
             activeControl === ActiveControl.DRAW_MASK ||
             activeControl === ActiveControl.EDIT,
+        statesSources,
+        conflicts,
+        showGroundTruth,
+        highlightedConflict,
+        groundTruthJobFramesMeta,
+        imageFilters,
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onSetupCanvas(): void {
-            dispatch(confirmCanvasReady());
+            dispatch(confirmCanvasReadyAsync());
         },
         onDragCanvas(enabled: boolean): void {
             dispatch(dragCanvas(enabled));
@@ -342,6 +364,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps;
 
 class CanvasWrapperComponent extends React.PureComponent<Props> {
+    private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
+
     public componentDidMount(): void {
         const {
             automaticBordering,
@@ -359,6 +383,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             colorBy,
             outlined,
             outlineColor,
+            showGroundTruth,
+            resetZoom,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -373,6 +399,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             displayAllText: showObjectsTextAlways,
             autoborders: automaticBordering,
             showProjections,
+            showConflicts: showGroundTruth,
             intelligentPolygonCrop,
             selectedShapeOpacity: selectedOpacity,
             controlPointsSize,
@@ -383,6 +410,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textFontSize,
             textPosition,
             textContent,
+            resetZoom,
         });
 
         this.initialSetup();
@@ -422,6 +450,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             showProjections,
             colorBy,
             onFetchAnnotation,
+            statesSources,
+            showGroundTruth,
+            highlightedConflict,
+            imageFilters,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -439,7 +471,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.textContent !== textContent ||
             prevProps.colorBy !== colorBy ||
             prevProps.outlineColor !== outlineColor ||
-            prevProps.outlined !== outlined
+            prevProps.outlined !== outlined ||
+            prevProps.showGroundTruth !== showGroundTruth ||
+            prevProps.resetZoom !== resetZoom
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
@@ -456,6 +490,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 controlPointsSize,
                 textPosition,
                 textContent,
+                showConflicts: showGroundTruth,
+                resetZoom,
             });
         }
 
@@ -465,6 +501,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.activatedStateID !== null && prevProps.activatedStateID !== activatedStateID) {
             canvasInstance.activate(null);
+        }
+
+        if (prevProps.highlightedConflict !== highlightedConflict) {
+            const severity: HighlightSeverity | null =
+                highlightedConflict?.severity ? (highlightedConflict?.severity as any) : null;
+            const highlightedElementsIDs = highlightedConflict?.annotationConflicts.map(
+                (conflict: AnnotationConflict) => conflict.clientID,
+            );
+            canvasInstance.highlight(highlightedElementsIDs || null, severity);
         }
 
         if (gridSize !== prevProps.gridSize) {
@@ -494,22 +539,21 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             });
         }
 
+        if (prevProps.imageFilters !== imageFilters) {
+            canvasInstance.configure({ forceFrameUpdate: true });
+        }
+
         if (
             prevProps.annotations !== annotations ||
+            prevProps.statesSources !== statesSources ||
             prevProps.frameData !== frameData ||
             prevProps.curZLayer !== curZLayer
         ) {
             this.updateCanvas();
-        }
-
-        if (prevProps.frame !== frameData.number && resetZoom && workspace !== Workspace.ATTRIBUTE_ANNOTATION) {
-            canvasInstance.html().addEventListener(
-                'canvas.setup',
-                () => {
-                    canvasInstance.fit();
-                },
-                { once: true },
-            );
+        } else if (prevProps.imageFilters !== imageFilters) {
+            // In case of frequent image filters changes, we apply debounced canvas update
+            // that makes UI smoother
+            this.debouncedUpdate();
         }
 
         if (prevProps.showBitmap !== showBitmap) {
@@ -518,6 +562,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (prevProps.frameAngle !== frameAngle) {
             canvasInstance.rotate(frameAngle);
+            if (prevProps.frameData === frameData) {
+                // explicitly rotated, not a new frame
+                canvasInstance.fit();
+            }
         }
 
         if (prevProps.workspace !== workspace) {
@@ -859,20 +907,74 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             if (activatedState && activatedState.objectType !== ObjectType.TAG) {
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
             }
+        } else if (workspace === Workspace.ATTRIBUTE_ANNOTATION) {
+            canvasInstance.fit();
         }
     }
 
     private updateCanvas(): void {
         const {
-            curZLayer, annotations, frameData, canvasInstance,
+            curZLayer, annotations, frameData, statesSources,
+            workspace, groundTruthJobFramesMeta, frame, imageFilters,
         } = this.props;
+        const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
         if (frameData !== null && canvasInstance) {
+            const filteredAnnotations = filterAnnotations(annotations, {
+                statesSources,
+                frame,
+                groundTruthJobFramesMeta,
+                workspace,
+                exclude: [ObjectType.TAG],
+            });
+            const proxy = new Proxy(frameData, {
+                get: (_frameData, prop, receiver) => {
+                    if (prop === 'data') {
+                        return async () => {
+                            const originalImage = await _frameData.data();
+                            const imageIsNotProcessed = imageFilters.some((imageFilter: ImageFilter) => (
+                                imageFilter.modifier.currentProcessedImage !== frame
+                            ));
+
+                            if (imageIsNotProcessed) {
+                                try {
+                                    const { renderWidth, renderHeight, imageData: imageBitmap } = originalImage;
+
+                                    const offscreen = new OffscreenCanvas(renderWidth, renderHeight);
+                                    const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D;
+                                    ctx.drawImage(imageBitmap, 0, 0);
+                                    const imageData = ctx.getImageData(0, 0, renderWidth, renderHeight);
+
+                                    const newImageData = imageFilters
+                                        .reduce((oldImageData, activeImageModifier) => activeImageModifier
+                                            .modifier.processImage(oldImageData, frame), imageData);
+                                    const newImageBitmap = await createImageBitmap(newImageData);
+                                    return {
+                                        renderWidth,
+                                        renderHeight,
+                                        imageData: newImageBitmap,
+                                    };
+                                } catch (error: any) {
+                                    notification.error({
+                                        description: error.toString(),
+                                        message: 'Image processing error occurred',
+                                        className: 'cvat-notification-notice-image-processing-error',
+                                    });
+                                }
+                            }
+
+                            return originalImage;
+                        };
+                    }
+                    return Reflect.get(_frameData, prop, receiver);
+                },
+            });
             canvasInstance.setup(
-                frameData,
-                frameData.deleted ? [] : annotations.filter((e) => e.objectType !== ObjectType.TAG),
+                proxy,
+                frameData.deleted ? [] : filteredAnnotations,
                 curZLayer,
             );
+            canvasInstance.configure({ forceFrameUpdate: false });
         }
     }
 
@@ -905,13 +1007,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
         });
 
-        // Events
+        canvasInstance.fitCanvas();
         canvasInstance.html().addEventListener(
             'canvas.setup',
             () => {
                 const { activatedStateID, activatedAttributeID } = this.props;
-                canvasInstance.fitCanvas();
-                canvasInstance.fit();
                 canvasInstance.activate(activatedStateID, activatedAttributeID);
             },
             { once: true },

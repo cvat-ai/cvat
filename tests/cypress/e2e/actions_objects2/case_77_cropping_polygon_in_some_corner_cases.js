@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,7 +44,8 @@ context('Cropping polygon in some corner cases.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Checking the right side of the canvas.', () => {
-            cy.get('.cvat-canvas-container').trigger('wheel', { deltaY: 5 }).trigger('wheel', { deltaY: 5 });
+            cy.get('.cvat-canvas-container').trigger('wheel', { deltaY: 5 });
+            cy.get('.cvat-canvas-container').trigger('wheel', { deltaY: 5 });
             cy.createPolygon(createPolygonShapeRightSide);
             cy.get('.cvat-canvas-container').trigger('mousemove', 650, 250); // Hover over a point that was free of the shape before the fix
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');

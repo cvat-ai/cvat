@@ -6,17 +6,18 @@
 import './styles.scss';
 import React, { useEffect, useRef, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
+import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 import Result from 'antd/lib/result';
 import notification from 'antd/lib/notification';
 
+import { getInferenceStatusAsync } from 'actions/models-actions';
 import { getCore, Task, Job } from 'cvat-core-wrapper';
 import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
-import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import TopBarComponent from './top-bar';
 import DetailsComponent from './details';
@@ -26,7 +27,7 @@ const core = getCore();
 function TaskPageComponent(): JSX.Element {
     const history = useHistory();
     const id = +useParams<{ id: string }>().id;
-
+    const dispatch = useDispatch();
     const [taskInstance, setTaskInstance] = useState<Task | null>(null);
     const [fetchingTask, setFetchingTask] = useState(true);
     const [updatingTask, setUpdatingTask] = useState(false);
@@ -44,7 +45,7 @@ function TaskPageComponent(): JSX.Element {
                 }).catch((error: Error) => {
                     if (mounted.current) {
                         notification.error({
-                            message: 'Could not receive the requested project from the server',
+                            message: 'Could not receive the requested task from the server',
                             description: error.toString(),
                         });
                     }
@@ -64,6 +65,7 @@ function TaskPageComponent(): JSX.Element {
 
     useEffect(() => {
         receieveTask();
+        dispatch(getInferenceStatusAsync());
         mounted.current = true;
         return () => {
             mounted.current = false;
@@ -140,7 +142,7 @@ function TaskPageComponent(): JSX.Element {
                 align='top'
                 className='cvat-task-details-wrapper'
             >
-                <Col md={22} lg={18} xl={16} xxl={14}>
+                <Col span={22} xl={18} xxl={14}>
                     <TopBarComponent taskInstance={taskInstance} />
                     <DetailsComponent task={taskInstance} onUpdateTask={onUpdateTask} />
                     <JobListComponent task={taskInstance} onUpdateJob={onJobUpdate} />

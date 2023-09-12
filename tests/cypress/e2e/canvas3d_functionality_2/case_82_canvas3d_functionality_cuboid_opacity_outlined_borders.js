@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +23,8 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
         cy.openJob();
         cy.wait(2000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
-        cy.get('.cvat-canvas3d-perspective').trigger('mousemove').click(); // Deactivate the cuboiud
+        cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
+        cy.get('.cvat-canvas3d-perspective').click(); // Deactivate the cuboiud
     });
 
     const getScene = (el) => el.scene.children[0];
@@ -51,7 +52,9 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
             cy.get('.cvat-appearance-selected-opacity-slider').click('right');
             cy.get('.cvat-appearance-selected-opacity-slider').find('[role="slider"]').should('have.attr', 'aria-valuenow', 100);
             cy.get('body').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove').trigger('mousemove', 500, 250).wait(1000); // Waiting for the cuboid activation
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 250);
+            cy.wait(1000); // Waiting for the cuboid activation
 
             cy.get('.cvat-canvas3d-perspective canvas').then(([el]) => {
                 expect(el.scene.children[0].children[0].material.opacity).to.equal(1);
@@ -66,7 +69,8 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
         });
 
         it('Enable/disable outlined borders.', () => {
-            cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').check().should('be.checked');
+            cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').check();
+            cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').should('be.checked');
             cy.get('.cvat-appearance-outlined-borders-button').click();
             cy.get('.cvat-label-color-picker').should('exist').and('be.visible').within(() => {
                 cy.get('div[title="#ff007c"]').click();
@@ -76,7 +80,8 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
                 expect({ ...getWireframe(el).material.color }).to.deep.equal({ r: 1, g: 0, b: 0.48627450980392156 });
             });
 
-            cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').uncheck().should('not.be.checked');
+            cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').uncheck();
+            cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').should('not.be.checked');
             cy.get('.cvat-canvas3d-perspective canvas').then(([el]) => {
                 expect({ ...getWireframe(el).material.color }).to.deep.equal({ ...getFirstChild(el).material.color });
             });

@@ -14,7 +14,7 @@ export interface Size {
 export interface Image {
     renderWidth: number;
     renderHeight: number;
-    imageData: ImageData | CanvasImageSource;
+    imageData: ImageBitmap;
 }
 
 export interface Position {
@@ -43,6 +43,16 @@ export interface ActiveElement {
     attributeID: number | null;
 }
 
+export enum HighlightSeverity {
+    ERROR = 'error',
+    WARNING = 'warning',
+}
+
+export interface HighlightedElements {
+    elementsIDs: number [];
+    severity: HighlightSeverity;
+}
+
 export enum RectDrawingMethod {
     CLASSIC = 'By 2 points',
     EXTREME_POINTS = 'By 4 points',
@@ -68,6 +78,7 @@ export interface Configuration {
     textContent?: string;
     undefinedAttrValue?: string;
     showProjections?: boolean;
+    showConflicts?: boolean;
     forceDisableEditing?: boolean;
     intelligentPolygonCrop?: boolean;
     forceFrameUpdate?: boolean;
@@ -77,6 +88,7 @@ export interface Configuration {
     shapeOpacity?: number;
     controlPointsSize?: number;
     outlinedBorders?: string | false;
+    resetZoom?: boolean;
 }
 
 export interface BrushTool {
@@ -160,12 +172,14 @@ export enum UpdateReasons {
     IMAGE_ZOOMED = 'image_zoomed',
     IMAGE_FITTED = 'image_fitted',
     IMAGE_MOVED = 'image_moved',
+    IMAGE_ROTATED = 'image_rotated',
     GRID_UPDATED = 'grid_updated',
 
     ISSUE_REGIONS_UPDATED = 'issue_regions_updated',
     OBJECTS_UPDATED = 'objects_updated',
     SHAPE_ACTIVATED = 'shape_activated',
     SHAPE_FOCUSED = 'shape_focused',
+    SHAPE_HIGHLIGHTED = 'shape_highlighted',
 
     FITTED_CANVAS = 'fitted_canvas',
 
@@ -211,6 +225,7 @@ export interface CanvasModel {
     readonly gridSize: Size;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
+    readonly highlightedElements: HighlightedElements;
     readonly drawData: DrawData;
     readonly editData: MasksEditData;
     readonly interactionData: InteractionData;
@@ -229,6 +244,7 @@ export interface CanvasModel {
     setup(frameData: any, objectStates: any[], zLayer: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     activate(clientID: number | null, attributeID: number | null): void;
+    highlight(clientIDs: number[] | null, severity: HighlightSeverity): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
@@ -301,6 +317,7 @@ function disableInternalSVGDrawing(data: DrawData | MasksEditData, currentData: 
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
         activeElement: ActiveElement;
+        highlightedElements: HighlightedElements;
         angle: number;
         canvasSize: Size;
         configuration: Configuration;
@@ -312,11 +329,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         imageIsDeleted: boolean;
         focusData: FocusData;
         gridSize: Size;
-        left: number;
         objects: any[];
         issueRegions: Record<number, { hidden: boolean; points: number[] }>;
         scale: number;
         top: number;
+        left: number;
+        fittedScale: number;
         zLayer: number | null;
         drawData: DrawData;
         editData: MasksEditData;
@@ -337,6 +355,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 clientID: null,
                 attributeID: null,
             },
+            highlightedElements: {
+                elementsIDs: [],
+                severity: null,
+            },
             angle: 0,
             canvasSize: {
                 height: 0,
@@ -347,6 +369,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 autoborders: false,
                 displayAllText: false,
                 showProjections: false,
+                showConflicts: false,
                 forceDisableEditing: false,
                 intelligentPolygonCrop: false,
                 forceFrameUpdate: false,
@@ -355,6 +378,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 selectedShapeOpacity: 0.5,
                 shapeOpacity: 0.2,
                 outlinedBorders: false,
+                resetZoom: true,
                 textFontSize: consts.DEFAULT_SHAPE_TEXT_SIZE,
                 controlPointsSize: consts.BASE_POINT_SIZE,
                 textPosition: consts.DEFAULT_SHAPE_TEXT_POSITION,
@@ -378,11 +402,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 height: 100,
                 width: 100,
             },
-            left: 0,
             objects: [],
             issueRegions: {},
             scale: 1,
             top: 0,
+            left: 0,
+            fittedScale: 0,
             zLayer: null,
             selected: null,
             mode: Mode.IDLE,
@@ -506,6 +531,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                     return;
                 }
 
+                const relativeScaling = this.data.scale / this.data.fittedScale;
+                const prevImageLeft = this.data.left;
+                const prevImageTop = this.data.top;
+                const prevImageWidth = this.data.imageSize.width;
+                const prevImageHeight = this.data.imageSize.height;
+
                 this.data.imageSize = {
                     height: frameData.height as number,
                     width: frameData.width as number,
@@ -516,6 +547,20 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 if (this.data.imageIsDeleted) {
                     this.data.angle = 0;
                 }
+
+                this.fit();
+
+                // restore correct image position after switching to a new frame
+                // if corresponding option is disabled
+                // prevImageHeight and prevImageWidth are initialized by 0 by default
+                if (prevImageHeight !== 0 && prevImageWidth !== 0 && !this.data.configuration.resetZoom) {
+                    const leftOffset = Math.round((this.data.imageSize.width - prevImageWidth) / 2);
+                    const topOffset = Math.round((this.data.imageSize.height - prevImageHeight) / 2);
+                    this.data.left = prevImageLeft - leftOffset;
+                    this.data.top = prevImageTop - topOffset;
+                    this.data.scale *= relativeScaling;
+                }
+
                 this.notify(UpdateReasons.IMAGE_CHANGED);
                 this.data.zLayer = zLayer;
                 this.data.objects = objectStates;
@@ -524,7 +569,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             .catch((exception: any): void => {
                 this.data.exception = exception;
                 // don't notify when the frame is no longer needed
-                if (typeof exception !== 'number' || exception === this.data.imageID) {
+                if (typeof exception !== 'number') {
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
             });
@@ -559,10 +604,26 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
     }
 
+    public highlight(clientIDs: number[] | null, severity: HighlightSeverity | null): void {
+        if (Array.isArray(clientIDs)) {
+            this.data.highlightedElements = {
+                elementsIDs: clientIDs,
+                severity,
+            };
+        } else {
+            this.data.highlightedElements = {
+                elementsIDs: [],
+                severity: null,
+            };
+        }
+
+        this.notify(UpdateReasons.SHAPE_HIGHLIGHTED);
+    }
+
     public rotate(rotationAngle: number): void {
         if (this.data.angle !== rotationAngle && !this.data.imageIsDeleted) {
             this.data.angle = (360 + Math.floor(rotationAngle / 90) * 90) % 360;
-            this.fit();
+            this.notify(UpdateReasons.IMAGE_ROTATED);
         }
     }
 
@@ -592,9 +653,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.scale = Math.min(Math.max(this.data.scale, FrameZoom.MIN), FrameZoom.MAX);
-
         this.data.top = this.data.canvasSize.height / 2 - this.data.imageSize.height / 2;
         this.data.left = this.data.canvasSize.width / 2 - this.data.imageSize.width / 2;
+
+        // scale is changed during zooming or translating
+        // so, remember fitted scale to compute fit-relative scaling
+        this.data.fittedScale = this.data.scale;
 
         this.notify(UpdateReasons.IMAGE_FITTED);
     }
@@ -813,6 +877,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (typeof configuration.forceFrameUpdate === 'boolean') {
             this.data.configuration.forceFrameUpdate = configuration.forceFrameUpdate;
         }
+        if (typeof configuration.resetZoom === 'boolean') {
+            this.data.configuration.resetZoom = configuration.resetZoom;
+        }
         if (typeof configuration.selectedShapeOpacity === 'number') {
             this.data.configuration.selectedShapeOpacity = configuration.selectedShapeOpacity;
         }
@@ -824,6 +891,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (Object.values(ColorBy).includes(configuration.colorBy)) {
             this.data.configuration.colorBy = configuration.colorBy;
+        }
+
+        if (typeof configuration.showConflicts === 'boolean') {
+            this.data.configuration.showConflicts = configuration.showConflicts;
         }
 
         if (typeof configuration.CSSImageFilter === 'string') {
@@ -922,6 +993,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get activeElement(): ActiveElement {
         return { ...this.data.activeElement };
+    }
+
+    public get highlightedElements(): HighlightedElements {
+        return { ...this.data.highlightedElements };
     }
 
     public get drawData(): DrawData {
