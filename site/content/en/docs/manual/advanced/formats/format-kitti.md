@@ -21,7 +21,7 @@ For more information, see:
 
 For export of images:
 
-- Supported annotations: Bounding Boxes (detection), Polygons (segmentation),
+- Supported annotations: Bounding Boxes (detection), Polygons (segmentation).
 - Supported attributes:
   - `occluded` (Available both as a UI option and a separate attribute)
     Denotes that a major portion of the object within

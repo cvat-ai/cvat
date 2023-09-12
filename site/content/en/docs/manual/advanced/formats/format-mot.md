@@ -18,7 +18,7 @@ For more information, see:
 
 For export of images and videos:
 
-- Supported annotations: Bounding Boxes, Tracks
+- Supported annotations: Bounding Boxes, Tracks.
 - Attributes: `visibility` (number), `ignored` (checkbox)
 - Tracks: Supported.
 
