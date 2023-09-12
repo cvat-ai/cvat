@@ -7,6 +7,7 @@ import itertools
 import os
 import sys
 import imghdr
+import time
 
 from rest_framework.serializers import ValidationError
 import rq
@@ -319,23 +320,37 @@ def _check_filename_collisions(name, files, rename_files):
     return name
 
 
-def retry(func: Callable, args=None, kwargs=None, times: int = 1, exc_types=None):
+def retry(func: Callable, args=None, kwargs=None,
+          exc_types=None, times=1, delay=0, factor=1):
     if args is None:
         args = ()
     if kwargs is None:
         kwargs = {}
     if exc_types is None:
         exc_types = (Exception, )
+    if times < 1:
+        times = 1
+    if delay < 0:
+        delay = 0
+    if factor < 0:
+        factor = 0
 
-    exc = None
+    try:
+        return func(*args, **kwargs)
+    except exc_types as e:
+        exc = e
+    times -= 1
+
     while times > 0:
+        time.sleep(delay)
         try:
             return func(*args, **kwargs)
         except exc_types as e:
             exc = e
+        times -= 1
+        delay *= factor
 
-    if exc is not None:
-        raise exc
+    raise exc
 
 
 def _download_data(db_data: models.Data, upload_dir, rename_files=False):
@@ -347,7 +362,7 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
         if 'gi_id' in file.meta:
             token = file.meta.pop('token')
             headers = {'Authorization': f'Token {token}'}
-            response = retry(requests.get, args=(url,), kwargs={'headers': headers, 'timeout': 10}, times=3)
+            response = retry(requests.get, args=(url,), kwargs={'headers': headers, 'timeout': 10}, times=3, delay=5)
             data = response.json()
 
             serializer = DetectionImageSerializer(data=data)
@@ -365,7 +380,7 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
         job.meta['status'] = '{} is being downloaded..'.format(url)
         job.save_meta()
 
-        response = retry(requests.get, args=(url,), kwargs={'stream': True, 'timeout': 10}, times=5)
+        response = retry(requests.get, args=(url,), kwargs={'stream': True, 'timeout': 30}, times=5, delay=1, factor=2)
         if response.status_code == 200:
             response.raw.decode_content = True
             output_path = os.path.join(upload_dir, name)
@@ -402,7 +417,7 @@ def _download_s3_files(db_data: models.Data, upload_dir, rename_files=False):
         job.meta['status'] = 'S3 {} is  being downloaded...'.format(url)
         job.save_meta()
 
-        response = retry(requests.get, args=(url,), kwargs={'stream': True, 'timeout': 10}, times=5)
+        response = retry(requests.get, args=(url,), kwargs={'stream': True, 'timeout': 30}, times=5, delay=1, factor=2)
         if response.status_code == 200:
             response.raw.decode_content = True
             output_path = os.path.join(upload_dir, name)
