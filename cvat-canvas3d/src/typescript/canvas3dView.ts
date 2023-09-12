@@ -1155,6 +1155,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
             const onPCDLoadSuccess = (points: any): void => {
                 try {
+                    points.material = new THREE.PointsMaterial({ color: 0xffffff });
                     this.onSceneImageLoaded(points);
                     model.updateCanvasObjects();
                 } finally {
