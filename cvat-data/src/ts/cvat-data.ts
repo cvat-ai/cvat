@@ -44,7 +44,6 @@ export function decodeContextImages(
                 if (event.data.error) {
                     this.zipWorker.onerror(new ErrorEvent('error', {
                         error: event.data.error,
-                        message: event.data.error.message,
                     }));
                     return;
                 }
