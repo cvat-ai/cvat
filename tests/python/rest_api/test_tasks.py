@@ -761,6 +761,7 @@ class TestPostTaskData:
                         # original is 480x640 with 90/-90 degrees rotation
                         assert im.height == 640 and im.width == 480
 
+    @pytest.mark.skip(reason="need to wait new Pillow release till 15 October 2023")
     def test_can_create_task_with_exif_rotated_tif_image(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated tif image",
