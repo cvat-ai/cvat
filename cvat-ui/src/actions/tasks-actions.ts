@@ -22,7 +22,6 @@ export enum TasksActionTypes {
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
     CREATE_TASK_FAILED = 'CREATE_TASK_FAILED',
-    UPDATE_JOB_FAILED = 'UPDATE_JOB_FAILED',
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
     GET_TASK_PREVIEW = 'GET_TASK_PREVIEW',
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
@@ -290,25 +289,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         } catch (error) {
             dispatch(createTaskFailed(error));
             throw error;
-        }
-    };
-}
-
-function updateJobFailed(jobID: number, error: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.UPDATE_JOB_FAILED,
-        payload: { jobID, error },
-    };
-
-    return action;
-}
-
-export function updateJobAsync(jobInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            await jobInstance.save();
-        } catch (error) {
-            dispatch(updateJobFailed(jobInstance.id, error));
         }
     };
 }

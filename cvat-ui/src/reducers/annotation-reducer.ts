@@ -5,6 +5,7 @@
 
 import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { JobsActionTypes } from 'actions/jobs-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
@@ -234,6 +235,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.job,
                     instance: undefined,
                     fetching: false,
+                },
+            };
+        }
+        case JobsActionTypes.UPDATE_JOB_SUCCESS: {
+            return {
+                ...state,
+                job: {
+                    ...state.job,
+                    instance: action.payload.job,
                 },
             };
         }

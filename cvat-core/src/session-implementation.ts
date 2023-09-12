@@ -71,8 +71,12 @@ export function implementJob(Job) {
             }
 
             const data = await serverProxy.jobs.save(this.id, jobData);
+            const updatedJob = new Job(data);
+            this.stage = updatedJob.stage;
+            this.state = updatedJob.state;
+            this.assignee = updatedJob.assignee;
             this._updateTrigger.reset();
-            return new Job(data);
+            return this;
         }
 
         const jobSpec = {

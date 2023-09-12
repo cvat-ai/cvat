@@ -13,9 +13,8 @@ import { exportActions } from 'actions/export-actions';
 import {
     Job, JobStage, JobType, getCore,
 } from 'cvat-core-wrapper';
-import { deleteJobAsync } from 'actions/jobs-actions';
+import { deleteJobAsync, updateJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
-import { updateJobAsync } from 'actions/tasks-actions';
 
 const core = getCore();
 

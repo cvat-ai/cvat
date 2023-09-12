@@ -11,7 +11,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 
 import { CombinedState, JobStage } from 'reducers';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
-import { updateJobAsync } from 'actions/tasks-actions';
+import { updateJobAsync } from 'actions/jobs-actions';
 import {
     saveAnnotationsAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
@@ -110,7 +110,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         } else if (action.startsWith('state:')) {
             [, jobInstance.state] = action.split(':');
             updateJob(jobInstance);
-            window.location.reload();
         } else if (action === Actions.LOAD_JOB_ANNO) {
             showImportModal(jobInstance);
         }

@@ -1563,6 +1563,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case JobsActionTypes.UPDATE_JOB_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    jobs: {
+                        ...state.errors.jobs,
+                        updating: {
+                            message: 'Could not update job',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-job-failed',
+                        },
+                    },
+                },
+            };
+        }
         case JobsActionTypes.DELETE_JOB_FAILED: {
             const { jobID } = action.payload;
             return {
