@@ -675,6 +675,7 @@ class TestGetTaskDataset:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_redis_db_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -754,6 +755,7 @@ class TestPostTaskData:
                 task_id, number=0, type="chunk", quality="original"
             )
             with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                print(zip_file.namelist())
                 for name in zip_file.namelist():
                     with zip_file.open(name) as zipped_img:
                         im = Image.open(zipped_img)
