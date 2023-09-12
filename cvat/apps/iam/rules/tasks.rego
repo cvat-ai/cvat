@@ -145,14 +145,6 @@ allow {
 }
 
 allow {
-    input.scope == utils.CREATE_IN_PROJECT
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.BUSINESS)
-    organizations.has_perm(organizations.WORKER)
-    is_project_staff
-}
-
-allow {
     input.scope == utils.LIST
     utils.is_sandbox
 }

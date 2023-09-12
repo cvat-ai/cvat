@@ -430,6 +430,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 <Layout.Content style={{ height: '100%' }}>
                                     <ShortcutsDialog />
                                     <Switch>
+                                        <Route
+                                            exact
+                                            path='/auth/login-with-token/:token'
+                                            component={LoginWithTokenComponent}
+                                        />
                                         <Route exact path='/auth/logout' component={LogoutComponent} />
                                         <Route exact path='/projects' component={ProjectsPageComponent} />
                                         <Route exact path='/projects/create' component={CreateProjectPageComponent} />
