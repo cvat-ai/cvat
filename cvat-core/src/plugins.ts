@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ArgumentError } from 'exceptions';
+import { ArgumentError } from './exceptions';
 
 const plugins = [];
 
