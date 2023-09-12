@@ -377,6 +377,239 @@ jobs:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
 
+  rest_api_testing_helm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@latest
+        with:
+          cpus: max
+          memory: max
+
+      - name: Try the cluster!
+        run: kubectl get pods -A
+
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
+
+      - name: Download CVAT UI images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
+
+      - name: Load Docker images
+        run: |
+          export SHELL=/bin/bash
+          eval $(minikube -p minikube docker-env)
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
+          docker image ls -a
+
+      - uses: azure/setup-helm@v3
+        with:
+          version: 'v3.9.4'
+
+      - name: Deploy to minikube
+        run: |
+          printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> helm-chart/test.values.yaml
+          cd helm-chart
+          helm dependency update
+          cd ..
+          helm upgrade -n default release-${{ github.run_id }}-${{ github.run_attempt }} -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/cvat.values.yaml -f helm-chart/test.values.yaml
+
+      - name: Update test config
+        run: |
+          sed -i -e 's$http://localhost:8080$http://cvat.local:80$g' tests/python/shared/utils/config.py
+          find tests/python/shared/assets/ -type f -name '*.json' | xargs sed -i -e 's$http://localhost:8080$http://cvat.local$g'
+          echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
+
+      - name: Wait for CVAT to be ready
+        run: |
+          max_tries=60
+          while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for CVAT pod" && (( max_tries-- )) && sleep 5; done
+          while [[ $(kubectl get pods -l app.kubernetes.io/name=postgresql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for DB pod" && (( max_tries-- )) && sleep 5; done
+          while [[ $(curl -s -o /tmp/server_response -w "%{http_code}" cvat.local/api/server/about) != "200" && max_tries -gt 0 ]]; do echo "waiting for CVAT" && (( max_tries-- )) && sleep 5; done
+          kubectl get pods
+          kubectl logs $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}')
+
+      - name: Generate SDK
+        run: |
+          pip3 install -r cvat-sdk/gen/requirements.txt
+          ./cvat-sdk/gen/generate.sh
+
+      - name: Install SDK
+        run: |
+          pip3 install -r ./tests/python/requirements.txt \
+            -e './cvat-sdk[pytorch]' -e ./cvat-cli
+
+      - name: REST API and SDK tests
+        # We don't have external services in Helm tests, so we ignore corresponding cases
+        # They are still tested without Helm
+        run: |
+          kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
+          pytest --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-cli-level DEBUG
+
+      - name: Creating a log file from "cvat" container logs
+        if: failure()
+        env:
+            LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
+        run: |
+          mkdir ${LOGS_DIR}
+          kubectl logs $(kubectl get pods -l component=server -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_server.log
+          kubectl logs $(kubectl get pods -l component=worker-import -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_import.log
+          kubectl logs $(kubectl get pods -l component=worker-export -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_export.log
+          kubectl logs $(kubectl get pods -l component=worker-webhooks -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/cvat_worker_webhooks.log
+          kubectl logs $(kubectl get pods -l app.kubernetes.io/name=traefik -o 'jsonpath={.items[0].metadata.name}') >${LOGS_DIR}/traefik.log
+
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: rest_api_container_logs
+          path: "${{ github.workspace }}/rest_api_testing"
+
+  e2e_testing_helm:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+                'actions_objects', 'actions_objects2', 'actions_users',
+                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
+                'issues_prs', 'issues_prs2', 'features']
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@latest
+        with:
+          cpus: max
+          memory: max
+
+      - name: Try the cluster!
+        run: kubectl get pods -A
+
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
+
+      - name: Download CVAT UI image
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
+
+      - name: Load Docker images
+        run: |
+          export SHELL=/bin/bash
+          eval $(minikube -p minikube docker-env)
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
+          docker image ls -a
+
+      - uses: azure/setup-helm@v3
+        with:
+          version: 'v3.9.4'
+
+      - name: Deploy to minikube
+        run: |
+          printf "  service:\n    externalIPs:\n      - $(minikube ip)\n" >> helm-chart/test.values.yaml
+          cd helm-chart
+          helm dependency update
+          cd ..
+          helm upgrade -n default release-${{ github.run_id }}-${{ github.run_attempt }} -i --create-namespace helm-chart -f helm-chart/values.yaml -f helm-chart/cvat.values.yaml -f helm-chart/test.values.yaml
+
+      - name: Update test config
+        run: |
+          sed -i -e 's$http://localhost:8080$http://cvat.local$g' tests/cypress.config.js
+          sed -i -e 's$defaultCommandTimeout: 25000$defaultCommandTimeout: 50000$g' tests/cypress.config.js
+          sed -i -e 's$http://localhost:8080$http://cvat.local$g' tests/cypress_canvas3d.config.js
+          sed -i -e 's$defaultCommandTimeout: 25000$defaultCommandTimeout: 50000$g' tests/cypress_canvas3d.config.js
+          sed -i -e 's$http://localhost:8080$http://cvat.local$g' tests/nightly_cypress.config.js
+          sed -i -e 's$defaultCommandTimeout: 25000$defaultCommandTimeout: 50000$g' tests/nightly_cypress.config.js
+          echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
+
+      - name: Wait for CVAT to be ready
+        run: |
+          max_tries=100
+          while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "${max_tries} waiting for CVAT pod" && (( max_tries-- )) && sleep 5; done
+          while [[ $(kubectl get pods -l app.kubernetes.io/name=postgresql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "${max_tries} waiting for DB pod" && (( max_tries-- )) && sleep 5; done
+          while [[ $(kubectl get jobs $(kubectl get jobs -l component=initializer -o jsonpath='{.items[0].metadata.name}') -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}') != "True" && max_tries -gt 0 ]]; do echo "${max_tries} waiting for CVAT migrations" && (( max_tries-- )) && sleep 5; done
+          while [[ $(curl -s -o /tmp/server_response -w "%{http_code}" 'cvat.local/api/server/health/?format=json') != "200" && max_tries -gt 0 ]]; do echo "${max_tries} waiting for CVAT" && (( max_tries-- )) && sleep 5; done
+          kubectl get pods
+          kubectl logs $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}')
+
+      - name: Copy file share assets
+        run: |
+          kubectl cp tests/mounted_file_share/test_different_resolutions $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
+          kubectl cp tests/mounted_file_share/images $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share
+
+      - name: Run E2E tests
+        env:
+          DJANGO_SU_NAME: 'admin'
+          DJANGO_SU_EMAIL: 'admin@localhost.company'
+          DJANGO_SU_PASSWORD: '12qwaszx'
+          SKIPPED_TESTS: 'analytics_pipeline|case_113_use_default_project_storage_for_import_export_annotations|case_114_use_default_task_storage_for_import_export_annotations|case_115_use_custom_storage_for_import_export_annotations|case_118_multi_tasks|case_117_backup_restore_project_to_various_storages|case_91_canvas3d_functionality_dump_upload_annotation_point_cloud_format|case_92_canvas3d_functionality_dump_upload_annotation_velodyne_points_format|case_95_move_task_to_project|case_93_canvas3d_functionality_export_dataset'
+        run: |
+          kubectl exec -i $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- \
+            /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+          cd ./tests
+          yarn --frozen-lockfile
+
+          if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
+            npx cypress run \
+              --headed \
+              --browser chrome \
+              --config-file cypress_canvas3d.config.js \
+              --spec "cypress/e2e/${{ matrix.specs }}/**/!(${SKIPPED_TESTS}).js,cypress/e2e/remove_users_tasks_projects_organizations.js"
+          else
+            npx cypress run \
+              --browser chrome \
+              --spec "cypress/e2e/${{ matrix.specs }}/**/!(${SKIPPED_TESTS}).js,cypress/e2e/remove_users_tasks_projects_organizations.js"
+          fi
+          mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
+
+      - name: Creating a log file from "cvat" container logs
+        if: failure()
+        run: |
+          kubectl logs $(kubectl get pods -l component=server -o 'jsonpath={.items[0].metadata.name}') > ${{ github.workspace }}/tests/cvat_kube_${{ matrix.specs }}.log
+
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: e2e_kube_container_logs
+          path: ${{ github.workspace }}/tests/cvat_kube_${{ matrix.specs }}.log
+
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: cypress_kube_screenshots_${{ matrix.specs }}
+          path: ${{ github.workspace }}/tests/cypress/screenshots
+
   generate_github_pages:
     needs: [rest_api_testing, unit_testing, e2e_testing]
     runs-on: ubuntu-latest

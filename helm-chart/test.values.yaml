@@ -14,18 +14,27 @@ cvat:
           value: cvat.settings.testing_rest
     worker:
       import:
+        replicas: 1
         additionalVolumeMounts:
         - mountPath: /home/django/share
           name: cvat-backend-data
           subPath: share
+    worker:
+      export:
+        replicas: 1
     utils:
       additionalEnv:
         - name: DJANGO_SETTINGS_MODULE
           value: cvat.settings.testing_rest
     # Images are already present in the node
     imagePullPolicy: Never
+    tag: local
   frontend:
     imagePullPolicy: Never
+    tag: local
+
+nuclio:
+  enabled: true
 
 traefik:
   logs:
