@@ -24,7 +24,8 @@ context('Attribute annotation mode (AAM) zoom margin feature', () => {
         cy.get('.cvat-settings-modal').within(() => {
             cy.contains('Workspace').click();
             cy.get('.cvat-workspace-settings-aam-zoom-margin').within(() => {
-                cy.get('[role="spinbutton"]').clear().type(valueZoomMargin);
+                cy.get('[role="spinbutton"]').clear();
+                cy.get('[role="spinbutton"]').type(valueZoomMargin);
             });
         });
         cy.closeSettings();

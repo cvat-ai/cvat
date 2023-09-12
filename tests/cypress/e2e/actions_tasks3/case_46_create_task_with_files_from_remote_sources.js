@@ -37,7 +37,8 @@ context('Create a task with files from remote sources.', () => {
         });
 
         it('Set correct URL to remote file. The task is created.', () => {
-            cy.get('.cvat-file-selector-remote').clear().type(correctUrl);
+            cy.get('.cvat-file-selector-remote').clear();
+            cy.get('.cvat-file-selector-remote').type(correctUrl);
             cy.contains('button', 'Submit & Continue').click();
             cy.get('.cvat-notification-create-task-success').should('exist');
             cy.goToTaskList();

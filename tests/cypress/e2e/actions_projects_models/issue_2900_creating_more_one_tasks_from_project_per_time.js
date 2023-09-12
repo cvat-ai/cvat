@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,7 +26,8 @@ context('Create more than one task per time when create from project.', () => {
     const directoryToArchive = imagesFolder;
 
     function createTask(nameTaskToCreate) {
-        cy.get('[id="name"]').clear().type(nameTaskToCreate);
+        cy.get('[id="name"]').clear();
+        cy.get('[id="name"]').type(nameTaskToCreate);
         cy.get('.cvat-project-search-field').first().within(() => {
             cy.get('[type="search"]').should('have.value', projectName);
         });

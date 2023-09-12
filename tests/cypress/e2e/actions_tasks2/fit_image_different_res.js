@@ -62,11 +62,13 @@ context('Correct behaviour of fit when navigating between frames with different 
         cy.openSettings();
         if (resetZoom) {
             cy.get('.cvat-player-settings-reset-zoom-checkbox').within(() => {
-                cy.get('[type="checkbox"]').check().should('be.checked');
+                cy.get('[type="checkbox"]').check();
+                cy.get('[type="checkbox"]').should('be.checked');
             });
         } else {
             cy.get('.cvat-player-settings-reset-zoom-checkbox').within(() => {
-                cy.get('[type="checkbox"]').uncheck().should('not.be.checked');
+                cy.get('[type="checkbox"]').uncheck();
+                cy.get('[type="checkbox"]').should('not.be.checked');
             });
         }
         cy.closeSettings();

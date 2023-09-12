@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -40,7 +41,9 @@ context('Value must be a user instance.', () => {
             cy.get('.cvat-spinner', { timeout: 500 }).should('not.exist');
             // Remove the user's assignment for next tests.
             cy.get('.cvat-task-details-user-block').within(() => {
-                cy.get('input').click().clear().type('{Enter}');
+                cy.get('input').click();
+                cy.get('input').clear();
+                cy.get('input').type('{Enter}');
             });
         });
     });

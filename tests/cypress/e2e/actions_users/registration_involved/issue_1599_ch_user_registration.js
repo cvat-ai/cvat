@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,11 +26,13 @@ context('Issue 1599 (Chinese alphabet).', () => {
 
     describe('User registration using the Chinese alphabet.', () => {
         it('Filling in the placeholder "First name"', () => {
-            cy.get('#firstName').type(firstName).should('not.have.class', 'has-error');
+            cy.get('#firstName').type(firstName);
+            cy.get('#firstName').should('not.have.class', 'has-error');
         });
 
         it('Filling in the placeholder "Last name"', () => {
-            cy.get('#lastName').type(lastName).should('not.have.class', 'has-error');
+            cy.get('#lastName').type(lastName);
+            cy.get('#lastName').should('not.have.class', 'has-error');
         });
 
         it('Filling in the placeholder "Username"', () => {

@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,13 +40,11 @@ context('Check error canvas is busy at resize element', () => {
 
         it('Resize element on second frame and go to previous frame at resizing element', () => {
             const { secondX, secondY } = createRectangleShape2Points;
-            cy.get('.cvat-canvas-container')
-                .trigger('mousemove', secondX - 10, secondY - 10) // activate second shape
-                .trigger('mousedown', secondX, secondY, { button: 0 })
-                .trigger('mousemove', secondX + 100, secondY + 100)
-                .get('body')
-                .type('d') // go to previous frame
-                .trigger('mouseup');
+            cy.get('.cvat-canvas-container').trigger('mousemove', secondX - 10, secondY - 10); // activate second shape
+            cy.get('.cvat-canvas-container').trigger('mousedown', secondX, secondY, { button: 0 });
+            cy.get('.cvat-canvas-container').trigger('mousemove', secondX + 100, secondY + 100);
+            cy.get('body').type('d'); // go to previous frame
+            cy.get('body').trigger('mouseup');
         });
 
         it('Page with the error is missing', () => {

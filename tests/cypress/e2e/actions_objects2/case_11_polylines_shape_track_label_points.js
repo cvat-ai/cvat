@@ -1,5 +1,6 @@
 // Copyright (C) 2020-2022 Intel Corporation
 // Copyright (C) 2023 CVAT.ai Corporation
+//
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
@@ -103,10 +104,9 @@ context('Actions on polylines.', () => {
                 x: 0,
                 y: 0,
             };
-            cy.get('#cvat_canvas_shape_4')
-                .trigger('mousemove', { scrollBehavior: false })
-                .trigger('mouseover', { scrollBehavior: false })
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_4').trigger('mousemove', { scrollBehavior: false });
+            cy.get('#cvat_canvas_shape_4').trigger('mouseover', { scrollBehavior: false });
+            cy.get('#cvat_canvas_shape_4').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('.svg_select_points_point').first().then((firtsPoint) => {
                 firtsPointCoords.x = firtsPoint.attr('cx');
                 firtsPointCoords.y = firtsPoint.attr('cy');

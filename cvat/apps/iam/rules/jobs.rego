@@ -157,7 +157,7 @@ allow {
 allow {
     { utils.VIEW,
       utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS,
-      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS
+      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA
     }[input.scope]
     utils.is_sandbox
     is_job_staff
@@ -166,7 +166,7 @@ allow {
 allow {
     { utils.CREATE, utils.DELETE, utils.VIEW,
       utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS,
-      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS
+      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA
     }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
@@ -176,7 +176,7 @@ allow {
 allow {
     { utils.VIEW,
       utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS,
-      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_COMMITS
+      utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA
     }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
@@ -206,6 +206,17 @@ allow {
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
     is_job_staff
+}
+
+allow {
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA,
+      utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
+      utils.IMPORT_ANNOTATIONS, utils.UPDATE_METADATA
+    }[input.scope]
+    input.auth.organization.id == input.resource.organization.id
+    input.auth.user.privilege == utils.WORKER
+    input.auth.organization.user.role == null
+    is_job_assignee
 }
 
 allow {

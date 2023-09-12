@@ -34,7 +34,8 @@ context('Rename a label via raw editor.', () => {
                 label.color = newlabelColor;
             }
         });
-        cy.get('.cvat-raw-labels-viewer').clear().type(JSON.stringify(labels), { parseSpecialCharSequences: false });
+        cy.get('.cvat-raw-labels-viewer').clear();
+        cy.get('.cvat-raw-labels-viewer').type(JSON.stringify(labels), { parseSpecialCharSequences: false });
     }
 
     before(() => {

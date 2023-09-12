@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -73,8 +74,8 @@ context('Repeat draw feature.', () => {
     }
 
     function repeatDrawningFinish() {
-        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
-            .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+        cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
     }
 
     before(() => {
@@ -85,9 +86,8 @@ context('Repeat draw feature.', () => {
         it('Draw and repeat the drawing of the rectangle.', () => {
             cy.createRectangle(createRectangleShape2Points);
             repeatDrawningStart(); // Repeat the drawing the rectangle
-            cy.get('.cvat-canvas-container')
-                .click(createRectangleShape2Points.firstX, createRectangleShape2Points.firstY - 200)
-                .click(createRectangleShape2Points.secondX, createRectangleShape2Points.secondY - 200);
+            cy.get('.cvat-canvas-container').click(createRectangleShape2Points.firstX, createRectangleShape2Points.firstY - 200);
+            cy.get('.cvat-canvas-container').click(createRectangleShape2Points.secondX, createRectangleShape2Points.secondY - 200);
             cy.get('#cvat_canvas_shape_2').should('exist');
             checkCountShapes(2);
             checkShapeType('#cvat-objects-sidebar-state-item-2', 'RECTANGLE SHAPE');
@@ -132,9 +132,8 @@ context('Repeat draw feature.', () => {
         it('Draw and repeat the drawing of the cuboid.', () => {
             cy.createCuboid(createCuboidShape2Points);
             repeatDrawningStart(); // Repeat the drawing the cuboid
-            cy.get('.cvat-canvas-container')
-                .click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 200)
-                .click(createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 200);
+            cy.get('.cvat-canvas-container').click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 200);
+            cy.get('.cvat-canvas-container').click(createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 200);
             cy.get('#cvat_canvas_shape_10').should('exist');
             checkCountShapes(10);
             checkShapeType('#cvat-objects-sidebar-state-item-10', 'CUBOID SHAPE');

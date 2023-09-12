@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -111,7 +112,8 @@ context('Object make a copy.', () => {
             const coordY = 300;
             for (let id = 1; id < countObject + 1; id++) {
                 cy.get(`#cvat-objects-sidebar-state-item-${id}`).within(() => {
-                    cy.get('[aria-label="more"]').trigger('mouseover').wait(300); // Wait dropdown menu transition
+                    cy.get('[aria-label="more"]').trigger('mouseover');
+                    cy.wait(300); // Wait dropdown menu transition
                 });
                 // Get the last element from cvat-object-item-menu array
                 cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click();
@@ -142,16 +144,12 @@ context('Object make a copy.', () => {
             const coordY = 400;
             for (let id = 1; id < countObject; id++) {
                 // Point doesn't have a context menu
-                cy.get(`#cvat_canvas_shape_${id}`)
-                    .trigger('mousemove', 'right')
-                    .should('have.class', 'cvat_canvas_shape_activated')
-                    .rightclick({ force: true });
-                cy.get('.cvat-canvas-context-menu')
-                    .last()
-                    .should('be.visible')
-                    .find('[aria-label="more"]')
-                    .trigger('mouseover')
-                    .wait(300); // Wait dropdown menu transition;
+                cy.get(`#cvat_canvas_shape_${id}`).trigger('mousemove', 'right');
+                cy.get(`#cvat_canvas_shape_${id}`).should('have.class', 'cvat_canvas_shape_activated');
+                cy.get(`#cvat_canvas_shape_${id}`).rightclick({ force: true });
+                cy.get('.cvat-canvas-context-menu').last().should('be.visible');
+                cy.get('.cvat-canvas-context-menu').last().find('[aria-label="more"]').trigger('mouseover');
+                cy.wait(300); // Wait dropdown menu transition;
                 // Get the last element from cvat-object-item-menu array
                 cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click();
                 cy.get('.cvat-canvas-container').click(coordX, coordY);
@@ -179,7 +177,8 @@ context('Object make a copy.', () => {
         );
 
         it('Copy a shape to an another frame.', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{ctrl}c');
             cy.get('.cvat-player-next-button').click();
             cy.get('body').type('{ctrl}v');
@@ -188,7 +187,8 @@ context('Object make a copy.', () => {
         });
 
         it('Copy a shape to an another frame after press "Ctrl+V" on the first frame.', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{ctrl}c');
             cy.get('body').type('{ctrl}v');
             cy.get('.cvat-player-next-button').click();
@@ -201,16 +201,13 @@ context('Object make a copy.', () => {
         it('Copy a shape with holding "Ctrl".', () => {
             const keyCodeC = 67;
             const keyCodeV = 86;
-            cy.get('.cvat_canvas_shape')
-                .first()
-                .trigger('mousemove')
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('.cvat_canvas_shape').first().trigger('mousemove');
+            cy.get('.cvat_canvas_shape').last().should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{ctrl}', { release: false }); // Hold
-            cy.get('body')
-                .trigger('keydown', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true })
-                .trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true })
-                .trigger('keydown', { keyCode: keyCodeV, code: 'KeyV', ctrlKey: true })
-                .trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true });
+            cy.get('body').trigger('keydown', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true });
+            cy.get('body').trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true });
+            cy.get('body').trigger('keydown', { keyCode: keyCodeV, code: 'KeyV', ctrlKey: true });
+            cy.get('body').trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true });
             cy.get('.cvat-canvas-container').click(400, 300);
             cy.get('.cvat-canvas-container').click(500, 300);
             cy.get('body').type('{ctrl}'); // Unhold
