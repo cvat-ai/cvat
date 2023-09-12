@@ -1472,11 +1472,11 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.sceneBBox = new THREE.Box3().setFromObject(points);
         this.views.perspective.scene.add(points.clone());
-        this.views.perspective.scene.add(new THREE.AxesHelper(5));
+        // this.views.perspective.scene.add(new THREE.AxesHelper(5));
         // Setup TopView
         const canvasTopView = this.views.top.renderer.domElement;
         const topScenePlane = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
+            new THREE.PlaneGeometry(
                 canvasTopView.offsetHeight,
                 canvasTopView.offsetWidth,
                 canvasTopView.offsetHeight,
@@ -1499,7 +1499,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // Setup Side View
         const canvasSideView = this.views.side.renderer.domElement;
         const sideScenePlane = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
+            new THREE.PlaneGeometry(
                 canvasSideView.offsetHeight,
                 canvasSideView.offsetWidth,
                 canvasSideView.offsetHeight,
@@ -1521,7 +1521,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // Setup front View
         const canvasFrontView = this.views.front.renderer.domElement;
         const frontScenePlane = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
+            new THREE.PlaneGeometry(
                 canvasFrontView.offsetHeight,
                 canvasFrontView.offsetWidth,
                 canvasFrontView.offsetHeight,
@@ -1604,7 +1604,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private renderRayCaster = (viewType: RenderView): void => {
         viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector, viewType.camera);
         if (this.mode === Mode.DRAW) {
-            const [intersection] = viewType.rayCaster.renderer.intersectObjects(this.views.perspective.scene.children);
+            const [intersection] = viewType.rayCaster.renderer
+                .intersectObjects(this.views.perspective.scene.children, false);
             if (intersection) {
                 const object = this.views.perspective.scene.getObjectByName('drawTemplate');
                 const { x, y, z } = intersection.point;

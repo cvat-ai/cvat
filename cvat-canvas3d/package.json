@@ -17,8 +17,8 @@
   "devDependencies": {},
   "dependencies": {
     "cvat-core": "link:./../cvat-core",
-    "@types/three": "^0.125.3",
+    "@types/three": "^0.156.0",
     "camera-controls": "^1.25.3",
-    "three": "^0.126.1"
+    "three": "^0.156.1"
   }
 }
