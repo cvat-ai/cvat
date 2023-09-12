@@ -1144,7 +1144,13 @@ class TestPostTaskData:
     ):
         cloud_storage = cloud_storages[cloud_storage_id]
         task_id, _ = self._create_task_with_cloud_data(
-            request, cloud_storage, use_manifest, server_files, use_cache=use_cache, server_files_exclude=server_files_exclude, org=org
+            request,
+            cloud_storage,
+            use_manifest,
+            server_files,
+            use_cache=use_cache,
+            server_files_exclude=server_files_exclude,
+            org=org,
         )
 
         with make_api_client(self._USERNAME) as api_client:
