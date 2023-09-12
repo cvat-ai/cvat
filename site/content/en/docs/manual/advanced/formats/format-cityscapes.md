@@ -25,7 +25,7 @@ For more information, see:
 
 For export of images:
 
-- Supported annotations: Polygons (segmentation task)
+- Supported annotations: Polygons (segmentation), Bounding Boxes.
 - Attributes:
   - `is_crowd` boolean, should be defined for labels as `checkbox`.
     Specifies if the annotation label can distinguish between different instances.
