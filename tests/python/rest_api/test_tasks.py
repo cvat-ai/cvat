@@ -755,7 +755,6 @@ class TestPostTaskData:
                 task_id, number=0, type="chunk", quality="original"
             )
             with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                print(zip_file.namelist())
                 for name in zip_file.namelist():
                     with zip_file.open(name) as zipped_img:
                         im = Image.open(zipped_img)
