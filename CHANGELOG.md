@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Include cloud storage manifest file to selected files if manifest was used as data source (<https://github.com/opencv/cvat/pull/6850>)
+- Keep sequence of files when directories were specified in server_files (<https://github.com/opencv/cvat/pull/6850>)
 
 ### Security
 - TDB
