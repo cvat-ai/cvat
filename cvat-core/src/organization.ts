@@ -3,30 +3,14 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { SerializedOrganization, SerializedOrganizationContact } from './server-response-types';
 import { checkObjectType, isEnum } from './common';
 import config from './config';
 import { MembershipRole } from './enums';
-import { ArgumentError, ServerError } from './exceptions';
+import { ArgumentError, DataError } from './exceptions';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import User from './user';
-
-interface RawOrganizationData {
-    id?: number,
-    slug?: string,
-    name?: string,
-    description?: string,
-    created_date?: string,
-    updated_date?: string,
-    owner?: any,
-    contact?: OrganizationContact,
-}
-
-interface OrganizationContact {
-    email?: string;
-    location?: string;
-    phoneNumber?: string
-}
 
 interface Membership {
     user: User;
@@ -45,12 +29,12 @@ export default class Organization {
     public readonly createdDate: string;
     public readonly updatedDate: string;
     public readonly owner: User;
-    public contact: OrganizationContact;
+    public contact: SerializedOrganizationContact;
     public name: string;
     public description: string;
 
-    constructor(initialData: RawOrganizationData) {
-        const data: RawOrganizationData = {
+    constructor(initialData: SerializedOrganization) {
+        const data: SerializedOrganization = {
             id: undefined,
             slug: undefined,
             name: undefined,
@@ -354,7 +338,7 @@ Object.defineProperties(Organization.prototype.leave, {
                 });
                 const [membership] = result.results;
                 if (!membership) {
-                    throw new ServerError(
+                    throw new DataError(
                         `Could not find membership for user ${user.username} in organization ${this.slug}`,
                     );
                 }

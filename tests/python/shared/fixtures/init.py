@@ -4,6 +4,7 @@
 
 import logging
 import os
+import shlex
 from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
@@ -103,31 +104,34 @@ def _run(command, capture_output=True):
             proc = run(_command)  # nosec
         return stdout, stderr
     except CalledProcessError as exc:
-        stderr = exc.stderr.decode() or exc.stdout.decode() if capture_output else "see above"
-        pytest.exit(
-            f"Command failed: {command}.\n"
-            f"Error message: {stderr}.\n"
-            "Add `-s` option to see more details"
-        )
+        message = f"Command failed: {' '.join(map(shlex.quote, _command))}."
+        message += f"\nExit code: {exc.returncode}"
+        if capture_output:
+            message += f"\nStandard output:\n{exc.stdout.decode()}"
+            message += f"\nStandard error:\n{exc.stderr.decode()}"
+
+        pytest.exit(message)
+
+
+def _kube_get_pod_name(label_filter):
+    output, _ = _run(f"kubectl get pods -l {label_filter} -o jsonpath={{.items[0].metadata.name}}")
+    return output
 
 
 def _kube_get_server_pod_name():
-    output, _ = _run("kubectl get pods -l component=server -o jsonpath={.items[0].metadata.name}")
-    return output
+    return _kube_get_pod_name("component=server")
 
 
 def _kube_get_db_pod_name():
-    output, _ = _run(
-        "kubectl get pods -l app.kubernetes.io/name=postgresql -o jsonpath={.items[0].metadata.name}"
-    )
-    return output
+    return _kube_get_pod_name("app.kubernetes.io/name=postgresql")
 
 
 def _kube_get_clichouse_pod_name():
-    output, _ = _run(
-        "kubectl get pods -l app.kubernetes.io/name=clickhouse -o jsonpath={.items[0].metadata.name}"
-    )
-    return output
+    return _kube_get_pod_name("app.kubernetes.io/name=clickhouse")
+
+
+def _kube_get_redis_pod_name():
+    return _kube_get_pod_name("app.kubernetes.io/name=keydb")
 
 
 def docker_cp(source, target):
@@ -169,6 +173,15 @@ def kube_exec_clickhouse_db(command):
     _run(["kubectl", "exec", pod_name, "--"] + command)
 
 
+def docker_exec_redis_db(command):
+    _run(["docker", "exec", f"{PREFIX}_cvat_redis_1"] + command)
+
+
+def kube_exec_redis_db(command):
+    pod_name = _kube_get_redis_pod_name()
+    _run(["kubectl", "exec", pod_name, "--"] + command)
+
+
 def docker_restore_db():
     docker_exec(
         Container.DB, "psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql"
@@ -201,6 +214,26 @@ def kube_restore_clickhouse_db():
             "/bin/sh",
             "-c",
             'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /bin/sh /docker-entrypoint-initdb.d/init.sh',
+        ]
+    )
+
+
+def docker_restore_redis_db():
+    docker_exec_redis_db(
+        [
+            "/bin/sh",
+            "-c",
+            "keydb-cli flushall",
+        ]
+    )
+
+
+def kube_restore_redis_db():
+    kube_exec_redis_db(
+        [
+            "/bin/sh",
+            "-c",
+            "keydb-cli flushall",
         ]
     )
 
@@ -279,7 +312,7 @@ def docker_restore_data_volumes():
         CVAT_DB_DIR / "cvat_data.tar.bz2",
         f"{PREFIX}_cvat_server_1:/tmp/cvat_data.tar.bz2",
     )
-    docker_exec(Container.SERVER, "tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
+    docker_exec_cvat("tar --strip 3 -xjf /tmp/cvat_data.tar.bz2 -C /home/django/data/")
 
 
 def kube_restore_data_volumes():
@@ -403,7 +436,7 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
     wait_for_services()
 
-    docker_exec(Container.SERVER, "python manage.py loaddata /tmp/data.json")
+    docker_exec_cvat("python manage.py loaddata /tmp/data.json")
     docker_exec(
         Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
     )
@@ -455,7 +488,7 @@ def session_finish(session):
 
         docker_exec(Container.DB, "dropdb --if-exists cvat")
         docker_exec(Container.DB, "createdb cvat")
-        docker_exec(Container.SERVER, "python manage.py migrate")
+        docker_exec_cvat("python manage.py migrate")
 
 
 def collect_code_coverage_from_containers():
@@ -471,10 +504,10 @@ def collect_code_coverage_from_containers():
 
         # get code coverage report
         docker_exec(container, "coverage combine", capture_output=False)
-        docker_exec(container, "coverage xml", capture_output=False)
+        docker_exec(container, "coverage json", capture_output=False)
         docker_cp(
-            f"{PREFIX}_{container}_1:home/django/coverage.xml",
-            f"coverage_{container}.xml",
+            f"{PREFIX}_{container}_1:home/django/coverage.json",
+            f"coverage_{container}.json",
         )
 
 
@@ -527,3 +560,15 @@ def restore_clickhouse_db_per_class(request):
         docker_restore_clickhouse_db()
     else:
         kube_restore_clickhouse_db()
+
+
+@pytest.fixture(scope="function")
+def restore_redis_db_per_function(request):
+    # Note that autouse fixtures are executed first within their scope, so be aware of the order
+    # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
+    # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_db()
+    else:
+        kube_restore_redis_db()

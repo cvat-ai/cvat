@@ -17,6 +17,7 @@ const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
     siblingClassNames: ['cvat-jobs-page-pagination', 'cvat-jobs-page-top-bar'],
     paddings: 40,
+    minHeight: 200,
     numberOfRows: 3,
 });
 

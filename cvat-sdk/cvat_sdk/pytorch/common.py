@@ -2,28 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import List, Mapping
+from typing import Mapping
 
 import attrs
-import attrs.validators
 
-import cvat_sdk.core
-import cvat_sdk.core.exceptions
-import cvat_sdk.models as models
-
-
-class UnsupportedDatasetError(cvat_sdk.core.exceptions.CvatSdkException):
-    pass
-
-
-@attrs.frozen
-class FrameAnnotations:
-    """
-    Contains annotations that pertain to a single frame.
-    """
-
-    tags: List[models.LabeledImage] = attrs.Factory(list)
-    shapes: List[models.LabeledShape] = attrs.Factory(list)
+from cvat_sdk.datasets.common import FrameAnnotations
 
 
 @attrs.frozen

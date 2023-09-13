@@ -56,8 +56,11 @@ COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/require
 RUN grep -q '^av==' /tmp/utils/dataset_manifest/requirements.txt
 RUN sed -i '/^av==/!d' /tmp/utils/dataset_manifest/requirements.txt
 
+# Work around https://github.com/PyAV-Org/PyAV/issues/1140
+RUN pip install setuptools wheel 'cython<3'
+
 RUN --mount=type=cache,target=/root/.cache/pip/http \
-    python3 -m pip wheel \
+    python3 -m pip wheel --no-binary=av --no-build-isolation \
     -r /tmp/utils/dataset_manifest/requirements.txt \
     -w /tmp/wheelhouse
 
@@ -70,11 +73,11 @@ COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/require
 # Exclude av from the requirements file
 RUN sed -i '/^av==/d' /tmp/utils/dataset_manifest/requirements.txt
 
-ARG DJANGO_CONFIGURATION="production"
+ARG CVAT_CONFIGURATION="production"
 
 RUN --mount=type=cache,target=/root/.cache/pip/http \
     DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps \
-    -r /tmp/cvat/requirements/${DJANGO_CONFIGURATION}.txt \
+    -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
 FROM golang:1.20.5 AS build-smokescreen
@@ -100,8 +103,8 @@ ENV TERM=xterm \
     TZ=${TZ}
 
 ARG USER="django"
-ARG DJANGO_CONFIGURATION="production"
-ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
+ARG CVAT_CONFIGURATION="production"
+ENV DJANGO_SETTINGS_MODULE="cvat.settings.${CVAT_CONFIGURATION}"
 
 # Install necessary apt packages
 RUN apt-get update && \
@@ -199,5 +202,4 @@ WORKDIR ${HOME}
 RUN mkdir -p data share keys logs /tmp/supervisord static
 
 EXPOSE 8080
-ENTRYPOINT ["/usr/bin/supervisord"]
-CMD ["-c", "supervisord/all.conf"]
+ENTRYPOINT ["./backend_entrypoint.sh"]

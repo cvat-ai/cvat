@@ -2,54 +2,116 @@
 title: 'Automatic annotation'
 linkTitle: 'Automatic annotation'
 weight: 16
-description: 'Guide to using the automatic annotation of tasks.'
+description: 'Automatic annotation of tasks'
 ---
 
-Automatic Annotation is used for creating preliminary annotations.
-To use Automatic Annotation you need a DL model that can be deployed by a CVAT administrator.
-You can find the list of available models in the `Models` section.
+Automatic annotation in CVAT is a tool that you can use
+to automatically pre-annotate your data with pre-trained models.
 
-1. To launch automatic annotation, you should open the dashboard and find a task which you want to annotate.
-   Then click the `Actions` button and choose option `Automatic Annotation` from the dropdown menu.
+CVAT can use models from the following sources:
+
+- [Pre-installed models](#models).
+- Models integrated from [Hugging Face and Roboflow](#adding-models-from-hugging-face-and-roboflow).
+- [Self-hosted models deployed with Nuclio](/docs/manual/advanced/serverless-tutorial/).
+
+The following table describes the available options:
+
+|                                             | Self-hosted            | Cloud                                            |
+| ------------------------------------------- | ---------------------- | ------------------------------------------------ |
+| **Price**                                   | Free                   | See [Pricing](https://www.cvat.ai/pricing/cloud) |
+| **Models**                                  | You have to add models | You can use pre-installed models                 |
+| **Hugging Face & Roboflow <br>integration** | Not supported          | Supported                                        |
+
+See:
+
+- [Running Automatic annotation](#running-automatic-annotation)
+- [Labels matching](#labels-matching)
+- [Models](#models)
+- [Adding models from Hugging Face and Roboflow](#adding-models-from-hugging-face-and-roboflow)
+
+## Running Automatic annotation
+
+To start automatic annotation, do the following:
+
+1. On the top menu, click **Tasks**.
+1. Find the task you want to annotate and click **Action** > **Automatic annotation**.
 
    ![](/images/image119_detrac.jpg)
 
-1. In the dialog window select a model you need. DL models are created for specific labels, e.g.
-   the Crossroad model was taught using footage from cameras located above the highway and it is best to
-   use this model for the tasks with similar camera angles.
-   If it's necessary select the `Clean old annotations` checkbox.
-   Adjust the labels so that the task labels will correspond to the labels of the DL model.
-   For example, let’s consider a task where you have to annotate labels “car” and “person”.
-   You should connect the “person” label from the model to the “person” label in the task.
-   As for the “car” label, you should choose the most fitting label available in the model - the “vehicle” label.
-   If the chosen model supports automatic attributes detection
-   (like facial expressions, for example: ``serverless/openvino/omz/intel/face-detection-0205``),
-   you can also map attributes between the DL model and your task.
-   The task requires to annotate cars only and choosing the “vehicle” label implies annotation of all vehicles,
-   in this case using auto annotation will help you complete the task faster.
-   Click `Submit` to begin the automatic annotation process.
+1. In the Automatic annotation dialog, from the drop-down list, select a [model](#models).
+1. [Match the labels](#labels-matching) of the model and the task.
+1. (Optional) In case you need the model to return masks as polygons, switch toggle **Return masks as polygons**.
+1. (Optional) In case you need to remove all previous annotations, switch toggle **Clean old annotations**.
 
    ![](/images/image120.jpg)
 
-1. At runtime - you can see the percentage of completion.
-   You can cancel the automatic annotation by clicking on the `Cancel`button.
+1. Click **Annotate**.
 
-   ![](/images/image121_detrac.jpg)
+CVAT will show the progress of annotation on the progress bar.
 
-1. The end result of an automatic annotation is an annotation with separate rectangles (or other shapes)
+![Progress bar](/images/image121_detrac.jpg)
 
-   ![](/images/gif014_detrac.gif)
+You can stop the automatic annotation at any moment by clicking cancel.
 
-1. You can combine separate bounding boxes into tracks using the `Person reidentification ` model.
-   To do this, click on the automatic annotation item in the action menu again and select the model
-   of the `ReID` type (in this case the `Person reidentification` model).
-   You can set the following parameters:
+## Labels matching
 
-   - Model `Threshold` is a maximum cosine distance between objects’ embeddings.
-   - `Maximum distance` defines a maximum radius that an object can diverge between adjacent frames.
+Each model is trained on a dataset and supports only the dataset's labels.
 
-   ![](/images/image133.jpg)
+For example:
 
-1. You can remove false positives and edit tracks using `Split` and `Merge` functions.
+- DL model has the label `car`.
+- Your task (or project) has the label `vehicle`.
 
-   ![](/images/gif015_detrac.gif)
+To annotate, you need to match these two labels to give
+CVAT a hint that, in this case, `car` = `vehicle`.
+
+If you have a label that is not on the list
+of DL labels, you will not be able to
+match them.
+
+For this reason, supported DL models are suitable only
+for certain labels.
+
+To check the list of labels for each model, see [Models](#models)
+papers and official documentation.
+
+## Models
+
+Automatic annotation uses pre-installed and added models.
+
+> For self-hosted solutions,
+> you need to [install Automatic Annotation first](/docs/administration/advanced/installation_automatic_annotation/)
+> and [add models](/docs/manual/advanced/models/).
+
+List of pre-installed models:
+
+<!--lint disable maximum-line-length-->
+
+| Model                     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Attributed face detection | Three OpenVINO models work together: <br><br><li> [Face Detection 0205](https://docs.openvino.ai/2022.3/omz_models_model_face_detection_0205.html): face detector based on MobileNetV2 as a backbone with a FCOS head for indoor and outdoor scenes shot by a front-facing camera. <li>[Emotions recognition retail 0003](https://docs.openvino.ai/2022.3/omz_models_model_emotions_recognition_retail_0003.html#emotions-recognition-retail-0003): fully convolutional network for recognition of five emotions (‘neutral’, ‘happy’, ‘sad’, ‘surprise’, ‘anger’). <li>[Age gender recognition retail 0013](https://docs.openvino.ai/2022.3/omz_models_model_age_gender_recognition_retail_0013.html): fully convolutional network for simultaneous Age/Gender recognition. The network can recognize the age of people in the [18 - 75] years old range; it is not applicable for children since their faces were not in the training set. |
+| RetinaNet R101            | RetinaNet is a one-stage object detection model that utilizes a focal loss function to address class imbalance during training. Focal loss applies a modulating term to the cross entropy loss to focus learning on hard negative examples. RetinaNet is a single, unified network composed of a backbone network and two task-specific subnetworks. <br><br>For more information, see: <li>[Site: RetinaNET](https://paperswithcode.com/lib/detectron2/retinanet)                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Text detection            | Text detector based on PixelLink architecture with MobileNetV2, depth_multiplier=1.4 as a backbone for indoor/outdoor scenes. <br><br> For more information, see: <li>[Site: OpenVINO Text detection 004](https://docs.openvino.ai/2022.3/omz_models_model_text_detection_0004.html)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| YOLO v3                   | YOLO v3 is a family of object detection architectures and models pre-trained on the COCO dataset. <br><br> For more information, see: <li>[Site: YOLO v3](https://docs.openvino.ai/2022.3/omz_models_model_yolo_v3_tf.html)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| YOLO v7                   | YOLOv7 is an advanced object detection model that outperforms other detectors in terms of both speed and accuracy. It can process frames at a rate ranging from 5 to 160 frames per second (FPS) and achieves the highest accuracy with 56.8% average precision (AP) among real-time object detectors running at 30 FPS or higher on the V100 graphics processing unit (GPU). <br><br> For more information, see: <li>[GitHub: YOLO v7](https://github.com/WongKinYiu/yolov7) <li>[Paper: YOLO v7](https://arxiv.org/pdf/2207.02696.pdf)                                                                                                                                                                                                                                                                                                                                                                                                    |
+
+<!--lint enable maximum-line-length-->
+
+## Adding models from Hugging Face and Roboflow
+
+In case you did not find the model you need, you can add a model
+of your choice from [Hugging Face](https://huggingface.co/)
+or [Roboflow](https://roboflow.com/).
+
+> **Note**, that you cannot add models from Hugging Face and Roboflow to self-hosted CVAT.
+
+<!--lint disable maximum-line-length-->
+
+For more information,
+see [Streamline annotation by integrating Hugging Face and Roboflow models](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models).
+
+This video demonstrates the process:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/SbU3aB65W5s" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+<!--lint enable maximum-line-length-->

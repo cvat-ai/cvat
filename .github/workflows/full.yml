@@ -52,18 +52,11 @@ jobs:
       - name: CVAT server. Build and push
         uses: docker/build-push-action@v3
         with:
-          build-args: |
-              "COVERAGE_PROCESS_START=.coveragerc"
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
           file: Dockerfile
           tags: cvat/server
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
-
-      - name: Instrumentation of the code then rebuilding the CVAT UI
-        run: |
-          yarn --frozen-lockfile
-          yarn run coverage
 
       - name: CVAT UI. Build and push
         uses: docker/build-push-action@v3
@@ -159,24 +152,20 @@ jobs:
           name: expected_schema
           path: cvat/schema-expected.yml
 
-      - name: Running REST API and SDK tests
-        id: run_tests
-        env:
-          COVERAGE_PROCESS_START: ".coveragerc"
+      - name: Generate SDK
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
-          pip3 install -r ./tests/python/requirements.txt
-          pip3 install -e ./cvat-sdk
-          pip3 install -e ./cvat-cli
+      - name: Install SDK
+        run: |
+          pip3 install -r ./tests/python/requirements.txt \
+            -e './cvat-sdk[pytorch]' -e ./cvat-cli
 
-          pytest tests/python/ --cov --cov-report xml
-
-      - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Running REST API and SDK tests
+        id: run_tests
+        run: |
+          pytest tests/python/
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
@@ -236,15 +225,10 @@ jobs:
           while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}'
+            -c 'python manage.py test cvat/apps -v 2'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
-
-      - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+            -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test'
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -270,8 +254,8 @@ jobs:
       matrix:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
                 'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
-                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2', 'masks', 'skeletons']
+                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
+                'issues_prs', 'issues_prs2', 'features']
     steps:
       - uses: actions/checkout@v3
         with:
@@ -340,18 +324,15 @@ jobs:
             npx cypress run \
               --headed \
               --browser chrome \
+              --env coverage=false \
               --config-file cypress_canvas3d.config.js \
               --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           else
             npx cypress run \
               --browser chrome \
+              --env coverage=false \
               --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
           fi
-
-      - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Creating a log file from "cvat" container logs
         if: failure()

@@ -7,6 +7,7 @@ import _cvat from 'cvat-core/src/api';
 import ObjectState from 'cvat-core/src/object-state';
 import Webhook from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
+import CloudStorage from 'cvat-core/src/cloud-storage';
 import { ModelProvider } from 'cvat-core/src/lambda-manager';
 import {
     Label, Attribute,
@@ -20,7 +21,7 @@ import QualitySettings from 'cvat-core/src/quality-settings';
 import { FramesMetaData } from 'cvat-core/src/frames';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
-    JobStage, JobState,
+    JobStage, JobState, RQStatus,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -28,6 +29,7 @@ import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
 import Organization from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
+import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 
@@ -59,6 +61,7 @@ export {
     Webhook,
     Issue,
     User,
+    CloudStorage,
     Organization,
     Comment,
     MLModel,
@@ -70,12 +73,16 @@ export {
     JobType,
     JobStage,
     JobState,
+    RQStatus,
     QualityReport,
     QualityConflict,
     QualitySettings,
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,
+    AnalyticsReport,
+    AnalyticsEntry,
+    AnalyticsEntryViewType,
 };
 
 export type {

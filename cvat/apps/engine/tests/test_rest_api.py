@@ -89,7 +89,6 @@ def create_db_task(data):
     db_task = Task.objects.create(**data)
     shutil.rmtree(db_task.get_dirname(), ignore_errors=True)
     os.makedirs(db_task.get_dirname())
-    os.makedirs(db_task.get_task_logs_dirname())
     os.makedirs(db_task.get_task_artifacts_dirname())
     db_task.data = db_data
     db_task.save()
@@ -126,7 +125,6 @@ def create_db_project(data):
     db_project = Project.objects.create(**data)
     shutil.rmtree(db_project.get_dirname(), ignore_errors=True)
     os.makedirs(db_project.get_dirname())
-    os.makedirs(db_project.get_project_logs_dirname())
 
     if not labels is None:
         for label_data in labels:
@@ -1811,7 +1809,8 @@ class ProjectImportExportAPITestCase(ApiTestBase):
                             "name": "bool_attribute",
                             "mutable": True,
                             "input_type": AttributeType.CHECKBOX,
-                            "default_value": "true"
+                            "default_value": "true",
+                            "values": [],
                         }],
                     }, {
                         "name": "person",
@@ -2572,7 +2571,8 @@ class TaskCreateAPITestCase(ApiTestBase):
                     "name": "my_attribute",
                     "mutable": True,
                     "input_type": AttributeType.CHECKBOX,
-                    "default_value": "true"
+                    "default_value": "true",
+                    "values": [],
                 }]
             }]
         }
@@ -2895,7 +2895,8 @@ class TaskImportExportAPITestCase(ApiTestBase):
                         "name": "bool_attribute",
                         "mutable": True,
                         "input_type": AttributeType.CHECKBOX,
-                        "default_value": "true"
+                        "default_value": "true",
+                        "values": [],
                     }],
                     }, {
                         "name": "person",
@@ -2915,7 +2916,8 @@ class TaskImportExportAPITestCase(ApiTestBase):
                         "name": "bool_attribute",
                         "mutable": True,
                         "input_type": AttributeType.CHECKBOX,
-                        "default_value": "true"
+                        "default_value": "true",
+                        "values": [],
                     }],
                     }, {
                         "name": "person",
@@ -4649,7 +4651,8 @@ class JobAnnotationAPITestCase(ApiTestBase):
                             "name": "parked",
                             "mutable": True,
                             "input_type": "checkbox",
-                            "default_value": "false"
+                            "default_value": "false",
+                            "values": [],
                         },
                     ]
                 },

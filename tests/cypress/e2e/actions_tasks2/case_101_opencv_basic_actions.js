@@ -173,7 +173,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                 .should('have.class', 'ant-tabs-tab-active');
             cy.get('.cvat-opencv-image-tool').click();
             cy.get('.cvat-opencv-image-tool').should('have.class', 'cvat-opencv-image-tool-active');
-            cy.get('.cvat-notification-notice-opencv-processing-error').should('not.exist');
+            cy.get('.cvat-notification-notice-image-processing-error').should('not.exist');
             cy.get('.cvat-opencv-image-tool').click();
             cy.get('.cvat-opencv-image-tool').should('not.have.class', 'cvat-opencv-image-tool-active');
             cy.get('.cvat-opencv-image-tool').trigger('mouseleave').trigger('mouseout');

@@ -26,18 +26,19 @@ from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
-from django_sendfile import sendfile
 from distutils.util import strtobool
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     JobWriteSerializer, LabelSerializer, AnnotationGuideWriteSerializer, AssetWriteSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job, get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after
+    av_scan_paths, process_failed_job, configure_dependent_job,
+    get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after,
+    sendfile
 )
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
@@ -47,6 +48,8 @@ from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
+
+slogger = ServerLogManager(__name__)
 
 class Version(Enum):
     V1 = '1.0'
@@ -364,7 +367,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 target_dir=target_data_dir,
             )
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("We don't currently support backing up tasks with data from cloud storage")
 
     def _write_task(self, zip_object, target_dir=None):
         task_dir = self._db_task.get_dirname()
@@ -660,7 +663,6 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        os.makedirs(self._db_task.get_task_logs_dirname())
         os.makedirs(self._db_task.get_task_artifacts_dirname())
 
         if not self._labels_mapping:
@@ -779,7 +781,8 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 
     def _write_tasks(self, zip_object):
         for idx, db_task in enumerate(self._db_project.tasks.all().order_by('id')):
-            TaskExporter(db_task.id, self._version).export_to(zip_object, self.TASKNAME_TEMPLATE.format(idx))
+            if db_task.data is not None:
+                TaskExporter(db_task.id, self._version).export_to(zip_object, self.TASKNAME_TEMPLATE.format(idx))
 
     def _write_manifest(self, zip_object):
         def serialize_project():
@@ -840,7 +843,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         project_path = self._db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
-        os.makedirs(self._db_project.get_project_logs_dirname())
+        os.makedirs(project_path)
 
         self._labels_mapping = self._create_labels(db_project=self._db_project, labels=labels)
 

@@ -11,7 +11,7 @@ context('Mutable attribute.', () => {
     const labelName = 'car';
     const additionalAttrsLabelShape = [
         {
-            additionalAttrName: 'tree', additionalValue: 'birch tree', typeAttribute: 'Text', mutable: true,
+            name: 'tree', values: 'birch tree', type: 'Text', mutable: true,
         },
     ];
 
@@ -31,7 +31,7 @@ context('Mutable attribute.', () => {
     function testChangingAttributeValue(expectedValue, value) {
         cy.get('.cvat-player-next-button').click();
         cy.get('.attribute-annotation-sidebar-attr-elem-wrapper')
-            .find('[type="text"]')
+            .find('textarea')
             .should('have.value', expectedValue)
             .clear()
             .type(value);
@@ -45,7 +45,7 @@ context('Mutable attribute.', () => {
 
     before(() => {
         cy.openTask(taskName);
-        cy.addNewLabel(labelName, additionalAttrsLabelShape);
+        cy.addNewLabel({ name: labelName }, additionalAttrsLabelShape);
         cy.openJob();
         cy.createRectangle(createRectangleTrack2Points);
     });
@@ -54,7 +54,7 @@ context('Mutable attribute.', () => {
         it('Go to AAM. For the 2nd and 3rd frames, change the attribute value.', () => {
             cy.changeWorkspace('Attribute annotation');
             cy.changeLabelAAM(labelName);
-            testChangingAttributeValue(additionalAttrsLabelShape[0].additionalValue, attrValueSecondFrame);
+            testChangingAttributeValue(additionalAttrsLabelShape[0].values, attrValueSecondFrame);
             testChangingAttributeValue(attrValueSecondFrame, attrValueThirdFrame);
         });
 
@@ -66,12 +66,12 @@ context('Mutable attribute.', () => {
             [
                 [
                     0,
-                    `${additionalAttrsLabelShape[0].additionalAttrName}: ${
-                        additionalAttrsLabelShape[0].additionalValue}`,
+                    `${additionalAttrsLabelShape[0].name}: ${
+                        additionalAttrsLabelShape[0].values}`,
                 ],
-                [1, `${additionalAttrsLabelShape[0].additionalAttrName}: ${attrValueSecondFrame}`],
-                [2, `${additionalAttrsLabelShape[0].additionalAttrName}: ${attrValueThirdFrame}`],
-                [3, `${additionalAttrsLabelShape[0].additionalAttrName}: ${attrValueThirdFrame}`],
+                [1, `${additionalAttrsLabelShape[0].name}: ${attrValueSecondFrame}`],
+                [2, `${additionalAttrsLabelShape[0].name}: ${attrValueThirdFrame}`],
+                [3, `${additionalAttrsLabelShape[0].name}: ${attrValueThirdFrame}`],
             ].forEach(([num, val]) => {
                 checkObjectDetailValue(num, val);
             });

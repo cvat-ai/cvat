@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-header.ant-layout-header {
     display: flex;
@@ -93,4 +93,11 @@
 
 .cvat-modal-organization-selector {
     width: 100%;
+}
+
+.cvat-shortcuts-modal-window-table {
+    .ant-table {
+        max-height: $grid-unit-size * 70;
+        overflow-y: auto;
+    }
 }

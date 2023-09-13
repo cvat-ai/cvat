@@ -13,7 +13,7 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, DimensionType, JobType, Job, QualityConflict,
+    getCore, MLModel, JobType, Job, QualityConflict,
 } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -581,10 +581,41 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
-export function confirmCanvasReady(): AnyAction {
+export function confirmCanvasReady(ranges?: string): AnyAction {
     return {
         type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
-        payload: {},
+        payload: { ranges },
+    };
+}
+
+export function confirmCanvasReadyAsync(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
+        try {
+            const state: CombinedState = getState();
+            const { instance: job } = state.annotation.job;
+            const chunks = await job.frames.cachedChunks() as number[];
+            const { startFrame, stopFrame, dataChunkSize } = job;
+
+            const ranges = chunks.map((chunk) => (
+                [
+                    Math.max(startFrame, chunk * dataChunkSize),
+                    Math.min(stopFrame, (chunk + 1) * dataChunkSize - 1),
+                ]
+            )).reduce<Array<[number, number]>>((acc, val) => {
+                if (acc.length && acc[acc.length - 1][1] + 1 === val[0]) {
+                    const newMax = val[1];
+                    acc[acc.length - 1][1] = newMax;
+                } else {
+                    acc.push(val as [number, number]);
+                }
+                return acc;
+            }, []).map(([start, end]) => `${start}:${end}`).join(';');
+
+            dispatch(confirmCanvasReady(ranges));
+        } catch (error) {
+            // even if error happens here, do not need to notify the users
+            dispatch(confirmCanvasReady());
+        }
     };
 }
 
@@ -942,10 +973,11 @@ export function getJobAsync(
                 if (report) conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
             }
 
-            // navigate to correct first frame according to setup
-            const frameNumber = (await job.frames.search(
-                { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
-            )) || job.startFrame;
+            // frame query parameter does not work for GT job
+            const frameNumber = Number.isInteger(initialFrame) && groundTruthJobId !== job.id ?
+                initialFrame : (await job.frames.search(
+                    { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
+                )) || job.startFrame;
 
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
@@ -953,12 +985,7 @@ export function getJobAsync(
             try {
                 await frameData.data();
             } catch (error) {
-                dispatch({
-                    type: AnnotationActionTypes.GET_DATA_FAILED,
-                    payload: {
-                        error,
-                    },
-                });
+                // do nothing, user will be notified when data request is done
             }
 
             const states = await job.annotations.get(
@@ -992,11 +1019,6 @@ export function getJobAsync(
                     maxZ,
                 },
             });
-
-            if (job.dimension === DimensionType.DIMENSION_3D) {
-                const workspace = Workspace.STANDARD3D;
-                dispatch(changeWorkspace(workspace));
-            }
 
             dispatch(changeFrameAsync(frameNumber, false));
         } catch (error) {

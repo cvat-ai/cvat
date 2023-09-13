@@ -1252,6 +1252,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         window.document.addEventListener('keydown', this.onShiftKeyDown);
         window.document.addEventListener('keyup', this.onShiftKeyUp);
 
+        this.attachmentBoard.addEventListener('wheel', (event) => {
+            event.stopPropagation();
+        });
+
+        this.attachmentBoard.addEventListener('mousemove', (event) => {
+            event.stopPropagation();
+        });
+
         this.canvas.addEventListener('wheel', (event): void => {
             if (event.ctrlKey) return;
             const { offset } = this.controller.geometry;
@@ -1420,19 +1428,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.background.setAttribute('height', `${image.renderHeight}px`);
 
                 if (ctx) {
-                    if (image.imageData instanceof ImageData) {
-                        ctx.scale(
-                            image.renderWidth / image.imageData.width,
-                            image.renderHeight / image.imageData.height,
-                        );
-                        ctx.putImageData(image.imageData, 0, 0);
-                        // Transformation matrix must not affect the putImageData() method.
-                        // By this reason need to redraw the image to apply scale.
-                        // https://www.w3.org/TR/2dcontext/#dom-context-2d-putimagedata
-                        ctx.drawImage(this.background, 0, 0);
-                    } else {
-                        ctx.drawImage(image.imageData, 0, 0);
-                    }
+                    ctx.drawImage(image.imageData, 0, 0, image.renderWidth, image.renderHeight);
                 }
 
                 if (model.imageIsDeleted) {
@@ -2183,7 +2179,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private deactivateShape(): void {
-        if (this.activeElement.clientID !== null) {
+        if (this.activeElement.clientID) {
             const { displayAllText } = this.configuration;
             const { clientID } = this.activeElement;
             const drawnState = this.drawnStates[clientID];
@@ -2570,7 +2566,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (!shape) return;
 
         if (text.node.style.display === 'none') return; // wrong transformation matrix
-        const { textFontSize, textPosition } = this.configuration;
+        const { textFontSize } = this.configuration;
+        let { textPosition } = this.configuration;
+        if (shape.type === 'circle') {
+            // force auto for skeleton elements
+            textPosition = 'auto';
+        }
 
         text.untransform();
         text.style({ 'font-size': `${textFontSize}px` });
@@ -2581,10 +2582,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (textPosition === 'center') {
             let cx = 0;
             let cy = 0;
-            if (shape.type === 'rect') {
-                // for rectangle finding a center is simple
+            if (['rect', 'image'].includes(shape.type)) {
+                // for rectangle/mask finding a center is simple
                 cx = +shape.attr('x') + +shape.attr('width') / 2;
                 cy = +shape.attr('y') + +shape.attr('height') / 2;
+            } else if (shape.type === 'g') {
+                ({ cx, cy } = shape.bbox());
             } else if (shape.type === 'ellipse') {
                 // even simpler for ellipses
                 cx = +shape.attr('cx');
@@ -2667,9 +2670,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
         }
 
-        for (const tspan of (text.lines() as any).members) {
-            tspan.attr('x', text.attr('x'));
+        function applyParentX(parentText: SVGTSpanElement | SVGTextElement): void {
+            for (let i = 0; i < parentText.children.length; i++) {
+                if (i === 0) {
+                    // do not align the first child
+                    continue;
+                }
+
+                const tspan = parentText.children[i];
+                tspan.setAttribute('x', parentText.getAttribute('x'));
+                applyParentX(tspan as SVGTSpanElement);
+            }
         }
+
+        applyParentX(text.node as any as SVGTextElement);
     }
 
     private deleteText(clientID: number): void {
@@ -2733,15 +2747,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
                 if (withAttr) {
                     for (const attrID of Object.keys(attributes)) {
-                        const value = attributes[attrID] === undefinedAttrValue ? '' : attributes[attrID];
-                        block
-                            .tspan(`${attrNames[attrID]}: ${value}`)
-                            .attr({
-                                attrID,
-                                dy: '1em',
-                                x: 0,
-                            })
-                            .addClass('cvat_canvas_text_attribute');
+                        const values = `${attributes[attrID] === undefinedAttrValue ? '' : attributes[attrID]}`.split('\n');
+                        const parent = block.tspan(`${attrNames[attrID]}: `)
+                            .attr({ attrID, dy: '1em', x: 0 }).addClass('cvat_canvas_text_attribute');
+                        values.forEach((attrLine: string, index: number) => {
+                            parent
+                                .tspan(attrLine)
+                                .attr({
+                                    dy: index === 0 ? 0 : '1em',
+                                });
+                        });
                     }
                 }
             })

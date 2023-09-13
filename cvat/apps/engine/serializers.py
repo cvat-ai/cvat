@@ -20,11 +20,12 @@ from django.db import transaction
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
+slogger = ServerLogManager(__name__)
 
 class WriteOnceMixin:
     """
@@ -212,29 +213,21 @@ class UserSerializer(serializers.ModelSerializer):
             'last_login': { 'allow_null': True }
         }
 
+class DelimitedStringListField(serializers.ListField):
+    def to_representation(self, value):
+        return super().to_representation(value.split('\n'))
+
+    def to_internal_value(self, data):
+        return '\n'.join(super().to_internal_value(data))
+
 class AttributeSerializer(serializers.ModelSerializer):
-    values = serializers.ListField(allow_empty=True,
-        child=serializers.CharField(max_length=200),
+    values = DelimitedStringListField(allow_empty=True,
+        child=serializers.CharField(allow_blank=True, max_length=200),
     )
 
     class Meta:
         model = models.AttributeSpec
         fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
-
-    # pylint: disable=no-self-use
-    def to_internal_value(self, data):
-        attribute = data.copy()
-        attribute['values'] = '\n'.join(data.get('values', []))
-        return attribute
-
-    def to_representation(self, instance):
-        if instance:
-            rep = super().to_representation(instance)
-            rep['values'] = instance.values.split('\n')
-        else:
-            rep = instance
-
-        return rep
 
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
@@ -1111,7 +1104,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        os.makedirs(db_task.get_task_logs_dirname())
         os.makedirs(db_task.get_task_artifacts_dirname())
 
         LabelSerializer.create_labels(labels, parent_instance=db_task)
@@ -1312,7 +1304,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         project_path = db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
-        os.makedirs(db_project.get_project_logs_dirname())
+        os.makedirs(project_path)
 
         LabelSerializer.create_labels(labels, parent_instance=db_project)
 
@@ -1814,8 +1806,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             cloud_storage_path = db_storage.get_storage_dirname()
             if os.path.isdir(cloud_storage_path):
                 shutil.rmtree(cloud_storage_path)
+            os.makedirs(cloud_storage_path)
 
-            os.makedirs(db_storage.get_storage_logs_dirname(), exist_ok=True)
             if temporary_file:
                 # so, gcs key file is valid and we need to set correct path to the file
                 real_path_to_key_file = db_storage.get_key_file_path()
