@@ -20,6 +20,7 @@ import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings from 'cvat-core/src/quality-settings';
 import { FramesMetaData } from 'cvat-core/src/frames';
+import { ServerError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
     JobStage, JobState, RQStatus,
@@ -85,6 +86,7 @@ export {
     AnalyticsReport,
     AnalyticsEntry,
     AnalyticsEntryViewType,
+    ServerError,
 };
 
 export type {

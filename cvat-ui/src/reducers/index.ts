@@ -430,7 +430,8 @@ export interface ModelsState {
 
 export interface ErrorState {
     message: string;
-    reason: string;
+    reason: Error;
+    shouldLog?: boolean;
     className?: string;
 }
 
