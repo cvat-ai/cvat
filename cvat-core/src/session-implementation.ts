@@ -70,12 +70,20 @@ export function implementJob(Job) {
                 jobData.assignee = jobData.assignee.id;
             }
 
-            const data = await serverProxy.jobs.save(this.id, jobData);
-            const updatedJob = new Job(data);
-            this.stage = updatedJob.stage;
-            this.state = updatedJob.state;
-            this.assignee = updatedJob.assignee;
-            this._updateTrigger.reset();
+            let updatedJob = null;
+            try {
+                const data = await serverProxy.jobs.save(this.id, jobData);
+                updatedJob = new Job(data);
+                this._updateTrigger.reset();
+            } catch (error) {
+                updatedJob = new Job(this._initialData);
+                throw error;
+            } finally {
+                this.stage = updatedJob.stage;
+                this.state = updatedJob.state;
+                this.assignee = updatedJob.assignee;
+            }
+
             return this;
         }
 

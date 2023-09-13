@@ -101,14 +101,17 @@ export const createJobAsync = (data: JobData): ThunkAction => async (dispatch) =
     }
 };
 
-export function updateJobAsync(jobInstance: Job): ThunkAction {
-    return async (dispatch): Promise<void> => {
+export function updateJobAsync(jobInstance: Job): ThunkAction<Promise<boolean>> {
+    return async (dispatch): Promise<boolean> => {
         try {
             const updated = await jobInstance.save();
             dispatch(jobsActions.updateJobSuccess(updated));
         } catch (error) {
             dispatch(jobsActions.updateJobFailed(jobInstance.id, error));
+            return false;
         }
+
+        return true;
     };
 }
 

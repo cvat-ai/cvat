@@ -375,12 +375,6 @@ export enum TaskStatus {
     COMPLETED = 'completed',
 }
 
-export enum JobStage {
-    ANNOTATION = 'annotation',
-    REVIEW = 'validation',
-    ACCEPTANCE = 'acceptance',
-}
-
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
