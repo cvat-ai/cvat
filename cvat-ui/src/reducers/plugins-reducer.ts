@@ -33,7 +33,9 @@ const defaultState: PluginsState = {
                 menu: {
                     items: [],
                 },
-                icon: [],
+                topBar: {
+                    items: [],
+                },
             },
         },
         projectActions: {

@@ -23,48 +23,62 @@ import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import Menu from 'antd/lib/menu';
 
-import ModelProviderIcon from './model-provider-icon';
-
 interface Props {
     model: MLModel;
 }
 
 export default function DeployedModelItem(props: Props): JSX.Element {
     const { model } = props;
-    const { provider } = model;
     const [isModalShown, setIsModalShown] = useState(false);
 
-    const onOpenModel = () => {
+    const onOpenModel = (): void => {
         setIsModalShown(true);
     };
-    const onCloseModel = () => {
+    const onCloseModel = (): void => {
         setIsModalShown(false);
     };
 
     const created = moment(model.createdDate).fromNow();
-    const icon = <ModelProviderIcon provider={provider} />;
     const modelDescription = model.provider !== ModelProviders.CVAT ?
         <Text type='secondary'>{`Added ${created}`}</Text> :
         <Text type='secondary'>System model</Text>;
 
     const menuItems: [JSX.Element, number][] = [];
+    const topBarItems: [JSX.Element, number][] = [];
 
-    const plugins = usePlugins(
+    const menuPlugins = usePlugins(
         (state: CombinedState) => state.plugins.components.modelsPage.modelItem.menu.items, props,
     );
-
     menuItems.push(
-        ...plugins.map(({ component: Component, weight }, index) => (
+        ...menuPlugins.map(({ component: Component, weight }, index) => (
             [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
         )),
     );
-
     const modelMenu = (
         <Menu selectable={false} className='cvat-project-actions-menu'>
             {menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
                 .map((menuItem) => menuItem[0])}
         </Menu>
     );
+
+    const topBarProps = {
+        provider: model.provider,
+    };
+    const topBarPlugins = usePlugins(
+        (state: CombinedState) => state.plugins.components.modelsPage.modelItem.topBar.items, topBarProps,
+    );
+    topBarItems.push(
+        ...topBarPlugins.map(({ component: Component, weight }, index) => (
+            [<Component key={index} targetProps={topBarProps} />, weight] as [JSX.Element, number]
+        )),
+    );
+    const modelTopBar = (
+        <div className='cvat-model-item-top-bar'>
+            {topBarItems.sort((item1, item2) => item1[1] - item2[1])
+                .map((item) => item[0])}
+        </div>
+    );
+
     return (
         <>
             <Modal
@@ -81,7 +95,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                     previewWrapperClassName='cvat-models-item-card-preview-wrapper'
                     previewClassName='cvat-models-item-card-preview'
                 />
-                {icon ? <div className='cvat-model-item-provider-inner'>{icon}</div> : null}
+                { modelTopBar }
                 <div className='cvat-model-info-container'>
                     <Title level={3}>{model.name}</Title>
                     {modelDescription}
@@ -171,9 +185,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                         </div>
                     )}
                 />
-                {
-                    icon ? <div className='cvat-model-item-provider'>{icon}</div> : null
-                }
+                { modelTopBar }
             </Card>
         </>
     );
