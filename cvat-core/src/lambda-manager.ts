@@ -151,7 +151,7 @@ class LambdaManager {
             return;
         }
         const timeoutCallback = (): void => {
-            LambdaManager.modelProxy(model).status(requestID).then((response) => {
+            this.modelProxy(model).status(requestID).then((response) => {
                 const { status } = response;
                 if (requestID in this.listening) {
                     // check it was not cancelled
