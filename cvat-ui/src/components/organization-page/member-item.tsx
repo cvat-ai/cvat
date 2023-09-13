@@ -3,12 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useSelector } from 'react-redux';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import moment from 'moment';
 import { DeleteOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
+import { CombinedState } from 'reducers';
 
 export interface Props {
     membershipInstance: any;
@@ -24,6 +26,7 @@ function MemberItem(props: Props): JSX.Element {
         user, joined_date: joinedDate, role, invitation,
     } = membershipInstance;
     const { username, firstName, lastName } = user;
+    const { username: selfUserName } = useSelector((state: CombinedState) => state.auth.user);
 
     return (
         <Row className='cvat-organization-member-item' justify='space-between'>
@@ -61,7 +64,7 @@ function MemberItem(props: Props): JSX.Element {
                 </Select>
             </Col>
             <Col span={1} className='cvat-organization-member-item-remove'>
-                {role !== 'owner' ? (
+                {(role === 'owner' || selfUserName === username) ? null : (
                     <DeleteOutlined
                         onClick={() => {
                             Modal.confirm({
@@ -78,7 +81,7 @@ function MemberItem(props: Props): JSX.Element {
                             });
                         }}
                     />
-                ) : null}
+                )}
             </Col>
         </Row>
     );
