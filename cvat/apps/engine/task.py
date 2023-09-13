@@ -374,7 +374,6 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
             url = serializer.validated_data['image']
 
         name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
-        name = _check_filename_collisions(name, local_files, rename_files)
         _validate_url(url)
         slogger.glob.info("Downloading: {}".format(url))
         job.meta['status'] = '{} is being downloaded..'.format(url)
@@ -388,6 +387,7 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
                 shutil.copyfileobj(response.raw, output_file)
 
             new_name = fix_filename(name, output_path, file)
+            new_name = _check_filename_collisions(new_name, local_files, rename_files)
             if new_name != name:
                 new_path = os.path.join(upload_dir, new_name)
                 os.rename(output_path, new_path)
@@ -397,7 +397,7 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
             slogger.glob.error(response.text)
             raise Exception("Failed to download " + url)
 
-        local_files[name] = new_name
+        local_files[new_name] = new_name
         file.meta['name'] = new_name
         file.save()
     return list(local_files.values())
@@ -411,7 +411,6 @@ def _download_s3_files(db_data: models.Data, upload_dir, rename_files=False):
     for file in s3_files:
         url = file.file.url
         name = os.path.basename(file.file.name)
-        name = _check_filename_collisions(name, local_files, rename_files)
         _validate_url(url)
         slogger.glob.info("Downloading from s3: {}".format(name))
         job.meta['status'] = 'S3 {} is  being downloaded...'.format(url)
@@ -425,6 +424,7 @@ def _download_s3_files(db_data: models.Data, upload_dir, rename_files=False):
                 shutil.copyfileobj(response.raw, output_file)
 
             new_name = fix_filename(name, output_path, file)
+            name = _check_filename_collisions(name, local_files, rename_files)
             if new_name != name:
                 new_path = os.path.join(upload_dir, new_name)
                 os.rename(output_path, new_path)
@@ -439,7 +439,7 @@ def _download_s3_files(db_data: models.Data, upload_dir, rename_files=False):
                     file.file.delete()
                 except Exception as e:
                     slogger.glob(f'Failed to delete s3 file {name} with pk {file.pk}.'
-                                 f' {type(e).__name_}: {e}'
+                                 f' {type(e).__name__}: {e}'
                                  f' Proceeding without deletion.')
                 file.delete()
         else:
@@ -448,7 +448,7 @@ def _download_s3_files(db_data: models.Data, upload_dir, rename_files=False):
             slogger.glob.error(response.text)
             raise Exception("Failed to download " + url)
 
-        local_files[name] = new_name
+        local_files[new_name] = new_name
     return list(local_files.values())
 
 
