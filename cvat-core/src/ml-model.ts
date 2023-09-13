@@ -3,9 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
-import { decodePreview } from './frames';
 import { ModelProviders, ModelKind, ModelReturnType } from './enums';
 import {
     SerializedModel, ModelAttribute, ModelParams, ModelTip,
@@ -152,8 +150,8 @@ Object.defineProperties(MLModel.prototype.preview, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<string | ArrayBuffer> {
-            return '';
+        value: async function implementation(): Promise<string | ArrayBuffer | null> {
+            return null;
         },
     },
 });
