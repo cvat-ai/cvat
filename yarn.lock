@@ -4066,7 +4066,7 @@ custom-error-instance@2.1.1:
     svg.select.js "3.0.1"
 
 "cvat-core@link:./cvat-core":
-  version "11.0.3"
+  version "11.1.0"
   dependencies:
     "@types/lodash" "^4.14.191"
     axios "^0.27.2"

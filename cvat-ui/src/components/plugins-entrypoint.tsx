@@ -8,6 +8,7 @@ import { useDispatch } from 'react-redux';
 
 import { PluginsActionTypes, pluginActions } from 'actions/plugins-actions';
 import { getCore, APIWrapperEnterOptions } from 'cvat-core-wrapper';
+import { modelsActions } from 'actions/models-actions';
 
 const core = getCore();
 
@@ -15,11 +16,14 @@ export type ComponentBuilder = ({
     dispatch,
     REGISTER_ACTION,
     REMOVE_ACTION,
+    actionCreators,
     core,
 }: {
     dispatch: Dispatch<AnyAction>,
+    // TODO: pass register/remove as action creator
     REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
-    REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT
+    REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
+    actionCreators: any,
     core: any,
 }) => {
     name: string;
@@ -43,6 +47,9 @@ function PluginEntrypoint(): null {
                         dispatch,
                         REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
                         REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
+                        actionCreators: {
+                            getModelsSuccess: modelsActions.getModelsSuccess,
+                        },
                         core,
                     });
 
