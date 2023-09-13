@@ -71,7 +71,7 @@ allow {
     input.resource.organization.id == input.auth.organization.id
 }
 
-# maintainer of the organization can change role and delete all members except himself and owner
+# maintainer of the organization can change the role of any member and remove any member except himself/another maintainer/owner
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
     input.resource.is_active
@@ -82,28 +82,28 @@ allow {
         organizations.OWNER,
         organizations.MAINTAINER
     }[input.resource.role]
+    input.resource.user.id != input.auth.user.id
 }
 
-# owner of the organization can change role and delete all members except himself
+
+# owner of the organization can change the role of any member and remove any member except himself
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
     input.resource.is_active
     input.resource.organization.id == input.auth.organization.id
     utils.has_perm(utils.USER)
     organizations.is_owner
+    input.resource.user.id != input.auth.user.id
     input.resource.role != organizations.OWNER
 }
 
-# member can leave the organization except cases when member is the owner or maintainer
+# member can leave the organization except case when member is the owner
 allow {
     input.scope == utils.DELETE
     input.resource.is_active
     organizations.is_member
     input.resource.organization.id == input.auth.organization.id
     input.resource.user.id == input.auth.user.id
-    not {
-        organizations.OWNER,
-        organizations.MAINTAINER
-    }[input.resource.role]
+    input.resource.role != organizations.OWNER
     utils.has_perm(utils.WORKER)
 }
