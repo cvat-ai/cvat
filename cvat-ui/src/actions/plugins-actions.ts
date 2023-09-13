@@ -4,12 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { PluginsList, PluginsRegistrar } from 'reducers';
-import { getCore, MLModel } from 'cvat-core-wrapper';
+import { PluginsList } from 'reducers';
+import { getCore } from 'cvat-core-wrapper';
 import React from 'react';
-import registerLambdaManagerPlugin from 'utils/lambda-utils';
-import { registerGitPlugin } from 'utils/git-utils';
-import { modelsActions } from './models-actions';
 
 const core = getCore();
 
@@ -24,8 +21,8 @@ export enum PluginsActionTypes {
 
 export const pluginActions = {
     checkPlugins: () => createAction(PluginsActionTypes.GET_PLUGINS),
-    checkPluginsSuccess: (list: PluginsList, pluginsRegistrar: PluginsRegistrar) => createAction(
-        PluginsActionTypes.GET_PLUGINS_SUCCESS, { list, pluginsRegistrar },
+    checkPluginsSuccess: (list: PluginsList) => createAction(
+        PluginsActionTypes.GET_PLUGINS_SUCCESS, { list },
     ),
     checkPluginsFailed: (error: any) => createAction(PluginsActionTypes.GET_PLUGINS_FAILED, { error }),
     addPlugin: (name: string, destructor: CallableFunction, globalStateDidUpdate?: CallableFunction) => createAction(
@@ -47,21 +44,10 @@ export const pluginActions = {
 export type PluginActions = ActionUnion<typeof pluginActions>;
 
 export const getPluginsAsync = (): ThunkAction => async (dispatch): Promise<void> => {
-    const pluginsRegistrar: PluginsRegistrar = {
-        modelsPlugin: () => {
-            registerLambdaManagerPlugin((cvat: any, models: MLModel[]) => {
-                dispatch(modelsActions.getModelsSuccess(models, models.length));
-            });
-        },
-        gitPlugin: () => {
-            registerGitPlugin();
-        },
-    };
-
     dispatch(pluginActions.checkPlugins());
     try {
         const list: PluginsList = await core.server.installedApps();
-        dispatch(pluginActions.checkPluginsSuccess(list, pluginsRegistrar));
+        dispatch(pluginActions.checkPluginsSuccess(list));
     } catch (error) {
         dispatch(pluginActions.checkPluginsFailed(error));
     }
