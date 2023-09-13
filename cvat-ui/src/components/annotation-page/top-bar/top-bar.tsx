@@ -28,7 +28,6 @@ interface Props {
     undoAction?: string;
     redoAction?: string;
     workspace: Workspace;
-    saveShortcut: string;
     undoShortcut: string;
     redoShortcut: string;
     drawShortcut: string;
@@ -86,7 +85,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         startFrame,
         stopFrame,
         workspace,
-        saveShortcut,
         undoShortcut,
         redoShortcut,
         drawShortcut,
@@ -193,7 +191,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 saving={saving}
                 undoAction={undoAction}
                 redoAction={redoAction}
-                saveShortcut={saveShortcut}
                 undoShortcut={undoShortcut}
                 redoShortcut={redoShortcut}
                 activeControl={activeControl}

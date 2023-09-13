@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -48,17 +49,16 @@ context('Drawing with predefined number of points.', () => {
         cy.get(`.cvat-draw-${object}-popover`)
             .should('be.visible')
             .within(() => {
-                cy.get('.cvat-draw-shape-popover-points-selector')
-                    .type(`${pointsCount - 1}`)
-                    .focused()
-                    .blur();
+                cy.get('.cvat-draw-shape-popover-points-selector').type(`${pointsCount - 1}`);
+                cy.focused().blur();
                 cy.get('[role="spinbutton"]').should('have.attr', 'aria-valuenow', pointsCount);
             });
     }
 
     function tryDeletePoint() {
         const svgJsCircleId = [];
-        cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true }).should('have.class', 'cvat_canvas_shape_activated');
+        cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true });
+        cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         cy.get('circle').then((circle) => {
             for (let i = 0; i < circle.length; i++) {
                 if (circle[i].id.match(/^SvgjsCircle\d+$/)) {

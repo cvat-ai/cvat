@@ -29,7 +29,8 @@ context('Check label attribute changes', () => {
     describe(`Testing issue "${issueId}"`, () => {
         it('Open object menu', () => {
             cy.createRectangle(createRectangleShape2Points);
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').rightclick();
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').rightclick();
         });
 
         it('Open object menu details', () => {
@@ -41,10 +42,8 @@ context('Check label attribute changes', () => {
                 .contains(attrName)
                 .parents('.cvat-object-item-attribute-wrapper')
                 .within(() => {
-                    cy.get('.cvat-object-item-text-attribute')
-                        .should('have.value', textDefaultValue)
-                        .clear()
-                        .type(newLabelAttrValue);
+                    cy.get('.cvat-object-item-text-attribute').should('have.value', textDefaultValue).clear();
+                    cy.get('.cvat-object-item-text-attribute').type(newLabelAttrValue);
                 });
         });
 
@@ -63,9 +62,8 @@ context('Check label attribute changes', () => {
                 .contains(attrName)
                 .parents('.cvat-object-item-attribute-wrapper')
                 .within(() => {
-                    cy.get('.cvat-object-item-text-attribute')
-                        .clear()
-                        .type(multilineValue);
+                    cy.get('.cvat-object-item-text-attribute').clear();
+                    cy.get('.cvat-object-item-text-attribute').type(multilineValue);
                 });
             cy.saveJob();
             cy.reload();

@@ -4,11 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
-import 'react-awesome-query-builder/lib/css/styles.css';
-import AntdConfig from 'react-awesome-query-builder/lib/config/antd';
 import {
-    Builder, Config, ImmutableTree, Query, Utils as QbUtils,
-} from 'react-awesome-query-builder';
+    Builder, Config, AntdConfig, ImmutableTree, Query, Utils as QbUtils,
+} from '@react-awesome-query-builder/antd';
+import '@modules/@react-awesome-query-builder/antd/css/styles.css';
 import {
     DownOutlined, FilterFilled, FilterOutlined,
 } from '@ant-design/icons';
@@ -19,7 +18,7 @@ import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
 import Menu from 'antd/lib/menu';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
-import { User } from 'components/task-page/user-selector';
+import { User } from 'cvat-core-wrapper';
 
 interface ResourceFilterProps {
     predefinedVisible?: boolean;
@@ -177,7 +176,7 @@ export default function ResourceFilterHOC(
             } else if (appliedFilter.recent) {
                 onApplyFilter(appliedFilter.recent);
                 const tree = QbUtils.loadFromJsonLogic(JSON.parse(appliedFilter.recent), config);
-                if (isValidTree(tree)) {
+                if (tree && isValidTree(tree)) {
                     setState(tree);
                 }
             } else if (appliedFilter.built) {
@@ -192,7 +191,7 @@ export default function ResourceFilterHOC(
 
         const renderBuilder = (builderProps: any): JSX.Element => (
             <div className='query-builder-container'>
-                <div className='query-builder qb-lite'>
+                <div className='query-builder'>
                     <Builder {...builderProps} />
                 </div>
             </div>

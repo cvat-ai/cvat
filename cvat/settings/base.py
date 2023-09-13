@@ -285,7 +285,14 @@ TEMPLATES = [
 # IAM settings
 IAM_TYPE = 'BASIC'
 IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
-IAM_DEFAULT_ROLES = ['user']
+
+# FIXME: There are several ways to "replace" default IAM role.
+# One of them is to assign groups when you create a user inside Crowdsourcing plugin and don't add more groups
+# if user.groups field isn't empty.
+# the function should be in uppercase to able get access from django.conf.settings
+def GET_IAM_DEFAULT_ROLES(user) -> list:
+    return ['user']
+
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
@@ -293,6 +300,10 @@ IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
+
+OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'request', 'server',]
+# FIXME: It looks like an internal function of IAM app.
+IAM_CONTEXT_BUILDERS = ['cvat.apps.iam.utils.build_iam_context',]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
@@ -691,6 +702,7 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
     'SCHEMA_PATH_PREFIX': '/api',
     'SCHEMA_PATH_PREFIX_TRIM': False,
+    'GENERIC_ADDITIONAL_PROPERTIES': None,
 }
 
 # set similar UI restrictions
@@ -738,3 +750,5 @@ ASSET_MAX_IMAGE_SIZE = 1920
 ASSET_MAX_COUNT_PER_GUIDE = 30
 
 SMOKESCREEN_ENABLED = True
+
+EXTRA_RULES_PATHS = []

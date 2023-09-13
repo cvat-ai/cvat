@@ -44,7 +44,7 @@ def create(db_task, data, request):
     q.enqueue_call(
         func=_create_thread,
         args=(db_task.pk, data),
-        job_id=f"create:task.id{db_task.pk}-by-{request.user.username}",
+        job_id=f"create:task.id{db_task.pk}",
         meta=get_rq_job_meta(request=request, db_obj=db_task),
     )
 

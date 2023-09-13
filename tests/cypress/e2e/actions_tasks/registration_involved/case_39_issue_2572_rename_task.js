@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,7 +36,8 @@ context('Rename a task.', () => {
         cy.get('.cvat-task-details-task-name').within(() => {
             cy.get('[aria-label="edit"]').click();
         });
-        cy.contains('.cvat-text-color', myTaskName).click().type(newValue);
+        cy.contains('.cvat-text-color', myTaskName).click();
+        cy.contains('.cvat-text-color', myTaskName).type(newValue);
         cy.get('.cvat-spinner').should('not.exist');
     }
 
