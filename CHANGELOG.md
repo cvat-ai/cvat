@@ -7,8 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[Unreleased\]
 ### Added
-
-- Admin actions for easy activation/deactivation of users (<https://github.com/opencv/cvat/pull/6314>)
+- TDB
 
 ### Changed
 - TDB
@@ -18,6 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - TDB
+
+### Fixed
+- TDB
+
+### Security
+- TDB
+
+## \[2.7.0\] - 2023-09-10
+### Added
+
+- Admin actions for easy activation/deactivation of users (<https://github.com/opencv/cvat/pull/6314>)
 
 ### Fixed
 - Invalid input validation in for `cloud_storage_id` (<https://github.com/opencv/cvat/pull/6825>)
