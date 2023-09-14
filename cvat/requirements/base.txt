@@ -195,7 +195,7 @@ kiwisolver==1.4.5
     # via matplotlib
 libclang==16.0.6
     # via tensorflow
-limits==3.6.0
+limits==3.5.0
     # via python-logstash-async
 lxml==4.9.3
     # via datumaro
