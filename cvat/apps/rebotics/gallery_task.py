@@ -7,7 +7,7 @@ from urllib import parse as urlparse, request as urlrequest
 from .serializers import DetectionImageListSerializer, DetectionImageSerializer
 from .models import GalleryImportProgress, GIStatusSuccess, GIStatusFailed, \
     GIInstanceLocal, GIInstanceR3cn, SHAPE_RECTANGLE, SHAPE_POLYGON, SHAPE_LINE, \
-    SPECS
+    SPECS, GIStatusSkip
 
 import django_rq
 from rq.job import JobStatus, Job as RqJob
@@ -413,7 +413,9 @@ def _create_task(project, gi_data, gi_instance, frame, size, segment_size, token
 
 def _create_tasks(gi_instance, token, task_size, job_size):
     gi_data = sort(
-        GalleryImportProgress.objects.filter(instance=gi_instance, task_id__isnull=True),
+        GalleryImportProgress.objects
+            .filter(instance=gi_instance, task_id__isnull=True)
+            .exclude(status=GIStatusSkip),
         sorting_method=SortingMethod.LEXICOGRAPHICAL,
         func=lambda i: i.name
     )
@@ -461,7 +463,16 @@ def _start(gi_instance, token, task_size, job_size):
     slogger.glob.info('Preloading images')
     _preload_images(gi_instance, token)
     slogger.glob.info('Creating tasks')
-    _create_tasks(gi_instance, token, task_size, job_size)
+    try:
+        _create_tasks(gi_instance, token, task_size, job_size)
+    except FileNotFoundError as e:
+        filename = os.path.basename(e.filename)
+
+        slogger.glob.warning(f'File {filename} not found after downloading, skipping it')
+        gi_data = GalleryImportProgress.objects.filter(name=filename)
+        gi_data.update(status=GIStatusSkip)
+
+        raise e
     slogger.glob.info('Importing annotations')
     _import_annotations(gi_instance)
 
@@ -496,18 +507,20 @@ def get_job_status(instance):
             exc_info = job.exc_info
 
     success_count = GalleryImportProgress.objects.filter(instance=instance, status=GIStatusSuccess).count()
-    started_count = GalleryImportProgress.objects.filter(
-        instance=instance, status=GIStatusFailed, task__isnull=False
-    ).count()
-    failed_count = GalleryImportProgress.objects.filter(
-        instance=instance, status=GIStatusFailed, task__isnull=True
-    ).count()
+    started_count = GalleryImportProgress.objects\
+        .filter(instance=instance, status=GIStatusFailed, task__isnull=False)\
+        .count()
+    failed_count = GalleryImportProgress.objects\
+        .filter(instance=instance, status=GIStatusFailed, task__isnull=True)\
+        .count()
+    skip_count = GalleryImportProgress.objects.filter(instance=instance, status=GIStatusSkip).count()
 
     return {
         'success': success_count,
         'started': started_count,
         'failed': failed_count,
-        'total': success_count + started_count + failed_count,
+        'skip': skip_count,
+        'total': success_count + started_count + failed_count + skip_count,
         'job_id': job_id,
         'job_status': job_status,
         'exc_info': exc_info,
