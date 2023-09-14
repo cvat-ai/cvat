@@ -31,7 +31,7 @@ import JobActionsMenu from './job-actions-menu';
 
 interface Props {
     job: Job;
-    task: Task,
+    task: Task;
     onJobUpdate: (job: Job) => void;
 }
 
