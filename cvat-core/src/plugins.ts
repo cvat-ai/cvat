@@ -9,6 +9,7 @@ const plugins = [];
 
 export interface APIWrapperEnterOptions {
     preventMethodCall?: boolean;
+    preventMethodCallWithReturn?: unknown;
 }
 
 export default class PluginRegistry {
@@ -23,14 +24,22 @@ export default class PluginRegistry {
             if (pluginDecorators && pluginDecorators.enter) {
                 const options: APIWrapperEnterOptions | undefined = await pluginDecorators
                     .enter.call(this, plugin, ...args);
-                if (options?.preventMethodCall) {
-                    aggregatedOptions.preventMethodCall = true;
+                if (options instanceof Object) {
+                    if ('preventMethodCallWithReturn' in options) {
+                        aggregatedOptions.preventMethodCallWithReturn = options.preventMethodCallWithReturn;
+                    }
+
+                    if ('preventMethodCall' in options) {
+                        aggregatedOptions.preventMethodCall = true;
+                    }
                 }
             }
         }
 
         let result = null;
-        if (!aggregatedOptions.preventMethodCall) {
+        if ('preventMethodCallWithReturn' in aggregatedOptions) {
+            result = aggregatedOptions.preventMethodCallWithReturn;
+        } else if (!aggregatedOptions.preventMethodCall) {
             result = await wrappedFunc.implementation.call(this, ...args);
         }
 
