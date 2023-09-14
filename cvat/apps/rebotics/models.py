@@ -3,10 +3,12 @@ from cvat.apps.engine.models import Task, S3File
 
 GIStatusSuccess = 'SUCCESS'
 GIStatusFailed = 'FAILED'
+GIStatusSkip = 'SKIP'
 
 GIStatusChoices = (
     (GIStatusSuccess, 'Success'),
     (GIStatusFailed, 'Failed'),
+    (GIStatusSkip, 'Skip'),
 )
 
 GIInstanceR3dev = 'r3dev'

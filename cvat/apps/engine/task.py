@@ -43,6 +43,7 @@ from .cloud_provider import db_storage_to_storage_instance
 
 from cvat.rebotics.s3_client import s3_client
 from cvat.apps.rebotics.serializers import DetectionImageSerializer
+from cvat.apps.rebotics.models import GalleryImportProgress
 
 
 ############################# Low Level server API
@@ -391,6 +392,8 @@ def _download_data(db_data: models.Data, upload_dir, rename_files=False):
             if new_name != name:
                 new_path = os.path.join(upload_dir, new_name)
                 os.rename(output_path, new_path)
+                if 'gi_id' in file.meta:
+                    GalleryImportProgress.objects.filter(gi_id=file.meta['gi_id']).update(name=new_name)
         else:
             slogger.glob.error(f'Failed to download {url}')
             slogger.glob.error(f'Status: {response.status_code}')
