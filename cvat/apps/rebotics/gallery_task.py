@@ -7,7 +7,7 @@ from urllib import parse as urlparse, request as urlrequest
 from .serializers import DetectionImageListSerializer, DetectionImageSerializer
 from .models import GalleryImportProgress, GIStatusSuccess, GIStatusFailed, \
     GIInstanceLocal, GIInstanceR3cn, SHAPE_RECTANGLE, SHAPE_POLYGON, SHAPE_LINE, \
-    SPECS, GIStatusSkip
+    SPECS
 
 import django_rq
 from rq.job import JobStatus, Job as RqJob
@@ -415,7 +415,7 @@ def _create_tasks(gi_instance, token, task_size, job_size):
     gi_data = sort(
         GalleryImportProgress.objects
             .filter(instance=gi_instance, task_id__isnull=True)
-            .exclude(status=GIStatusSkip),
+            .exclude(status='SKIP'),
         sorting_method=SortingMethod.LEXICOGRAPHICAL,
         func=lambda i: i.name
     )
@@ -470,7 +470,7 @@ def _start(gi_instance, token, task_size, job_size):
 
         slogger.glob.warning(f'File {filename} not found after downloading, skipping it')
         gi_data = GalleryImportProgress.objects.filter(name=filename)
-        gi_data.update(status=GIStatusSkip)
+        gi_data.update(status='SKIP')
 
         raise e
     slogger.glob.info('Importing annotations')
@@ -513,7 +513,7 @@ def get_job_status(instance):
     failed_count = GalleryImportProgress.objects\
         .filter(instance=instance, status=GIStatusFailed, task__isnull=True)\
         .count()
-    skip_count = GalleryImportProgress.objects.filter(instance=instance, status=GIStatusSkip).count()
+    skip_count = GalleryImportProgress.objects.filter(instance=instance, status='SKIP').count()
 
     return {
         'success': success_count,
