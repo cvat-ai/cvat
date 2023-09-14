@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admin actions for easy activation/deactivation of users (<https://github.com/opencv/cvat/pull/6314>)
 
 ### Changed
-- TDB
+- Do not reload annotation view when renew the job or update job state (<https://github.com/opencv/cvat/pull/6851>)
 
 ### Deprecated
 - TDB
