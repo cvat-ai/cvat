@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
+from typing import ClassVar
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
-from cvat_sdk.api_client.model.membership_read import MembershipRead
 from deepdiff import DeepDiff
 
 from shared.utils.config import get_method, make_api_client, patch_method
@@ -78,7 +78,7 @@ class TestMembershipsListFilters(CollectionSimpleFilterTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchMemberships:
-    _ORG = 2
+    _ORG: ClassVar[int] = 1
 
     def _test_can_change_membership(self, user, membership_id, new_role):
         response = patch_method(
@@ -98,11 +98,16 @@ class TestPatchMemberships:
     @pytest.mark.parametrize(
         "who, whom, new_role, is_allow",
         [
-            ("supervisor", "worker", "supervisor", False),
-            ("supervisor", "maintainer", "supervisor", False),
+            ("worker", "worker", "supervisor", False),
             ("worker", "supervisor", "worker", False),
             ("worker", "maintainer", "worker", False),
+            ("worker", "owner", "worker", False),
+            ("supervisor", "worker", "supervisor", False),
+            ("supervisor", "supervisor", "worker", False),
+            ("supervisor", "maintainer", "supervisor", False),
+            ("supervisor", "owner", "worker", False),
             ("maintainer", "maintainer", "worker", False),
+            ("maintainer", "owner", "worker", False),
             ("maintainer", "supervisor", "worker", True),
             ("maintainer", "worker", "supervisor", True),
             ("owner", "maintainer", "worker", True),
@@ -119,31 +124,33 @@ class TestPatchMemberships:
         else:
             self._test_cannot_change_membership(user, membership_id, new_role)
 
+    @pytest.mark.parametrize(
+        "who",
+        ["worker", "supervisor", "maintainer", "owner"],
+    )
+    def test_user_cannot_change_self_role(self, who: str, find_users):
+        user = find_users(org=self._ORG, role=who)[0]
+        self._test_cannot_change_membership(user["username"], user["membership_id"], "worker")
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteMemberships:
-    _ORG = 1
-
-    def _get_user_membership(self, user: str, api_client: ApiClient) -> MembershipRead:
-        (memberships, _) = api_client.memberships_api.list(user=user, org_id=self._ORG)
-        assert 1 == memberships["count"]
-        return memberships["results"][0]
+    _ORG: ClassVar[int] = 1
 
     def _test_delete_membership(
         self,
-        active_user: str,
-        user_to_be_deleted: str,
+        who: str,
+        membership_id: int,
         is_allow: bool,
     ) -> None:
         expected_status = HTTPStatus.NO_CONTENT if is_allow else HTTPStatus.FORBIDDEN
 
-        with make_api_client(active_user) as api_client:
-            membership = self._get_user_membership(user_to_be_deleted, api_client)
-            (_, response) = api_client.memberships_api.destroy(membership.id, _check_status=False)
+        with make_api_client(who) as api_client:
+            (_, response) = api_client.memberships_api.destroy(membership_id, _check_status=False)
             assert response.status == expected_status
 
     @pytest.mark.parametrize(
-        "role, is_allow",
+        "who, is_allow",
         [
             ("worker", True),
             ("supervisor", True),
@@ -151,13 +158,13 @@ class TestDeleteMemberships:
             ("owner", False),
         ],
     )
-    def test_member_can_leave_organization(self, role, is_allow, find_users):
-        user = find_users(role=role, org=self._ORG)[0]["username"]
+    def test_member_can_leave_organization(self, who, is_allow, find_users):
+        user = find_users(role=who, org=self._ORG)[0]
 
-        self._test_delete_membership(user, user, is_allow)
+        self._test_delete_membership(user["username"], user["membership_id"], is_allow)
 
     @pytest.mark.parametrize(
-        "active_role, desired_role, is_allow",
+        "who, whom, is_allow",
         [
             ("worker", "worker", False),
             ("worker", "supervisor", False),
@@ -176,15 +183,15 @@ class TestDeleteMemberships:
             ("owner", "maintainer", True),
         ],
     )
-    def test_member_can_exclude_another_organization_member(
+    def test_member_can_exclude_another_member(
         self,
-        active_role: str,
-        desired_role: str,
+        who: str,
+        whom: str,
         is_allow: bool,
         find_users,
     ):
-        active_user = find_users(role=active_role, org=self._ORG)[0]["username"]
-        desired_user = find_users(role=desired_role, org=self._ORG, exclude_username=active_user)[
-            0
-        ]["username"]
-        self._test_delete_membership(active_user, desired_user, is_allow)
+        user = find_users(role=who, org=self._ORG)[0]["username"]
+        membership_id = find_users(role=whom, org=self._ORG, exclude_username=user)[0][
+            "membership_id"
+        ]
+        self._test_delete_membership(user, membership_id, is_allow)
