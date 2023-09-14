@@ -19,7 +19,7 @@ For more information, see:
 
 For export of images:
 
-- Supported annotations:Bounding Boxes (detection),
+- Supported annotations: Bounding Boxes (detection),
   Tags (classification), Polygons (segmentation).
 
 - Supported attributes:

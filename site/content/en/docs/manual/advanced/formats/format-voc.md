@@ -20,7 +20,7 @@ For more information, see:
 For export of images:
 
 - Supported annotations: Bounding Boxes (detection),
-  Tags (classification), Polygons (segmentations)
+  Tags (classification), Polygons (segmentation)
 - Attributes:
   - `occluded` as both UI option and a separate attribute.
   - `truncated` and `difficult` must be defined for labels as `checkbox`.

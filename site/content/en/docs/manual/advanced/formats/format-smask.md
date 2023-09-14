@@ -7,7 +7,8 @@ Segmentation masks format is often used in the training of models for tasks
 like semantic segmentation, instance segmentation, and panoptic segmentation.
 
 Segmentation Mask in CVAT is
-created by CVAT format inside the [Pascal VOC](docs/manual/advanced/formats/format-voc/)
+a format created by CVAT engineers
+inside the [Pascal VOC](docs/manual/advanced/formats/format-voc/)
 
 ## Segmentation mask export
 

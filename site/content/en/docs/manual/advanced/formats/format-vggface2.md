@@ -9,7 +9,7 @@ verification, and similar tasks.
 
 For more information, see:
 
-- [VGGFace2](https://github.com/ox-vgg/vgg_face2)
+- [VGGFace2 Github](https://github.com/ox-vgg/vgg_face2)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/vgg_face2_dataset)
 
 ## VGGFace2 export
