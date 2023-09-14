@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -31,7 +32,8 @@ context('When delete a point, the required point is deleted.', () => {
 
     describe(`Testing issue "${issueId}"`, () => {
         it('Remove point holding Alt key from each shape. Point must be removed from first shape, second one should stay the same', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true }).trigger('mouseover', { force: true });
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true });
+            cy.get('#cvat_canvas_shape_1').trigger('mouseover', { force: true });
             cy.get('body').type('{alt}', { release: false });
             cy.get('#cvat_canvas_shape_1')
                 .children()
@@ -60,7 +62,8 @@ context('When delete a point, the required point is deleted.', () => {
         });
 
         it('Remove point holding Ctrl key from each shape. Point must be removed from first shape, second one should stay the same', () => {
-            cy.get('#cvat_canvas_shape_3').trigger('mousemove', { force: true }).trigger('mouseover', { force: true });
+            cy.get('#cvat_canvas_shape_3').trigger('mousemove', { force: true });
+            cy.get('#cvat_canvas_shape_3').trigger('mouseover', { force: true });
             cy.get('body').type('{ctrl}', { release: false });
             cy.get('#cvat_canvas_shape_3')
                 .children()

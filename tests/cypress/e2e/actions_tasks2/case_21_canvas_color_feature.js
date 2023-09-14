@@ -26,18 +26,16 @@ context('Canvas color feature', () => {
                 .find('div[title]')
                 .then((colorPicker) => {
                     for (let i = 0; i < colorPicker.length; i++) {
-                        cy.get(colorPicker[i])
-                            .click()
-                            .should('have.css', 'background-color')
-                            .then((colorPickerBgValue) => {
-                                cy.get('.cvat-canvas-grid-root')
-                                    .should('have.css', 'background-color')
-                                    .then((canvasBgColor) => {
-                                        // For each color change compare
-                                        // the value with the css value background-color of .cvat-canvas-grid-root
-                                        expect(colorPickerBgValue).to.be.equal(canvasBgColor);
-                                    });
-                            });
+                        cy.get(colorPicker[i]).click();
+                        cy.get(colorPicker[i]).should('have.css', 'background-color').then((colorPickerBgValue) => {
+                            cy.get('.cvat-canvas-grid-root')
+                                .should('have.css', 'background-color')
+                                .then((canvasBgColor) => {
+                                    // For each color change compare
+                                    // the value with the css value background-color of .cvat-canvas-grid-root
+                                    expect(colorPickerBgValue).to.be.equal(canvasBgColor);
+                                });
+                        });
                     }
                 });
         });

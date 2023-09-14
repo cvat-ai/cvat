@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -68,9 +69,8 @@ context('Redraw feature.', () => {
             cy.get('.cvat-canvas-container').trigger('mousemove', 200, 400);
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }); // Start redraw the rectangle
-            cy.get('.cvat-canvas-container')
-                .click(createRectangleShape2Points.firstX, createRectangleShape2Points.firstY - 50)
-                .click(createRectangleShape2Points.secondX, createRectangleShape2Points.secondY - 50);
+            cy.get('.cvat-canvas-container').click(createRectangleShape2Points.firstX, createRectangleShape2Points.firstY - 50);
+            cy.get('.cvat-canvas-container').click(createRectangleShape2Points.secondX, createRectangleShape2Points.secondY - 50);
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(1);
             });
@@ -87,8 +87,8 @@ context('Redraw feature.', () => {
             createPolygonShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 50);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
-                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(2);
             });
@@ -105,8 +105,8 @@ context('Redraw feature.', () => {
             createPolylinesShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 50);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
-                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(3);
             });
@@ -122,8 +122,8 @@ context('Redraw feature.', () => {
             createPointsShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 50);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
-                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(4);
             });
@@ -137,16 +137,14 @@ context('Redraw feature.', () => {
             cy.get('.cvat-canvas-container').trigger('mousemove', 350, 400);
             cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }); // Start redraw the cuboid
-            cy.get('.cvat-canvas-container')
-                .click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 50)
-                .click(createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 50);
+            cy.get('.cvat-canvas-container').click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 50);
+            cy.get('.cvat-canvas-container').click(createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 50);
             // Check issue 3219. Press "N" during the redrawing of the cuboid
             cy.get('.cvat-canvas-container').trigger('mousemove', 350, 300);
             cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }); // Start redraw the cuboid
-            cy.get('.cvat-canvas-container')
-                .click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 100)
-                .trigger('mousemove', createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 100);
+            cy.get('.cvat-canvas-container').click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 100);
+            cy.get('.cvat-canvas-container').trigger('mousemove', createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 100);
             cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape_drawing').should('not.exist');
             cy.get('.cvat_canvas_shape').then(($shape) => {

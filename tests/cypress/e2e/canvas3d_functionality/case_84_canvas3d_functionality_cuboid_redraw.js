@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,7 +26,8 @@ context('Canvas 3D functionality. Redraw.', () => {
         it('Redraw a cuboid.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
             cy.get('body').type('{Shift}n');
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 450, 250).dblclick(450, 250);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 450, 250);
+            cy.get('.cvat-canvas3d-perspective').dblclick(450, 250);
             cy.get('.cvat-objects-sidebar-state-item').then((sidebarStateItems) => {
                 expect(sidebarStateItems.length).to.be.equal(1);
             });

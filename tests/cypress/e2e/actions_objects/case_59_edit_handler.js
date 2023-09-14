@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -66,15 +67,15 @@ context('Edit handler.', () => {
                 .invoke('attr', 'points')
                 .then(($pointsBefore) => {
                     const pointsCountBefore = $pointsBefore.split(' ').filter((el) => el.length !== 0).length;
-                    cy.get('.cvat-canvas-container')
-                        .click(550, 350, { shiftKey: true })
-                        .then(() => {
-                            // Click on the second polygon points to start of change
-                            cy.get('.cvat_canvas_shape_drawing')
-                                .should('exist')
-                                .and('have.attr', 'data-origin-client-id', '1');
-                        });
-                    cy.get('.cvat-canvas-container').click(650, 300).click(550, 450); // Click on the third polygon points to finish the change
+                    cy.get('.cvat-canvas-container').click(550, 350, { shiftKey: true });
+                    cy.get('.cvat-canvas-container').then(() => {
+                        // Click on the second polygon points to start of change
+                        cy.get('.cvat_canvas_shape_drawing')
+                            .should('exist')
+                            .and('have.attr', 'data-origin-client-id', '1');
+                    });
+                    cy.get('.cvat-canvas-container').click(650, 300);
+                    cy.get('.cvat-canvas-container').click(550, 450); // Click on the third polygon points to finish the change
                     cy.get('.cvat_canvas_shape_drawing').should('not.exist');
                     cy.get('#cvat_canvas_shape_1')
                         .invoke('attr', 'points')
@@ -84,10 +85,9 @@ context('Edit handler.', () => {
                         });
                     // Splitting polygon
                     testActivatingShape(520, 400, '#cvat_canvas_shape_1');
-                    cy.get('.cvat-canvas-container')
-                        .click(650, 300, { shiftKey: true })
-                        .click(450, 350)
-                        .trigger('mouseenter', 530, 340);
+                    cy.get('.cvat-canvas-container').click(650, 300, { shiftKey: true });
+                    cy.get('.cvat-canvas-container').click(450, 350);
+                    cy.get('.cvat-canvas-container').trigger('mouseenter', 530, 340);
                     cy.get('.cvat_canvas_shape_splitting').should('exist');
                     cy.get('.cvat-canvas-container').trigger('mouseleave', 530, 340);
                     cy.get('.cvat_canvas_shape_splitting').should('not.exist');
@@ -95,21 +95,19 @@ context('Edit handler.', () => {
                     // Cancel changes, repeat edit handler and select an another shape
                     cy.get('body').type('{Ctrl}z');
                     testActivatingShape(520, 400, '#cvat_canvas_shape_1');
-                    cy.get('.cvat-canvas-container')
-                        .click(650, 300, { shiftKey: true })
-                        .click(450, 350)
-                        .click(530, 400);
+                    cy.get('.cvat-canvas-container').click(650, 300, { shiftKey: true });
+                    cy.get('.cvat-canvas-container').click(450, 350);
+                    cy.get('.cvat-canvas-container').click(530, 400);
                     // Cancel changes again, repeat edit handler dblclick to the last point
                     cy.get('body').type('{Ctrl}z');
                     testActivatingShape(520, 400, '#cvat_canvas_shape_1');
-                    cy.get('.cvat-canvas-container')
-                        .click(650, 300, { shiftKey: true })
-                        .click(630, 300)
-                        .click(530, 300)
-                        .click(450, 350)
-                        .click(530, 400)
-                        .click(450, 350)
-                        .dblclick(530, 400);
+                    cy.get('.cvat-canvas-container').click(650, 300, { shiftKey: true });
+                    cy.get('.cvat-canvas-container').click(630, 300);
+                    cy.get('.cvat-canvas-container').click(530, 300);
+                    cy.get('.cvat-canvas-container').click(450, 350);
+                    cy.get('.cvat-canvas-container').click(530, 400);
+                    cy.get('.cvat-canvas-container').click(450, 350);
+                    cy.get('.cvat-canvas-container').dblclick(530, 400);
                     cy.get('#cvat_canvas_shape_1')
                         .invoke('attr', 'points')
                         .then(($pointsAfterSplitting) => {
@@ -126,22 +124,22 @@ context('Edit handler.', () => {
                 .should('have.class', 'cvat_canvas_shape_activated')
                 .invoke('attr', 'points')
                 .then(($pointsCordsBefore) => {
-                    cy.get('.cvat-canvas-container')
-                        .click(800, 450, { shiftKey: true })
-                        .then(() => {
-                            // Click on the third polyline points to start of change
-                            cy.get('.cvat_canvas_shape_drawing')
-                                .should('exist')
-                                .and('have.attr', 'data-origin-client-id', '2');
-                            cy.get('body').type('{Ctrl}');
-                            cy.get('.cvat_canvas_autoborder_point')
-                                .should('exist')
-                                .and('be.visible')
-                                .then(($autoborderPoints) => {
-                                    expect($autoborderPoints.length).to.be.equal(5); // Autoborder points on the polygon
-                                });
-                        });
-                    cy.get('.cvat-canvas-container').click(750, 500).click(700, 350); // Click on the first polyline points to finish the change
+                    cy.get('.cvat-canvas-container').click(800, 450, { shiftKey: true });
+                    cy.get('.cvat-canvas-container').then(() => {
+                        // Click on the third polyline points to start of change
+                        cy.get('.cvat_canvas_shape_drawing')
+                            .should('exist')
+                            .and('have.attr', 'data-origin-client-id', '2');
+                        cy.get('body').type('{Ctrl}');
+                        cy.get('.cvat_canvas_autoborder_point')
+                            .should('exist')
+                            .and('be.visible')
+                            .then(($autoborderPoints) => {
+                                expect($autoborderPoints.length).to.be.equal(5); // Autoborder points on the polygon
+                            });
+                    });
+                    cy.get('.cvat-canvas-container').click(750, 500);
+                    cy.get('.cvat-canvas-container').click(700, 350); // Click on the first polyline points to finish the change
                     cy.get('.cvat_canvas_shape_drawing').should('not.exist');
                     cy.get('#cvat_canvas_shape_2')
                         .invoke('attr', 'points')
@@ -155,21 +153,20 @@ context('Edit handler.', () => {
 
         it('Edit handler for the points.', () => {
             cy.createPoint(createPointsShape);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 200, 400).trigger('mouseenter', 200, 400);
-            cy.get('.cvat-canvas-container')
-                .click(200, 400, { shiftKey: true })
-                .then(() => {
-                    // Click on the point shape to start of change
-                    cy.get('.cvat_canvas_selected_point').should('exist');
-                    cy.get('.cvat_canvas_shape_drawing').should('exist').and('have.attr', 'data-origin-client-id', '3');
-                });
-            cy.get('.cvat-canvas-container')
-                .click(200, 300)
-                .find('circle')
+            cy.get('.cvat-canvas-container').trigger('mousemove', 200, 400);
+            cy.get('.cvat-canvas-container').trigger('mouseenter', 200, 400);
+            cy.get('.cvat-canvas-container').click(200, 400, { shiftKey: true });
+            cy.get('.cvat-canvas-container').then(() => {
+                // Click on the point shape to start of change
+                cy.get('.cvat_canvas_selected_point').should('exist');
+                cy.get('.cvat_canvas_shape_drawing').should('exist').and('have.attr', 'data-origin-client-id', '3');
+            });
+            cy.get('.cvat-canvas-container').click(200, 300);
+            cy.get('.cvat-canvas-container').find('circle')
                 .then(($circleEditHanlerProgress) => {
                     // rightclick() on canvas to check canceling draw a additional point
+                    cy.get('.cvat-canvas-container').rightclick();
                     cy.get('.cvat-canvas-container')
-                        .rightclick()
                         .find('circle')
                         .then(($circleEditHanlerProgressCancelDrawPoint) => {
                             expect($circleEditHanlerProgress.length).not.equal(
@@ -177,7 +174,8 @@ context('Edit handler.', () => {
                             ); // expected 4 to not equal 3
                         });
                 });
-            cy.get('.cvat-canvas-container').click(200, 300).click(200, 400); // Click on the first points shape to finish the change
+            cy.get('.cvat-canvas-container').click(200, 300);
+            cy.get('.cvat-canvas-container').click(200, 400); // Click on the first points shape to finish the change
             cy.get('#cvat_canvas_shape_3')
                 .find('circle')
                 .then(($circleCountAfterHanlerEditing) => {
@@ -187,13 +185,16 @@ context('Edit handler.', () => {
 
         it('Combining polygon and points.', () => {
             testActivatingShape(520, 400, '#cvat_canvas_shape_1');
-            cy.get('.cvat-canvas-container') // Draw line with shift key held down
-                .click(550, 450, { shiftKey: true })
-                .trigger('mousemove', 530, 450, { shiftKey: true })
-                .trigger('mousemove', 500, 450, { shiftKey: true })
-                .trigger('mousemove', 200, 400, { shiftKey: true });
+
+            // Draw line with shift key held down
+            cy.get('.cvat-canvas-container').click(550, 450, { shiftKey: true });
+            cy.get('.cvat-canvas-container').trigger('mousemove', 530, 450, { shiftKey: true });
+            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 450, { shiftKey: true });
+            cy.get('.cvat-canvas-container').trigger('mousemove', 200, 400, { shiftKey: true });
+
             // Coverage "!pointsCriteria && !lengthCriteria"
-            cy.get('.cvat-canvas-container').click(200, 400).click(200, 300);
+            cy.get('.cvat-canvas-container').click(200, 400);
+            cy.get('.cvat-canvas-container').click(200, 300);
             cy.get('.cvat_canvas_autoborder_point_direction').should('exist');
             cy.get('.cvat-canvas-container').dblclick(200, 300);
             cy.get('.cvat_canvas_autoborder_point_direction').should('not.exist');
@@ -207,11 +208,10 @@ context('Edit handler.', () => {
                 });
             testActivatingShape(750, 500, '#cvat_canvas_shape_2');
             // Coverage "circle.on('mousedown', (e: MouseEvent): void => {"
-            cy.get('.cvat-canvas-container')
-                .click(750, 500, { shiftKey: true })
-                .click(450, 350)
-                .trigger('mousemove', 450, 370)
-                .click(450, 350);
+            cy.get('.cvat-canvas-container').click(750, 500, { shiftKey: true });
+            cy.get('.cvat-canvas-container').click(450, 350);
+            cy.get('.cvat-canvas-container').trigger('mousemove', 450, 370);
+            cy.get('.cvat-canvas-container').click(450, 350);
         });
     });
 });

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { PluginError } from './exceptions';
+import { ArgumentError } from './exceptions';
 
 const plugins = [];
 
@@ -21,18 +21,10 @@ export default class PluginRegistry {
         for (const plugin of pluginList) {
             const pluginDecorators = plugin.functions.filter((obj) => obj.callback === wrappedFunc)[0];
             if (pluginDecorators && pluginDecorators.enter) {
-                try {
-                    const options: APIWrapperEnterOptions | undefined = await pluginDecorators
-                        .enter.call(this, plugin, ...args);
-                    if (options?.preventMethodCall) {
-                        aggregatedOptions.preventMethodCall = true;
-                    }
-                } catch (exception) {
-                    if (exception instanceof PluginError) {
-                        throw exception;
-                    } else {
-                        throw new PluginError(`Exception in plugin ${plugin.name}: ${exception.toString()}`);
-                    }
+                const options: APIWrapperEnterOptions | undefined = await pluginDecorators
+                    .enter.call(this, plugin, ...args);
+                if (options?.preventMethodCall) {
+                    aggregatedOptions.preventMethodCall = true;
                 }
             }
         }
@@ -45,15 +37,7 @@ export default class PluginRegistry {
         for (const plugin of pluginList) {
             const pluginDecorators = plugin.functions.filter((obj) => obj.callback === wrappedFunc)[0];
             if (pluginDecorators && pluginDecorators.leave) {
-                try {
-                    result = await pluginDecorators.leave.call(this, plugin, result, ...args);
-                } catch (exception) {
-                    if (exception instanceof PluginError) {
-                        throw exception;
-                    } else {
-                        throw new PluginError(`Exception in plugin ${plugin.name}: ${exception.toString()}`);
-                    }
-                }
+                result = await pluginDecorators.leave.call(this, plugin, result, ...args);
             }
         }
 
@@ -65,19 +49,19 @@ export default class PluginRegistry {
         const functions = [];
 
         if (typeof plug !== 'object') {
-            throw new PluginError(`Plugin should be an object, but got "${typeof plug}"`);
+            throw new ArgumentError(`Plugin should be an object, but got "${typeof plug}"`);
         }
 
         if (!('name' in plug) || typeof plug.name !== 'string') {
-            throw new PluginError('Plugin must contain a "name" field and it must be a string');
+            throw new ArgumentError('Plugin must contain a "name" field and it must be a string');
         }
 
         if (!('description' in plug) || typeof plug.description !== 'string') {
-            throw new PluginError('Plugin must contain a "description" field and it must be a string');
+            throw new ArgumentError('Plugin must contain a "description" field and it must be a string');
         }
 
         if ('functions' in plug) {
-            throw new PluginError('Plugin must not contain a "functions" field');
+            throw new ArgumentError('Plugin must not contain a "functions" field');
         }
 
         function traverse(plugin, api) {

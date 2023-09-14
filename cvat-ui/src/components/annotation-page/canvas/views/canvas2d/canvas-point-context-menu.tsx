@@ -8,7 +8,7 @@ import Button from 'antd/lib/button';
 import { DeleteOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { connect } from 'react-redux';
 
-import { CombinedState, ContextMenuType } from 'reducers';
+import { CombinedState, ContextMenuType, ShapeType } from 'reducers';
 import { updateAnnotationsAsync, updateCanvasContextMenu } from 'actions/annotation-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
@@ -103,16 +103,23 @@ function CanvasPointContextMenu(props: Props): React.ReactPortal | null {
     return visible && contextMenuFor && type === ContextMenuType.CANVAS_SHAPE_POINT ?
         ReactDOM.createPortal(
             <div className='cvat-canvas-point-context-menu' style={{ top, left }}>
-                <CVATTooltip title='Delete point [Alt + dblclick]'>
-                    <Button
-                        type='link'
-                        icon={<DeleteOutlined />}
-                        onClick={onPointDelete}
-                        className='cvat-canvas-point-context-menu-delete'
-                    >
-                        Delete point
-                    </Button>
-                </CVATTooltip>
+                {contextMenuFor && (
+                    (contextMenuFor.shapeType === ShapeType.POLYGON && contextMenuFor.points.length > 6) ||
+                    (contextMenuFor.shapeType === ShapeType.POLYLINE && contextMenuFor.points.length > 4) ||
+                    (contextMenuFor.shapeType === ShapeType.POINTS && contextMenuFor.points.length > 2)) &&
+                (
+                    <CVATTooltip title='Delete point [Alt + dblclick]'>
+                        <Button
+                            type='link'
+                            icon={<DeleteOutlined />}
+                            onClick={onPointDelete}
+                            className='cvat-canvas-point-context-menu-delete'
+                        >
+                            Delete point
+                        </Button>
+                    </CVATTooltip>
+                )}
+
                 {contextMenuFor && contextMenuFor.shapeType === 'polygon' && (
                     <Button
                         type='link'
