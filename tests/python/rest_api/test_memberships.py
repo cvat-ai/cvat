@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
-from typing import ClassVar
+from typing import ClassVar, List
 
 import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -79,6 +79,7 @@ class TestMembershipsListFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchMemberships:
     _ORG: ClassVar[int] = 1
+    ROLES: ClassVar[List[str]] = ["worker", "supervisor", "maintainer", "owner"]
 
     def _test_can_change_membership(self, user, membership_id, new_role):
         response = patch_method(
@@ -117,7 +118,7 @@ class TestPatchMemberships:
     )
     def test_user_can_change_role_of_member(self, who, whom, new_role, is_allow, find_users):
         user = find_users(org=self._ORG, role=who)[0]["username"]
-        membership_id = find_users(org=self._ORG, role=whom)[1]["membership_id"]
+        membership_id = find_users(org=self._ORG, role=whom, exclude_username=user)[0]["membership_id"]
 
         if is_allow:
             self._test_can_change_membership(user, membership_id, new_role)
@@ -126,11 +127,11 @@ class TestPatchMemberships:
 
     @pytest.mark.parametrize(
         "who",
-        ["worker", "supervisor", "maintainer", "owner"],
+        ROLES,
     )
     def test_user_cannot_change_self_role(self, who: str, find_users):
         user = find_users(org=self._ORG, role=who)[0]
-        self._test_cannot_change_membership(user["username"], user["membership_id"], "worker")
+        self._test_cannot_change_membership(user["username"], user["membership_id"], self.ROLES[abs(self.ROLES.index(who) - 1)])
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

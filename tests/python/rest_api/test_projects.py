@@ -266,14 +266,14 @@ class TestGetProjectBackup:
     def test_org_supervisor_cannot_get_project_backup(
         self, find_users, projects, is_project_staff, is_org_member
     ):
-        users = find_users(role="supervisor", exclude_privilege="admin")
+        users = find_users(exclude_privilege="admin")
 
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
             if not is_project_staff(user["id"], project["id"])
             and project["organization"]
-            and is_org_member(user["id"], project["organization"])
+            and is_org_member(user["id"], project["organization"], role="supervisor")
         )
 
         self._test_cannot_get_project_backup(user["username"], project["id"])
@@ -890,14 +890,14 @@ class TestPatchProjectLabel:
         is_org_member,
         role,
     ):
-        users = find_users(role=role, exclude_privilege="admin")
+        users = find_users(exclude_privilege="admin")
 
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
             if not is_project_staff(user["id"], project["id"])
             and project["organization"]
-            and is_org_member(user["id"], project["organization"])
+            and is_org_member(user["id"], project["organization"], role=role)
         )
 
         new_label = {"name": "new name"}
@@ -913,14 +913,14 @@ class TestPatchProjectLabel:
     def test_project_staff_org_members_can_add_label(
         self, find_users, projects, is_project_staff, is_org_member, labels, role
     ):
-        users = find_users(role=role, exclude_privilege="admin")
+        users = find_users(exclude_privilege="admin")
 
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
             if is_project_staff(user["id"], project["id"])
             and project["organization"]
-            and is_org_member(user["id"], project["organization"])
+            and is_org_member(user["id"], project["organization"], role=role)
             and any(label.get("project_id") == project["id"] for label in labels)
         )
 
