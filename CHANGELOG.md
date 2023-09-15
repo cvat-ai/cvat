@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Leaving an organization (<https://github.com/opencv/cvat/pull/6422>)
 
 ### Security
 - TDB
