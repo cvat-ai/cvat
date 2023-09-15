@@ -16,7 +16,7 @@ from math import ceil
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
-from typing import List, Optional
+from typing import Any, List, Optional, Tuple
 
 import pytest
 from cvat_sdk import Client, Config, exceptions
@@ -1085,39 +1085,19 @@ class TestPostTaskData:
         kwargs = {"org": org} if org else {}
         create_task(self._USERNAME, task_spec, data_spec, **kwargs)
 
-    @pytest.mark.with_external_services
-    @pytest.mark.parametrize("cloud_storage_id", [2])
-    @pytest.mark.parametrize(
-        "use_cache, use_manifest, server_files, server_files_exclude, task_size",
-        [
-            (True, False, ["test/"], None, 6),
-            (True, False, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (True, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
-            (True, True, ["test/"], None, 6),
-            (True, True, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (True, True, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
-            (False, False, ["test/"], None, 6),
-            (False, False, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (False, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
-        ],
-    )
-    @pytest.mark.parametrize("org", [""])
-    def test_create_task_with_cloud_storage_directories_and_excluded_files(
+    def _create_task_with_cloud_data(
         self,
-        cloud_storage_id: int,
-        use_cache: bool,
+        request,
+        cloud_storage: Any,
         use_manifest: bool,
         server_files: List[str],
-        server_files_exclude: Optional[List[str]],
-        task_size: int,
-        org: str,
-        cloud_storages,
-        request,
-    ):
+        use_cache: bool = True,
+        sorting_method: str = "lexicographical",
+        server_files_exclude: Optional[List[str]] = None,
+        org: Optional[str] = None,
+    ) -> Tuple[int, Any]:
         s3_client = s3.make_client()
         images = generate_image_files(3, prefixes=["img_"] * 3)
-
-        cloud_storage = cloud_storages[cloud_storage_id]
 
         for image in images:
             for i in range(2):
@@ -1160,10 +1140,8 @@ class TestPostTaskData:
                             filename="test/manifest.jsonl",
                         )
                     )
-                server_files.append("test/manifest.jsonl")
-
         task_spec = {
-            "name": f"Task created from directories from cloud storage {cloud_storage_id}",
+            "name": f"Task created from directories from cloud storage {cloud_storage['id']}",
             "labels": [
                 {
                     "name": "car",
@@ -1174,18 +1152,104 @@ class TestPostTaskData:
         data_spec = {
             "image_quality": 75,
             "use_cache": use_cache,
-            "cloud_storage_id": cloud_storage_id,
-            "server_files": server_files,
+            "cloud_storage_id": cloud_storage["id"],
+            "server_files": server_files
+            if not use_manifest
+            else server_files + ["test/manifest.jsonl"],
+            "sorting_method": sorting_method,
         }
         if server_files_exclude:
             data_spec["server_files_exclude"] = server_files_exclude
 
-        task_id, _ = create_task(self._USERNAME, task_spec, data_spec, org=org)
+        return create_task(self._USERNAME, task_spec, data_spec, org=org)
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize(
+        "use_cache, use_manifest, server_files, server_files_exclude, task_size",
+        [
+            (True, False, ["test/"], None, 6),
+            (True, False, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (True, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (True, True, ["test/"], None, 6),
+            (True, True, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (True, True, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (False, False, ["test/"], None, 6),
+            (False, False, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (False, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+        ],
+    )
+    @pytest.mark.parametrize("org", [""])
+    def test_create_task_with_cloud_storage_directories_and_excluded_files(
+        self,
+        cloud_storage_id: int,
+        use_cache: bool,
+        use_manifest: bool,
+        server_files: List[str],
+        server_files_exclude: Optional[List[str]],
+        task_size: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+        task_id, _ = self._create_task_with_cloud_data(
+            request,
+            cloud_storage,
+            use_manifest,
+            server_files,
+            use_cache=use_cache,
+            server_files_exclude=server_files_exclude,
+            org=org,
+        )
 
         with make_api_client(self._USERNAME) as api_client:
             (task, response) = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
             assert task.size == task_size
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize("use_manifest", [True, False])
+    @pytest.mark.parametrize(
+        "server_files, expected_result",
+        [
+            (
+                ["test/sub_1/", "test/sub_0/"],
+                [
+                    "test/sub_1/img_0.jpeg",
+                    "test/sub_1/img_1.jpeg",
+                    "test/sub_1/img_2.jpeg",
+                    "test/sub_0/img_0.jpeg",
+                    "test/sub_0/img_1.jpeg",
+                    "test/sub_0/img_2.jpeg",
+                ],
+            )
+        ],
+    )
+    @pytest.mark.parametrize("org", [""])
+    def test_create_task_with_cloud_storage_directories_and_predefined_sorting(
+        self,
+        cloud_storage_id: int,
+        use_manifest: bool,
+        server_files: List[str],
+        expected_result: List[str],
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+        task_id, _ = self._create_task_with_cloud_data(
+            request, cloud_storage, use_manifest, server_files, sorting_method="predefined", org=org
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            (_, response) = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
+
+            # check sequence of frames
+            (data_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
+            assert expected_result == list(map(lambda x: x.name, data_meta.frames))
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
