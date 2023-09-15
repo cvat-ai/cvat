@@ -19,7 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- PCD files with nan values could not be opened on 3D workspace
+ (<https://github.com/opencv/cvat/pull/6862>)
+- Fixed direct navigation to neightbour chunk on 3D workspace
+ (<https://github.com/opencv/cvat/pull/6862>)
+- Intencity level from .bin lidar data ignored when converting .bin -> .pcd
+ (<https://github.com/opencv/cvat/pull/6862>)
 
 ### Security
 - TDB
