@@ -5,24 +5,9 @@
   "results": [
     {
       "id": 15,
-      "invitation": "4lPMWz4Yc3kDRa36JVVr7G2QnatjaOyHfVpk1L9sdNWEbU1OKkFd5UMiLJ3MS0gi",
+      "invitation": "q8GWTPiR1Vz9DDO6MQo1B6pUBzW9GjDb6AUQPziAV62jD7OpCLZji0GS66C48wRX",
       "is_active": true,
-      "joined_date": "2023-09-14T12:04:20.996876Z",
-      "organization": 1,
-      "role": "supervisor",
-      "user": {
-        "first_name": "User",
-        "id": 4,
-        "last_name": "Third",
-        "url": "http://localhost:8080/api/users/4",
-        "username": "user3"
-      }
-    },
-    {
-      "id": 14,
-      "invitation": "mpxr1CF3XFd7GgBfgQSA5I3Yx71Hz4XlPX9S9Y4O9xg4nZ0lAg6IX6KoMLxduRIq",
-      "is_active": true,
-      "joined_date": "2023-09-14T12:04:20.990273Z",
+      "joined_date": "2023-09-15T07:53:52.116000Z",
       "organization": 1,
       "role": "maintainer",
       "user": {
@@ -31,6 +16,21 @@
         "last_name": "Second",
         "url": "http://localhost:8080/api/users/11",
         "username": "business2"
+      }
+    },
+    {
+      "id": 14,
+      "invitation": "d2Zaawf81uImG1nmWA0Va0Bv5EPERt1edJDTgTgMZiefZ2QmC1IdPld9LIPnkiWR",
+      "is_active": true,
+      "joined_date": "2023-09-15T07:53:52.115000Z",
+      "organization": 1,
+      "role": "supervisor",
+      "user": {
+        "first_name": "User",
+        "id": 5,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/5",
+        "username": "user4"
       }
     },
     {
