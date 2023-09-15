@@ -549,7 +549,8 @@ def _create_thread(
 
         # update the server_files list with files from the specified directories
         if (dirs:= list(filter(lambda x: x.endswith('/'), data['server_files']))):
-            data['server_files'] = [i for i in data['server_files'] if i not in dirs]
+            copy_of_server_files = data['server_files'].copy()
+            copy_of_dirs = dirs.copy()
             additional_files = []
             if manifest_file:
                 for directory in dirs:
@@ -575,7 +576,13 @@ def _create_thread(
                         else:
                             dirs.append(f['name'])
 
-            data['server_files'].extend(additional_files)
+            data['server_files'] = []
+            for f in copy_of_server_files:
+                if f not in copy_of_dirs:
+                    data['server_files'].append(f)
+                else:
+                    data['server_files'].extend(list(filter(lambda x: x.startswith(f), additional_files)))
+
             del additional_files
 
         if server_files_exclude := data.get('server_files_exclude'):

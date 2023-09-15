@@ -55,8 +55,9 @@ context('Drawing with predefined number of points.', () => {
             });
     }
 
-    function tryDeletePoint() {
+    function tryDeletePoint(successful = true) {
         const svgJsCircleId = [];
+        const updatedSvgJsCircleId = [];
         cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true });
         cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
         cy.get('circle').then((circle) => {
@@ -67,14 +68,18 @@ context('Drawing with predefined number of points.', () => {
             }
             cy.get(`#${svgJsCircleId[0]}`).click({ altKey: true });
         });
-    }
 
-    function checkNotificationAndClose() {
-        cy.get('.cvat-notification-notice-update-annotations-failed')
-            .should('exist')
-            .within(() => {
-                cy.get('[aria-label="close"]').click();
+        if (!successful) {
+            cy.get('circle').then((circle) => {
+                for (let i = 0; i < circle.length; i++) {
+                    if (circle[i].id.match(/^SvgjsCircle\d+$/)) {
+                        updatedSvgJsCircleId.push(circle[i].id);
+                    }
+                }
+
+                expect(updatedSvgJsCircleId.length).to.be.equal(svgJsCircleId.length);
             });
+        }
     }
 
     describe(`Testing case "${caseId}"`, () => {
@@ -82,10 +87,9 @@ context('Drawing with predefined number of points.', () => {
             tryDrawObjectPredefinedNumberPoints('polygon', countPointsPolygon);
         });
 
-        it('Draw a polygon with 3 points. And try to delete one point. The error notification should appear.', () => {
+        it('Draw a polygon with 3 points. And try to delete one point. Point can not be removed.', () => {
             cy.createPolygon(createPolygonShape);
-            tryDeletePoint();
-            checkNotificationAndClose();
+            tryDeletePoint(false);
             cy.removeAnnotations(); // Removing the annotation for the convenience of further testing
         });
 
@@ -93,10 +97,9 @@ context('Drawing with predefined number of points.', () => {
             tryDrawObjectPredefinedNumberPoints('polyline', countPointsPolyline);
         });
 
-        it('Draw a polyline with 2 points. And try to delete one point. The error notification should appear.', () => {
+        it('Draw a polyline with 2 points. And try to delete one point. Point can not be removed.', () => {
             cy.createPolyline(createPolylinesShape);
-            tryDeletePoint();
-            checkNotificationAndClose();
+            tryDeletePoint(false);
             cy.removeAnnotations(); // Removing the annotation for the convenience of further testing
         });
 
@@ -104,10 +107,9 @@ context('Drawing with predefined number of points.', () => {
             tryDrawObjectPredefinedNumberPoints('points', countPointsPoint);
         });
 
-        it('Draw a point with 1 points. And try to delete one point. The error notification should appear.', () => {
+        it('Draw a point with 1 points. And try to delete one point. Point can not be removed.', () => {
             cy.createPoint(createPointsShape);
-            tryDeletePoint();
-            checkNotificationAndClose();
+            tryDeletePoint(false);
         });
     });
 });
