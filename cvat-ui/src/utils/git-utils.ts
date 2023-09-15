@@ -106,7 +106,7 @@ async function cloneRepository(this: any, plugin: GitPlugin, createdTask: any): 
                 })
                 .catch((error: any): void => {
                     createdTask.delete().finally((): void => {
-                        reject(new core.exceptions.PluginError(typeof error === 'string' ? error : error.message));
+                        reject(new core.exceptions.ServerError(typeof error === 'string' ? error : error.message));
                     });
                 });
         }
