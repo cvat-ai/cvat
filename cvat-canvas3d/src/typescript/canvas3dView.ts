@@ -1149,13 +1149,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.statesToBeGrouped = [];
             this.clearScene();
 
-            const onPCDLoadFailed = (): void => {
-                model.unlockFrameUpdating();
-            };
-
             const onPCDLoadSuccess = (points: any): void => {
                 try {
-                    points.material = new THREE.PointsMaterial({ color: 0xffffff });
                     this.onSceneImageLoaded(points);
                     model.updateCanvasObjects();
                 } finally {
@@ -1170,47 +1165,124 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 }
 
                 const loader = new PCDLoader();
-                const objectURL = URL.createObjectURL(model.data.image.imageData);
 
-                try {
-                    this.views.perspective.renderer.dispose();
-                    if (this.controller.imageIsDeleted) {
-                        try {
-                            this.render();
-                            const [container] = window.document.getElementsByClassName('cvat-canvas-container');
-                            const overlay = window.document.createElement('canvas');
-                            overlay.classList.add('cvat_3d_canvas_deleted_overlay');
-                            overlay.style.width = '100%';
-                            overlay.style.height = '100%';
-                            overlay.style.position = 'absolute';
-                            overlay.style.top = '0px';
-                            overlay.style.left = '0px';
-                            container.appendChild(overlay);
-                            const { clientWidth: width, clientHeight: height } = overlay;
-                            overlay.width = width;
-                            overlay.height = height;
-                            const canvasContext = overlay.getContext('2d');
-                            const fontSize = width / 10;
-                            canvasContext.font = `bold ${fontSize}px serif`;
-                            canvasContext.textAlign = 'center';
-                            canvasContext.lineWidth = fontSize / 20;
-                            canvasContext.strokeStyle = 'white';
-                            canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
-                            canvasContext.fillStyle = 'black';
-                            canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
-                            this.dispatchEvent(new CustomEvent('canvas.setup'));
-                        } finally {
-                            model.unlockFrameUpdating();
-                        }
-                    } else {
-                        loader.load(objectURL, onPCDLoadSuccess, () => {}, onPCDLoadFailed);
-                        const [overlay] = window.document.getElementsByClassName('cvat_3d_canvas_deleted_overlay');
-                        if (overlay) {
-                            overlay.remove();
-                        }
+                this.views.perspective.renderer.dispose();
+                if (this.controller.imageIsDeleted) {
+                    try {
+                        this.render();
+                        const [container] = window.document.getElementsByClassName('cvat-canvas-container');
+                        const overlay = window.document.createElement('canvas');
+                        overlay.classList.add('cvat_3d_canvas_deleted_overlay');
+                        overlay.style.width = '100%';
+                        overlay.style.height = '100%';
+                        overlay.style.position = 'absolute';
+                        overlay.style.top = '0px';
+                        overlay.style.left = '0px';
+                        container.appendChild(overlay);
+                        const { clientWidth: width, clientHeight: height } = overlay;
+                        overlay.width = width;
+                        overlay.height = height;
+                        const canvasContext = overlay.getContext('2d');
+                        const fontSize = width / 10;
+                        canvasContext.font = `bold ${fontSize}px serif`;
+                        canvasContext.textAlign = 'center';
+                        canvasContext.lineWidth = fontSize / 20;
+                        canvasContext.strokeStyle = 'white';
+                        canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
+                        canvasContext.fillStyle = 'black';
+                        canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
+                        this.dispatchEvent(new CustomEvent('canvas.setup'));
+                    } finally {
+                        model.unlockFrameUpdating();
                     }
-                } finally {
-                    URL.revokeObjectURL(objectURL);
+                } else {
+                    model.data.image.imageData.arrayBuffer().then((data) => {
+                        const defaultImpl = console.error;
+                        // loader.parse will throw some errors to console when nan values are in PCD file
+                        // there is not way to prevent it, because three.js opinion is that nan values
+                        // in input data is incorrect
+                        let cloud = null;
+                        try {
+                            console.error = () => {};
+                            cloud = loader.parse(data) as THREE.Points;
+                        } finally {
+                            console.error = defaultImpl;
+                        }
+
+                        let {
+                            position, color, normal, intensity, label,
+                        } = cloud.geometry.attributes;
+
+                        ({
+                            color, position, normal, intensity, label,
+                        } = position.array.reduce((acc, _, i, array) => {
+                            if (
+                                i % 3 === 0 &&
+                                Number.isFinite(array[i]) &&
+                                Number.isFinite(array[i + 1]) &&
+                                Number.isFinite(array[i + 2])
+                            ) {
+                                acc.position.push(array[i], array[i + 1], array[i + 2]);
+
+                                if (
+                                    color &&
+                                    Number.isFinite(color.array[i]) &&
+                                    Number.isFinite(color.array[i + 1]) &&
+                                    Number.isFinite(color.array[i + 2])
+                                ) {
+                                    acc.color.push(color.array[i], color.array[i + 1], color.array[i + 2]);
+                                }
+
+                                if (
+                                    normal &&
+                                    Number.isFinite(normal.array[i]) &&
+                                    Number.isFinite(normal.array[i + 1]) &&
+                                    Number.isFinite(normal.array[i + 2])
+                                ) {
+                                    acc.normal.push(normal.array[i], normal.array[i + 1], normal.array[i + 2]);
+                                }
+
+                                if (intensity) {
+                                    acc.intensity.push(intensity.array[i / 3]);
+                                }
+
+                                if (label) {
+                                    acc.label.push(label.array[i / 3]);
+                                }
+                            }
+
+                            return acc;
+                        }, {
+                            position: [], color: [], normal: [], intensity: [], label: [],
+                        }));
+
+                        if (position.length) {
+                            cloud.geometry.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+                        }
+
+                        if (color.length) {
+                            cloud.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 3));
+                        }
+
+                        if (normal.length) {
+                            cloud.geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normal, 3));
+                        }
+
+                        if (intensity.length) {
+                            cloud.geometry.setAttribute('intensity', new THREE.Float32BufferAttribute(intensity, 1));
+                        }
+
+                        if (label.length) {
+                            cloud.geometry.setAttribute('label', new THREE.Float32BufferAttribute(label, 1));
+                        }
+
+                        cloud.geometry.computeBoundingSphere();
+                        onPCDLoadSuccess(cloud);
+                    });
+                    const [overlay] = window.document.getElementsByClassName('cvat_3d_canvas_deleted_overlay');
+                    if (overlay) {
+                        overlay.remove();
+                    }
                 }
             } catch (error: any) {
                 model.unlockFrameUpdating();
