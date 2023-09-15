@@ -1212,6 +1212,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                         let {
                             position, color, normal, intensity, label,
                         } = cloud.geometry.attributes;
+                        cloud.material.vertexColors = true;
 
                         ({
                             color, position, normal, intensity, label,
@@ -1231,6 +1232,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                                     Number.isFinite(color.array[i + 2])
                                 ) {
                                     acc.color.push(color.array[i], color.array[i + 1], color.array[i + 2]);
+                                } else {
+                                    acc.color.push(255, 255, 255);
                                 }
 
                                 if (
@@ -1545,7 +1548,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.sceneBBox = new THREE.Box3().setFromObject(points);
         this.views.perspective.scene.add(points.clone());
-        // this.views.perspective.scene.add(new THREE.AxesHelper(5));
+        this.views.perspective.scene.add(new THREE.AxesHelper(5));
         // Setup TopView
         const canvasTopView = this.views.top.renderer.domElement;
         const topScenePlane = new THREE.Mesh(
