@@ -5,24 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[Unreleased\]
-### Added
-- TDB
-
-### Changed
-- TDB
-
-### Deprecated
-- TDB
-
-### Removed
-- TDB
-
+## \[2.7.1\] - 2023-09-15
 ### Fixed
-- TDB
 
-### Security
-- TDB
+- Include cloud storage manifest file to selected files if manifest was used as data source (<https://github.com/opencv/cvat/pull/6850>)
+- Keep sequence of files when directories were specified in server_files (<https://github.com/opencv/cvat/pull/6850>)
 
 ## \[2.7.0\] - 2023-09-10
 ### Added
@@ -30,12 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admin actions for easy activation/deactivation of users (<https://github.com/opencv/cvat/pull/6314>)
 
 ### Fixed
+
 - Invalid input validation in for `cloud_storage_id` (<https://github.com/opencv/cvat/pull/6825>)
 - Incorrect task progress report for 3rdparty users (<https://github.com/opencv/cvat/pull/6834>)
-- Include cloud storage manifest file to selected files if manifest was used as data source (<https://github.com/opencv/cvat/pull/6850>)
-- Keep sequence of files when directories were specified in server_files (<https://github.com/opencv/cvat/pull/6850>)
 
 ### Security
+
 - Security upgrade gitpython from 3.1.33 to 3.1.35 (<https://github.com/opencv/cvat/pull/6843>)
 - Security upgrade numpy from 1.22.0 to 1.22.4 (<https://github.com/opencv/cvat/pull/6843>)
 
