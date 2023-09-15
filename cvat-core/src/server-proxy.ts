@@ -197,26 +197,20 @@ class WorkerWrappedAxios {
 
         worker.onmessage = (e) => {
             if (e.data.id in requests) {
-                if (e.data.isSuccess) {
-                    requests[e.data.id].resolve(e.data.responseData);
-                } else {
-                    requests[e.data.id].reject({
-                        response: {
-                            status: e.data.status,
-                            data: e.data.responseData,
-                        },
-                    });
+                try {
+                    if (e.data.isSuccess) {
+                        requests[e.data.id].resolve(e.data.responseData);
+                    } else {
+                        requests[e.data.id].reject(new AxiosError(e.data.message, e.data.code));
+                    }
+                } finally {
+                    delete requests[e.data.id];
                 }
-
-                delete requests[e.data.id];
             }
         };
 
-        worker.onerror = (e) => {
-            if (e.data.id in requests) {
-                requests[e.data.id].reject(e);
-                delete requests[e.data.id];
-            }
+        worker.onerror = () => {
+            throw new Error('Unexpected download worker error');
         };
 
         function getRequestId(): number {
@@ -226,10 +220,7 @@ class WorkerWrappedAxios {
         async function get(url: string, requestConfig) {
             return new Promise((resolve, reject) => {
                 const newRequestId = getRequestId();
-                requests[newRequestId] = {
-                    resolve,
-                    reject,
-                };
+                requests[newRequestId] = { resolve, reject };
                 worker.postMessage({
                     url,
                     config: requestConfig,
@@ -1508,7 +1499,7 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality): Promi
     const { backendAPI } = config;
 
     try {
-        const response = await workerAxios.get(`${backendAPI}/jobs/${jid}/data`, {
+        const response = await (workerAxios as any).get(`${backendAPI}/jobs/${jid}/data`, {
             params: {
                 ...enableOrganization(),
                 quality,
@@ -1520,13 +1511,7 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality): Promi
 
         return response;
     } catch (errorData) {
-        throw generateError({
-            message: '',
-            response: {
-                ...errorData.response,
-                data: String.fromCharCode.apply(null, new Uint8Array(errorData.response.data)),
-            },
-        });
+        throw generateError(errorData);
     }
 }
 

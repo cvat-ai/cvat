@@ -23,6 +23,7 @@ from cvat_sdk import Client, Config, exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, ApiException, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
+from cvat_sdk.core.progress import NullProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
@@ -675,6 +676,7 @@ class TestGetTaskDataset:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
+@pytest.mark.usefixtures("restore_redis_db_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -759,6 +761,54 @@ class TestPostTaskData:
                         im = Image.open(zipped_img)
                         # original is 480x640 with 90/-90 degrees rotation
                         assert im.height == 640 and im.width == 480
+
+    @pytest.mark.skip(reason="need to wait new Pillow release till 15 October 2023")
+    def test_can_create_task_with_exif_rotated_tif_image(self):
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with exif rotated tif image",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        image_files = ["images/exif_rotated/tif_left.tif"]
+        task_data = {
+            "server_files": image_files,
+            "image_quality": 70,
+            "segment_size": 500,
+            "use_cache": True,
+            "sorting_method": "natural",
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check that the frame has correct width and height
+        with make_api_client(self._USERNAME) as api_client:
+            _, response = api_client.tasks_api.retrieve_data(
+                task_id, number=0, type="chunk", quality="original"
+            )
+            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                assert len(zip_file.namelist()) == 1
+                name = zip_file.namelist()[0]
+                assert name == "000000.tif"
+                with zip_file.open(name) as zipped_img:
+                    im = Image.open(zipped_img)
+                    # raw image is horizontal 100x150 with -90 degrees rotation
+                    assert im.height == 150 and im.width == 100
+
+            _, response = api_client.tasks_api.retrieve_data(
+                task_id, number=0, type="chunk", quality="compressed"
+            )
+            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                assert len(zip_file.namelist()) == 1
+                name = zip_file.namelist()[0]
+                assert name == "000000.jpeg"
+                with zip_file.open(name) as zipped_img:
+                    im = Image.open(zipped_img)
+                    # raw image is horizontal 100x150 with -90 degrees rotation
+                    assert im.height == 150 and im.width == 100
 
     def test_can_create_task_with_sorting_method_natural(self):
         task_spec = {
@@ -2180,7 +2230,11 @@ class TestImportTaskAnnotations:
             required_time = 60
             uploader._tus_start_upload(url, query_params=params)
             uploader._upload_file_data_with_tus(
-                url, filename, meta=params, logger=self.client.logger.debug
+                url,
+                filename,
+                meta=params,
+                logger=self.client.logger.debug,
+                pbar=NullProgressReporter(),
             )
 
         sleep(required_time)
@@ -2207,7 +2261,11 @@ class TestImportTaskAnnotations:
         uploader = Uploader(self.client)
         uploader._tus_start_upload(url, query_params=params)
         uploader._upload_file_data_with_tus(
-            url, filename, meta=params, logger=self.client.logger.debug
+            url,
+            filename,
+            meta=params,
+            logger=self.client.logger.debug,
+            pbar=NullProgressReporter(),
         )
         number_of_files = 1
         sleep(30)  # wait when the cleaning job from rq worker will be started

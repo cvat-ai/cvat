@@ -868,7 +868,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                     if (e.altKey) {
                         const { points } = state;
-                        this.onEditDone(state, points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)));
+                        if (
+                            (state.shapeType === 'polygon' && state.points.length > 6) ||
+                            (state.shapeType === 'polyline' && state.points.length > 4) ||
+                            (state.shapeType === 'points' && state.points.length > 2)
+                        ) {
+                            this.onEditDone(state, points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)));
+                        }
                     } else if (e.shiftKey) {
                         this.onEditStart(state);
                         this.editHandler.edit({
