@@ -31,7 +31,7 @@ See:
 ## Image settings in CVAT
 
 The **Image settings** panel serves
-as a versatile tool for fine-tuning of the visual aspects of your image.
+as a versatile tool for fine-tuning the visual aspects of your image.
 Whether you need to brighten the image,
 increase contrast, or make other adjustments, this panel is your go-to.
 
@@ -46,7 +46,7 @@ icon located at the bottom of the workspace.
 
 ### Adding grid overlay to image in CVAT
 
-To add grid to the image, do the following:
+To add the grid to the image, do the following:
 
 1. Open the **Image Settings** panel.
 2. Locate and check the box that
@@ -60,7 +60,7 @@ To add grid to the image, do the following:
 
 ### Changing color settings of image is CVAT
 
-To change color setting of the image is CVAT, do the following:
+To change the color setting of the image is CVAT, do the following:
 
 1. Open the **Image Settings** panel.
 2. Use the slider to change the color quality.
@@ -86,7 +86,7 @@ control the overall brightness of an image
 
 ![Image Saturation](/images/image-settings-gamma.jpg)
 
-To reset setting to default values, click
+To reset the setting to default values, click
 **Reset color settings**
 
 ## Adding layers and Z-axis slider
@@ -116,7 +116,7 @@ The workspace is also equipped with the following features:
 
   ![Object card](/images/image138_mapillary_vistas.jpg)
 
-- Right-clicking on a polygon point will open menu, from which you can
+- Right-clicking on a polygon point will open a menu, from which you can
   **Delete point** or **Set start point**.
 
   ![Polygon menu](/images/image139_mapillary_vistas.jpg)
