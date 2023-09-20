@@ -71,7 +71,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         }
     }
     if (initialFrame == null) {
-        initialFrame = 90;
+        initialFrame = 0;
     }
 
     if (searchParams.has('serverID') && searchParams.has('type')) {

@@ -175,15 +175,13 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             updateJob(jobInstance).then((success) => {
                 if (success) {
                     message.info('Job state updated', 2);
+                    if (['rejected', 'completed'].includes(jobInstance.state)) {
+                        loadNextJob();
+                    } else {
+                        window.location.reload();
+                    }
                 }
             });
-            [, jobInstance.state] = action.split(':') as [string, JobState];
-            updateJob(jobInstance);
-            if (['rejected', 'completed'].includes(jobInstance.state)) {
-                await loadNextJob();
-            } else {
-                window.location.reload();
-            }
         } else if (action === Actions.LOAD_JOB_ANNO) {
             showImportModal(jobInstance);
         }
