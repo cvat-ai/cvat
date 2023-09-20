@@ -121,10 +121,11 @@ class MediaCache:
         images = []
         tmp_dir = None
         upload_dir = {
-                StorageChoice.LOCAL: db_data.get_upload_dirname(),
-                StorageChoice.SHARE: settings.SHARE_ROOT,
-                StorageChoice.CLOUD_STORAGE: db_data.get_upload_dirname(),
-            }[db_data.storage]
+            StorageChoice.LOCAL: db_data.get_upload_dirname(),
+            StorageChoice.SHARE: settings.SHARE_ROOT,
+            StorageChoice.CLOUD_STORAGE: db_data.get_upload_dirname(),
+        }[db_data.storage]
+
         try:
             if hasattr(db_data, 'video'):
                 source_path = os.path.join(upload_dir, db_data.video.path)
