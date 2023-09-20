@@ -262,3 +262,13 @@ questions and get our support.
 [doi-url]: https://zenodo.org/badge/latestdoi/139156354
 [discord-img]: https://img.shields.io/discord/1000789942802337834?label=discord
 [discord-url]: https://discord.gg/fNR3eXfk6C
+
+
+## Segment Anything Install Instructions
+
+```bash
+wget https://github.com/nuclio/nuclio/releases/download/1.11.24/nuctl-1.11.24-linux-amd64
+sudo chmod +x nuctl-1.11.24-linux-amd64
+sudo ln -sf $(pwd)/nuctl-1.11.24-linux-amd64 /usr/local/bin/nuctl
+cd serverless && ./deploy_gpu.sh pytorch/facebookresearch/sam/nuclio/
+```
