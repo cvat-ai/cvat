@@ -392,14 +392,8 @@ services:
 volumes:
   cvat_db:
   cvat_data:
-    external:
-      name: cvat_cvat_data
   cvat_keys:
-    external:
-      name: cvat_cvat_keys
   cvat_logs:
-    external:
-      name: cvat_cvat_logs
   cvat_share:
     driver_opts:
       type: none
