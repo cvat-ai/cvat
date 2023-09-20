@@ -9,7 +9,6 @@ import base64
 import json
 import os
 import textwrap
-import glob
 from copy import deepcopy
 from enum import Enum
 from functools import wraps
@@ -38,7 +37,6 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
 )
-from cvat.apps.engine.utils import sendfile
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
@@ -64,14 +62,15 @@ class LambdaGateway:
             host or settings.NUCLIO['HOST'],
             port or settings.NUCLIO['PORT'])
         NUCLIO_FUNCTION_NAMESPACE = function_namespace or settings.NUCLIO['FUNCTION_NAMESPACE']
+        NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
         extra_headers = {
             'x-nuclio-project-name': 'cvat',
             'x-nuclio-function-namespace': NUCLIO_FUNCTION_NAMESPACE,
             'x-nuclio-invoke-via': 'domain-name',
+            'X-Nuclio-Invoke-Timeout': f"{NUCLIO_TIMEOUT}s",
         }
         if headers:
             extra_headers.update(headers)
-        NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
 
         if url:
             url = "{}{}".format(NUCLIO_GATEWAY, url)
@@ -926,7 +925,7 @@ class FunctionViewSet(viewsets.ViewSet):
             '200': FunctionCallSerializer
         }
     ),
-    delete=extend_schema(
+    destroy=extend_schema(
         operation_id='lambda_delete_requests',
         summary='Method cancels the request',
         parameters=[
@@ -1002,16 +1001,8 @@ class RequestViewSet(viewsets.ViewSet):
         return response_serializer.data
 
     @return_response(status.HTTP_204_NO_CONTENT)
-    def delete(self, request, pk):
+    def destroy(self, request, pk):
         self.check_object_permissions(request, pk)
         queue = LambdaQueue()
         rq_job = queue.fetch_job(pk)
         rq_job.delete()
-
-def ONNXDetector(request):
-    dirname = os.path.join(settings.STATIC_ROOT, 'lambda_manager')
-    pattern = os.path.join(dirname, 'decoder.onnx')
-    path = glob.glob(pattern)[0]
-    response = sendfile(request, path)
-    response['Cache-Control'] = "public, max-age=604800"
-    return response

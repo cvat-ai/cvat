@@ -14,13 +14,12 @@ from typing import (
     ContextManager,
     Dict,
     Iterator,
+    Literal,
     Sequence,
     TextIO,
     Union,
     overload,
 )
-
-from typing_extensions import Literal
 
 
 def filter_dict(
@@ -76,7 +75,7 @@ def atomic_writer(
     try:
         with tmp_file:
             yield tmp_file
-        os.rename(tmp_path, path)
+        os.replace(tmp_path, path)
     except:
         os.unlink(tmp_path)
         raise

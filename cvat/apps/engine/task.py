@@ -24,7 +24,7 @@ from datetime import datetime
 from pathlib import Path
 
 from cvat.apps.engine import models
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
 from cvat.apps.engine.utils import av_scan_paths, get_rq_job_meta
@@ -34,6 +34,8 @@ from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manif
 from utils.dataset_manifest.utils import detect_related_images
 from .cloud_provider import db_storage_to_storage_instance
 
+slogger = ServerLogManager(__name__)
+
 ############################# Low Level server API
 
 def create(db_task, data, request):
@@ -42,7 +44,7 @@ def create(db_task, data, request):
     q.enqueue_call(
         func=_create_thread,
         args=(db_task.pk, data),
-        job_id=f"create:task.id{db_task.pk}-by-{request.user.username}",
+        job_id=f"create:task.id{db_task.pk}",
         meta=get_rq_job_meta(request=request, db_obj=db_task),
     )
 
@@ -547,7 +549,8 @@ def _create_thread(
 
         # update the server_files list with files from the specified directories
         if (dirs:= list(filter(lambda x: x.endswith('/'), data['server_files']))):
-            data['server_files'] = [i for i in data['server_files'] if i not in dirs]
+            copy_of_server_files = data['server_files'].copy()
+            copy_of_dirs = dirs.copy()
             additional_files = []
             if manifest_file:
                 for directory in dirs:
@@ -573,7 +576,13 @@ def _create_thread(
                         else:
                             dirs.append(f['name'])
 
-            data['server_files'].extend(additional_files)
+            data['server_files'] = []
+            for f in copy_of_server_files:
+                if f not in copy_of_dirs:
+                    data['server_files'].append(f)
+                else:
+                    data['server_files'].extend(list(filter(lambda x: x.startswith(f), additional_files)))
+
             del additional_files
 
         if server_files_exclude := data.get('server_files_exclude'):
@@ -846,7 +855,7 @@ def _create_thread(
         if not hasattr(update_progress, 'call_counter'):
             update_progress.call_counter = 0
 
-        status_message = 'Images are being compressed'
+        status_message = 'CVAT is preparing data chunks'
         if not progress:
             status_message = '{} {}'.format(status_message, progress_animation[update_progress.call_counter])
         job.meta['status'] = status_message

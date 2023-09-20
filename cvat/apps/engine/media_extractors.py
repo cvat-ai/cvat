@@ -80,21 +80,8 @@ def image_size_within_orientation(img: Image):
         return img.height, img.width
     return img.width, img.height
 
-def rotate_within_exif(img: Image):
-    orientation = img.getexif().get(ORIENTATION_EXIF_TAG,  ORIENTATION.NORMAL_HORIZONTAL)
-    if orientation in [ORIENTATION.NORMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
-        img = img.rotate(180, expand=True)
-    elif orientation in [ORIENTATION.NORMAL_270_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED]:
-        img = img.rotate(90, expand=True)
-    elif orientation in [ORIENTATION.NORMAL_90_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED]:
-        img = img.rotate(270, expand=True)
-    if orientation in [
-        ORIENTATION.MIRROR_HORIZONTAL, ORIENTATION.MIRROR_VERTICAL,
-        ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED ,ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED,
-    ]:
-        img = img.transpose(Image.FLIP_LEFT_RIGHT)
-
-    return img
+def has_exif_rotation(img: Image):
+    return img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL) != ORIENTATION.NORMAL_HORIZONTAL
 
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
@@ -124,7 +111,7 @@ class IMediaReader(ABC):
             preview = Image.open(obj)
         else:
             preview = obj
-        preview = rotate_within_exif(preview)
+        preview = ImageOps.exif_transpose(preview)
         # TODO - Check if the other formats work. I'm only interested in I;16 for now. Sorry @:-|
         # Summary:
         # Images in the Format I;16 definitely don't work. Most likely I;16B/L/N won't work as well.
@@ -224,8 +211,8 @@ class ImageListReader(IMediaReader):
             with open(self.get_path(i), 'rb') as f:
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
-        img = Image.open(self._source_path[i])
-        return image_size_within_orientation(img)
+        with Image.open(self._source_path[i]) as img:
+            return image_size_within_orientation(img)
 
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         # FIXME
@@ -366,8 +353,8 @@ class ZipReader(ImageListReader):
             with open(self.get_path(i), 'rb') as f:
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
-        img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
-        return image_size_within_orientation(img)
+        with Image.open(io.BytesIO(self._zip_source.read(self._source_path[i]))) as img:
+            return image_size_within_orientation(img)
 
     def get_image(self, i):
         if self._dimension == DimensionType.DIM_3D:
@@ -601,8 +588,12 @@ class IChunkWriter(ABC):
 
     @staticmethod
     def _compress_image(image_path, quality):
-        image = image_path.to_image() if isinstance(image_path, av.VideoFrame) else Image.open(image_path)
-        image = rotate_within_exif(image)
+        if isinstance(image_path, av.VideoFrame):
+            image = image_path.to_image()
+        else:
+            with Image.open(image_path) as source_image:
+                image = ImageOps.exif_transpose(source_image)
+
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
             # Image mode is 32bit integer pixels.
@@ -629,12 +620,14 @@ class IChunkWriter(ABC):
 
         converted_image = image.convert('RGB')
         image.close()
-        buf = io.BytesIO()
-        converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
-        buf.seek(0)
-        width, height = converted_image.size
-        converted_image.close()
-        return width, height, buf
+        try:
+            buf = io.BytesIO()
+            converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
+            buf.seek(0)
+            width, height = converted_image.size
+            return width, height, buf
+        finally:
+            converted_image.close()
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):
@@ -661,12 +654,33 @@ class ZipChunkWriter(IChunkWriter):
                 ext = os.path.splitext(path)[1].replace('.', '')
                 output = io.BytesIO()
                 if self._dimension == DimensionType.DIM_2D:
-                    pil_image = rotate_within_exif(Image.open(image))
-                    pil_image.save(output, format=pil_image.format if pil_image.format else self.IMAGE_EXT, quality=100, subsampling=0)
+                    with Image.open(image) as pil_image:
+                        if has_exif_rotation(pil_image):
+                            rot_image = ImageOps.exif_transpose(pil_image)
+                            try:
+                                if rot_image.format == 'TIFF':
+                                # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
+                                # use loseless lzw compression for tiff images
+                                    rot_image.save(output, format='TIFF', compression='tiff_lzw')
+                                else:
+                                    rot_image.save(
+                                        output,
+                                        format=rot_image.format if rot_image.format else self.IMAGE_EXT,
+                                        quality=100,
+                                        subsampling=0
+                                    )
+                            finally:
+                                rot_image.close()
+                        else:
+                            output = image
                 else:
                     output, ext = self._write_pcd_file(image)[0:2]
                 arcname = '{:06d}.{}'.format(idx, ext)
-                zip_chunk.writestr(arcname, output.getvalue())
+
+                if isinstance(output, io.BytesIO):
+                    zip_chunk.writestr(arcname, output.getvalue())
+                else:
+                    zip_chunk.write(filename=output, arcname=arcname)
         # return empty list because ZipChunkWriter write files as is
         # and does not decode it to know img size.
         return []
@@ -684,8 +698,8 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
                     else:
                         assert isinstance(image, io.IOBase)
                         image_buf = io.BytesIO(image.read())
-                        w, h = Image.open(image_buf).size
-
+                        with Image.open(image_buf) as img:
+                            w, h = img.size
                     extension = self.IMAGE_EXT
                 else:
                     image_buf, extension, w, h = self._write_pcd_file(image)

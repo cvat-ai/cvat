@@ -77,7 +77,7 @@ to 10 tasks there and upload up to 500Mb of data to annotate. It will only be
 visible to you or the people you assign to it.
 
 For now, it does not have [analytics features](https://opencv.github.io/cvat/docs/administration/advanced/analytics/)
-like management and monitoring the data annotation team.
+like management and monitoring the data annotation team. It also does not allow exporting images, just the annotations.
 
 We plan to enhance [cvat.ai](https://cvat.ai) with new powerful features. Stay tuned!
 
@@ -95,7 +95,6 @@ The images have been downloaded more than 1M times so far.
 Here are some screencasts showing how to use CVAT.
 
 <!--lint disable maximum-line-length-->
-
 [Computer Vision Annotation Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN):
 we introduce our course series designed to help you annotate data faster and better
 using CVAT. This course is about CVAT deployment and integrations, it includes
@@ -193,7 +192,6 @@ up to 10x. Here is a list of the algorithms we support, and the platforms they c
 | [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-0277/nuclio)    | reid       | OpenVINO   | ✔️  |     |
 | [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | ✔️  |     |
 | [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | ✔️  |     |
-| [YOLO v5](/serverless/pytorch/ultralytics/yolov5/nuclio)                                                | detector   | PyTorch    | ✔️  |     |
 | [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    | ✔️  | ✔️  |
 | [TransT](/serverless/pytorch/dschoerk/transt/nuclio)                                                    | tracker    | PyTorch    | ✔️  | ✔️  |
 | [f-BRS](/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | interactor | PyTorch    | ✔️  |     |

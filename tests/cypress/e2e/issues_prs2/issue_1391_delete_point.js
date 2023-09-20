@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -41,7 +42,8 @@ context('When delete a point, the required point is deleted.', () => {
                 });
         });
         it('Remove the second point from created polyline', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true }).trigger('mouseover', { force: true });
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true });
+            cy.get('#cvat_canvas_shape_1').trigger('mouseover', { force: true });
             cy.get('.svg_select_points').then((points) => {
                 cy.get(points)
                     .eq(0)

@@ -1,30 +1,13 @@
+x-allow-webhook-receiver: &allow-webhook-receiver
+  depends_on:
+    - webhook_receiver
+  volumes:
+    - ./tests/allow_webhooks_receiver.sh:/etc/cvat/init.d/allow_webhooks_receiver.sh:ro
+
 services:
-  cvat_worker_webhooks:
-    depends_on:
-      - webhook_receiver
-    entrypoint:
-      - /bin/bash
-      - -euc
-        # We want to exclude webhooks_receiver from SSRF protection,
-        # so that the server can access it.
-        # --allow-address doesn't allow hostnames, so we have to resolve
-        # the IP address ourselves.
-      - |
-        webhooks_ip_addr="$$(getent hosts webhooks | head -1 | awk '{ print $$1 }')"
-        export SMOKESCREEN_OPTS=--allow-address="$$webhooks_ip_addr"
-        exec /usr/bin/supervisord -c supervisord/worker.webhooks.conf
+  cvat_worker_webhooks: *allow-webhook-receiver
 
-  cvat_server:
-    depends_on:
-      - webhook_receiver
-    entrypoint:
-      - /bin/bash
-      - -euc
-      - |
-        webhooks_ip_addr="$$(getent hosts webhooks | head -1 | awk '{ print $$1 }')"
-        export SMOKESCREEN_OPTS=--allow-address="$$webhooks_ip_addr"
-        exec /home/django/backend_entrypoint.sh
-
+  cvat_server: *allow-webhook-receiver
 
   webhook_receiver:
     image: python:3.9-slim

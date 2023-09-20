@@ -30,8 +30,8 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import JobActionsMenu from './job-actions-menu';
 
 interface Props {
-    job: Job,
-    task: Task,
+    job: Job;
+    task: Task;
     onJobUpdate: (job: Job) => void;
 }
 
@@ -156,10 +156,8 @@ function JobItem(props: Props): JSX.Element {
                                             value={job.assignee}
                                             onSelect={(user: User | null): void => {
                                                 if (job?.assignee?.id === user?.id) return;
-                                                if (user) {
-                                                    job.assignee = user;
-                                                    onJobUpdate(job);
-                                                }
+                                                job.assignee = user;
+                                                onJobUpdate(job);
                                             }}
                                         />
                                     </Col>

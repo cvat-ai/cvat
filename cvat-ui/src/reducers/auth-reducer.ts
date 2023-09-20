@@ -21,15 +21,23 @@ const defaultState: AuthState = {
 
 export default function (state = defaultState, action: AuthActions | BoundariesActions): AuthState {
     switch (action.type) {
+        case AuthActionTypes.AUTHORIZED_REQUEST:
+            return {
+                ...state,
+                fetching: true,
+                initialized: false,
+            };
         case AuthActionTypes.AUTHORIZED_SUCCESS:
             return {
                 ...state,
                 initialized: true,
+                fetching: false,
                 user: action.payload.user,
             };
         case AuthActionTypes.AUTHORIZED_FAILED:
             return {
                 ...state,
+                fetching: false,
                 initialized: true,
             };
         case AuthActionTypes.LOGIN:
@@ -99,10 +107,7 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
         case AuthActionTypes.SWITCH_CHANGE_PASSWORD_DIALOG:
             return {
                 ...state,
-                showChangePasswordDialog:
-                    typeof action.payload.showChangePasswordDialog === 'undefined' ?
-                        !state.showChangePasswordDialog :
-                        action.payload.showChangePasswordDialog,
+                showChangePasswordDialog: action.payload.visible,
             };
         case AuthActionTypes.REQUEST_PASSWORD_RESET:
             return {

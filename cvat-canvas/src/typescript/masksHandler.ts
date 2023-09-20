@@ -359,6 +359,8 @@ export class MasksHandlerImpl implements MasksHandler {
                 if (!continueInserting) {
                     this.releasePaste();
                 }
+            } else {
+                this.canvas.fire('mouse:move', options);
             }
         });
 

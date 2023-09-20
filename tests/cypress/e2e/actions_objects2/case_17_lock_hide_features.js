@@ -191,10 +191,9 @@ context('Lock/hide features.', () => {
                     shapeWidth = $shapeWidth;
                 });
             // Resize rectangle shape.
-            cy.get('.cvat-canvas-container')
-                .trigger('mousedown', 650, 400, { button: 0 })
-                .trigger('mousemove', 660, 400)
-                .trigger('mouseup');
+            cy.get('.cvat-canvas-container').trigger('mousedown', 650, 400, { button: 0 });
+            cy.get('.cvat-canvas-container').trigger('mousemove', 660, 400);
+            cy.get('.cvat-canvas-container').trigger('mouseup');
             cy.get('#cvat_canvas_shape_6')
                 .should('have.attr', 'width')
                 .then(($shapeWidth) => {

@@ -4,9 +4,13 @@
 
 from __future__ import annotations
 
+import importlib
+import importlib.util
 import json
-from typing import Dict, List, Sequence, Tuple
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client, models
 from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
@@ -139,4 +143,39 @@ class CLI:
             filename=filename,
             status_check_period=status_check_period,
             pbar=DeferredTqdmProgressReporter(),
+        )
+
+    def tasks_auto_annotate(
+        self,
+        task_id: int,
+        *,
+        function_module: Optional[str] = None,
+        function_file: Optional[Path] = None,
+        function_parameters: Dict[str, Any],
+        clear_existing: bool = False,
+        allow_unmatched_labels: bool = False,
+    ) -> None:
+        if function_module is not None:
+            function = importlib.import_module(function_module)
+        elif function_file is not None:
+            module_spec = importlib.util.spec_from_file_location("__cvat_function__", function_file)
+            function = importlib.util.module_from_spec(module_spec)
+            module_spec.loader.exec_module(function)
+        else:
+            assert False, "function identification arguments missing"
+
+        if hasattr(function, "create"):
+            # this is actually a function factory
+            function = function.create(**function_parameters)
+        else:
+            if function_parameters:
+                raise TypeError("function takes no parameters")
+
+        cvataa.annotate_task(
+            self.client,
+            task_id,
+            function,
+            pbar=DeferredTqdmProgressReporter(),
+            clear_existing=clear_existing,
+            allow_unmatched_labels=allow_unmatched_labels,
         )

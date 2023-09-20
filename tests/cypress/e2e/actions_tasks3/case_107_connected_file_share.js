@@ -41,7 +41,8 @@ context('Connected file share.', () => {
                 for (let frame = 0; frame < imageFiles.images.length; frame++) {
                     cy.get(playerFilenameWrapper).should('have.text', `images/${imageFiles.images[frame]}`);
                     cy.checkFrameNum(frame);
-                    cy.get('.cvat-player-next-button').click().trigger('mouseout');
+                    cy.get('.cvat-player-next-button').click();
+                    cy.get('.cvat-player-next-button').trigger('mouseout');
                 }
             });
         });

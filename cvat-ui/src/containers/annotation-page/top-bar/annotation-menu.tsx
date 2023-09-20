@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,9 +9,9 @@ import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
-import { CombinedState, JobsQuery, JobStage } from 'reducers';
+import { CombinedState } from 'reducers';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
-import { updateJobAsync } from 'actions/tasks-actions';
+import { updateJobAsync } from 'actions/jobs-actions';
 import {
     saveAnnotationsAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
@@ -19,23 +19,25 @@ import {
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
-import { getCore } from 'cvat-core-wrapper';
-import { filterNull } from 'utils/filter-null';
+import {
+    getCore, Job, JobStage, JobState,
+} from 'cvat-core-wrapper';
+import { message } from 'antd';
 
 const core = getCore();
 
 interface StateToProps {
-    jobInstance: any;
+    jobInstance: Job;
     stopFrame: number;
 }
 
 interface DispatchToProps {
-    showExportModal: (jobInstance: any) => void;
-    showImportModal: (jobInstance: any) => void;
+    showExportModal: (jobInstance: Job) => void;
+    showImportModal: (jobInstance: Job) => void;
     removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
-    saveAnnotations(jobInstance: any, afterSave?: () => void): void;
-    updateJob(jobInstance: any): void;
+    saveAnnotations(jobInstance: Job, afterSave?: () => void): void;
+    updateJob(jobInstance: Job): Promise<boolean>;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -56,10 +58,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        showExportModal(jobInstance: any): void {
+        showExportModal(jobInstance: Job): void {
             dispatch(exportActions.openExportDatasetModal(jobInstance));
         },
-        showImportModal(jobInstance: any): void {
+        showImportModal(jobInstance: Job): void {
             dispatch(importActions.openImportDatasetModal(jobInstance));
         },
         removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
@@ -68,11 +70,11 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         setForceExitAnnotationFlag(forceExit: boolean): void {
             dispatch(setForceExitAnnotationFlagAction(forceExit));
         },
-        saveAnnotations(jobInstance: any, afterSave?: () => void): void {
+        saveAnnotations(jobInstance: Job, afterSave?: () => void): void {
             dispatch(saveAnnotationsAsync(jobInstance, afterSave));
         },
-        updateJob(jobInstance: any): void {
-            dispatch(updateJobAsync(jobInstance));
+        updateJob(jobInstance: Job): Promise<boolean> {
+            return dispatch(updateJobAsync(jobInstance));
         },
     };
 }
@@ -150,16 +152,30 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         } else if (action === Actions.RENEW_JOB) {
             jobInstance.state = core.enums.JobState.NEW;
             jobInstance.stage = JobStage.ANNOTATION;
-            updateJob(jobInstance);
-            window.location.reload();
+            updateJob(jobInstance).then((success) => {
+                if (success) {
+                    message.info('Job renewed', 2);
+                }
+            });
         } else if (action === Actions.FINISH_JOB) {
             jobInstance.stage = JobStage.ACCEPTANCE;
             jobInstance.state = core.enums.JobState.COMPLETED;
+            updateJob(jobInstance).then((success) => {
+                if (success) {
+                    history.push(`/tasks/${jobInstance.taskId}`);
+                }
+            });
             updateJob(jobInstance);
             await loadNextJob();
         } else if (action === Actions.OPEN_TASK) {
             history.push(`/tasks/${jobInstance.taskId}`);
         } else if (action.startsWith('state:')) {
+            [, jobInstance.state] = action.split(':') as [string, JobState];
+            updateJob(jobInstance).then((success) => {
+                if (success) {
+                    message.info('Job state updated', 2);
+                }
+            });
             [, jobInstance.state] = action.split(':');
             updateJob(jobInstance);
             if (['rejected', 'completed'].includes(jobInstance.state)) {

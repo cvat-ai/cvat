@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -52,10 +53,9 @@ context('Always show object details feature', () => {
             checkShowDetails('not.exist', 'not.exist');
 
             // activate first object
-            cy.get('#cvat_canvas_shape_1')
-                .should('not.have.class', 'cvat_canvas_shape_activated')
-                .trigger('mousemove')
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_1').should('not.have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             checkShowDetails('be.visible', 'not.exist');
         });
 

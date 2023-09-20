@@ -520,6 +520,7 @@
             "type": "node",
             "request": "launch",
             "name": "jest debug",
+            "cwd": "${workspaceFolder}/cvat-core",
             "program": "${workspaceFolder}/node_modules/.bin/jest",
             "args": [
                 "--config",

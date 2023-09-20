@@ -19,9 +19,10 @@ import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings from 'cvat-core/src/quality-settings';
 import { FramesMetaData } from 'cvat-core/src/frames';
+import { ServerError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
-    JobStage, JobState,
+    JobStage, JobState, RQStatus,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -73,6 +74,7 @@ export {
     JobType,
     JobStage,
     JobState,
+    RQStatus,
     QualityReport,
     QualityConflict,
     QualitySettings,
@@ -82,6 +84,7 @@ export {
     AnalyticsReport,
     AnalyticsEntry,
     AnalyticsEntryViewType,
+    ServerError,
 };
 
 export type {

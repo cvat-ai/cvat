@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,7 +22,8 @@ context('Settings "Player step"', () => {
             cy.get('.cvat-settings-modal').within(() => {
                 cy.contains('Player').click();
                 cy.get('.cvat-player-settings-step').within(() => {
-                    cy.get('[role="spinbutton"]').clear().type(countJumpStep);
+                    cy.get('[role="spinbutton"]').clear();
+                    cy.get('[role="spinbutton"]').type(countJumpStep);
                 });
             });
             cy.closeSettings();
