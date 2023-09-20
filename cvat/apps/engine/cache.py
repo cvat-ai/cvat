@@ -13,7 +13,6 @@ import tempfile
 
 from typing import Optional, Tuple
 
-import time
 import cv2
 import PIL.Image
 import pytz
@@ -156,7 +155,6 @@ class MediaCache:
                     }
                     cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
 
-                    now = time.time()
                     tmp_dir = tempfile.mkdtemp(prefix='cvat')
                     files_to_download = []
                     checksums = []
@@ -173,8 +171,6 @@ class MediaCache:
                     for checksum, fs_filename in zip(checksums, images):
                         if checksum and not md5_hash(fs_filename) == checksum:
                             slogger.cloud_storage[db_cloud_storage.id].warning('Hash sums of files {} do not match'.format(file_name))
-
-                    slogger.glob.info(f'Chunk download time: {time.time() - now}')
                 else:
                     for item in reader:
                         source_path = os.path.join(upload_dir, f"{item['name']}{item['extension']}")
