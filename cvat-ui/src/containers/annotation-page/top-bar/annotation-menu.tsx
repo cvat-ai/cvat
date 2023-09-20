@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
-import { CombinedState } from 'reducers';
+import { CombinedState, JobsQuery } from 'reducers';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
 import { updateJobAsync } from 'actions/jobs-actions';
 import {
@@ -23,6 +23,7 @@ import {
     getCore, Job, JobStage, JobState,
 } from 'cvat-core-wrapper';
 import { message } from 'antd';
+import { filterNull } from '../../../utils/filter-null';
 
 const core = getCore();
 
@@ -121,7 +122,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     }
 
     const loadNextJob = async (): Promise<void> => {
-        const assignee = jobInstance.assignee.username;
+        const assignee = jobInstance!.assignee!.username;
         const currentJobsQuery = nextJobsQuery(assignee, 1);
         try {
             const currentPageJobs: any[] = await core.jobs.get(filterNull(currentJobsQuery));
@@ -176,7 +177,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
                     message.info('Job state updated', 2);
                 }
             });
-            [, jobInstance.state] = action.split(':');
+            [, jobInstance.state] = action.split(':') as [string, JobState];
             updateJob(jobInstance);
             if (['rejected', 'completed'].includes(jobInstance.state)) {
                 await loadNextJob();
