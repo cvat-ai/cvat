@@ -1445,7 +1445,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                 dm_item = dm.DatasetItem(
                         id=osp.splitext(frame_data.name)[0],
                         annotations=dm_anno, media=dm_image,
-                        subset=frame_data.subset, # Added
+                        subset=frame_data.subset,
                         attributes={'frame': frame_data.frame
                     })
 
