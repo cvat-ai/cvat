@@ -6733,7 +6733,10 @@ components:
             type: string
             format: binary
           default: []
-          description: Uploaded files
+          description: |2
+
+            Uploaded files.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
         server_files:
           type: array
           items:
@@ -6741,8 +6744,10 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
-          description: Paths to files from a file share mounted on the server, or
-            from a cloud storage
+          description: |2
+
+            Paths to files from a file share mounted on the server, or from a cloud storage.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
         remote_files:
           type: array
           items:
@@ -6750,7 +6755,10 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
-          description: Direct download URLs for files
+          description: |2
+
+            Direct download URLs for files.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
         use_zip_chunks:
           type: boolean
           default: false
@@ -6825,12 +6833,18 @@ components:
           writeOnly: true
           description: |2
 
-            Represents a file-to-job mapping. Useful to specify a custom job
-            configuration during task creation. This option is not compatible with
-            most other job split-related options. Files in the jobs must not overlap or repeat.
+            Represents a file-to-job mapping.
+            Useful to specify a custom job configuration during task creation.
+            This option is not compatible with most other job split-related options.
+            Files in the jobs must not overlap or repeat.
+            Job file mapping files must be a subset of the input files.
+            If directories are specified in server_files, all files obtained by recursive search
+            in the specified directories will be used as input files.
+            In case of missing items in the input files, an error will be raised.
 
             Example:
             [
+
                 ["file1.jpg", "file2.jpg"], # job #1 files
                 ["file3.png"], # job #2 files
                 ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
