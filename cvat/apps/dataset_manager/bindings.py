@@ -274,7 +274,7 @@ class CommonData(InstanceLabelData):
                     "path": db_image.path,
                     "width": db_image.width,
                     "height": db_image.height,
-                    "subset": self._db_subset, # Added
+                    "subset": self._db_subset,
                 } for db_image in queryset
             }
 
