@@ -405,7 +405,7 @@ class CommonData(InstanceLabelData):
             if frame not in frames:
                 frames[frame] = CommonData.Frame(
                     idx=idx,
-                    subset=frame_info["subset"], # Added
+                    subset=frame_info["subset"],
                     id=frame_info.get("id", 0),
                     frame=frame,
                     name=frame_info["path"],
