@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -27,21 +27,18 @@ context('Object propagate.', () => {
     }
 
     function setupUpToFrame(value) {
-        cy.get('.cvat-propagate-confirm-up-to-input')
-            .find('input')
-            .clear()
-            .type(value)
-            .blur()
-            .should('have.value', value);
+        cy.get('.cvat-propagate-confirm-up-to-input').find('input').clear();
+        cy.get('.cvat-propagate-confirm-up-to-input').find('input').type(value);
+        cy.get('.cvat-propagate-confirm-up-to-input').find('input').blur();
+        cy.get('.cvat-propagate-confirm-up-to-input').find('input').should('have.value', value);
     }
 
     function setupPropagateFrames(value) {
-        cy.get('.cvat-propagate-confirm-object-on-frames') // Change value in the "copy of the object on frame" field
-            .find('input')
-            .clear()
-            .type(value)
-            .blur()
-            .should('have.value', value);
+        // Change value in the "copy of the object on frame" field
+        cy.get('.cvat-propagate-confirm-object-on-frames').find('input').clear();
+        cy.get('.cvat-propagate-confirm-object-on-frames').find('input').type(value);
+        cy.get('.cvat-propagate-confirm-object-on-frames').find('input').blur();
+        cy.get('.cvat-propagate-confirm-object-on-frames').find('input').should('have.value', value);
     }
 
     before(() => {

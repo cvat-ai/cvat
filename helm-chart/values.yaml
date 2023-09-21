@@ -9,6 +9,15 @@ fullnameOverride: ""
 
 cvat:
   backend:
+    initializer:
+      labels: {}
+      annotations: {}
+      resources: {}
+      affinity: {}
+      tolerations: []
+      additionalEnv: []
+      additionalVolumes: []
+      additionalVolumeMounts: []
     server:
       replicas: 1
       labels: {}
@@ -73,6 +82,16 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+      analyticsreports:
+        replicas: 1
+        labels: {}
+        annotations: {}
+        resources: {}
+        affinity: {}
+        tolerations: []
+        additionalEnv: []
+        additionalVolumes: []
+        additionalVolumeMounts: []
     utils:
       replicas: 1
       labels: {}
@@ -101,7 +120,11 @@ cvat:
             name: http
     defaultStorage:
         enabled: true
+#        storageClassName: default
+#        accessModes:
+#         - ReadWriteMany
         size: 20Gi
+    disableDistinctCachePerService: false
   frontend:
     replicas: 1
     image: cvat/ui
@@ -211,19 +234,24 @@ postgresql:
     postgres_password: cvat_postgresql_postgres
     replication_password: cvat_postgresql_replica
 
-redis:
-  #See https://github.com/bitnami/charts/blob/master/bitnami/redis/ for more info
+
+# https://artifacthub.io/packages/helm/enapter/keydb
+keydb:
   enabled: true
   external:
-      host: 127.0.0.1
-  auth:
-    existingSecret: "{{ .Release.Name }}-redis-secret"
+    host: 127.0.0.1
+  existingSecret: "cvat-keydb-secret"
   secret:
     create: true
-    name: "{{ .Release.Name }}-redis-secret"
-    password: cvat_redis
-  cluster:
-    enabled: false
+    name: cvat-keydb-secret
+    password: cvat_keydb
+  multiMaster: false
+  activeReplicas: false
+  nodes: 1
+  configExtraArgs:
+  - storage-provider: ["flash", "/data/flash"]
+  - maxmemory: "5G"
+  - maxmemory-policy: "allkeys-lfu"
 
 nuclio:
   enabled: false
@@ -329,59 +357,58 @@ grafana:
       enabled: false
 
 ingress:
-  enabled: true
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
-    kubernetes.io/ingress.class: traefik
-  hosts:
-    - host: cvat.local
-      paths:
-        - path: /api
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /admin
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /static
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /django-rq
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /git
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /opencv
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /profiler
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path : /
-          pathType: "Prefix"
-          service:
-            name: frontend-service
-            port: 80
-  # tls:
-  #   - hosts:
-  #     - <your_domain>
-  #   secretName: ingress-tls-cvat
+  enabled: false
+
+# In case you need an ingress, write them manually in your my.values.eml, see example below:
+#  enabled: true
+#  annotations:
+#    traefik.ingress.kubernetes.io/router.entrypoints: web
+#    kubernetes.io/ingress.class: traefik
+#  hosts:
+#    - host: cvat.local
+#      paths:
+#        - path: /api
+#          pathType: "Prefix"
+#          service:
+#            name: backend-service
+#            port: 8080
+#        - path: /admin
+#          pathType: "Prefix"
+#          service:
+#            name: backend-service
+#            port: 8080
+#        - path: /static
+#          pathType: "Prefix"
+#          service:
+#            name: backend-service
+#            port: 8080
+#        - path: /django-rq
+#          pathType: "Prefix"
+#          service:
+#            name: backend-service
+#            port: 8080
+#        - path: /git
+#          pathType: "Prefix"
+#          service:
+#            name: backend-service
+#            port: 8080
+#        - path: /profiler
+#          pathType: "Prefix"
+#          service:
+#            name: backend-service
+#            port: 8080
+#        - path : /
+#          pathType: "Prefix"
+#          service:
+#            name: frontend-service
+#            port: 80
+#  tls:
+#    - hosts:
+#      - <your_domain>
+#    secretName: ingress-tls-cvat
 
 traefik:
+  enabled: false
   service:
     externalIPs:
       # - "192.168.49.2"

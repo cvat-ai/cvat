@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,7 +18,9 @@ context('Tooltip does not interfere with interaction with elements.', () => {
         it('Mouseover to "Shape" button when draw new rectangle. The tooltip open.', () => {
             cy.get('.cvat-draw-rectangle-control').click();
             cy.get('.cvat-draw-shape-popover-content');
-            cy.contains('Shape').invoke('show').trigger('mouseover', 'top').should('have.class', 'ant-tooltip-open');
+            cy.contains('Shape').invoke('show');
+            cy.contains('Shape').trigger('mouseover', 'top');
+            cy.contains('Shape').should('have.class', 'ant-tooltip-open');
         });
         it('The radio element was clicked successfully', () => {
             /* Before the fix, cypress can't click on the radio element

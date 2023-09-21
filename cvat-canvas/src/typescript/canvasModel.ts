@@ -14,7 +14,7 @@ export interface Size {
 export interface Image {
     renderWidth: number;
     renderHeight: number;
-    imageData: ImageData | CanvasImageSource;
+    imageData: ImageBitmap;
 }
 
 export interface Position {
@@ -569,7 +569,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             .catch((exception: any): void => {
                 this.data.exception = exception;
                 // don't notify when the frame is no longer needed
-                if (typeof exception !== 'number' || exception === this.data.imageID) {
+                if (typeof exception !== 'number') {
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
             });

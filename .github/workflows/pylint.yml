@@ -19,28 +19,15 @@ jobs:
           CHANGED_FILES="${{steps.files.outputs.all_changed_files}}"
 
           if [[ ! -z $CHANGED_FILES ]]; then
-            sudo apt-get --no-install-recommends install -y build-essential curl python3-dev python3-pip python3-venv
-            python3 -m venv .env
-            . .env/bin/activate
-            pip install -U pip wheel setuptools
-            pip install pylint-json2html
-            pip install $(egrep "pylint.*==.*" ./cvat/requirements/development.txt)
-            pip install $(egrep "django==.*" ./cvat/requirements/base.txt)
-            mkdir -p pylint_report
+            pipx install $(egrep "^pylint==" ./cvat/requirements/development.txt)
+
+            pipx inject pylint \
+              $(egrep "^pylint-.+==" ./cvat/requirements/development.txt) \
+              $(egrep "^django==" ./cvat/requirements/base.txt)
 
             echo "Pylint version: "$(pylint --version | head -1)
             echo "The files will be checked: "$(echo $CHANGED_FILES)
-            pylint $CHANGED_FILES --output-format=json > ./pylint_report/pylint_checks.json || EXIT_CODE=$(echo $?) || true
-            pylint-json2html -o ./pylint_report/pylint_checks.html ./pylint_report/pylint_checks.json
-            deactivate
-            exit $EXIT_CODE
+            pylint $CHANGED_FILES
           else
             echo "No files with the \"py\" extension found"
           fi
-
-      - name: Upload artifacts
-        if: failure()
-        uses: actions/upload-artifact@v3.1.1
-        with:
-          name: pylint_report
-          path: pylint_report

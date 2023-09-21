@@ -1,0 +1,182 @@
+// Copyright (C) 2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base';
+
+.cvat-analytics-inner {
+    background: $background-color-1;
+    min-height: $grid-unit-size * 95;
+    padding: $grid-unit-size * 4;
+    padding-bottom: $grid-unit-size;
+
+    .ant-tabs {
+        height: 100%;
+    }
+}
+
+.cvat-task-quality-page {
+    >.ant-row {
+        margin-top: $grid-unit-size;
+    }
+}
+
+.cvat-task-quality-page-empty {
+    @extend .cvat-task-quality-page;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: $grid-unit-size * 68;
+}
+
+.cvat-task-mean-annotation-quality {
+    .ant-statistic {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .ant-card-body {
+        padding: $grid-unit-size * 2 $grid-unit-size * 3;
+    }
+}
+
+.cvat-analytics-card-title {
+    font-size: 16px;
+}
+
+.cvat-analytics-card-value {
+    font-size: 28px;
+}
+
+.cvat-analytics-tooltip {
+    margin-left: $grid-unit-size;
+}
+
+.cvat-analytics-tooltip-inner {
+    span {
+        display: block;
+        color: white;
+    }
+}
+
+.cvat-analytics-settings-tooltip-inner {
+    @extend .cvat-analytics-tooltip-inner;
+
+    span:not(:last-child) {
+        margin-bottom: $grid-unit-size;
+    }
+}
+
+.cvat-analytics-tooltip-conflicts-inner {
+    @extend .cvat-analytics-tooltip-inner;
+
+    min-width: $grid-unit-size * 47;
+}
+
+.cvat-analytics-download-report-button {
+    padding-left: $grid-unit-size * 2;
+    padding-right: $grid-unit-size * 2;
+
+    a {
+        color: white;
+        margin-left: $grid-unit-size;
+
+        &:hover {
+            color: white;
+        }
+    }
+}
+
+.cvat-analytics-time-hint {
+    font-size: 10px;
+    position: absolute;
+    bottom: -$grid-unit-size * 3;
+    right: $grid-unit-size * 4;
+}
+
+.cvat-analytics-page {
+    height: 100%;
+}
+
+.cvat-analytics-wrapper {
+    overflow-y: auto;
+    width: 100%;
+    height: 100%;
+    padding-bottom: $grid-unit-size * 2;
+}
+
+.cvat-project-analytics-title {
+    margin-bottom: $grid-unit-size;
+
+    h4 {
+        display: inline;
+        margin-right: $grid-unit-size;
+    }
+}
+
+.cvat-task-analytics-title {
+    margin-bottom: $grid-unit-size;
+
+    h4 {
+        display: inline;
+        margin-right: $grid-unit-size;
+    }
+}
+
+.cvat-job-analytics-title {
+    margin-bottom: $grid-unit-size;
+
+    h4 {
+        display: inline;
+        margin-right: $grid-unit-size;
+    }
+}
+
+.cvat-task-quality-reports-hint {
+    margin-bottom: $grid-unit-size * 3;
+}
+
+.cvat-job-empty-ground-truth-item {
+    .ant-card-body {
+        padding: $grid-unit-size * 3;
+    }
+
+    h5 {
+        margin: 0;
+    }
+
+    .ant-btn {
+        padding-left: $grid-unit-size * 3;
+        padding-right: $grid-unit-size * 3;
+    }
+}
+
+.cvat-quality-settings-switch {
+    padding-left: $grid-unit-size * 2;
+}
+
+.cvat-quality-settings-title {
+    margin-bottom: $grid-unit-size * 2;
+    align-items: center;
+}
+
+.cvat-modal-quality-settings {
+    top: $grid-unit-size * 3;
+
+    .ant-divider {
+        margin: $grid-unit-size 0;
+    }
+
+    .ant-form-item-control-input {
+        min-height: 0;
+    }
+}
+
+.cvat-job-list-item-conflicts {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}

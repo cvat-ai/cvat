@@ -30,8 +30,8 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import JobActionsMenu from './job-actions-menu';
 
 interface Props {
-    job: Job,
-    task: Task,
+    job: Job;
+    task: Task;
     onJobUpdate: (job: Job) => void;
 }
 
@@ -133,13 +133,13 @@ function JobItem(props: Props): JSX.Element {
                         <Row className='cvat-job-item-dates-info'>
                             <Col>
                                 <Text>Created on </Text>
-                                <Text type='secondary'>{`${created.format('MMMM Do YYYY HH:MM')}`}</Text>
+                                <Text type='secondary'>{`${created.format('MMMM Do YYYY HH:mm')}`}</Text>
                             </Col>
                         </Row>
                         <Row>
                             <Col>
                                 <Text>Last updated </Text>
-                                <Text type='secondary'>{`${updated.format('MMMM Do YYYY HH:MM')}`}</Text>
+                                <Text type='secondary'>{`${updated.format('MMMM Do YYYY HH:mm')}`}</Text>
                             </Col>
                         </Row>
                     </Col>
@@ -156,10 +156,8 @@ function JobItem(props: Props): JSX.Element {
                                             value={job.assignee}
                                             onSelect={(user: User | null): void => {
                                                 if (job?.assignee?.id === user?.id) return;
-                                                if (user) {
-                                                    job.assignee = user;
-                                                    onJobUpdate(job);
-                                                }
+                                                job.assignee = user;
+                                                onJobUpdate(job);
                                             }}
                                         />
                                     </Col>

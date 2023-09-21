@@ -76,6 +76,7 @@ export function useGoBack(): () => void {
 
 export interface ICardHeightHOC {
     numberOfRows: number;
+    minHeight: number;
     paddings: number;
     containerClassName: string;
     siblingClassNames: string[];
@@ -83,7 +84,7 @@ export interface ICardHeightHOC {
 
 export function useCardHeightHOC(params: ICardHeightHOC): () => string {
     const {
-        numberOfRows, paddings, containerClassName, siblingClassNames,
+        numberOfRows, minHeight, paddings, containerClassName, siblingClassNames,
     } = params;
 
     return (): string => {
@@ -106,7 +107,7 @@ export function useCardHeightHOC(params: ICardHeightHOC): () => string {
                     }, 0);
 
                     const cardHeight = (containerHeight - (othersHeight + paddings)) / numberOfRows;
-                    setHeight(`${Math.round(cardHeight)}px`);
+                    setHeight(`${Math.max(Math.round(cardHeight), minHeight)}px`);
                 }
             };
 

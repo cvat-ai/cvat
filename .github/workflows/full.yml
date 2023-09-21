@@ -152,16 +152,19 @@ jobs:
           name: expected_schema
           path: cvat/schema-expected.yml
 
-      - name: Running REST API and SDK tests
-        id: run_tests
+      - name: Generate SDK
         run: |
           pip3 install -r cvat-sdk/gen/requirements.txt
           ./cvat-sdk/gen/generate.sh
 
-          pip3 install -r ./tests/python/requirements.txt
-          pip3 install -e ./cvat-sdk
-          pip3 install -e ./cvat-cli
+      - name: Install SDK
+        run: |
+          pip3 install -r ./tests/python/requirements.txt \
+            -e './cvat-sdk[pytorch]' -e ./cvat-cli
 
+      - name: Running REST API and SDK tests
+        id: run_tests
+        run: |
           pytest tests/python/
 
       - name: Creating a log file from cvat containers
@@ -225,7 +228,7 @@ jobs:
             -c 'python manage.py test cvat/apps -v 2'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
+            -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test'
 
       - name: Creating a log file from cvat containers
         if: failure()
@@ -251,8 +254,8 @@ jobs:
       matrix:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
                 'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
-                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2', 'masks', 'skeletons']
+                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
+                'issues_prs', 'issues_prs2', 'features']
     steps:
       - uses: actions/checkout@v3
         with:

@@ -1,6 +1,7 @@
 // Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
 import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -15,13 +16,12 @@ import {
 } from 'cvat-core-wrapper';
 import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
-import { updateJobAsync } from 'actions/tasks-actions';
 
 const core = getCore();
 
 interface Props {
     job: Job;
-    onJobUpdate?: (job: Job) => void;
+    onJobUpdate: (job: Job) => void;
 }
 
 function JobActionsMenu(props: Props): JSX.Element {
@@ -57,22 +57,16 @@ function JobActionsMenu(props: Props): JSX.Element {
                 dispatch(importActions.openImportDatasetModal(job));
             } else if (action.key === 'export_job') {
                 dispatch(exportActions.openExportDatasetModal(job));
+            } else if (action.key === 'view_analytics') {
+                history.push(`/tasks/${job.taskId}/jobs/${job.id}/analytics`);
             } else if (action.key === 'renew_job') {
                 job.state = core.enums.JobState.NEW;
                 job.stage = JobStage.ANNOTATION;
-                if (onJobUpdate) {
-                    onJobUpdate(job);
-                } else {
-                    dispatch(updateJobAsync(job));
-                }
+                onJobUpdate(job);
             } else if (action.key === 'finish_job') {
                 job.stage = JobStage.ACCEPTANCE;
                 job.state = core.enums.JobState.COMPLETED;
-                if (onJobUpdate) {
-                    onJobUpdate(job);
-                } else {
-                    dispatch(updateJobAsync(job));
-                }
+                onJobUpdate(job);
             }
         }}
         >
@@ -81,6 +75,7 @@ function JobActionsMenu(props: Props): JSX.Element {
             <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
             <Menu.Item key='import_job'>Import annotations</Menu.Item>
             <Menu.Item key='export_job'>Export annotations</Menu.Item>
+            <Menu.Item key='view_analytics'>View analytics</Menu.Item>
             {[JobStage.ANNOTATION, JobStage.VALIDATION].includes(job.stage) ?
                 <Menu.Item key='finish_job'>Finish the job</Menu.Item> : null}
             {job.stage === JobStage.ACCEPTANCE ?

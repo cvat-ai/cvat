@@ -6,7 +6,9 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { TasksQuery, StorageLocation } from 'reducers';
-import { getCore, Storage } from 'cvat-core-wrapper';
+import {
+    getCore, RQStatus, Storage, Task,
+} from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
 import { getInferenceStatusAsync } from './models-actions';
 
@@ -20,12 +22,11 @@ export enum TasksActionTypes {
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
     CREATE_TASK_FAILED = 'CREATE_TASK_FAILED',
-    UPDATE_JOB_FAILED = 'UPDATE_JOB_FAILED',
-    HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
     GET_TASK_PREVIEW = 'GET_TASK_PREVIEW',
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
     GET_TASK_PREVIEW_FAILED = 'GET_TASK_PREVIEW_FAILED',
+    UPDATE_TASK_IN_STATE = 'UPDATE_TASK_IN_STATE',
 }
 
 function getTasks(query: Partial<TasksQuery>, updateQuery: boolean): AnyAction {
@@ -144,6 +145,62 @@ function createTaskFailed(error: any): AnyAction {
     return action;
 }
 
+function getTaskPreview(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.GET_TASK_PREVIEW,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function getTaskPreviewSuccess(taskID: number, preview: string): AnyAction {
+    const action = {
+        type: TasksActionTypes.GET_TASK_PREVIEW_SUCCESS,
+        payload: {
+            taskID,
+            preview,
+        },
+    };
+
+    return action;
+}
+
+function getTaskPreviewFailed(taskID: number, error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.GET_TASK_PREVIEW_FAILED,
+        payload: {
+            taskID,
+            error,
+        },
+    };
+
+    return action;
+}
+
+export function getTaskPreviewAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(getTaskPreview(taskInstance.id));
+            const result = await taskInstance.frames.preview();
+            dispatch(getTaskPreviewSuccess(taskInstance.id, result));
+        } catch (error) {
+            dispatch(getTaskPreviewFailed(taskInstance.id, error));
+        }
+    };
+}
+
+export function updateTaskInState(task: Task): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK_IN_STATE,
+        payload: { task },
+    };
+
+    return action;
+}
+
 export function createTaskAsync(data: any, onProgress?: (status: string) => void):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch): Promise<any> => {
@@ -215,45 +272,25 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
 
         try {
-            const savedTask = await taskInstance.save((status: string, progress: number): void => {
-                onProgress?.(status + (progress !== null ? ` ${Math.floor(progress * 100)}%` : ''));
+            const savedTask = await taskInstance.save((status: RQStatus, progress: number, message: string): void => {
+                if (status === RQStatus.UNKNOWN) {
+                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
+                } else if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
+                    const helperMessage = data.advanced.repository ?
+                        'Do not leave the page' : 'You may close the window.';
+                    onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
+                } else {
+                    onProgress?.(`${status}: ${message}`);
+                }
             });
+            dispatch(updateTaskInState(savedTask));
+            dispatch(getTaskPreviewAsync(savedTask));
             return savedTask;
         } catch (error) {
             dispatch(createTaskFailed(error));
             throw error;
         }
     };
-}
-
-function updateJobFailed(jobID: number, error: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.UPDATE_JOB_FAILED,
-        payload: { jobID, error },
-    };
-
-    return action;
-}
-
-export function updateJobAsync(jobInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            await jobInstance.save();
-        } catch (error) {
-            dispatch(updateJobFailed(jobInstance.id, error));
-        }
-    };
-}
-
-export function hideEmptyTasks(hideEmpty: boolean): AnyAction {
-    const action = {
-        type: TasksActionTypes.HIDE_EMPTY_TASKS,
-        payload: {
-            hideEmpty,
-        },
-    };
-
-    return action;
 }
 
 export function switchMoveTaskModalVisible(visible: boolean, taskId: number | null = null): AnyAction {
@@ -266,51 +303,4 @@ export function switchMoveTaskModalVisible(visible: boolean, taskId: number | nu
     };
 
     return action;
-}
-
-function getTaskPreview(taskID: number): AnyAction {
-    const action = {
-        type: TasksActionTypes.GET_TASK_PREVIEW,
-        payload: {
-            taskID,
-        },
-    };
-
-    return action;
-}
-
-function getTaskPreviewSuccess(taskID: number, preview: string): AnyAction {
-    const action = {
-        type: TasksActionTypes.GET_TASK_PREVIEW_SUCCESS,
-        payload: {
-            taskID,
-            preview,
-        },
-    };
-
-    return action;
-}
-
-function getTaskPreviewFailed(taskID: number, error: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.GET_TASK_PREVIEW_FAILED,
-        payload: {
-            taskID,
-            error,
-        },
-    };
-
-    return action;
-}
-
-export function getTaskPreviewAsync(taskInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            dispatch(getTaskPreview(taskInstance.id));
-            const result = await taskInstance.frames.preview();
-            dispatch(getTaskPreviewSuccess(taskInstance.id, result));
-        } catch (error) {
-            dispatch(getTaskPreviewFailed(taskInstance.id, error));
-        }
-    };
 }

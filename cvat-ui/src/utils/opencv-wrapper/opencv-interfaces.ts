@@ -1,11 +1,7 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
-
-export interface ImageProcessing {
-    processImage: (src: ImageData, frameNumber: number) => ImageData;
-    currentProcessedImage: number | undefined;
-}
 
 export interface TrackingResult {
     updated: boolean;

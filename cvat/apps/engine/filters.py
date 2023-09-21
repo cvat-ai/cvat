@@ -19,6 +19,7 @@ from django.utils.encoding import force_str
 from rest_framework import filters
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.exceptions import ValidationError
+from textwrap import dedent
 
 DEFAULT_FILTER_FIELDS_ATTR = 'filter_fields'
 DEFAULT_LOOKUP_MAP_ATTR = 'lookup_fields'
@@ -134,7 +135,12 @@ class JsonLogicFilter(filters.BaseFilterBackend):
     Rules = Dict[str, Any]
     filter_param = 'filter'
     filter_title = _('Filter')
-    filter_description = _('A filter term.')
+    filter_description = _(dedent("""
+        JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.\n
+        For example, using such a filter you can get all resources created by you:\n
+            - {"and":[{"==":[{"var":"owner"},"<user>"]}]}\n
+        Details about the syntax used can be found at the link: https://jsonlogic.com/\n
+    """))
 
     def _build_Q(self, rules, lookup_fields):
         op, args = next(iter(rules.items()))
@@ -206,8 +212,9 @@ class JsonLogicFilter(filters.BaseFilterBackend):
         assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
 
         filter_fields = getattr(view, 'filter_fields', [])
+        filter_description = getattr(view, 'filter_description', '')
         full_description = self.filter_description + \
-            f' Available filter_fields: {filter_fields}'
+            f' Available filter_fields: {filter_fields}.' + filter_description
 
         return [
             coreapi.Field(
@@ -223,8 +230,9 @@ class JsonLogicFilter(filters.BaseFilterBackend):
 
     def get_schema_operation_parameters(self, view):
         filter_fields = getattr(view, 'filter_fields', [])
+        filter_description = getattr(view, 'filter_description', '')
         full_description = self.filter_description + \
-            f' Available filter_fields: {filter_fields}'
+            f' Available filter_fields: {filter_fields}.' + filter_description
         return [
             {
                 'name': self.filter_param,

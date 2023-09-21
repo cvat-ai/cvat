@@ -28,7 +28,6 @@ interface Props {
     undoAction?: string;
     redoAction?: string;
     workspace: Workspace;
-    saveShortcut: string;
     undoShortcut: string;
     redoShortcut: string;
     drawShortcut: string;
@@ -69,6 +68,7 @@ interface Props {
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
     jobInstance: any;
+    ranges: string;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -77,6 +77,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         undoAction,
         redoAction,
         playing,
+        ranges,
         frameNumber,
         frameFilename,
         frameDeleted,
@@ -84,7 +85,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         startFrame,
         stopFrame,
         workspace,
-        saveShortcut,
         undoShortcut,
         redoShortcut,
         drawShortcut,
@@ -168,6 +168,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             startFrame={startFrame}
             stopFrame={stopFrame}
             playing={playing}
+            ranges={ranges}
             frameNumber={frameNumber}
             frameFilename={frameFilename}
             frameDeleted={frameDeleted}
@@ -190,7 +191,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 saving={saving}
                 undoAction={undoAction}
                 redoAction={redoAction}
-                saveShortcut={saveShortcut}
                 undoShortcut={undoShortcut}
                 redoShortcut={redoShortcut}
                 activeControl={activeControl}

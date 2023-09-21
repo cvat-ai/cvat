@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,9 +24,9 @@ context('Hotkeys to change labels feature.', () => {
     const directoryToArchive = imagesFolder;
     const secondLabel = `Case ${caseId} second`;
     const additionalAttrsSecondLabel = [{
-        additionalAttrName: attrName,
-        additionalValue: '0;3;1',
-        typeAttribute: 'Number',
+        name: attrName,
+        values: '0;3;1',
+        type: 'Number',
         mutable: false,
     }];
     let firstLabelCurrentVal = '';
@@ -38,9 +38,11 @@ context('Hotkeys to change labels feature.', () => {
             cy.contains('Workspace').click();
             cy.get('.cvat-workspace-settings-show-text-always').within(() => {
                 if (check) {
-                    cy.get('[type="checkbox"]').check().should('be.checked');
+                    cy.get('[type="checkbox"]').check();
+                    cy.get('[type="checkbox"]').should('be.checked');
                 } else {
-                    cy.get('[type="checkbox"]').uncheck().should('not.be.checked');
+                    cy.get('[type="checkbox"]').uncheck();
+                    cy.get('[type="checkbox"]').should('not.be.checked');
                 }
             });
         });
@@ -54,7 +56,7 @@ context('Hotkeys to change labels feature.', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
-        cy.addNewLabel(secondLabel, additionalAttrsSecondLabel);
+        cy.addNewLabel({ name: secondLabel }, additionalAttrsSecondLabel);
         cy.openJob();
     });
 
@@ -127,7 +129,8 @@ context('Hotkeys to change labels feature.', () => {
             });
             cy.get('body').type('{Ctrl}2');
             cy.contains(`Default label has been changed to "${secondLabelCurrentVal}"`).should('exist');
-            cy.get('.cvat-canvas-container').click(500, 500).click(600, 600);
+            cy.get('.cvat-canvas-container').click(500, 500);
+            cy.get('.cvat-canvas-container').click(600, 600);
             cy.get('#cvat-objects-sidebar-state-item-2')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .should('have.text', secondLabelCurrentVal);

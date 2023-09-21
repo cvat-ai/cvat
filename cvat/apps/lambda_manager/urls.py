@@ -25,6 +25,5 @@ router.register('requests', views.RequestViewSet, basename='request')
 # GET  /api/lambda/requests/<int:rid> - get status of the request
 # DEL  /api/lambda/requests/<int:rid> - cancel a request (don't delete)
 urlpatterns = [
-    path('api/lambda/', include(router.urls)),
-    path('api/lambda/sam_detector.onnx', views.ONNXDetector)
+    path('api/lambda/', include(router.urls))
 ]

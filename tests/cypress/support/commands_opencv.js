@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +9,10 @@ let selectedValueGlobal = '';
 
 Cypress.Commands.add('interactOpenCVControlButton', () => {
     cy.get('body').focus();
-    cy.get('.cvat-opencv-control').trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
+    cy.get('.cvat-opencv-control').trigger('mouseleave');
+    cy.get('.cvat-opencv-control').trigger('mouseout');
+    cy.get('.cvat-opencv-control').trigger('mousemove');
+    cy.get('.cvat-opencv-control').trigger('mouseover');
     cy.get('.cvat-opencv-control').should('have.class', 'ant-popover-open');
     cy.get('.cvat-opencv-control-popover')
         .should('be.visible')
@@ -34,9 +38,8 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
         cy.contains('span', 'Done').click();
     } else {
         const keyCodeN = 78;
-        cy.get('.cvat-canvas-container')
-            .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
-            .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
+        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+        cy.get('.cvat-canvas-container').trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
     }
     cy.checkPopoverHidden('opencv-control');
     cy.opencvCheckObjectParameters('POLYGON');
@@ -63,9 +66,9 @@ Cypress.Commands.add('opencvCheckObjectParameters', (objectType) => {
 Cypress.Commands.add('opencvOpenTab', (tabName) => {
     cy.checkPopoverHidden('opencv-control');
     cy.interactOpenCVControlButton();
+    cy.get('.cvat-opencv-control-popover').contains('[role="tab"]', tabName).click();
     cy.get('.cvat-opencv-control-popover')
         .contains('[role="tab"]', tabName)
-        .click()
         .parents('.ant-tabs-tab')
         .should('have.class', 'ant-tabs-tab-active');
 });

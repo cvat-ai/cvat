@@ -14,6 +14,7 @@ from typing import Any, Dict, Optional, Callable, Union
 import subprocess
 import os
 import urllib.parse
+import re
 import logging
 import platform
 
@@ -31,6 +32,7 @@ from PIL import Image
 from multiprocessing import cpu_count
 
 from django.core.exceptions import ValidationError
+from django_sendfile import sendfile as _sendfile
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -284,3 +286,46 @@ def get_cpu_number() -> int:
         # the number of cpu cannot be determined
         cpu_number = 1
     return cpu_number
+
+def make_attachment_file_name(filename: str) -> str:
+    # Borrowed from sendfile() to minimize changes for users.
+    # Added whitespace conversion and squashing into a single space
+    # Added removal of control characters
+
+    filename = str(filename).replace("\\", "\\\\").replace('"', r"\"")
+    filename = re.sub(r"\s+", " ", filename)
+
+    # From https://github.com/encode/uvicorn/blob/cd18c3b14aa810a4a6ebb264b9a297d6f8afb9ac/uvicorn/protocols/http/httptools_impl.py#L51
+    filename = re.sub(r"[\x00-\x1F\x7F]", "", filename)
+
+    return filename
+
+def sendfile(
+    request, filename,
+    attachment=False, attachment_filename=None, mimetype=None, encoding=None
+):
+    """
+    Create a response to send file using backend configured in ``SENDFILE_BACKEND``
+
+    ``filename`` is the absolute path to the file to send.
+
+    If ``attachment`` is ``True`` the ``Content-Disposition`` header will be set accordingly.
+    This will typically prompt the user to download the file, rather
+    than view it. But even if ``False``, the user may still be prompted, depending
+    on the browser capabilities and configuration.
+
+    The ``Content-Disposition`` filename depends on the value of ``attachment_filename``:
+
+        ``None`` (default): Same as ``filename``
+        ``False``: No ``Content-Disposition`` filename
+        ``String``: Value used as filename
+
+    If neither ``mimetype`` or ``encoding`` are specified, then they will be guessed via the
+    filename (using the standard Python mimetypes module)
+    """
+    # A drop-in replacement for sendfile with extra filename cleaning
+
+    if attachment_filename:
+        attachment_filename = make_attachment_file_name(attachment_filename)
+
+    return _sendfile(request, filename, attachment, attachment_filename, mimetype, encoding)

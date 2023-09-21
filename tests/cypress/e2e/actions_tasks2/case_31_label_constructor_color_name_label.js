@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -59,9 +60,9 @@ context('Label constructor. Color label. Label name editing', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('To add multiple labels with a color change.', () => {
-            cy.addNewLabel(colorRed, labelAdditionalAttrs, labelColor.redHex);
-            cy.addNewLabel(colorGreen, labelAdditionalAttrs, labelColor.greenHex);
-            cy.addNewLabel(colorBlue, labelAdditionalAttrs, labelColor.blueHex);
+            cy.addNewLabel({ name: colorRed, color: labelColor.redHex }, labelAdditionalAttrs);
+            cy.addNewLabel({ name: colorGreen, color: labelColor.greenHex }, labelAdditionalAttrs);
+            cy.addNewLabel({ name: colorBlue, color: labelColor.blueHex }, labelAdditionalAttrs);
         });
 
         it('Check color for created labels.', () => {
@@ -109,7 +110,8 @@ context('Label constructor. Color label. Label name editing', () => {
             });
             cy.get('.cvat-change-task-label-color-button').click();
             cy.changeColorViaBadge(labelColor.yellowHex);
-            cy.get('[placeholder="Label name"]').clear().type(colorYellow); // Check PR 2806
+            cy.get('[placeholder="Label name"]').clear();
+            cy.get('[placeholder="Label name"]').type(colorYellow); // Check PR 2806
             cy.contains('button', 'Done').click();
         });
 
@@ -130,7 +132,7 @@ context('Label constructor. Color label. Label name editing', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             // Adding a label without setting a color
-            cy.addNewLabel(`Case ${caseId}`);
+            cy.addNewLabel({ name: `Case ${caseId}` });
             cy.get('.cvat-constructor-viewer').should('be.visible');
             cy.contains('.cvat-constructor-viewer-item', `Case ${caseId}`)
                 .invoke('attr', 'style')
@@ -148,7 +150,9 @@ context('Label constructor. Color label. Label name editing', () => {
                         .not('.ant-popover-hidden')
                         .should('be.visible')
                         .within(() => {
-                            cy.contains('hex').prev().clear().type(labelColor.yellowHex);
+                            cy.contains('hex').prev();
+                            cy.contains('hex').prev().clear();
+                            cy.contains('hex').prev().type(labelColor.yellowHex);
                             cy.contains('button', 'Cancel').click();
                         });
                     cy.get('.cvat-label-color-picker').should('be.hidden');

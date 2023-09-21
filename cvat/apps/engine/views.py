@@ -6,8 +6,9 @@
 import io
 import os
 import os.path as osp
+from PIL import Image
 from types import SimpleNamespace
-from typing import Optional
+from typing import Optional, Any, Dict, List, cast
 import pytz
 import traceback
 import textwrap
@@ -15,7 +16,7 @@ from copy import copy
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, List, cast
+from textwrap import dedent
 
 import django_rq
 from django.apps import apps
@@ -26,7 +27,6 @@ from django.db.models import Count, Q
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
-from http import HTTPStatus
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -42,7 +42,6 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
-from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
@@ -75,22 +74,22 @@ from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job,
     parse_exception_message, get_rq_job_meta, get_import_rq_id,
-    import_resource_with_clean_up_after
+    import_resource_with_clean_up_after, sendfile
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
 from cvat.apps.engine.location import get_location_configuration, StorageType
 
 from . import models, task
-from .log import slogger
+from .log import ServerLogManager
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
     TaskPermission, UserPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.events.handlers import handle_annotations_patch
 from cvat.apps.engine.view_utils import tus_chunk_action
 
+slogger = ServerLogManager(__name__)
 
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
@@ -195,13 +194,13 @@ class ServerViewSet(viewsets.ViewSet):
         })
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
     def plugins(request):
-        response = {
+        data = {
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
             'PREDICT': False, # FIXME: it is unused anymore (for UI only)
         }
-        return Response(response)
+        return Response(PluginsSerializer(data).data)
 
 @extend_schema(tags=['projects'])
 @extend_schema_view(
@@ -304,7 +303,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in project to import dataset',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
@@ -332,7 +331,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the project to import annotations',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
@@ -468,7 +467,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in project to export annotation',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
@@ -507,7 +506,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in project to export backup',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
@@ -540,7 +539,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list(), default=Location.LOCAL),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('rq_id', description='rq id',
@@ -786,6 +785,12 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         'subset', 'mode', 'dimension', 'tracker_link'
     )
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
+    filter_description = dedent("""
+
+        There are few examples for complex filtering tasks:\n
+            - Get all tasks from 1,2,3 projects - { "and" : [{ "in" : [{ "var" : "project_id" }, [1, 2, 3]]}]}\n
+            - Get all completed tasks from 1 project - { "and": [{ "==": [{ "var" : "status" }, "completed"]}, { "==" : [{ "var" : "project_id"}, 1]}]}\n
+    """)
     simple_filters = list(search_fields) + ['project_id']
     ordering_fields = list(filter_fields)
     ordering = "-id"
@@ -826,7 +831,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list(), default=Location.LOCAL),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('filename', description='Backup file name',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
             OpenApiParameter('rq_id', description='rq id',
@@ -863,7 +868,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export backup',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
@@ -872,9 +877,15 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': OpenApiResponse(description='Download of file started'),
             '201': OpenApiResponse(description='Output backup file is ready for downloading'),
             '202': OpenApiResponse(description='Creating a backup file has been started'),
+            '400': OpenApiResponse(description='Backup of a task without data is not allowed'),
         })
     @action(methods=['GET'], detail=True, url_path='backup')
     def export_backup(self, request, pk=None):
+        if self.get_object().data is None:
+            return Response(
+                data='Backup of a task without data is not allowed',
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return self.serialize(request, backup.export)
 
     @transaction.atomic
@@ -1208,7 +1219,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export annotation',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
@@ -1262,7 +1273,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in task to import annotations',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
@@ -1373,7 +1384,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         self.get_object() # force call of check_object_permissions()
         response = self._get_rq_response(
             queue=settings.CVAT_QUEUES.IMPORT_DATA.value,
-            job_id=f"create:task.id{pk}-by-{request.user}"
+            job_id=f"create:task.id{pk}"
         )
         serializer = RqStatusSerializer(data=response)
 
@@ -1462,7 +1473,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
         ],
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
@@ -1647,7 +1658,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the task to export annotation',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
@@ -1676,7 +1687,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the task to import annotation',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
@@ -1706,7 +1717,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
             OpenApiParameter('use_default_location', description='Use the location that was configured in the task to import annotation',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL, required=False,
                 default=True),
@@ -1801,7 +1812,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     data = dm.task.patch_job_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
-                handle_annotations_patch(instance=self._object, annotations=data, action=action)
                 return Response(data)
 
 
@@ -1828,7 +1838,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
                 enum=Location.list()),
             OpenApiParameter('cloud_storage_id', description='Storage id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER, required=False),
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.INT, required=False),
         ],
         responses={
             '200': OpenApiResponse(OpenApiTypes.BINARY, description='Download of file started'),
@@ -2589,7 +2599,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if not db_storage.has_at_least_one_manifest:
                 result = cache.get_cloud_preview_with_mime(db_storage)
                 if not result:
-                    return HttpResponse(status=HTTPStatus.NO_CONTENT)
+                    return HttpResponseNotFound('Cloud storage preview not found')
                 return HttpResponse(result[0], result[1])
 
             preview, mime = cache.get_or_set_cloud_preview_with_mime(db_storage)
@@ -2723,9 +2733,16 @@ class AssetsViewSet(
         self.perform_create(serializer)
         path = os.path.join(settings.ASSETS_ROOT, str(serializer.instance.uuid))
         os.makedirs(path)
-        with open(os.path.join(path, file.name), 'wb+') as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
+        if file.content_type in ('image/jpeg', 'image/png'):
+            image = Image.open(file)
+            if any(map(lambda x: x > settings.ASSET_MAX_IMAGE_SIZE, image.size)):
+                scale_factor = settings.ASSET_MAX_IMAGE_SIZE / max(image.size)
+                image = image.resize((map(lambda x: int(x * scale_factor), image.size)))
+            image.save(os.path.join(path, file.name))
+        else:
+            with open(os.path.join(path, file.name), 'wb+') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -2736,6 +2753,21 @@ class AssetsViewSet(
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
+
+    # FIXME: It should be done in another way. It is better to introduce a "public resource" concept and handle it
+    # properly in PolicyEnfocer. Looks like PolicyEnfocer should handle rest_framework.permissions.IsAuthenticated internally.
+    @action(methods=['GET'], detail=True, url_path='public', permission_classes=[])
+    def public_retrieve(self, request, *args, **kwargs):
+        # Note: It is not a good approach to implement one more endpoint for receiving public assets
+        # but it separated to 2 endpoints for better server API specification.
+        # It could be implemented via overwriting get_permissions func,
+        # but in that case the specification would contain incorrect security information.
+        # Note: we cannot move this logic to OPA because OPA permissions
+        # don't imply that the user will be anonymous.
+        instance = self.get_object()
+        if instance.guide.is_public:
+            return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance):
         full_path = os.path.join(instance.get_asset_dir(), instance.filename)

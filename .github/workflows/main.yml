@@ -28,6 +28,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Verify version consistency
+        run: ./dev/update_version.py --verify-current
+
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
         with:
@@ -235,7 +238,7 @@ jobs:
             -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
+            -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
 
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v3.1.1
@@ -269,8 +272,8 @@ jobs:
       matrix:
         specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
                 'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'actions_organizations', 'canvas3d_functionality',
-                'canvas3d_functionality_2', 'issues_prs', 'issues_prs2', 'masks', 'skeletons']
+                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
+                'issues_prs', 'issues_prs2', 'features']
     steps:
       - uses: actions/checkout@v3
 
