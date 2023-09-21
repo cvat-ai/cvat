@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Do not reload annotation view when renew the job or update job state (<https://github.com/opencv/cvat/pull/6851>)
+- Now images from cloud baskets are loaded in parallel when preparing a chunk (<https://github.com/opencv/cvat/pull/6881>)
 
 ### Deprecated
 - TDB
