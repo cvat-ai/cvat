@@ -177,7 +177,7 @@ class MediaCache:
                         source_path = os.path.join(upload_dir, f"{item['name']}{item['extension']}")
                         images.append((source_path, source_path, None))
 
-                yield images
+            yield images
         finally:
             if db_data.storage == StorageChoice.CLOUD_STORAGE and tmp_dir is not None:
                 shutil.rmtree(tmp_dir)
