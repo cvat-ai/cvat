@@ -1381,8 +1381,11 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         **kwargs
     ):
         dm.SourceExtractor.__init__(
-            self, media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud
+            self,
+            subset=instance_meta["subset"],
+            media_type=dm.Image if dimension == DimensionType.DIM_2D else PointCloud
         )
+
         CVATDataExtractorMixin.__init__(self, **kwargs)
 
         instance_meta = instance_data.meta[instance_data.META_FIELD]
