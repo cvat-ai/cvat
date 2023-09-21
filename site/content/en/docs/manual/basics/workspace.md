@@ -58,7 +58,7 @@ To add the grid to the image, do the following:
 5. Use the Opacity slider to change the
    transparency of the grid overlay.
 
-### Changing color settings of image is CVAT
+### Changing color settings of image in CVAT
 
 To change the color setting of the image is CVAT, do the following:
 
