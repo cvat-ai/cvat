@@ -263,7 +263,7 @@ class CommonData(InstanceLabelData):
                     "path": "frame_{:06d}".format(self.abs_frame_id(frame)),
                     "width": self._db_data.video.width,
                     "height": self._db_data.video.height,
-                    "subset": self._db_subset, # Added
+                    "subset": self._db_subset,
                 } for frame in self.rel_range
             }
         else:
