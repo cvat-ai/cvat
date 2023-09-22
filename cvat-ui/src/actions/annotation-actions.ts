@@ -29,7 +29,7 @@ import {
     ShapeType,
     Workspace,
 } from 'reducers';
-import { updateJobAsync } from './tasks-actions';
+import { updateJobAsync } from './jobs-actions';
 import { switchToolsBlockerState } from './settings-actions';
 
 interface AnnotationsParameters {

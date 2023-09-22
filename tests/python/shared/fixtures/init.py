@@ -113,23 +113,25 @@ def _run(command, capture_output=True):
         pytest.exit(message)
 
 
-def _kube_get_server_pod_name():
-    output, _ = _run("kubectl get pods -l component=server -o jsonpath={.items[0].metadata.name}")
+def _kube_get_pod_name(label_filter):
+    output, _ = _run(f"kubectl get pods -l {label_filter} -o jsonpath={{.items[0].metadata.name}}")
     return output
+
+
+def _kube_get_server_pod_name():
+    return _kube_get_pod_name("component=server")
 
 
 def _kube_get_db_pod_name():
-    output, _ = _run(
-        "kubectl get pods -l app.kubernetes.io/name=postgresql -o jsonpath={.items[0].metadata.name}"
-    )
-    return output
+    return _kube_get_pod_name("app.kubernetes.io/name=postgresql")
 
 
 def _kube_get_clichouse_pod_name():
-    output, _ = _run(
-        "kubectl get pods -l app.kubernetes.io/name=clickhouse -o jsonpath={.items[0].metadata.name}"
-    )
-    return output
+    return _kube_get_pod_name("app.kubernetes.io/name=clickhouse")
+
+
+def _kube_get_redis_pod_name():
+    return _kube_get_pod_name("app.kubernetes.io/name=keydb")
 
 
 def docker_cp(source, target):
@@ -171,6 +173,15 @@ def kube_exec_clickhouse_db(command):
     _run(["kubectl", "exec", pod_name, "--"] + command)
 
 
+def docker_exec_redis_db(command):
+    _run(["docker", "exec", f"{PREFIX}_cvat_redis_1"] + command)
+
+
+def kube_exec_redis_db(command):
+    pod_name = _kube_get_redis_pod_name()
+    _run(["kubectl", "exec", pod_name, "--"] + command)
+
+
 def docker_restore_db():
     docker_exec(
         Container.DB, "psql -U root -d postgres -v from=test_db -v to=cvat -f /tmp/restore.sql"
@@ -203,6 +214,26 @@ def kube_restore_clickhouse_db():
             "/bin/sh",
             "-c",
             'clickhouse-client --query "DROP TABLE IF EXISTS ${CLICKHOUSE_DB}.events;" && /bin/sh /docker-entrypoint-initdb.d/init.sh',
+        ]
+    )
+
+
+def docker_restore_redis_db():
+    docker_exec_redis_db(
+        [
+            "/bin/sh",
+            "-c",
+            "keydb-cli flushall",
+        ]
+    )
+
+
+def kube_restore_redis_db():
+    kube_exec_redis_db(
+        [
+            "/bin/sh",
+            "-c",
+            "keydb-cli flushall",
         ]
     )
 
@@ -256,8 +287,8 @@ def delete_compose_files(container_name_files):
         filename.unlink(missing_ok=True)
 
 
-def wait_for_services():
-    for i in range(300):
+def wait_for_services(num_secs=300):
+    for i in range(num_secs):
         logger.debug(f"waiting for the server to load ... ({i})")
         response = requests.get(get_server_url("api/server/health/", format="json"))
         if response.status_code == HTTPStatus.OK:
@@ -272,7 +303,7 @@ def wait_for_services():
         sleep(1)
 
     raise Exception(
-        "Failed to reach the server during the specified period. Please check the configuration."
+        f"Failed to reach the server during {num_secs} seconds. Please check the configuration."
     )
 
 
@@ -328,7 +359,11 @@ def stop_services(dc_files, cvat_root_dir=CVAT_ROOT_DIR):
 
 
 def session_start(
-    session, cvat_root_dir=CVAT_ROOT_DIR, cvat_db_dir=CVAT_DB_DIR, extra_dc_files=None
+    session,
+    cvat_root_dir=CVAT_ROOT_DIR,
+    cvat_db_dir=CVAT_DB_DIR,
+    extra_dc_files=None,
+    waiting_time=300,
 ):
     stop = session.config.getoption("--stop-services")
     start = session.config.getoption("--start-services")
@@ -362,13 +397,16 @@ def session_start(
             cvat_root_dir,
             cvat_db_dir,
             extra_dc_files,
+            waiting_time,
         )
 
     elif platform == "kube":
         kube_start(cvat_db_dir)
 
 
-def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files):
+def local_start(
+    start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_dir, extra_dc_files, waiting_time
+):
     if start and stop:
         raise Exception("--start-services and --stop-services are incompatible")
 
@@ -403,7 +441,8 @@ def local_start(start, stop, dumpdb, cleanup, rebuild, cvat_root_dir, cvat_db_di
     docker_restore_data_volumes()
     docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")
     docker_cp(cvat_db_dir / "data.json", f"{PREFIX}_cvat_server_1:/tmp/data.json")
-    wait_for_services()
+
+    wait_for_services(waiting_time)
 
     docker_exec_cvat("python manage.py loaddata /tmp/data.json")
     docker_exec(
@@ -529,3 +568,15 @@ def restore_clickhouse_db_per_class(request):
         docker_restore_clickhouse_db()
     else:
         kube_restore_clickhouse_db()
+
+
+@pytest.fixture(scope="function")
+def restore_redis_db_per_function(request):
+    # Note that autouse fixtures are executed first within their scope, so be aware of the order
+    # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
+    # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
+    platform = request.config.getoption("--platform")
+    if platform == "local":
+        docker_restore_redis_db()
+    else:
+        kube_restore_redis_db()

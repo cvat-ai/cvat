@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.7.0
+  version: 2.8.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -176,6 +176,32 @@ paths:
       responses:
         '204':
           description: The asset has been deleted
+  /api/assets/{uuid}/public:
+    get:
+      operationId: assets_retrieve_public
+      parameters:
+      - in: path
+        name: uuid
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this asset.
+        required: true
+      tags:
+      - assets
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AssetRead'
+          description: ''
   /api/auth/login:
     post:
       operationId: auth_create_login
@@ -412,9 +438,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''provider_type'',
-          ''name'', ''resource'', ''credentials_type'', ''owner'', ''description'',
-          ''id'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['provider_type', 'name', 'resource', 'credentials_type', 'owner', 'description', 'id'].
         schema:
           type: string
       - name: name
@@ -879,8 +913,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''owner'', ''id'',
-          ''issue_id'', ''frame_id'', ''job_id'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['owner', 'id', 'issue_id', 'frame_id', 'job_id'].
         schema:
           type: string
       - name: frame_id
@@ -1303,7 +1346,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''owner'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['owner'].
         schema:
           type: string
       - name: org
@@ -1496,8 +1549,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''owner'', ''assignee'',
-          ''id'', ''job_id'', ''task_id'', ''resolved'', ''frame_id'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved', 'frame_id'].
         schema:
           type: string
       - name: frame_id
@@ -1719,9 +1781,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''task_name'', ''project_name'',
-          ''assignee'', ''state'', ''stage'', ''id'', ''task_id'', ''project_id'',
-          ''updated_date'', ''dimension'', ''type'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type'].
         schema:
           type: string
       - name: org
@@ -1944,7 +2014,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -2013,7 +2083,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -2090,7 +2160,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -2335,7 +2405,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -2433,8 +2503,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''name'', ''parent'',
-          ''id'', ''type'', ''color'', ''parent_id'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['name', 'parent', 'id', 'type', 'color', 'parent_id'].
         schema:
           type: string
       - in: query
@@ -2652,7 +2731,6 @@ paths:
             application/vnd.cvat+json:
               schema:
                 type: object
-                additionalProperties: {}
           description: Information about the function
     post:
       operationId: lambda_create_functions
@@ -2808,8 +2886,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''user'', ''role'',
-          ''id'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['user', 'role', 'id'].
         schema:
           type: string
       - name: org
@@ -2962,8 +3049,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''name'', ''owner'',
-          ''id'', ''slug'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['name', 'owner', 'id', 'slug'].
         schema:
           type: string
       - name: name
@@ -3140,8 +3236,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''name'', ''owner'',
-          ''assignee'', ''status'', ''id'', ''updated_date'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date'].
         schema:
           type: string
       - name: name
@@ -3347,7 +3452,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -3422,7 +3527,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -3489,7 +3594,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -3564,7 +3669,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -3676,7 +3781,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -3745,8 +3850,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''id'', ''frame'',
-          ''type'', ''job_id'', ''task_id'', ''severity'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id', 'severity'].
         schema:
           type: string
       - name: frame
@@ -3848,8 +3962,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''id'', ''job_id'',
-          ''created_date'', ''gt_last_updated'', ''target_last_updated'', ''parent_id'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'job_id', 'created_date', 'gt_last_updated', 'target_last_updated', 'parent_id'].
         schema:
           type: string
       - name: job_id
@@ -4012,7 +4135,6 @@ paths:
             application/vnd.cvat+json:
               schema:
                 type: object
-                additionalProperties: {}
           description: ''
   /api/quality/settings:
     get:
@@ -4027,7 +4149,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''id'', ''task_id'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'task_id'].
         schema:
           type: string
       - name: org
@@ -4269,19 +4401,15 @@ paths:
             application/vnd.oai.openapi:
               schema:
                 type: object
-                additionalProperties: {}
             application/yaml:
               schema:
                 type: object
-                additionalProperties: {}
             application/vnd.oai.openapi+json:
               schema:
                 type: object
-                additionalProperties: {}
             application/json:
               schema:
                 type: object
-                additionalProperties: {}
           description: ''
   /api/server/about:
     get:
@@ -4394,9 +4522,24 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''project_name'', ''name'',
-          ''owner'', ''status'', ''assignee'', ''subset'', ''mode'', ''dimension'',
-          ''tracker_link'', ''id'', ''project_id'', ''updated_date'']'
+        description: |2+
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'id', 'project_id', 'updated_date'].
+
+          There are few examples for complex filtering tasks:
+
+              - Get all tasks from 1,2,3 projects - { "and" : [{ "in" : [{ "var" : "project_id" }, [1, 2, 3]]}]}
+
+              - Get all completed tasks from 1 project - { "and": [{ "==": [{ "var" : "status" }, "completed"]}, { "==" : [{ "var" : "project_id"}, 1]}]}
+
         schema:
           type: string
       - name: mode
@@ -4631,7 +4774,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -4702,7 +4845,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -4896,7 +5039,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -5155,7 +5298,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -5291,7 +5434,7 @@ paths:
       - in: query
         name: cloud_storage_id
         schema:
-          type: number
+          type: integer
         description: Storage id
       - in: query
         name: filename
@@ -5360,8 +5503,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''username'', ''first_name'',
-          ''last_name'', ''id'', ''is_active'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['username', 'first_name', 'last_name', 'id', 'is_active'].
         schema:
           type: string
       - name: first_name
@@ -5545,8 +5697,17 @@ paths:
       - name: filter
         required: false
         in: query
-        description: 'A filter term. Available filter_fields: [''target_url'', ''owner'',
-          ''type'', ''description'', ''id'', ''project_id'', ''updated_date'']'
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['target_url', 'owner', 'type', 'description', 'id', 'project_id', 'updated_date'].
         schema:
           type: string
       - name: org
@@ -6572,7 +6733,10 @@ components:
             type: string
             format: binary
           default: []
-          description: Uploaded files
+          description: |2
+
+            Uploaded files.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
         server_files:
           type: array
           items:
@@ -6580,8 +6744,10 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
-          description: Paths to files from a file share mounted on the server, or
-            from a cloud storage
+          description: |2
+
+            Paths to files from a file share mounted on the server, or from a cloud storage.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
         remote_files:
           type: array
           items:
@@ -6589,7 +6755,10 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
-          description: Direct download URLs for files
+          description: |2
+
+            Direct download URLs for files.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
         use_zip_chunks:
           type: boolean
           default: false
@@ -6664,12 +6833,18 @@ components:
           writeOnly: true
           description: |2
 
-            Represents a file-to-job mapping. Useful to specify a custom job
-            configuration during task creation. This option is not compatible with
-            most other job split-related options. Files in the jobs must not overlap or repeat.
+            Represents a file-to-job mapping.
+            Useful to specify a custom job configuration during task creation.
+            This option is not compatible with most other job split-related options.
+            Files in the jobs must not overlap or repeat.
+            Job file mapping files must be a subset of the input files.
+            If directories are specified in server_files, all files obtained by recursive search
+            in the specified directories will be used as input files.
+            In case of missing items in the input files, an error will be raised.
 
             Example:
             [
+
                 ["file1.jpg", "file2.jpg"], # job #1 files
                 ["file3.png"], # job #2 files
                 ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
@@ -7075,7 +7250,6 @@ components:
           type: object
           additionalProperties:
             type: object
-            additionalProperties: {}
           description: Label mapping from the model to the task labels
         max_distance:
           type: integer
@@ -7791,6 +7965,7 @@ components:
         invitation:
           type: string
           readOnly: true
+          nullable: true
       required:
       - user
     MetaUser:
@@ -7890,7 +8065,6 @@ components:
           readOnly: true
         contact:
           type: object
-          additionalProperties: {}
           readOnly: true
         owner:
           allOf:
@@ -7913,7 +8087,6 @@ components:
           type: string
         contact:
           type: object
-          additionalProperties: {}
       required:
       - slug
     PaginatedAnnotationConflictList:
@@ -8467,7 +8640,6 @@ components:
           type: string
         contact:
           type: object
-          additionalProperties: {}
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -9759,11 +9931,9 @@ components:
           readOnly: true
         request:
           type: object
-          additionalProperties: {}
           readOnly: true
         response:
           type: object
-          additionalProperties: {}
           readOnly: true
     WebhookRead:
       type: object

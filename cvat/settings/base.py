@@ -21,9 +21,11 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import timedelta
 from distutils.util import strtobool
 from enum import Enum
+import urllib
 
 from corsheaders.defaults import default_headers
 from logstash_async.constants import constants as logstash_async_constants
@@ -40,18 +42,46 @@ BASE_DIR = str(Path(__file__).parents[2])
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
 
-try:
-    sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
-except ImportError:
+redis_host = os.getenv('CVAT_REDIS_HOST', 'localhost')
+redis_port = os.getenv('CVAT_REDIS_PORT', 6379)
+redis_password = os.getenv('CVAT_REDIS_PASSWORD', '')
+
+def generate_secret_key():
+    """
+    Creates secret_key.py in such a way that multiple processes calling
+    this will all end up with the same key (assuming that they share the
+    same "keys" directory).
+    """
 
     from django.utils.crypto import get_random_string
     keys_dir = os.path.join(BASE_DIR, 'keys')
     if not os.path.isdir(keys_dir):
         os.mkdir(keys_dir)
-    with open(os.path.join(keys_dir, 'secret_key.py'), 'w') as f:
+
+    secret_key_fname = 'secret_key.py' # nosec
+
+    with tempfile.NamedTemporaryFile(
+        mode='wt', dir=keys_dir, prefix=secret_key_fname + ".",
+    ) as f:
         chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
         f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
+
+        # Make sure the file contents are written before we link to it
+        # from the final location.
+        f.flush()
+
+        try:
+            os.link(f.name, os.path.join(keys_dir, secret_key_fname))
+        except FileExistsError:
+            # Somebody else created the secret key first.
+            # Discard ours and use theirs.
+            pass
+
+try:
+    sys.path.append(BASE_DIR)
+    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
+except ModuleNotFoundError:
+    generate_secret_key()
     from keys.secret_key import SECRET_KEY
 
 
@@ -255,7 +285,14 @@ TEMPLATES = [
 # IAM settings
 IAM_TYPE = 'BASIC'
 IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
-IAM_DEFAULT_ROLES = ['user']
+
+# FIXME: There are several ways to "replace" default IAM role.
+# One of them is to assign groups when you create a user inside Crowdsourcing plugin and don't add more groups
+# if user.groups field isn't empty.
+# the function should be in uppercase to able get access from django.conf.settings
+def GET_IAM_DEFAULT_ROLES(user) -> list:
+    return ['user']
+
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
@@ -263,6 +300,10 @@ IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
+
+OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'request', 'server',]
+# FIXME: It looks like an internal function of IAM app.
+IAM_CONTEXT_BUILDERS = ['cvat.apps.iam.utils.build_iam_context',]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
@@ -300,52 +341,60 @@ class CVAT_QUEUES(Enum):
 
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '4h'
+        'DEFAULT_TIMEOUT': '4h',
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '4h'
+        'DEFAULT_TIMEOUT': '4h',
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '24h'
+        'DEFAULT_TIMEOUT': '24h',
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.WEBHOOKS.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': '1h'
-    },
-    CVAT_QUEUES.NOTIFICATIONS.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': '1h'
-    },
-    CVAT_QUEUES.QUALITY_REPORTS.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
         'DEFAULT_TIMEOUT': '1h',
+        'PASSWORD': urllib.parse.quote(redis_password),
+    },
+    CVAT_QUEUES.NOTIFICATIONS.value: {
+        'HOST': redis_host,
+        'PORT': redis_port,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h',
+        'PASSWORD': urllib.parse.quote(redis_password),
+    },
+    CVAT_QUEUES.QUALITY_REPORTS.value: {
+        'HOST': redis_host,
+        'PORT': redis_port,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': '1h',
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.ANALYTICS_REPORTS.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '1h'
+        'DEFAULT_TIMEOUT': '1h',
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.CLEANING.value: {
-        'HOST': 'localhost',
-        'PORT': 6379,
+        'HOST': redis_host,
+        'PORT': redis_port,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '1h'
+        'DEFAULT_TIMEOUT': '1h',
+        'PASSWORD': urllib.parse.quote(redis_password),
     },
 }
 
@@ -510,17 +559,18 @@ LOGGING = {
             'database_path': EVENTS_LOCAL_DB_FILE,
         }
     },
+    'root': {
+        'handlers': ['console', 'server_file'],
+    },
     'loggers': {
-        'cvat.server': {
-            'handlers': ['console', 'server_file'],
+        'cvat': {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
 
         'django': {
-            'handlers': ['console', 'server_file'],
             'level': 'INFO',
-            'propagate': True
         },
+
         'vector': {
             'handlers': [],
             'level': 'INFO',
@@ -543,19 +593,14 @@ RESTRICTIONS = {
     'analytics_visibility': True,
 }
 
-# http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
 CACHES = {
    'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
    'media' : {
-       'BACKEND' : 'diskcache.DjangoCache',
-       'LOCATION' : CACHE_ROOT,
-       'TIMEOUT' : None,
-       'SHARDS': 32,
-       'OPTIONS' : {
-            'size_limit' : 2 ** 40, # 1 Tb
-       }
+       'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
+       "LOCATION": f"redis://:{urllib.parse.quote(redis_password)}@{redis_host}:{redis_port}",
+       'TIMEOUT' : 3600 * 24, # 1 day
    }
 }
 
@@ -657,6 +702,7 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
     'SCHEMA_PATH_PREFIX': '/api',
     'SCHEMA_PATH_PREFIX_TRIM': False,
+    'GENERIC_ADDITIONAL_PROPERTIES': None,
 }
 
 # set similar UI restrictions
@@ -704,3 +750,5 @@ ASSET_MAX_IMAGE_SIZE = 1920
 ASSET_MAX_COUNT_PER_GUIDE = 30
 
 SMOKESCREEN_ENABLED = True
+
+EXTRA_RULES_PATHS = []

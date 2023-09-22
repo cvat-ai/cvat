@@ -12,6 +12,7 @@ import {
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
+import { ImageFilter } from 'utils/image-processing';
 
 export type StringObject = {
     [index: string]: string;
@@ -374,12 +375,6 @@ export enum TaskStatus {
     COMPLETED = 'completed',
 }
 
-export enum JobStage {
-    ANNOTATION = 'annotation',
-    REVIEW = 'validation',
-    ACCEPTANCE = 'acceptance',
-}
-
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
@@ -415,7 +410,8 @@ export interface ModelsState {
 
 export interface ErrorState {
     message: string;
-    reason: string;
+    reason: Error;
+    shouldLog?: boolean;
     className?: string;
 }
 
@@ -826,6 +822,7 @@ export interface SettingsState {
     shapes: ShapesSettingsState;
     workspace: WorkspaceSettingsState;
     player: PlayerSettingsState;
+    imageFilters: ImageFilter[];
     showDialog: boolean;
 }
 

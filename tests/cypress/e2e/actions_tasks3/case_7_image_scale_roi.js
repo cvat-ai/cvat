@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,10 +24,9 @@ context('Check if image was scaled to ROI', () => {
                     scaleBefore = Number($scale.match(/scale\((\d\.\d+)\)/m)[1]);
                 });
             cy.get('.cvat-resize-control').click();
-            cy.get('.cvat-canvas-container')
-                .trigger('mousedown', 309, 431, { which: 1 })
-                .trigger('mousemove', 616, 671)
-                .trigger('mouseup', 616, 671);
+            cy.get('.cvat-canvas-container').trigger('mousedown', 309, 431, { which: 1 });
+            cy.get('.cvat-canvas-container').trigger('mousemove', 616, 671);
+            cy.get('.cvat-canvas-container').trigger('mouseup', 616, 671);
         });
         it('Image scaled to ROI', () => {
             cy.get('#cvat_canvas_background')

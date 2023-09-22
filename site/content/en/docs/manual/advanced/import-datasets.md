@@ -1,6 +1,6 @@
 ---
-title: 'Export/import datasets and upload annotation'
-linkTitle: 'Export/import datasets'
+title: 'Import datasets and upload annotation'
+linkTitle: 'Import datasets and upload annotation'
 weight: 19
 description: 'This section explains how to download and upload datasets
   (including annotation, images, and metadata) of projects, tasks, and jobs.'

@@ -238,7 +238,7 @@ jobs:
             -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
+            -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
 
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v3.1.1
@@ -279,7 +279,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-            node-version: '16.x'
+            node-version: '18.x'
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v3

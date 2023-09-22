@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -44,12 +45,11 @@ context("The points of the previous polygon mustn't appear while polygon's inter
         });
         it('Redraw the polygon', () => {
             const keyCodeN = 78;
-            cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove', { force: true })
-                .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true })
-                .trigger('keyup', {
-                    force: true, keyCode: keyCodeN, code: 'KeyN', shiftKey: true,
-                });
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove', { force: true });
+            cy.get('#cvat_canvas_shape_1').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true });
+            cy.get('#cvat_canvas_shape_1').trigger('keyup', {
+                force: true, keyCode: keyCodeN, code: 'KeyN', shiftKey: true,
+            });
             cy.createPolygon(reDrawPolygonTrack);
         });
         it('Activate auto bordering mode', () => {

@@ -35,19 +35,20 @@ export function decodeContextImages(
             const result: Record<string, ImageBitmap> = {};
             let decoded = 0;
 
-            decodeZipWorker.onerror = (e: ErrorEvent) => {
+            decodeZipWorker.onerror = (event: ErrorEvent) => {
                 release();
-                reject(new Error(`Archive can not be decoded. ${e.message}`));
+                reject(event.error);
             };
 
             decodeZipWorker.onmessage = async (event) => {
-                const { error, fileName } = event.data;
-                if (error) {
-                    decodeZipWorker.onerror(new ErrorEvent('error', { message: error.toString() }));
+                if (event.data.error) {
+                    this.zipWorker.onerror(new ErrorEvent('error', {
+                        error: event.data.error,
+                    }));
                     return;
                 }
 
-                const { data } = event.data;
+                const { data, fileName } = event.data;
                 result[fileName.split('.')[0]] = data;
                 decoded++;
 
@@ -253,10 +254,10 @@ export class FrameDecoder {
                     index++;
                 };
 
-                worker.onerror = () => {
+                worker.onerror = (event: ErrorEvent) => {
                     release();
                     worker.terminate();
-                    this.chunkIsBeingDecoded.onReject(new Error('Error occured during decode'));
+                    this.chunkIsBeingDecoded.onReject(event.error);
                     this.chunkIsBeingDecoded = null;
                 };
 
@@ -290,7 +291,9 @@ export class FrameDecoder {
 
                 this.zipWorker.onmessage = async (event) => {
                     if (event.data.error) {
-                        this.zipWorker.onerror(new ErrorEvent('error', { message: event.data.error.toString() }));
+                        this.zipWorker.onerror(new ErrorEvent('error', {
+                            error: event.data.error,
+                        }));
                         return;
                     }
 
@@ -306,10 +309,9 @@ export class FrameDecoder {
                     index++;
                 };
 
-                this.zipWorker.onerror = () => {
+                this.zipWorker.onerror = (event: ErrorEvent) => {
                     release();
-
-                    this.chunkIsBeingDecoded.onReject(new Error('Error occured during decode'));
+                    this.chunkIsBeingDecoded.onReject(event.error);
                     this.chunkIsBeingDecoded = null;
                 };
 

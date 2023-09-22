@@ -141,8 +141,6 @@ export class DataError extends Exception {}
 
 export class ScriptingError extends Exception {}
 
-export class PluginError extends Exception {}
-
 export class ServerError extends Exception {
     constructor(message, code) {
         super(message);

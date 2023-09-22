@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,6 +9,8 @@ import Card from 'antd/lib/card';
 import Descriptions from 'antd/lib/descriptions';
 import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
+
+import { Job } from 'cvat-core-wrapper';
 import { useCardHeightHOC } from 'utils/hooks';
 import Preview from 'components/common/preview';
 import JobActionsMenu from 'components/job-item/job-actions-menu';
@@ -22,11 +24,12 @@ const useCardHeight = useCardHeightHOC({
 });
 
 interface Props {
-    job: any;
+    job: Job;
+    onJobUpdate: (job: Job) => void;
 }
 
 function JobCardComponent(props: Props): JSX.Element {
-    const { job } = props;
+    const { job, onJobUpdate } = props;
     const [expanded, setExpanded] = useState<boolean>(false);
     const history = useHistory();
     const height = useCardHeight();
@@ -73,7 +76,7 @@ function JobCardComponent(props: Props): JSX.Element {
                     <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
                 ) : null}
             </Descriptions>
-            <Dropdown overlay={<JobActionsMenu job={job} />}>
+            <Dropdown overlay={<JobActionsMenu onJobUpdate={onJobUpdate} job={job} />}>
                 <MoreOutlined className='cvat-job-card-more-button' />
             </Dropdown>
         </Card>

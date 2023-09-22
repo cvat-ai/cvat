@@ -52,7 +52,7 @@
     "husky": "^6.0.0",
     "lint-staged": "^13.0.3",
     "micromatch": "^4.0.2",
-    "nodemon": "^2.0.7",
+    "nodemon": "^3.0.1",
     "nyc": "^15.1.0",
     "postcss": "8",
     "postcss-loader": "^7.3.3",
@@ -92,7 +92,8 @@
     "instrument": "nyc instrument cvat-ui cvat-ui_cov && nyc instrument cvat-canvas cvat-canvas_cov && nyc instrument cvat-canvas3d cvat-canvas3d_cov && nyc instrument cvat-data cvat-data_cov && nyc instrument cvat-core cvat-core_cov",
     "cp": "cp -r cvat-ui_cov/* cvat-ui && cp -r cvat-canvas_cov/* cvat-canvas && cp -r cvat-canvas3d_cov/* cvat-canvas3d && cp -r cvat-data_cov/* cvat-data && cp -r cvat-core_cov/* cvat-core",
     "rm": "rm -rf cvat-ui_cov cvat-canvas_cov cvat-canvas3d_cov cvat-data_cov cvat-core_cov",
-    "prepare": "husky install && rm .husky/pre-commit; npx husky add .husky/pre-commit \"npx lint-staged\"",
+    "prepare": "if [ -z \"${DISABLE_HUSKY}\" ]; then yarn run setup:husky; fi",
+    "setup:husky": "husky install && rm .husky/pre-commit; npx husky add .husky/pre-commit \"npx lint-staged\"",
     "precommit:cvat-tests": "cd tests && eslint --fix",
     "precommit:cvat-data": "cd cvat-data && eslint --fix",
     "precommit:cvat-core": "cd cvat-core && eslint --fix",
@@ -126,5 +127,8 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/prettier": "2.4.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@types/fabric": "^4.5.7",
+    "fabric": "^5.2.1"
+  }
 }

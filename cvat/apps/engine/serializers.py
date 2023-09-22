@@ -20,11 +20,12 @@ from django.db import transaction
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
+slogger = ServerLogManager(__name__)
 
 class WriteOnceMixin:
     """
@@ -790,12 +791,18 @@ class JobFiles(serializers.ListField):
 
 class JobFileMapping(serializers.ListField):
     """
-    Represents a file-to-job mapping. Useful to specify a custom job
-    configuration during task creation. This option is not compatible with
-    most other job split-related options. Files in the jobs must not overlap or repeat.
+    Represents a file-to-job mapping.
+    Useful to specify a custom job configuration during task creation.
+    This option is not compatible with most other job split-related options.
+    Files in the jobs must not overlap or repeat.
+    Job file mapping files must be a subset of the input files.
+    If directories are specified in server_files, all files obtained by recursive search
+    in the specified directories will be used as input files.
+    In case of missing items in the input files, an error will be raised.
 
     Example:
     [
+
         ["file1.jpg", "file2.jpg"], # job #1 files
         ["file3.png"], # job #2 files
         ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
@@ -823,9 +830,15 @@ class DataSerializer(serializers.ModelSerializer):
             When false, video chunks are represented as video segments
         """))
     client_files = ClientFileSerializer(many=True, default=[],
-        help_text="Uploaded files")
+        help_text=textwrap.dedent("""
+            Uploaded files.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
+        """))
     server_files = ServerFileSerializer(many=True, default=[],
-        help_text="Paths to files from a file share mounted on the server, or from a cloud storage")
+        help_text=textwrap.dedent("""
+            Paths to files from a file share mounted on the server, or from a cloud storage.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
+        """))
     server_files_exclude = serializers.ListField(required=False, default=[],
         child=serializers.CharField(max_length=1024),
         help_text=textwrap.dedent("""\
@@ -844,7 +857,10 @@ class DataSerializer(serializers.ModelSerializer):
         """)
     )
     remote_files = RemoteFileSerializer(many=True, default=[],
-        help_text="Direct download URLs for files")
+        help_text=textwrap.dedent("""
+            Direct download URLs for files.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
+        """))
     use_cache = serializers.BooleanField(default=False,
         help_text=textwrap.dedent("""\
             Enable or disable task data chunk caching for the task.
@@ -1103,7 +1119,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
 
-        os.makedirs(db_task.get_task_logs_dirname())
         os.makedirs(db_task.get_task_artifacts_dirname())
 
         LabelSerializer.create_labels(labels, parent_instance=db_task)
@@ -1304,7 +1319,7 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         project_path = db_project.get_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
-        os.makedirs(db_project.get_project_logs_dirname())
+        os.makedirs(project_path)
 
         LabelSerializer.create_labels(labels, parent_instance=db_project)
 
@@ -1806,8 +1821,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             cloud_storage_path = db_storage.get_storage_dirname()
             if os.path.isdir(cloud_storage_path):
                 shutil.rmtree(cloud_storage_path)
+            os.makedirs(cloud_storage_path)
 
-            os.makedirs(db_storage.get_storage_logs_dirname(), exist_ok=True)
             if temporary_file:
                 # so, gcs key file is valid and we need to set correct path to the file
                 real_path_to_key_file = db_storage.get_key_file_path()
@@ -2033,7 +2048,7 @@ class AnnotationGuideWriteSerializer(WriteOnceMixin, serializers.ModelSerializer
             markdown = guide.markdown
 
             # pylint: disable=anomalous-backslash-in-string
-            pattern = re.compile('\!\[image\]\(\/api\/assets\/([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})\)')
+            pattern = re.compile(r'\(/api/assets/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\)')
             results = re.findall(pattern, markdown)
 
             for asset_id in results:

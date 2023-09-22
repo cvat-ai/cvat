@@ -9,6 +9,15 @@ fullnameOverride: ""
 
 cvat:
   backend:
+    initializer:
+      labels: {}
+      annotations: {}
+      resources: {}
+      affinity: {}
+      tolerations: []
+      additionalEnv: []
+      additionalVolumes: []
+      additionalVolumeMounts: []
     server:
       replicas: 1
       labels: {}
@@ -226,19 +235,23 @@ postgresql:
     replication_password: cvat_postgresql_replica
 
 
-# See https://github.com/bitnami/charts/blob/master/bitnami/redis/ for more info
-redis:
+# https://artifacthub.io/packages/helm/enapter/keydb
+keydb:
   enabled: true
   external:
-      host: 127.0.0.1
-  auth:
-    existingSecret: "{{ .Release.Name }}-redis-secret"
+    host: 127.0.0.1
+  existingSecret: "cvat-keydb-secret"
   secret:
     create: true
-    name: "{{ .Release.Name }}-redis-secret"
-    password: cvat_redis
-  cluster:
-    enabled: false
+    name: cvat-keydb-secret
+    password: cvat_keydb
+  multiMaster: false
+  activeReplicas: false
+  nodes: 1
+  configExtraArgs:
+  - storage-provider: ["flash", "/data/flash"]
+  - maxmemory: "5G"
+  - maxmemory-policy: "allkeys-lfu"
 
 nuclio:
   enabled: false
