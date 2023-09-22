@@ -3,15 +3,24 @@ linkTitle: 'YOLO'
 weight: 7
 ---
 
-# [YOLO](https://pjreddie.com/darknet/yolo/)
+models, which are designed for real-time object detection tasks.
+However, the format can also be adapted for use with other object detection models.
 
+For more information, see:
+
+- [YOLO Specification](https://pjreddie.com/darknet/yolo/)
 - [Format specification](https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/yolo_dataset)
-- supported annotations: Rectangles
 
 ## YOLO export
 
-Downloaded file: a zip archive with following structure:
+For export of images:
+
+- Supported annotations: Bounding Boxes.
+- Attributes: Not supported.
+- Tracks: Not supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 archive.zip/
@@ -48,12 +57,16 @@ airplane
 2 0.7 0.2 0.3 0.1
 ```
 
-Each annotation `*.txt` file has a name that corresponds to the name of
-the image file (e. g. `frame_000001.txt` is the annotation
-for the `frame_000001.jpg` image).
-The `*.txt` file structure: each line describes label and bounding box
-in the following format `label_id cx cy w h`.
-`obj.names` contains the ordered list of label names.
+Each annotation file, with the `.txt` extension,
+is named to correspond with its associated image file.
+
+For example, `frame_000001.txt` serves as the annotation for the
+`frame_000001.jpg` image.
+
+The structure of the `.txt` file is as follows:
+each line describes a label and a bounding box
+in the format `label_id cx cy w h`.
+The file `obj.names` contains an ordered list of label names.
 
 ## YOLO import
 
