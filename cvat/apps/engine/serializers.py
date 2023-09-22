@@ -791,12 +791,18 @@ class JobFiles(serializers.ListField):
 
 class JobFileMapping(serializers.ListField):
     """
-    Represents a file-to-job mapping. Useful to specify a custom job
-    configuration during task creation. This option is not compatible with
-    most other job split-related options. Files in the jobs must not overlap or repeat.
+    Represents a file-to-job mapping.
+    Useful to specify a custom job configuration during task creation.
+    This option is not compatible with most other job split-related options.
+    Files in the jobs must not overlap or repeat.
+    Job file mapping files must be a subset of the input files.
+    If directories are specified in server_files, all files obtained by recursive search
+    in the specified directories will be used as input files.
+    In case of missing items in the input files, an error will be raised.
 
     Example:
     [
+
         ["file1.jpg", "file2.jpg"], # job #1 files
         ["file3.png"], # job #2 files
         ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
@@ -824,9 +830,15 @@ class DataSerializer(serializers.ModelSerializer):
             When false, video chunks are represented as video segments
         """))
     client_files = ClientFileSerializer(many=True, default=[],
-        help_text="Uploaded files")
+        help_text=textwrap.dedent("""
+            Uploaded files.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
+        """))
     server_files = ServerFileSerializer(many=True, default=[],
-        help_text="Paths to files from a file share mounted on the server, or from a cloud storage")
+        help_text=textwrap.dedent("""
+            Paths to files from a file share mounted on the server, or from a cloud storage.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
+        """))
     server_files_exclude = serializers.ListField(required=False, default=[],
         child=serializers.CharField(max_length=1024),
         help_text=textwrap.dedent("""\
@@ -845,7 +857,10 @@ class DataSerializer(serializers.ModelSerializer):
         """)
     )
     remote_files = RemoteFileSerializer(many=True, default=[],
-        help_text="Direct download URLs for files")
+        help_text=textwrap.dedent("""
+            Direct download URLs for files.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
+        """))
     use_cache = serializers.BooleanField(default=False,
         help_text=textwrap.dedent("""\
             Enable or disable task data chunk caching for the task.

@@ -112,6 +112,11 @@ class MembershipReadSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role',
             'invitation']
         read_only_fields = fields
+        extra_kwargs = {
+            'invitation': {
+                'allow_null': True, # owner of an organization does not have an invitation
+            }
+        }
 
 class MembershipWriteSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
