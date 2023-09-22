@@ -88,7 +88,7 @@ from lightest to darkest, in an image.
 **Gamma** correction can be used to
 control the overall brightness of an image
 
-![Image Saturation](/images/image-settings-gamma.jpg)
+![Gamma Correction](/images/image-settings-gamma.jpg)
 
 To reset the setting to default values, click
 **Reset color settings**
