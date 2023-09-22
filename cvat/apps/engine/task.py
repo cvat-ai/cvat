@@ -623,6 +623,15 @@ def _create_thread(
 
             data['server_files'].extend(additional_files)
 
+        # We only need to process the files specified in job_file_mapping
+        if job_file_mapping is not None:
+            filtered_files = []
+            for f in itertools.chain.from_iterable(job_file_mapping):
+                if f not in data['server_files']:
+                    raise ValidationError(f"Job mapping file {f} is not specified in input files")
+                filtered_files.append(f)
+            data['server_files'] = filtered_files
+
         if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
             _download_data_from_cloud_storage(db_data.cloud_storage, data['server_files'], upload_dir)
             is_data_in_cloud = False

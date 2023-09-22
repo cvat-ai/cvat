@@ -3,13 +3,26 @@ linkTitle: 'Wider Face'
 weight: 9
 ---
 
-# [WIDER Face](http://shuoyang1213.me/WIDERFACE/)
+he WIDER Face dataset is widely used for face detection tasks.
+Many popular models for object detection and face detection
+specifically are trained on this dataset for benchmarking and deployment.
 
+For more information, see:
+
+- [WIDER Face Specification](http://shuoyang1213.me/WIDERFACE/)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/widerface_dataset)
 
 ## WIDER Face export
 
-Downloaded file: a zip archive of the following structure:
+For export of images:
+
+- Supported annotations: Bounding Boxes (with attributes), Tags.
+- Attributes:
+  - `blur`, `expression`, `illumination`, `pose`, `invalid`
+  - `occluded` (both the annotation property & an attribute).
+- Tracks: Not supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -23,11 +36,6 @@ taskname.zip/
         └── 1--label1/
             └── 1_label1_image2.jpg
 ```
-
-- supported annotations: Rectangles (with attributes), Labels
-- supported attributes:
-  - `blur`, `expression`, `illumination`, `pose`, `invalid`
-  - `occluded` (both the annotation property & an attribute)
 
 ## WIDER Face import
 
