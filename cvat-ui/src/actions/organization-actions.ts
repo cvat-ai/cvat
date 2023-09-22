@@ -212,14 +212,17 @@ export function inviteOrganizationMembersAsync(
     };
 }
 
-export function leaveOrganizationAsync(organization: any): ThunkAction {
+export function leaveOrganizationAsync(
+    organization: any,
+    onLeaveSuccess?: () => void,
+): ThunkAction {
     return async function (dispatch, getState) {
         const { user } = getState().auth;
         dispatch(organizationActions.leaveOrganization());
         try {
             await organization.leave(user);
             dispatch(organizationActions.leaveOrganizationSuccess());
-            localStorage.removeItem('currentOrganization');
+            if (onLeaveSuccess) onLeaveSuccess();
         } catch (error) {
             dispatch(organizationActions.leaveOrganizationFailed(error));
         }

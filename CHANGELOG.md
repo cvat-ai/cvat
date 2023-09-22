@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Downloading additional data from cloud storage if use_cache=true and job_file_mapping are specified
   (<https://github.com/opencv/cvat/pull/6879>)
+- Leaving an organization (<https://github.com/opencv/cvat/pull/6422>)
 
 ### Security
 - TDB

@@ -281,7 +281,10 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 onClick={() => {
                                     Modal.confirm({
                                         onOk: () => {
-                                            dispatch(leaveOrganizationAsync(organizationInstance));
+                                            dispatch(leaveOrganizationAsync(organizationInstance, () => {
+                                                localStorage.removeItem('currentOrganization');
+                                                window.location.reload();
+                                            }));
                                         },
                                         className: 'cvat-modal-organization-leave-confirm',
                                         content: (
