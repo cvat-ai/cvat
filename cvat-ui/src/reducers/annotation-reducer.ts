@@ -5,11 +5,12 @@
 
 import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
+import { JobsActionTypes } from 'actions/jobs-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { DimensionType } from 'cvat-core-wrapper';
+import { DimensionType, JobStage } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
 import { SettingsActionTypes } from 'actions/settings-actions';
@@ -17,7 +18,6 @@ import {
     ActiveControl,
     AnnotationState,
     ContextMenuType,
-    JobStage,
     ObjectType,
     ShapeType,
     Workspace,
@@ -158,7 +158,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 groundTruthJobFramesMeta,
             } = action.payload;
 
-            const isReview = job.stage === JobStage.REVIEW;
+            const isReview = job.stage === JobStage.VALIDATION;
             let workspaceSelected = Workspace.STANDARD;
 
             const defaultLabel = job.labels.length ? job.labels[0] : null;
@@ -234,6 +234,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.job,
                     instance: undefined,
                     fetching: false,
+                },
+            };
+        }
+        case JobsActionTypes.UPDATE_JOB_SUCCESS: {
+            return {
+                ...state,
+                job: {
+                    ...state.job,
+                    instance: action.payload.job,
                 },
             };
         }

@@ -135,6 +135,32 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
                 },
             };
         }
+        case JobsActionTypes.UPDATE_JOB: {
+            return {
+                ...state,
+                fetching: true,
+            };
+        }
+        case JobsActionTypes.UPDATE_JOB_SUCCESS: {
+            return {
+                ...state,
+                current: state.current.includes(action.payload.job) ? (
+                    state.current.map((job) => {
+                        if (job === action.payload.job) {
+                            return action.payload.job;
+                        }
+                        return job;
+                    })
+                ) : state.current,
+                fetching: false,
+            };
+        }
+        case JobsActionTypes.UPDATE_JOB_FAILED: {
+            return {
+                ...state,
+                fetching: false,
+            };
+        }
         default: {
             return state;
         }
