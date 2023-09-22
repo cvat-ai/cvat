@@ -102,26 +102,37 @@ const defaultState: State = {
 };
 
 const UploadFileErrorMessages = {
-    one: 'It can not be processed. You can upload an archive with images, a video, a pdf file or multiple images',
-    multi: 'It can not be processed. You can upload one or more videos',
+    one: 'It can not be processed. You can upload an archive with images, a video, a pdf file or multiple images. ',
+    multi: 'It can not be processed. You can upload one or more videos. ',
 };
+
+function fileExtensionList(files: RemoteFile[]): string {
+    const fileTypes = files.map((file: RemoteFile) => `.${file.name.split('.').pop()}`);
+    return Array.from(new Set(fileTypes)).join(', ');
+}
 
 function validateRemoteFiles(remoteFiles: RemoteFile[], many: boolean): string {
     let uploadFileErrorMessage = '';
-    let filteredFiles = remoteFiles;
     const regFiles = remoteFiles.filter((file) => file.type === 'REG');
     const excludedManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
     if (!many && excludedManifests.length > 1) {
-        uploadFileErrorMessage = excludedManifests.every(
-            (it) => it.mimeType === SupportedShareTypes.IMAGE,
-        ) ? '' : UploadFileErrorMessages.one;
+        const erroredFiles = excludedManifests.filter(
+            (it) => it.mimeType !== SupportedShareTypes.IMAGE,
+        );
+        if (erroredFiles.length !== 0) {
+            const unsupportedTypes = fileExtensionList(erroredFiles);
+            uploadFileErrorMessage =
+                `${UploadFileErrorMessages.one} Found unsupported types: ${unsupportedTypes} `;
+        }
     } else if (many) {
-        filteredFiles = filteredFiles.filter((it) => it.mimeType === SupportedShareTypes.VIDEO);
-        // something is selected and no one video
-        // or something except of videos selected (excluding directories)
-        uploadFileErrorMessage = remoteFiles.length && (
-            !filteredFiles.length || filteredFiles.length !== regFiles.length
-        ) ? UploadFileErrorMessages.multi : '';
+        const erroredFiles = regFiles.filter(
+            (it) => it.mimeType !== SupportedShareTypes.VIDEO,
+        );
+        if (erroredFiles.length !== 0) {
+            const unsupportedTypes = fileExtensionList(erroredFiles);
+            uploadFileErrorMessage =
+                `${UploadFileErrorMessages.multi} Found unsupported types: ${unsupportedTypes} `;
+        }
     }
     return uploadFileErrorMessage;
 }
