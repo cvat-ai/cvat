@@ -111,28 +111,33 @@ function fileExtensionList(files: RemoteFile[]): string {
     return Array.from(new Set(fileTypes)).join(', ');
 }
 
+function checkFiles(files: RemoteFile[], type: SupportedShareTypes, baseError: string): string {
+    const erroredFiles = files.filter(
+        (it) => it.mimeType !== type,
+    );
+    if (erroredFiles.length !== 0) {
+        const unsupportedTypes = fileExtensionList(erroredFiles);
+        return `${baseError} Found unsupported types: ${unsupportedTypes} `;
+    }
+    return '';
+}
+
 function validateRemoteFiles(remoteFiles: RemoteFile[], many: boolean): string {
     let uploadFileErrorMessage = '';
     const regFiles = remoteFiles.filter((file) => file.type === 'REG');
     const excludedManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
     if (!many && excludedManifests.length > 1) {
-        const erroredFiles = excludedManifests.filter(
-            (it) => it.mimeType !== SupportedShareTypes.IMAGE,
+        uploadFileErrorMessage = checkFiles(
+            excludedManifests,
+            SupportedShareTypes.IMAGE,
+            UploadFileErrorMessages.one,
         );
-        if (erroredFiles.length !== 0) {
-            const unsupportedTypes = fileExtensionList(erroredFiles);
-            uploadFileErrorMessage =
-                `${UploadFileErrorMessages.one} Found unsupported types: ${unsupportedTypes} `;
-        }
     } else if (many) {
-        const erroredFiles = regFiles.filter(
-            (it) => it.mimeType !== SupportedShareTypes.VIDEO,
+        uploadFileErrorMessage = checkFiles(
+            regFiles,
+            SupportedShareTypes.VIDEO,
+            UploadFileErrorMessages.multi,
         );
-        if (erroredFiles.length !== 0) {
-            const unsupportedTypes = fileExtensionList(erroredFiles);
-            uploadFileErrorMessage =
-                `${UploadFileErrorMessages.multi} Found unsupported types: ${unsupportedTypes} `;
-        }
     }
     return uploadFileErrorMessage;
 }
