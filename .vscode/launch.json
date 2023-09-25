@@ -340,22 +340,6 @@
             "console": "internalConsole"
         },
         {
-            "name": "server: git",
-            "type": "python",
-            "request": "launch",
-            "justMyCode": false,
-            "stopOnEntry": false,
-            "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
-            "args": [
-                "update_git_states"
-            ],
-            "django": true,
-            "cwd": "${workspaceFolder}",
-            "env": {},
-            "console": "internalConsole"
-        },
-        {
             "name": "server: RQ - cleaning",
             "type": "python",
             "request": "launch",
