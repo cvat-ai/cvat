@@ -6,12 +6,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-05-26T16:11:23.946000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 3,
+      "guide_id": null,
       "id": 28,
       "issues": {
         "count": 0,
@@ -37,12 +37,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-05-26T16:11:23.880000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 11,
+      "guide_id": null,
       "id": 27,
       "issues": {
         "count": 0,
@@ -68,12 +68,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-03-27T19:08:07.649000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 4,
+      "guide_id": null,
       "id": 26,
       "issues": {
         "count": 0,
@@ -99,12 +99,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-03-27T19:08:07.649000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 6,
+      "guide_id": null,
       "id": 25,
       "issues": {
         "count": 0,
@@ -130,12 +130,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2023-03-10T11:57:31.614000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 2,
+      "guide_id": null,
       "id": 24,
       "issues": {
         "count": 0,
@@ -161,12 +161,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-03-10T11:56:33.757000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 2,
+      "guide_id": null,
       "id": 23,
       "issues": {
         "count": 0,
@@ -192,12 +192,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2023-03-01T15:36:26.668000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 2,
+      "guide_id": null,
       "id": 22,
       "issues": {
         "count": 0,
@@ -223,12 +223,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2023-02-10T14:05:25.947000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 21,
       "issues": {
         "count": 0,
@@ -254,12 +254,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-12-01T12:53:10.425000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 25,
+      "guide_id": null,
       "id": 19,
       "issues": {
         "count": 0,
@@ -285,12 +285,12 @@
     {
       "assignee": null,
       "bug_tracker": "https://bugtracker.localhost/task/12345",
-      "guide_id": null,
       "created_date": "2022-09-22T14:22:25.820000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 8,
+      "guide_id": null,
       "id": 18,
       "issues": {
         "count": 0,
@@ -316,12 +316,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-06-08T08:33:06.505000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 17,
       "issues": {
         "count": 0,
@@ -353,12 +353,12 @@
         "username": "worker2"
       },
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-05T10:32:19.149000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 11,
+      "guide_id": null,
       "id": 16,
       "issues": {
         "count": 1,
@@ -384,12 +384,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 14,
       "issues": {
         "count": 0,
@@ -415,12 +415,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 13,
       "issues": {
         "count": 0,
@@ -446,12 +446,12 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 12,
       "issues": {
         "count": 0,
@@ -483,12 +483,12 @@
         "username": "worker4"
       },
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-05T09:33:10.420000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 5,
+      "guide_id": null,
       "id": 11,
       "issues": {
         "count": 1,
@@ -520,12 +520,12 @@
         "username": "admin1"
       },
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2022-03-05T08:30:48.612000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 14,
+      "guide_id": null,
       "id": 10,
       "issues": {
         "count": 1,
@@ -551,12 +551,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2022-02-21T10:31:52.429000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 11,
+      "guide_id": null,
       "id": 9,
       "issues": {
         "count": 1,
@@ -582,12 +582,12 @@
     {
       "assignee": null,
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2022-02-16T06:26:54.631000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "3d",
       "frame_count": 1,
+      "guide_id": null,
       "id": 8,
       "issues": {
         "count": 0,
@@ -619,12 +619,12 @@
         "username": "worker4"
       },
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2022-02-16T06:25:48.168000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 25,
+      "guide_id": null,
       "id": 7,
       "issues": {
         "count": 1,
@@ -656,12 +656,12 @@
         "username": "worker1"
       },
       "bug_tracker": null,
-      "guide_id": null,
       "created_date": "2021-12-14T18:50:29.458000Z",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
       "dimension": "2d",
       "frame_count": 23,
+      "guide_id": null,
       "id": 2,
       "issues": {
         "count": 0,

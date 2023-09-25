@@ -7965,6 +7965,7 @@ components:
         invitation:
           type: string
           readOnly: true
+          nullable: true
       required:
       - user
     MetaUser:
