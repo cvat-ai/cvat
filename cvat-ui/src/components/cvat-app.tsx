@@ -58,6 +58,8 @@ import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-pag
 
 import GuidePage from 'components/md-guide/guide-page';
 
+import AcceptInvitationPage from 'components/accept-invitation-page/accept-invitation-page';
+
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { getCore } from 'cvat-core-wrapper';
 import { ErrorState, NotificationsState, PluginsState } from 'reducers';
@@ -514,6 +516,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 <GlobalErrorBoundary>
                     <Switch>
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
+                        <Route exact path='/auth/register/invitation' component={AcceptInvitationPage} />
                         <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
                         <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
                         <Route exact path='/auth/login' component={LoginPageContainer} />
