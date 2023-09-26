@@ -464,8 +464,9 @@ async function acceptInvitation(
     key: string,
 ): Promise<SerializedRegister> {
     let response = null;
+
     try {
-        response = await Axios.post(`${config.backendAPI}/invitations/accept`, {
+        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`, {
             username,
             first_name: firstName,
             last_name: lastName,
@@ -473,7 +474,6 @@ async function acceptInvitation(
             password1: password,
             password2: password,
             confirmations,
-            key,
         });
     } catch (errorData) {
         throw generateError(errorData);

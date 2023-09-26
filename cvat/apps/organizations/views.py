@@ -6,10 +6,12 @@
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
+from rest_framework.permissions import AllowAny
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
-
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
@@ -214,3 +216,9 @@ class InvitationViewSet(viewsets.GenericViewSet,
             serializer.instance.accept()
         else:
             super().perform_update(serializer)
+
+    @action(detail=True, methods=['POST'], url_path='accept', permission_classes=[AllowAny], authentication_classes=[])
+    def accept(self, request, pk):
+        print(request, pk)
+        ## TODO implement accept invitation
+        return Response("testOrgSlug")
