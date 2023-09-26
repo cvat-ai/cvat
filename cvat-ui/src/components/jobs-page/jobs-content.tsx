@@ -1,4 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +10,12 @@ import { CombinedState } from 'reducers';
 import { Job, JobType } from 'cvat-core-wrapper';
 import JobCard from './job-card';
 
-function JobsContentComponent(): JSX.Element {
+interface Props {
+    onJobUpdate(job: Job): void;
+}
+
+function JobsContentComponent(props: Props): JSX.Element {
+    const { onJobUpdate } = props;
     const jobs = useSelector((state: CombinedState) => state.jobs.current);
     const dimensions = {
         md: 22,
@@ -22,7 +28,7 @@ function JobsContentComponent(): JSX.Element {
         <Row justify='center' align='middle'>
             <Col className='cvat-jobs-page-list' {...dimensions}>
                 {jobs.filter((job: Job) => job.type === JobType.ANNOTATION).map((job: Job): JSX.Element => (
-                    <JobCard job={job} key={job.id} />
+                    <JobCard onJobUpdate={onJobUpdate} job={job} key={job.id} />
                 ))}
             </Col>
         </Row>

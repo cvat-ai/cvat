@@ -5,13 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[2.7.2\] - 2023-09-25
+
+### Changed
+
+- Do not reload annotation view when renew the job or update job state (<https://github.com/opencv/cvat/pull/6851>)
+- Now images from cloud buckets are loaded in parallel when preparing a chunk (<https://github.com/opencv/cvat/pull/6881>)
+
+### Fixed
+
+- Downloading additional data from cloud storage if use_cache=true and job_file_mapping are specified
+  (<https://github.com/opencv/cvat/pull/6879>)
+- Leaving an organization (<https://github.com/opencv/cvat/pull/6422>)
+
 ## \[2.7.1\] - 2023-09-15
+
 ### Fixed
 
 - Include cloud storage manifest file to selected files if manifest was used as data source (<https://github.com/opencv/cvat/pull/6850>)
 - Keep sequence of files when directories were specified in server_files (<https://github.com/opencv/cvat/pull/6850>)
 
 ## \[2.7.0\] - 2023-09-10
+
 ### Added
 
 - Admin actions for easy activation/deactivation of users (<https://github.com/opencv/cvat/pull/6314>)
