@@ -23,10 +23,14 @@ interface RegisterPageComponentProps {
         password: string,
         confirmations: UserConfirmation[],
     ) => void;
+    predifinedEmail?: string;
+    disableNavigation?: boolean;
 }
 
 function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponentProps): JSX.Element {
-    const { fetching, userAgreements, onRegister } = props;
+    const {
+        fetching, userAgreements, onRegister, predifinedEmail, disableNavigation,
+    } = props;
 
     return (
         <SigningLayout>
@@ -36,6 +40,8 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
                         <RegisterForm
                             fetching={fetching}
                             userAgreements={userAgreements}
+                            predifinedEmail={predifinedEmail}
+                            disableNavigation={disableNavigation}
                             onSubmit={(registerData: RegisterData): void => {
                                 onRegister(
                                     registerData.username,

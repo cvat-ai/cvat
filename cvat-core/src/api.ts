@@ -96,6 +96,19 @@ function build() {
                 );
                 return result;
             },
+            async acceptInvitation(username, firstName, lastName, email, password, userConfirmations, key) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.server.acceptInvitation,
+                    username,
+                    firstName,
+                    lastName,
+                    email,
+                    password,
+                    userConfirmations,
+                    key,
+                );
+                return result;
+            },
             async authorized() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.authorized);
                 return result;

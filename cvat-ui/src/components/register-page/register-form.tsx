@@ -34,6 +34,8 @@ export interface RegisterData {
 interface Props {
     fetching: boolean;
     userAgreements: UserAgreement[];
+    predifinedEmail?: string;
+    disableNavigation?: boolean;
     onSubmit(registerData: RegisterData): void;
 }
 
@@ -99,16 +101,25 @@ const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
 });
 
 function RegisterFormComponent(props: Props): JSX.Element {
-    const { fetching, onSubmit, userAgreements } = props;
+    const {
+        fetching, onSubmit, userAgreements, predifinedEmail, disableNavigation,
+    } = props;
     const [form] = Form.useForm();
+    if (predifinedEmail) {
+        form.setFieldsValue({ email: predifinedEmail });
+    }
     const [usernameEdited, setUsernameEdited] = useState(false);
     return (
         <div className={`cvat-register-form-wrapper ${userAgreements.length ? 'cvat-register-form-wrapper-extended' : ''}`}>
-            <Row justify='space-between' className='cvat-credentials-navigation'>
-                <Col>
-                    <Link to='/auth/login'><Icon component={BackArrowIcon} /></Link>
-                </Col>
-            </Row>
+            {
+                !disableNavigation && (
+                    <Row justify='space-between' className='cvat-credentials-navigation'>
+                        <Col>
+                            <Link to='/auth/login'><Icon component={BackArrowIcon} /></Link>
+                        </Col>
+                    </Row>
+                )
+            }
             <Form
                 form={form}
                 onFinish={(values: Record<string, string | boolean>) => {
@@ -121,6 +132,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
 
                     onSubmit({
                         ...(Object.fromEntries(rest) as any as RegisterData),
+                        ...(predifinedEmail ? { email: predifinedEmail } : {}),
                         confirmations,
                     });
                 }}
@@ -186,6 +198,8 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         id='email'
                         autoComplete='email'
                         placeholder='Email'
+                        value={predifinedEmail}
+                        disabled={!!predifinedEmail}
                         onReset={() => form.setFieldsValue({ email: '', username: '' })}
                         onChange={(event) => {
                             const { value } = event.target;

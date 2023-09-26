@@ -36,6 +36,9 @@ export enum AuthActionTypes {
     LOAD_AUTH_ACTIONS = 'LOAD_AUTH_ACTIONS',
     LOAD_AUTH_ACTIONS_SUCCESS = 'LOAD_AUTH_ACTIONS_SUCCESS',
     LOAD_AUTH_ACTIONS_FAILED = 'LOAD_AUTH_ACTIONS_FAILED',
+    ACCEPT_INVITATION = 'ACCEPT_INVITATION',
+    ACCEPT_INVITATION_SUCCESS = 'ACCEPT_INVITATION_SUCCESS',
+    ACCEPT_INVITATION_FAILED = 'ACCEPT_INVITATION_FAILED',
 }
 
 export const authActions = {
@@ -73,6 +76,10 @@ export const authActions = {
         })
     ),
     loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
+    acceptInvitation: () => createAction(AuthActionTypes.ACCEPT_INVITATION),
+    // TODO: successs must return organization
+    acceptInvitationSuccess: (user: any) => createAction(AuthActionTypes.ACCEPT_INVITATION_SUCCESS, { user }),
+    acceptInvitationFailed: (error: any) => createAction(AuthActionTypes.ACCEPT_INVITATION_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -198,5 +205,33 @@ export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
         dispatch(authActions.loadServerAuthActionsSuccess(allowChangePassword, allowResetPassword));
     } catch (error) {
         dispatch(authActions.loadServerAuthActionsFailed(error));
+    }
+};
+
+export const acceptInvitationAsync = (
+    username: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    confirmations: UserConfirmation[],
+    key: string,
+): ThunkAction => async (dispatch) => {
+    dispatch(authActions.acceptInvitation());
+
+    try {
+        const orgSlug = await cvat.server.acceptInvitation(
+            username,
+            firstName,
+            lastName,
+            email,
+            password,
+            confirmations,
+            key,
+        );
+
+        dispatch(authActions.acceptInvitationSuccess(orgSlug));
+    } catch (error) {
+        dispatch(authActions.acceptInvitationSuccess(error));
     }
 };

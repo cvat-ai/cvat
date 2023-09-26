@@ -454,6 +454,34 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
     }
 }
 
+async function acceptInvitation(
+    username: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    confirmations: Record<string, string>,
+    key: string,
+): Promise<SerializedRegister> {
+    let response = null;
+    try {
+        response = await Axios.post(`${config.backendAPI}/invitations/accept`, {
+            username,
+            first_name: firstName,
+            last_name: lastName,
+            email,
+            password1: password,
+            password2: password,
+            confirmations,
+            key,
+        });
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return response.data;
+}
+
 async function getSelf(): Promise<SerializedUser> {
     const { backendAPI } = config;
 
@@ -2365,6 +2393,7 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
+        acceptInvitation,
     }),
 
     projects: Object.freeze({
