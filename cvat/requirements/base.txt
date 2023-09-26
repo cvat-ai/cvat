@@ -414,3 +414,4 @@ setuptools==68.1.2
     #   limits
     #   tensorboard
     #   tensorflow
+pillow>=10.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
