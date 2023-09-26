@@ -58,6 +58,11 @@ class InvitationReadSerializer(serializers.ModelSerializer):
         fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization']
         read_only_fields = fields
 
+class BasicInvitationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invitation
+        fields = ['key', 'created_date']
+        read_only_fields = fields
 
 class InvitationWriteSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(Membership.role.field.choices,
@@ -89,9 +94,9 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
                 email=user_email)
             user.set_unusable_password()
             user.save()
-        print('Created user', user)
+            del membership_data['user']
         membership, created = Membership.objects.get_or_create(
-            # defaults=membership_data,
+            defaults=membership_data,
             user=user, organization=organization)
         if not created:
             raise serializers.ValidationError('The user is a member of '
@@ -113,6 +118,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
 class MembershipReadSerializer(serializers.ModelSerializer):
     user = BasicUserSerializer()
+    invitation = BasicInvitationSerializer()
     class Meta:
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role',
