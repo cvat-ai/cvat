@@ -1,14 +1,14 @@
 {% load i18n %}{% autoescape off %}
 {% blocktrans %}
 <p>
-  You're receiving this email because you requested a password reset for your user account at {{ site_name }}.
+  You're receiving this email because you've been invited to organization in CVAT at {{ site_name }}.
 </p>
 {% endblocktrans %}
 
-{% trans "Please go to the following page and choose a new password:" %}
+{% trans "Please go to the following page and finish creating your account to accept the invitation:" %}
 {% block reset_link %}
 <p>
-<a href="{{ protocol }}://{{ domain }}/auth/password/reset/confirm">{{ protocol }}://{{ domain }}/auth/password/reset/confirm</a>
+<a href="{{ protocol }}://{{ domain }}/auth/register?email={{ email }}&invitation_key={{ invitation_key }}">{{ protocol }}://{{ domain }}/auth/register?email={{ email }}&invitation_key={{ invitation_key }}</a>
 </p>
 {% endblock %}
 

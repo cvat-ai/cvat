@@ -72,13 +72,14 @@ class Invitation(models.Model):
         domain = current_site.domain
         context = {
                 'email': target_email,
+                'invitation_key': self.key,
                 'domain': domain,
                 'site_name': site_name,
-                'protocol': 'http',
+                'protocol': 'http', ## TODO add https
         }
 
         get_adapter(request).send_mail('invitation/invitation', target_email, context)
-        # TODO: use email backend to send invitations as well
+        # TODO: auto accept for existing users
 
     def accept(self, date=None):
         if not self.membership.is_active:
