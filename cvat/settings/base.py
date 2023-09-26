@@ -715,6 +715,8 @@ ACCOUNT_ADAPTER = 'cvat.apps.iam.adapters.DefaultAccountAdapterEx'
 CVAT_HOST = os.getenv('CVAT_HOST', 'localhost')
 CVAT_BASE_URL = os.getenv('CVAT_BASE_URL', f'http://{CVAT_HOST}:8080').rstrip('/')
 
+CSRF_TRUSTED_ORIGINS = ["https://" + CVAT_HOST, "http://" + CVAT_HOST]
+
 CLICKHOUSE = {
     'events': {
         'NAME': os.getenv('CLICKHOUSE_DB', 'cvat'),

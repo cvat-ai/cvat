@@ -54,6 +54,7 @@ services:
       CLICKHOUSE_HOST: clickhouse
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
+      CVAT_HOST: ${CVAT_HOST:-localhost}
       SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
     command: init run server
     labels:
