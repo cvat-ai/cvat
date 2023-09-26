@@ -8,7 +8,7 @@
 {% trans "Please go to the following page and finish creating your account to accept the invitation:" %}
 {% block reset_link %}
 <p>
-<a href="{{ protocol }}://{{ domain }}/auth/register?email={{ email }}&invitation_key={{ invitation_key }}">{{ protocol }}://{{ domain }}/auth/register?email={{ email }}&invitation_key={{ invitation_key }}</a>
+<a href="{{ protocol }}://{{ domain }}/auth/register/invitation?email={{ email }}&key={{ invitation_key }}">{{ protocol }}://{{ domain }}/auth/register/invitation?email={{ email }}&invitation_key={{ invitation_key }}</a>
 </p>
 {% endblock %}
 

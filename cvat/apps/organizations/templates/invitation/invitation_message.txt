@@ -5,7 +5,7 @@
 
 {% trans "Please go to the following page and finish creating your account to accept the invitation:" %}
 {% block reset_link %}
-{{ protocol }}://{{ domain }}/auth/register?email={{ email }}&invitation_key={{ invitation_key }}
+{{ protocol }}://{{ domain }}/auth/register/invitation?email={{ email }}&key={{ invitation_key }}
 {% endblock %}
 
 {% trans "Thanks for using our site!" %}
