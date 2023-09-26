@@ -6,6 +6,8 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
+from django.contrib.auth.models import User
+from django.utils.crypto import get_random_string
 from .models import Invitation, Membership, Organization
 from cvat.apps.engine.serializers import BasicUserSerializer
 
@@ -81,12 +83,15 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
                 email__iexact=membership_data['user']['email'])
             del membership_data['user']
         except ObjectDoesNotExist:
-            raise serializers.ValidationError(f'You cannot invite an user '
-                f'with {membership_data["user"]["email"]} email. It is not '
-                f'a valid email in the system.')
-
+            user_email = membership_data['user']['email']
+            username = user_email.split("@")[0]
+            user = User.objects.create_user(username=username, password=get_random_string(length=32),
+                email=user_email)
+            user.set_unusable_password()
+            user.save()
+        print('Created user', user)
         membership, created = Membership.objects.get_or_create(
-            defaults=membership_data,
+            # defaults=membership_data,
             user=user, organization=organization)
         if not created:
             raise serializers.ValidationError('The user is a member of '
@@ -99,9 +104,10 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         return super().update(instance, {})
 
-    def save(self, **kwargs):
+    def save(self, request, **kwargs):
+        ## TODO move/remove request to/from kwarg
         invitation = super().save(**kwargs)
-        invitation.send()
+        invitation.send(request)
 
         return invitation
 

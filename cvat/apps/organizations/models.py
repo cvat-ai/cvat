@@ -5,6 +5,9 @@
 
 from distutils.util import strtobool
 from django.conf import settings
+from allauth.account.adapter import get_adapter
+from django.contrib.sites.shortcuts import get_current_site
+
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -60,10 +63,21 @@ class Invitation(models.Model):
     def organization_id(self):
         return self.membership.organization_id
 
-    def send(self):
-        if not strtobool(settings.ORG_INVITATION_CONFIRM):
-            self.accept(self.created_date)
+    def send(self, request):
+        # if not strtobool(settings.ORG_INVITATION_CONFIRM):
+        #     self.accept(self.created_date)
+        target_email = self.membership.user.email
+        current_site = get_current_site(request)
+        site_name = current_site.name
+        domain = current_site.domain
+        context = {
+                'email': target_email,
+                'domain': domain,
+                'site_name': site_name,
+                'protocol': 'http',
+        }
 
+        get_adapter(request).send_mail('invitation/invitation', target_email, context)
         # TODO: use email backend to send invitations as well
 
     def accept(self, date=None):
