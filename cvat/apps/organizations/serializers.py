@@ -59,9 +59,10 @@ class InvitationReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 class BasicInvitationSerializer(serializers.ModelSerializer):
+    owner = BasicUserSerializer(allow_null=True)
     class Meta:
         model = Invitation
-        fields = ['key', 'created_date']
+        fields = ['key', 'created_date', 'owner']
         read_only_fields = fields
 
 class InvitationWriteSerializer(serializers.ModelSerializer):

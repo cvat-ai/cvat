@@ -236,18 +236,7 @@ Object.defineProperties(Organization.prototype.members, {
             const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
             await Promise.all(
                 result.results.map((membership) => {
-                    const { invitation } = membership;
                     membership.user = new User(membership.user);
-                    if (invitation) {
-                        return serverProxy.organizations
-                            .invitation(invitation)
-                            .then((invitationData) => {
-                                membership.invitation = invitationData;
-                            })
-                            .catch(() => {
-                                membership.invitation = null;
-                            });
-                    }
 
                     return Promise.resolve();
                 }),
