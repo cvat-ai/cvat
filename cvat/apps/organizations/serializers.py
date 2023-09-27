@@ -93,7 +93,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
             user_email = membership_data['user']['email']
             username = user_email.split("@")[0]
             user = User.objects.create_user(username=username, password=get_random_string(length=32),
-                email=user_email)
+                email=user_email, is_active=False)
             user.set_unusable_password()
             user.save()
             del membership_data['user']
@@ -112,9 +112,12 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
         return super().update(instance, {})
 
     def save(self, request, **kwargs):
-        ## TODO move/remove request to/from kwarg
         invitation = super().save(**kwargs)
-        invitation.send(request)
+        if invitation.membership.user.is_active:
+            # For existing users we auto-accept all invitations
+            invitation.accept()
+        else:
+            invitation.send(request)
 
         return invitation
 

@@ -78,9 +78,6 @@ class Invitation(models.Model):
         return self.membership.organization.slug
 
     def send(self, request):
-        # TODO: auto accept for existing users
-        #  if not strtobool(settings.ORG_INVITATION_CONFIRM):
-        #     self.accept(self.created_date)
         target_email = self.membership.user.email
         current_site = get_current_site(request)
         site_name = current_site.name
