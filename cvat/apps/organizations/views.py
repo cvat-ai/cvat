@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.organizations.throttle import ResendOrganizationInvitationThrottle
 from .models import Invitation, Membership, Organization
 
 from .serializers import (
@@ -233,3 +234,14 @@ class InvitationViewSet(viewsets.GenericViewSet,
                 return Response(status=status.HTTP_200_OK, data=invitation.membership.organization.slug)
         except Invitation.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist. Please contact organization owner.")
+
+    @action(detail=True, methods=['POST'], url_path='resend', throttle_classes=[ResendOrganizationInvitationThrottle])
+    def resend(self, request, pk):
+        try:
+            invitation = Invitation.objects.get(key=pk)
+            if invitation.membership.is_active:
+                return Response(status=status.HTTP_400_BAD_REQUEST, data="This invitation is already accepted.")
+            invitation.send(request)
+            return Response(status=status.HTTP_200_OK, data="Invitation has been sent.")
+        except Invitation.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist.")
