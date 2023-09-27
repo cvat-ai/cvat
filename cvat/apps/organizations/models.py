@@ -56,6 +56,7 @@ class Membership(models.Model):
 class Invitation(models.Model):
     key = models.CharField(max_length=64, primary_key=True)
     created_date = models.DateTimeField(auto_now_add=True)
+    sent_date = models.DateTimeField(null=True)
     owner = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
     membership = models.OneToOneField(Membership, on_delete=models.CASCADE)
 
@@ -64,7 +65,8 @@ class Invitation(models.Model):
         return self.membership.organization_id
 
     def send(self, request):
-        # if not strtobool(settings.ORG_INVITATION_CONFIRM):
+        # TODO: auto accept for existing users
+        #  if not strtobool(settings.ORG_INVITATION_CONFIRM):
         #     self.accept(self.created_date)
         target_email = self.membership.user.email
         current_site = get_current_site(request)
@@ -79,7 +81,9 @@ class Invitation(models.Model):
         }
 
         get_adapter(request).send_mail('invitation/invitation', target_email, context)
-        # TODO: auto accept for existing users
+
+        self.sent_date = timezone.now()
+        self.save()
 
     def accept(self, date=None):
         if not self.membership.is_active:
