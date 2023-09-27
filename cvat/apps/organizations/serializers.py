@@ -153,15 +153,13 @@ class AcceptInvitationSerializer(RegisterSerializer):
         return {
             'username': self.validated_data.get('username', ''),
             'password1': self.validated_data.get('password1', ''),
-            'email': self.validated_data.get('email', ''),
             'firstname': self.validated_data.get('firstname', ''),
             'lastname': self.validated_data.get('lastname', ''),
         }
 
-    def save(self, request, pk):
+    def save(self, request, invitation):
         self.cleaned_data = self.get_cleaned_data()
-        user = User.objects.get(email=self.cleaned_data['email'])
-        invitation = Invitation.objects.get(key=pk)
+        user = invitation.membership.user
         if "password1" in self.cleaned_data:
             try:
                 user.is_active = True
@@ -170,9 +168,6 @@ class AcceptInvitationSerializer(RegisterSerializer):
                 user.username = self.cleaned_data['username']
                 user.set_password(self.cleaned_data['password1'])
                 user.save()
-
-                invitation.accept()
-                return invitation.membership.organization.slug
             except ValidationError as exc:
                 raise serializers.ValidationError(
                     detail=serializers.as_serializer_error(exc)

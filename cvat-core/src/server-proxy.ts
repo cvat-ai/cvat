@@ -470,7 +470,6 @@ async function acceptInvitation(
             username,
             first_name: firstName,
             last_name: lastName,
-            email,
             password1: password,
             password2: password,
             confirmations,

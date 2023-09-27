@@ -307,6 +307,7 @@ IAM_CONTEXT_BUILDERS = ['cvat.apps.iam.utils.build_iam_context',]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
+ORG_INVITATION_EXPIRY = 14
 
 
 AUTHENTICATION_BACKENDS = [

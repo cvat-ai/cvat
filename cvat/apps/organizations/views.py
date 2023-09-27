@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, viewsets, status
 from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
 from rest_framework.permissions import AllowAny
@@ -220,11 +220,16 @@ class InvitationViewSet(viewsets.GenericViewSet,
 
     @action(detail=True, methods=['POST'], url_path='accept', permission_classes=[AllowAny], authentication_classes=[], serializer_class=AcceptInvitationSerializer)
     def accept(self, request, pk):
-        print(request, pk)
-        print(request.data)
-        serializer = AcceptInvitationSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            org_slug = serializer.save(request, pk)
-            return Response(org_slug)
-        ## TODO implement accept invitation
-        return Response("testOrgSlug")
+        try:
+            invitation = Invitation.objects.get(key=pk)
+            if invitation.expired:
+                return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is expired. Please contact organization owner to renew it.")
+            if invitation.membership.is_active:
+                return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is already accepted.")
+            serializer = AcceptInvitationSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save(request, invitation)
+                invitation.accept()
+                return Response(status=status.HTTP_200_OK, data=invitation.membership.organization.slug)
+        except Invitation.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist. Please contact organization owner.")

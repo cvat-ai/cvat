@@ -3,10 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import timedelta
 from distutils.util import strtobool
 from django.conf import settings
 from allauth.account.adapter import get_adapter
 from django.contrib.sites.shortcuts import get_current_site
+from django.conf import settings
 
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -64,6 +66,17 @@ class Invitation(models.Model):
     def organization_id(self):
         return self.membership.organization_id
 
+    @property
+    def expired(self):
+        expiration_date = self.sent_date + timedelta(
+            days=settings.ORG_INVITATION_EXPIRY,
+        )
+        return expiration_date <= timezone.now()
+
+    @property
+    def organization_slug(self):
+        return self.membership.organization.slug
+
     def send(self, request):
         # TODO: auto accept for existing users
         #  if not strtobool(settings.ORG_INVITATION_CONFIRM):
@@ -77,6 +90,7 @@ class Invitation(models.Model):
                 'invitation_key': self.key,
                 'domain': domain,
                 'site_name': site_name,
+                'organization_name': self.membership.organization.slug,
                 'protocol': 'http', ## TODO add https
         }
 
