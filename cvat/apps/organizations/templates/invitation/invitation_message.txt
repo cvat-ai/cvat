@@ -1,10 +1,10 @@
 {% load i18n %}{% autoescape off %}
 {% blocktrans %}
-  You're receiving this email because you've been invited to organization in CVAT at {{ site_name }}.
+  You're receiving this email because you've been invited to join {{ organization_name }} organization in CVAT at {{ site_name }}.
 {% endblocktrans %}
 
 {% trans "Please go to the following page and finish creating your account to accept the invitation:" %}
-{% block reset_link %}
+{% block setup_link %}
 {{ protocol }}://{{ domain }}/auth/register/invitation?email={{ email }}&key={{ invitation_key }}
 {% endblock %}
 

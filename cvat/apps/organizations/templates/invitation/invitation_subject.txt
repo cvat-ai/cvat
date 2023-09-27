@@ -1,4 +1,4 @@
 {% load i18n %}
 {% autoescape off %}
-{% blocktrans %}Password Reset E-mail{% endblocktrans %}
+{% blocktrans %}You're invited to join {{ organization_name }} organization on CVAT!{% endblocktrans %}
 {% endautoescape %}
