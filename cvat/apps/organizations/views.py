@@ -20,7 +20,8 @@ from .models import Invitation, Membership, Organization
 from .serializers import (
     InvitationReadSerializer, InvitationWriteSerializer,
     MembershipReadSerializer, MembershipWriteSerializer,
-    OrganizationReadSerializer, OrganizationWriteSerializer)
+    OrganizationReadSerializer, OrganizationWriteSerializer,
+    AcceptInvitationSerializer)
 
 @extend_schema(tags=['organizations'])
 @extend_schema_view(
@@ -217,8 +218,13 @@ class InvitationViewSet(viewsets.GenericViewSet,
         else:
             super().perform_update(serializer)
 
-    @action(detail=True, methods=['POST'], url_path='accept', permission_classes=[AllowAny], authentication_classes=[])
+    @action(detail=True, methods=['POST'], url_path='accept', permission_classes=[AllowAny], authentication_classes=[], serializer_class=AcceptInvitationSerializer)
     def accept(self, request, pk):
         print(request, pk)
+        print(request.data)
+        serializer = AcceptInvitationSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            org_slug = serializer.save(request, pk)
+            return Response(org_slug)
         ## TODO implement accept invitation
         return Response("testOrgSlug")

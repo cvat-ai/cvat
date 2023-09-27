@@ -4,8 +4,9 @@
 # SPDX-License-Identifier: MIT
 
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import serializers
+from dj_rest_auth.registration.serializers import RegisterSerializer
 from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
 from .models import Invitation, Membership, Organization
@@ -140,3 +141,40 @@ class MembershipWriteSerializer(serializers.ModelSerializer):
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
         read_only_fields = ['user', 'organization', 'is_active', 'joined_date']
+
+class AcceptInvitationSerializer(RegisterSerializer):
+    def validate_username(self, username):
+        return username
+
+    def validate_email(self, email):
+        return email
+
+    def get_cleaned_data(self):
+        return {
+            'username': self.validated_data.get('username', ''),
+            'password1': self.validated_data.get('password1', ''),
+            'email': self.validated_data.get('email', ''),
+            'firstname': self.validated_data.get('firstname', ''),
+            'lastname': self.validated_data.get('lastname', ''),
+        }
+
+    def save(self, request, pk):
+        self.cleaned_data = self.get_cleaned_data()
+        user = User.objects.get(email=self.cleaned_data['email'])
+        invitation = Invitation.objects.get(key=pk)
+        if "password1" in self.cleaned_data:
+            try:
+                user.is_active = True
+                user.first_name = self.cleaned_data['firstname']
+                user.last_name = self.cleaned_data['lastname']
+                user.username = self.cleaned_data['username']
+                user.set_password(self.cleaned_data['password1'])
+                user.save()
+
+                invitation.accept()
+                return invitation.membership.organization.slug
+            except ValidationError as exc:
+                raise serializers.ValidationError(
+                    detail=serializers.as_serializer_error(exc)
+            )
+        return user
