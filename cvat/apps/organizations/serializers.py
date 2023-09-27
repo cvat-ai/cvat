@@ -5,10 +5,12 @@
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.conf import settings
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
+from distutils.util import strtobool
 from .models import Invitation, Membership, Organization
 from cvat.apps.engine.serializers import BasicUserSerializer
 
@@ -113,7 +115,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
     def save(self, request, **kwargs):
         invitation = super().save(**kwargs)
-        if invitation.membership.user.is_active:
+        if not strtobool(settings.ORG_INVITATION_CONFIRM) and invitation.membership.user.is_active:
             # For existing users we auto-accept all invitations
             invitation.accept()
         else:
