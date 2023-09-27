@@ -9,6 +9,7 @@ import { CombinedState } from 'reducers';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import { acceptInvitationAsync } from 'actions/auth-actions';
+import { RegisterData } from 'components/register-page/register-form';
 
 interface InvitationParams {
     email: string | null;
@@ -27,15 +28,9 @@ function AcceptInvitationPage(): JSX.Element {
         email: queryParams.get('email'),
         key: queryParams.get('key'),
     };
-    const onRegister: (args) => void = useCallback((args) => {
-        console.log(args);
+    const onRegister = useCallback((registerData: RegisterData) => {
         dispatch(acceptInvitationAsync(
-            args.username,
-            args.firstName,
-            args.lastName,
-            args.email,
-            args.password,
-            args.confirmations,
+            registerData,
             invitationParams.key,
         ));
     }, [dispatch]);

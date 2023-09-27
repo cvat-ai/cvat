@@ -10,18 +10,13 @@ import { Row, Col } from 'antd/lib/grid';
 
 import { UserAgreement } from 'reducers';
 import SigningLayout, { formSizes } from 'components/signing-common/signing-layout';
-import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
+import RegisterForm, { RegisterData } from './register-form';
 
 interface RegisterPageComponentProps {
     fetching: boolean;
     userAgreements: UserAgreement[];
     onRegister: (
-        username: string,
-        firstName: string,
-        lastName: string,
-        email: string,
-        password: string,
-        confirmations: UserConfirmation[],
+        registerData: RegisterData,
     ) => void;
     predifinedEmail?: string;
     disableNavigation?: boolean;
@@ -43,14 +38,7 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
                             predifinedEmail={predifinedEmail}
                             disableNavigation={disableNavigation}
                             onSubmit={(registerData: RegisterData): void => {
-                                onRegister(
-                                    registerData.username,
-                                    registerData.firstName,
-                                    registerData.lastName,
-                                    registerData.email,
-                                    registerData.password,
-                                    registerData.confirmations,
-                                );
+                                onRegister(registerData);
                             }}
                         />
                     </Col>
