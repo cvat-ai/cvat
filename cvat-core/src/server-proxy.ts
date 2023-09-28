@@ -2086,6 +2086,24 @@ async function inviteOrganizationMembers(orgId, data) {
     }
 }
 
+async function resendOrganizationInvitation(key) {
+    const { backendAPI } = config;
+    try {
+        await Axios.post(`${backendAPI}/invitations/${key}/resend`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function deleteOrganizationInvitation(key) {
+    const { backendAPI } = config;
+    try {
+        await Axios.delete(`${backendAPI}/invitations/${key}`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function updateOrganizationMembership(membershipId, data) {
     const { backendAPI } = config;
     let response = null;
@@ -2509,6 +2527,8 @@ export default Object.freeze({
         invitation: getMembershipInvitation,
         delete: deleteOrganization,
         invite: inviteOrganizationMembers,
+        resendInvitation: resendOrganizationInvitation,
+        deleteInvitation: deleteOrganizationInvitation,
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
     }),
