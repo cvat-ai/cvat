@@ -760,7 +760,7 @@
                     "refId": "A"
                 }
             ],
-            "timeFrom": "30d",
+            "timeFrom": "5d",
             "title": "Avg time [m] from opening to completing a job",
             "type": "barchart"
         },
@@ -861,7 +861,7 @@
                     "refId": "A"
                 }
             ],
-            "timeFrom": "30d",
+            "timeFrom": "5d",
             "title": "Avg time [m] from opening to completing job per user",
             "type": "barchart"
         },
@@ -1557,13 +1557,13 @@
         ]
     },
     "time": {
-        "from": "now-30d",
+        "from": "now-7d",
         "to": "now"
     },
     "timepicker": {},
     "timezone": "",
     "title": "Management",
     "uid": "w0if6WAVz",
-    "version": 4,
+    "version": 2,
     "weekStart": ""
 }
