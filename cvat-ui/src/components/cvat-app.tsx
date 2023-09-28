@@ -492,7 +492,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         )}
                                         <Redirect
                                             push
-                                            to={new URLSearchParams(location.search).get('next') || '/tasks'}
+                                            to={{
+                                                pathname: new URLSearchParams(location.search).get('next') || '/tasks',
+                                                search: new URLSearchParams(location.search).get('activateOrganization') ?
+                                                    `?activateOrganization=${new URLSearchParams(location.search).get('activateOrganization')}` : '',
+                                            }}
                                         />
                                     </Switch>
                                     <ExportDatasetModal />

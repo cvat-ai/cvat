@@ -215,6 +215,7 @@ export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
 export const acceptInvitationAsync = (
     registerData: RegisterData,
     key: string,
+    onSuccess?: (orgSlug: string) => void,
 ): ThunkAction => async (dispatch) => {
     dispatch(authActions.acceptInvitation());
 
@@ -238,6 +239,7 @@ export const acceptInvitationAsync = (
             key,
         );
 
+        if (onSuccess) onSuccess(orgSlug);
         dispatch(authActions.acceptInvitationSuccess(orgSlug));
     } catch (error) {
         dispatch(authActions.acceptInvitationSuccess(error));

@@ -32,6 +32,9 @@ function AcceptInvitationPage(): JSX.Element {
         dispatch(acceptInvitationAsync(
             registerData,
             invitationParams.key,
+            (orgSlug: string) => {
+                history.replace(`/auth/login?next=/tasks&activateOrganization=${orgSlug}`);
+            },
         ));
     }, [dispatch]);
 
