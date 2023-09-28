@@ -161,6 +161,18 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         );
     }
 
+    const [_attrValue, setAttributeValue] = useState(attrValue)
+
+    useEffect(() => {
+        changeAttribute(attrID, _attrValue)
+    }, [_attrValue])
+
+    useEffect(() => {
+        if (attrValue !== _attrValue) {
+            setAttributeValue(attrValue)
+        }
+    }, [attrValue])
+
     return (
         <>
             <Col span={8} style={attrNameStyle}>
@@ -179,9 +191,9 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         if (ref.current?.resizableTextArea?.textArea) {
                             setSelectionStart(ref.current.resizableTextArea.textArea.selectionStart);
                         }
-                        changeAttribute(attrID, event.target.value);
+                        setAttributeValue(event.target.value);
                     }}
-                    value={attrValue}
+                    value={_attrValue}
                     className='cvat-object-item-text-attribute'
                 />
             </Col>
