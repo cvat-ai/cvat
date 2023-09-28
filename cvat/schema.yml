@@ -7915,9 +7915,6 @@ components:
           type: string
           format: uri
           readOnly: true
-        count:
-          type: integer
-          readOnly: true
     LocationEnum:
       enum:
       - cloud_storage
