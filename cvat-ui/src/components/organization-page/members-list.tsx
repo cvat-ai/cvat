@@ -67,9 +67,12 @@ function MembersList(props: Props): JSX.Element {
                             }}
                             onDeleteInvitation={(key: string) => {
                                 dispatch(
-                                    deleteOrganizationInvitationAsync(organizationInstance, key, () => {
+                                    removeOrganizationMemberAsync(organizationInstance, member, () => {
                                         fetchMembers();
                                     }),
+                                );
+                                dispatch(
+                                    deleteOrganizationInvitationAsync(organizationInstance, key),
                                 );
                             }}
                         />
