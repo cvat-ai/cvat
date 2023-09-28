@@ -1609,14 +1609,14 @@ class TestPatchTaskLabel:
         is_org_member,
         role,
     ):
-        users = find_users(role=role, exclude_privilege="admin")
+        users = find_users(exclude_privilege="admin")
 
         user, task = next(
             (user, task)
             for user, task in product(users, tasks)
             if not is_task_staff(user["id"], task["id"])
             and task["organization"]
-            and is_org_member(user["id"], task["organization"])
+            and is_org_member(user["id"], task["organization"], role=role)
         )
 
         new_label = {"name": "new name"}
