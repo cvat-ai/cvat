@@ -458,7 +458,7 @@ class VideoReader(IMediaReader):
                 tb_denominator = stream.time_base.denominator
                 if duration_str and tb_denominator:
                     _hour, _min, _sec = duration_str.split(':')
-                    duration_sec = 60*60*float(_hour) + 60*float(_min) + float(_sec)
+                    duration_sec = 60*60*float(_hour) + 60*float(_min) + float(_sec.replace(',', '.'))
                     duration = duration_sec * tb_denominator
             return duration
 
