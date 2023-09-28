@@ -17,6 +17,7 @@ from datetime import datetime
 from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
+from cvat.apps.profiler import silk_profile
 
 import django_rq
 from django.apps import apps
@@ -242,9 +243,6 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).prefetch_related(
         'tasks', 'label_set__sublabels__attributespec_set',
         'label_set__attributespec_set'
-    ).annotate(
-        proj_labels_count=Count('label',
-            filter=Q(label__parent__isnull=True), distinct=True)
     ).all()
 
     # NOTE: The search_fields attribute should be a list of names of text
@@ -762,6 +760,7 @@ class JobDataGetter(DataChunkGetter):
             '200': TaskReadSerializer, # check TaskWriteSerializer.to_representation
         })
 )
+
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -772,7 +771,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).prefetch_related(
         'segment_set__job_set',
         'segment_set__job_set__assignee',
-    ).with_label_summary().with_job_summary().all()
+    ).with_job_summary().all()
 
     lookup_fields = {
         'project_name': 'project__name',
@@ -796,6 +795,10 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     iam_organization_field = 'organization'
     IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('task', {}, 'annotations', {})
+
+    @silk_profile("TaskViewSet:list")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, args, kwargs)
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -1562,10 +1565,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
     ).annotate(
         Count('issues', distinct=True),
-        task_labels_count=Count('segment__task__label',
-            filter=Q(segment__task__label__parent__isnull=True), distinct=True),
-        proj_labels_count=Count('segment__task__project__label',
-            filter=Q(segment__task__project__label__parent__isnull=True), distinct=True)
     ).all()
 
     iam_organization_field = 'segment__task__organization'
@@ -1585,6 +1584,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'assignee': 'assignee__username'
     }
     IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('job', {}, 'annotations', {})
+
+    @silk_profile("JobViewSet:list")
+    def list(self, request, *args, **kwargs):
+        return super().list(request, args, kwargs)
+
 
     def get_queryset(self):
         queryset = super().get_queryset()
