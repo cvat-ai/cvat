@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- Update Grafana from 9.3.6 to 10.1.2
 - Security upgrade Pillow from 9.3.0 to 10.0.1
   (<https://github.com/opencv/cvat/pull/6907>)
 
