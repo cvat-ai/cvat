@@ -17,7 +17,6 @@ from datetime import datetime
 from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
-from cvat.apps.profiler import silk_profile
 
 import django_rq
 from django.apps import apps
@@ -795,10 +794,6 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ordering = "-id"
     iam_organization_field = 'organization'
     IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('task', {}, 'annotations', {})
-
-    @silk_profile("TaskViewSet:list")
-    def list(self, request, *args, **kwargs):
-        return super().list(request, args, kwargs)
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -1584,11 +1579,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'assignee': 'assignee__username'
     }
     IMPORT_RQ_ID_TEMPLATE = get_import_rq_id('job', {}, 'annotations', {})
-
-    @silk_profile("JobViewSet:list")
-    def list(self, request, *args, **kwargs):
-        return super().list(request, args, kwargs)
-
 
     def get_queryset(self):
         queryset = super().get_queryset()
