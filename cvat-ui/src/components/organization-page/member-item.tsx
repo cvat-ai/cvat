@@ -23,7 +23,7 @@ function MemberItem(props: Props): JSX.Element {
         membershipInstance, onRemoveMembership, onUpdateMembershipRole,
     } = props;
     const {
-        user, joined_date: joinedDate, role, invitation,
+        user, joinedDate, role, invitation,
     } = membershipInstance;
     const { username, firstName, lastName } = user;
     const { username: selfUserName } = useSelector((state: CombinedState) => state.auth.user);
@@ -42,7 +42,7 @@ function MemberItem(props: Props): JSX.Element {
                         {`Invited ${moment(invitation.created_date).fromNow()} ${invitation.owner ? `by ${invitation.owner.username}` : ''}`}
                     </Text>
                 ) : null}
-                {joinedDate ? <Text type='secondary'>{`Joined ${moment(joinedDate).fromNow()}`}</Text> : null}
+                {joinedDate ? <Text type='secondary'>{`Joined ${moment(joinedDate).fromNow()}`}</Text> : <Text type='secondary'>Invitation pending</Text>}
             </Col>
             <Col span={3} className='cvat-organization-member-item-role'>
                 <Select

@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-interface RawUserData {
+export interface RawUserData {
     id: number;
     username: string;
     email: string;

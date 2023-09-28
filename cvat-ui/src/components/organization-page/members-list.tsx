@@ -9,6 +9,7 @@ import Spin from 'antd/lib/spin';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import { removeOrganizationMemberAsync, updateOrganizationMemberAsync } from 'actions/organization-actions';
+import { Membership } from 'cvat-core-wrapper';
 import MemberItem from './member-item';
 
 export interface Props {
@@ -17,7 +18,7 @@ export interface Props {
     fetching: boolean;
     pageSize: number;
     pageNumber: number;
-    members: any[];
+    members: Membership[];
     setPageNumber: (pageNumber: number) => void;
     setPageSize: (pageSize: number) => void;
     fetchMembers: () => void;
@@ -38,7 +39,7 @@ function MembersList(props: Props): JSX.Element {
         <>
             <div>
                 {members.map(
-                    (member: any): JSX.Element => (
+                    (member: Membership): JSX.Element => (
                         <MemberItem
                             key={member.user.id}
                             membershipInstance={member}

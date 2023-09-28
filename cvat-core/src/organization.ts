@@ -10,17 +10,77 @@ import { MembershipRole } from './enums';
 import { ArgumentError, DataError } from './exceptions';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-import User from './user';
+import User, { RawUserData } from './user';
 
-interface Membership {
-    user: User;
+interface SerializedInvitationData {
+    created_date: string;
+    owner: RawUserData;
+}
+
+interface SerializedMembershipData {
+    id: number;
+    user: RawUserData;
     is_active: boolean;
     joined_date: string;
     role: MembershipRole;
-    invitation: {
-        created_date: string;
-        owner: User;
-    } | null;
+    invitation: SerializedInvitationData | null;
+}
+
+export class Invitation {
+    #createdDate: string;
+    #owner: User;
+
+    constructor(initialData: SerializedInvitationData) {
+        this.#createdDate = initialData.created_date;
+        this.#owner = new User(initialData.owner);
+    }
+
+    get owner(): User {
+        return this.#owner;
+    }
+
+    get createdDate(): string {
+        return this.#createdDate;
+    }
+}
+
+export class Membership {
+    #id: number;
+    #user: User;
+    #isActive: boolean;
+    #joinedDate: string;
+    #role: MembershipRole;
+    #invitation: Invitation | null;
+
+    constructor(initialData: SerializedMembershipData) {
+        this.#id = initialData.id;
+        this.#user = new User(initialData.user);
+        this.#isActive = initialData.is_active;
+        this.#joinedDate = initialData.joined_date;
+        this.#role = initialData.role;
+        this.#invitation = initialData.invitation ? new Invitation(initialData.invitation) : null;
+    }
+
+    get id(): number {
+        return this.#id;
+    }
+
+    get user(): User {
+        return this.#user;
+    }
+
+    get isActive(): boolean {
+        return this.#isActive;
+    }
+    get joinedDate(): string {
+        return this.#joinedDate;
+    }
+    get role(): MembershipRole {
+        return this.#role;
+    }
+    get invitation(): Invitation {
+        return this.#invitation;
+    }
 }
 
 export default class Organization {
@@ -234,13 +294,9 @@ Object.defineProperties(Organization.prototype.members, {
             checkObjectType('pageSize', pageSize, 'number');
 
             const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
-            await Promise.all(
-                result.results.map((membership) => {
-                    membership.user = new User(membership.user);
-
-                    return Promise.resolve();
-                }),
-            );
+            result.results = result.results.map((rawMembership: SerializedMembershipData) => new Membership(
+                rawMembership,
+            ));
 
             result.results.count = result.count;
             return result.results;

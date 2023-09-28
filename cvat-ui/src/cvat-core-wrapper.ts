@@ -28,7 +28,7 @@ import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
-import Organization from 'cvat-core/src/organization';
+import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
 import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
@@ -64,6 +64,8 @@ export {
     User,
     CloudStorage,
     Organization,
+    Membership,
+    Invitation,
     Comment,
     MLModel,
     ModelKind,
