@@ -30,7 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- TDB
+- Security upgrade Pillow from 9.3.0 to 10.0.1
+  (<https://github.com/opencv/cvat/pull/6907>)
 
 ## \[2.7.2\] - 2023-09-25
 
