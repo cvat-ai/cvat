@@ -14,6 +14,7 @@ import User, { RawUserData } from './user';
 
 interface SerializedInvitationData {
     created_date: string;
+    key: string;
     owner: RawUserData;
 }
 
@@ -29,10 +30,12 @@ interface SerializedMembershipData {
 export class Invitation {
     #createdDate: string;
     #owner: User;
+    #key: string;
 
     constructor(initialData: SerializedInvitationData) {
         this.#createdDate = initialData.created_date;
         this.#owner = new User(initialData.owner);
+        this.#key = initialData.key;
     }
 
     get owner(): User {
@@ -41,6 +44,10 @@ export class Invitation {
 
     get createdDate(): string {
         return this.#createdDate;
+    }
+
+    get key(): string {
+        return this.#key;
     }
 }
 

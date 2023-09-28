@@ -284,26 +284,36 @@ export function updateOrganizationMemberAsync(
     };
 }
 
-export function resendOrganizationInvitationAsync(organization: any, invitationKey: string): ThunkAction {
+export function resendOrganizationInvitationAsync(
+    organization: any,
+    invitationKey: string,
+    onFinish?: () => void,
+): ThunkAction {
     return async function (dispatch) {
         dispatch(organizationActions.resendOrganizationInvitation());
 
         try {
             await organization.resendInvitation(invitationKey);
             dispatch(organizationActions.resendOrganizationInvitationSuccess());
+            if (onFinish) onFinish();
         } catch (error) {
             dispatch(organizationActions.resendOrganizationInvitationFailed(error));
         }
     };
 }
 
-export function deleteOrganizationInvitationAsync(organization: any, invitationKey: string): ThunkAction {
+export function deleteOrganizationInvitationAsync(
+    organization: any,
+    invitationKey: string,
+    onFinish?: () => void,
+): ThunkAction {
     return async function (dispatch) {
         dispatch(organizationActions.deleteOrganizationInvitation());
 
         try {
             await organization.deleteInvitation(invitationKey);
             dispatch(organizationActions.deleteOrganizationInvitationSuccess());
+            if (onFinish) onFinish();
         } catch (error) {
             dispatch(organizationActions.deleteOrganizationInvitationFailed(error));
         }
