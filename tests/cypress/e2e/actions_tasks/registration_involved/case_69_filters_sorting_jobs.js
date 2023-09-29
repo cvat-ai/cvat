@@ -139,13 +139,11 @@ context('Filtering, sorting jobs.', () => {
         // The second job - status "completed"
         cy.openJob(1);
         cy.setJobState('completed');
-
         cy.interactMenu('Open the task');
     });
 
     after(() => {
         cy.logout();
-
         cy.getAuthKey().then((authKey) => {
             cy.deleteUsers(authKey, [secondUserName]);
             cy.deleteTasks(authKey, [taskName]);
