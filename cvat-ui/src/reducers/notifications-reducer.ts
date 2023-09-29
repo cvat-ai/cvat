@@ -38,6 +38,7 @@ const defaultState: NotificationsState = {
             requestPasswordReset: null,
             resetPassword: null,
             loadAuthActions: null,
+            acceptingInvitation: null,
         },
         projects: {
             fetching: null,
@@ -148,6 +149,8 @@ const defaultState: NotificationsState = {
             inviting: null,
             updatingMembership: null,
             removingMembership: null,
+            resendingInvitation: null,
+            deletingInvitation: null,
         },
         webhooks: {
             fetching: null,
@@ -373,6 +376,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.auth,
                         loadAuthActions: {
                             message: 'Could not check available auth actions',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.ACCEPT_INVITATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        acceptingInvitation: {
+                            message: 'Could not accept invitation',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                         },
@@ -1599,6 +1618,40 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-update-organization-membership-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        resendingInvitation: {
+                            message: 'Could not resend invitation',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-resend-organization-invintation-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.DELETE_ORGANIZATION_INVITATION: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        deletingInvitation: {
+                            message: 'Could not delete invitation',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-delete-organization-invintation-failed',
                         },
                     },
                 },
