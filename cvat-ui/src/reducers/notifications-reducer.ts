@@ -192,6 +192,9 @@ const defaultState: NotificationsState = {
             annotation: '',
             backup: '',
         },
+        organizations: {
+            resendingInvitation: '',
+        },
     },
 };
 
@@ -1653,6 +1656,18 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-delete-organization-invintation-failed',
                         },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    organizations: {
+                        ...state.messages.organizations,
+                        resendingInvitation: 'Invintation was sent suces',
                     },
                 },
             };

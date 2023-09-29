@@ -580,6 +580,9 @@ export interface NotificationsState {
             annotation: string;
             backup: string;
         };
+        organizations: {
+            resendingInvitation: string;
+        }
     };
 }
 
