@@ -12,8 +12,8 @@ import { acceptInvitationAsync } from 'actions/auth-actions';
 import { RegisterData } from 'components/register-page/register-form';
 
 interface InvitationParams {
-    email: string | null;
-    key: string | null;
+    email: string;
+    key: string;
 }
 
 function AcceptInvitationPage(): JSX.Element {
@@ -23,10 +23,9 @@ function AcceptInvitationPage(): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
     const queryParams = new URLSearchParams(history.location.search);
-    // TODO: add check for inv params
     const invitationParams: InvitationParams = {
-        email: queryParams.get('email'),
-        key: queryParams.get('key'),
+        email: queryParams.get('email') || '',
+        key: queryParams.get('key') || '',
     };
     const onRegister = useCallback((registerData: RegisterData) => {
         dispatch(acceptInvitationAsync(

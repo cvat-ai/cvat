@@ -428,6 +428,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
             .map(({ component: Component }) => Component);
 
+        const queryParams = new URLSearchParams(location.search);
+
         if (readyForRender) {
             if (user && user.isVerified) {
                 return (
@@ -493,9 +495,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Redirect
                                             push
                                             to={{
-                                                pathname: new URLSearchParams(location.search).get('next') || '/tasks',
-                                                search: new URLSearchParams(location.search).get('activateOrganization') ?
-                                                    `?activateOrganization=${new URLSearchParams(location.search).get('activateOrganization')}` : '',
+                                                pathname: queryParams.get('next') || '/tasks',
+                                                search: queryParams.get('activateOrganization') ?
+                                                    `?activateOrganization=${queryParams.get('activateOrganization')}` : '',
                                             }}
                                         />
                                     </Switch>
