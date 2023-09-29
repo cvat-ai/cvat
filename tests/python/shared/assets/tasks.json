@@ -22,7 +22,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=22"
       },
       "mode": "annotation",
@@ -65,7 +64,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=21"
       },
       "mode": "annotation",
@@ -116,7 +114,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=20"
       },
       "mode": "annotation",
@@ -167,7 +164,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=19"
       },
       "mode": "annotation",
@@ -218,7 +214,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?task_id=18"
       },
       "mode": "annotation",
@@ -275,7 +270,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 3,
         "url": "http://localhost:8080/api/labels?task_id=17"
       },
       "mode": "annotation",
@@ -318,7 +312,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=15"
       },
       "mode": "interpolation",
@@ -369,7 +362,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=14"
       },
       "mode": "annotation",
@@ -426,7 +418,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=13"
       },
       "mode": "annotation",
@@ -464,7 +455,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?task_id=12"
       },
       "mode": "",
@@ -512,7 +502,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=11"
       },
       "mode": "annotation",
@@ -569,7 +558,6 @@
         "validation": 1
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=9"
       },
       "mode": "annotation",
@@ -618,7 +606,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 3,
         "url": "http://localhost:8080/api/labels?task_id=8"
       },
       "mode": "annotation",
@@ -667,7 +654,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=7"
       },
       "mode": "annotation",
@@ -710,7 +696,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?task_id=6"
       },
       "mode": "annotation",
@@ -759,7 +744,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?task_id=5"
       },
       "mode": "interpolation",
@@ -808,7 +792,6 @@
         "validation": 0
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?task_id=2"
       },
       "mode": "annotation",
