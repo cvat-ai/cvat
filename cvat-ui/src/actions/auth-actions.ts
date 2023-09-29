@@ -5,7 +5,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, User } from 'cvat-core-wrapper';
 import isReachable from 'utils/url-checker';
 
 const cvat = getCore();
@@ -77,8 +77,7 @@ export const authActions = {
     ),
     loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
     acceptInvitation: () => createAction(AuthActionTypes.ACCEPT_INVITATION),
-    // TODO: successs must return organization
-    acceptInvitationSuccess: (user: any) => createAction(AuthActionTypes.ACCEPT_INVITATION_SUCCESS, { user }),
+    acceptInvitationSuccess: (user: User) => createAction(AuthActionTypes.ACCEPT_INVITATION_SUCCESS, { user }),
     acceptInvitationFailed: (error: any) => createAction(AuthActionTypes.ACCEPT_INVITATION_FAILED, { error }),
 };
 
@@ -242,6 +241,6 @@ export const acceptInvitationAsync = (
         if (onSuccess) onSuccess(orgSlug);
         dispatch(authActions.acceptInvitationSuccess(orgSlug));
     } catch (error) {
-        dispatch(authActions.acceptInvitationSuccess(error));
+        dispatch(authActions.acceptInvitationFailed(error));
     }
 };
