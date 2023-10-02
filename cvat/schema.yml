@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.8.0
+  version: 2.8.0.dev20231002094801
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -1531,6 +1531,64 @@ paths:
       responses:
         '204':
           description: The invitation has been deleted
+  /api/invitations/{key}/accept:
+    post:
+      operationId: invitations_create_accept
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationWriteRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/InvitationWrite'
+          description: ''
+  /api/invitations/{key}/resend:
+    post:
+      operationId: invitations_create_resend
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationWriteRequest'
+        required: true
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/InvitationWrite'
+          description: ''
   /api/issues:
     get:
       operationId: issues_list
@@ -6362,6 +6420,22 @@ components:
       oneOf:
       - $ref: '#/components/schemas/ProjectFileRequest'
       nullable: true
+    BasicInvitation:
+      type: object
+      properties:
+        key:
+          type: string
+          readOnly: true
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          nullable: true
+      required:
+      - owner
     BasicUser:
       type: object
       properties:
@@ -7305,6 +7379,31 @@ components:
       - owner
       - role
       - user
+    InvitationWrite:
+      type: object
+      properties:
+        key:
+          type: string
+          readOnly: true
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        owner:
+          type: integer
+          readOnly: true
+          nullable: true
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        organization:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+      required:
+      - email
+      - role
     InvitationWriteRequest:
       type: object
       properties:
@@ -7963,10 +8062,9 @@ components:
           - $ref: '#/components/schemas/RoleEnum'
           readOnly: true
         invitation:
-          type: string
-          readOnly: true
-          nullable: true
+          $ref: '#/components/schemas/BasicInvitation'
       required:
+      - invitation
       - user
     MetaUser:
       anyOf:
