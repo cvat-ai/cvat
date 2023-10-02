@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import './styles.scss';
 import React, { useCallback } from 'react';
 import RegisterPageComponent from 'components/register-page/register-page';
 import { CombinedState } from 'reducers';
