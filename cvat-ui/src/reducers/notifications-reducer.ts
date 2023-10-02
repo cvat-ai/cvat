@@ -178,6 +178,7 @@ const defaultState: NotificationsState = {
             registerDone: '',
             requestPasswordResetDone: '',
             resetPasswordDone: '',
+            acceptInvitationDone: '',
         },
         projects: {
             restoringDone: '',
@@ -382,6 +383,19 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                         },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.ACCEPT_INVITATION_SUCCESS: {
+            return {
+                ...state,
+                ...state,
+                messages: {
+                    ...state.messages,
+                    auth: {
+                        ...state.messages.auth,
+                        acceptInvitationDone: 'Invitation accepted successfully. You can Sign in now.',
                     },
                 },
             };

@@ -565,6 +565,7 @@ export interface NotificationsState {
             registerDone: string;
             requestPasswordResetDone: string;
             resetPasswordDone: string;
+            acceptInvitationDone: string;
         };
         projects: {
             restoringDone: string;
