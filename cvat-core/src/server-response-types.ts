@@ -67,6 +67,7 @@ export interface SerializedProject {
     target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
     url: string;
     tasks: { count: number; url: string; };
+    labels: { url: string } | SerializedLabel[];
     task_subsets: string[];
     status: ProjectStatus;
 }
@@ -87,8 +88,9 @@ export interface SerializedTask {
     dimension: DimensionType;
     id: number;
     image_quality: number;
-    jobs: { count: 1; completed: 0; url: string; validation: 0 };
-    labels: { count: number; url: string; };
+    jobs?: SerializedJob[];
+    progress: { count: number; completed: number; url: string; validation: number; };
+    labels: { url: string; } | SerializedLabel[];
     mode: TaskMode | '';
     name: string;
     organization: number | null;
@@ -114,7 +116,7 @@ export interface SerializedJob {
     dimension: DimensionType;
     id: number;
     issues: { count: number; url: string };
-    labels: { count: number; url: string };
+    labels: { url: string } | SerializedLabel[];
     mode: TaskMode;
     project_id: number | null;
     guide_id: number | null;

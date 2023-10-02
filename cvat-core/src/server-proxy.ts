@@ -638,7 +638,8 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
             Object.defineProperty(results, 'count', {
                 value: 1,
             });
-
+            response.data.progress = response.data.jobs;
+            delete response.data.jobs;
             return results as SerializedTask[] & { count: number };
         }
 
@@ -652,6 +653,10 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
         throw generateError(errorData);
     }
 
+    response.data.results.forEach((task) => {
+        task.progress = task.jobs;
+        delete task.jobs;
+    });
     response.data.results.count = response.data.count;
     return response.data.results;
 }
