@@ -88,7 +88,7 @@ class Invitation(models.Model):
                 'domain': domain,
                 'site_name': site_name,
                 'organization_name': self.membership.organization.slug,
-                'protocol': 'http', ## TODO add https
+                'protocol': 'https' if request.is_secure() else 'http',
         }
 
         get_adapter(request).send_mail('invitation/invitation', target_email, context)
