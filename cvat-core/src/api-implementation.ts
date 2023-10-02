@@ -208,9 +208,7 @@ export default function implementAPI(cvat) {
 
         const jobsData = await serverProxy.jobs.get(searchParams);
         const jobs = jobsData.results.map((jobData) => new Job(jobData));
-        Object.defineProperty(jobs, 'count', {
-            value: jobsData.count,
-        });
+        Object.defineProperty(jobs, 'count', { value: jobsData.count });
         return jobs;
     };
 
@@ -256,9 +254,7 @@ export default function implementAPI(cvat) {
             return new Task({ ...taskItem });
         }));
 
-        Object.defineProperty(tasks, 'count', {
-            value: tasksData.count,
-        });
+        Object.defineProperty(tasks, 'count', { value: tasksData.count });
         return tasks;
     };
 
@@ -292,9 +288,7 @@ export default function implementAPI(cvat) {
             });
         }));
 
-        Object.defineProperty(projects, 'count', {
-            value: projectsData.count,
-        });
+        Object.defineProperty(projects, 'count', { value: projectsData.count });
         return projects;
     };
 
