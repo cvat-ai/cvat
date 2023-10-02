@@ -69,7 +69,7 @@ class Invitation(models.Model):
     @property
     def expired(self):
         expiration_date = self.sent_date + timedelta(
-            days=settings.ORG_INVITATION_EXPIRY,
+            days=settings.ORG_INVITATION_EXPIRY_DAYS,
         )
         return expiration_date <= timezone.now()
 
