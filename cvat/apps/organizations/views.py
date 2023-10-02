@@ -16,6 +16,7 @@ from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.organizations.throttle import ResendOrganizationInvitationThrottle
+from django.db import transaction
 from .models import Invitation, Membership, Organization
 
 from .serializers import (
@@ -219,6 +220,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
         else:
             super().perform_update(serializer)
 
+    @transaction.atomic
     @action(detail=True, methods=['POST'], url_path='accept', permission_classes=[AllowAny], authentication_classes=[], serializer_class=AcceptInvitationSerializer)
     def accept(self, request, pk):
         try:
