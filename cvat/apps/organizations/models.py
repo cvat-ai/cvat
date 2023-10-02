@@ -87,6 +87,7 @@ class Invitation(models.Model):
                 'invitation_key': self.key,
                 'domain': domain,
                 'site_name': site_name,
+                'invitation_owner': self.owner.get_username(),
                 'organization_name': self.membership.organization.slug,
                 'protocol': 'https' if request.is_secure() else 'http',
         }
