@@ -322,16 +322,6 @@ class CVAT_API_V2:
     def __init__(self, host: str):
         self.host = host.rstrip("/")
         self.base = self.host + "/api/"
-        self.git = self.host + "/git/repository/"
-
-    def git_create(self, task_id: int) -> str:
-        return self.git + f"create/{task_id}"
-
-    def git_check(self, rq_id: int) -> str:
-        return self.git + f"check/{rq_id}"
-
-    def git_get(self, task_id: int) -> str:
-        return self.git + f"get/{task_id}"
 
     def make_endpoint_url(
         self,

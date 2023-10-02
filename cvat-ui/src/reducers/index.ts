@@ -260,7 +260,6 @@ export interface CloudStoragesState {
 }
 
 export enum SupportedPlugins {
-    GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
 }

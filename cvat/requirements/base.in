@@ -30,7 +30,6 @@ djangorestframework~=3.14.0
 dnspython==2.2.0
 drf-spectacular>=0.26.2
 furl==2.1.0
-GitPython~=3.1
 google-cloud-storage==1.42.0
 natsort==8.0.0
 numpy~=1.22.2

@@ -181,7 +181,7 @@ To create bucket, do the following:
 3. [Create a Bucket](https://cloud.google.com/storage/docs/creating-buckets) with the following parameters:
    - **Name your bucket**: Unique name.
    - **Choose where to store your data**: Set up a location nearest to you.
-   - **Choose a storage class for your data**: `Set a default class` > `Standart`.
+   - **Choose a storage class for your data**: `Set a default class` > `Standard`.
    - **Choose how to control access to objects**: `Enforce public access prevention on this bucket` >
      `Uniform` (default).
    - **How to protect data**: `None`
