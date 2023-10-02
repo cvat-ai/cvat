@@ -24,17 +24,3 @@ services:
       cvat:
         aliases:
           - webhooks
-
-  git_server:
-    image: alpine/git
-    restart: always
-    depends_on:
-      - cvat_server
-    entrypoint: /mnt/scripts/entrypoint.sh
-    volumes:
-      - ./tests/git_server/:/mnt/scripts:ro
-      - cvat_keys:/mnt/keys:ro
-    networks:
-      cvat:
-        aliases:
-          - gitserver

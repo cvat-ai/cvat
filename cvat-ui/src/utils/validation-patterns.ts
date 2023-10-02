@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -66,14 +67,8 @@ const validationPatterns = {
 
     validateURL: {
         // eslint-disable-next-line
-        pattern: /^((https?:\/\/)|((ssh:\/\/)?git@))[^\s$.?#].[^\s]*$/, // url, ssh url, ip
+        pattern: /^(https?:\/\/)[^\s$.?#].[^\s]*$/, // url, ip
         message: 'URL is not valid',
-    },
-
-    validatePath: {
-        // eslint-disable-next-line
-        pattern: /^\[\/?([A-z0-9-_+]+\/)*([A-z0-9]+\.(xml|zip|json))\]$/,
-        message: 'Git path is not valid',
     },
 
     validateOrganizationSlug: {
