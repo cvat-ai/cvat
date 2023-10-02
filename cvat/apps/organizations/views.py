@@ -210,7 +210,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
             owner=self.request.user,
             key=get_random_string(length=64),
             organization=self.request.iam_context['organization'],
-            request=self.request
+            request=self.request,
         )
 
     def perform_update(self, serializer):
