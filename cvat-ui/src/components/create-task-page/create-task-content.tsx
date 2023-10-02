@@ -102,13 +102,14 @@ const defaultState: State = {
 };
 
 const UploadFileErrorMessages = {
-    one: 'It can not be processed. You can upload an archive with images, a video, a pdf file or multiple images. ',
-    multi: 'It can not be processed. You can upload one or more videos. ',
+    one: 'Wrong list of files. You can upload an archive with images, a video, a pdf file or multiple images. ',
+    multi: 'Wrong list of files. You can upload one or more videos. ',
 };
 
-function fileExtensionList(files: RemoteFile[]): string {
-    const fileTypes = files.map((file: RemoteFile) => `.${file.name.split('.').pop()}`);
-    return Array.from(new Set(fileTypes)).join(', ');
+function receiveExtensions(files: RemoteFile[]): string[] {
+    const fileTypes = files.filter((file: RemoteFile) => file.name.includes('.'))
+        .map((file: RemoteFile) => `.${file.name.split('.').pop()}`);
+    return fileTypes;
 }
 
 function checkFiles(files: RemoteFile[], type: SupportedShareTypes, baseError: string): string {
@@ -116,8 +117,8 @@ function checkFiles(files: RemoteFile[], type: SupportedShareTypes, baseError: s
         (it) => it.mimeType !== type,
     );
     if (erroredFiles.length !== 0) {
-        const unsupportedTypes = fileExtensionList(erroredFiles);
-        return `${baseError} Found unsupported types: ${unsupportedTypes} `;
+        const unsupportedTypes = receiveExtensions(erroredFiles);
+        return unsupportedTypes.length ? `${baseError} Found unsupported types: ${unsupportedTypes} ` : baseError;
     }
     return '';
 }

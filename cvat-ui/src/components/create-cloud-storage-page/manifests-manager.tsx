@@ -93,7 +93,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                                                     {
                                                         type: 'string',
                                                         pattern: /^.*\.(jsonl)$/,
-                                                        message: 'Manifest file should be in the .jsonl format',
+                                                        message: 'Manifest file must have .jsonl extension',
                                                     },
                                                 ]}
                                                 initialValue={field.name}
