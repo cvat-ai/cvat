@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New , form-based Issue templates for Github repository
 - TDB
 
 ### Changed
@@ -19,6 +18,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 - TDB
+
+### Removed
+
+- TDB
+
+### Fixed
+
+- TDB
+
+### Security
+
+- TDB
+
+## \[2.7.3\] - 2023-10-02
+
+### Added
+
+- New , form-based Issue templates for Github repository
 
 ### Removed
 
