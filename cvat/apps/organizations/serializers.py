@@ -4,15 +4,16 @@
 # SPDX-License-Identifier: MIT
 
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
-from rest_framework import serializers
-from dj_rest_auth.registration.serializers import RegisterSerializer
 from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
+
+from rest_framework import serializers
+from dj_rest_auth.registration.serializers import RegisterSerializer
 from distutils.util import strtobool
-from .models import Invitation, Membership, Organization
 from cvat.apps.engine.serializers import BasicUserSerializer
+from .models import Invitation, Membership, Organization
 
 class OrganizationReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True)

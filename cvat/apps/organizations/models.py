@@ -4,11 +4,9 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import timedelta
-from distutils.util import strtobool
 from django.conf import settings
 from allauth.account.adapter import get_adapter
 from django.contrib.sites.shortcuts import get_current_site
-from django.conf import settings
 
 from django.db import models
 from django.contrib.auth import get_user_model
