@@ -30,7 +30,6 @@ djangorestframework~=3.14.0
 dnspython==2.2.0
 drf-spectacular>=0.26.2
 furl==2.1.0
-GitPython~=3.1
 google-cloud-storage==1.42.0
 natsort==8.0.0
 numpy~=1.22.2
@@ -41,7 +40,7 @@ opencv-python-headless==4.5.5.62
 patool==1.12
 
 pdf2image==1.14.0
-Pillow==9.3.0
+Pillow>=10.0.1
 psutil==5.9.4
 psycopg2-binary==2.9.5
 python-ldap==3.4.3

@@ -46,10 +46,6 @@ class VideoStreamReader:
                         )
                     self.height, self.width = (frame.height, frame.width)
 
-                    # not all videos contain information about numbers of frames
-                    if video_stream.frames:
-                        self._frames_number = video_stream.frames
-
                     return
 
     @property
@@ -63,6 +59,9 @@ class VideoStreamReader:
         return video_stream
 
     def __len__(self):
+        assert self._frames_number is not None, \
+            "The length will not be available until the reader is iterated all the way through at least once"
+
         return self._frames_number
 
     @property
@@ -498,7 +497,7 @@ class VideoManifestManager(_ManifestManager):
 
     def _write_core_part(self, file, _tqdm):
         iterable_obj = self._reader if _tqdm is None else \
-            _tqdm(self._reader, desc="Manifest creating", total=len(self._reader))
+            _tqdm(self._reader, desc="Manifest creating", total=float("inf"))
         for item in iterable_obj:
             if isinstance(item, tuple):
                 json_item = json.dumps({
@@ -510,17 +509,12 @@ class VideoManifestManager(_ManifestManager):
 
     def create(self, *, _tqdm=None): # pylint: disable=arguments-differ
         """ Creating and saving a manifest file """
-        if not len(self._reader):
-            tmp_file = StringIO()
-            self._write_core_part(tmp_file, _tqdm)
+        tmp_file = StringIO()
+        self._write_core_part(tmp_file, _tqdm)
 
-            with open(self._manifest.path, 'w') as manifest_file:
-                self._write_base_information(manifest_file)
-                manifest_file.write(tmp_file.getvalue())
-        else:
-            with open(self._manifest.path, 'w') as manifest_file:
-                self._write_base_information(manifest_file)
-                self._write_core_part(manifest_file, _tqdm)
+        with open(self._manifest.path, 'w') as manifest_file:
+            self._write_base_information(manifest_file)
+            manifest_file.write(tmp_file.getvalue())
 
         self.set_index()
 
@@ -575,15 +569,6 @@ class VideoManifestValidator(VideoManifestManager):
                 container.seek(offset=key_frame['pts'], stream=video_stream)
                 self.validate_key_frame(container, video_stream, key_frame)
                 last_key_frame = key_frame
-
-    def validate_frame_numbers(self):
-        with closing(av.open(self._source_path, mode='r')) as container:
-            video_stream = self._get_video_stream(container)
-            # not all videos contain information about numbers of frames
-            frames = video_stream.frames
-            if frames:
-                assert frames == self.video_length, "The uploaded manifest does not match the video"
-                return
 
 class ImageProperties(dict):
     @property
