@@ -162,16 +162,10 @@ class AcceptInvitationSerializer(RegisterSerializer):
     def save(self, request, invitation):
         self.cleaned_data = self.get_cleaned_data()
         user = invitation.membership.user
-        if "password1" in self.cleaned_data:
-            try:
-                user.is_active = True
-                user.first_name = self.cleaned_data['firstname']
-                user.last_name = self.cleaned_data['lastname']
-                user.username = self.cleaned_data['username']
-                user.set_password(self.cleaned_data['password1'])
-                user.save()
-            except ValidationError as exc:
-                raise serializers.ValidationError(
-                    detail=serializers.as_serializer_error(exc)
-            )
+        user.is_active = True
+        user.first_name = self.cleaned_data['firstname']
+        user.last_name = self.cleaned_data['lastname']
+        user.username = self.cleaned_data['username']
+        user.set_password(self.cleaned_data['password1'])
+        user.save()
         return user
