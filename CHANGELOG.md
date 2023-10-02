@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Downloading additional data from cloud storage if use_cache=true and job_file_mapping are specified
   (<https://github.com/opencv/cvat/pull/6879>)
 - Leaving an organization (<https://github.com/opencv/cvat/pull/6422>)
+- Order of images in annotation file when dumping project in CVAT format (<https://github.com/opencv/cvat/pull/6927>)
 
 ## \[2.7.1\] - 2023-09-15
 
