@@ -115,7 +115,8 @@ function checkFiles(files: RemoteFile[], type: SupportedShareTypes, baseError: s
     );
     if (erroredFiles.length !== 0) {
         const unsupportedTypes = receiveExtensions(erroredFiles);
-        return unsupportedTypes.length ? `${baseError} Found unsupported types: ${unsupportedTypes} ` : baseError;
+        const extensionList = Array.from(new Set(unsupportedTypes));
+        return extensionList.length ? `${baseError} Found unsupported types: ${extensionList.join(', ')}. ` : baseError;
     }
     return '';
 }
