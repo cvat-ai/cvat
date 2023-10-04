@@ -1258,25 +1258,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         window.document.addEventListener('keydown', this.onShiftKeyDown);
         window.document.addEventListener('keyup', this.onShiftKeyUp);
 
-        this.attachmentBoard.addEventListener('wheel', (event) => {
-            event.stopPropagation();
-        });
-
-        this.attachmentBoard.addEventListener('mousemove', (event) => {
-            event.stopPropagation();
-        });
-
-        this.attachmentBoard.addEventListener('mousedown', (event) => {
-            event.stopPropagation();
-        });
-
-        this.attachmentBoard.addEventListener('dblclick', (event) => {
-            event.stopPropagation();
-        });
-
-        this.attachmentBoard.addEventListener('contextmenu', (event) => {
-            event.stopPropagation();
-        });
+        for (const eventName of ['wheel', 'mousemove', 'mousedown', 'dblclick', 'contextmenu']) {
+            this.attachmentBoard.addEventListener(eventName, (event) => {
+                event.stopPropagation();
+            });
+        }
 
         this.canvas.addEventListener('wheel', (event): void => {
             if (event.ctrlKey) return;
