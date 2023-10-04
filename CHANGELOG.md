@@ -5,31 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[Unreleased\]
+<!--
+  Developers: this project uses scriv (<https://scriv.readthedocs.io/en/stable/index.html>)
+  to maintain the changelog. To add an entry, create a fragment:
 
-### Added
+    $ scriv create --edit
 
-- The latest comment displayed in issues sidebar (<https://github.com/opencv/cvat/pull/6937>)
+  Fragments will be merged into this file whenever a release is made.
+-->
 
-### Changed
-
-- TDB
-
-### Deprecated
-
-- TDB
-
-### Removed
-
-- TDB
-
-### Fixed
-
-- It was not possible to copy issue comment from issue dialog (<https://github.com/opencv/cvat/pull/6937>)
-
-### Security
-
-- Update Grafana from 9.3.6 to 10.1.2
+<!-- scriv-insert-here -->
 
 ## \[2.7.3\] - 2023-10-02
 
@@ -1766,26 +1751,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial version
-
-## Template
-
-```
-## \[Unreleased]
-### Added
-- TDB
-
-### Changed
-- TDB
-
-### Deprecated
-- TDB
-
-### Removed
-- TDB
-
-### Fixed
-- TDB
-
-### Security
-- TDB
-```
