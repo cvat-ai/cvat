@@ -198,4 +198,4 @@ enable = false
 	name = "Discord chat"
 	url = "https://discord.gg/fNR3eXfk6C"
 	icon = "fab fa-discord"
-        desc = "Join our Discord channel for community support."
+        desc = "Join our Discord server for community support."
