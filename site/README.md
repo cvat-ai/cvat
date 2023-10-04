@@ -30,65 +30,74 @@ description: >
 
 #### Installation
 
-1. Get the code
+1. Install Hugo
 
-Clone a repository branch containing the site. For example, using a git command:
+Get the [v110.0-extended release of hugo](https://github.com/gohugoio/hugo/releases/tag/v0.110.0).
+Expand the Assets section of the release on GitHub and and scroll down
+until you find a list of **Extended** versions.
+[Read more](https://gohugo.io/getting-started/installing/#quick-install)
 
-```bash
-git clone --branch <branchname> <remote-repo-url>
-```
+Add a path to `hugo` in the `PATH` environment variable.
 
-If you want to build and/or serve your site locally, you also need to get local copies of the theme’s own submodules:
+2. Get the Docsy theme code
 
 ```bash
 git submodule update --init --recursive
 ```
 
-2. Install Hugo
-
-Get the [v110.0-extended release of hugo](https://github.com/gohugoio/hugo/releases/tag/v0.110.0).
-Expand the Assets section of the release on GitHub and and scroll down
-until you find a list of Extended versions.
-[Read more](https://gohugo.io/getting-started/installing/#quick-install)
-
-Add a path to "hugo" in the "Path" environment variable.
-
 3. Install the Docsy theme dependencies
 
-To build or update your site’s CSS resources you will need [PostCSS](https://postcss.org/) to create final assets.
-To install it you must have a recent version of [NodeJS](https://nodejs.org/en/) installed on your machine,
-so you can use npm, the Node package manager, or nvm.
-By default npm installs tools under the directory where you run [npm install](https://docs.npmjs.com/cli/v6/commands/npm-install#description):
+To build or update your site’s CSS resources, you will need several packages installed.
+To install them, you must have a recent version of [NodeJS](https://nodejs.org/en/)
+installed on your machine (tested with v18.0). For this, you can use
+[npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) directly
+or via an environment manager like [nvm](https://github.com/nvm-sh/nvm).
+By default `npm` installs tools under the directory where you run `npm install`.
 
 ```bash
 (cd site/ && npm ci)
 ```
 
-Full documentation is [here](https://www.docsy.dev/docs/get-started/other-options/#for-an-existing-site).
+The full documentation is available
+[here](https://www.docsy.dev/docs/get-started/other-options/#for-an-existing-site).
 
 4. To preview your site locally, use:
 
 ```bash
-cd site/
-hugo server
+(cd site/ && hugo server)
 ```
 
 By default, your site will be available at <http://localhost:1313/docs/>.
 
-#### How to build and run for production
+#### How to build for production deployment
 
-Use the command that generates the site in the `public/` folder:
+1. Install dependencies
 
 ```bash
-hugo
+cd site/
+pip -m venv venv
+. venv/bin/activate
+pip install -r requirements.txt
 ```
 
-[Read more](https://www.docsy.dev/docs/getting-started/)
+2. Use the commands that generate a static site in the `public/` folder:
 
-### How to update the submodule of the docsy theme
+Make sure to generate the SDK code first.
 
-To update the submodule of the docsy theme you need to have a repository clone. While in the repository folder,
-use the git command:
+```bash
+python process_sdk_docs.py --input-dir ../cvat-sdk/docs/ --site-root .
+
+python build_docs.py
+```
+
+The resulting folder contains the whole site, which can be published by a server like Apache.
+Read more [here](https://www.docsy.dev/docs/getting-started/)
+and [here](https://gohugo.io/hosting-and-deployment/).
+
+### How to update the submodule of the Docsy theme
+
+To update the submodule of the docsy theme, you need to have a repository clone.
+While in the repository folder, use the git command:
 
 ```bash
 git submodule update --remote
