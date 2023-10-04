@@ -1266,6 +1266,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
             event.stopPropagation();
         });
 
+        this.attachmentBoard.addEventListener('mousedown', (event) => {
+            event.stopPropagation();
+        });
+
+        this.attachmentBoard.addEventListener('dblclick', (event) => {
+            event.stopPropagation();
+        });
+
+        this.attachmentBoard.addEventListener('contextmenu', (event) => {
+            event.stopPropagation();
+        });
+
         this.canvas.addEventListener('wheel', (event): void => {
             if (event.ctrlKey) return;
             const { offset } = this.controller.geometry;

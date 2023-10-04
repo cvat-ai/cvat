@@ -92,7 +92,7 @@
             }
         }
 
-        border-radius: 0.5 * $grid-unit-size;
+        user-select: all;
         background: $background-color-1;
         padding: $grid-unit-size;
         max-height: $grid-unit-size * 45;
