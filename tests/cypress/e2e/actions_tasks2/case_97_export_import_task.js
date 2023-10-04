@@ -53,15 +53,12 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         cy.createRectangle(createRectangleShape2Points).then(() => {
             Cypress.config('scrollBehavior', false);
         });
-        cy.get('#cvat_canvas_shape_1')
-            .trigger('mousemove')
-            .trigger('mouseover')
-            .should('have.class', 'cvat_canvas_shape_activated');
-        cy.get('.svg_select_points_rot')
-            .should('be.visible')
-            .and('have.length', 1)
-            .trigger('mousemove')
-            .trigger('mouseover');
+        cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+        cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+        cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+        cy.get('.svg_select_points_rot').should('be.visible').and('have.length', 1);
+        cy.get('.svg_select_points_rot').trigger('mousemove');
+        cy.get('.svg_select_points_rot').trigger('mouseover');
         cy.get('.svg_select_points_rot').trigger('mousedown', { button: 0 });
         cy.get('.cvat-canvas-container').trigger('mousemove', 345, 150);
         cy.get('.cvat-canvas-container').trigger('mouseup');

@@ -1,6 +1,7 @@
 // Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
 import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -15,13 +16,12 @@ import {
 } from 'cvat-core-wrapper';
 import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
-import { updateJobAsync } from 'actions/tasks-actions';
 
 const core = getCore();
 
 interface Props {
     job: Job;
-    onJobUpdate?: (job: Job) => void;
+    onJobUpdate: (job: Job) => void;
 }
 
 function JobActionsMenu(props: Props): JSX.Element {
@@ -62,19 +62,11 @@ function JobActionsMenu(props: Props): JSX.Element {
             } else if (action.key === 'renew_job') {
                 job.state = core.enums.JobState.NEW;
                 job.stage = JobStage.ANNOTATION;
-                if (onJobUpdate) {
-                    onJobUpdate(job);
-                } else {
-                    dispatch(updateJobAsync(job));
-                }
+                onJobUpdate(job);
             } else if (action.key === 'finish_job') {
                 job.stage = JobStage.ACCEPTANCE;
                 job.state = core.enums.JobState.COMPLETED;
-                if (onJobUpdate) {
-                    onJobUpdate(job);
-                } else {
-                    dispatch(updateJobAsync(job));
-                }
+                onJobUpdate(job);
             }
         }}
         >

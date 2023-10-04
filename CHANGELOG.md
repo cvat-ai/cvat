@@ -6,24 +6,91 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## \[Unreleased\]
+
+### Added
+
+- TDB
+
+### Changed
+
+- TDB
+
+### Deprecated
+
+- TDB
+
+### Removed
+
+- TDB
+
+### Fixed
+
+- TDB
+
+### Security
+
+- TDB
+
+## \[2.7.3\] - 2023-10-02
+
+### Added
+
+- New , form-based Issue templates for Github repository
+
+### Removed
+
+- Functionality for synchronizing a task with a Git repository
+  (<https://github.com/opencv/cvat/pull/6904>)
+
+### Fixed
+
+- Incorrectly determined video frame count when the video contains an MP4 edit list
+  (<https://github.com/opencv/cvat/pull/6929>)
+- Internal server error when retrieving data from CS and cache=True
+  (<https://github.com/opencv/cvat/pull/6932>)
+
+### Security
+
+- Security upgrade Pillow from 9.3.0 to 10.0.1
+  (<https://github.com/opencv/cvat/pull/6907>)
+- Security update cryptography from 41.0.3 to 41.0.4
+  (<https://github.com/opencv/cvat/pull/6914>)
+
+## \[2.7.2\] - 2023-09-25
+
+### Changed
+
+- Do not reload annotation view when renew the job or update job state (<https://github.com/opencv/cvat/pull/6851>)
+- Now images from cloud buckets are loaded in parallel when preparing a chunk (<https://github.com/opencv/cvat/pull/6881>)
+
+### Fixed
+
+- Downloading additional data from cloud storage if use_cache=true and job_file_mapping are specified
+  (<https://github.com/opencv/cvat/pull/6879>)
+- Leaving an organization (<https://github.com/opencv/cvat/pull/6422>)
+- Validation on Cloud Storage form / error message on create task form (<https://github.com/opencv/cvat/pull/6890>)
+
+
+## \[2.7.1\] - 2023-09-15
+
+### Fixed
+
+- Include cloud storage manifest file to selected files if manifest was used as data source (<https://github.com/opencv/cvat/pull/6850>)
+- Keep sequence of files when directories were specified in server_files (<https://github.com/opencv/cvat/pull/6850>)
+
+## \[2.7.0\] - 2023-09-10
+
 ### Added
 
 - Admin actions for easy activation/deactivation of users (<https://github.com/opencv/cvat/pull/6314>)
 
-### Changed
-- TDB
-
-### Deprecated
-- TDB
-
-### Removed
-- TDB
-
 ### Fixed
+
 - Invalid input validation in for `cloud_storage_id` (<https://github.com/opencv/cvat/pull/6825>)
 - Incorrect task progress report for 3rdparty users (<https://github.com/opencv/cvat/pull/6834>)
 
 ### Security
+
 - Security upgrade gitpython from 3.1.33 to 3.1.35 (<https://github.com/opencv/cvat/pull/6843>)
 - Security upgrade numpy from 1.22.0 to 1.22.4 (<https://github.com/opencv/cvat/pull/6843>)
 

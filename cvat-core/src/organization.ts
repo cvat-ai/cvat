@@ -332,7 +332,7 @@ Object.defineProperties(Organization.prototype.leave, {
                 const result = await serverProxy.organizations.members(this.slug, 1, 10, {
                     filter: JSON.stringify({
                         and: [{
-                            '==': [{ var: 'user' }, user.id],
+                            '==': [{ var: 'user' }, user.username],
                         }],
                     }),
                 });

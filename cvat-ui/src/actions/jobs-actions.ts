@@ -19,6 +19,9 @@ export enum JobsActionTypes {
     GET_JOB_PREVIEW_SUCCESS = 'GET_JOB_PREVIEW_SUCCESS',
     GET_JOB_PREVIEW_FAILED = 'GET_JOB_PREVIEW_FAILED',
     CREATE_JOB_FAILED = 'CREATE_JOB_FAILED',
+    UPDATE_JOB = 'UPDATE_JOB',
+    UPDATE_JOB_SUCCESS = 'UPDATE_JOB_SUCCESS',
+    UPDATE_JOB_FAILED = 'UPDATE_JOB_FAILED',
     DELETE_JOB = 'DELETE_JOB',
     DELETE_JOB_SUCCESS = 'DELETE_JOB_SUCCESS',
     DELETE_JOB_FAILED = 'DELETE_JOB_FAILED',
@@ -45,6 +48,15 @@ const jobsActions = {
     ),
     createJobFailed: (error: any) => (
         createAction(JobsActionTypes.CREATE_JOB_FAILED, { error })
+    ),
+    updateJob: () => (
+        createAction(JobsActionTypes.UPDATE_JOB)
+    ),
+    updateJobSuccess: (job: Job) => (
+        createAction(JobsActionTypes.UPDATE_JOB_SUCCESS, { job })
+    ),
+    updateJobFailed: (jobID: number, error: any) => (
+        createAction(JobsActionTypes.UPDATE_JOB_FAILED, { jobID, error })
     ),
     deleteJob: (jobID: number) => (
         createAction(JobsActionTypes.DELETE_JOB, { jobID })
@@ -92,6 +104,21 @@ export const createJobAsync = (data: JobData): ThunkAction => async (dispatch) =
         throw error;
     }
 };
+
+export function updateJobAsync(jobInstance: Job): ThunkAction<Promise<boolean>> {
+    return async (dispatch): Promise<boolean> => {
+        try {
+            dispatch(jobsActions.updateJob());
+            const updated = await jobInstance.save();
+            dispatch(jobsActions.updateJobSuccess(updated));
+        } catch (error) {
+            dispatch(jobsActions.updateJobFailed(jobInstance.id, error));
+            return false;
+        }
+
+        return true;
+    };
+}
 
 export const deleteJobAsync = (job: Job): ThunkAction => async (dispatch) => {
     dispatch(jobsActions.deleteJob(job.id));

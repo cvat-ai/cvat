@@ -25,7 +25,7 @@ import AnnotationGuide from './guide';
 import * as enums from './enums';
 
 import {
-    Exception, ArgumentError, DataError, ScriptingError, PluginError, ServerError,
+    Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
 import User from './user';
@@ -249,7 +249,6 @@ function build() {
             ArgumentError,
             DataError,
             ScriptingError,
-            PluginError,
             ServerError,
         },
         cloudStorages: {

@@ -180,6 +180,7 @@ context('New organization pipeline.', () => {
             cy.activateOrganization(organizationParams.shortName);
             cy.openOrganization(organizationParams.shortName);
             cy.contains('button', 'Leave organization').should('be.visible').click();
+            cy.once('uncaught:exception', () => false); // thrown exception is expected in this test
             cy.get('.cvat-modal-organization-leave-confirm')
                 .should('be.visible')
                 .within(() => {

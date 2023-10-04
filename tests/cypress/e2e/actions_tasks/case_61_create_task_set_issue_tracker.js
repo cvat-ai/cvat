@@ -51,7 +51,8 @@ context('Create a task with set an issue tracker.', () => {
         });
 
         it('Set correct issue tracker URL. The task created.', () => {
-            cy.get('#bugTracker').clear().type(dummyBugTrackerUrl);
+            cy.get('#bugTracker').clear();
+            cy.get('#bugTracker').type(dummyBugTrackerUrl);
             cy.contains('URL is not a valid URL').should('not.exist');
             cy.contains('button', 'Submit & Continue').click();
             cy.get('.cvat-notification-create-task-fail').should('not.exist');
@@ -64,7 +65,8 @@ context('Create a task with set an issue tracker.', () => {
             cy.get('.cvat-issue-tracker-value').should('have.text', dummyBugTrackerUrl);
             cy.contains('button', 'Open the issue').should('exist').and('be.visible');
             cy.get('.cvat-issue-tracker').find('[aria-label="Edit"]').click();
-            cy.get('.cvat-issue-tracker-value').find('textarea').clear().type(`${incorrectBugTrackerUrl}{Enter}`);
+            cy.get('.cvat-issue-tracker-value').find('textarea').clear();
+            cy.get('.cvat-issue-tracker-value').find('textarea').type(`${incorrectBugTrackerUrl}{Enter}`);
             cy.get('.cvat-modal-issue-tracker-update-task-fail')
                 .should('exist')
                 .and('be.visible')
@@ -75,7 +77,8 @@ context('Create a task with set an issue tracker.', () => {
         it('Remove issue trasker URL.', () => {
             cy.get('.cvat-issue-tracker-value').should('have.text', dummyBugTrackerUrl);
             cy.get('.cvat-issue-tracker').find('[aria-label="Edit"]').click();
-            cy.get('.cvat-issue-tracker-value').find('textarea').clear().type('{Enter}');
+            cy.get('.cvat-issue-tracker-value').find('textarea').clear();
+            cy.get('.cvat-issue-tracker-value').find('textarea').type('{Enter}');
             cy.get('.cvat-open-bug-tracker-button').should('not.exist'); // Not specified
             cy.contains('button', 'Open the issue').should('not.exist');
         });

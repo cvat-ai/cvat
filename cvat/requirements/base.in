@@ -6,7 +6,7 @@ azure-storage-blob==12.13.0
 boto3==1.17.61
 clickhouse-connect==0.6.8
 coreapi==2.3.3
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@ff83c00c2c1bc4b8fdfcc55067fcab0a9b5b6b11
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@8a14a99fe17f19d98595a2a4a74ab459051cc23b
 dj-pagination==2.5.0
 dj-rest-auth[with_social]==2.2.7
 
@@ -30,7 +30,6 @@ djangorestframework~=3.14.0
 dnspython==2.2.0
 drf-spectacular>=0.26.2
 furl==2.1.0
-GitPython~=3.1
 google-cloud-storage==1.42.0
 natsort==8.0.0
 numpy~=1.22.2
@@ -41,7 +40,7 @@ opencv-python-headless==4.5.5.62
 patool==1.12
 
 pdf2image==1.14.0
-Pillow==9.3.0
+Pillow>=10.0.1
 psutil==5.9.4
 psycopg2-binary==2.9.5
 python-ldap==3.4.3

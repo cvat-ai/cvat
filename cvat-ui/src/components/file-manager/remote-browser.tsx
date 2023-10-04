@@ -29,7 +29,7 @@ interface Node {
     nextToken?: string | null;
 }
 
-export type RemoteFile = Pick<Node, 'key' | 'type' | 'mimeType'>;
+export type RemoteFile = Pick<Node, 'key' | 'type' | 'mimeType' | 'name'>;
 
 interface Props {
     resource: 'share' | CloudStorage;
@@ -171,8 +171,20 @@ function RemoteBrowser(props: Props): JSX.Element {
             }
         };
         collectNodes(content);
+
+        if (manifestPath) {
+            nodes.push({
+                name: manifestPath,
+                key: manifestPath,
+                children: [],
+                type: 'REG',
+                mimeType: 'unknown',
+                initialized: true,
+            });
+        }
+
         onSelectFiles(nodes);
-    }, [selectedRowKeys]);
+    }, [selectedRowKeys, manifestPath]);
 
     useEffect(() => {
         const button = window.document.getElementsByClassName('cvat-remote-browser-receive-more-btn')[0];

@@ -1,4 +1,5 @@
 // Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -71,11 +72,13 @@ context('Creating a task with only bounding boxes', () => {
                         cy.get(`.cvat-label-type-option-${labelSpecification.type}`).click();
                     });
             }
-            cy.contains('Continue').scrollIntoView().click();
+            cy.contains('Continue').scrollIntoView();
+            cy.contains('Continue').click();
             cy.get('input[type="file"]').attachFile(archiveName, { subjectType: 'drag-n-drop' });
 
             cy.intercept('/api/tasks?**').as('taskPost');
-            cy.contains('Submit & Open').scrollIntoView().click();
+            cy.contains('Submit & Open').scrollIntoView();
+            cy.contains('Submit & Open').click();
 
             cy.wait('@taskPost').then((interception) => {
                 taskID = interception.response.body.id;

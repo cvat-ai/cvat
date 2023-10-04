@@ -260,7 +260,6 @@ export interface CloudStoragesState {
 }
 
 export enum SupportedPlugins {
-    GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
 }
@@ -314,7 +313,12 @@ export interface PluginsState {
             };
         };
         settings: {
-            player: PluginComponent[],
+            player: PluginComponent[];
+        }
+        about: {
+            links: {
+                items: PluginComponent[];
+            }
         }
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
@@ -375,12 +379,6 @@ export enum TaskStatus {
     COMPLETED = 'completed',
 }
 
-export enum JobStage {
-    ANNOTATION = 'annotation',
-    REVIEW = 'validation',
-    ACCEPTANCE = 'acceptance',
-}
-
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
@@ -416,7 +414,8 @@ export interface ModelsState {
 
 export interface ErrorState {
     message: string;
-    reason: string;
+    reason: Error;
+    shouldLog?: boolean;
     className?: string;
 }
 

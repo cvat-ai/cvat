@@ -22,7 +22,6 @@ export enum TasksActionTypes {
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
     CREATE_TASK_FAILED = 'CREATE_TASK_FAILED',
-    UPDATE_JOB_FAILED = 'UPDATE_JOB_FAILED',
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
     GET_TASK_PREVIEW = 'GET_TASK_PREVIEW',
     GET_TASK_PREVIEW_SUCCESS = 'GET_TASK_PREVIEW_SUCCESS',
@@ -258,27 +257,12 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
 
-        if (data.advanced.repository) {
-            const [gitPlugin] = (await cvat.plugins.list()).filter((plugin: any): boolean => plugin.name === 'Git');
-
-            if (gitPlugin) {
-                gitPlugin.callbacks.onStatusChange = (status: string): void => {
-                    onProgress?.(status);
-                };
-                gitPlugin.data.task = taskInstance;
-                gitPlugin.data.repos = data.advanced.repository;
-                gitPlugin.data.format = data.advanced.format;
-                gitPlugin.data.lfs = data.advanced.lfs;
-            }
-        }
-
         try {
             const savedTask = await taskInstance.save((status: RQStatus, progress: number, message: string): void => {
                 if (status === RQStatus.UNKNOWN) {
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}`);
                 } else if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
-                    const helperMessage = data.advanced.repository ?
-                        'Do not leave the page' : 'You may close the window.';
+                    const helperMessage = 'You may close the window.';
                     onProgress?.(`${message} ${progress ? `${Math.floor(progress * 100)}%` : ''}. ${helperMessage}`);
                 } else {
                     onProgress?.(`${status}: ${message}`);
@@ -290,25 +274,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         } catch (error) {
             dispatch(createTaskFailed(error));
             throw error;
-        }
-    };
-}
-
-function updateJobFailed(jobID: number, error: any): AnyAction {
-    const action = {
-        type: TasksActionTypes.UPDATE_JOB_FAILED,
-        payload: { jobID, error },
-    };
-
-    return action;
-}
-
-export function updateJobAsync(jobInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            await jobInstance.save();
-        } catch (error) {
-            dispatch(updateJobFailed(jobInstance.id, error));
         }
     };
 }

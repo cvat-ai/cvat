@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,11 +22,11 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
         cy.wait(300);
         if (arrow) {
-            cy.get(button).trigger('mouseover').click();
+            cy.get(button).trigger('mouseover');
+            cy.get(button).click();
         } else {
-            cy.contains('button', new RegExp(`^${button}$`))
-                .trigger('mouseover')
-                .click();
+            cy.contains('button', new RegExp(`^${button}$`)).trigger('mouseover');
+            cy.contains('button', new RegExp(`^${button}$`)).click();
         }
         cy.contains(expectedTooltipText).should('exist').and('be.visible'); // Check tooltip
         if (arrow) {
