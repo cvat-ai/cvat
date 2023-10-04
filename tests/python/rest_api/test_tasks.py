@@ -1418,6 +1418,36 @@ class TestPostTaskData:
             status = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert "No media data found" in status.message
 
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize(
+        "cloud_storage_id, org",
+        [
+            (1, ""),
+        ],
+    )
+    def test_create_task_with_cloud_storage_and_retrieve_data(
+        self,
+        cloud_storage_id,
+        cloud_storages,
+        request,
+        org,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+        task_id, _ = self._create_task_with_cloud_data(
+            request=request,
+            cloud_storage=cloud_storage,
+            use_manifest=True,
+            use_cache=True,
+            server_files=[],
+            org=org,
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            (_, response) = api_client.tasks_api.retrieve_data(
+                task_id, type="chunk", quality="compressed", number=0
+            )
+            assert response.status == HTTPStatus.OK
+
     def test_can_specify_file_job_mapping(self):
         task_spec = {
             "name": f"test file-job mapping",

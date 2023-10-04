@@ -932,7 +932,6 @@ def _create_thread(
                                                               manifest_path=db_data.get_manifest_path())
                             manifest.init_index()
                             manifest.validate_seek_key_frames()
-                            manifest.validate_frame_numbers()
                             assert len(manifest) > 0, 'No key frames.'
 
                             all_frames = manifest.video_length

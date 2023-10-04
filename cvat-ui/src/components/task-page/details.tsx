@@ -7,26 +7,17 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import { Row, Col } from 'antd/lib/grid';
-import Tag from 'antd/lib/tag';
-import { CheckCircleOutlined, ExclamationCircleOutlined, LoadingOutlined } from '@ant-design/icons';
-import Modal from 'antd/lib/modal';
-import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
-import Paragraph from 'antd/lib/typography/Paragraph';
-import Select from 'antd/lib/select';
-import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import Space from 'antd/lib/space';
 
-import { getCore, Task } from 'cvat-core-wrapper';
-import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
+import { getCore, Task, User } from 'cvat-core-wrapper';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference } from 'reducers';
-import UserSelector, { User } from './user-selector';
+import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import ProjectSubsetField from '../create-task-page/project-subset-field';
@@ -38,7 +29,6 @@ interface OwnProps {
 
 interface StateToProps {
     activeInference: ActiveInference | null;
-    installedGit: boolean;
     projectSubsets: string[];
     dumpers: any[];
     user: any;
@@ -49,14 +39,12 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps & OwnProps {
-    const { list } = state.plugins;
     const [taskProject] = state.projects.current.filter((project) => project.id === own.task.projectId);
 
     return {
         ...own,
         dumpers: state.formats.annotationFormats.dumpers,
         user: state.auth.user,
-        installedGit: list.GIT_INTEGRATION,
         activeInference: state.models.inferences[own.task.id] || null,
         projectSubsets: taskProject ?
             ([
@@ -79,66 +67,18 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
-    repository: string;
-    repositoryStatus: string;
-    format: string;
-    lfs: boolean;
-    updatingRepository: boolean;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
 
 class DetailsComponent extends React.PureComponent<Props, State> {
-    private mounted: boolean;
-
     constructor(props: Props) {
         super(props);
         const { task: taskInstance } = props;
-        this.mounted = false;
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
-            repository: '',
-            format: '',
-            repositoryStatus: '',
-            lfs: false,
-            updatingRepository: false,
         };
-    }
-
-    public componentDidMount(): void {
-        const { task: taskInstance } = this.props;
-        this.mounted = true;
-
-        getReposData(taskInstance.id)
-            .then((data): void => {
-                if (data !== null && this.mounted) {
-                    if (data.status.error) {
-                        notification.error({
-                            message: 'Could not receive repository status',
-                            description: data.status.error,
-                        });
-                    } else {
-                        this.setState({
-                            repositoryStatus: data.status.value,
-                        });
-                    }
-
-                    this.setState({
-                        repository: data.url,
-                        format: data.format,
-                        lfs: !!data.lfs,
-                    });
-                }
-            })
-            .catch((error): void => {
-                if (this.mounted) {
-                    notification.error({
-                        message: 'Could not receive repository status',
-                        description: error.toString(),
-                    });
-                }
-            });
     }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -150,58 +90,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             });
         }
     }
-
-    public componentWillUnmount(): void {
-        this.mounted = false;
-    }
-
-    private onChangeRepoValue = (value: string): void => {
-        const { task: taskInstance } = this.props;
-        const { repository } = this.state;
-        const old = repository;
-        this.setState({ repository: value, updatingRepository: true });
-        changeRepo(taskInstance.id, 'url', value)
-            .catch((error) => {
-                this.setState({ repository: old });
-                notification.error({
-                    message: 'Could not update repository',
-                    description: error,
-                });
-            })
-            .finally(() => this.setState({ updatingRepository: false }));
-    };
-
-    private onChangeLFSValue = (event: CheckboxChangeEvent): void => {
-        const { task: taskInstance } = this.props;
-        const { lfs } = this.state;
-        const old = lfs;
-        this.setState({ lfs: event.target.checked, updatingRepository: true });
-        changeRepo(taskInstance.id, 'lfs', event.target.checked)
-            .catch((error) => {
-                this.setState({ lfs: old });
-                notification.error({
-                    message: 'Could not update LFS',
-                    description: error,
-                });
-            })
-            .finally(() => this.setState({ updatingRepository: false }));
-    };
-
-    private onChangeFormatValue = (value: string): void => {
-        const { task: taskInstance } = this.props;
-        const { format } = this.state;
-        const old = format;
-        this.setState({ format: value, updatingRepository: true });
-        changeRepo(taskInstance.id, 'format', value)
-            .catch((error) => {
-                this.setState({ format: old });
-                notification.error({
-                    message: 'Could not update format',
-                    description: error,
-                });
-            })
-            .finally(() => this.setState({ updatingRepository: false }));
-    };
 
     private renderTaskName(): JSX.Element {
         const { name } = this.state;
@@ -259,101 +147,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         );
     }
 
-    private renderDatasetRepository(): JSX.Element | boolean {
-        const { task: taskInstance, dumpers } = this.props;
-        const {
-            repository, repositoryStatus, format, lfs, updatingRepository,
-        } = this.state;
-        return (
-            !!repository && (
-                <Row>
-                    <Col className='cvat-dataset-repository-url'>
-                        <Text strong className='cvat-text-color'>
-                            Dataset Repository
-                        </Text>
-                        <Paragraph>
-                            <Text editable={{ onChange: this.onChangeRepoValue }} disabled={updatingRepository}>
-                                {repository}
-                            </Text>
-                            {repositoryStatus === 'sync' && (
-                                <Tag color='blue'>
-                                    <CheckCircleOutlined />
-                                    Synchronized
-                                </Tag>
-                            )}
-                            {repositoryStatus === 'merged' && (
-                                <Tag color='green'>
-                                    <CheckCircleOutlined />
-                                    Merged
-                                </Tag>
-                            )}
-                            {repositoryStatus === 'syncing' && (
-                                <Tag color='purple'>
-                                    <LoadingOutlined />
-                                    Syncing
-                                </Tag>
-                            )}
-                            {repositoryStatus === '!sync' && (
-                                <Tag
-                                    color='red'
-                                    onClick={(): void => {
-                                        this.setState({
-                                            repositoryStatus: 'syncing',
-                                        });
-
-                                        syncRepos(taskInstance.id)
-                                            .then((): void => {
-                                                if (this.mounted) {
-                                                    this.setState({
-                                                        repositoryStatus: 'sync',
-                                                    });
-                                                }
-                                            })
-                                            .catch((error): void => {
-                                                if (this.mounted) {
-                                                    Modal.error({
-                                                        width: 800,
-                                                        title: 'Could not synchronize the repository',
-                                                        content: error.toString(),
-                                                    });
-
-                                                    this.setState({
-                                                        repositoryStatus: '!sync',
-                                                    });
-                                                }
-                                            });
-                                    }}
-                                >
-                                    <ExclamationCircleOutlined />
-                                    Synchronize
-                                </Tag>
-                            )}
-                        </Paragraph>
-                        <Text strong className='cvat-text-color'>Using format: </Text>
-                        <Space>
-                            <Select disabled={updatingRepository} onChange={this.onChangeFormatValue} className='cvat-repository-format-select' value={format}>
-                                {
-                                    dumpers.map((dumper: any) => (
-                                        <Select.Option
-                                            key={dumper.name}
-                                            value={dumper.name}
-                                        >
-                                            {dumper.name}
-                                        </Select.Option>
-                                    ))
-                                }
-                            </Select>
-                            <Checkbox disabled={updatingRepository} onChange={this.onChangeLFSValue} checked={lfs}>
-                                Large file support
-                            </Checkbox>
-                            {updatingRepository && <LoadingOutlined style={{ fontSize: 14 }} spin />}
-                        </Space>
-                    </Col>
-                </Row>
-            )
-        );
-    }
-
     private renderLabelsEditor(): JSX.Element {
         const { task: taskInstance, onUpdateTask } = this.props;
 
@@ -388,7 +181,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                 <Col span={24}>
                     <ProjectSubsetField
                         value={subset}
-                        projectId={taskInstance.projectId}
+                        projectId={taskInstance.projectId as number}
                         projectSubsets={projectSubsets}
                         onChange={(value) => {
                             this.setState({
@@ -452,7 +245,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                 />
                             </Col>
                         </Row>
-                        {this.renderDatasetRepository()}
                         {!taskInstance.projectId && this.renderLabelsEditor()}
                         {taskInstance.projectId && this.renderSubsetField()}
                     </Col>
