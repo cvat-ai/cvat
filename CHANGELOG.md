@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- TDB
+- Update Grafana from 9.3.6 to 10.1.2
 
 ## \[2.7.3\] - 2023-10-02
 
