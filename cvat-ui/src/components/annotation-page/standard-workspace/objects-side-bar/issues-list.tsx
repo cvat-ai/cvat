@@ -131,45 +131,70 @@ export default function LabelsListComponent(): JSX.Element {
             </div>
             <div className='cvat-objects-sidebar-issues-list'>
                 {frameIssues.map(
-                    (frameIssue: any): JSX.Element => (
-                        <div
-                            key={frameIssue.id}
-                            id={`cvat-objects-sidebar-issue-item-${frameIssue.id}`}
-                            className={
-                                `cvat-objects-sidebar-issue-item ${frameIssue.resolved ? 'cvat-objects-sidebar-issue-resolved' : ''}`
-                            }
-                            onMouseEnter={() => {
-                                const element = window.document.getElementById(
-                                    `cvat_canvas_issue_region_${frameIssue.id}`,
-                                );
-                                if (element) {
-                                    element.setAttribute('fill', 'url(#cvat_issue_region_pattern_2)');
+                    (frameIssue: any): JSX.Element => {
+                        const firstComment = frameIssue.comments[0];
+                        const lastComment = frameIssue.comments.slice(-1)[0];
+                        return (
+                            <div
+                                key={frameIssue.id}
+                                id={`cvat-objects-sidebar-issue-item-${frameIssue.id}`}
+                                className={
+                                    `cvat-objects-sidebar-issue-item ${frameIssue.resolved ? 'cvat-objects-sidebar-issue-resolved' : ''}`
                                 }
-                                dispatch(activateObject(null, null, null));
-                            }}
-                            onMouseLeave={() => {
-                                const element = window.document.getElementById(
-                                    `cvat_canvas_issue_region_${frameIssue.id}`,
-                                );
-                                if (element) {
-                                    element.setAttribute('fill', 'url(#cvat_issue_region_pattern_1)');
-                                }
-                            }}
-                        >
-                            <Row>
-                                <Text strong>{`#${frameIssue.id} • Issue`}</Text>
-                            </Row>
-                            <Row>
-                                <Paragraph ellipsis={{ rows: 2 }}>
-                                    {frameIssue.comments[0]?.message ? frameIssue.comments[0]?.message : ''}
-                                </Paragraph>
-                                <Text />
-                            </Row>
-                            <Row>
-                                <Text>{moment(frameIssue.createdDate).fromNow()}</Text>
-                            </Row>
-                        </div>
-                    ),
+                                onMouseEnter={() => {
+                                    const element = window.document.getElementById(
+                                        `cvat_canvas_issue_region_${frameIssue.id}`,
+                                    );
+                                    if (element) {
+                                        element.setAttribute('fill', 'url(#cvat_issue_region_pattern_2)');
+                                    }
+                                    dispatch(activateObject(null, null, null));
+                                }}
+                                onMouseLeave={() => {
+                                    const element = window.document.getElementById(
+                                        `cvat_canvas_issue_region_${frameIssue.id}`,
+                                    );
+                                    if (element) {
+                                        element.setAttribute('fill', 'url(#cvat_issue_region_pattern_1)');
+                                    }
+                                }}
+                            >
+                                <Row justify='space-between'>
+                                    <Col>
+                                        <Text strong>
+                                            {`#${frameIssue.id} • Issue`}
+                                        </Text>
+                                    </Col>
+                                    <Col offset={1}>
+                                        <Text type='secondary'>
+                                            {`created ${moment(frameIssue.createdDate).fromNow()}`}
+                                        </Text>
+                                    </Col>
+                                </Row>
+                                <Row>
+                                    <Paragraph ellipsis={{ rows: 2 }}>
+                                        <Text strong>{`${firstComment?.owner?.username || ''} `}</Text>
+                                        <Text>{firstComment?.message || ''}</Text>
+                                    </Paragraph>
+                                </Row>
+                                { lastComment !== firstComment && (
+                                    <>
+                                        <Row justify='start'>
+                                            <Col>
+                                                <Text strong>&#8230;</Text>
+                                            </Col>
+                                        </Row>
+                                        <Row>
+                                            <Paragraph ellipsis={{ rows: 2 }}>
+                                                <Text strong>{`${lastComment?.owner?.username || ''} `}</Text>
+                                                <Text>{lastComment?.message || ''}</Text>
+                                            </Paragraph>
+                                        </Row>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    },
                 )}
                 {showGroundTruth && frameConflicts.map(
                     (frameConflict: QualityConflict): JSX.Element => (
