@@ -5,6 +5,7 @@
 
 from django.utils.crypto import get_random_string
 from django.db import transaction
+from django.core.exceptions import ImproperlyConfigured
 
 from rest_framework import mixins, viewsets, status
 from rest_framework.permissions import SAFE_METHODS
@@ -209,6 +210,16 @@ class InvitationViewSet(viewsets.GenericViewSet,
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            self.perform_create(serializer)
+        except ImproperlyConfigured:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data="Email backend is not configured.")
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     def perform_create(self, serializer):
         serializer.save(
             owner=self.request.user,
@@ -250,3 +261,5 @@ class InvitationViewSet(viewsets.GenericViewSet,
             return Response(status=status.HTTP_200_OK, data="Invitation has been sent.")
         except Invitation.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist.")
+        except ImproperlyConfigured:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data="Email backend is not configured.")

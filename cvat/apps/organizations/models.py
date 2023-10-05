@@ -10,6 +10,7 @@ from django.contrib.sites.shortcuts import get_current_site
 
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured
 from django.utils import timezone
 
 class Organization(models.Model):
@@ -76,6 +77,9 @@ class Invitation(models.Model):
         return self.membership.organization.slug
 
     def send(self, request):
+        if settings.EMAIL_BACKEND is None:
+            raise ImproperlyConfigured("Email backend is not configured")
+
         target_email = self.membership.user.email
         current_site = get_current_site(request)
         site_name = current_site.name
