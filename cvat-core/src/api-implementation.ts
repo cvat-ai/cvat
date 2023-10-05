@@ -106,28 +106,6 @@ export default function implementAPI(cvat) {
         await serverProxy.server.resetPassword(newPassword1, newPassword2, uid, token);
     };
 
-    cvat.server.acceptInvitation.implementation = async (
-        username,
-        firstName,
-        lastName,
-        email,
-        password,
-        userConfirmations,
-        key,
-    ) => {
-        const orgSlug = await serverProxy.server.acceptInvitation(
-            username,
-            firstName,
-            lastName,
-            email,
-            password,
-            userConfirmations,
-            key,
-        );
-
-        return orgSlug;
-    };
-
     cvat.server.authorized.implementation = async () => {
         const result = await serverProxy.server.authorized();
         return result;
@@ -361,6 +339,28 @@ export default function implementAPI(cvat) {
             organizationID: null,
             organizationSlug: null,
         };
+    };
+
+    cvat.organizations.acceptInvitation.implementation = async (
+        username,
+        firstName,
+        lastName,
+        email,
+        password,
+        userConfirmations,
+        key,
+    ) => {
+        const orgSlug = await serverProxy.organizations.acceptInvitation(
+            username,
+            firstName,
+            lastName,
+            email,
+            password,
+            userConfirmations,
+            key,
+        );
+
+        return orgSlug;
     };
 
     cvat.webhooks.get.implementation = async (filter) => {

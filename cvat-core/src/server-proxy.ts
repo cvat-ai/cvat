@@ -454,7 +454,7 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
     }
 }
 
-async function acceptInvitation(
+async function acceptOrganizationInvitation(
     username: string,
     firstName: string,
     lastName: string,
@@ -2410,7 +2410,6 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
-        acceptInvitation,
     }),
 
     projects: Object.freeze({
@@ -2531,6 +2530,7 @@ export default Object.freeze({
         deleteInvitation: deleteOrganizationInvitation,
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
+        acceptInvitation: acceptOrganizationInvitation,
     }),
 
     webhooks: Object.freeze({

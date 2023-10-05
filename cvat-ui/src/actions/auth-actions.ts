@@ -228,7 +228,7 @@ export const acceptInvitationAsync = (
     } = registerData;
 
     try {
-        const orgSlug = await cvat.server.acceptInvitation(
+        const orgSlug = await cvat.organizations.acceptInvitation(
             username,
             firstName,
             lastName,
