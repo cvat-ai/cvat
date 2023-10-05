@@ -252,9 +252,6 @@ keydb:
   - storage-provider: ["flash", "/data/flash"]
   - maxmemory: "5G"
   - maxmemory-policy: "allkeys-lfu"
-  resources:
-    requests:
-      memory: "7G"
 
 nuclio:
   enabled: false
