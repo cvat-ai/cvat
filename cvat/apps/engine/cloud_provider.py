@@ -272,9 +272,10 @@ class _CloudStorage(ABC):
         content = [{'name': f, 'type': 'REG'} for f in result['files']]
         content.extend([{'name': d, 'type': 'DIR'} for d in result['directories']])
 
-        if not _use_flat_listing and prefix and prefix.endswith('/'):
+        if not _use_flat_listing and search_prefix and '/' in search_prefix:
+            last_slash = search_prefix.rindex(os.path.sep)
             for f in content:
-                f['name'] = f['name'][len(prefix):]
+                f['name'] = f['name'][last_slash + 1:]
 
         if _use_sort:
             content = sorted(content, key=lambda x: x['type'])

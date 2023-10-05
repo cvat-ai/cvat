@@ -17,10 +17,11 @@ import config from 'config';
 import { CloudStorage, RemoteFileType } from 'reducers';
 import { useIsMounted } from 'utils/hooks';
 import {
-    FileOutlined, FolderOutlined, RightOutlined, SearchOutlined,
+    FileOutlined, FolderOutlined, RightOutlined, SearchOutlined, InfoCircleOutlined,
 } from '@ant-design/icons';
 import { getCore } from 'cvat-core-wrapper';
 import { Empty, notification } from 'antd';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Node {
     children: Node[];
@@ -92,9 +93,10 @@ function RemoteBrowser(props: Props): JSX.Element {
         return { ...defaultRoot };
     };
 
-    const [content, setContent] = useState<Node>(() => defineDefaultRoot());
+    const defineDefaultSearch = (): string => ((defaultPrefix && !defaultPrefix.endsWith('/')) ? defaultPrefix.substring(defaultPrefix.lastIndexOf('/') + 1) : defaultSearchString);
 
-    const [searchString, setSearchString] = useState((defaultPrefix && !defaultPrefix.endsWith('/')) ? defaultPrefix.substring(defaultPrefix.lastIndexOf('/') + 1) : defaultSearchString);
+    const [content, setContent] = useState<Node>(() => defineDefaultRoot());
+    const [searchString, setSearchString] = useState(() => defineDefaultSearch());
 
     const updateContent = async (): Promise<void> => {
         let target = content;
@@ -105,8 +107,7 @@ function RemoteBrowser(props: Props): JSX.Element {
 
         if (!target.initialized || target.nextToken) {
             const isRoot = (): boolean => currentPath.slice(1).length === 0;
-            const path = `${currentPath.slice(1).join('/')}/`;
-            const searchPath = `${path}${(searchString) || ''}`;
+            const path = (!(isRoot() && searchString)) ? `${currentPath.slice(1).join('/')}/` : '';
             const convertChildren = (children: Omit<Node, 'key' | 'children'>[]): Node[] => (
                 children.map((child) => {
                     const ending = `${child.type === 'DIR' ? '/' : ''}`;
@@ -131,11 +132,11 @@ function RemoteBrowser(props: Props): JSX.Element {
             try {
                 let nodes: Node[] = [];
                 if (resource === 'share') {
-                    const files: (Omit<Node, 'key' | 'children'>)[] = await core.server.share(searchPath);
+                    const files: (Omit<Node, 'key' | 'children'>)[] = await core.server.share(path, searchString);
                     nodes = convertChildren(files);
                 } else {
                     const response: { next: string | null, content: Omit<Node, 'key' | 'children'>[] } =
-                        await resource.getContent(searchPath, target.nextToken, manifestPath);
+                        await resource.getContent(`${path}${(searchString) || ''}`, target.nextToken, manifestPath);
                     const { next, content: files } = response;
                     target.nextToken = next;
                     nodes = convertChildren(files);
@@ -242,6 +243,10 @@ function RemoteBrowser(props: Props): JSX.Element {
     }, [defaultPrefix]);
 
     useEffect(() => {
+        setSearchString(defineDefaultSearch());
+    }, [manifestPath]);
+
+    useEffect(() => {
         const button = window.document.getElementsByClassName('cvat-remote-browser-receive-more-btn')[0];
         if (button) {
             if (isFetching) {
@@ -261,7 +266,14 @@ function RemoteBrowser(props: Props): JSX.Element {
                 if (node.type === 'DIR') {
                     return (
                         <>
-                            <Button size='small' type='link' onClick={() => setCurrentPath([...currentPath, name])}>
+                            <Button
+                                size='small'
+                                type='link'
+                                onClick={() => {
+                                    setCurrentPath([...currentPath, name]);
+                                    setSearchString(defaultSearchString);
+                                }}
+                            >
                                 <FolderOutlined />
                                 {name}
                             </Button>
@@ -279,7 +291,7 @@ function RemoteBrowser(props: Props): JSX.Element {
         },
     ];
 
-    if (content.initialized && !content.children.length && resource === 'share') {
+    if (content.initialized && !content.children.length && resource === 'share' && !searchString) {
         return (
             <>
                 <Empty />
@@ -317,7 +329,14 @@ function RemoteBrowser(props: Props): JSX.Element {
 
             <div className='cvat-remote-browser-search-wrapper'>
                 <Input
-                    prefix={<SearchOutlined />}
+                    addonBefore={<SearchOutlined />}
+                    suffix={
+                        (resource !== 'share' && resource.prefix) ? (
+                            <CVATTooltip title={`Default prefix "${resource.prefix}" is used`}>
+                                <InfoCircleOutlined />
+                            </CVATTooltip>
+                        ) : ''
+                    }
                     placeholder='Find files by prefix'
                     value={searchString}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
