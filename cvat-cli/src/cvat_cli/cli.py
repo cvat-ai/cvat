@@ -43,8 +43,6 @@ class CLI:
         annotation_path: str = "",
         annotation_format: str = "CVAT XML 1.1",
         status_check_period: int = 2,
-        dataset_repository_url: str = "",
-        lfs: bool = False,
         **kwargs,
     ) -> None:
         """
@@ -68,8 +66,6 @@ class CLI:
             annotation_path=annotation_path,
             annotation_format=annotation_format,
             status_check_period=status_check_period,
-            dataset_repository_url=dataset_repository_url,
-            use_lfs=lfs,
             pbar=DeferredTqdmProgressReporter(),
         )
         print("Created task id", task.id)

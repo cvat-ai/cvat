@@ -60,7 +60,7 @@ services:
       - traefik.enable=true
       - traefik.http.services.cvat.loadbalancer.server.port=8080
       - traefik.http.routers.cvat.rule=Host(`${CVAT_HOST:-localhost}`) &&
-        PathPrefix(`/api/`, `/git/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+        PathPrefix(`/api/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
       - traefik.http.routers.cvat.entrypoints=web
     volumes:
       - cvat_data:/home/django/data
@@ -331,7 +331,7 @@ services:
       - ./components/analytics/vector/vector.toml:/etc/vector/vector.toml:ro
 
   cvat_grafana:
-    image: grafana/grafana-oss:9.3.6
+    image: grafana/grafana-oss:10.1.2
     container_name: cvat_grafana
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning

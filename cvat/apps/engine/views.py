@@ -19,7 +19,6 @@ from tempfile import NamedTemporaryFile
 from textwrap import dedent
 
 import django_rq
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
@@ -195,7 +194,7 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
     def plugins(request):
         data = {
-            'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
+            'GIT_INTEGRATION': False, # kept for backwards compatibility
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
             'PREDICT': False, # FIXME: it is unused anymore (for UI only)

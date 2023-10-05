@@ -28,9 +28,6 @@ urlpatterns = [
     path('django-rq/', include('django_rq.urls')),
 ]
 
-if apps.is_installed('cvat.apps.dataset_repo'):
-    urlpatterns.append(path('git/repository/', include('cvat.apps.dataset_repo.urls')))
-
 if apps.is_installed('cvat.apps.log_viewer'):
     urlpatterns.append(path('', include('cvat.apps.log_viewer.urls')))
 

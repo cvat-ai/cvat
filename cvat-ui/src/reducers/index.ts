@@ -260,7 +260,6 @@ export interface CloudStoragesState {
 }
 
 export enum SupportedPlugins {
-    GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
 }
@@ -314,7 +313,12 @@ export interface PluginsState {
             };
         };
         settings: {
-            player: PluginComponent[],
+            player: PluginComponent[];
+        }
+        about: {
+            links: {
+                items: PluginComponent[];
+            }
         }
         router: PluginComponent[];
         loggedInModals: PluginComponent[];

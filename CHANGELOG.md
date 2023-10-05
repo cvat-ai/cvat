@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- TDB
+- The latest comment displayed in issues sidebar (<https://github.com/opencv/cvat/pull/6937>)
 
 ### Changed
 
@@ -25,12 +25,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- TDB
+- It was not possible to copy issue comment from issue dialog (<https://github.com/opencv/cvat/pull/6937>)
+
+### Security
+
+- Update Grafana from 9.3.6 to 10.1.2
+
+## \[2.7.3\] - 2023-10-02
+
+### Added
+
+- New , form-based Issue templates for Github repository
+
+### Removed
+
+- Functionality for synchronizing a task with a Git repository
+  (<https://github.com/opencv/cvat/pull/6904>)
+
+### Fixed
+
+- Incorrectly determined video frame count when the video contains an MP4 edit list
+  (<https://github.com/opencv/cvat/pull/6929>)
+- Internal server error when retrieving data from CS and cache=True
+  (<https://github.com/opencv/cvat/pull/6932>)
 
 ### Security
 
 - Security upgrade Pillow from 9.3.0 to 10.0.1
   (<https://github.com/opencv/cvat/pull/6907>)
+- Security update cryptography from 41.0.3 to 41.0.4
+  (<https://github.com/opencv/cvat/pull/6914>)
 
 ## \[2.7.2\] - 2023-09-25
 
@@ -44,6 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Downloading additional data from cloud storage if use_cache=true and job_file_mapping are specified
   (<https://github.com/opencv/cvat/pull/6879>)
 - Leaving an organization (<https://github.com/opencv/cvat/pull/6422>)
+- Order of images in annotation file when dumping project in CVAT format (<https://github.com/opencv/cvat/pull/6927>)
+- Validation on Cloud Storage form / error message on create task form (<https://github.com/opencv/cvat/pull/6890>)
 
 ## \[2.7.1\] - 2023-09-15
 
