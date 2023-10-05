@@ -19,12 +19,12 @@ interface RegisterPageComponentProps {
         registerData: RegisterData,
     ) => void;
     predefinedEmail?: string;
-    disableNavigation?: boolean;
+    hideLoginLink?: boolean;
 }
 
 function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponentProps): JSX.Element {
     const {
-        fetching, userAgreements, onRegister, predefinedEmail, disableNavigation,
+        fetching, userAgreements, onRegister, predefinedEmail, hideLoginLink,
     } = props;
 
     return (
@@ -36,7 +36,7 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
                             fetching={fetching}
                             userAgreements={userAgreements}
                             predefinedEmail={predefinedEmail}
-                            disableNavigation={disableNavigation}
+                            hideLoginLink={hideLoginLink}
                             onSubmit={(registerData: RegisterData): void => {
                                 onRegister(registerData);
                             }}

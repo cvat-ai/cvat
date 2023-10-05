@@ -42,7 +42,7 @@ function AcceptInvitationPage(): JSX.Element {
             userAgreements={userAgreements}
             fetching={userAgreementsFetching || authFetching}
             predefinedEmail={invitationParams.email}
-            disableNavigation
+            hideLoginLink
         />
     );
 }

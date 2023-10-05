@@ -35,7 +35,7 @@ interface Props {
     fetching: boolean;
     userAgreements: UserAgreement[];
     predefinedEmail?: string;
-    disableNavigation?: boolean;
+    hideLoginLink?: boolean;
     onSubmit(registerData: RegisterData): void;
 }
 
@@ -102,7 +102,7 @@ const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
 
 function RegisterFormComponent(props: Props): JSX.Element {
     const {
-        fetching, onSubmit, userAgreements, predefinedEmail, disableNavigation,
+        fetching, onSubmit, userAgreements, predefinedEmail, hideLoginLink,
     } = props;
     const [form] = Form.useForm();
     if (predefinedEmail) {
@@ -112,7 +112,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
     return (
         <div className={`cvat-register-form-wrapper ${userAgreements.length ? 'cvat-register-form-wrapper-extended' : ''}`}>
             {
-                !disableNavigation && (
+                !hideLoginLink && (
                     <Row justify='space-between' className='cvat-credentials-navigation'>
                         <Col>
                             <Link to='/auth/login'><Icon component={BackArrowIcon} /></Link>
