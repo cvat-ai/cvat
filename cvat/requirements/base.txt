@@ -382,7 +382,7 @@ uritemplate==4.1.1
     # via
     #   coreapi
     #   drf-spectacular
-urllib3==1.26.16
+urllib3==1.26.17
     # via
     #   botocore
     #   clickhouse-connect
