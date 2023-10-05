@@ -31,7 +31,8 @@ function AcceptInvitationPage(): JSX.Element {
             registerData,
             invitationParams.key,
             (orgSlug: string) => {
-                history.replace(`/auth/login?next=/tasks&activateOrganization=${orgSlug}`);
+                localStorage.setItem('currentOrganization', orgSlug);
+                history.replace('/auth/login?next=/tasks');
             },
         ));
     }, [dispatch]);

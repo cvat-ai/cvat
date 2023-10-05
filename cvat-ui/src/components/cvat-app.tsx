@@ -496,8 +496,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             push
                                             to={{
                                                 pathname: queryParams.get('next') || '/tasks',
-                                                search: queryParams.get('activateOrganization') ?
-                                                    `?activateOrganization=${queryParams.get('activateOrganization')}` : '',
                                             }}
                                         />
                                     </Switch>

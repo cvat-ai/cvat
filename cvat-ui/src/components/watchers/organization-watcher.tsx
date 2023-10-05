@@ -5,15 +5,12 @@
 import { Organization, getCore } from 'cvat-core-wrapper';
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useHistory } from 'react-router';
 import { CombinedState } from 'reducers';
 
 const core = getCore();
 
 function OrganizationWatcher(): JSX.Element {
     const organizationList = useSelector((state: CombinedState) => state.organizations.list);
-    const history = useHistory();
-    const queryParams = new URLSearchParams(history.location.search);
 
     const changeOrganization = (newOrg: number | string | null, location?: string): void => {
         let newOrganization: Organization | null = null;
@@ -44,10 +41,6 @@ function OrganizationWatcher(): JSX.Element {
         core.config.onOrganizationChange = (newOrgId: number | null) => {
             changeOrganization(newOrgId);
         };
-        if (queryParams.get('activateOrganization')) {
-            const orgSlug = queryParams.get('activateOrganization');
-            changeOrganization(orgSlug, '/tasks');
-        }
     }, []);
 
     return <></>;
