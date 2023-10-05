@@ -18,29 +18,29 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { ActiveControl, CombinedState, Workspace } from 'reducers';
 import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
-import { ConflictSeverity, QualityConflict } from 'cvat-core-wrapper';
+import { ConflictSeverity, QualityConflict, Issue } from 'cvat-core-wrapper';
 import { changeShowGroundTruth } from 'actions/settings-actions';
 import { ShowGroundTruthIcon } from 'icons';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const frame = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
-    const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
+    const frameIssues = useSelector((state: CombinedState): Issue[] => state.review.frameIssues);
     const frameConflicts = useSelector((state: CombinedState) => state.review.frameConflicts);
     const showGroundTruth = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
-    const issues = useSelector((state: CombinedState): any[] => state.review.issues);
+    const issues = useSelector((state: CombinedState): Issue[] => state.review.issues);
     const conflicts = useSelector((state: CombinedState) => state.review.conflicts);
-    const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
-    const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
+    const issuesHidden = useSelector((state: CombinedState) => state.review.issuesHidden);
+    const issuesResolvedHidden = useSelector((state: CombinedState) => state.review.issuesResolvedHidden);
     const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
     const workspace = useSelector((state: CombinedState) => state.annotation.workspace);
     const ready = useSelector((state: CombinedState) => state.annotation.canvas.ready);
     const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
 
-    let frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
+    let frames = issues.map((issue: Issue): number => issue.frame).sort((a: number, b: number) => +a - +b);
     if (showGroundTruth) {
         const conflictFrames = conflicts
-            .map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
+            .map((conflict): number => conflict.frame).sort((a: number, b: number) => +a - +b);
         frames = [...new Set([...frames, ...conflictFrames])];
     }
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];
@@ -131,7 +131,7 @@ export default function LabelsListComponent(): JSX.Element {
             </div>
             <div className='cvat-objects-sidebar-issues-list'>
                 {frameIssues.map(
-                    (frameIssue: any): JSX.Element => {
+                    (frameIssue: Issue): JSX.Element => {
                         const firstComment = frameIssue.comments[0];
                         const lastComment = frameIssue.comments.slice(-1)[0];
                         return (
@@ -173,7 +173,9 @@ export default function LabelsListComponent(): JSX.Element {
                                 </Row>
                                 <Row>
                                     <Paragraph ellipsis={{ rows: 2 }}>
-                                        <Text strong>{`${firstComment?.owner?.username || ''} `}</Text>
+                                        {!!firstComment?.owner?.username && (
+                                            <Text strong>{`${firstComment.owner.username}: `}</Text>
+                                        )}
                                         <Text>{firstComment?.message || ''}</Text>
                                     </Paragraph>
                                 </Row>
@@ -186,7 +188,9 @@ export default function LabelsListComponent(): JSX.Element {
                                         </Row>
                                         <Row>
                                             <Paragraph ellipsis={{ rows: 2 }}>
-                                                <Text strong>{`${lastComment?.owner?.username || ''} `}</Text>
+                                                {!!lastComment?.owner?.username && (
+                                                    <Text strong>{`${lastComment.owner.username}: `}</Text>
+                                                )}
                                                 <Text>{lastComment?.message || ''}</Text>
                                             </Paragraph>
                                         </Row>
