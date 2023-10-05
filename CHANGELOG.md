@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- TDB
+- The latest comment displayed in issues sidebar (<https://github.com/opencv/cvat/pull/6937>)
 
 ### Changed
 
@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- TDB
+- It was not possible to copy issue comment from issue dialog (<https://github.com/opencv/cvat/pull/6937>)
 
 ### Security
 
