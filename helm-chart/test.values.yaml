@@ -33,3 +33,7 @@ traefik:
       level: DEBUG
     access:
       enabled: true
+
+keydb:
+  resources:
+    requests:
