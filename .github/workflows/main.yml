@@ -417,7 +417,6 @@ jobs:
         working-directory: ./site
         run: |
           npm ci
-          npm install themes/docsy
 
       - name: Build docs
         run: |
