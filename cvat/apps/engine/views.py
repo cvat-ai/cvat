@@ -2537,6 +2537,10 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # make api identical to share api
             if prefix and prefix.startswith('/'):
                 prefix = prefix[1:]
+
+            if storage.prefix and prefix and not (storage.prefix.startswith(prefix) or prefix.startswith(storage.prefix)):
+                return Response(data=CloudStorageContentSerializer().data)
+
             next_token = request.query_params.get('next_token')
 
             if (manifest_path := request.query_params.get('manifest_path')):
@@ -2554,9 +2558,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 except ValueError:
                     return HttpResponseBadRequest('Wrong value for the next_token parameter was found.')
                 content = manifest.emulate_hierarchical_structure(
-                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
+                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, default_prefix=storage.prefix, start_index=start_index)
             else:
-                content = storage.list_files_on_one_page(prefix, next_token, page_size,_use_sort=True)
+                content = storage.list_files_on_one_page(prefix, next_token, page_size, _use_sort=True)
             for i in content['content']:
                 mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
                 if mime_type == 'zip':

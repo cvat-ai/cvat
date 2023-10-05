@@ -11,11 +11,14 @@ import Pagination from 'antd/lib/pagination';
 import Table from 'antd/lib/table';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
+import Input from 'antd/lib/input';
 
 import config from 'config';
 import { CloudStorage, RemoteFileType } from 'reducers';
 import { useIsMounted } from 'utils/hooks';
-import { FileOutlined, FolderOutlined, RightOutlined } from '@ant-design/icons';
+import {
+    FileOutlined, FolderOutlined, RightOutlined, SearchOutlined,
+} from '@ant-design/icons';
 import { getCore } from 'cvat-core-wrapper';
 import { Empty, notification } from 'antd';
 
@@ -34,6 +37,7 @@ export type RemoteFile = Pick<Node, 'key' | 'type' | 'mimeType'>;
 interface Props {
     resource: 'share' | CloudStorage;
     manifestPath?: string;
+    defaultPrefix?: string;
     onSelectFiles: (checkedKeysValue: RemoteFile[]) => void;
 }
 
@@ -49,18 +53,48 @@ const defaultRoot: Node = {
     initialized: false,
     nextToken: null,
 };
+const defaultSearchString = '';
 
 function RemoteBrowser(props: Props): JSX.Element {
     const { SHARE_MOUNT_GUIDE_URL } = config;
-    const { resource, manifestPath, onSelectFiles } = props;
+    const {
+        resource, manifestPath, defaultPrefix, onSelectFiles,
+    } = props;
     const isMounted = useIsMounted();
     const resourceRef = useRef<Props['resource']>(resource);
     const manifestPathRef = useRef<string | undefined>(manifestPath);
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-    const [currentPath, setCurrentPath] = useState([...defaultPath]);
+    const [currentPath, setCurrentPath] = useState(
+        (!defaultPrefix) ? [...defaultPath] : [...defaultPath, ...defaultPrefix.substring(0, defaultPrefix.lastIndexOf('/') + 1).split('/').filter((item) => !!item)],
+    );
     const [currentPage, setCurrentPage] = useState(1);
     const [isFetching, setFetching] = useState(false);
-    const [content, setContent] = useState<Node>({ ...defaultRoot });
+    const defineDefaultRoot = (): Node => {
+        if (defaultPrefix) {
+            let root = { ...defaultRoot };
+            const copyOfRoot = root;
+            for (const subpath of currentPath.slice(1)) {
+                const child: Node = {
+                    name: subpath,
+                    key: subpath,
+                    children: [],
+                    type: 'DIR',
+                    mimeType: 'DIR',
+                    initialized: false,
+                    nextToken: null,
+                };
+                root.children.push(child);
+                root = child;
+            }
+            return copyOfRoot;
+        }
+
+        return { ...defaultRoot };
+    };
+
+    const [content, setContent] = useState<Node>(() => defineDefaultRoot());
+
+    const [searchString, setSearchString] = useState((defaultPrefix && !defaultPrefix.endsWith('/')) ? defaultPrefix.substring(defaultPrefix.lastIndexOf('/') + 1) : defaultSearchString);
 
     const updateContent = async (): Promise<void> => {
         let target = content;
@@ -72,6 +106,7 @@ function RemoteBrowser(props: Props): JSX.Element {
         if (!target.initialized || target.nextToken) {
             const isRoot = (): boolean => currentPath.slice(1).length === 0;
             const path = `${currentPath.slice(1).join('/')}/`;
+            const searchPath = `${path}${(searchString) || ''}`;
             const convertChildren = (children: Omit<Node, 'key' | 'children'>[]): Node[] => (
                 children.map((child) => {
                     const ending = `${child.type === 'DIR' ? '/' : ''}`;
@@ -96,17 +131,18 @@ function RemoteBrowser(props: Props): JSX.Element {
             try {
                 let nodes: Node[] = [];
                 if (resource === 'share') {
-                    const files: (Omit<Node, 'key' | 'children'>)[] = await core.server.share(path);
+                    const files: (Omit<Node, 'key' | 'children'>)[] = await core.server.share(searchPath);
                     nodes = convertChildren(files);
                 } else {
                     const response: { next: string | null, content: Omit<Node, 'key' | 'children'>[] } =
-                        await resource.getContent(path, target.nextToken, manifestPath);
+                        await resource.getContent(searchPath, target.nextToken, manifestPath);
                     const { next, content: files } = response;
                     target.nextToken = next;
                     nodes = convertChildren(files);
                 }
 
-                target.children = target.children.concat(nodes);
+                // Why? target.children = target.children.concat(nodes);
+                target.children = [...nodes];
                 target.initialized = true;
                 if (isRelevant()) {
                     // select all new children if parent was selected
@@ -154,11 +190,18 @@ function RemoteBrowser(props: Props): JSX.Element {
     }, [resource, manifestPath]);
 
     useEffect(() => {
+        dataSource = {
+            ...dataSource,
+            initialized: false,
+        };
+    }, [searchString]);
+
+    useEffect(() => {
         setCurrentPage(1);
         if (!dataSource.initialized) {
             updateContent();
         }
-    }, [dataSource]);
+    }, [dataSource, dataSource.initialized]);
 
     useEffect(() => {
         const nodes: Node[] = [];
@@ -185,6 +228,18 @@ function RemoteBrowser(props: Props): JSX.Element {
 
         onSelectFiles(nodes);
     }, [selectedRowKeys, manifestPath]);
+
+    useEffect(() => {
+        if (defaultPrefix) {
+            if (!defaultPrefix.endsWith('/')) {
+                setSearchString(defaultPrefix.substring(defaultPrefix.lastIndexOf('/') + 1));
+                dataSource = {
+                    ...dataSource,
+                    initialized: false,
+                };
+            }
+        }
+    }, [defaultPrefix]);
 
     useEffect(() => {
         const button = window.document.getElementsByClassName('cvat-remote-browser-receive-more-btn')[0];
@@ -250,6 +305,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                             className='cvat-remote-browser-nav-breadcrumb'
                             onClick={() => {
                                 setCurrentPath(key.split('/'));
+                                setSearchString(defaultSearchString);
                             }}
                             key={key}
                         >
@@ -258,6 +314,25 @@ function RemoteBrowser(props: Props): JSX.Element {
                     );
                 })}
             </Breadcrumb>
+
+            <div className='cvat-remote-browser-search-wrapper'>
+                <Input
+                    prefix={<SearchOutlined />}
+                    placeholder='Find files by prefix'
+                    value={searchString}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        setSearchString(event.target.value);
+                        let currentContent = content;
+                        for (const subpath of currentPath.slice(1)) {
+                            const child = currentContent.children.find((item) => item.name === subpath);
+                            currentContent = child as Node;
+                        }
+                        currentContent.children = [];
+                        currentContent.initialized = false;
+                    }}
+                />
+            </div>
+
             <div className='cvat-remote-browser-table-wrapper'>
                 <Table
                     scroll={{ y: 472 }}
@@ -272,7 +347,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                                 if (dataSource.children.every((child) => copy.includes(child.key))) {
                                     copy.push(dataSource.key);
 
-                                    // also update all the parents recoursively
+                                    // also update all the parents recursively
                                     const traverse = (node: Node, selectedKeys: React.Key[]): boolean => {
                                         if (dataSource === node) {
                                             return true;
