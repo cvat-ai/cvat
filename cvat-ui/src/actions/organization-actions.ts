@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -40,9 +41,6 @@ export enum OrganizationActionsTypes {
     RESEND_ORGANIZATION_INVITATION = 'RESEND_ORGANIZATION_INVITATION',
     RESEND_ORGANIZATION_INVITATION_SUCCESS = 'RESEND_ORGANIZATION_INVITATION_SUCCESS',
     RESEND_ORGANIZATION_INVITATION_FAILED = 'RESEND_ORGANIZATION_INVITATION_FAILED',
-    DELETE_ORGANIZATION_INVITATION = 'DELETE_ORGANIZATION_INVITATION',
-    DELETE_ORGANIZATION_INVITATION_SUCCESS = 'DELETE_ORGANIZATION_INVITATION_SUCCESS',
-    DELETE_ORGANIZATION_INVITATION_FAILED = 'DELETE_ORGANIZATION_INVITATION_FAILED',
 }
 
 const organizationActions = {
@@ -109,13 +107,6 @@ const organizationActions = {
     ),
     resendOrganizationInvitationFailed: (error: any) => createAction(
         OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION_FAILED, { error },
-    ),
-    deleteOrganizationInvitation: () => createAction(OrganizationActionsTypes.DELETE_ORGANIZATION_INVITATION),
-    deleteOrganizationInvitationSuccess: () => createAction(
-        OrganizationActionsTypes.DELETE_ORGANIZATION_INVITATION_SUCCESS,
-    ),
-    deleteOrganizationInvitationFailed: (error: any) => createAction(
-        OrganizationActionsTypes.DELETE_ORGANIZATION_INVITATION_FAILED, { error },
     ),
 };
 
@@ -298,24 +289,6 @@ export function resendOrganizationInvitationAsync(
             if (onFinish) onFinish();
         } catch (error) {
             dispatch(organizationActions.resendOrganizationInvitationFailed(error));
-        }
-    };
-}
-
-export function deleteOrganizationInvitationAsync(
-    organization: any,
-    invitationKey: string,
-    onFinish?: () => void,
-): ThunkAction {
-    return async function (dispatch) {
-        dispatch(organizationActions.deleteOrganizationInvitation());
-
-        try {
-            await organization.deleteInvitation(invitationKey);
-            dispatch(organizationActions.deleteOrganizationInvitationSuccess());
-            if (onFinish) onFinish();
-        } catch (error) {
-            dispatch(organizationActions.deleteOrganizationInvitationFailed(error));
         }
     };
 }

@@ -1657,23 +1657,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case OrganizationActionsTypes.DELETE_ORGANIZATION_INVITATION: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    organizations: {
-                        ...state.errors.organizations,
-                        deletingInvitation: {
-                            message: 'Could not delete invitation',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-delete-organization-invintation-failed',
-                        },
-                    },
-                },
-            };
-        }
         case OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION_SUCCESS: {
             return {
                 ...state,

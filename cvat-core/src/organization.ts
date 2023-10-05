@@ -269,15 +269,6 @@ export default class Organization {
         );
         return result;
     }
-
-    public async deleteInvitation(key: string): Promise<void> {
-        const result = await PluginRegistry.apiWrapper.call(
-            this,
-            Organization.prototype.deleteInvitation,
-            key,
-        );
-        return result;
-    }
 }
 
 Object.defineProperties(Organization.prototype.save, {
@@ -426,19 +417,6 @@ Object.defineProperties(Organization.prototype.resendInvitation, {
             checkObjectType('key', key, 'string');
             if (typeof this.id === 'number') {
                 await serverProxy.organizations.resendInvitation(key);
-            }
-        },
-    },
-});
-
-Object.defineProperties(Organization.prototype.deleteInvitation, {
-    implementation: {
-        writable: false,
-        enumerable: false,
-        value: async function implementation(key: string) {
-            checkObjectType('key', key, 'string');
-            if (typeof this.id === 'number') {
-                await serverProxy.organizations.deleteInvitation(key);
             }
         },
     },

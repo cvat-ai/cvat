@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +10,7 @@ import Spin from 'antd/lib/spin';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import {
-    deleteOrganizationInvitationAsync, removeOrganizationMemberAsync,
+    removeOrganizationMemberAsync,
     resendOrganizationInvitationAsync, updateOrganizationMemberAsync,
 } from 'actions/organization-actions';
 import { Membership } from 'cvat-core-wrapper';
@@ -65,14 +66,11 @@ function MembersList(props: Props): JSX.Element {
                                     resendOrganizationInvitationAsync(organizationInstance, key),
                                 );
                             }}
-                            onDeleteInvitation={(key: string) => {
+                            onDeleteInvitation={() => {
                                 dispatch(
                                     removeOrganizationMemberAsync(organizationInstance, member, () => {
                                         fetchMembers();
                                     }),
-                                );
-                                dispatch(
-                                    deleteOrganizationInvitationAsync(organizationInstance, key),
                                 );
                             }}
                         />

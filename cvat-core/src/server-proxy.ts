@@ -2095,15 +2095,6 @@ async function resendOrganizationInvitation(key) {
     }
 }
 
-async function deleteOrganizationInvitation(key) {
-    const { backendAPI } = config;
-    try {
-        await Axios.delete(`${backendAPI}/invitations/${key}`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 async function updateOrganizationMembership(membershipId, data) {
     const { backendAPI } = config;
     let response = null;
@@ -2527,7 +2518,6 @@ export default Object.freeze({
         delete: deleteOrganization,
         invite: inviteOrganizationMembers,
         resendInvitation: resendOrganizationInvitation,
-        deleteInvitation: deleteOrganizationInvitation,
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
         acceptInvitation: acceptOrganizationInvitation,
