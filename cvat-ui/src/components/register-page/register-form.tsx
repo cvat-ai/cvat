@@ -34,7 +34,7 @@ export interface RegisterData {
 interface Props {
     fetching: boolean;
     userAgreements: UserAgreement[];
-    predifinedEmail?: string;
+    predefinedEmail?: string;
     disableNavigation?: boolean;
     onSubmit(registerData: RegisterData): void;
 }
@@ -102,11 +102,11 @@ const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
 
 function RegisterFormComponent(props: Props): JSX.Element {
     const {
-        fetching, onSubmit, userAgreements, predifinedEmail, disableNavigation,
+        fetching, onSubmit, userAgreements, predefinedEmail, disableNavigation,
     } = props;
     const [form] = Form.useForm();
-    if (predifinedEmail) {
-        form.setFieldsValue({ email: predifinedEmail });
+    if (predefinedEmail) {
+        form.setFieldsValue({ email: predefinedEmail });
     }
     const [usernameEdited, setUsernameEdited] = useState(false);
     return (
@@ -132,7 +132,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
 
                     onSubmit({
                         ...(Object.fromEntries(rest) as any as RegisterData),
-                        ...(predifinedEmail ? { email: predifinedEmail } : {}),
+                        ...(predefinedEmail ? { email: predefinedEmail } : {}),
                         confirmations,
                     });
                 }}
@@ -198,8 +198,8 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         id='email'
                         autoComplete='email'
                         placeholder='Email'
-                        value={predifinedEmail}
-                        disabled={!!predifinedEmail}
+                        value={predefinedEmail}
+                        disabled={!!predefinedEmail}
                         onReset={() => form.setFieldsValue({ email: '', username: '' })}
                         onChange={(event) => {
                             const { value } = event.target;

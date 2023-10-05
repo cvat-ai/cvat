@@ -41,7 +41,7 @@ function AcceptInvitationPage(): JSX.Element {
             onRegister={onRegister}
             userAgreements={userAgreements}
             fetching={userAgreementsFetching || authFetching}
-            predifinedEmail={invitationParams.email}
+            predefinedEmail={invitationParams.email}
             disableNavigation
         />
     );
