@@ -3,24 +3,24 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedOrganization, SerializedOrganizationContact } from './server-response-types';
+import { SerializedOrganization, SerializedOrganizationContact, SerializedUser } from './server-response-types';
 import { checkObjectType, isEnum } from './common';
 import config from './config';
 import { MembershipRole } from './enums';
 import { ArgumentError, DataError } from './exceptions';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-import User, { RawUserData } from './user';
+import User from './user';
 
 interface SerializedInvitationData {
     created_date: string;
     key: string;
-    owner: RawUserData;
+    owner: SerializedUser;
 }
 
 interface SerializedMembershipData {
     id: number;
-    user: RawUserData;
+    user: SerializedUser;
     is_active: boolean;
     joined_date: string;
     role: MembershipRole;

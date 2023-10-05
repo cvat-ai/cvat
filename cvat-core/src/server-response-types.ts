@@ -50,6 +50,7 @@ export interface SerializedUser {
     is_active?: boolean;
     last_login?: string;
     date_joined?: string;
+    email_verification_required: boolean;
 }
 
 export interface SerializedProject {
