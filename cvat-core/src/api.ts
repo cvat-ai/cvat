@@ -41,8 +41,8 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.about);
                 return result;
             },
-            async share(directory = '/') {
-                const result = await PluginRegistry.apiWrapper(cvat.server.share, directory);
+            async share(directory = '/', searchString?: string) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.share, directory, searchString);
                 return result;
             },
             async formats() {

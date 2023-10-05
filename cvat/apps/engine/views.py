@@ -34,6 +34,7 @@ from drf_spectacular.utils import (
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
+from pathlib import Path
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
@@ -132,6 +133,8 @@ class ServerViewSet(viewsets.ViewSet):
         summary='Returns all files and folders that are on the server along specified path',
         parameters=[
             OpenApiParameter('directory', description='Directory to browse',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('search', description='Search for specific files',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR)
         ],
         responses={
@@ -139,25 +142,25 @@ class ServerViewSet(viewsets.ViewSet):
         })
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
     def share(request):
-        param = request.query_params.get('directory', '/')
-        if param.startswith("/"):
-            param = param[1:]
-        directory = os.path.abspath(os.path.join(settings.SHARE_ROOT, param))
+        directory_param = request.query_params.get('directory', '/')
+        search_param = request.query_params.get('search', '')
 
-        if directory.startswith(settings.SHARE_ROOT) and os.path.isdir(directory):
+        if directory_param.startswith("/"):
+            directory_param = directory_param[1:]
+
+        directory = (Path(settings.SHARE_ROOT) / directory_param).absolute()
+
+        if str(directory).startswith(settings.SHARE_ROOT) and directory.is_dir():
             data = []
-            content = os.scandir(directory)
-            for entry in content:
-                entry_type = None
-                entry_mime_type = None
+            for entry in directory.glob(f'{search_param}*'):
+                entry_type, entry_mime_type = None, None
                 if entry.is_file():
                     entry_type = "REG"
-                    entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
+                    entry_mime_type = get_mime(entry)
                     if entry_mime_type == 'zip':
                         entry_mime_type = 'archive'
                 elif entry.is_dir():
-                    entry_type = "DIR"
-                    entry_mime_type = "DIR"
+                    entry_type = entry_mime_type = "DIR"
 
                 if entry_type:
                     data.append({
@@ -171,7 +174,7 @@ class ServerViewSet(viewsets.ViewSet):
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         else:
-            return Response("{} is an invalid directory".format(param),
+            return Response("{} is an invalid directory".format(directory_param),
                 status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod

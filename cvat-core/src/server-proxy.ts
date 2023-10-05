@@ -322,13 +322,16 @@ async function about(): Promise<SerializedAbout> {
     return response.data;
 }
 
-async function share(directoryArg: string): Promise<SerializedRemoteFile[]> {
+async function share(directoryArg: string, searchArg?: string): Promise<SerializedRemoteFile[]> {
     const { backendAPI } = config;
 
     let response = null;
     try {
         response = await Axios.get(`${backendAPI}/server/share`, {
-            params: { directory: directoryArg },
+            params: {
+                directory: directoryArg,
+                ...((searchArg) ? { search: searchArg } : {}),
+            },
         });
     } catch (errorData) {
         throw generateError(errorData);
