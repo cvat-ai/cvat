@@ -319,12 +319,12 @@ Object.defineProperties(Organization.prototype.members, {
             checkObjectType('pageSize', pageSize, 'number');
 
             const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
-            result.results = result.results.map((rawMembership: SerializedMembershipData) => new Membership(
+            const memeberships = result.results.map((rawMembership: SerializedMembershipData) => new Membership(
                 rawMembership,
             ));
 
-            result.results.count = result.count;
-            return result.results;
+            memeberships.count = result.count;
+            return memeberships;
         },
     },
 });
