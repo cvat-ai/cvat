@@ -10,8 +10,6 @@ import Select from 'antd/lib/select';
 import { CloudStorage } from 'reducers';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 import config from 'config';
-import Space from 'antd/lib/space';
-import Text from 'antd/lib/typography/Text';
 import CloudStorageBrowser, { RemoteFile } from './remote-browser';
 
 interface Props {
@@ -77,14 +75,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
 
             {cloudStorage && selectedSource ? (
                 <Form.Item
-                    label={(
-                        cloudStorage.prefix ? (
-                            <Space>
-                                Files
-                                <Text type='warning' italic>{`Default prefix "${cloudStorage.prefix}" is used`}</Text>
-                            </Space>
-                        ) : 'Files'
-                    )}
+                    label='Files'
                     name='cloudStorageFiles'
                     rules={[{ required: true, message: 'Please, select a files' }]}
                 >
