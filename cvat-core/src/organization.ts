@@ -29,16 +29,16 @@ interface SerializedMembershipData {
 
 export class Invitation {
     #createdDate: string;
-    #owner: User;
+    #owner: User | null;
     #key: string;
 
     constructor(initialData: SerializedInvitationData) {
         this.#createdDate = initialData.created_date;
-        this.#owner = new User(initialData.owner);
+        this.#owner = initialData.owner ? new User(initialData.owner) : null;
         this.#key = initialData.key;
     }
 
-    get owner(): User {
+    get owner(): User | null {
         return this.#owner;
     }
 
@@ -310,12 +310,12 @@ Object.defineProperties(Organization.prototype.members, {
             checkObjectType('pageSize', pageSize, 'number');
 
             const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
-            const memeberships = result.results.map((rawMembership: SerializedMembershipData) => new Membership(
+            const memberships = result.results.map((rawMembership: SerializedMembershipData) => new Membership(
                 rawMembership,
             ));
 
-            memeberships.count = result.count;
-            return memeberships;
+            memberships.count = result.count;
+            return memberships;
         },
     },
 });
