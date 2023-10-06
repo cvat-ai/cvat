@@ -940,10 +940,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         task_data.client_files.get_or_create(file=filename)
 
     def _append_upload_info_entries(self, client_files: List[Dict[str, Any]]):
-        # batch version without optional insertion
+        # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
         task_data.client_files.bulk_create([
-            ClientFile(**cf, data=task_data) for cf in client_files
+            ClientFile(file=self._prepare_upload_info_entry(cf['file'].name), data=task_data)
+            for cf in client_files
         ])
 
     def _sort_uploaded_files(self, uploaded_files: List[str], ordering: List[str]) -> List[str]:
@@ -987,6 +988,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return response
 
     # UploadMixin method
+    @transaction.atomic
     def append_files(self, request):
         client_files = self._get_request_client_files(request)
         if self._is_data_uploading() and client_files:
