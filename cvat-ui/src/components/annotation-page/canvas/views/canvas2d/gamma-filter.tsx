@@ -49,6 +49,13 @@ export default function GammaFilter(): JSX.Element {
         }
     }, [filters]);
 
+    useEffect(() => {
+        if (gammaFilter) {
+            const gammaValue = (gammaFilter.modifier as GammaCorrection).gamma;
+            setGamma(gammaValue[0]);
+        }
+    }, []);
+
     return (
         <div className='cvat-image-setups-filters'>
             <Row justify='space-around'>
