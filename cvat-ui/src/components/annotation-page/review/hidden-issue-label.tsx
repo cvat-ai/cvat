@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
-import { CheckCircleOutlined, CloseCircleOutlined, WarningOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 
 import { Issue } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -63,7 +63,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
 
     const elementID = `cvat-hidden-issue-label-${id}`;
     return ReactDOM.createPortal(
-        <CVATTooltip title={comments[0]?.message || 'Messages not found'}>
+        <CVATTooltip title={comments[0]?.message || 'No comments found'}>
             <Tag
                 ref={ref}
                 id={elementID}
@@ -78,7 +78,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                 ) : (
                     <CloseCircleOutlined className='cvat-hidden-issue-unsolved-indicator' />
                 )}
-                {comments[0]?.message || <WarningOutlined />}
+                {comments[0]?.message || null}
             </Tag>
         </CVATTooltip>,
         window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
