@@ -7,6 +7,7 @@ import io
 import json
 import os
 import os.path as osp
+import textwrap
 import zipfile
 from copy import deepcopy
 from functools import partial
@@ -39,7 +40,7 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
-from shared.utils.helpers import generate_image_files, generate_manifest
+from shared.utils.helpers import generate_image_file, generate_image_files, generate_manifest
 
 from .utils import (
     CollectionSimpleFilterTestBase,
@@ -761,6 +762,53 @@ class TestPostTaskData:
                         im = Image.open(zipped_img)
                         # original is 480x640 with 90/-90 degrees rotation
                         assert im.height == 640 and im.width == 480
+
+    def test_can_create_task_with_big_images(self):
+        # Checks for regressions about the issue
+        # https://github.com/opencv/cvat/issues/6878
+        # In the case of big files (>2.5 MB by default),
+        # uploaded files could be write-appended twice,
+        # leading to bigger raw file sizes than expected.
+
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with big images",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        # We need a big file to reproduce the problem
+        image_file = generate_image_file("big_image.bmp", size=(4000, 4000), color=(100, 200, 30))
+        file_size = len(image_file.getvalue())
+        assert 10 * 2**20 < file_size
+
+        task_data = {
+            "client_files": [image_file],
+            "image_quality": 70,
+            "use_cache": True,
+            "use_zip_chunks": True,
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check that the uploaded unprocessed files have the original size
+        script = textwrap.dedent(
+            """\
+            import os
+            from cvat.apps.engine.models import Data
+            data = Data.objects.get(tasks__id={task_id})
+            print(os.stat(f"data/data/{{data.id}}/raw/{image_file_name}").st_size)
+            """.format(
+                task_id=task_id, image_file_name=image_file.name
+            )
+        )
+
+        script = ";".join(script.splitlines())
+
+        stdout, _ = docker_exec_cvat("python manage.py shell -c".split() + [f"{script}"])
+        assert stdout.strip() == f"{file_size}"
 
     @pytest.mark.skip(reason="need to wait new Pillow release till 15 October 2023")
     def test_can_create_task_with_exif_rotated_tif_image(self):
