@@ -1,6 +1,8 @@
 ---
-linkTitle: 'CVAT'
+title: 'CVAT for image'
+linkTitle: 'CVAT for image'
 weight: 1
+description: 'How to export and import data in CVAT for image format'
 ---
 
 This is CVAT's native annotation format,

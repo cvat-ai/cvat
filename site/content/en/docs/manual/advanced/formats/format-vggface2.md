@@ -1,6 +1,8 @@
 ---
+title: 'VGGFace2'
 linkTitle: 'VGGFace2'
 weight: 12
+description: 'How to export and import data in VGGFace2 format'
 ---
 
 The VGGFace2 is primarily designed for face recognition tasks and is
