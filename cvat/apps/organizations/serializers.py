@@ -149,6 +149,9 @@ class MembershipWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ['user', 'organization', 'is_active', 'joined_date']
 
 class AcceptInvitationSerializer(RegisterSerializer):
+    first_name = serializers.CharField(required=False)
+    last_name = serializers.CharField(required=False)
+
     def validate_email(self, email):
         return email
 

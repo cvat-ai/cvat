@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.8.0
+  version: 2.8.0.dev20231005123911
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -1533,7 +1533,8 @@ paths:
           description: The invitation has been deleted
   /api/invitations/{key}/accept:
     post:
-      operationId: invitations_create_accept
+      operationId: invitations_accept
+      summary: Method registers user and accepts invitation to organization
       parameters:
       - in: path
         name: key
@@ -1547,7 +1548,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InvitationWriteRequest'
+              $ref: '#/components/schemas/AcceptInvitationRequest'
         required: true
       security:
       - {}
@@ -1556,11 +1557,14 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/InvitationWrite'
-          description: ''
+                type: string
+          description: Organization slug
+        '400':
+          description: The invitation is expired or already accepted
   /api/invitations/{key}/resend:
     post:
-      operationId: invitations_create_resend
+      operationId: invitations_resend
+      summary: Method resends the invitation
       parameters:
       - in: path
         name: key
@@ -1570,12 +1574,6 @@ paths:
         required: true
       tags:
       - invitations
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InvitationWriteRequest'
-        required: true
       security:
       - sessionAuth: []
         csrfAuth: []
@@ -1584,11 +1582,9 @@ paths:
       - basicAuth: []
       responses:
         '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/InvitationWrite'
-          description: ''
+          description: Invitation has been sent
+        '400':
+          description: The invitation is already accepted
   /api/issues:
     get:
       operationId: issues_list
@@ -6158,6 +6154,35 @@ components:
       - description
       - name
       - version
+    AcceptInvitationRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 5
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password1:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password2:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          minLength: 1
+        last_name:
+          type: string
+          minLength: 1
+      required:
+      - password1
+      - password2
+      - username
     AnalyticsReport:
       type: object
       properties:
@@ -7379,31 +7404,6 @@ components:
       - owner
       - role
       - user
-    InvitationWrite:
-      type: object
-      properties:
-        key:
-          type: string
-          readOnly: true
-        created_date:
-          type: string
-          format: date-time
-          readOnly: true
-        owner:
-          type: integer
-          readOnly: true
-          nullable: true
-        role:
-          $ref: '#/components/schemas/RoleEnum'
-        organization:
-          type: integer
-          readOnly: true
-        email:
-          type: string
-          format: email
-      required:
-      - email
-      - role
     InvitationWriteRequest:
       type: object
       properties:

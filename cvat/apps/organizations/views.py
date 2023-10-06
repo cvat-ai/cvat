@@ -14,6 +14,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from drf_spectacular.types import OpenApiTypes
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
@@ -178,7 +179,23 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
         summary='Method deletes an invitation',
         responses={
             '204': OpenApiResponse(description='The invitation has been deleted'),
-        })
+        }),
+    accept=extend_schema(
+        operation_id='invitations_accept',
+        summary='Method registers user and accepts invitation to organization',
+        request=AcceptInvitationSerializer,
+        responses={
+            '200': OpenApiResponse(response=OpenApiTypes.STR, description='Organization slug'),
+            '400': OpenApiResponse(description='The invitation is expired or already accepted'),
+        }),
+    resend=extend_schema(
+        operation_id='invitations_resend',
+        summary='Method resends the invitation',
+        request=None,
+        responses={
+            '200': OpenApiResponse(description='Invitation has been sent'),
+            '400': OpenApiResponse(description='The invitation is already accepted'),
+        }),
 )
 class InvitationViewSet(viewsets.GenericViewSet,
                    mixins.RetrieveModelMixin,
