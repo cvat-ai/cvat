@@ -8,6 +8,7 @@ from inspect import isclass
 import os
 import re
 import shutil
+import string
 
 from tempfile import NamedTemporaryFile
 import textwrap
@@ -1751,6 +1752,27 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', '') and not attrs.get('connection_string', ''):
                 raise serializers.ValidationError('Account name or connection string for Azure container was not specified')
+
+        # AWS S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
+        # Azure Container: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
+        # GCS: https://cloud.google.com/storage/docs/buckets#naming
+        COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS = (
+            string.ascii_lowercase + string.digits + "-"
+        )
+        ALLOWED_RESOURCE_NAME_SYMBOLS = (
+            COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS
+            if provider_type != models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE
+            else COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS + "_"
+        )
+
+        # We need to check only basic naming rule
+        if (resource := attrs.get("resource")) and (
+            diff := (set(resource) - set(ALLOWED_RESOURCE_NAME_SYMBOLS))
+        ):
+            raise serializers.ValidationError({
+                'resource': f"Invalid characters ({','.join(diff)}) were found.",
+            })
+
         return attrs
 
     def _validate_prefix(self, value: str) -> None:
