@@ -34,7 +34,7 @@ services:
 
   cvat_server:
     container_name: cvat_server
-    image: cvat/server:${CVAT_VERSION:-v2.7.3}
+    image: cvat/server:${CVAT_VERSION:-v2.7.4}
     restart: always
     depends_on:
       - cvat_redis
@@ -73,7 +73,7 @@ services:
 
   cvat_utils:
     container_name: cvat_utils
-    image: cvat/server:${CVAT_VERSION:-v2.7.3}
+    image: cvat/server:${CVAT_VERSION:-v2.7.4}
     restart: always
     depends_on:
       - cvat_redis
@@ -98,7 +98,7 @@ services:
 
   cvat_worker_import:
     container_name: cvat_worker_import
-    image: cvat/server:${CVAT_VERSION:-v2.7.3}
+    image: cvat/server:${CVAT_VERSION:-v2.7.4}
     restart: always
     depends_on:
       - cvat_redis
@@ -121,7 +121,7 @@ services:
 
   cvat_worker_export:
     container_name: cvat_worker_export
-    image: cvat/server:${CVAT_VERSION:-v2.7.3}
+    image: cvat/server:${CVAT_VERSION:-v2.7.4}
     restart: always
     depends_on:
       - cvat_redis
@@ -144,7 +144,7 @@ services:
 
   cvat_worker_annotation:
     container_name: cvat_worker_annotation
-    image: cvat/server:${CVAT_VERSION:-v2.7.3}
+    image: cvat/server:${CVAT_VERSION:-v2.7.4}
     restart: always
     depends_on:
       - cvat_redis
@@ -167,7 +167,7 @@ services:
 
   cvat_worker_webhooks:
     container_name: cvat_worker_webhooks
-    image: cvat/server:${CVAT_VERSION:-v2.7.3}
+    image: cvat/server:${CVAT_VERSION:-v2.7.4}
     restart: always
     depends_on:
       - cvat_redis
@@ -191,7 +191,7 @@ services:
 
   cvat_worker_quality_reports:
     container_name: cvat_worker_quality_reports
-    image: cvat/server:${CVAT_VERSION:-v2.7.3}
+    image: cvat/server:${CVAT_VERSION:-v2.7.4}
     restart: always
     depends_on:
       - cvat_redis
@@ -213,7 +213,7 @@ services:
 
   cvat_worker_analytics_reports:
     container_name: cvat_worker_analytics_reports
-    image: cvat/server:${CVAT_VERSION:-v2.7.3}
+    image: cvat/server:${CVAT_VERSION:-v2.7.4}
     restart: always
     depends_on:
       - cvat_redis
@@ -236,7 +236,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-v2.7.3}
+    image: cvat/ui:${CVAT_VERSION:-v2.7.4}
     restart: always
     depends_on:
       - cvat_server
@@ -331,7 +331,7 @@ services:
       - ./components/analytics/vector/vector.toml:/etc/vector/vector.toml:ro
 
   cvat_grafana:
-    image: grafana/grafana-oss:9.3.6
+    image: grafana/grafana-oss:10.1.2
     container_name: cvat_grafana
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning

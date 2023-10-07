@@ -488,8 +488,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            COPY_SHAPE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
+            COPY_SHAPE: () => {
                 const state = activatedState();
                 if (state && !readonly) {
                     copyShape(state);

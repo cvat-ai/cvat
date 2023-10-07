@@ -31,7 +31,7 @@ export interface SplitData {
 export interface Image {
     renderWidth: number;
     renderHeight: number;
-    imageData: ImageData | CanvasImageSource;
+    imageData: Blob;
 }
 
 export interface DrawData {
@@ -102,7 +102,7 @@ export enum Mode {
 export interface Canvas3dDataModel {
     activeElement: ActiveElement;
     canvasSize: Size;
-    image: Image | null;
+    image: { imageData: Blob } | null;
     imageID: number | null;
     imageOffset: number;
     imageSize: Size;
@@ -236,7 +236,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
                 this.data.image = null;
                 this.notify(UpdateReasons.IMAGE_CHANGED);
             })
-            .then((data: Image): void => {
+            .then((data: { imageData: Blob }): void => {
                 this.data.imageSize = {
                     height: frameData.height as number,
                     width: frameData.width as number,

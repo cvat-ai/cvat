@@ -21,7 +21,7 @@ If an item isn't applicable for some reason, then ~~explicitly strikethrough~~ t
 line. If you don't do that, GitHub will show incorrect progress for the pull request.
 If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 - [ ] I submit my changes into the `develop` branch
-- [ ] I have added a description of my changes into the [CHANGELOG](https://github.com/opencv/cvat/blob/develop/CHANGELOG.md) file
+- [ ] I have created a changelog fragment <!-- see top comment in CHANGELOG.md -->
 - [ ] I have updated the documentation accordingly
 - [ ] I have added tests to cover my changes
 - [ ] I have linked related issues (see [GitHub docs](
