@@ -12,12 +12,14 @@ import Table from 'antd/lib/table';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
+import Row from 'antd/lib/row';
+import Col from 'antd/lib/col';
 
 import config from 'config';
 import { CloudStorage, RemoteFileType } from 'reducers';
 import { useIsMounted } from 'utils/hooks';
 import {
-    FileOutlined, FolderOutlined, RightOutlined, SearchOutlined, InfoCircleOutlined,
+    FileOutlined, FolderOutlined, RightOutlined, SearchOutlined, InfoCircleOutlined, SyncOutlined,
 } from '@ant-design/icons';
 import { getCore } from 'cvat-core-wrapper';
 import { Empty, notification } from 'antd';
@@ -98,6 +100,8 @@ function RemoteBrowser(props: Props): JSX.Element {
     const [content, setContent] = useState<Node>(() => defineDefaultRoot());
     const [searchString, setSearchString] = useState(() => defineDefaultSearch());
 
+    const isRoot = (): boolean => currentPath.slice(1).length === 0;
+
     const updateContent = async (): Promise<void> => {
         let target = content;
         for (const subpath of currentPath.slice(1)) {
@@ -106,7 +110,6 @@ function RemoteBrowser(props: Props): JSX.Element {
         }
 
         if (!target.initialized || target.nextToken) {
-            const isRoot = (): boolean => currentPath.slice(1).length === 0;
             const path = (!(isRoot() && searchString)) ? `${currentPath.slice(1).join('/')}/` : '';
             const convertChildren = (children: Omit<Node, 'key' | 'children'>[]): Node[] => (
                 children.map((child) => {
@@ -327,30 +330,49 @@ function RemoteBrowser(props: Props): JSX.Element {
                 })}
             </Breadcrumb>
 
-            <div className='cvat-remote-browser-search-wrapper'>
-                <Input
-                    addonBefore={<SearchOutlined />}
-                    suffix={
-                        (resource !== 'share' && resource.prefix) ? (
-                            <CVATTooltip title={`Default prefix "${resource.prefix}" is used`}>
-                                <InfoCircleOutlined />
-                            </CVATTooltip>
-                        ) : ''
-                    }
-                    placeholder='Find files by prefix'
-                    value={searchString}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                        setSearchString(event.target.value);
-                        let currentContent = content;
-                        for (const subpath of currentPath.slice(1)) {
-                            const child = currentContent.children.find((item) => item.name === subpath);
-                            currentContent = child as Node;
+            <Row className='cvat-remote-browser-search-wrapper' justify='space-between'>
+                <Col span={22}>
+                    <Input
+                        addonBefore={<SearchOutlined />}
+                        suffix={
+                            (resource !== 'share' && resource.prefix) ? (
+                                <CVATTooltip title={`Default prefix "${resource.prefix}" is used`}>
+                                    <InfoCircleOutlined style={{ opacity: 0.5 }} />
+                                </CVATTooltip>
+                            ) : ''
                         }
-                        currentContent.children = [];
-                        currentContent.initialized = false;
-                    }}
-                />
-            </div>
+                        placeholder='Search by prefix'
+                        value={searchString}
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                            setSearchString(event.target.value);
+                            let currentContent = content;
+                            for (const subpath of currentPath.slice(1)) {
+                                const child = currentContent.children.find((item) => item.name === subpath);
+                                currentContent = child as Node;
+                            }
+                            currentContent.children = [];
+                            currentContent.initialized = false;
+                        }}
+                    />
+                </Col>
+                <Col>
+                    <CVATTooltip title='Refresh'>
+                        <Button
+                            disabled={isFetching}
+                            onClick={() => {
+                                const filteredSelectedRowKeys = (isRoot()) ? [] : selectedRowKeys.filter(
+                                    (item: React.Key) => !item.toLocaleString().startsWith(currentPath.slice(1).join('/')),
+                                );
+                                setSelectedRowKeys(filteredSelectedRowKeys);
+                                dataSource.initialized = false;
+                                dataSource.children = [];
+                            }}
+                        >
+                            <SyncOutlined />
+                        </Button>
+                    </CVATTooltip>
+                </Col>
+            </Row>
 
             <div className='cvat-remote-browser-table-wrapper'>
                 <Table
@@ -361,7 +383,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                         onChange: (_selectedRowKeys) => {
                             let copy = _selectedRowKeys.slice(0);
 
-                            if (!copy.includes(dataSource.key) && !dataSource.nextToken) {
+                            if (!copy.includes(dataSource.key) && !dataSource.nextToken && !searchString) {
                                 // select parent if all children have been fetched and selected
                                 if (dataSource.children.every((child) => copy.includes(child.key))) {
                                     copy.push(dataSource.key);
