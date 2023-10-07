@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-remote-browser-nav-breadcrumb {
     transition: all 0.5s;
@@ -24,6 +24,11 @@
     width: 50%;
     margin-left: 25%;
     margin-top: $grid-unit-size * 4;
+}
+
+.cvat-remote-browser-search-wrapper {
+    margin-bottom: $grid-unit-size;
+    margin-top: $grid-unit-size;
 }
 
 .cvat-remote-browser-table-wrapper {
@@ -53,7 +58,7 @@
             align-items: center;
 
             .cvat-remote-browser-receive-more-btn {
-                color: rgba(0, 0, 0, 0.85) !important;
+                color: rgba(0, 0, 0, 85%) !important;
                 cursor: pointer !important;
 
                 > span {
