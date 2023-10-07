@@ -621,6 +621,9 @@ class LambdaJob:
                         "source": "auto"
                     }
 
+                    if anno.get("rotation"):
+                        shape["rotation"] = anno.get("rotation")
+
                     if anno["type"] == "mask" and "points" in anno and conv_mask_to_poly:
                         shape["type"] = "polygon"
                         shape["points"] = anno["points"]
