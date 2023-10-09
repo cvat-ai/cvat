@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.7.5'></a>
+## \[2.7.5\] - 2023-10-09
+
+### Added
+
+- Temporary workaround to fix corrupted zip file
+  (<https://github.com/opencv/cvat/pull/6965>)
+
 <a id='changelog-2.7.4'></a>
 ## \[2.7.4\] - 2023-10-06
 
