@@ -5,8 +5,10 @@ weight: 23
 description: 'Instructions on how to attach cloud storage using UI'
 ---
 
-In CVAT you can use [AWS-S3](using-aws-s3), [Azure Blob Container](#using-azure-blob-container)
-and [Google cloud](#using-google-cloud-storage) storages to store image datasets for your tasks.
+In CVAT you can use **AWS S3**, **Azure Blob Container**
+and **Google Cloud** storages to import and export
+image datasets for your tasks.
+
 
 See:
 
@@ -29,7 +31,7 @@ See:
   - [Create a bucket](#create-a-bucket-2)
   - [Create a container](#create-a-container)
   - [Upload data](#upload-data-2)
-  - [SAS token](#sas-token)
+  - [SAS token and connection string](#sas-token-and-connection-string)
   - [Personal use](#personal-use)
   - [Attach Azure Blob Container](#attach-azure-blob-container)
 - [Prepare the dataset](#prepare-the-dataset)
@@ -115,13 +117,13 @@ Fill in the following fields:
 
 | CVAT                   | AWS S3                                                                                                                                                                                                                                              |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Display name**       | Preferred display name for your storage.                                                                                                                                                                                                                              |
+| **Display name**       | Preferred display name for your storage.                                                                                                                                                                                                            |
 | **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                              |
 | **Provider**           | From drop-down list select **AWS S3**.                                                                                                                                                                                                              |
 | **Bucket name**        | Name of the [Bucket](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket).                                                                                                                                                            |
 | **Authorization type** | Depends on the bucket setup: <br><li>**Key id and secret access key pair**: available on [IAM](https://console.aws.amazon.com/iamv2/home?#/users). <br><li>**Anonymous access**: for anonymous access. Public access to the bucket must be enabled. |
 | **Region**             | (Optional) Choose a region from the list or add a new one. For more information, see [**Available locations**](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions).               |
-| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`.                                                                                                                                   |
+| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`.                                                                                                                                  |
 
 <!--lint enable maximum-line-length-->
 
@@ -404,13 +406,11 @@ Fill in the following fields:
 | **Provider**           | From drop-down list select **Azure Blob Container**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Container name`**    | Name of the cloud storage container.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **Authorization type** | Depends on the container setup. <br>**[Account name and SAS token](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs)**: <ul><li>**Account name** enter storage account name. <li>**SAS token** is located in the **Shared access signature** section of your [Storage account](#sas-token).</ul>. **[Anonymous access](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal)**: for anonymous access **Allow enabling public access on containers** must be enabled. |
-| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extention. For example: `manifest.jsonl`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Manifests**          | Click **+ Add manifest** and enter the name of the manifest file with an extention. For example: `manifest.jsonl`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 <!--lint enable maximum-line-length-->
 
 After filling in all the fields, click **Submit**.
-
-
 
 ## Prepare the dataset
 

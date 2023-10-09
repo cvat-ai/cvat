@@ -35,7 +35,7 @@ interface Node {
     nextToken?: string | null;
 }
 
-export type RemoteFile = Pick<Node, 'key' | 'type' | 'mimeType'>;
+export type RemoteFile = Pick<Node, 'key' | 'type' | 'mimeType' | 'name'>;
 
 interface Props {
     resource: 'share' | CloudStorage;
