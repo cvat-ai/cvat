@@ -205,12 +205,13 @@ class _TestLabelsPermissionsBase:
 
 class TestLabelsListFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_class, admin_user, labels, jobs, tasks, projects):
+    def setup(self, restore_db_per_class, admin_user, labels,
+            jobs_wlc, tasks_wlc, projects_wlc):
         self.user = admin_user
         self.samples = labels
-        self.job_samples = jobs
-        self.task_samples = tasks
-        self.project_samples = projects
+        self.job_samples = jobs_wlc
+        self.task_samples = tasks_wlc
+        self.project_samples = projects_wlc
 
     def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
         return api_client.labels_api.list_endpoint
@@ -358,9 +359,9 @@ class TestListLabels(_TestLabelsPermissionsBase):
         role,
         staff,
         labels,
-        jobs,
-        tasks,
-        projects,
+        jobs_wlc,
+        tasks_wlc,
+        projects_wlc,
         users,
         is_project_staff,
         is_task_staff,
@@ -368,6 +369,9 @@ class TestListLabels(_TestLabelsPermissionsBase):
         memberships,
         users_by_name,
     ):
+        jobs = jobs_wlc
+        tasks = tasks_wlc
+        projects = projects_wlc
         labels_by_project = self._labels_by_source(labels, source_key="project_id")
         labels_by_task = self._labels_by_source(labels, source_key="task_id")
         if source_type == "project":

@@ -1525,14 +1525,16 @@ class TestPatchTaskLabel:
                 api_client.labels_api.list_endpoint, task_id=pid, **kwargs
             )
 
-    def test_can_delete_label(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 0][0]
+    def test_can_delete_label(self, tasks_wlc, labels, admin_user):
+        task = [t for t in tasks_wlc if t["project_id"] is None and t["labels"]["count"] > 0][0]
         label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
+        prev_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
+        curr_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK, response.content
-        assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
+        assert curr_lc == prev_lc - 1
 
     def test_can_delete_skeleton_label(self, tasks, labels, admin_user):
         task = next(
@@ -1550,9 +1552,11 @@ class TestPatchTaskLabel:
         task_labels.remove(label)
         label_payload = {"id": label["id"], "deleted": True}
 
+        prev_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
+        curr_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
+        assert curr_lc == prev_lc - 1
 
         resulting_labels = self._get_task_labels(task["id"], admin_user)
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
@@ -1598,9 +1602,11 @@ class TestPatchTaskLabel:
         task = [t for t in tasks if t["project_id"] is None][0]
         new_label = {"name": "new name"}
 
+        prev_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_label]})
+        curr_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     @pytest.mark.parametrize("role", ["maintainer", "owner"])
     def test_non_task_staff_privileged_org_members_can_add_label(
@@ -1622,13 +1628,16 @@ class TestPatchTaskLabel:
         )
 
         new_label = {"name": "new name"}
+        prev_lc = get_method(user["username"], "labels", task_id=task["id"]).json()["count"]
+
         response = patch_method(
             user["username"],
             f'tasks/{task["id"]}',
             {"labels": [new_label]},
         )
+        curr_lc = get_method(user["username"], "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     @pytest.mark.parametrize("role", ["supervisor", "worker"])
     def test_non_task_staff_org_members_cannot_add_label(
@@ -1673,14 +1682,16 @@ class TestPatchTaskLabel:
             and any(label.get("task_id") == task["id"] for label in labels)
         )
 
+        prev_lc = get_method(user["username"], "labels", task_id=task["id"]).json()["count"]
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'tasks/{task["id"]}',
             {"labels": [new_label]},
         )
+        curr_lc = get_method(user["username"], "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     def test_admin_can_add_skeleton(self, tasks, admin_user):
         task = [t for t in tasks if t["project_id"] is None][0]
@@ -1698,9 +1709,11 @@ class TestPatchTaskLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
+        prev_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_skeleton]})
+        curr_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
