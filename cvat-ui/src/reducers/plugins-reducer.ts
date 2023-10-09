@@ -45,6 +45,11 @@ const defaultState: PluginsState = {
         settings: {
             player: [],
         },
+        about: {
+            links: {
+                items: [],
+            },
+        },
     },
 };
 

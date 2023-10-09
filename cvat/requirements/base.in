@@ -27,7 +27,6 @@ django-rq==2.3.2
 django-sendfile2==0.7.0
 Django~=4.2.1
 djangorestframework~=3.14.0
-dnspython==2.2.0
 drf-spectacular>=0.26.2
 furl==2.1.0
 google-cloud-storage==1.42.0
