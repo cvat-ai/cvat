@@ -10,7 +10,7 @@ export interface GammaFilterOptions {
 }
 
 export default class GammaCorrection extends FabricFilter {
-    public gamma: number[];
+    #gamma: number[];
 
     constructor(options: GammaFilterOptions) {
         super();
@@ -24,13 +24,17 @@ export default class GammaCorrection extends FabricFilter {
         this.filter = new fabric.Image.filters.Gamma({
             gamma,
         });
-        this.gamma = gamma;
+        this.#gamma = gamma;
     }
 
     public configure(options: object): void {
         super.configure(options);
 
         const { gamma: newGamma } = options as GammaFilterOptions;
-        this.gamma = newGamma;
+        this.#gamma = newGamma;
+    }
+
+    get gamma(): number {
+        return this.#gamma[0];
     }
 }

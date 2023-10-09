@@ -46,15 +46,10 @@ export default function GammaFilter(): JSX.Element {
     useEffect(() => {
         if (filters.length === 0) {
             setGamma(1);
+        } else if (gammaFilter) {
+            setGamma((gammaFilter.modifier as GammaCorrection).gamma);
         }
     }, [filters]);
-
-    useEffect(() => {
-        if (gammaFilter) {
-            const gammaValue = (gammaFilter.modifier as GammaCorrection).gamma;
-            setGamma(gammaValue[0]);
-        }
-    }, []);
 
     return (
         <div className='cvat-image-setups-filters'>
