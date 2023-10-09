@@ -169,7 +169,7 @@ class MediaCache:
 
                     cloud_storage_instance.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
 
-                    for checksum, fs_filename in zip(checksums, images):
+                    for checksum, (_, fs_filename, _) in zip(checksums, images):
                         if checksum and not md5_hash(fs_filename) == checksum:
                             slogger.cloud_storage[db_cloud_storage.id].warning('Hash sums of files {} do not match'.format(file_name))
                 else:
