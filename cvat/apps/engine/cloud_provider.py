@@ -249,14 +249,14 @@ class _CloudStorage(ABC):
     ) -> Dict:
         search_prefix = prefix
         if self.prefix and (len(prefix or "") < len(self.prefix)):
-            next_layer_and_tail = self.prefix[len(prefix or "") :].split(
+            next_layer_and_tail = self.prefix[(prefix or "").find('/') + 1:].split(
                 "/", maxsplit=1
             )
             if 2 == len(next_layer_and_tail):
                 directory = (
                     next_layer_and_tail[0]
                     if not _use_flat_listing
-                    else self.prefix[: len(prefix or "")] + next_layer_and_tail[0] + "/"
+                    else self.prefix[: (prefix or "").find('/') + 1] + next_layer_and_tail[0] + "/"
                 )
                 return {
                     "content": [{"name": directory, "type": "DIR"}],
@@ -273,7 +273,7 @@ class _CloudStorage(ABC):
         content.extend([{'name': d, 'type': 'DIR'} for d in result['directories']])
 
         if not _use_flat_listing and search_prefix and '/' in search_prefix:
-            last_slash = search_prefix.rindex(os.path.sep)
+            last_slash = search_prefix.rindex('/')
             for f in content:
                 f['name'] = f['name'][last_slash + 1:]
 

@@ -152,7 +152,7 @@ class ServerViewSet(viewsets.ViewSet):
 
         if str(directory).startswith(settings.SHARE_ROOT) and directory.is_dir():
             data = []
-            for entry in directory.glob(f'{search_param}*'):
+            for entry in (directory.iterdir() if not search_param else (f for f in directory.iterdir() if f.name.startswith(search_param))):
                 entry_type, entry_mime_type = None, None
                 if entry.is_file():
                     entry_type = "REG"

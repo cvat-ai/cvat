@@ -652,7 +652,7 @@ class ImageManifestManager(_ManifestManager):
 
         search_prefix = prefix
         if default_prefix and (len(prefix or "") < len(default_prefix)):
-            next_layer_and_tail = default_prefix[len(prefix or "") :].split(
+            next_layer_and_tail = default_prefix[(prefix or "").find('/') + 1:].split(
                 "/", maxsplit=1
             )
             if 2 == len(next_layer_and_tail):
