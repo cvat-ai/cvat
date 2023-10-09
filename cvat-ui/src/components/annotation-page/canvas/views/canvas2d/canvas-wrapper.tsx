@@ -935,7 +935,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                             const imageIsNotProcessed = imageFilters.some((imageFilter: ImageFilter) => (
                                 imageFilter.modifier.currentProcessedImage !== frame
                             ));
-                            console.log(imageIsNotProcessed);
+
                             if (imageIsNotProcessed) {
                                 try {
                                     const { renderWidth, renderHeight, imageData: imageBitmap } = originalImage;
