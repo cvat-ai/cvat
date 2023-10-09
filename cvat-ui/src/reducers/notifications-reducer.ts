@@ -1664,7 +1664,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     organizations: {
                         ...state.messages.organizations,
-                        resendingInvitation: 'Invintation was sent suces',
+                        resendingInvitation: 'Invintation was sent sucessfully',
                     },
                 },
             };

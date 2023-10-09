@@ -193,7 +193,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
         summary='Method resends the invitation',
         request=None,
         responses={
-            '200': OpenApiResponse(description='Invitation has been sent'),
+            '204': OpenApiResponse(description='Invitation has been sent'),
             '400': OpenApiResponse(description='The invitation is already accepted'),
         }),
 )
@@ -276,7 +276,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
             if invitation.membership.is_active:
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="This invitation is already accepted.")
             invitation.send(request)
-            return Response(status=status.HTTP_200_OK, data="Invitation has been sent.")
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except Invitation.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist.")
         except ImproperlyConfigured:

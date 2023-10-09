@@ -1581,7 +1581,7 @@ paths:
       - signatureAuth: []
       - basicAuth: []
       responses:
-        '200':
+        '204':
           description: Invitation has been sent
         '400':
           description: The invitation is already accepted
