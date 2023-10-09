@@ -1510,7 +1510,7 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality, retry 
         });
 
         const contentLength = +(response.headers || {})['content-length'];
-        if (Number.isInteger(contentLength)) {
+        if (Number.isInteger(contentLength) && response.data.byteLength < +contentLength) {
             if (retry < 10) {
                 // corrupted zip tmp workaround
                 // if content length more than received byteLength, request the chunk again
@@ -1526,7 +1526,7 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality, retry 
 
             // not to try anymore, throw explicit error
             throw new Error(
-                `Truncated chunk after all retries. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
+                `Truncated chunk. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
                 `Body size: ${response.data.byteLength}`,
             );
         }
