@@ -261,6 +261,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
             if invitation.membership.is_active:
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is already accepted.")
             serializer = AcceptInvitationSerializer(data=request.data)
+            # serializer = RegisterSerializerEx(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 serializer.save(request, invitation)
                 invitation.accept()

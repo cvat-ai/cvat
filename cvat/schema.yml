@@ -6161,10 +6161,6 @@ components:
           type: string
           minLength: 5
           maxLength: 150
-        email:
-          type: string
-          format: email
-          minLength: 1
         password1:
           type: string
           writeOnly: true

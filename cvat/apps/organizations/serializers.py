@@ -10,9 +10,9 @@ from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
 
 from rest_framework import serializers
-from dj_rest_auth.registration.serializers import RegisterSerializer
 from distutils.util import strtobool
 from cvat.apps.engine.serializers import BasicUserSerializer
+from cvat.apps.iam.serializers import RegisterSerializerEx
 from .models import Invitation, Membership, Organization
 
 class OrganizationReadSerializer(serializers.ModelSerializer):
@@ -148,27 +148,18 @@ class MembershipWriteSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
         read_only_fields = ['user', 'organization', 'is_active', 'joined_date']
 
-class AcceptInvitationSerializer(RegisterSerializer):
-    first_name = serializers.CharField(required=False)
-    last_name = serializers.CharField(required=False)
-
-    def validate_email(self, email):
-        return email
-
-    def get_cleaned_data(self):
-        return {
-            'username': self.validated_data.get('username', ''),
-            'password1': self.validated_data.get('password1', ''),
-            'firstname': self.validated_data.get('firstname', ''),
-            'lastname': self.validated_data.get('lastname', ''),
-        }
+class AcceptInvitationSerializer(RegisterSerializerEx):
+    def get_fields(self):
+        fields = super().get_fields()
+        fields.pop('email', default=None)
+        return fields
 
     def save(self, request, invitation):
         self.cleaned_data = self.get_cleaned_data()
         user = invitation.membership.user
         user.is_active = True
-        user.first_name = self.cleaned_data['firstname']
-        user.last_name = self.cleaned_data['lastname']
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
         user.username = self.cleaned_data['username']
         user.set_password(self.cleaned_data['password1'])
         user.save()
