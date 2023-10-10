@@ -13,7 +13,7 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, FunctionsResponseBody,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAcceptInvitation,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -462,9 +462,9 @@ async function acceptOrganizationInvitation(
     password: string,
     confirmations: Record<string, string>,
     key: string,
-): Promise<SerializedRegister> {
+): Promise<SerializedAcceptInvitation> {
     let response = null;
-
+    let orgSlug = null;
     try {
         response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`, {
             username,
@@ -474,11 +474,12 @@ async function acceptOrganizationInvitation(
             password2: password,
             confirmations,
         });
+        orgSlug = response.data.organization_slug;
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.data;
+    return orgSlug;
 }
 
 async function getSelf(): Promise<SerializedUser> {
