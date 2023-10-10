@@ -443,8 +443,9 @@ class TestListLabels(_TestLabelsPermissionsBase):
     @pytest.mark.parametrize("org_id", [2])
     @pytest.mark.parametrize("source_type", ["job", "task", "project"])
     def test_only_1st_level_labels_included(
-        self, projects, tasks, jobs, labels, admin_user, source_type, org_id
+        self, projects_wlc, tasks_wlc, jobs_wlc, labels, admin_user, source_type, org_id
     ):
+        projects, tasks, jobs = projects_wlc, tasks_wlc, jobs_wlc
         labels_by_project = self._labels_by_source(labels, source_key="project_id")
         labels_by_task = self._labels_by_source(labels, source_key="task_id")
         if source_type == "project":

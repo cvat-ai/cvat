@@ -1561,7 +1561,8 @@ class TestPatchTaskLabel:
         resulting_labels = self._get_task_labels(task["id"], admin_user)
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
-    def test_can_rename_label(self, tasks, labels, admin_user):
+    def test_can_rename_label(self, tasks_wlc, labels, admin_user):
+        tasks = tasks_wlc
         task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 0][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": "new name"})
@@ -1572,7 +1573,8 @@ class TestPatchTaskLabel:
         resulting_labels = self._get_task_labels(task["id"], admin_user)
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
-    def test_cannot_rename_label_to_duplicate_name(self, tasks, labels, admin_user):
+    def test_cannot_rename_label_to_duplicate_name(self, tasks_wlc, labels, admin_user):
+        tasks = tasks_wlc
         task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 1][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": task_labels[1]["name"]})
@@ -2253,7 +2255,8 @@ class TestPatchTask:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
+def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user):
+    tasks, jobs = tasks_wlc, jobs_wlc
     # Reproduces https://github.com/opencv/cvat/issues/6098
     task = next(
         t

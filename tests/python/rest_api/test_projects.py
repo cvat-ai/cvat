@@ -815,7 +815,8 @@ class TestPatchProjectLabel:
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
 
-    def test_can_rename_label(self, projects, labels, admin_user):
+    def test_can_rename_label(self, projects_wlc, labels, admin_user):
+        projects = projects_wlc
         project = [p for p in projects if p["labels"]["count"] > 0][0]
         project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
         project_labels[0].update({"name": "new name"})
@@ -828,7 +829,8 @@ class TestPatchProjectLabel:
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
 
-    def test_cannot_rename_label_to_duplicate_name(self, projects, labels, admin_user):
+    def test_cannot_rename_label_to_duplicate_name(self, projects_wlc, labels, admin_user):
+        projects = projects_wlc
         project = [p for p in projects if p["labels"]["count"] > 1][0]
         project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
         project_labels[0].update({"name": project_labels[1]["name"]})
