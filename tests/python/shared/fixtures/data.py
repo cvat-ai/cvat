@@ -59,8 +59,9 @@ def tasks():
     with open(ASSETS_DIR / "tasks.json") as f:
         return Container(json.load(f)["results"])
 
+
 @pytest.fixture(scope="session")
-def tasks_wlc(labels, tasks): # tasks with labels count
+def tasks_wlc(labels, tasks):  # tasks with labels count
     tasks = deepcopy(tasks)
     tasks_by_project = defaultdict(list)
     for task in tasks:
@@ -79,13 +80,15 @@ def tasks_wlc(labels, tasks): # tasks with labels count
 
     return tasks
 
+
 @pytest.fixture(scope="session")
 def projects():
     with open(ASSETS_DIR / "projects.json") as f:
         return Container(json.load(f)["results"])
 
+
 @pytest.fixture(scope="session")
-def projects_wlc(projects, labels): # projects with labels count
+def projects_wlc(projects, labels):  # projects with labels count
     projects = deepcopy(projects)
     for project in projects:
         project["labels"]["count"] = 0
@@ -97,13 +100,15 @@ def projects_wlc(projects, labels): # projects with labels count
 
     return projects
 
+
 @pytest.fixture(scope="session")
-def jobs(): # jobs with labels count
+def jobs():  # jobs with labels count
     with open(ASSETS_DIR / "jobs.json") as f:
         return Container(json.load(f)["results"])
 
+
 @pytest.fixture(scope="session")
-def jobs_wlc(jobs, tasks_wlc): # jobs with labels count
+def jobs_wlc(jobs, tasks_wlc):  # jobs with labels count
     jobs = deepcopy(jobs)
     tasks = tasks_wlc
     for job in jobs:

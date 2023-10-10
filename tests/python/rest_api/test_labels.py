@@ -205,8 +205,7 @@ class _TestLabelsPermissionsBase:
 
 class TestLabelsListFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
-    def setup(self, restore_db_per_class, admin_user, labels,
-            jobs_wlc, tasks_wlc, projects_wlc):
+    def setup(self, restore_db_per_class, admin_user, labels, jobs_wlc, tasks_wlc, projects_wlc):
         self.user = admin_user
         self.samples = labels
         self.job_samples = jobs_wlc
