@@ -192,9 +192,13 @@ def configure_dependent_job_to_download_from_cs(
             func=rq_func,
             args=(db_storage, filename, key),
             job_id=rq_job_id_download_file,
-            meta=get_rq_job_meta(request=request, db_obj=db_storage),
+            meta={
+                **get_rq_job_meta(request=request, db_obj=db_storage),
+                'exclude_from_dependency': True,
+            },
             result_ttl=result_ttl,
-            failure_ttl=failure_ttl
+            failure_ttl=failure_ttl,
+            depends_on=define_dependent_job(queue, request.user.id)
         )
     return rq_job_download_file
 
