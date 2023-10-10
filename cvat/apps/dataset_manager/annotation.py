@@ -100,12 +100,12 @@ class AnnotationIR:
         track = deepcopy(track_)
         segment_shapes = filter_track_shapes(deepcopy(track['shapes']))
 
-        if len(segment_shapes) < len(track['shapes']):
-            track["elements"] = [
-                cls._slice_track(element, start, stop, dimension)
-                for element in track.get('elements', [])
-            ]
+        track["elements"] = [
+            cls._slice_track(element, start, stop, dimension)
+            for element in track.get('elements', [])
+        ]
 
+        if len(segment_shapes) < len(track['shapes']):
             interpolated_shapes = TrackManager.get_interpolated_shapes(
                 track, start, stop, dimension)
             scoped_shapes = filter_track_shapes(interpolated_shapes)
