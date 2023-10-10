@@ -100,6 +100,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                                             >
                                                 <Input
                                                     placeholder='manifest.jsonl'
+                                                    className='cvat-cloud-storage-manifest-field'
                                                     onChange={(event) => onChangeManifestPath(event.target.value, idx)}
                                                 />
                                             </Form.Item>
