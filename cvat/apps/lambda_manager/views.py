@@ -37,6 +37,7 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
 )
+from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
@@ -427,7 +428,7 @@ class LambdaQueue:
         return [LambdaJob(job) for job in jobs if job.meta.get("lambda")]
 
     def enqueue(self,
-        lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance,
+        lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance, request,
         *,
         job: Optional[int] = None
     ) -> LambdaJob:
@@ -446,8 +447,16 @@ class LambdaQueue:
         # staticmethod, it cannot run a callable class. Thus I provide an object
         # which has __call__ function.
         rq_job = queue.create_job(LambdaJob(None),
-            meta = { "lambda": True },
-            kwargs = {
+            meta={
+                **get_rq_job_meta(
+                    request,
+                    db_obj=(
+                        Job.objects.get(pk=job) if job else Task.objects.get(pk=task)
+                    ),
+                ),
+                "lambda": True,
+            },
+            kwargs={
                 "function": lambda_func,
                 "threshold": threshold,
                 "task": task,
@@ -457,7 +466,9 @@ class LambdaQueue:
                 "conv_mask_to_poly": conv_mask_to_poly,
                 "mapping": mapping,
                 "max_distance": max_distance
-            })
+            },
+            depends_on=define_dependent_job(queue, request.user.id, settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME)
+        )
 
         queue.enqueue_job(rq_job)
 
@@ -986,7 +997,7 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
         rq_job = queue.enqueue(lambda_func, threshold, task, quality,
-            mapping, cleanup, conv_mask_to_poly, max_distance, job=job)
+            mapping, cleanup, conv_mask_to_poly, max_distance, request, job=job)
 
         response_serializer = FunctionCallSerializer(rq_job.to_dict())
         return response_serializer.data

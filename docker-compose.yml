@@ -55,6 +55,9 @@ services:
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
       SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
+      LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME:
+      LIMIT_ONE_USER_TO_ONE_EXPORT_TASK_AT_A_TIME:
+      LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME:
     command: init run server
     labels:
       - traefik.enable=true

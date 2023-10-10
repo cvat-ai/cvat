@@ -18,7 +18,7 @@ import re
 import logging
 import platform
 
-from rq.job import Job
+from rq.job import Job, Dependency
 from django_rq.queues import DjangoRQ
 from pathlib import Path
 
@@ -151,7 +151,29 @@ def process_failed_job(rq_job: Job):
     return msg
 
 
-def configure_dependent_job(
+def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: bool = False) -> Optional[Dependency]:
+    if not should_be_dependent:
+        return None
+
+    started_user_jobs = [
+        job
+        for job in queue.job_class.fetch_many(
+            queue.started_job_registry.get_job_ids(), queue.connection
+        )
+        if job.meta.get("user", {}).get("id") == user_id
+    ]
+    deferred_user_jobs = [
+        job
+        for job in queue.job_class.fetch_many(
+            queue.deferred_job_registry.get_job_ids(), queue.connection
+        )
+        if job.meta.get("user", {}).get("id") == user_id
+    ]
+    user_jobs = list(filter(lambda job: not job.meta.get('exclude_from_dependency'), started_user_jobs + deferred_user_jobs))
+
+    return Dependency(jobs=[user_jobs[-1]], allow_failure=True) if user_jobs else None
+
+def configure_dependent_job_to_download_from_cs(
     queue: DjangoRQ,
     rq_id: str,
     rq_func: Callable[[Any, str, str], None],

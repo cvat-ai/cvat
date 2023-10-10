@@ -36,9 +36,9 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job,
+    av_scan_paths, process_failed_job, configure_dependent_job_to_download_from_cs,
     get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after,
-    sendfile
+    sendfile, define_dependent_job
 )
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
@@ -1017,7 +1017,10 @@ def export(db_instance, request, queue_name):
         args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
         job_id=rq_id,
         meta=get_rq_job_meta(request=request, db_obj=db_instance),
-        result_ttl=ttl, failure_ttl=ttl)
+        depends_on=define_dependent_job(queue, request.user.id, settings.LIMIT_ONE_USER_TO_ONE_EXPORT_TASK_AT_A_TIME),
+        result_ttl=ttl,
+        failure_ttl=ttl,
+    )
     return Response(status=status.HTTP_202_ACCEPTED)
 
 
@@ -1069,7 +1072,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as tf:
                 filename = tf.name
 
-            dependent_job = configure_dependent_job(
+            dependent_job = configure_dependent_job_to_download_from_cs(
                 queue=queue,
                 rq_id=rq_id,
                 rq_func=_download_file_from_bucket,
@@ -1089,7 +1092,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 'tmp_file': filename,
                 **get_rq_job_meta(request=request, db_obj=None)
             },
-            depends_on=dependent_job,
+            depends_on=dependent_job or define_dependent_job(queue, request.user.id, settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME),
             result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
             failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
         )

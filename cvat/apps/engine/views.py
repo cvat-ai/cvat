@@ -71,9 +71,9 @@ from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job,
+    av_scan_paths, process_failed_job, configure_dependent_job_to_download_from_cs,
     parse_exception_message, get_rq_job_meta, get_import_rq_id,
-    import_resource_with_clean_up_after, sendfile
+    import_resource_with_clean_up_after, sendfile, define_dependent_job
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -598,7 +598,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
-        elif job.is_queued:
+        elif job.is_queued or job.is_deferred:
             response = { "state": "Queued" }
         elif job.is_failed:
             response = { "state": "Failed", "message": job.exc_info }
@@ -1387,8 +1387,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         )
         serializer = RqStatusSerializer(data=response)
 
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
 
     @staticmethod
     def _get_rq_response(queue, job_id):
@@ -1397,7 +1397,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
-        elif job.is_queued:
+        elif job.is_queued or job.is_deferred:
             response = { "state": "Queued" }
         elif job.is_failed:
             # FIXME: It seems that in some cases exc_info can be None.
@@ -2912,7 +2912,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                     delete=False) as tf:
                     filename = tf.name
 
-                dependent_job = configure_dependent_job(
+                dependent_job = configure_dependent_job_to_download_from_cs(
                     queue=queue,
                     rq_id=rq_id,
                     rq_func=_download_file_from_bucket,
@@ -2932,7 +2932,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
             func=import_resource_with_clean_up_after,
             args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
             job_id=rq_id,
-            depends_on=dependent_job,
+            depends_on=dependent_job or define_dependent_job(queue, request.user.id, settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME),
             meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)},
             result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
             failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
@@ -3056,7 +3056,10 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         args=(db_instance.id, format_name, server_address),
         job_id=rq_id,
         meta=get_rq_job_meta(request=request, db_obj=db_instance),
-        result_ttl=ttl, failure_ttl=ttl)
+        depends_on=define_dependent_job(queue, request.user.id, settings.LIMIT_ONE_USER_TO_ONE_EXPORT_TASK_AT_A_TIME),
+        result_ttl=ttl,
+        failure_ttl=ttl,
+    )
     return Response(status=status.HTTP_202_ACCEPTED)
 
 def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
@@ -3112,7 +3115,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 delete=False) as tf:
                 filename = tf.name
 
-            dependent_job = configure_dependent_job(
+            dependent_job = configure_dependent_job_to_download_from_cs(
                 queue=queue,
                 rq_id=rq_id,
                 rq_func=_download_file_from_bucket,
@@ -3132,7 +3135,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 'tmp_file': filename,
                 **get_rq_job_meta(request=request, db_obj=db_obj),
             },
-            depends_on=dependent_job,
+            depends_on=dependent_job or define_dependent_job(queue, request.user.id, settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME),
             result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
             failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
         )
