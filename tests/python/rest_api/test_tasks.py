@@ -573,17 +573,19 @@ class TestPatchTaskAnnotations:
 
         # clear task annotations
         response = delete_method("admin1", f"tasks/{task_id}/annotations")
-        assert response.status_code == 204, f"Unexpected result when try to delete task's annotations: {response.content}"
+        assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
 
         # create skeleton track that covers few jobs
-        response = patch_method("admin1", f"tasks/{task_id}/annotations", annotations, action="create")
-        assert response.status_code == 200, f"Unexpected result when try to update task's annotations: {response.content}"
+        response = patch_method(
+            "admin1", f"tasks/{task_id}/annotations", annotations, action="create"
+        )
+        assert response.status_code == 200, f"Cannot update task's annotations: {response.content}"
 
         # check that server splitted skeleton track's elements on jobs correctly
         for job_id, job_frame_range in frame_ranges.items():
 
             response = get_method("admin1", f"jobs/{job_id}/annotations")
-            assert response.status_code == 200, f"Unexpected result when try to get job's annotations: {response.content}"
+            assert response.status_code == 200, f"Cannot get job's annotations: {response.content}"
 
             job_annotations = response.json()
             assert len(job_annotations["tracks"]) == 1, "Expected to see only one track"
@@ -592,7 +594,8 @@ class TestPatchTaskAnnotations:
             assert track.get("elements", []), "Expected to see track with elements"
 
             for element in track["elements"]:
-                assert set(shape["frame"] for shape in element["shapes"]) <= job_frame_range, "Shapes of track get out of job frame range"
+                element_frames = set(shape["frame"] for shape in element["shapes"])
+                assert element_frames <= job_frame_range, "Track shapes get out of job frame range"
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskDataset:
