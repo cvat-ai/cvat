@@ -3,11 +3,13 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from collections import defaultdict
+from copy import deepcopy
 
 import pytest
 
 from shared.utils.config import ASSETS_DIR
-from collections import defaultdict
+
 
 class Container:
     def __init__(self, data, key="id"):
@@ -59,6 +61,7 @@ def tasks():
 
 @pytest.fixture(scope="session")
 def tasks_wlc(labels, tasks): # tasks with labels count
+    tasks = deepcopy(tasks)
     tasks_by_project = defaultdict(list)
     for task in tasks:
         tasks_by_project[task["project_id"]].append(task)
@@ -83,6 +86,7 @@ def projects():
 
 @pytest.fixture(scope="session")
 def projects_wlc(projects, labels): # projects with labels count
+    projects = deepcopy(projects)
     for project in projects:
         project["labels"]["count"] = 0
 
@@ -100,6 +104,7 @@ def jobs(): # jobs with labels count
 
 @pytest.fixture(scope="session")
 def jobs_wlc(jobs, tasks_wlc): # jobs with labels count
+    jobs = deepcopy(jobs)
     tasks = tasks_wlc
     for job in jobs:
         tid = job["task_id"]
