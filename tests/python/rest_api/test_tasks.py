@@ -34,11 +34,11 @@ from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
 from shared.utils.config import (
     BASE_URL,
     USER_PASS,
+    delete_method,
     get_method,
     make_api_client,
     patch_method,
     post_method,
-    delete_method,
 )
 from shared.utils.helpers import generate_image_files, generate_manifest
 
