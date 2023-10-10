@@ -14,7 +14,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-from drf_spectacular.types import OpenApiTypes
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
@@ -28,7 +27,7 @@ from .serializers import (
     InvitationReadSerializer, InvitationWriteSerializer,
     MembershipReadSerializer, MembershipWriteSerializer,
     OrganizationReadSerializer, OrganizationWriteSerializer,
-    AcceptInvitationSerializer)
+    AcceptInvitationReadSerializer, AcceptInvitationWriteSerializer)
 
 @extend_schema(tags=['organizations'])
 @extend_schema_view(
@@ -183,9 +182,9 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     accept=extend_schema(
         operation_id='invitations_accept',
         summary='Method registers user and accepts invitation to organization',
-        request=AcceptInvitationSerializer,
+        request=AcceptInvitationWriteSerializer,
         responses={
-            '200': OpenApiResponse(response=OpenApiTypes.STR, description='Organization slug'),
+            '200': OpenApiResponse(response=AcceptInvitationReadSerializer, description='The invitation is accepted'),
             '400': OpenApiResponse(description='The invitation is expired or already accepted'),
         }),
     resend=extend_schema(
@@ -252,7 +251,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
             super().perform_update(serializer)
 
     @transaction.atomic
-    @action(detail=True, methods=['POST'], url_path='accept', permission_classes=[AllowAny], authentication_classes=[], serializer_class=AcceptInvitationSerializer)
+    @action(detail=True, methods=['POST'], url_path='accept', permission_classes=[AllowAny], authentication_classes=[])
     def accept(self, request, pk):
         try:
             invitation = Invitation.objects.get(key=pk)
@@ -260,12 +259,12 @@ class InvitationViewSet(viewsets.GenericViewSet,
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is expired. Please contact organization owner to renew it.")
             if invitation.membership.is_active:
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is already accepted.")
-            serializer = AcceptInvitationSerializer(data=request.data)
-            # serializer = RegisterSerializerEx(data=request.data)
+            serializer = AcceptInvitationWriteSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 serializer.save(request, invitation)
                 invitation.accept()
-                return Response(status=status.HTTP_200_OK, data=invitation.membership.organization.slug)
+                response_serializer = AcceptInvitationReadSerializer(data={'oranization_slug': invitation.membership.organization.slug});
+                return Response(status=status.HTTP_200_OK, data=response_serializer.data)
         except Invitation.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist. Please contact organization owner.")
 

@@ -1548,7 +1548,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AcceptInvitationRequest'
+              $ref: '#/components/schemas/AcceptInvitationWriteRequest'
         required: true
       security:
       - {}
@@ -1557,8 +1557,8 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                type: string
-          description: Organization slug
+                $ref: '#/components/schemas/AcceptInvitationRead'
+          description: The invitation is accepted
         '400':
           description: The invitation is expired or already accepted
   /api/invitations/{key}/resend:
@@ -6154,7 +6154,14 @@ components:
       - description
       - name
       - version
-    AcceptInvitationRequest:
+    AcceptInvitationRead:
+      type: object
+      properties:
+        organization_slug:
+          type: string
+      required:
+      - organization_slug
+    AcceptInvitationWriteRequest:
       type: object
       properties:
         username:
