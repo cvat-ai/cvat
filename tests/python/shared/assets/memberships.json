@@ -5,17 +5,7 @@
   "results": [
     {
       "id": 15,
-      "invitation": {
-        "created_date": "2023-09-15T07:53:52.116000Z",
-        "key": "q8GWTPiR1Vz9DDO6MQo1B6pUBzW9GjDb6AUQPziAV62jD7OpCLZji0GS66C48wRX",
-        "owner": {
-          "first_name": "User",
-          "id": 2,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/2",
-          "username": "user1"
-        }
-      },
+      "invitation": "q8GWTPiR1Vz9DDO6MQo1B6pUBzW9GjDb6AUQPziAV62jD7OpCLZji0GS66C48wRX",
       "is_active": true,
       "joined_date": "2023-09-15T07:53:52.116000Z",
       "organization": 1,
@@ -30,17 +20,7 @@
     },
     {
       "id": 14,
-      "invitation": {
-        "created_date": "2023-09-15T07:53:52.115000Z",
-        "key": "d2Zaawf81uImG1nmWA0Va0Bv5EPERt1edJDTgTgMZiefZ2QmC1IdPld9LIPnkiWR",
-        "owner": {
-          "first_name": "User",
-          "id": 2,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/2",
-          "username": "user1"
-        }
-      },
+      "invitation": "d2Zaawf81uImG1nmWA0Va0Bv5EPERt1edJDTgTgMZiefZ2QmC1IdPld9LIPnkiWR",
       "is_active": true,
       "joined_date": "2023-09-15T07:53:52.115000Z",
       "organization": 1,
@@ -55,17 +35,7 @@
     },
     {
       "id": 13,
-      "invitation": {
-        "created_date": "2022-09-28T13:11:37.839000Z",
-        "key": "hIH9RB3QqZLFwdUDmufaSPc2H8uS5cNjcG6pk8gfAIQ4jg6nJZZWDIQHMN1gFMk9",
-        "owner": {
-          "first_name": "Admin",
-          "id": 1,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/1",
-          "username": "admin1"
-        }
-      },
+      "invitation": "hIH9RB3QqZLFwdUDmufaSPc2H8uS5cNjcG6pk8gfAIQ4jg6nJZZWDIQHMN1gFMk9",
       "is_active": true,
       "joined_date": "2022-09-28T13:11:37.839000Z",
       "organization": 1,
@@ -80,17 +50,7 @@
     },
     {
       "id": 12,
-      "invitation": {
-        "created_date": "2022-02-24T21:29:21.978000Z",
-        "key": "Fi3WRUhFxTWpMiVpdwNR2CGyhgcIXSCUYgPCugPq72QUOgHz9NSMOGiKS3PfJ7Ql",
-        "owner": {
-          "first_name": "Admin",
-          "id": 1,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/1",
-          "username": "admin1"
-        }
-      },
+      "invitation": "Fi3WRUhFxTWpMiVpdwNR2CGyhgcIXSCUYgPCugPq72QUOgHz9NSMOGiKS3PfJ7Ql",
       "is_active": true,
       "joined_date": "2022-02-24T21:29:21.978000Z",
       "organization": 2,
@@ -105,17 +65,7 @@
     },
     {
       "id": 11,
-      "invitation": {
-        "created_date": "2022-01-19T13:54:42.015000Z",
-        "key": "BrwoDmMNQQ1v9WXOukp9DwQVuqB3RDPjpUECCEq6QcAuG0Pi8k1IYtQ9uz9jg0Bv",
-        "owner": {
-          "first_name": "Business",
-          "id": 10,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/10",
-          "username": "business1"
-        }
-      },
+      "invitation": "BrwoDmMNQQ1v9WXOukp9DwQVuqB3RDPjpUECCEq6QcAuG0Pi8k1IYtQ9uz9jg0Bv",
       "is_active": true,
       "joined_date": "2022-01-19T13:54:42.015000Z",
       "organization": 2,
@@ -130,17 +80,7 @@
     },
     {
       "id": 10,
-      "invitation": {
-        "created_date": "2022-01-19T13:54:42.005000Z",
-        "key": "5FjIXya6fTGvlRpauFvi2QN1wDOqo1V9REB5rJinDR8FZO9gr0qmtWpghsCte8Y1",
-        "owner": {
-          "first_name": "Business",
-          "id": 10,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/10",
-          "username": "business1"
-        }
-      },
+      "invitation": "5FjIXya6fTGvlRpauFvi2QN1wDOqo1V9REB5rJinDR8FZO9gr0qmtWpghsCte8Y1",
       "is_active": true,
       "joined_date": "2022-01-19T13:54:42.005000Z",
       "organization": 2,
@@ -155,17 +95,7 @@
     },
     {
       "id": 9,
-      "invitation": {
-        "created_date": "2021-12-14T19:55:13.745000Z",
-        "key": "h43G28di7vfs4Jv5VrKZ26xvGAfm6Yc2FFv14z9EKhiuIEDQ22pEnzmSCab8MnK1",
-        "owner": {
-          "first_name": "Business",
-          "id": 10,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/10",
-          "username": "business1"
-        }
-      },
+      "invitation": "h43G28di7vfs4Jv5VrKZ26xvGAfm6Yc2FFv14z9EKhiuIEDQ22pEnzmSCab8MnK1",
       "is_active": true,
       "joined_date": "2021-12-14T19:55:13.745000Z",
       "organization": 2,
@@ -180,17 +110,7 @@
     },
     {
       "id": 8,
-      "invitation": {
-        "created_date": "2021-12-14T19:54:56.431000Z",
-        "key": "mFpVV2Yh39uUdU8IpigSxvuPegqi8sjxFi6P9Jdy6fBE8Ky9Juzi1KjeGDQsizSS",
-        "owner": {
-          "first_name": "Business",
-          "id": 10,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/10",
-          "username": "business1"
-        }
-      },
+      "invitation": "mFpVV2Yh39uUdU8IpigSxvuPegqi8sjxFi6P9Jdy6fBE8Ky9Juzi1KjeGDQsizSS",
       "is_active": true,
       "joined_date": "2021-12-14T19:54:56.431000Z",
       "organization": 2,
@@ -205,17 +125,7 @@
     },
     {
       "id": 7,
-      "invitation": {
-        "created_date": "2021-12-14T19:54:46.172000Z",
-        "key": "62HplmGPJuzpTXSyzPWiAlREkq8smCjK30GdtYze3q03J9X5ghQe3oMhlAyQ0WBH",
-        "owner": {
-          "first_name": "Business",
-          "id": 10,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/10",
-          "username": "business1"
-        }
-      },
+      "invitation": "62HplmGPJuzpTXSyzPWiAlREkq8smCjK30GdtYze3q03J9X5ghQe3oMhlAyQ0WBH",
       "is_active": true,
       "joined_date": "2021-12-14T19:54:46.172000Z",
       "organization": 2,
@@ -230,17 +140,7 @@
     },
     {
       "id": 6,
-      "invitation": {
-        "created_date": "2021-12-14T19:54:33.591000Z",
-        "key": "Y1I4FFU27WRqq2rWQLtKjDztMqpvqW7gJgg7q73F7oE4H5kukvXugWjiTLHclPDu",
-        "owner": {
-          "first_name": "Business",
-          "id": 10,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/10",
-          "username": "business1"
-        }
-      },
+      "invitation": "Y1I4FFU27WRqq2rWQLtKjDztMqpvqW7gJgg7q73F7oE4H5kukvXugWjiTLHclPDu",
       "is_active": true,
       "joined_date": "2021-12-14T19:54:33.591000Z",
       "organization": 2,
@@ -270,17 +170,7 @@
     },
     {
       "id": 4,
-      "invitation": {
-        "created_date": "2021-12-14T18:48:46.579000Z",
-        "key": "cbmm587Z05WQUYvesIZUCtbTl7CEL4thv1Au6Nr51psflITn9X6BsvNFXcNEkoYn",
-        "owner": {
-          "first_name": "User",
-          "id": 2,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/2",
-          "username": "user1"
-        }
-      },
+      "invitation": "cbmm587Z05WQUYvesIZUCtbTl7CEL4thv1Au6Nr51psflITn9X6BsvNFXcNEkoYn",
       "is_active": true,
       "joined_date": "2021-12-14T18:48:46.579000Z",
       "organization": 1,
@@ -295,17 +185,7 @@
     },
     {
       "id": 3,
-      "invitation": {
-        "created_date": "2021-12-14T18:47:49.322000Z",
-        "key": "aViZkw9TaieLoZaswEnkMy8tTet1yYDRof3eKZDtZaHf1BItgCNNM6y6fnjrkrej",
-        "owner": {
-          "first_name": "User",
-          "id": 2,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/2",
-          "username": "user1"
-        }
-      },
+      "invitation": "aViZkw9TaieLoZaswEnkMy8tTet1yYDRof3eKZDtZaHf1BItgCNNM6y6fnjrkrej",
       "is_active": true,
       "joined_date": "2021-12-14T18:47:49.322000Z",
       "organization": 1,
@@ -320,17 +200,7 @@
     },
     {
       "id": 2,
-      "invitation": {
-        "created_date": "2021-12-14T18:47:39.935000Z",
-        "key": "Lzyzgo161I7Fej1vC5RXPdyUgCBfbuxsEEhHYeYOJqvbeJe5clPDnqCm7pKOC9tr",
-        "owner": {
-          "first_name": "User",
-          "id": 2,
-          "last_name": "First",
-          "url": "http://localhost:8080/api/users/2",
-          "username": "user1"
-        }
-      },
+      "invitation": "Lzyzgo161I7Fej1vC5RXPdyUgCBfbuxsEEhHYeYOJqvbeJe5clPDnqCm7pKOC9tr",
       "is_active": true,
       "joined_date": "2021-12-14T18:47:39.935000Z",
       "organization": 1,
