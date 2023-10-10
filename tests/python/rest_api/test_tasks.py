@@ -38,7 +38,7 @@ from shared.utils.config import (
     make_api_client,
     patch_method,
     post_method,
-    delete_method
+    delete_method,
 )
 from shared.utils.helpers import generate_image_files, generate_manifest
 
@@ -539,11 +539,7 @@ class TestPatchTaskAnnotations:
         # https://github.com/opencv/cvat/pull/6968
         task_id = 21
 
-        task_jobs = [
-            job
-            for job in jobs
-            if job["task_id"] == task_id
-        ]
+        task_jobs = [job for job in jobs if job["task_id"] == task_id]
 
         frame_ranges = {}
         for job in task_jobs:
@@ -564,9 +560,9 @@ class TestPatchTaskAnnotations:
                                 {"type": "points", "frame": 0, "points": [1.0, 2.0]},
                                 {"type": "points", "frame": 2, "points": [1.0, 2.0]},
                                 {"type": "points", "frame": 7, "points": [1.0, 2.0]},
-                            ]
+                            ],
                         },
-                    ]
+                    ],
                 }
             ]
         }
@@ -583,7 +579,6 @@ class TestPatchTaskAnnotations:
 
         # check that server splitted skeleton track's elements on jobs correctly
         for job_id, job_frame_range in frame_ranges.items():
-
             response = get_method("admin1", f"jobs/{job_id}/annotations")
             assert response.status_code == 200, f"Cannot get job's annotations: {response.content}"
 
@@ -596,6 +591,7 @@ class TestPatchTaskAnnotations:
             for element in track["elements"]:
                 element_frames = set(shape["frame"] for shape in element["shapes"])
                 assert element_frames <= job_frame_range, "Track shapes get out of job frame range"
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskDataset:
