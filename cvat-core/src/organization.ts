@@ -310,9 +310,20 @@ Object.defineProperties(Organization.prototype.members, {
             checkObjectType('pageSize', pageSize, 'number');
 
             const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
-            const memberships = result.results.map((rawMembership: SerializedMembershipData) => new Membership(
-                rawMembership,
-            ));
+            const memberships = await Promise.all(result.results.map(async (rawMembership) => {
+                const { invitation } = rawMembership;
+                let rawInvitation = null;
+                if (invitation) {
+                    try {
+                        rawInvitation = await serverProxy.organizations.invitation(invitation);
+                    // eslint-disable-next-line no-empty
+                    } catch (e) {}
+                }
+                return new Membership({
+                    ...rawMembership,
+                    invitation: rawInvitation,
+                });
+            }));
 
             memberships.count = result.count;
             return memberships;

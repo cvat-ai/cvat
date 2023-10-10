@@ -6441,22 +6441,6 @@ components:
       oneOf:
       - $ref: '#/components/schemas/ProjectFileRequest'
       nullable: true
-    BasicInvitation:
-      type: object
-      properties:
-        key:
-          type: string
-          readOnly: true
-        created_date:
-          type: string
-          format: date-time
-          readOnly: true
-        owner:
-          allOf:
-          - $ref: '#/components/schemas/BasicUser'
-          nullable: true
-      required:
-      - owner
     BasicUser:
       type: object
       properties:
@@ -8058,9 +8042,10 @@ components:
           - $ref: '#/components/schemas/RoleEnum'
           readOnly: true
         invitation:
-          $ref: '#/components/schemas/BasicInvitation'
+          type: string
+          readOnly: true
+          nullable: true
       required:
-      - invitation
       - user
     MetaUser:
       anyOf:

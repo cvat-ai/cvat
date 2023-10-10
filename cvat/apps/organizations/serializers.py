@@ -62,13 +62,6 @@ class InvitationReadSerializer(serializers.ModelSerializer):
         fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization']
         read_only_fields = fields
 
-class BasicInvitationSerializer(serializers.ModelSerializer):
-    owner = BasicUserSerializer(allow_null=True)
-    class Meta:
-        model = Invitation
-        fields = ['key', 'created_date', 'owner']
-        read_only_fields = fields
-
 class InvitationWriteSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(Membership.role.field.choices,
         source='membership.role')
@@ -126,7 +119,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
 class MembershipReadSerializer(serializers.ModelSerializer):
     user = BasicUserSerializer()
-    invitation = BasicInvitationSerializer()
+
     class Meta:
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role',
