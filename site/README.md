@@ -115,3 +115,6 @@ Push the commit to project repo. For example, run:
 ```bash
 git push
 ```
+
+Make sure to update the corresponding configuration files and
+theme overrides (`layouts/`, `i18n/`, etc.).
