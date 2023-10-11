@@ -100,9 +100,12 @@ class AnnotationIR:
         track = deepcopy(track_)
         segment_shapes = filter_track_shapes(deepcopy(track['shapes']))
 
+        track["elements"] = [
+            cls._slice_track(element, start, stop, dimension)
+            for element in track.get('elements', [])
+        ]
+
         if len(segment_shapes) < len(track['shapes']):
-            for element in track.get('elements', []):
-                element = cls._slice_track(element, start, stop, dimension)
             interpolated_shapes = TrackManager.get_interpolated_shapes(
                 track, start, stop, dimension)
             scoped_shapes = filter_track_shapes(interpolated_shapes)
@@ -909,7 +912,7 @@ class TrackManager(ObjectManager):
                 break # The track finishes here
 
             if prev_shape:
-                assert curr_frame > prev_shape["frame"] # Catch invalid tracks
+                assert curr_frame > prev_shape["frame"], f"{curr_frame} > {prev_shape['frame']}. Track id: {track['id']}" # Catch invalid tracks
 
                 # Propagate attributes
                 for attr in prev_shape["attributes"]:

@@ -35,6 +35,8 @@ type Params = {
     action?: string,
 };
 
+tus.defaultOptions.storeFingerprintForResuming = false;
+
 function enableOrganization(): { org: string } {
     return { org: config.organization.organizationSlug || '' };
 }
@@ -199,7 +201,7 @@ class WorkerWrappedAxios {
             if (e.data.id in requests) {
                 try {
                     if (e.data.isSuccess) {
-                        requests[e.data.id].resolve(e.data.responseData);
+                        requests[e.data.id].resolve({ data: e.data.responseData, headers: e.data.headers });
                     } else {
                         requests[e.data.id].reject(new AxiosError(e.data.message, e.data.code));
                     }
@@ -1495,7 +1497,7 @@ async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer>
     }
 }
 
-async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
+async function getData(jid: number, chunk: number, quality: ChunkQuality, retry = 0): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
     try {
@@ -1509,7 +1511,29 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality): Promi
             responseType: 'arraybuffer',
         });
 
-        return response;
+        const contentLength = +(response.headers || {})['content-length'];
+        if (Number.isInteger(contentLength) && response.data.byteLength < +contentLength) {
+            if (retry < 10) {
+                // corrupted zip tmp workaround
+                // if content length more than received byteLength, request the chunk again
+                // and log this error
+                setTimeout(() => {
+                    throw new Error(
+                        `Truncated chunk, try: ${retry}. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
+                        `Body size: ${response.data.byteLength}`,
+                    );
+                });
+                return await getData(jid, chunk, quality, retry + 1);
+            }
+
+            // not to try anymore, throw explicit error
+            throw new Error(
+                `Truncated chunk. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
+                `Body size: ${response.data.byteLength}`,
+            );
+        }
+
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }

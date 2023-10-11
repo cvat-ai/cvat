@@ -935,10 +935,10 @@ class ValidateDimension:
         def write_header(fileObj, width, height):
             fileObj.writelines(f'{line}\n' for line in [
                 'VERSION 0.7',
-                'FIELDS x y z',
-                'SIZE 4 4 4',
-                'TYPE F F F',
-                'COUNT 1 1 1',
+                'FIELDS x y z intensity',
+                'SIZE 4 4 4 4',
+                'TYPE F F F F',
+                'COUNT 1 1 1 1',
                 f'WIDTH {width}',
                 f'HEIGHT {height}',
                 'VIEWPOINT 0 0 0 1 0 0 0',
@@ -952,8 +952,8 @@ class ValidateDimension:
             size_float = 4
             byte = f.read(size_float * 4)
             while byte:
-                x, y, z, _ = struct.unpack("ffff", byte)
-                list_pcd.append([x, y, z])
+                x, y, z, intensity = struct.unpack("ffff", byte)
+                list_pcd.append([x, y, z, intensity])
                 byte = f.read(size_float * 4)
         np_pcd = np.asarray(list_pcd)
         pcd_filename = path.replace(".bin", ".pcd")
