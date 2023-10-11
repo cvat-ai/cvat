@@ -120,7 +120,6 @@ function RemoteBrowser(props: Props): JSX.Element {
     const isMounted = useIsMounted();
     const resourceRef = useRef<Props['resource']>(resource);
     const manifestPathRef = useRef<string | undefined>(manifestPath);
-    const defaultPrefixRef = useRef<string | undefined>(defaultPrefix);
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [isFetching, setFetching] = useState(false);
@@ -136,16 +135,11 @@ function RemoteBrowser(props: Props): JSX.Element {
     const [curSearchString, setCurSearchString] = useState(dataSource.searchString);
     const isRoot = useCallback((): boolean => currentPath.slice(1).length === 0, [currentPath]);
 
+    // method updates content of the current node
+    // if it was not initialized or the next token is defined
     const updateContent = async (): Promise<boolean> => {
-        let target = content;
-        let { searchString } = content;
-        for (const subpath of currentPath.slice(1)) {
-            const child = target.children.find((item) => item.name === subpath);
-            searchString = child?.searchString;
-            target = child as Node;
-        }
-
-        if (!target.initialized || target.nextToken) {
+        const { searchString } = dataSource;
+        if (!dataSource.initialized || dataSource.nextToken) {
             const path = `${currentPath.slice(1).join('/')}/`;
             const convertChildren = (children: Omit<Node, 'key' | 'children'>[]): Node[] => (
                 children.map((child) => {
@@ -162,8 +156,8 @@ function RemoteBrowser(props: Props): JSX.Element {
             const currentResource = resourceRef.current;
             const currentManifest = manifestPathRef.current;
             const isRelevant = (): boolean => (
-                // check if component is still relevant after async request, and resource & share are the same
-                // if not, results are not valid anymore
+                // check if component is still relevant after async request
+                // and resource & share are the same if not, results are not valid anymore
                 isMounted() &&
                 currentResource === resourceRef.current &&
                 currentManifest === manifestPathRef.current
@@ -176,17 +170,17 @@ function RemoteBrowser(props: Props): JSX.Element {
                     nodes = convertChildren(files);
                 } else {
                     const response: { next: string | null, content: Omit<Node, 'key' | 'children'>[] } =
-                        await resource.getContent(`${path}${(searchString) || ''}`, target.nextToken, manifestPath);
+                        await resource.getContent(`${path}${(searchString) || ''}`, dataSource.nextToken, manifestPath);
                     const { next, content: files } = response;
-                    target.nextToken = next;
+                    dataSource.nextToken = next;
                     nodes = convertChildren(files);
                 }
 
-                target.children = target.children.concat(nodes);
-                target.initialized = true;
+                dataSource.children = dataSource.children.concat(nodes);
+                dataSource.initialized = true;
                 if (isRelevant()) {
                     // select all new children if parent was selected
-                    if (selectedRowKeys.includes(target.key)) {
+                    if (selectedRowKeys.includes(dataSource.key)) {
                         const copy = selectedRowKeys.slice(0);
                         for (const child of nodes) {
                             copy.push(child.key);
@@ -214,10 +208,14 @@ function RemoteBrowser(props: Props): JSX.Element {
         return false;
     };
 
+    // in case of refetch request, or changing a search string
+    // we need to request content again
+    // to do that, we reset initialized state
     const resetDataSource = (): void => {
         dataSource.searchString = curSearchString;
         dataSource.children = [];
         dataSource.initialized = false;
+        dataSource.nextToken = null;
         updateContent().then((updated) => {
             if (updated) {
                 setCurrentPage(1);
@@ -225,11 +223,11 @@ function RemoteBrowser(props: Props): JSX.Element {
         });
     };
 
+    // when change cloud storage or manifest
+    // need to reset the whole state
     useEffect(() => {
         if (resourceRef.current !== resource ||
-            manifestPathRef.current !== manifestPath ||
-            defaultPrefixRef.current !== defaultPrefix
-        ) {
+            manifestPathRef.current !== manifestPath) {
             setContent(updateRoot(getDefaultRoot(), defaultPrefix));
             setCurrentPage(1);
             setFetching(false);
@@ -237,9 +235,8 @@ function RemoteBrowser(props: Props): JSX.Element {
             setSelectedRowKeys([]);
             resourceRef.current = resource;
             manifestPathRef.current = manifestPath;
-            defaultPrefixRef.current = defaultPrefix;
         }
-    }, [resource, manifestPath, defaultPrefix]);
+    }, [resource, manifestPath]);
 
     useEffect(() => {
         const nodes: Node[] = [];
