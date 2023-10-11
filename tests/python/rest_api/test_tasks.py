@@ -2496,3 +2496,45 @@ class TestImportWithComplexFilenames:
                 task.import_annotations(self.format_name, dataset_file)
 
             assert b"Could not match item id" in capture.value.body
+
+    def test_can_export_and_import_skeleton_tracks_in_coco_format(self):
+        task = self.client.tasks.retrieve(14)
+        dataset_file = self.tmp_dir / "some_file.zip"
+        format_name = "COCO Keypoints 1.0"
+
+        original_annotations = task.get_annotations()
+        print(original_annotations)
+
+        task.export_dataset(format_name, dataset_file, include_images=False)
+        task.remove_annotations()
+        task.import_annotations(format_name, dataset_file)
+
+        imported_annotations = task.get_annotations()
+        print(imported_annotations)
+
+        # Number of shapes and tracks hasn't changed
+        assert len(original_annotations.shapes) == len(imported_annotations.shapes)
+        assert len(original_annotations.tracks) == len(imported_annotations.tracks)
+
+        # Frames of shapes, tracks and track elements hasn't changed
+        assert set([s.frame for s in original_annotations.shapes]) == set(
+            [s.frame for s in imported_annotations.shapes]
+        )
+        assert set([t.frame for t in original_annotations.tracks]) == set(
+            [t.frame for t in imported_annotations.tracks]
+        )
+        assert set(
+            [
+                tes.frame
+                for t in original_annotations.tracks
+                for te in t.elements
+                for tes in te.shapes
+            ]
+        ) == set(
+            [
+                tes.frame
+                for t in imported_annotations.tracks
+                for te in t.elements
+                for tes in te.shapes
+            ]
+        )
