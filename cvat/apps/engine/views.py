@@ -2988,7 +2988,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
             rq_job.delete()
         else:
             if rq_job.is_finished:
-                file_path = rq_job.return_value
+                file_path = rq_job.return_value()
                 if action == "download" and osp.exists(file_path):
                     rq_job.delete()
 
