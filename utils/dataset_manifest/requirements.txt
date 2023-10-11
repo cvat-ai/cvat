@@ -11,7 +11,7 @@ natsort==8.0.0
     # via -r utils/dataset_manifest/requirements.in
 numpy==1.22.4
     # via opencv-python-headless
-opencv-python-headless==4.5.5.62
+opencv-python-headless==4.8.1.78
     # via -r utils/dataset_manifest/requirements.in
 pillow==10.0.1
     # via -r utils/dataset_manifest/requirements.in
