@@ -32,7 +32,7 @@ furl==2.1.0
 google-cloud-storage==1.42.0
 natsort==8.0.0
 numpy~=1.22.2
-opencv-python-headless==4.5.5.62
+opencv-python-headless~=4.8
 
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
