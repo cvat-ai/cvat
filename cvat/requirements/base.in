@@ -27,13 +27,12 @@ django-rq==2.3.2
 django-sendfile2==0.7.0
 Django~=4.2.1
 djangorestframework~=3.14.0
-dnspython==2.2.0
 drf-spectacular>=0.26.2
 furl==2.1.0
 google-cloud-storage==1.42.0
 natsort==8.0.0
 numpy~=1.22.2
-opencv-python-headless==4.5.5.62
+opencv-python-headless~=4.8
 
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
