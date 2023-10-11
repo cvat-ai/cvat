@@ -13,6 +13,7 @@ onmessage = (e) => {
         .then((response) => {
             postMessage({
                 responseData: response.data,
+                headers: response.headers,
                 id: e.data.id,
                 isSuccess: true,
             });

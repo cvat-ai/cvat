@@ -50,8 +50,6 @@ enum SupportedShareTypes {
 interface Props {
     onCreate: (data: CreateTaskData, onProgress?: (status: string, progress?: number) => void) => Promise<any>;
     projectId: number | null;
-    installedGit: boolean;
-    dumpers:[];
     many: boolean;
 }
 
@@ -71,7 +69,6 @@ const defaultState: State = {
     },
     subset: '',
     advanced: {
-        lfs: false,
         useZipChunks: true,
         useCache: true,
         sortingMethod: SortingMethod.LEXICOGRAPHICAL,
@@ -102,26 +99,44 @@ const defaultState: State = {
 };
 
 const UploadFileErrorMessages = {
-    one: 'It can not be processed. You can upload an archive with images, a video, a pdf file or multiple images',
-    multi: 'It can not be processed. You can upload one or more videos',
+    one: 'Wrong list of files. You can upload an archive with images, a video, a pdf file or multiple images. ',
+    multi: 'Wrong list of files. You can upload one or more videos. ',
 };
+
+function receiveExtensions(files: RemoteFile[]): string[] {
+    const fileTypes = files.filter((file: RemoteFile) => file.name.includes('.'))
+        .map((file: RemoteFile) => `.${file.name.split('.').pop()}`);
+    return fileTypes;
+}
+
+function checkFiles(files: RemoteFile[], type: SupportedShareTypes, baseError: string): string {
+    const erroredFiles = files.filter(
+        (it) => it.mimeType !== type,
+    );
+    if (erroredFiles.length !== 0) {
+        const unsupportedTypes = receiveExtensions(erroredFiles);
+        const extensionList = Array.from(new Set(unsupportedTypes));
+        return extensionList.length ? `${baseError} Found unsupported types: ${extensionList.join(', ')}. ` : baseError;
+    }
+    return '';
+}
 
 function validateRemoteFiles(remoteFiles: RemoteFile[], many: boolean): string {
     let uploadFileErrorMessage = '';
-    let filteredFiles = remoteFiles;
     const regFiles = remoteFiles.filter((file) => file.type === 'REG');
     const excludedManifests = regFiles.filter((file) => !file.key.endsWith('.jsonl'));
     if (!many && excludedManifests.length > 1) {
-        uploadFileErrorMessage = excludedManifests.every(
-            (it) => it.mimeType === SupportedShareTypes.IMAGE,
-        ) ? '' : UploadFileErrorMessages.one;
+        uploadFileErrorMessage = checkFiles(
+            excludedManifests,
+            SupportedShareTypes.IMAGE,
+            UploadFileErrorMessages.one,
+        );
     } else if (many) {
-        filteredFiles = filteredFiles.filter((it) => it.mimeType === SupportedShareTypes.VIDEO);
-        // something is selected and no one video
-        // or something except of videos selected (excluding directories)
-        uploadFileErrorMessage = remoteFiles.length && (
-            !filteredFiles.length || filteredFiles.length !== regFiles.length
-        ) ? UploadFileErrorMessages.multi : '';
+        uploadFileErrorMessage = checkFiles(
+            regFiles,
+            SupportedShareTypes.VIDEO,
+            UploadFileErrorMessages.multi,
+        );
     }
     return uploadFileErrorMessage;
 }
@@ -815,7 +830,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderAdvancedBlock(): JSX.Element {
-        const { installedGit, dumpers } = this.props;
         const { activeFileManagerTab, projectId } = this.state;
 
         const {
@@ -835,8 +849,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                 <Collapse className='cvat-advanced-configuration-wrapper'>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
-                            dumpers={dumpers}
-                            installedGit={installedGit}
                             activeFileManagerTab={activeFileManagerTab}
                             ref={this.advancedConfigurationComponent}
                             onSubmit={this.handleSubmitAdvancedConfiguration}

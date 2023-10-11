@@ -46,10 +46,6 @@ class VideoStreamReader:
                         )
                     self.height, self.width = (frame.height, frame.width)
 
-                    # not all videos contain information about numbers of frames
-                    if video_stream.frames:
-                        self._frames_number = video_stream.frames
-
                     return
 
     @property
@@ -63,6 +59,9 @@ class VideoStreamReader:
         return video_stream
 
     def __len__(self):
+        assert self._frames_number is not None, \
+            "The length will not be available until the reader is iterated all the way through at least once"
+
         return self._frames_number
 
     @property
@@ -112,41 +111,6 @@ class VideoStreamReader:
                     index += 1
             if not self._frames_number:
                 self._frames_number = index
-
-class KeyFramesVideoStreamReader(VideoStreamReader):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def __iter__(self):
-        with closing(av.open(self.source_path, mode='r')) as container:
-            video_stream = self._get_video_stream(container)
-            frame_pts, frame_dts = -1, -1
-            index, key_frame_number = 0, 0
-            for packet in container.demux(video_stream):
-                for frame in packet.decode():
-                    if None not in {frame.pts, frame_pts} and frame.pts <= frame_pts:
-                        raise InvalidVideoFrameError('Invalid pts sequences')
-                    if None not in {frame.dts, frame_dts} and frame.dts <= frame_dts:
-                        raise InvalidVideoFrameError('Invalid dts sequences')
-                    frame_pts, frame_dts = frame.pts, frame.dts
-
-                    if frame.key_frame:
-                        key_frame_number += 1
-                        ratio = (index + 1) // key_frame_number
-                        if ratio >= self._upper_bound and not self._force:
-                            raise AssertionError('Too few keyframes')
-                        key_frame = {
-                            'index': index,
-                            'pts': frame.pts,
-                            'md5': md5_hash(frame)
-                        }
-
-                        with closing(av.open(self.source_path, mode='r')) as checked_container:
-                            checked_container.seek(offset=key_frame['pts'], stream=video_stream)
-                            isValid = self.validate_key_frame(checked_container, video_stream, key_frame)
-                            if isValid:
-                                yield (index, key_frame['pts'], key_frame['md5'])
-                    index += 1
 
 class DatasetImagesReader:
     def __init__(self,
@@ -475,9 +439,8 @@ class VideoManifestManager(_ManifestManager):
         setattr(self._manifest, 'TYPE', 'video')
         self.BASE_INFORMATION['properties'] = 3
 
-    def link(self, media_file, upload_dir=None, chunk_size=36, force=False, only_key_frames=False, **kwargs):
-        ReaderClass = VideoStreamReader if not only_key_frames else KeyFramesVideoStreamReader
-        self._reader = ReaderClass(
+    def link(self, media_file, upload_dir=None, chunk_size=36, force=False, **kwargs):
+        self._reader = VideoStreamReader(
             os.path.join(upload_dir, media_file) if upload_dir else media_file,
             chunk_size,
             force)
@@ -498,7 +461,7 @@ class VideoManifestManager(_ManifestManager):
 
     def _write_core_part(self, file, _tqdm):
         iterable_obj = self._reader if _tqdm is None else \
-            _tqdm(self._reader, desc="Manifest creating", total=len(self._reader))
+            _tqdm(self._reader, desc="Manifest creating", total=float("inf"))
         for item in iterable_obj:
             if isinstance(item, tuple):
                 json_item = json.dumps({
@@ -510,17 +473,12 @@ class VideoManifestManager(_ManifestManager):
 
     def create(self, *, _tqdm=None): # pylint: disable=arguments-differ
         """ Creating and saving a manifest file """
-        if not len(self._reader):
-            tmp_file = StringIO()
-            self._write_core_part(tmp_file, _tqdm)
+        tmp_file = StringIO()
+        self._write_core_part(tmp_file, _tqdm)
 
-            with open(self._manifest.path, 'w') as manifest_file:
-                self._write_base_information(manifest_file)
-                manifest_file.write(tmp_file.getvalue())
-        else:
-            with open(self._manifest.path, 'w') as manifest_file:
-                self._write_base_information(manifest_file)
-                self._write_core_part(manifest_file, _tqdm)
+        with open(self._manifest.path, 'w') as manifest_file:
+            self._write_base_information(manifest_file)
+            manifest_file.write(tmp_file.getvalue())
 
         self.set_index()
 
@@ -575,15 +533,6 @@ class VideoManifestValidator(VideoManifestManager):
                 container.seek(offset=key_frame['pts'], stream=video_stream)
                 self.validate_key_frame(container, video_stream, key_frame)
                 last_key_frame = key_frame
-
-    def validate_frame_numbers(self):
-        with closing(av.open(self._source_path, mode='r')) as container:
-            video_stream = self._get_video_stream(container)
-            # not all videos contain information about numbers of frames
-            frames = video_stream.frames
-            if frames:
-                assert frames == self.video_length, "The uploaded manifest does not match the video"
-                return
 
 class ImageProperties(dict):
     @property
