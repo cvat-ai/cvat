@@ -1786,6 +1786,7 @@ class CvatToDmAnnotationConverter:
                     label=self.map_label(element.label, shape.label),
                     attributes=element_attr))
 
+            dm_attr["keyframe"] = any([element.attributes.get("keyframe") for element in elements])
             anno = dm.Skeleton(elements, label=dm_label,
                 attributes=dm_attr, group=dm_group, z_order=shape.z_order)
         else:
@@ -2059,9 +2060,11 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
-                                element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), bool) is True
+                                element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), bool, True)
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
+                                if not element_keyframe and not element_outside:
+                                    continue
 
                                 if element.label not in tracks[track_id]['elements']:
                                     tracks[track_id]['elements'][element.label] = instance_data.Track(
@@ -2076,6 +2079,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 ]
                                 element_source = element.attributes.pop('source').lower() \
                                     if element.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
                                     type=shapes[element.type],
                                     frame=frame_number,
