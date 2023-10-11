@@ -102,6 +102,19 @@ context('Canvas color settings feature', () => {
             cy.get('.cvat-notification-notice-image-processing-error').should('not.exist');
         });
 
+        it('Check persisting image filters across jobs', () => {
+            cy.interactMenu('Open the task');
+            cy.openJob(1);
+            cy.get('.cvat-canvas-image-setups-trigger').click();
+            checkSlidersValue(
+                '.cvat-canvas-image-setups-content', classNameSliders, expectedResultInSetting,
+            );
+            checkSlidersValue(
+                '.cvat-image-setups-filters', filterSlidersClassNames, expectedResultInSettingFilters,
+            );
+            cy.get('.cvat-notification-notice-image-processing-error').should('not.exist');
+        });
+
         it('Check reset of settings', () => {
             cy.get('.cvat-image-setups-reset-color-settings').find('button').click();
             const expectedResultInBackground = defaultValueInSidebar / 100;
