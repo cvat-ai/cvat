@@ -238,10 +238,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = models.Project.objects.select_related(
         'assignee', 'owner', 'target_storage', 'source_storage', 'annotation_guide',
-    ).prefetch_related(
-        'tasks', 'label_set__sublabels__attributespec_set',
-        'label_set__attributespec_set'
-    ).all()
+    ).prefetch_related('tasks').all()
 
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
