@@ -581,7 +581,7 @@ export function switchPlay(playing: boolean): AnyAction {
     };
 }
 
-export function confirmCanvasReady(ranges?: string): AnyAction {
+function confirmCanvasReady(ranges?: string): AnyAction {
     return {
         type: AnnotationActionTypes.CONFIRM_CANVAS_READY,
         payload: { ranges },
@@ -644,46 +644,21 @@ export function changeFrameAsync(
                 throw Error(`Required frame ${toFrame} is out of the current job`);
             }
 
-            const abortAction = (): void => {
-                const currentState = getState();
-                dispatch({
-                    type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
-                    payload: {
-                        number: currentState.annotation.player.frame.number,
-                        data: currentState.annotation.player.frame.data,
-                        filename: currentState.annotation.player.frame.filename,
-                        relatedFiles: currentState.annotation.player.frame.relatedFiles,
-                        delay: currentState.annotation.player.frame.delay,
-                        changeTime: currentState.annotation.player.frame.changeTime,
-                        states: currentState.annotation.annotations.states,
-                        minZ: currentState.annotation.annotations.zLayer.min,
-                        maxZ: currentState.annotation.annotations.zLayer.max,
-                        curZ: currentState.annotation.annotations.zLayer.cur,
-                    },
-                });
-
-                dispatch(confirmCanvasReady());
-            };
-
-            dispatch({
-                type: AnnotationActionTypes.CHANGE_FRAME,
-                payload: {},
-            });
-
             if (toFrame === frame && !forceUpdate) {
-                abortAction();
+                return;
+            }
+
+            if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
                 return;
             }
 
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
 
-            if (!isAbleToChangeFrame() || statisticsVisible || propagateVisible) {
-                // while doing async actions above, canvas can become used by a user in another way
-                // so, we need an additional check and if it is used, we do not update state
-                abortAction();
-                return;
-            }
+            dispatch({
+                type: AnnotationActionTypes.CHANGE_FRAME,
+                payload: {},
+            });
 
             // commit the latest job frame to local storage
             localStorage.setItem(`Job_${job.id}_frame`, `${toFrame}`);
