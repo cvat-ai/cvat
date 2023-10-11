@@ -1,10 +1,10 @@
-{{ $links := .Site.Params.links }}
+{{ $links := .Site.Params.links -}}
 <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
   <div class="container-fluid">
     <div class="row">
       <div class="col text-center">
         {{ with $links }}
-        {{ with index . "user"}}
+        {{ with index . "user" }}
         {{ template "footer-links-block"  . }}
         {{ end }}
         {{ end }}
@@ -24,7 +24,7 @@
       </div>
       <div class="col text-right text-center">
         {{ with $links }}
-        {{ with index . "developer"}}
+        {{ with index . "developer" }}
         {{ template "footer-links-block"  . }}
         {{ end }}
         {{ end }}
@@ -32,10 +32,11 @@
     </div>
   </div>
 </footer>
+
 {{ define "footer-links-block" }}
 <ul class="list-inline mb-0">
   {{ range . }}
-  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="{{ .name }}" aria-label="{{ .name }}">
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="{{ .name }}" aria-label="{{ .name }}">
     <a class="text-white" rel="noopener noreferrer" href="{{ .url }}">
       <i class="{{ .icon }}"></i>
     </a>
