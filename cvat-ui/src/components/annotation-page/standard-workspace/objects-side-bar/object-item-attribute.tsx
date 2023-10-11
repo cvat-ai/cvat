@@ -161,17 +161,17 @@ function ItemAttributeComponent(props: Props): JSX.Element {
         );
     }
 
-    const [_attrValue, setAttributeValue] = useState(attrValue)
+    const [tmpAttrValue, setAttributeValue] = useState(attrValue);
 
     useEffect(() => {
-        changeAttribute(attrID, _attrValue)
-    }, [_attrValue])
+        changeAttribute(attrID, tmpAttrValue);
+    }, [tmpAttrValue]);
 
     useEffect(() => {
-        if (attrValue !== _attrValue) {
-            setAttributeValue(attrValue)
+        if (attrValue !== tmpAttrValue) {
+            setAttributeValue(attrValue);
         }
-    }, [attrValue])
+    }, [attrValue]);
 
     return (
         <>
@@ -193,7 +193,7 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         }
                         setAttributeValue(event.target.value);
                     }}
-                    value={_attrValue}
+                    value={tmpAttrValue}
                     className='cvat-object-item-text-attribute'
                 />
             </Col>
