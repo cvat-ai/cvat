@@ -682,11 +682,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             {providerType === ProviderType.GOOGLE_CLOUD_STORAGE && GoogleCloudStorageConfiguration()}
             <Form.Item
                 label={(
-                    <CVATTooltip title='Prefix will be used to filter bucket content'>
-                        <Space>
-                            Prefix
-                            <QuestionCircleOutlined style={{ opacity: 0.5 }} />
-                        </Space>
+                    <CVATTooltip title='Prefix is used to filter bucket content'>
+                        Prefix
+                        <QuestionCircleOutlined className='cvat-cloud-storage-help-button' />
                     </CVATTooltip>
                 )}
                 name='prefix'

@@ -51,8 +51,8 @@ export default function implementAPI(cvat) {
         return result;
     };
 
-    cvat.server.share.implementation = async (directory: string, searchString?: string) => {
-        const result = await serverProxy.server.share(directory, searchString);
+    cvat.server.share.implementation = async (directory: string, searchPrefix?: string) => {
+        const result = await serverProxy.server.share(directory, searchPrefix);
         return result.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type }));
     };
 
