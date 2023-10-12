@@ -160,18 +160,19 @@ def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: boo
         for job in queue.job_class.fetch_many(
             queue.started_job_registry.get_job_ids(), queue.connection
         )
-        if job.meta.get("user", {}).get("id") == user_id
+        if job and job.meta.get("user", {}).get("id") == user_id
     ]
     deferred_user_jobs = [
         job
         for job in queue.job_class.fetch_many(
             queue.deferred_job_registry.get_job_ids(), queue.connection
         )
-        if job.meta.get("user", {}).get("id") == user_id
+        if job and job.meta.get("user", {}).get("id") == user_id
     ]
     user_jobs = list(filter(lambda job: not job.meta.get('exclude_from_dependency'), started_user_jobs + deferred_user_jobs))
 
-    return Dependency(jobs=[user_jobs[-1]], allow_failure=True) if user_jobs else None
+    return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
+
 
 def configure_dependent_job_to_download_from_cs(
     queue: DjangoRQ,
