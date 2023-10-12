@@ -30,10 +30,6 @@ interface ConflictMappingElement {
     conflict: QualityConflict;
 }
 
-function geometryListener(setGeometry: (param: Canvas['geometry']) => void, canvasInstance: Canvas): void {
-    setGeometry(canvasInstance.geometry);
-}
-
 export default function IssueAggregatorComponent(): JSX.Element | null {
     const dispatch = useDispatch();
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
@@ -78,19 +74,21 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         if (canvasReady) {
             const { geometry: updatedGeometry } = canvasInstance;
             setGeometry(updatedGeometry);
-            const listener = geometryListener.bind(null, setGeometry, canvasInstance);
 
-            canvasInstance.html().addEventListener('canvas.zoom', listener);
-            canvasInstance.html().addEventListener('canvas.fit', listener);
-            canvasInstance.html().addEventListener('canvas.reshape', listener);
+            const geometryListener = (): void => {
+                setGeometry(canvasInstance.geometry);
+            };
+
+            canvasInstance.html().addEventListener('canvas.zoom', geometryListener);
+            canvasInstance.html().addEventListener('canvas.fit', geometryListener);
+            canvasInstance.html().addEventListener('canvas.reshape', geometryListener);
 
             return () => {
-                canvasInstance.html().removeEventListener('canvas.zoom', listener);
-                canvasInstance.html().removeEventListener('canvas.fit', listener);
-                canvasInstance.html().addEventListener('canvas.reshape', listener);
+                canvasInstance.html().removeEventListener('canvas.zoom', geometryListener);
+                canvasInstance.html().removeEventListener('canvas.fit', geometryListener);
+                canvasInstance.html().removeEventListener('canvas.reshape', geometryListener);
             };
         }
-
         return () => {};
     }, [canvasReady]);
 
