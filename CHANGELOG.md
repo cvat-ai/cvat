@@ -16,6 +16,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.7.6'></a>
+## \[2.7.6\] - 2023-10-12
+
+### Fixed
+
+- Persist image filters across jobs
+  (<https://github.com/opencv/cvat/pull/6953>)
+
+- Splitting skeleton tracks on jobs
+  (<https://github.com/opencv/cvat/pull/6968>)
+
+- Fixed Siammask tracker error on grayscale images
+  (<https://github.com/opencv/cvat/pull/6982>)
+
+- Fixed memory leak on client side when event listener was not removed together with its context
+  (<https://github.com/opencv/cvat/pull/6984>)
+
+- Fixed crash related to issue tries to mount to not existing parent
+  (<https://github.com/opencv/cvat/pull/6977>)
+
+### Security
+
+- Security upgrade opencv-python-headless from 4.5.5.62 to 4.8.1.78
+  (<https://github.com/opencv/cvat/pull/6931>)
+
 <a id='changelog-2.7.5'></a>
 ## \[2.7.5\] - 2023-10-09
 
