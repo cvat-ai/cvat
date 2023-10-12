@@ -77,7 +77,9 @@ context('Canvas 3D functionality. Opacity. Outlined borders.', () => {
                 cy.contains('Ok').click();
             });
             cy.get('.cvat-canvas3d-perspective canvas').then(([el]) => {
-                expect({ ...getWireframe(el).material.color }).to.deep.equal({ r: 1, g: 0, b: 0.48627450980392156 });
+                expect({ ...getWireframe(el).material.color }).to.deep.equal({
+                    isColor: true, r: 1, g: 0, b: 0.20155625378383743,
+                });
             });
 
             cy.get('.cvat-appearance-outlinded-borders-checkbox').find('[type="checkbox"]').uncheck();

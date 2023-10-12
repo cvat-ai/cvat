@@ -1,0 +1,59 @@
+name: Prepare release
+on:
+  workflow_dispatch:
+    inputs:
+      newVersion:
+        description: "Version number for the new release"
+        required: true
+        default: X.Y.Z
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version number
+        env:
+          NEW_VERSION: "${{ inputs.newVersion }}"
+        run: |
+          if ! [[ "$NEW_VERSION" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "Invalid version number"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - name: Verify that the release is new
+        run: |
+          if git ls-remote --exit-code origin refs/tags/v${{ inputs.newVersion }} > /dev/null; then
+            echo "Release v${{ inputs.newVersion }} already exists"
+            exit 1
+          fi
+
+      - name: Create release branch
+        run:
+          git checkout -b "release-${{ inputs.newVersion }}"
+
+      - name: Collect changelog
+        run:
+          pipx run scriv collect --version="${{ inputs.newVersion }}"
+
+      - name: Set the new version
+        run:
+          ./dev/update_version.py --set="${{ inputs.newVersion }}"
+
+      - name: Commit release preparation changes
+        run: |
+          git -c user.name='github-actions[bot]' -c user.email='github-actions[bot]@users.noreply.github.com' \
+            commit -a -m "Prepare release v${{ inputs.newVersion }}"
+
+      - name: Push release branch
+        run:
+          git push -u origin "release-${{ inputs.newVersion }}"
+
+      - name: Create release pull request
+        env:
+          GH_TOKEN: "${{ github.token }}"
+        run: |
+          gh pr create \
+            --base=master \
+            --title="Release v${{ inputs.newVersion }}" \
+            --body="$(awk '/^## / { hn += 1; next } hn == 1 && !/^</' CHANGELOG.md)"

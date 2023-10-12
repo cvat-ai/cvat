@@ -462,6 +462,10 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { job } = action.payload;
+            const filters = [...state.imageFilters];
+            filters.forEach((imageFilter) => {
+                imageFilter.modifier.currentProcessedImage = null;
+            });
 
             return {
                 ...state,
@@ -477,7 +481,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                         } :
                         {}),
                 },
-                imageFilters: [],
+                imageFilters: filters,
             };
         }
         case AnnotationActionTypes.INTERACT_WITH_CANVAS: {

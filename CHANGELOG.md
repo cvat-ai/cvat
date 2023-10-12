@@ -5,27 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[Unreleased\]
+<!--
+  Developers: this project uses scriv (<https://scriv.readthedocs.io/en/stable/index.html>)
+  to maintain the changelog. To add an entry, create a fragment:
+
+    $ scriv create --edit
+
+  Fragments will be merged into this file whenever a release is made.
+-->
+
+<!-- scriv-insert-here -->
+
+<a id='changelog-2.7.5'></a>
+## \[2.7.5\] - 2023-10-09
 
 ### Added
 
-- TDB
+- Temporary workaround to fix corrupted zip file
+  (<https://github.com/opencv/cvat/pull/6965>)
 
-### Changed
+<a id='changelog-2.7.4'></a>
+## \[2.7.4\] - 2023-10-06
 
-- TDB
+### Added
 
-### Deprecated
-
-- TDB
-
-### Removed
-
-- TDB
+- The latest comment displayed in issues sidebar (<https://github.com/opencv/cvat/pull/6937>)
 
 ### Fixed
 
-- TDB
+- It was not possible to copy issue comment from issue dialog (<https://github.com/opencv/cvat/pull/6937>)
 
 ### Security
 
@@ -44,6 +52,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- PCD files with nan values could not be opened on 3D workspace
+ (<https://github.com/opencv/cvat/pull/6862>)
+- Fixed direct navigation to neightbour chunk on 3D workspace
+ (<https://github.com/opencv/cvat/pull/6862>)
+- Intencity level from .bin lidar data ignored when converting .bin -> .pcd
+ (<https://github.com/opencv/cvat/pull/6862>)
 - Incorrectly determined video frame count when the video contains an MP4 edit list
   (<https://github.com/opencv/cvat/pull/6929>)
 - Internal server error when retrieving data from CS and cache=True
@@ -68,8 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Downloading additional data from cloud storage if use_cache=true and job_file_mapping are specified
   (<https://github.com/opencv/cvat/pull/6879>)
 - Leaving an organization (<https://github.com/opencv/cvat/pull/6422>)
+- Order of images in annotation file when dumping project in CVAT format (<https://github.com/opencv/cvat/pull/6927>)
 - Validation on Cloud Storage form / error message on create task form (<https://github.com/opencv/cvat/pull/6890>)
-
 
 ## \[2.7.1\] - 2023-09-15
 
@@ -1766,26 +1780,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial version
-
-## Template
-
-```
-## \[Unreleased]
-### Added
-- TDB
-
-### Changed
-- TDB
-
-### Deprecated
-- TDB
-
-### Removed
-- TDB
-
-### Fixed
-- TDB
-
-### Security
-- TDB
-```
