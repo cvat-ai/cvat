@@ -2533,14 +2533,12 @@ class TestImportWithComplexFilenames:
         format_name = "COCO Keypoints 1.0"
 
         original_annotations = task.get_annotations()
-        print(original_annotations)
 
         task.export_dataset(format_name, dataset_file, include_images=False)
         task.remove_annotations()
         task.import_annotations(format_name, dataset_file)
 
         imported_annotations = task.get_annotations()
-        print(imported_annotations)
 
         # Number of shapes and tracks hasn't changed
         assert len(original_annotations.shapes) == len(imported_annotations.shapes)
