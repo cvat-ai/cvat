@@ -600,7 +600,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 const { points } = editData.state;
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
-                const imageBitmap = expandChannels(color[0], color[1], color[2], points, 4);
+                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
                 imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {

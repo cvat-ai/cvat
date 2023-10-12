@@ -2301,16 +2301,26 @@ export class MaskShape extends Shape {
         }
     }
 
-    static distance(points: number[], x: number, y: number): null | number {
-        const [left, top, right, bottom] = points.slice(-4);
+    static distance(rle: number[], x: number, y: number): null | number {
+        const [left, top, right, bottom] = rle.slice(-4);
         const [width, height] = [right - left + 1, bottom - top + 1];
         const [translatedX, translatedY] = [x - left, y - top];
         if (translatedX < 0 || translatedX >= width || translatedY < 0 || translatedY >= height) {
             return null;
         }
-        const offset = Math.floor(translatedY) * width + Math.floor(translatedX);
 
-        if (points[offset]) return 1;
+        const offset = Math.floor(translatedY) * width + Math.floor(translatedX);
+        let sum = 0;
+        let value = 0;
+
+        for (const count of rle) {
+            sum += count;
+            if (sum > offset) {
+                return value || null;
+            }
+            value = Math.abs(value - 1);
+        }
+
         return null;
     }
 }
@@ -2324,7 +2334,7 @@ MaskShape.prototype.toJSON = function () {
 
 MaskShape.prototype.get = function (frame) {
     const result = Shape.prototype.get.call(this, frame);
-    result.points = rle2Mask(this.points, this.right - this.left + 1, this.bottom - this.top + 1);
+    result.points = this.points.slice(0);
     result.points.push(this.left, this.top, this.right, this.bottom);
     return result;
 };
