@@ -89,6 +89,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                 canvasInstance.html().removeEventListener('canvas.reshape', geometryListener);
             };
         }
+
         return () => {};
     }, [canvasReady]);
 
