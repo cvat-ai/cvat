@@ -1239,6 +1239,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     objectType: ObjectType.SHAPE,
                                     frame,
                                     occluded: false,
+                                    rotation: [
+                                        ShapeType.RECTANGLE, ShapeType.ELLIPSE,
+                                    ].includes(data.type) ? (data.rotation || 0) : 0,
                                     source: core.enums.Source.AUTO,
                                     attributes: (data.attributes as { name: string, value: string }[])
                                         .reduce((acc, attr) => {
