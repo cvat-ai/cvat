@@ -383,12 +383,24 @@ export function imageDataToDataURL(
     }, 'image/png');
 }
 
-export function alphaChannelOnly(imageData: Uint8ClampedArray): number[] {
-    const alpha = new Array(imageData.length / 4);
+export function zipChannels(imageData: Uint8ClampedArray): number[] {
+    const rle = [];
+
+    let prev = 0;
+    let summ = 0;
     for (let i = 3; i < imageData.length; i += 4) {
-        alpha[Math.floor(i / 4)] = imageData[i] > 0 ? 1 : 0;
+        const alpha = imageData[i] > 0 ? 1 : 0;
+        if (prev !== alpha) {
+            rle.push(summ);
+            prev = alpha;
+            summ = 1;
+        } else {
+            summ++;
+        }
     }
-    return alpha;
+
+    rle.push(summ);
+    return rle;
 }
 
 export function expandChannels(r: number, g: number, b: number, encoded: number[]): Uint8ClampedArray {

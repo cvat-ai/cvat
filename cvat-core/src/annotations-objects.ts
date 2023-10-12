@@ -14,7 +14,7 @@ import {
 import AnnotationHistory from './annotations-history';
 import {
     checkNumberOfPoints, attrsAsAnObject, checkShapeArea, mask2Rle, rle2Mask,
-    computeWrappingBox, findAngleDiff, rotatePoint, validateAttributeValue, truncateMask,
+    computeWrappingBox, findAngleDiff, rotatePoint, validateAttributeValue, cropMask,
 } from './object-utils';
 
 const defaultGroupColor = '#E0E0E0';
@@ -2201,8 +2201,7 @@ export class MaskShape extends Shape {
         Annotation.prototype.validateStateBeforeSave.call(this, data, updated);
         if (updated.points) {
             const { width, height } = this.frameMeta[frame];
-            const fittedPoints = truncateMask(data.points, 0, width, height);
-            return fittedPoints;
+            return cropMask(data.points, width, height);
         }
 
         return [];
@@ -2264,7 +2263,7 @@ export class MaskShape extends Shape {
         const undoSource = this.source;
 
         const [redoLeft, redoTop, redoRight, redoBottom] = maskPoints.splice(-4);
-        const points = mask2Rle(maskPoints);
+        const points = maskPoints;
 
         const redoPoints = points;
         const redoSource = computeNewSource(this.source);
