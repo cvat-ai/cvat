@@ -5,11 +5,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 import shutil
 import subprocess
 import tarfile
 import tempfile
 from pathlib import Path
+from typing import Dict
 
 import git
 import toml
@@ -17,6 +19,9 @@ from packaging import version
 
 # the initial version for the documentation site
 MINIMUM_VERSION = version.Version("1.5.0")
+
+# Start the name with HUGO_ for Hugo default security checks
+VERSION_URL_ENV_VAR = "HUGO_VERSION_REL_URL"
 
 
 def prepare_tags(repo):
@@ -75,7 +80,13 @@ def generate_docs(repo, output_dir, tags):
         content_loc = Path(temp_dir, "site")
         shutil.copytree(repo_root / "site", content_loc, symlinks=True)
 
-        def run_hugo(destination_dir):
+        def run_hugo(destination_dir, *, extra_env_vars: Dict[str, str] = None):
+            extra_kwargs = {}
+
+            if extra_env_vars:
+                extra_kwargs["env"] = os.environ.copy()
+                extra_kwargs["env"].update(extra_env_vars)
+
             subprocess.run(  # nosec
                 [
                     "hugo",
@@ -86,6 +97,7 @@ def generate_docs(repo, output_dir, tags):
                 ],
                 cwd=content_loc,
                 check=True,
+                **extra_kwargs,
             )
 
         versioning_toml_path = content_loc / "versioning.toml"
@@ -99,7 +111,11 @@ def generate_docs(repo, output_dir, tags):
         for tag in tags:
             git_checkout(tag.name, repo, Path(temp_dir))
             change_version_menu_toml(versioning_toml_path, tag.name)
-            run_hugo(output_dir / tag.name)
+            run_hugo(
+                output_dir / tag.name,
+                # Docsy doesn't forward the current version url to templates
+                extra_env_vars={VERSION_URL_ENV_VAR: f"/cvat/{tag.name}/docs"},
+            )
 
 
 if __name__ == "__main__":
