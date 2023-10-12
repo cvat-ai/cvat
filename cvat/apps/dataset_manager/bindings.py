@@ -1383,6 +1383,8 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         dimension: DimensionType = DimensionType.DIM_2D,
         **kwargs
     ):
+        instance_meta = instance_data.meta[instance_data.META_FIELD]
+        
         dm.SourceExtractor.__init__(
             self,
             subset=instance_meta["subset"],
