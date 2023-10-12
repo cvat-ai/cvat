@@ -20,6 +20,7 @@ def handler(context, event):
     shapes = data.get("shapes")
     states = data.get("states")
     image = Image.open(buf)
+    image = image.convert("RGB")  #  to make sure image comes in RGB
 
     results = {
         'shapes': [],

@@ -1,8 +1,38 @@
 {
-  "count": 13,
+  "count": 15,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "id": 15,
+      "invitation": "q8GWTPiR1Vz9DDO6MQo1B6pUBzW9GjDb6AUQPziAV62jD7OpCLZji0GS66C48wRX",
+      "is_active": true,
+      "joined_date": "2023-09-15T07:53:52.116000Z",
+      "organization": 1,
+      "role": "maintainer",
+      "user": {
+        "first_name": "Business",
+        "id": 11,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/11",
+        "username": "business2"
+      }
+    },
+    {
+      "id": 14,
+      "invitation": "d2Zaawf81uImG1nmWA0Va0Bv5EPERt1edJDTgTgMZiefZ2QmC1IdPld9LIPnkiWR",
+      "is_active": true,
+      "joined_date": "2023-09-15T07:53:52.115000Z",
+      "organization": 1,
+      "role": "supervisor",
+      "user": {
+        "first_name": "User",
+        "id": 5,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/5",
+        "username": "user4"
+      }
+    },
     {
       "id": 13,
       "invitation": "hIH9RB3QqZLFwdUDmufaSPc2H8uS5cNjcG6pk8gfAIQ4jg6nJZZWDIQHMN1gFMk9",

@@ -150,13 +150,6 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
   --start_frame 5 --stop_frame 705 --use_cache \
   remote https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
   ```
-- Create a task named "task 1 with sync annotation", with label "person",
-  with annotation storage in `git` repository, enable `lfs` and the image files from the shared resource:
-  ```bash
-  cvat-cli create "task 1 with sync annotation" --labels '[{"name": "person"}]' \
-  --dataset_repository_url https://github.com/user/dataset/blob/main/annotation/anno_file_name.zip \
-  --lfs share //share/large_dataset/images/
-  ```
 - Create a task named "task with filtered cloud storage data", with filename_pattern `test_images/*.jpeg`
   and using the data from the cloud storage resource described in the manifest.jsonl:
   ```bash

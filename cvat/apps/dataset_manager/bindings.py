@@ -1153,7 +1153,7 @@ class ProjectData(InstanceLabelData):
             return frames[(frame_info["subset"], abs_frame)]
 
         if include_empty:
-            for ident in self._frame_info:
+            for ident in sorted(self._frame_info):
                 if ident not in self._deleted_frames:
                     get_frame(*ident)
 

@@ -3,23 +3,37 @@ linkTitle: 'Cityscapes'
 weight: 16
 ---
 
-# [Cityscapes](https://www.cityscapes-dataset.com/login/)
+The Cityscapes format is a widely-used standard in the field of computer vision,
+particularly for tasks involving semantic and instance segmentation in urban scenes.
+This dataset format typically comprises high-resolution images of
+cityscapes along with detailed pixel-level annotations.
 
-- [Format specification](https://github.com/mcordts/cityscapesScripts#the-cityscapes-dataset)
-- [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cityscapes_dataset)
+Each pixel is labeled with a category such as "road," "pedestrian," or "vehicle," making
+it a valuable resource for training and validating machine learning
+models aimed at understanding urban environments. It's a go-to choice
+for researchers and professionals working on autonomous vehicles,
+robotics, and smart cities.
 
-- Supported annotations
+For more information, see:
 
-  - Polygons (segmentation task)
+- [Cityscapes site](https://www.cityscapes-dataset.com/login/)
+- [Cityscapes format specification](https://github.com/mcordts/cityscapesScripts#the-cityscapes-dataset)
+- [Cityscapes dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cityscapes_dataset)
 
-- Supported attributes
-  - 'is_crowd' (boolean, should be defined for labels as `checkbox` -es)
-    Specifies if the annotation label can distinguish between different instances.
-    If False, the annotation id field encodes the instance id.
 
 # Cityscapes export
 
-Downloaded file: a zip archive of the following structure:
+For export of images:
+
+- Supported annotations: Polygons (segmentation), Bounding Boxes.
+- Attributes:
+  - `is_crowd` boolean, should be defined for labels as `checkbox`.
+    Specifies if the annotation label can distinguish between different instances.
+    If False, the annotation id field encodes the instance id.
+- Tracks: Not supported.
+
+
+The downloaded file is a .zip archive with the following structure:
 
 ```
 .
