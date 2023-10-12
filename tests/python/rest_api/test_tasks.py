@@ -7,7 +7,6 @@ import io
 import json
 import os
 import os.path as osp
-import textwrap
 import zipfile
 from copy import deepcopy
 from functools import partial
