@@ -6,7 +6,7 @@
 import _ from 'lodash';
 import { DimensionType, ProjectStatus, StorageLocation } from './enums';
 import { Storage } from './storage';
-import { SerializedProject } from './server-response-types';
+import { SerializedLabel, SerializedProject } from './server-response-types';
 import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
@@ -35,7 +35,7 @@ export default class Project {
         importDataset: CallableFunction;
     }
 
-    constructor(initialData: SerializedProject) {
+    constructor(initialData: SerializedProject & { labels?: SerializedLabel[] }) {
         const data = {
             id: undefined,
             name: undefined,

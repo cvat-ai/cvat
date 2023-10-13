@@ -637,9 +637,10 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
         if ('id' in filter) {
             response = await Axios.get(`${backendAPI}/tasks/${filter.id}`);
             const results = [response.data];
-            Object.defineProperty(results, 'count', { value: 1 });
-            results[0].progress = results[0].jobs;
-            delete results[0].jobs;
+            Object.defineProperty(results, 'count', {
+                value: 1,
+            });
+
             return results as SerializedTask[] & { count: number };
         }
 
@@ -653,10 +654,6 @@ async function getTasks(filter: TasksFilter = {}): Promise<SerializedTask[] & { 
         throw generateError(errorData);
     }
 
-    response.data.results.forEach((task) => {
-        task.progress = task.jobs;
-        delete task.jobs;
-    });
     response.data.results.count = response.data.count;
     return response.data.results;
 }
