@@ -34,6 +34,7 @@ from shared.fixtures.init import docker_exec_cvat, kube_exec_cvat
 from shared.utils.config import (
     BASE_URL,
     USER_PASS,
+    delete_method,
     get_method,
     make_api_client,
     patch_method,
@@ -533,6 +534,63 @@ class TestPatchTaskAnnotations:
         annotations["tracks"][0]["shapes"] = shapes0[1:]
         response = patch_method("admin1", endpoint, annotations, action="update")
         assert response.status_code == HTTPStatus.OK
+
+    def test_can_split_skeleton_tracks_on_jobs(self, jobs):
+        # https://github.com/opencv/cvat/pull/6968
+        task_id = 21
+
+        task_jobs = [job for job in jobs if job["task_id"] == task_id]
+
+        frame_ranges = {}
+        for job in task_jobs:
+            frame_ranges[job["id"]] = set(range(job["start_frame"], job["stop_frame"] + 1))
+
+        # skeleton track that covers few jobs
+        annotations = {
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": 58,
+                    "shapes": [{"type": "skeleton", "frame": 0, "points": []}],
+                    "elements": [
+                        {
+                            "label_id": 59,
+                            "frame": 0,
+                            "shapes": [
+                                {"type": "points", "frame": 0, "points": [1.0, 2.0]},
+                                {"type": "points", "frame": 2, "points": [1.0, 2.0]},
+                                {"type": "points", "frame": 7, "points": [1.0, 2.0]},
+                            ],
+                        },
+                    ],
+                }
+            ]
+        }
+
+        # clear task annotations
+        response = delete_method("admin1", f"tasks/{task_id}/annotations")
+        assert response.status_code == 204, f"Cannot delete task's annotations: {response.content}"
+
+        # create skeleton track that covers few jobs
+        response = patch_method(
+            "admin1", f"tasks/{task_id}/annotations", annotations, action="create"
+        )
+        assert response.status_code == 200, f"Cannot update task's annotations: {response.content}"
+
+        # check that server splitted skeleton track's elements on jobs correctly
+        for job_id, job_frame_range in frame_ranges.items():
+            response = get_method("admin1", f"jobs/{job_id}/annotations")
+            assert response.status_code == 200, f"Cannot get job's annotations: {response.content}"
+
+            job_annotations = response.json()
+            assert len(job_annotations["tracks"]) == 1, "Expected to see only one track"
+
+            track = job_annotations["tracks"][0]
+            assert track.get("elements", []), "Expected to see track with elements"
+
+            for element in track["elements"]:
+                element_frames = set(shape["frame"] for shape in element["shapes"])
+                assert element_frames <= job_frame_range, "Track shapes get out of job frame range"
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -2526,3 +2584,43 @@ class TestImportWithComplexFilenames:
                 task.import_annotations(self.format_name, dataset_file)
 
             assert b"Could not match item id" in capture.value.body
+
+    def test_can_export_and_import_skeleton_tracks_in_coco_format(self):
+        task = self.client.tasks.retrieve(14)
+        dataset_file = self.tmp_dir / "some_file.zip"
+        format_name = "COCO Keypoints 1.0"
+
+        original_annotations = task.get_annotations()
+
+        task.export_dataset(format_name, dataset_file, include_images=False)
+        task.remove_annotations()
+        task.import_annotations(format_name, dataset_file)
+
+        imported_annotations = task.get_annotations()
+
+        # Number of shapes and tracks hasn't changed
+        assert len(original_annotations.shapes) == len(imported_annotations.shapes)
+        assert len(original_annotations.tracks) == len(imported_annotations.tracks)
+
+        # Frames of shapes, tracks and track elements hasn't changed
+        assert set([s.frame for s in original_annotations.shapes]) == set(
+            [s.frame for s in imported_annotations.shapes]
+        )
+        assert set([t.frame for t in original_annotations.tracks]) == set(
+            [t.frame for t in imported_annotations.tracks]
+        )
+        assert set(
+            [
+                tes.frame
+                for t in original_annotations.tracks
+                for te in t.elements
+                for tes in te.shapes
+            ]
+        ) == set(
+            [
+                tes.frame
+                for t in imported_annotations.tracks
+                for te in t.elements
+                for tes in te.shapes
+            ]
+        )

@@ -192,7 +192,7 @@ export class GroupHandlerImpl implements GroupHandler {
                 const { points } = objectState;
                 const colorRGB = [139, 0, 139];
                 const [left, top, right, bottom] = points.slice(-4);
-                const imageBitmap = expandChannels(colorRGB[0], colorRGB[1], colorRGB[2], points, 4);
+                const imageBitmap = expandChannels(colorRGB[0], colorRGB[1], colorRGB[2], points);
 
                 const bbox = shape.bbox();
                 const image = this.canvas.image().attr({
