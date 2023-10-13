@@ -63,6 +63,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Getting CS content when S3 bucket contains manually created directories
   (<https://github.com/opencv/cvat/pull/6997>)
 
+- Optimized huge memory consumption when working with masks in the interface
+  (<https://github.com/opencv/cvat/pull/6996>)
+
 ### Security
 
 - Security upgrade opencv-python-headless from 4.5.5.62 to 4.8.1.78
@@ -70,11 +73,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added X-Frame-Options: deny
   (<https://github.com/opencv/cvat/pull/6992>)
-
-### Fixed <!-- pick one -->
-
-- Optimized huge memory consumption when working with masks in the interface
-  (<https://github.com/opencv/cvat/pull/6996>)
 
 <a id='changelog-2.7.5'></a>
 ## \[2.7.5\] - 2023-10-09
