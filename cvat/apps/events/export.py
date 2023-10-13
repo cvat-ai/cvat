@@ -75,6 +75,7 @@ def _create_csv(query_params, output_filename, cache_ttl):
             func=clear_export_cache,
             file_path=output_filename,
             file_ctime=archive_ctime,
+            logger=slogger.glob,
         )
         slogger.glob.info(
             f"The {output_filename} is created "
