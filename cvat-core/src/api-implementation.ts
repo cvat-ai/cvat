@@ -320,8 +320,13 @@ export default function implementAPI(cvat) {
         return cloudStorages;
     };
 
-    cvat.organizations.get.implementation = async () => {
-        const organizationsData = await serverProxy.organizations.get();
+    cvat.organizations.get.implementation = async (filter) => {
+        checkFilter(filter, {
+            search: isString,
+            filter: isString,
+        });
+
+        const organizationsData = await serverProxy.organizations.get(filter);
         const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
         return organizations;
     };

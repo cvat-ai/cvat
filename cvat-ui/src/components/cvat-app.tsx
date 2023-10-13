@@ -88,11 +88,11 @@ interface CVATAppProps {
     resetErrors: () => void;
     resetMessages: () => void;
     loadAuthActions: () => void;
-    loadOrganizations: () => void;
+    loadOrganization: () => void;
     userInitialized: boolean;
     userFetching: boolean;
-    organizationsFetching: boolean;
-    organizationsInitialized: boolean;
+    organizationFetching: boolean;
+    organizationInitialized: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
     modelsInitialized: boolean;
@@ -239,12 +239,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadUserAgreements,
             initPlugins,
             initModels,
-            loadOrganizations,
+            loadOrganization,
             loadAuthActions,
             userInitialized,
             userFetching,
-            organizationsFetching,
-            organizationsInitialized,
+            organizationFetching,
+            organizationInitialized,
             formatsInitialized,
             formatsFetching,
             aboutInitialized,
@@ -288,8 +288,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (!organizationsInitialized && !organizationsFetching) {
-            loadOrganizations();
+        if (!organizationInitialized && !organizationFetching) {
+            loadOrganization();
         }
 
         if (!formatsInitialized && !formatsFetching) {
@@ -394,7 +394,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             pluginsInitialized,
             formatsInitialized,
             modelsInitialized,
-            organizationsInitialized,
+            organizationInitialized,
             userAgreementsInitialized,
             authActionsInitialized,
             pluginComponents,
@@ -413,7 +413,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 formatsInitialized &&
                 pluginsInitialized &&
                 aboutInitialized &&
-                organizationsInitialized &&
+                organizationInitialized &&
                 (!isModelPluginActive || modelsInitialized)
             )
         );

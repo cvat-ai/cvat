@@ -1432,23 +1432,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    organizations: {
-                        ...state.errors.organizations,
-                        fetching: {
-                            message: 'Could not fetch organizations list',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-fetch-organizations-failed',
-                        },
-                    },
-                },
-            };
-        }
         case OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED: {
             return {
                 ...state,

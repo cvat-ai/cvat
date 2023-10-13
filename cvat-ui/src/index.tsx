@@ -20,7 +20,7 @@ import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import createRootReducer from 'reducers/root-reducer';
-import { getOrganizationsAsync } from 'actions/organization-actions';
+import { activateOrganizationAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
 
@@ -35,8 +35,8 @@ interface StateToProps {
     modelsFetching: boolean;
     userInitialized: boolean;
     userFetching: boolean;
-    organizationsFetching: boolean;
-    organizationsInitialized: boolean;
+    organizationFetching: boolean;
+    organizationInitialized: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
     formatsInitialized: boolean;
@@ -63,7 +63,7 @@ interface DispatchToProps {
     resetMessages: () => void;
     loadUserAgreements: () => void;
     loadAuthActions: () => void;
-    loadOrganizations: () => void;
+    loadOrganization: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -78,8 +78,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         userInitialized: auth.initialized,
         userFetching: auth.fetching,
-        organizationsFetching: organizations.fetching,
-        organizationsInitialized: organizations.initialized,
+        organizationFetching: organizations.fetching,
+        organizationInitialized: organizations.initialized,
         pluginsInitialized: plugins.initialized,
         pluginsFetching: plugins.fetching,
         modelsInitialized: models.initialized,
@@ -112,7 +112,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
-        loadOrganizations: (): void => dispatch(getOrganizationsAsync()),
+        loadOrganization: (): void => dispatch(activateOrganizationAsync()),
     };
 }
 

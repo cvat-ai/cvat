@@ -69,10 +69,6 @@ export default function UserSelector(props: Props): JSX.Element {
         }
     }, [searchPhrase]);
 
-    const handleSearch = (searchValue: string): void => {
-        setSearchPhrase(searchValue);
-    };
-
     const onBlur = (): void => {
         if (!searchPhrase && value) {
             onSelect(null);
@@ -117,7 +113,7 @@ export default function UserSelector(props: Props): JSX.Element {
             ref={autocompleteRef}
             value={searchPhrase}
             placeholder='Select a user'
-            onSearch={handleSearch}
+            onSearch={setSearchPhrase}
             onSelect={handleSelect}
             onBlur={onBlur}
             className={combinedClassName}
