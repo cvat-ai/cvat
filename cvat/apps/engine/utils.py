@@ -9,7 +9,7 @@ import hashlib
 import importlib
 import sys
 import traceback
-from contextlib import suppress
+from contextlib import suppress, nullcontext
 from typing import Any, Dict, Optional, Callable, Union
 import subprocess
 import os
@@ -183,24 +183,27 @@ def configure_dependent_job_to_download_from_cs(
     key: str,
     request: HttpRequest,
     result_ttl: float,
-    failure_ttl: float
+    failure_ttl: float,
+    should_be_dependent: bool = False,
 ) -> Job:
     rq_job_id_download_file = rq_id + f'?action=download_{filename}'
     rq_job_download_file = queue.fetch_job(rq_job_id_download_file)
     if not rq_job_download_file:
         # note: boto3 resource isn't pickleable, so we can't use storage
-        rq_job_download_file = queue.enqueue_call(
-            func=rq_func,
-            args=(db_storage, filename, key),
-            job_id=rq_job_id_download_file,
-            meta={
-                **get_rq_job_meta(request=request, db_obj=db_storage),
-                'exclude_from_dependency': True,
-            },
-            result_ttl=result_ttl,
-            failure_ttl=failure_ttl,
-            depends_on=define_dependent_job(queue, request.user.id)
-        )
+        cm = queue.connection.lock(f'{queue.name}-lock') if should_be_dependent else nullcontext()
+        with cm:
+            rq_job_download_file = queue.enqueue_call(
+                func=rq_func,
+                args=(db_storage, filename, key),
+                job_id=rq_job_id_download_file,
+                meta={
+                    **get_rq_job_meta(request=request, db_obj=db_storage),
+                    'exclude_from_dependency': True,
+                },
+                result_ttl=result_ttl,
+                failure_ttl=failure_ttl,
+                depends_on=define_dependent_job(queue, request.user.id, should_be_dependent)
+            )
     return rq_job_download_file
 
 def get_rq_job_meta(request, db_obj):

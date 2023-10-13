@@ -10,6 +10,7 @@ import json
 import os
 import textwrap
 from copy import deepcopy
+from contextlib import nullcontext
 from enum import Enum
 from functools import wraps
 from typing import Any, Dict, Optional
@@ -446,31 +447,33 @@ class LambdaQueue:
         # with invocation of non-trivial functions. For example, it cannot run
         # staticmethod, it cannot run a callable class. Thus I provide an object
         # which has __call__ function.
-        rq_job = queue.create_job(LambdaJob(None),
-            meta={
-                **get_rq_job_meta(
-                    request,
-                    db_obj=(
-                        Job.objects.get(pk=job) if job else Task.objects.get(pk=task)
+        cm = queue.connection.lock(f'{queue.name}-lock') if settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME else nullcontext()
+        with cm:
+            rq_job = queue.create_job(LambdaJob(None),
+                meta={
+                    **get_rq_job_meta(
+                        request,
+                        db_obj=(
+                            Job.objects.get(pk=job) if job else Task.objects.get(pk=task)
+                        ),
                     ),
-                ),
-                "lambda": True,
-            },
-            kwargs={
-                "function": lambda_func,
-                "threshold": threshold,
-                "task": task,
-                "job": job,
-                "quality": quality,
-                "cleanup": cleanup,
-                "conv_mask_to_poly": conv_mask_to_poly,
-                "mapping": mapping,
-                "max_distance": max_distance
-            },
-            depends_on=define_dependent_job(queue, request.user.id, settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME)
-        )
+                    "lambda": True,
+                },
+                kwargs={
+                    "function": lambda_func,
+                    "threshold": threshold,
+                    "task": task,
+                    "job": job,
+                    "quality": quality,
+                    "cleanup": cleanup,
+                    "conv_mask_to_poly": conv_mask_to_poly,
+                    "mapping": mapping,
+                    "max_distance": max_distance
+                },
+                depends_on=define_dependent_job(queue, request.user.id, settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME)
+            )
 
-        queue.enqueue_job(rq_job)
+            queue.enqueue_job(rq_job)
 
         return LambdaJob(rq_job)
 
