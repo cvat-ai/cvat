@@ -536,7 +536,7 @@ class TestGetCloudStorageContent:
         expected_content: Optional[Any],
     ):
         result = self._test_get_cloud_storage_content(
-            cloud_storage_id, version, manifest, prefix=prefix, page_size=page_size
+            cloud_storage_id, manifest, prefix=prefix, page_size=page_size
         )
         if expected_content:
             assert result["content"] == expected_content
