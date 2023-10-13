@@ -547,17 +547,18 @@ export class MasksHandlerImpl implements MasksHandler {
                     }));
 
                 this.isInsertion = true;
-            } else if (!this.isDrawing) {
-                // initialize drawing pipeline if not started
-                this.isDrawing = true;
-                this.redraw = drawData.redraw || null;
+            } else {
+                this.updateBrushTools(drawData.brushTool);
+                if (!this.isDrawing) {
+                    // initialize drawing pipeline if not started
+                    this.isDrawing = true;
+                    this.redraw = drawData.redraw || null;
+                }
             }
 
             this.canvas.getElement().parentElement.style.display = 'block';
             this.startTimestamp = Date.now();
         }
-
-        this.updateBrushTools(drawData.brushTool);
 
         if (!drawData.enabled && this.isDrawing) {
             try {
