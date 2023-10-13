@@ -27,9 +27,14 @@ cvat:
   frontend:
     imagePullPolicy: Never
 
+keydb:
+  resources:
+    requests:
+
 traefik:
   logs:
     general:
       level: DEBUG
     access:
       enabled: true
+
