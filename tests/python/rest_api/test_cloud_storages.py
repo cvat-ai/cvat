@@ -5,7 +5,6 @@
 
 import io
 import json
-from enum import Enum
 from http import HTTPStatus
 from typing import Any, Optional
 
