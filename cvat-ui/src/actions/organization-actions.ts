@@ -104,6 +104,7 @@ export function activateOrganizationAsync(): ThunkAction {
                 } : {});
                 const [organization] = organizations;
                 if (organization?.slug === curSlug) {
+                    await core.organizations.activate(organization);
                     dispatch(organizationActions.activateOrganizationSuccess(organization));
                 } else {
                     localStorage.removeItem('currentOrganization');
