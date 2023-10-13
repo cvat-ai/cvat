@@ -309,6 +309,9 @@ clickhouse:
     username: user
     existingSecret: cvat-analytics-secret
     existingSecretKey: CLICKHOUSE_PASSWORD
+  # Consider enabling zookeeper if a distributed configuration is used
+  zookeeper:
+    enabled: false
 
 grafana:
   datasources:
