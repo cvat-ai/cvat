@@ -25,11 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6991>)
 
 - Helm: set memory request for keydb
-- Supervisord:
+  (<https://github.com/opencv/cvat/pull/6945>)
+
+- Supervisord (<https://github.com/opencv/cvat/pull/6945>):
   - added `autorestart=true` option for all workers
   - unified program names to use dashes as delimiter instead of mixed '_' and '-'
   - minor improvements to supervisor configurations
-  (<https://github.com/opencv/cvat/pull/6945>)
 
 ### Removed
 
