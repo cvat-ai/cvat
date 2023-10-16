@@ -210,7 +210,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         id: string | null;
         isAborted: boolean;
         latestResponse: {
-            mask: number[][],
+            rle: number[],
             points: number[][],
             bounds?: [number, number, number, number],
         };
@@ -245,7 +245,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             id: null,
             isAborted: false,
             latestResponse: {
-                mask: [],
+                rle: [],
                 points: [],
             },
             lastestApproximatedPoints: [],
@@ -291,7 +291,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction = {
                 id: null,
                 isAborted: false,
-                latestResponse: { mask: [], points: [] },
+                latestResponse: { rle: [], points: [] },
                 lastestApproximatedPoints: [],
                 latestRequest: null,
                 hideMessage: null,
@@ -386,13 +386,27 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                 // approximation with cv.approxPolyDP
                 const approximated = await this.approximateResponsePoints(response.points);
+                const rle = core.utils.mask2Rle(response.mask.flat());
+                if (response.bounds) {
+                    rle.push(...response.bounds);
+                } else {
+                    const height = response.mask.length;
+                    const width = response.mask[0].length;
+                    rle.push(0, 0, width - 1, height - 1);
+                }
+
+                response.mask = rle;
 
                 if (this.interaction.id !== interactionId || this.interaction.isAborted) {
                     // new interaction session or the session is aborted
                     return;
                 }
 
-                this.interaction.latestResponse = response;
+                this.interaction.latestResponse = {
+                    bounds: response.bounds,
+                    points: response.points,
+                    rle,
+                };
                 this.interaction.lastestApproximatedPoints = approximated;
 
                 this.setState({ pointsReceived: !!response.points.length });
@@ -406,20 +420,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             }
 
             if (this.interaction.lastestApproximatedPoints.length) {
-                const maskPoints = this.interaction.latestResponse.mask.flat();
-                if (this.interaction.latestResponse.bounds) {
-                    maskPoints.push(...this.interaction.latestResponse.bounds);
-                } else {
-                    const height = this.interaction.latestResponse.mask.length;
-                    const width = this.interaction.latestResponse.mask[0].length;
-                    maskPoints.push(0, 0, width - 1, height - 1);
-                }
                 canvasInstance.interact({
                     enabled: true,
                     intermediateShape: {
                         shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
                         points: convertMasksToPolygons ? this.interaction.lastestApproximatedPoints.flat() :
-                            maskPoints,
+                            this.interaction.latestResponse.rle,
                     },
                     onChangeToolsBlockerState: this.onChangeToolsBlockerState,
                 });
@@ -455,7 +461,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction.isAborted = true;
             this.interaction.latestRequest = null;
             if (this.interaction.lastestApproximatedPoints.length) {
-                this.constructFromPoints(this.interaction.lastestApproximatedPoints);
+                this.constructFromPoints();
             }
         } else if (shapesUpdated) {
             const interactor = activeInteractor as MLModel;
@@ -845,7 +851,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
-    private async constructFromPoints(points: number[][]): Promise<void> {
+    private async constructFromPoints(): Promise<void> {
         const { convertMasksToPolygons } = this.state;
         const {
             frame, labels, curZOrder, jobInstance, activeLabelID, createAnnotations,
@@ -858,29 +864,20 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 source: core.enums.Source.SEMI_AUTO,
                 label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                 shapeType: ShapeType.POLYGON,
-                points: points.flat(),
+                points: this.interaction.lastestApproximatedPoints.flat(),
                 occluded: false,
                 zOrder: curZOrder,
             });
 
             createAnnotations(jobInstance, frame, [object]);
         } else {
-            const maskPoints = this.interaction.latestResponse.mask.flat();
-            if (this.interaction.latestResponse.bounds) {
-                maskPoints.push(...this.interaction.latestResponse.bounds);
-            } else {
-                const height = this.interaction.latestResponse.mask.length;
-                const width = this.interaction.latestResponse.mask[0].length;
-                maskPoints.push(0, 0, width - 1, height - 1);
-            }
-
             const object = new core.classes.ObjectState({
                 frame,
                 objectType: ObjectType.SHAPE,
                 source: core.enums.Source.SEMI_AUTO,
                 label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                 shapeType: ShapeType.MASK,
-                points: maskPoints,
+                points: this.interaction.latestResponse.rle,
                 occluded: false,
                 zOrder: curZOrder,
             });
@@ -1274,10 +1271,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }
 
                                 if (data.type === 'mask') {
+                                    const [left, top, right, bottom] = data.mask.splice(-4);
+                                    const rle = core.utils.mask2Rle(data.mask);
+                                    rle.push(left, top, right, bottom);
                                     return new core.classes.ObjectState({
                                         ...objectData,
                                         shapeType: data.type,
-                                        points: data.mask,
+                                        points: rle,
                                     });
                                 }
 
