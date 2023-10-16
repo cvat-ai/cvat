@@ -254,6 +254,7 @@ IAM_CONTEXT_BUILDERS = ['cvat.apps.iam.utils.build_iam_context',]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
+ORG_INVITATION_EXPIRY_DAYS = 7
 
 
 AUTHENTICATION_BACKENDS = [
@@ -699,6 +700,11 @@ ASSET_MAX_COUNT_PER_GUIDE = 30
 SMOKESCREEN_ENABLED = True
 
 EXTRA_RULES_PATHS = []
+
+# By default, email backend is django.core.mail.backends.smtp.EmailBackend
+# But it won't work without additional configuration, so we set it to None
+# to check configuration and throw ImproperlyConfigured if thats a case
+EMAIL_BACKEND = None
 
 LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME = strtobool(os.getenv('LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME', 'false'))
 LIMIT_ONE_USER_TO_ONE_EXPORT_TASK_AT_A_TIME = strtobool(os.getenv('LIMIT_ONE_USER_TO_ONE_EXPORT_TASK_AT_A_TIME', 'false'))

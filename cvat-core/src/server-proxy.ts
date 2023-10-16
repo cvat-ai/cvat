@@ -13,7 +13,7 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, FunctionsResponseBody,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAcceptInvitation,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -454,6 +454,34 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
     } catch (errorData) {
         throw generateError(errorData);
     }
+}
+
+async function acceptOrganizationInvitation(
+    username: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    confirmations: Record<string, string>,
+    key: string,
+): Promise<SerializedAcceptInvitation> {
+    let response = null;
+    let orgSlug = null;
+    try {
+        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`, {
+            username,
+            first_name: firstName,
+            last_name: lastName,
+            password1: password,
+            password2: password,
+            confirmations,
+        });
+        orgSlug = response.data.organization_slug;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return orgSlug;
 }
 
 async function getSelf(): Promise<SerializedUser> {
@@ -2083,6 +2111,15 @@ async function inviteOrganizationMembers(orgId, data) {
     }
 }
 
+async function resendOrganizationInvitation(key) {
+    const { backendAPI } = config;
+    try {
+        await Axios.post(`${backendAPI}/invitations/${key}/resend`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function updateOrganizationMembership(membershipId, data) {
     const { backendAPI } = config;
     let response = null;
@@ -2505,8 +2542,10 @@ export default Object.freeze({
         invitation: getMembershipInvitation,
         delete: deleteOrganization,
         invite: inviteOrganizationMembers,
+        resendInvitation: resendOrganizationInvitation,
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
+        acceptInvitation: acceptOrganizationInvitation,
     }),
 
     webhooks: Object.freeze({
