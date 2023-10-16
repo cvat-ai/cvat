@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedOrganization, SerializedOrganizationContact } from './server-response-types';
+import { SerializedOrganization, SerializedOrganizationContact, SerializedUser } from './server-response-types';
 import { checkObjectType, isEnum } from './common';
 import config from './config';
 import { MembershipRole } from './enums';
@@ -12,15 +12,82 @@ import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import User from './user';
 
-interface Membership {
-    user: User;
+interface SerializedInvitationData {
+    created_date: string;
+    key: string;
+    owner: SerializedUser;
+}
+
+interface SerializedMembershipData {
+    id: number;
+    user: SerializedUser;
     is_active: boolean;
     joined_date: string;
     role: MembershipRole;
-    invitation: {
-        created_date: string;
-        owner: User;
-    } | null;
+    invitation: SerializedInvitationData | null;
+}
+
+export class Invitation {
+    #createdDate: string;
+    #owner: User | null;
+    #key: string;
+
+    constructor(initialData: SerializedInvitationData) {
+        this.#createdDate = initialData.created_date;
+        this.#owner = initialData.owner ? new User(initialData.owner) : null;
+        this.#key = initialData.key;
+    }
+
+    get owner(): User | null {
+        return this.#owner;
+    }
+
+    get createdDate(): string {
+        return this.#createdDate;
+    }
+
+    get key(): string {
+        return this.#key;
+    }
+}
+
+export class Membership {
+    #id: number;
+    #user: User;
+    #isActive: boolean;
+    #joinedDate: string;
+    #role: MembershipRole;
+    #invitation: Invitation | null;
+
+    constructor(initialData: SerializedMembershipData) {
+        this.#id = initialData.id;
+        this.#user = new User(initialData.user);
+        this.#isActive = initialData.is_active;
+        this.#joinedDate = initialData.joined_date;
+        this.#role = initialData.role;
+        this.#invitation = initialData.invitation ? new Invitation(initialData.invitation) : null;
+    }
+
+    get id(): number {
+        return this.#id;
+    }
+
+    get user(): User {
+        return this.#user;
+    }
+
+    get isActive(): boolean {
+        return this.#isActive;
+    }
+    get joinedDate(): string {
+        return this.#joinedDate;
+    }
+    get role(): MembershipRole {
+        return this.#role;
+    }
+    get invitation(): Invitation {
+        return this.#invitation;
+    }
 }
 
 export default class Organization {
@@ -193,6 +260,15 @@ export default class Organization {
         );
         return result;
     }
+
+    public async resendInvitation(key: string): Promise<void> {
+        const result = await PluginRegistry.apiWrapper.call(
+            this,
+            Organization.prototype.resendInvitation,
+            key,
+        );
+        return result;
+    }
 }
 
 Object.defineProperties(Organization.prototype.save, {
@@ -234,27 +310,23 @@ Object.defineProperties(Organization.prototype.members, {
             checkObjectType('pageSize', pageSize, 'number');
 
             const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
-            await Promise.all(
-                result.results.map((membership) => {
-                    const { invitation } = membership;
-                    membership.user = new User(membership.user);
-                    if (invitation) {
-                        return serverProxy.organizations
-                            .invitation(invitation)
-                            .then((invitationData) => {
-                                membership.invitation = invitationData;
-                            })
-                            .catch(() => {
-                                membership.invitation = null;
-                            });
-                    }
+            const memberships = await Promise.all(result.results.map(async (rawMembership) => {
+                const { invitation } = rawMembership;
+                let rawInvitation = null;
+                if (invitation) {
+                    try {
+                        rawInvitation = await serverProxy.organizations.invitation(invitation);
+                    // eslint-disable-next-line no-empty
+                    } catch (e) {}
+                }
+                return new Membership({
+                    ...rawMembership,
+                    invitation: rawInvitation,
+                });
+            }));
 
-                    return Promise.resolve();
-                }),
-            );
-
-            result.results.count = result.count;
-            return result.results;
+            memberships.count = result.count;
+            return memberships;
         },
     },
 });
@@ -343,6 +415,19 @@ Object.defineProperties(Organization.prototype.leave, {
                     );
                 }
                 await serverProxy.organizations.deleteMembership(membership.id);
+            }
+        },
+    },
+});
+
+Object.defineProperties(Organization.prototype.resendInvitation, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(key: string) {
+            checkObjectType('key', key, 'string');
+            if (typeof this.id === 'number') {
+                await serverProxy.organizations.resendInvitation(key);
             }
         },
     },
