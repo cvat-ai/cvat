@@ -15,9 +15,10 @@ import Input from 'antd/lib/input';
 import Row from 'antd/lib/row';
 import Col from 'antd/lib/col';
 import Empty from 'antd/lib/empty';
+import Alert from 'antd/lib/alert';
 import notification from 'antd/lib/notification';
 import {
-    FileOutlined, FolderOutlined, RightOutlined, SearchOutlined, InfoCircleOutlined, SyncOutlined,
+    FileOutlined, FolderOutlined, RightOutlined, SearchOutlined, SyncOutlined,
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -117,13 +118,16 @@ function RemoteBrowser(props: Props): JSX.Element {
     const {
         resource, manifestPath, defaultPrefix, onSelectFiles,
     } = props;
+
+    const pathFromDefPrefix = prefixToPath(defaultPrefix);
+
     const isMounted = useIsMounted();
     const resourceRef = useRef<Props['resource']>(resource);
     const manifestPathRef = useRef<string | undefined>(manifestPath);
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [isFetching, setFetching] = useState(false);
-    const [currentPath, setCurrentPath] = useState(prefixToPath(defaultPrefix));
+    const [currentPath, setCurrentPath] = useState(pathFromDefPrefix);
     const [content, setContent] = useState<Node>(updateRoot(getDefaultRoot(), defaultPrefix));
 
     let dataSource = content;
@@ -212,15 +216,17 @@ function RemoteBrowser(props: Props): JSX.Element {
     // we need to request content again
     // to do that, we reset initialized state
     const resetDataSource = (): void => {
-        dataSource.searchString = curSearchString;
-        dataSource.children = [];
-        dataSource.initialized = false;
-        dataSource.nextToken = null;
-        updateContent().then((updated) => {
-            if (updated) {
-                setCurrentPage(1);
-            }
-        });
+        if (dataSource.searchString !== curSearchString) {
+            dataSource.searchString = curSearchString;
+            dataSource.children = [];
+            dataSource.initialized = false;
+            dataSource.nextToken = null;
+            updateContent().then((updated) => {
+                if (updated) {
+                    setCurrentPage(1);
+                }
+            });
+        }
     };
 
     // when change cloud storage or manifest
@@ -355,13 +361,6 @@ function RemoteBrowser(props: Props): JSX.Element {
                 <Col span={22}>
                     <Input
                         addonBefore={<SearchOutlined />}
-                        suffix={
-                            (resource !== 'share' && resource.prefix) ? (
-                                <CVATTooltip title={`Default prefix "${resource.prefix}" is used`}>
-                                    <InfoCircleOutlined style={{ opacity: 0.5 }} />
-                                </CVATTooltip>
-                            ) : ''
-                        }
                         disabled={isFetching}
                         placeholder='Search by prefix'
                         value={curSearchString}
@@ -384,6 +383,23 @@ function RemoteBrowser(props: Props): JSX.Element {
                         </Button>
                     </CVATTooltip>
                 </Col>
+                { defaultPrefix && dataSource.searchString &&
+                pathFromDefPrefix.length === currentPath.length &&
+                pathFromDefPrefix.every((el, idx) => currentPath[idx] === el) &&
+                !dataSource.searchString.includes(prefixToSearch(defaultPrefix) || '') && (
+                    <Col className='cvat-remote-browser-incorrect-cs-prefix-wrapper' span={24}>
+                        <Alert
+                            type='warning'
+                            message={(
+                                <>
+                                    <Text>Specified prefix does not include the default prefix </Text>
+                                    <Text strong>{`"${defaultPrefix}". `}</Text>
+                                    <Text>There is no content to show.</Text>
+                                </>
+                            )}
+                        />
+                    </Col>
+                )}
             </Row>
 
             <div className='cvat-remote-browser-table-wrapper'>

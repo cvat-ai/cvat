@@ -31,6 +31,10 @@
     margin-top: $grid-unit-size;
 }
 
+.cvat-remote-browser-incorrect-cs-prefix-wrapper {
+    margin-top: $grid-unit-size;
+}
+
 .cvat-remote-browser-table-wrapper {
     .ant-table-wrapper {
         height: $grid-unit-size * 64;
@@ -41,6 +45,10 @@
 
         .ant-pagination {
             display: none;
+        }
+
+        .ant-empty {
+            margin: $grid-unit-size * 24 0 $grid-unit-size * 24 0;
         }
     }
 
