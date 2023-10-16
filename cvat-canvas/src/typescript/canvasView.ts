@@ -1796,7 +1796,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.shapeType === 'mask') {
                     const { points } = state;
                     const [left, top, right, bottom] = points.slice(-4);
-                    const imageBitmap = expandChannels(255, 255, 255, points, 4);
+                    const imageBitmap = expandChannels(255, 255, 255, points);
                     imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
                         (dataURL: string) => new Promise((resolve) => {
                             const img = document.createElement('img');
@@ -2893,7 +2893,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const colorization = this.getShapeColorization(state);
         const color = fabric.Color.fromHex(colorization.fill).getSource();
         const [left, top, right, bottom] = points.slice(-4);
-        const imageBitmap = expandChannels(color[0], color[1], color[2], points, 4);
+        const imageBitmap = expandChannels(color[0], color[1], color[2], points);
 
         const image = this.adoptedContent.image().attr({
             clientID: state.clientID,

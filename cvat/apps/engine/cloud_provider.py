@@ -467,7 +467,7 @@ class AWS_S3(_CloudStorage):
             **({'Prefix': prefix} if prefix else {}),
             **({'ContinuationToken': next_token} if next_token else {}),
         )
-        files = [f['Key'] for f in response.get('Contents', [])]
+        files = [f['Key'] for f in response.get('Contents', []) if not f['Key'].endswith('/')]
         directories = [p['Prefix'] for p in response.get('CommonPrefixes', [])]
 
         return {
