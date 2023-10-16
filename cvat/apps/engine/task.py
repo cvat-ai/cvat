@@ -42,7 +42,8 @@ slogger = ServerLogManager(__name__)
 def create(db_task, data, request):
     """Schedule the task"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    cm = q.connection.lock(f'{q.name}-lock') if settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME else nullcontext()
+    user_id = request.user.id
+    cm = q.connection.lock(f'{q.name}-lock-{user_id}') if settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME else nullcontext()
 
     with cm:
         q.enqueue_call(
@@ -50,7 +51,7 @@ def create(db_task, data, request):
             args=(db_task.pk, data),
             job_id=f"create:task.id{db_task.pk}",
             meta=get_rq_job_meta(request=request, db_obj=db_task),
-            depends_on=define_dependent_job(q, request.user.id, settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME),
+            depends_on=define_dependent_job(q, user_id, settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME),
         )
 
 ############################# Internal implementation for server API

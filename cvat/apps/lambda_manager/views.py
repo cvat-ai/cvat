@@ -447,7 +447,8 @@ class LambdaQueue:
         # with invocation of non-trivial functions. For example, it cannot run
         # staticmethod, it cannot run a callable class. Thus I provide an object
         # which has __call__ function.
-        cm = queue.connection.lock(f'{queue.name}-lock') if settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME else nullcontext()
+        user_id = request.user.id
+        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}') if settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME else nullcontext()
         with cm:
             rq_job = queue.create_job(LambdaJob(None),
                 meta={
@@ -470,7 +471,7 @@ class LambdaQueue:
                     "mapping": mapping,
                     "max_distance": max_distance
                 },
-                depends_on=define_dependent_job(queue, request.user.id, settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME)
+                depends_on=define_dependent_job(queue, user_id, settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME)
             )
 
             queue.enqueue_job(rq_job)
