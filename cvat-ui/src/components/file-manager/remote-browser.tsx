@@ -18,7 +18,7 @@ import Empty from 'antd/lib/empty';
 import Alert from 'antd/lib/alert';
 import notification from 'antd/lib/notification';
 import {
-    FileOutlined, FolderOutlined, RightOutlined, SearchOutlined, SyncOutlined,
+    FileOutlined, FolderOutlined, RightOutlined, SearchOutlined, InfoCircleOutlined, SyncOutlined,
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -361,6 +361,11 @@ function RemoteBrowser(props: Props): JSX.Element {
                 <Col span={22}>
                     <Input
                         addonBefore={<SearchOutlined />}
+                        suffix={resource !== 'share' && !!resource.prefix && (
+                            <CVATTooltip title={`Default prefix "${resource.prefix}" is used`}>
+                                <InfoCircleOutlined style={{ opacity: 0.5 }} />
+                            </CVATTooltip>
+                        )}
                         disabled={isFetching}
                         placeholder='Search by prefix'
                         value={curSearchString}
@@ -392,9 +397,10 @@ function RemoteBrowser(props: Props): JSX.Element {
                             type='warning'
                             message={(
                                 <>
-                                    <Text>Specified prefix does not include the default prefix </Text>
-                                    <Text strong>{`"${defaultPrefix}". `}</Text>
-                                    <Text>There is no content to show.</Text>
+                                    <Text>
+                                        There is no intersection between the specified prefix and the default one
+                                    </Text>
+                                    <Text strong>{` "${defaultPrefix}". `}</Text>
                                 </>
                             )}
                         />
