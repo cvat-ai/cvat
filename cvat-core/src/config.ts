@@ -12,6 +12,7 @@ const config = {
     origin: '',
     uploadChunkSize: 100,
     removeUnderlyingMaskPixels: false,
+    onOrganizationChange: null,
 };
 
 export default config;

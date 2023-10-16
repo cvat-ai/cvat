@@ -272,6 +272,19 @@ Axios.interceptors.request.use((reqConfig) => {
     return reqConfig;
 });
 
+Axios.interceptors.response.use((response) => {
+    if (isResourceURL(response.config.url) &&
+        'organization' in (response.data || {})
+    ) {
+        const newOrgId: number | null = response.data.organization;
+        if (config.organization.organizationID !== newOrgId) {
+            config?.onOrganizationChange(newOrgId);
+        }
+    }
+
+    return response;
+});
+
 let token = store.get('token');
 if (token) {
     Axios.defaults.headers.common.Authorization = `Token ${token}`;
@@ -1998,29 +2011,6 @@ async function getOrganizations(filter) {
 
     return response.data.results;
 }
-
-Axios.interceptors.response.use((response) => {
-    if (isResourceURL(response.config.url) &&
-        'organization' in (response.data || {})
-    ) {
-        const newOrgId: number | null = response.data.organization;
-        if (newOrgId === null && config.organization.organizationID !== null) {
-            localStorage.removeItem('currentOrganization');
-            window.location.reload();
-        } else if (config.organization.organizationID !== newOrgId) {
-            getOrganizations({
-                filter: `{"and":[{"==":[{"var":"id"},${newOrgId}]}]}`,
-            }).then(([organization]) => {
-                if (organization) {
-                    localStorage.setItem('currentOrganization', organization.slug);
-                    window.location.reload();
-                }
-            });
-        }
-    }
-
-    return response;
-});
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {
     const { backendAPI } = config;

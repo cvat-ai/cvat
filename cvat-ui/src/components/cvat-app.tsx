@@ -59,7 +59,7 @@ import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-pag
 import GuidePage from 'components/md-guide/guide-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
-import { getCore } from 'cvat-core-wrapper';
+import { Organization, getCore } from 'cvat-core-wrapper';
 import { ErrorState, NotificationsState, PluginsState } from 'reducers';
 import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
@@ -142,6 +142,22 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
         EventRecorder.initSave();
+
+        core.config.onOrganizationChange = (newOrgId: number | null) => {
+            if (newOrgId === null) {
+                localStorage.removeItem('currentOrganization');
+                window.location.reload();
+            } else {
+                core.organizations.get({
+                    filter: `{"and":[{"==":[{"var":"id"},${newOrgId}]}]}`,
+                }).then(([organization]: Organization[]) => {
+                    if (organization) {
+                        localStorage.setItem('currentOrganization', organization.slug);
+                        window.location.reload();
+                    }
+                });
+            }
+        };
 
         customWaViewHit(location.pathname, location.search, location.hash);
         history.listen((newLocation) => {
