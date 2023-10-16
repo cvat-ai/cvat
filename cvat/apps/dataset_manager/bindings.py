@@ -1384,7 +1384,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         **kwargs
     ):
         instance_meta = instance_data.meta[instance_data.META_FIELD]
-        
+
         dm.SourceExtractor.__init__(
             self,
             subset=instance_meta["subset"],
