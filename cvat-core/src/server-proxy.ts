@@ -35,6 +35,8 @@ type Params = {
     action?: string,
 };
 
+tus.defaultOptions.storeFingerprintForResuming = false;
+
 function enableOrganization(): { org: string } {
     return { org: config.organization.organizationSlug || '' };
 }

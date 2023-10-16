@@ -9,7 +9,6 @@ const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
 const NO_BREAK_SPACE = '\u00a0';
 const CHANGELOG_URL = 'https://github.com/opencv/cvat/blob/develop/CHANGELOG.md';
 const LICENSE_URL = 'https://github.com/opencv/cvat/blob/develop/LICENSE';
-const GITTER_URL = 'https://gitter.im/opencv-cvat';
 const DISCORD_URL = 'https://discord.gg/fNR3eXfk6C';
 const GITHUB_URL = 'https://github.com/opencv/cvat';
 const GITHUB_IMAGE_URL = 'https://github.com/opencv/cvat/raw/develop/site/content/en/images/cvat.jpg';
@@ -133,7 +132,6 @@ export default {
     NO_BREAK_SPACE,
     CHANGELOG_URL,
     LICENSE_URL,
-    GITTER_URL,
     DISCORD_URL,
     GITHUB_URL,
     GITHUB_IMAGE_URL,
