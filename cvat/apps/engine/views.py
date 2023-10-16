@@ -152,7 +152,9 @@ class ServerViewSet(viewsets.ViewSet):
 
         if str(directory).startswith(settings.SHARE_ROOT) and directory.is_dir():
             data = []
-            for entry in (directory.iterdir() if not search_param else (f for f in directory.iterdir() if f.name.startswith(search_param))):
+            generator = directory.iterdir() if not search_param else (f for f in directory.iterdir() if f.name.startswith(search_param))
+
+            for entry in generator:
                 entry_type, entry_mime_type = None, None
                 if entry.is_file():
                     entry_type = "REG"
@@ -2531,7 +2533,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         try:
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
-            prefix = request.query_params.get('prefix')
+            prefix = request.query_params.get('prefix', "")
             page_size = request.query_params.get('page_size', str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE))
             if not page_size.isnumeric():
                 return HttpResponseBadRequest('Wrong value for page_size was found')
@@ -2541,8 +2543,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if prefix and prefix.startswith('/'):
                 prefix = prefix[1:]
 
-            if storage.prefix and prefix and not (storage.prefix.startswith(prefix) or prefix.startswith(storage.prefix)):
-                return Response(data=CloudStorageContentSerializer().data)
 
             next_token = request.query_params.get('next_token')
 

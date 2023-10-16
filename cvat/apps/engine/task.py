@@ -601,7 +601,7 @@ def _create_thread(
             if not manifest_file:
                 # NOTE: we cannot list files with specified pattern on the providers page because they don't provide such function
                 dirs = []
-                prefix = None
+                prefix = ""
 
                 while True:
                     for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):

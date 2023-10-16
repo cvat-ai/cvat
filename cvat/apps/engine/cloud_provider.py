@@ -233,7 +233,7 @@ class _CloudStorage(ABC):
     @abstractmethod
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
@@ -241,27 +241,37 @@ class _CloudStorage(ABC):
 
     def list_files_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
         _use_flat_listing: bool = False,
         _use_sort: bool = False,
     ) -> Dict:
+
+        if self.prefix and prefix and not (self.prefix.startswith(prefix) or prefix.startswith(self.prefix)):
+            return {
+                'content': [],
+                'next': None,
+            }
+
         search_prefix = prefix
-        if self.prefix and (len(prefix or "") < len(self.prefix)):
-            next_layer_and_tail = self.prefix[(prefix or "").find('/') + 1:].split(
-                "/", maxsplit=1
-            )
-            if 2 == len(next_layer_and_tail):
-                directory = (
-                    next_layer_and_tail[0]
-                    if not _use_flat_listing
-                    else self.prefix[: (prefix or "").find('/') + 1] + next_layer_and_tail[0] + "/"
+        if self.prefix and (len(prefix) < len(self.prefix)):
+            if '/' in self.prefix[len(prefix):]:
+                next_layer_and_tail = self.prefix[prefix.find('/') + 1:].split(
+                    "/", maxsplit=1
                 )
-                return {
-                    "content": [{"name": directory, "type": "DIR"}],
-                    "next": None,
-                }
+                if 2 == len(next_layer_and_tail):
+                    directory = (
+                        next_layer_and_tail[0]
+                        if not _use_flat_listing
+                        else self.prefix[: prefix.find('/') + 1] + next_layer_and_tail[0] + "/"
+                    )
+                    return {
+                        "content": [{"name": directory, "type": "DIR"}],
+                        "next": None,
+                    }
+                else:
+                    search_prefix = self.prefix
             else:
                 search_prefix = self.prefix
 
@@ -287,7 +297,7 @@ class _CloudStorage(ABC):
 
     def list_files(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         _use_flat_listing: bool = False,
     ) -> List[str]:
         all_files = []
@@ -467,7 +477,7 @@ class AWS_S3(_CloudStorage):
 
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
@@ -670,7 +680,7 @@ class AzureBlobContainer(_CloudStorage):
 
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
@@ -785,7 +795,7 @@ class GoogleCloudStorage(_CloudStorage):
 
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
