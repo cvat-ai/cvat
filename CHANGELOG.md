@@ -16,6 +16,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.7.6'></a>
+## \[2.7.6\] - 2023-10-13
+
+### Changed
+
+- Enabled nginx proxy buffering
+  (<https://github.com/opencv/cvat/pull/6991>)
+
+- Helm: set memory request for keydb
+  (<https://github.com/opencv/cvat/pull/6945>)
+
+- Supervisord (<https://github.com/opencv/cvat/pull/6945>):
+  - added `autorestart=true` option for all workers
+  - unified program names to use dashes as delimiter instead of mixed '_' and '-'
+  - minor improvements to supervisor configurations
+
+### Removed
+
+- Removed gitter link from about modal
+  (<https://github.com/opencv/cvat/pull/7002>)
+
+### Fixed
+
+- Persist image filters across jobs
+  (<https://github.com/opencv/cvat/pull/6953>)
+
+- Splitting skeleton tracks on jobs
+  (<https://github.com/opencv/cvat/pull/6968>)
+
+- Uploading skeleton tracks in COCO Keypoints format
+  (<https://github.com/opencv/cvat/pull/6969>)
+
+- Fixed Siammask tracker error on grayscale images
+  (<https://github.com/opencv/cvat/pull/6982>)
+
+- Fixed memory leak on client side when event listener was not removed together with its context
+  (<https://github.com/opencv/cvat/pull/6984>)
+
+- Fixed crash related to issue tries to mount to not existing parent
+  (<https://github.com/opencv/cvat/pull/6977>)
+
+- Added 'notranslate' markers to avoid issues caused by extension translators
+  (<https://github.com/opencv/cvat/pull/6993>)
+
+- Getting CS content when S3 bucket contains manually created directories
+  (<https://github.com/opencv/cvat/pull/6997>)
+
+- Optimized huge memory consumption when working with masks in the interface
+  (<https://github.com/opencv/cvat/pull/6996>)
+
+### Security
+
+- Security upgrade opencv-python-headless from 4.5.5.62 to 4.8.1.78
+  (<https://github.com/opencv/cvat/pull/6931>)
+
+- Added X-Frame-Options: deny
+  (<https://github.com/opencv/cvat/pull/6992>)
+
 <a id='changelog-2.7.5'></a>
 ## \[2.7.5\] - 2023-10-09
 
