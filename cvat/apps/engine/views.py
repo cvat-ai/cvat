@@ -2840,9 +2840,9 @@ def rq_exception_handler(rq_job, exc_type, exc_value, tb):
 def _download_file_from_bucket(db_storage, filename, key):
     storage = db_storage_to_storage_instance(db_storage)
 
-    data = storage.download_fileobj(key)
-    with open(filename, 'wb+') as f:
-        f.write(data.getbuffer())
+    with storage.download_fileobj(key) as data:
+        with open(filename, 'wb+') as f:
+            f.write(data.getbuffer())
 
 def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                         filename=None, location_conf=None, conv_mask_to_poly=True):

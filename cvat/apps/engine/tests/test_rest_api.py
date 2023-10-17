@@ -3306,6 +3306,13 @@ class TaskDataAPITestCase(ApiTestBase):
 
         return response
 
+    def _get_task_creation_status(self, tid, user, *, headers=None):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/tasks/{}/status'.format(tid),
+                **{'HTTP_' + k: v for k, v in (headers or {}).items()})
+
+        return response
+
     def _create_task(self, user, data):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/tasks', data=data, format="json")
@@ -3370,10 +3377,17 @@ class TaskDataAPITestCase(ApiTestBase):
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
                                         expected_uploaded_data_location=StorageChoice.LOCAL,
                                         dimension=DimensionType.DIM_2D,
+                                        expected_task_creation_status_state='Finished',
+                                        expected_task_creation_status_reason=None,
                                         *,
-                                        send_data_callback=None):
+                                        send_data_callback=None,
+                                        get_status_callback=None,
+                                        ):
         if send_data_callback is None:
             send_data_callback = self._run_api_v2_tasks_id_data_post
+
+        if get_status_callback is None:
+            get_status_callback = self._get_task_creation_status
 
         # create task
         response = self._create_task(user, spec)
@@ -3384,6 +3398,15 @@ class TaskDataAPITestCase(ApiTestBase):
         # post data for the task
         response = send_data_callback(task_id, user, data)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
+
+        if get_status_callback:
+            response = get_status_callback(task_id, user)
+            while response.data['state'] not in ('Failed', 'Finished'):
+                response = get_status_callback(task_id, user)
+            self.assertEqual(response.data['state'], expected_task_creation_status_state)
+            if expected_task_creation_status_state == 'Failed':
+                self.assertIn(expected_task_creation_status_reason, response.data['message'])
+                return
 
         response = self._get_task(user, task_id)
 
@@ -4270,7 +4293,7 @@ class TaskDataAPITestCase(ApiTestBase):
             with self.subTest(current_function_name(),
                 manifest=manifest,
                 caching_enabled=caching_enabled,
-            ), ExitStack() as es:
+            ):
                 task_data = task_data_common.copy()
 
                 task_data["use_cache"] = caching_enabled
@@ -4285,19 +4308,18 @@ class TaskDataAPITestCase(ApiTestBase):
                 images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
                 image_sizes = [self._share_image_sizes[v] for v in images]
 
+                kwargs = {}
                 if manifest:
                     task_data["server_files[1]"] = manifest_name
                 else:
-                    es.enter_context(self.assertRaisesMessage(FileNotFoundError,
-                        "Can't find upload manifest file"
-                    ))
-
-                    # Suppress stacktrace spam from another thread from the expected error
-                    es.enter_context(logging_disabled())
+                    kwargs.update({
+                        'expected_task_creation_status_state': 'Failed',
+                        'expected_task_creation_status_reason': "Can't find upload manifest file",
+                    })
 
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, storage_method, StorageChoice.LOCAL)
+                    image_sizes, storage_method, StorageChoice.LOCAL, **kwargs)
 
     def _test_api_v2_tasks_id_data_create_can_use_local_archive_with_predefined_sorting(self, user):
         task_spec = {
