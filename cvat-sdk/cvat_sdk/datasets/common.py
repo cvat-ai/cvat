@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import abc
-from typing import List
+from typing import List, Optional
 
 import attrs
 import attrs.validators
@@ -53,8 +53,12 @@ class Sample:
     frame_name: str
     """File name of the frame in its task."""
 
-    annotations: FrameAnnotations
-    """Annotations belonging to the frame."""
+    annotations: Optional[FrameAnnotations]
+    """
+    Annotations belonging to the frame.
+
+    Will be None if the dataset was created without loading annotations.
+    """
 
     media: MediaElement
     """Media data of the frame."""
