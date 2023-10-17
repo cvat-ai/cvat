@@ -6,6 +6,7 @@
 import io
 import json
 from enum import Enum
+from functools import partial
 from http import HTTPStatus
 from typing import Any, Optional
 
@@ -17,6 +18,7 @@ from deepdiff import DeepDiff
 from PIL import Image
 
 from shared.utils.config import get_method, make_api_client
+from shared.utils.s3 import make_client as make_s3_client
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -590,6 +592,47 @@ class TestGetCloudStorageContent:
                 break
 
         assert expected_content == current_content
+
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    def test_can_get_storage_content_with_manually_created_dirs(
+        self,
+        cloud_storage_id: int,
+        request,
+        cloud_storages,
+    ):
+        initial_content = self._test_get_cloud_storage_content(cloud_storage_id)["content"]
+        s3_client = make_s3_client()
+        cs_name = cloud_storages[cloud_storage_id]["resource"]
+        new_directory = "manually_created_directory/"
+
+        # directory is 0 size object that has a name ending with a forward slash
+        s3_client.create_file(
+            bucket=cs_name,
+            filename=new_directory,
+        )
+        request.addfinalizer(
+            partial(
+                s3_client.remove_file,
+                bucket=cs_name,
+                filename=new_directory,
+            )
+        )
+
+        content = self._test_get_cloud_storage_content(
+            cloud_storage_id,
+        )["content"]
+        assert len(initial_content) + 1 == len(content)
+        assert list(
+            filter(
+                lambda x: new_directory.strip() == x["name"] and "DIR" == x["mime_type"], content
+            )
+        )
+
+        content = self._test_get_cloud_storage_content(
+            cloud_storage_id,
+            prefix=new_directory,
+        )["content"]
+        assert not len(content)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
