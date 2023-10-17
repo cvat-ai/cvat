@@ -100,6 +100,7 @@ def handler(context, event):
             "type": "skeleton",
             "elements": [{
                 "label": obj_label["elements"][j]["name"],
+                "type": "points",
                 "points": [float(instance_keypoints[j][0]), float(instance_keypoints[j][1])],
                 "confidence": str(instance_scores[j]),
             } for j in obj_label["elements"]],
@@ -113,6 +114,7 @@ def handler(context, event):
             "type": "skeleton",
             "elements": [{
                 "label": obj_label["elements"][j]["name"],
+                "type": "points",
                 "points": [
                     float(instance_keypoints[j + offset][0]),
                     float(instance_keypoints[j + offset][1])
@@ -129,6 +131,7 @@ def handler(context, event):
             "type": "skeleton",
             "elements": [{
                 "label": obj_label["elements"][j]["name"],
+                "type": "points",
                 "points": [
                     float(instance_keypoints[j + offset][0]),
                     float(instance_keypoints[j + offset][1])
