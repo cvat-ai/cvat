@@ -90,7 +90,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         shutil.copytree(repo_root / "site", content_loc, symlinks=True)
 
         def run_npm_install():
-            subprocess.run(["npm", "install"], cwd=content_loc)
+            subprocess.run(["npm", "install"], cwd=content_loc) # nosec
 
         def run_hugo(
             destination_dir: os.PathLike,
@@ -147,7 +147,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
 def validate_env():
     for hugo in [hugo83, hugo110]:
         try:
-            subprocess.run([hugo, "version"], capture_output=True)
+            subprocess.run([hugo, "version"], capture_output=True) # nosec
         except (subprocess.CalledProcessError, FileNotFoundError) as ex:
             raise Exception(
                 f"Failed to run '{hugo}', please make sure it exists."
