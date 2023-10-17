@@ -391,7 +391,10 @@ function RemoteBrowser(props: Props): JSX.Element {
                 { defaultPrefix && dataSource.searchString &&
                 pathFromDefPrefix.length === currentPath.length &&
                 pathFromDefPrefix.every((el, idx) => currentPath[idx] === el) &&
-                !dataSource.searchString.includes(prefixToSearch(defaultPrefix) || '') && (
+                (
+                    !dataSource.searchString.includes(prefixToSearch(defaultPrefix) || '') &&
+                    !(prefixToSearch(defaultPrefix) || '').includes(dataSource.searchString)
+                ) && (
                     <Col className='cvat-remote-browser-incorrect-cs-prefix-wrapper' span={24}>
                         <Alert
                             type='warning'
