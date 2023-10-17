@@ -215,8 +215,8 @@ function RemoteBrowser(props: Props): JSX.Element {
     // in case of refetch request, or changing a search string
     // we need to request content again
     // to do that, we reset initialized state
-    const resetDataSource = (): void => {
-        if (dataSource.searchString !== curSearchString) {
+    const resetDataSource = (force = false): void => {
+        if (dataSource.searchString !== curSearchString || force) {
             dataSource.searchString = curSearchString;
             dataSource.children = [];
             dataSource.initialized = false;
@@ -369,8 +369,8 @@ function RemoteBrowser(props: Props): JSX.Element {
                         disabled={isFetching}
                         placeholder='Search by prefix'
                         value={curSearchString}
-                        onBlur={resetDataSource}
-                        onPressEnter={resetDataSource}
+                        onBlur={() => resetDataSource()}
+                        onPressEnter={() => resetDataSource()}
                         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                             setCurSearchString(event.target.value);
                         }}
@@ -381,7 +381,7 @@ function RemoteBrowser(props: Props): JSX.Element {
                         <Button
                             disabled={isFetching}
                             onClick={() => {
-                                resetDataSource();
+                                resetDataSource(true);
                             }}
                         >
                             <SyncOutlined />
