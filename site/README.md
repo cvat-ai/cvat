@@ -80,6 +80,29 @@ pip -m venv venv
 pip install -r requirements.txt
 ```
 
+The documentation site includes both old and new releases. Because of this,
+you will need tooling for all these releases. Currently, it means you need
+in your environment:
+- `hugo-0.110` - for new docs
+- `hugo-0.83` - for older docs
+
+Please download these hugo releases (both extended), and make such binaries
+available in your `PATH` environment variable.
+
+On Linux, you can install it this way:
+
+```bash
+wget https://github.com/gohugoio/hugo/releases/download/v0.110.0/hugo_extended_0.110.0_Linux-64bit.tar.gz
+(mkdir hugo_extended_0.110.0_Linux-64bit && tar -xf hugo_extended_0.110.0_Linux-64bit.tar.gz -C hugo_extended_0.110.0_Linux-64bit)
+cd hugo_extended_0.110.0_Linux-64bit
+sudo cp hugo /usr/local/bin/hugo-0.110
+
+wget https://github.com/gohugoio/hugo/releases/download/v0.83.0/hugo_extended_0.83.0_Linux-64bit.tar.gz
+(mkdir hugo_extended_0.83.0_Linux-64bit && tar -xf hugo_extended_0.83.0_Linux-64bit.tar.gz -C hugo_extended_0.83.0_Linux-64bit)
+cd hugo_extended_0.83.0_Linux-64bit
+sudo cp hugo /usr/local/bin/hugo-0.83
+```
+
 2. Use the commands that generate a static site in the `public/` folder:
 
 Make sure to generate the SDK code first.
