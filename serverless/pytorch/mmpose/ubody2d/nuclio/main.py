@@ -94,7 +94,6 @@ def handler(context, event):
         instance_scores = keypoint_scores[i]
 
         obj_label = context.user_data.labels[0]
-
         results.append({
             "confidence": 1,
             "label": obj_label["name"],
@@ -102,6 +101,38 @@ def handler(context, event):
             "elements": [{
                 "label": obj_label["elements"][j]["name"],
                 "points": [float(instance_keypoints[j][0]), float(instance_keypoints[j][1])],
+                "confidence": str(instance_scores[j]),
+            } for j in obj_label["elements"]],
+        })
+
+        offset = len(obj_label["elements"])
+        obj_label = context.user_data.labels[1]
+        results.append({
+            "confidence": 1,
+            "label": obj_label["name"],
+            "type": "skeleton",
+            "elements": [{
+                "label": obj_label["elements"][j]["name"],
+                "points": [
+                    float(instance_keypoints[j + offset][0]),
+                    float(instance_keypoints[j + offset][1])
+                ],
+                "confidence": str(instance_scores[j]),
+            } for j in obj_label["elements"]],
+        })
+
+        offset += len(obj_label["elements"])
+        obj_label = context.user_data.labels[2]
+        results.append({
+            "confidence": 1,
+            "label": obj_label["name"],
+            "type": "skeleton",
+            "elements": [{
+                "label": obj_label["elements"][j]["name"],
+                "points": [
+                    float(instance_keypoints[j + offset][0]),
+                    float(instance_keypoints[j + offset][1])
+                ],
                 "confidence": str(instance_scores[j]),
             } for j in obj_label["elements"]],
         })

@@ -9,7 +9,7 @@ metadata:
       [
         {
           "id": 0,
-          "name": "person",
+          "name": "body",
           "elements": [
               {
                   "id": 1,
@@ -78,8 +78,13 @@ metadata:
               {
                   "id": 17,
                   "name": "17"
-              },
-
+              }
+          ]
+        },
+        {
+          "id": 1,
+          "name": "feet",
+          "elements": [
               {
                   "id": 18,
                   "name": "18"
@@ -102,8 +107,13 @@ metadata:
               {
                   "id": 23,
                   "name": "23"
-              },
-
+              }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "face",
+          "elements": [
               {
                   "id": 24,
                   "name": "24"
@@ -376,7 +386,6 @@ metadata:
                   "id": 91,
                   "name": "91"
               }
-
           ]
         }
       ]
