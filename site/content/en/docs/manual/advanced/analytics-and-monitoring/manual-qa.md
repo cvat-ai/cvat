@@ -176,7 +176,8 @@ It has has the following elements:
 
 ### Issues workspace
 
-In the workspace, you can click on the issue, and add a comment on the issue, remove (**Remove**) it, or resolve (**Resolve**) it.
+In the workspace, you can click on the issue, and add a
+comment on the issue, remove (**Remove**) it, or resolve (**Resolve**) it.
 
 ![](/images/image232.jpg)
 
