@@ -61,11 +61,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         showExportModal(jobInstance: Job): void {
-            mixpanel.track('Exporting Job', { jobId: jobInstance.id });
             dispatch(exportActions.openExportDatasetModal(jobInstance));
         },
         showImportModal(jobInstance: Job): void {
-            mixpanel.track('Importing Job', { jobId: jobInstance.id });
             dispatch(importActions.openImportDatasetModal(jobInstance));
         },
         removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
@@ -175,11 +173,12 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             await loadNextJob();
         } else if (action === Actions.OPEN_TASK) {
             history.push(`/tasks/${jobInstance.taskId}`);
+            mixpanel.track('Opened task for job', { jobId: jobInstance.id, taskId: jobInstance.taskId });
         } else if (action.startsWith('state:')) {
             [, jobInstance.state] = action.split(':') as [string, JobState];
             updateJob(jobInstance).then((success) => {
                 if (success) {
-                    mixpanel.track('Updated job state', { jobId: jobInstance.id, newstate: jobInstance.state });
+                    mixpanel.track('Updated job state', { jobId: jobInstance.id, newState: jobInstance.state });
                     message.info('Job state updated', 2);
                     if (['rejected', 'completed'].includes(jobInstance.state)) {
                         loadNextJob();

@@ -16,6 +16,7 @@ import { clamp } from 'utils/math';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { Label, DimensionType } from 'cvat-core-wrapper';
+import mixpanel from 'mixpanel-browser';
 
 interface Props {
     shapeType: ShapeType;
@@ -55,6 +56,11 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
     } = props;
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
+    mixpanel.track('Engaged draw tool',
+        {
+            jobId: jobInstance.id,
+            shape: shapeType,
+        });
     return (
         <div className='cvat-draw-shape-popover-content'>
             <Row justify='start'>

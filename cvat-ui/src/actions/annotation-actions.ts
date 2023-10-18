@@ -17,6 +17,7 @@ import {
 } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
+import mixpanel from 'mixpanel-browser';
 
 import {
     ActiveControl,
@@ -348,6 +349,13 @@ export function removeAnnotationsAsync(
                     states,
                 },
             });
+            mixpanel.track('Removed annotations for job',
+                {
+                    jobId: jobInstance.id,
+                    startFrame,
+                    endFrame,
+                    trackKeyFramesOnly: delTrackKeyframesOnly,
+                });
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_FAILED,
@@ -1069,6 +1077,20 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
                     states,
                 },
             });
+            if (sessionInstance.annotations.hasUnsavedChanges()) {
+                const annotationData = sessionInstance.annotations.map((annotation: any) => ({
+                    annotationId: annotation.label.id,
+                    shape: annotation.shapeType,
+                    points: annotation.points,
+                }));
+                mixpanel.track('Saved annotations for session',
+                    {
+                        jobId: sessionInstance.id,
+                        frame,
+                        annotations: annotationData,
+
+                    });
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED,
@@ -1319,8 +1341,9 @@ export function changeGroupColorAsync(group: number, color: string): ThunkAction
     };
 }
 
-export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, frameTo: number): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
+export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, frameTo: number)
+    : ThunkAction<Promise<number | null>> {
+    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<number | null> => {
         try {
             const {
                 settings: {
@@ -1346,6 +1369,7 @@ export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, 
             if (frame !== null) {
                 dispatch(changeFrameAsync(frame));
             }
+            return frame;
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.SEARCH_ANNOTATIONS_FAILED,
@@ -1353,12 +1377,14 @@ export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, 
                     error,
                 },
             });
+            return null;
         }
     };
 }
 
-export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, frameTo: number): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
+export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, frameTo: number)
+    : ThunkAction<Promise<number | null>> {
+    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<number | null> => {
         try {
             const {
                 settings: {
@@ -1381,6 +1407,7 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
             if (frame !== null) {
                 dispatch(changeFrameAsync(frame));
             }
+            return frame;
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.SEARCH_EMPTY_FRAME_FAILED,
@@ -1388,6 +1415,7 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
                     error,
                 },
             });
+            return null;
         }
     };
 }
