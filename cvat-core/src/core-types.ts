@@ -26,7 +26,7 @@ export interface MLModelTip {
 
 export interface MLModelLabel {
     name: string;
-    type: ShapeType | 'any';
+    type: ShapeType | 'unknown';
     attributes: ModelAttribute[];
     elements?: MLModelLabel[];
 }

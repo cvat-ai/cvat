@@ -28,7 +28,7 @@ import lodash from 'lodash';
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
-    getCore, Attribute, Label, MLModel,
+    getCore, Attribute, Label, MLModel, ObjectState,
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -1222,14 +1222,20 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         const result = await core.lambda.call(jobInstance.taskId, model, {
                             ...body, frame, job: jobInstance.id,
                         });
+
                         const states = result.map(
                             (data: any): any => {
                                 const jobLabel = (jobInstance.labels as Label[])
                                     .find((jLabel: Label): boolean => jLabel.name === data.label);
-                                const [modelLabel] = Object.entries(body.mapping)
-                                    .find(([, { name }]) => name === data.label) || [];
 
-                                if (!jobLabel || !modelLabel) return null;
+                                // const [modelLabel] = Object.entries(body.mapping)
+                                //     .find(([, { name }]) => name === data.label) || [];
+
+                                // if (!jobLabel || !modelLabel) return null;
+
+                                if (!jobLabel) {
+                                    return null;
+                                }
 
                                 const objectData = {
                                     label: jobLabel,
@@ -1262,10 +1268,38 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     zOrder: curZOrder,
                                 };
 
-                                if (data.type === 'skeleton') {
-                                    const elements = data.elements
-                                    const jobLabel = (jobInstance.labels as Label[])
-                                    .find((jLabel: Label): boolean => jLabel.name === data.label);
+                                if (data.type === 'skeleton' && jobLabel.type === ShapeType.SKELETON) {
+                                    const elements = (jobLabel.structure?.sublabels || []).map((sublabel) => {
+                                        const element = data.elements.find((el) => el.label === sublabel.name);
+                                        if (element) {
+                                            return {
+                                                label: sublabel,
+                                                objectType: ObjectType.SHAPE,
+                                                shapeType: sublabel.type,
+                                                frame,
+                                                soruce: core.enums.Source.AUTO,
+                                                points: element.points,
+                                                outside: false,
+                                            };
+                                        }
+
+                                        return {
+                                            label: sublabel,
+                                            objectType: ObjectType.SHAPE,
+                                            shapeType: sublabel.type,
+                                            frame,
+                                            soruce: core.enums.Source.AUTO,
+                                            points: [0, 0],
+                                            outside: true,
+                                        };
+                                    }).map((elementData) => new core.classes.ObjectState({ ...elementData }));
+
+                                    return new core.classes.ObjectState({
+                                        ...objectData,
+                                        shapeType: ShapeType.SKELETON,
+                                        points: [],
+                                        elements,
+                                    });
                                 }
 
                                 if (data.type === 'mask' && data.points && body.convMaskToPoly) {
@@ -1295,7 +1329,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             },
                         ).filter((state: any) => state);
 
-                        createAnnotations(jobInstance, frame, states);
+                        createAnnotations(jobInstance, frame, states.filter((state: ObjectState | null) => !!state));
                         const { onSwitchToolsBlockerState } = this.props;
                         onSwitchToolsBlockerState({ buttonVisible: false });
                     } catch (error: any) {

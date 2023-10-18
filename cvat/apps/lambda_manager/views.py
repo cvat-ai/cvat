@@ -149,7 +149,7 @@ class LambdaFunction:
 
             return [{
                 'name': label.get('name'),
-                'type': label.get('type', 'any'),
+                'type': label.get('type', 'unknown'),
                 'attributes': parse_attributes(label.get('attributes', [])),
                 'elements': parse_labels(label.get('elements', []))
             } for label in spec]
@@ -421,9 +421,12 @@ class LambdaFunction:
                 #         attr["name"] = mapped_attributes[attr['name']]
                 #         item["attributes"].append(attr)
 
-                item['label'] = mapping[item_label]
+                item['label'] = mapping[item_label]['name']
                 if 'elements' in item:
-                    item['elements'] = filter(lambda x: x['label'] in mapping[item_label]['elements'], item['elements'])
+                    item['elements'] = list(filter(lambda x: x['label'] in mapping[item_label]['elements'], item['elements']))
+                    for element in item['elements']:
+                        element_label = element['label']
+                        element['label'] = mapping[item_label]['elements'][element_label]['name']
                 response_filtered.append(item)
                 response = response_filtered
 

@@ -30,6 +30,10 @@ interface Props {
     onUpdateMatch(match: Match): void;
 }
 
+function labelsCompatible(modelLabel: LabelInterface, taskLabel: LabelInterface): boolean {
+    return modelLabel.type === taskLabel.type || (modelLabel.type === 'unknown' && taskLabel.type !== 'skeleton');
+}
+
 function computeAutoMatch(
     modelLabels: LabelInterface[],
     taskLabels: LabelInterface[],
@@ -39,10 +43,7 @@ function computeAutoMatch(
         for (let j = 0; j < taskLabels.length; j++) {
             const modelLabel = modelLabels[i];
             const taskLabel = taskLabels[j];
-            if (
-                modelLabel.name === taskLabel.name &&
-                (modelLabel.type === taskLabel.type || modelLabel.type === 'any' || taskLabel.type === 'any')
-            ) {
+            if (modelLabel.name === taskLabel.name && labelsCompatible(modelLabel, taskLabel)) {
                 autoMatch.push([modelLabel, taskLabel]);
             }
         }
@@ -140,9 +141,7 @@ function LabelsMatcher(props: Props): JSX.Element {
                             }}
                         >
                             {notMappedTaskLabels
-                                .filter((label) => (
-                                    modelLabelValue.type === 'any' || label.type === 'any' || modelLabelValue.type === label.type
-                                )).map((label) => (
+                                .filter((label) => labelsCompatible(modelLabelValue, label)).map((label) => (
                                     <Select.Option value={label.name}>{label.name}</Select.Option>
                                 ))}
                         </Select>
@@ -168,9 +167,7 @@ function LabelsMatcher(props: Props): JSX.Element {
                             }}
                         >
                             {notMappedModelLabels
-                                .filter((label) => (
-                                    label.type === 'any' || taskLabelValue.type === 'any' || label.type === taskLabelValue.type
-                                )).map((label) => (
+                                .filter((label) => labelsCompatible(label, taskLabelValue)).map((label) => (
                                     <Select.Option value={label.name}>{label.name}</Select.Option>
                                 ))}
                         </Select>
