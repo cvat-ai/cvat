@@ -118,267 +118,267 @@ jobs:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
 
-  # rest_api_testing:
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
+  rest_api_testing:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-  #     - uses: actions/setup-python@v4
-  #       with:
-  #         python-version: '3.8'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
 
-  #     - name: Download CVAT server image
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: cvat_server
-  #         path: /tmp/cvat_server/
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
 
-  #     - name: Download CVAT UI images
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: cvat_ui
-  #         path: /tmp/cvat_ui/
+      - name: Download CVAT UI images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
 
-  #     - name: Load Docker images
-  #       run: |
-  #         docker load --input /tmp/cvat_server/image.tar
-  #         docker load --input /tmp/cvat_ui/image.tar
-  #         docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
-  #         docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
-  #         docker image ls -a
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
+          docker image ls -a
 
-  #     - name: Upload expected schema as an artifact
-  #       if: failure() && steps.verify_schema.conclusion == 'failure'
-  #       uses: actions/upload-artifact@v3.1.2
-  #       with:
-  #         name: expected_schema
-  #         path: cvat/schema-expected.yml
+      - name: Upload expected schema as an artifact
+        if: failure() && steps.verify_schema.conclusion == 'failure'
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: expected_schema
+          path: cvat/schema-expected.yml
 
-  #     - name: Generate SDK
-  #       run: |
-  #         pip3 install -r cvat-sdk/gen/requirements.txt
-  #         ./cvat-sdk/gen/generate.sh
+      - name: Generate SDK
+        run: |
+          pip3 install -r cvat-sdk/gen/requirements.txt
+          ./cvat-sdk/gen/generate.sh
 
-  #     - name: Install SDK
-  #       run: |
-  #         pip3 install -r ./tests/python/requirements.txt \
-  #           -e './cvat-sdk[pytorch]' -e ./cvat-cli
+      - name: Install SDK
+        run: |
+          pip3 install -r ./tests/python/requirements.txt \
+            -e './cvat-sdk[pytorch]' -e ./cvat-cli
 
-  #     - name: Run REST API and SDK tests
-  #       id: run_tests
-  #       env:
-  #         COVERAGE_PROCESS_START: ".coveragerc"
-  #       run: |
-  #         pytest tests/python/ --cov --cov-report=json
+      - name: Run REST API and SDK tests
+        id: run_tests
+        env:
+          COVERAGE_PROCESS_START: ".coveragerc"
+        run: |
+          pytest tests/python/ --cov --cov-report=json
 
-  #     - name: Uploading code coverage results as an artifact
-  #       uses: actions/upload-artifact@v3.1.1
-  #       with:
-  #         name: coverage_results
-  #         path: |
-  #           coverage*.json
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: coverage_results
+          path: |
+            coverage*.json
 
-  #     - name: Creating a log file from cvat containers
-  #       if: failure() && steps.run_tests.conclusion == 'failure'
-  #       env:
-  #         LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
-  #       run: |
-  #           mkdir $LOGS_DIR
-  #           docker logs test_cvat_server_1 > $LOGS_DIR/cvat_server.log
-  #           docker logs test_cvat_worker_export_1 > $LOGS_DIR/cvat_worker_export.log
-  #           docker logs test_cvat_worker_import_1 > $LOGS_DIR/cvat_worker_import.log
-  #           docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
+      - name: Creating a log file from cvat containers
+        if: failure() && steps.run_tests.conclusion == 'failure'
+        env:
+          LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
+        run: |
+            mkdir $LOGS_DIR
+            docker logs test_cvat_server_1 > $LOGS_DIR/cvat_server.log
+            docker logs test_cvat_worker_export_1 > $LOGS_DIR/cvat_worker_export.log
+            docker logs test_cvat_worker_import_1 > $LOGS_DIR/cvat_worker_import.log
+            docker logs test_cvat_opa_1 2> $LOGS_DIR/cvat_opa.log
 
-  #     - name: Uploading "cvat" container logs as an artifact
-  #       if: failure() && steps.run_tests.conclusion == 'failure'
-  #       uses: actions/upload-artifact@v3.1.2
-  #       with:
-  #         name: rest_api_container_logs
-  #         path: "${{ github.workspace }}/rest_api_testing"
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure() && steps.run_tests.conclusion == 'failure'
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: rest_api_container_logs
+          path: "${{ github.workspace }}/rest_api_testing"
 
-  # unit_testing:
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
+  unit_testing:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-  #     - name: Download CVAT server image
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: cvat_server
-  #         path: /tmp/cvat_server/
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
 
-  #     - name: Load Docker server image
-  #       run: |
-  #         docker load --input /tmp/cvat_server/image.tar
-  #         docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
-  #         docker image ls -a
+      - name: Load Docker server image
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker image ls -a
 
-  #     - name: Running OPA tests
-  #       run: |
-  #         python cvat/apps/iam/rules/tests/generate_tests.py \
-  #           --output-dir cvat/apps/iam/rules/
+      - name: Running OPA tests
+        run: |
+          python cvat/apps/iam/rules/tests/generate_tests.py \
+            --output-dir cvat/apps/iam/rules/
 
-  #         curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
-  #         chmod +x ./opa
-  #         ./opa test cvat/apps/iam/rules
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
+          chmod +x ./opa
+          ./opa test cvat/apps/iam/rules
 
-  #     - name: Running unit tests
-  #       env:
-  #         HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
-  #         CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
-  #       run: |
-  #         docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server cvat_db
+      - name: Running unit tests
+        env:
+          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
+          CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server cvat_db
 
-  #         max_tries=12
-  #         while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
+          max_tries=12
+          while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health?bundles) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
-  #         docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-  #           -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+            -c 'coverage run -a manage.py test cvat/apps && coverage json && mv coverage.json ${CONTAINER_COVERAGE_DATA_DIR}/unit_tests_coverage.json'
 
-  #         docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-  #           -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+            -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test && mv cvat-core/reports/coverage/coverage-final.json ${CONTAINER_COVERAGE_DATA_DIR}'
 
-  #     - name: Uploading code coverage results as an artifact
-  #       uses: actions/upload-artifact@v3.1.1
-  #       with:
-  #         name: coverage_results
-  #         path: |
-  #           ${{ github.workspace }}/coverage-final.json
-  #           ${{ github.workspace }}/unit_tests_coverage.json
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: coverage_results
+          path: |
+            ${{ github.workspace }}/coverage-final.json
+            ${{ github.workspace }}/unit_tests_coverage.json
 
-  #     - name: Creating a log file from cvat containers
-  #       if: failure()
-  #       env:
-  #         LOGS_DIR: "${{ github.workspace }}/unit_testing"
-  #       run: |
-  #           mkdir $LOGS_DIR
-  #           docker logs cvat_server > $LOGS_DIR/cvat_server.log
-  #           docker logs cvat_opa 2> $LOGS_DIR/cvat_opa.log
+      - name: Creating a log file from cvat containers
+        if: failure()
+        env:
+          LOGS_DIR: "${{ github.workspace }}/unit_testing"
+        run: |
+            mkdir $LOGS_DIR
+            docker logs cvat_server > $LOGS_DIR/cvat_server.log
+            docker logs cvat_opa 2> $LOGS_DIR/cvat_opa.log
 
-  #     - name: Uploading "cvat" container logs as an artifact
-  #       if: failure()
-  #       uses: actions/upload-artifact@v3.1.1
-  #       with:
-  #         name: unit_tests_container_logs
-  #         path: "${{ github.workspace }}/unit_testing"
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: unit_tests_container_logs
+          path: "${{ github.workspace }}/unit_testing"
 
-  # e2e_testing:
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
-  #               'actions_objects', 'actions_objects2', 'actions_users',
-  #               'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
-  #               'issues_prs', 'issues_prs2', 'features']
-  #   steps:
-  #     - uses: actions/checkout@v3
+  e2e_testing:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
+                'actions_objects', 'actions_objects2', 'actions_users',
+                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
+                'issues_prs', 'issues_prs2', 'features']
+    steps:
+      - uses: actions/checkout@v3
 
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #           node-version: '18.x'
+      - uses: actions/setup-node@v3
+        with:
+            node-version: '18.x'
 
-  #     - name: Download CVAT server image
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: cvat_server
-  #         path: /tmp/cvat_server/
+      - name: Download CVAT server image
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
 
-  #     - name: Download CVAT UI image
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: cvat_ui
-  #         path: /tmp/cvat_ui/
+      - name: Download CVAT UI image
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
 
-  #     - name: Load Docker images
-  #       run: |
-  #         docker load --input /tmp/cvat_server/image.tar
-  #         docker load --input /tmp/cvat_ui/image.tar
-  #         docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
-  #         docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
-  #         docker image ls -a
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
+          docker tag cvat/server:latest cvat/server:${CVAT_VERSION}
+          docker tag cvat/ui:latest cvat/ui:${CVAT_VERSION}
+          docker image ls -a
 
-  #     - name: Run CVAT instance
-  #       run: |
-  #         docker compose \
-  #           -f docker-compose.yml \
-  #           -f docker-compose.dev.yml \
-  #           -f components/serverless/docker-compose.serverless.yml \
-  #           -f tests/docker-compose.minio.yml \
-  #           -f tests/docker-compose.file_share.yml up -d
+      - name: Run CVAT instance
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.dev.yml \
+            -f components/serverless/docker-compose.serverless.yml \
+            -f tests/docker-compose.minio.yml \
+            -f tests/docker-compose.file_share.yml up -d
 
-  #     - name: Waiting for server
-  #       env:
-  #         API_ABOUT_PAGE: "localhost:8080/api/server/about"
-  #       run: |
-  #         max_tries=60
-  #         status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
-  #         while [[  $status_code != "200" && max_tries -gt 0 ]]
-  #         do
-  #           echo Number of attempts left: $max_tries
-  #           echo Status code of response: $status_code
+      - name: Waiting for server
+        env:
+          API_ABOUT_PAGE: "localhost:8080/api/server/about"
+        run: |
+          max_tries=60
+          status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
+          while [[  $status_code != "200" && max_tries -gt 0 ]]
+          do
+            echo Number of attempts left: $max_tries
+            echo Status code of response: $status_code
 
-  #           sleep 5
-  #           status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
-  #           (( max_tries-- ))
-  #         done
+            sleep 5
+            status_code=$(curl -s -o /tmp/server_response -w "%{http_code}" ${API_ABOUT_PAGE})
+            (( max_tries-- ))
+          done
 
-  #     - name: Run E2E tests
-  #       env:
-  #         DJANGO_SU_NAME: 'admin'
-  #         DJANGO_SU_EMAIL: 'admin@localhost.company'
-  #         DJANGO_SU_PASSWORD: '12qwaszx'
-  #       run: |
-  #         docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
-  #         cd ./tests
-  #         yarn --frozen-lockfile
+      - name: Run E2E tests
+        env:
+          DJANGO_SU_NAME: 'admin'
+          DJANGO_SU_EMAIL: 'admin@localhost.company'
+          DJANGO_SU_PASSWORD: '12qwaszx'
+        run: |
+          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+          cd ./tests
+          yarn --frozen-lockfile
 
-  #         if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
-  #           npx cypress run \
-  #             --headed \
-  #             --browser chrome \
-  #             --config-file cypress_canvas3d.config.js \
-  #             --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
-  #         else
-  #           npx cypress run \
-  #             --browser chrome \
-  #             --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
-  #         fi
-  #         mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
+          if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
+            npx cypress run \
+              --headed \
+              --browser chrome \
+              --config-file cypress_canvas3d.config.js \
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+          else
+            npx cypress run \
+              --browser chrome \
+              --spec 'cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
+          fi
+          mv coverage/coverage-final.json coverage/${{ matrix.specs }}_coverage.json
 
-  #     - name: Uploading code coverage results as an artifact
-  #       uses: actions/upload-artifact@v3.1.1
-  #       with:
-  #         name: coverage_results
-  #         path: |
-  #           tests/coverage/${{ matrix.specs }}_coverage.json
+      - name: Uploading code coverage results as an artifact
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: coverage_results
+          path: |
+            tests/coverage/${{ matrix.specs }}_coverage.json
 
-  #     - name: Creating a log file from "cvat" container logs
-  #       if: failure()
-  #       run: |
-  #           docker logs cvat_server > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
-  #           docker logs cvat_worker_export > ${{ github.workspace }}/tests/cvat_worker_export_${{ matrix.specs }}.log
-  #           docker logs cvat_worker_import > ${{ github.workspace }}/tests/cvat_worker_import_${{ matrix.specs }}.log
+      - name: Creating a log file from "cvat" container logs
+        if: failure()
+        run: |
+            docker logs cvat_server > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
+            docker logs cvat_worker_export > ${{ github.workspace }}/tests/cvat_worker_export_${{ matrix.specs }}.log
+            docker logs cvat_worker_import > ${{ github.workspace }}/tests/cvat_worker_import_${{ matrix.specs }}.log
 
-  #     - name: Uploading "cvat" container logs as an artifact
-  #       if: failure()
-  #       uses: actions/upload-artifact@v3.1.1
-  #       with:
-  #         name: e2e_container_logs
-  #         path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: e2e_container_logs
+          path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
-  #     - name: Uploading cypress screenshots as an artifact
-  #       if: failure()
-  #       uses: actions/upload-artifact@v3.1.1
-  #       with:
-  #         name: cypress_screenshots_${{ matrix.specs }}
-  #         path: ${{ github.workspace }}/tests/cypress/screenshots
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
+        uses: actions/upload-artifact@v3.1.1
+        with:
+          name: cypress_screenshots_${{ matrix.specs }}
+          path: ${{ github.workspace }}/tests/cypress/screenshots
 
   generate_github_pages:
-    needs: [build] #[rest_api_testing, unit_testing, e2e_testing]
+    needs: [rest_api_testing, unit_testing, e2e_testing]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -440,59 +440,59 @@ jobs:
           publish_dir: ./public
           force_orphan: true
 
-  # publish_dev_images:
-  #   if: github.ref == 'refs/heads/develop'
-  #   needs: [rest_api_testing, unit_testing, e2e_testing, generate_github_pages]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
+  publish_dev_images:
+    if: github.ref == 'refs/heads/develop'
+    needs: [rest_api_testing, unit_testing, e2e_testing, generate_github_pages]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-  #     - name: Download CVAT server images
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: cvat_server
-  #         path: /tmp/cvat_server/
+      - name: Download CVAT server images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_server
+          path: /tmp/cvat_server/
 
-  #     - name: Download CVAT UI images
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: cvat_ui
-  #         path: /tmp/cvat_ui/
+      - name: Download CVAT UI images
+        uses: actions/download-artifact@v3
+        with:
+          name: cvat_ui
+          path: /tmp/cvat_ui/
 
-  #     - name: Load Docker images
-  #       run: |
-  #         docker load --input /tmp/cvat_server/image.tar
-  #         docker load --input /tmp/cvat_ui/image.tar
+      - name: Load Docker images
+        run: |
+          docker load --input /tmp/cvat_server/image.tar
+          docker load --input /tmp/cvat_ui/image.tar
 
-  #     - name: Login to Docker Hub
-  #       uses: docker/login-action@v1
-  #       with:
-  #         username: ${{ secrets.DOCKERHUB_USERNAME }}
-  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  #     - name: Push to Docker Hub
-  #       env:
-  #         SERVER_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/server
-  #         UI_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/ui
-  #       run: |
-  #         docker tag cvat/server:latest "${SERVER_IMAGE_REPO}:dev"
-  #         docker push "${SERVER_IMAGE_REPO}:dev"
+      - name: Push to Docker Hub
+        env:
+          SERVER_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/server
+          UI_IMAGE_REPO: ${{ secrets.DOCKERHUB_WORKSPACE }}/ui
+        run: |
+          docker tag cvat/server:latest "${SERVER_IMAGE_REPO}:dev"
+          docker push "${SERVER_IMAGE_REPO}:dev"
 
-  #         docker tag cvat/ui:latest "${UI_IMAGE_REPO}:dev"
-  #         docker push "${UI_IMAGE_REPO}:dev"
+          docker tag cvat/ui:latest "${UI_IMAGE_REPO}:dev"
+          docker push "${UI_IMAGE_REPO}:dev"
 
-  # codecov:
-  #   runs-on: ubuntu-latest
-  #   needs: [unit_testing, e2e_testing, rest_api_testing]
-  #   steps:
-  #     - uses: actions/checkout@v3
+  codecov:
+    runs-on: ubuntu-latest
+    needs: [unit_testing, e2e_testing, rest_api_testing]
+    steps:
+      - uses: actions/checkout@v3
 
-  #     - name: Downloading coverage results
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: coverage_results
+      - name: Downloading coverage results
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage_results
 
-  #     - name: Upload coverage reports to Codecov with GitHub Action
-  #       uses: codecov/codecov-action@v3
-  #       with:
-  #         token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload coverage reports to Codecov with GitHub Action
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

@@ -136,9 +136,6 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         for tag in tags:
             git_checkout(tag.name, temp_repo, Path(temp_dir))
             change_version_menu_toml(versioning_toml_path, tag.name)
-            subprocess.run(
-                ["tree", temp_dir + "/site/themes/docsy/assets/vendor"]
-            )  # nosec
             run_npm_install()
             run_hugo(
                 output_dir / tag.name,
