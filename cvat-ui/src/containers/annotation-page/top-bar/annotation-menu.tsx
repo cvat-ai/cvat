@@ -6,6 +6,7 @@
 import React from 'react';
 import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
+import mixpanel from 'mixpanel-browser';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
@@ -60,9 +61,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         showExportModal(jobInstance: Job): void {
+            mixpanel.track('Exporting Job', { jobId: jobInstance.id });
             dispatch(exportActions.openExportDatasetModal(jobInstance));
         },
         showImportModal(jobInstance: Job): void {
+            mixpanel.track('Importing Job', { jobId: jobInstance.id });
             dispatch(importActions.openImportDatasetModal(jobInstance));
         },
         removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
@@ -155,6 +158,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             jobInstance.stage = JobStage.ANNOTATION;
             updateJob(jobInstance).then((success) => {
                 if (success) {
+                    mixpanel.track('Renewed job', { jobId: jobInstance.id });
                     message.info('Job renewed', 2);
                 }
             });
@@ -163,6 +167,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             jobInstance.state = core.enums.JobState.COMPLETED;
             updateJob(jobInstance).then((success) => {
                 if (success) {
+                    mixpanel.track('Finished Job', { jobId: jobInstance.id });
                     history.push(`/tasks/${jobInstance.taskId}`);
                 }
             });
@@ -174,6 +179,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             [, jobInstance.state] = action.split(':') as [string, JobState];
             updateJob(jobInstance).then((success) => {
                 if (success) {
+                    mixpanel.track('Updated job state', { jobId: jobInstance.id, newstate: jobInstance.state });
                     message.info('Job state updated', 2);
                     if (['rejected', 'completed'].includes(jobInstance.state)) {
                         loadNextJob();

@@ -47,6 +47,7 @@
     "json-logic-js": "^2.0.2",
     "lodash": "^4.17.21",
     "lru-cache": "^9.1.1",
+    "mixpanel-browser": "^2.47.0",
     "moment": "^2.29.2",
     "mousetrap": "^1.6.5",
     "onnxruntime-web": "1.14.0",
