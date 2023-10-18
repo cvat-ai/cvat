@@ -31,6 +31,9 @@ jobs:
       - name: Verify version consistency
         run: ./dev/update_version.py --verify-current
 
+      - name: Check changelog fragments
+        run: ./dev/check_changelog_fragments.py
+
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
         with:
