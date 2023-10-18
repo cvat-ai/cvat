@@ -978,47 +978,28 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return list(expected_files)
 
-    # UploadMixin method
-    def init_tus_upload(self, request):
-        response = super().init_tus_upload(request)
-
-        if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
-            self._maybe_append_upload_info_entry(response['Upload-Filename'])
-
-        return response
-
-    # UploadMixin method
     @transaction.atomic
-    def append_files(self, request):
-        client_files = self._get_request_client_files(request)
-        if self._is_data_uploading() and client_files:
-            self._append_upload_info_entries(client_files)
+    def _handle_upload_annotations(self, request):
+        format_name = request.query_params.get("format", "")
+        filename = request.query_params.get("filename", "")
+        conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+        tmp_dir = self._object.get_tmp_dirname()
+        if os.path.isfile(os.path.join(tmp_dir, filename)):
+            annotation_file = os.path.join(tmp_dir, filename)
+            return _import_annotations(
+                    request=request,
+                    filename=annotation_file,
+                    rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
+                    rq_func=dm.task.import_task_annotations,
+                    db_obj=self._object,
+                    format_name=format_name,
+                    conv_mask_to_poly=conv_mask_to_poly,
+                )
+        return Response(data='No such file were uploaded',
+                status=status.HTTP_400_BAD_REQUEST)
 
-        return super().append_files(request)
-
-    # UploadMixin method
-    @transaction.atomic
-    def upload_finished(self, request):
-        if self.action == 'annotations':
-            format_name = request.query_params.get("format", "")
-            filename = request.query_params.get("filename", "")
-            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
-            tmp_dir = self._object.get_tmp_dirname()
-            if os.path.isfile(os.path.join(tmp_dir, filename)):
-                annotation_file = os.path.join(tmp_dir, filename)
-                return _import_annotations(
-                        request=request,
-                        filename=annotation_file,
-                        rq_id_template=self.IMPORT_RQ_ID_TEMPLATE,
-                        rq_func=dm.task.import_task_annotations,
-                        db_obj=self._object,
-                        format_name=format_name,
-                        conv_mask_to_poly=conv_mask_to_poly,
-                    )
-            else:
-                return Response(data='No such file were uploaded',
-                        status=status.HTTP_400_BAD_REQUEST)
-        elif self.action == 'data':
+    def _handle_upload_data(self, request):
+        with transaction.atomic():
             task_data = self._object.data
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -1070,22 +1051,55 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 # if the value of stop_frame is 0, then inside the function we cannot know
                 # the value specified by the user or it's default value from the database
                 data['stop_frame'] = None
-            task.create(self._object, data, request)
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+        # Need to process task data when the transaction is committed
+        task.create(self._object, data, request)
+
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+    @transaction.atomic
+    def _handle_upload_backup(self, request):
+        filename = request.query_params.get("filename", "")
+        if filename:
+            tmp_dir = backup.get_backup_dirname()
+            backup_file = os.path.join(tmp_dir, filename)
+            if os.path.isfile(backup_file):
+                return backup.import_task(
+                    request,
+                    settings.CVAT_QUEUES.IMPORT_DATA.value,
+                    filename=backup_file,
+                )
+            return Response(data='No such file were uploaded',
+                    status=status.HTTP_400_BAD_REQUEST)
+        return backup.import_task(request, settings.CVAT_QUEUES.IMPORT_DATA.value)
+
+    # UploadMixin method
+    def init_tus_upload(self, request):
+        response = super().init_tus_upload(request)
+
+        if self._is_data_uploading() and response.status_code == status.HTTP_201_CREATED:
+            self._maybe_append_upload_info_entry(response['Upload-Filename'])
+
+        return response
+
+    # UploadMixin method
+    @transaction.atomic
+    def append_files(self, request):
+        client_files = self._get_request_client_files(request)
+        if self._is_data_uploading() and client_files:
+            self._append_upload_info_entries(client_files)
+
+        return super().append_files(request)
+
+    # UploadMixin method
+    def upload_finished(self, request):
+        if self.action == 'annotations':
+            return self._handle_upload_annotations(request)
+        elif self.action == 'data':
+            return self._handle_upload_data(request)
         elif self.action == 'import_backup':
-            filename = request.query_params.get("filename", "")
-            if filename:
-                tmp_dir = backup.get_backup_dirname()
-                backup_file = os.path.join(tmp_dir, filename)
-                if os.path.isfile(backup_file):
-                    return backup.import_task(
-                        request,
-                        settings.CVAT_QUEUES.IMPORT_DATA.value,
-                        filename=backup_file,
-                    )
-                return Response(data='No such file were uploaded',
-                        status=status.HTTP_400_BAD_REQUEST)
-            return backup.import_task(request, settings.CVAT_QUEUES.IMPORT_DATA.value)
+            return self._handle_upload_backup(request)
+
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -1180,17 +1194,21 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def data(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
-            task_data = self._object.data
-            if not task_data:
-                task_data = Data.objects.create()
-                task_data.make_dirs()
-                self._object.data = task_data
-                self._object.save()
-            elif task_data.size != 0:
-                return Response(data='Adding more data is not supported',
-                    status=status.HTTP_400_BAD_REQUEST)
-            return self.upload_data(request)
-
+            with transaction.atomic():
+                # To fix race condition
+                # Cannot use get_queryset() here, because select_for_update() has some limitations
+                locked_instance = Task.objects.select_for_update().get(pk=pk)
+                task_data = locked_instance.data
+                if not task_data:
+                    task_data = Data.objects.create()
+                    task_data.make_dirs()
+                    locked_instance.data = task_data
+                    self._object.data = task_data
+                    locked_instance.save()
+                elif task_data.size != 0:
+                    return Response(data='Adding more data is not supported',
+                        status=status.HTTP_400_BAD_REQUEST)
+                return self.upload_data(request)
         else:
             data_type = request.query_params.get('type', None)
             data_num = request.query_params.get('number', None)

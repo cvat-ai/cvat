@@ -1011,17 +1011,17 @@ class DataSerializer(serializers.ModelSerializer):
     # pylint: disable=no-self-use
     def _create_files(self, instance, files):
         if 'client_files' in files:
-            models.ClientFile.bulk_create(
+            models.ClientFile.objects.bulk_create(
                 models.ClientFile(data=instance, **f) for f in files['client_files']
             )
 
         if 'server_files' in files:
-            models.ServerFile.bulk_create(
+            models.ServerFile.objects.bulk_create(
                 models.ServerFile(data=instance, **f) for f in files['server_files']
             )
 
         if 'remote_files' in files:
-            models.RemoteFile.bulk_create(
+            models.RemoteFile.objects.bulk_create(
                 models.RemoteFile(data=instance, **f) for f in files['remote_files']
             )
 
