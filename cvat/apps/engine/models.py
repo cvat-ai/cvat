@@ -1083,7 +1083,7 @@ class CloudStorage(models.Model):
     # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
     # https://cloud.google.com/storage/docs/naming-buckets#requirements
     # AWS access key id - 20, Oracle OCI access key id - 40
-    # AWS secret access key - 40, Oracle OCI secret key id - 44
+    # AWS secret access key - 40, Oracle OCI secret access key - 44, Cloudflare R2 secret access key - 64
     # AWS temporary session token - None
     # The size of the security token that AWS STS API operations return is not fixed.
     # We strongly recommend that you make no assumptions about the maximum size.

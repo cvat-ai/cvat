@@ -176,61 +176,136 @@ export function validateAttributeValue(value: string, attr: Attribute): boolean 
     return values.includes(value);
 }
 
-export function truncateMask(points: number[], _: number, width: number, height: number): number[] {
-    const [currentLeft, currentTop, currentRight, currentBottom] = points.slice(-4);
+// Method computes correct mask wrapping bbox
+// Taking into account image size and removing leading/terminating zeros, minimizing the mask size
+function findMaskBorders(rle: number[], width: number, height: number): {
+    top: number,
+    left: number,
+    right: number,
+    bottom: number,
+} {
+    const [currentLeft, currentTop, currentRight, currentBottom] = rle.slice(-4);
     const [currentWidth, currentHeight] = [currentRight - currentLeft + 1, currentBottom - currentTop + 1];
+    const empty = {
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    };
 
+    if (currentWidth < 0 || currentHeight < 0) {
+        return empty;
+    }
+
+    let x = 0; // mask-relative
+    let y = 0; // mask-relative
+    let value = 0;
+
+    // first let's find actual wrapping bounding box
+    // cutting leading/terminating zeros from the mask
     let left = width;
     let right = 0;
     let top = height;
     let bottom = 0;
     let atLeastOnePixel = false;
-    const truncatedPoints = [];
 
-    for (let y = 0; y < currentHeight; y++) {
-        const absY = y + currentTop;
-
-        for (let x = 0; x < currentWidth; x++) {
+    for (let idx = 0; idx < rle.length - 4; idx++) {
+        let count = rle[idx];
+        while (count) {
+            // get image-relative coordinates
+            const absY = y + currentTop;
             const absX = x + currentLeft;
-            const offset = y * currentWidth + x;
 
-            if (absX >= width || absY >= height || absX < 0 || absY < 0) {
-                points[offset] = 0;
+            if (!(absX >= width || absY >= height || absX < 0 || absY < 0) && value) {
+                if (value) {
+                    // update coordinates to fit them around non-zero values
+                    atLeastOnePixel = true;
+                    left = Math.min(left, absX);
+                    top = Math.min(top, absY);
+                    right = Math.max(right, absX);
+                    bottom = Math.max(bottom, absY);
+                }
             }
 
-            if (points[offset]) {
-                atLeastOnePixel = true;
-                left = Math.min(left, absX);
-                top = Math.min(top, absY);
-                right = Math.max(right, absX);
-                bottom = Math.max(bottom, absY);
+            // shift coordinates and count
+            x++;
+            if (x === currentWidth) {
+                y++;
+                x = 0;
             }
+            count--;
         }
+
+        // shift current rle value
+        value = Math.abs(value - 1);
     }
 
     if (!atLeastOnePixel) {
-        // if mask is empty, set its size as 0
-        left = 0;
-        top = 0;
+        return empty;
     }
 
-    // TODO: check corner case when right = left = 0
-    const [newWidth, newHeight] = [right - left + 1, bottom - top + 1];
-    for (let y = 0; y < newHeight; y++) {
-        for (let x = 0; x < newWidth; x++) {
-            const leftDiff = left - currentLeft;
-            const topDiff = top - currentTop;
-            const offset = (y + topDiff) * currentWidth + (x + leftDiff);
-            truncatedPoints.push(points[offset]);
+    return {
+        top, left, right, bottom,
+    };
+}
+
+// Method performs cropping of a mask in RLE format
+// It cuts mask parts that are out of the image width/height
+// Also it cuts leading/terminating zeros and minimizes mask wrapping bounding box
+export function cropMask(rle: number[], width: number, height: number): number[] {
+    const [currentLeft, currentTop, currentRight] = rle.slice(-4, -1);
+    const {
+        top, left, right, bottom,
+    } = findMaskBorders(rle, width, height);
+
+    if (top === bottom || left === right) {
+        return [0, 0, 0, 0];
+    }
+
+    const maskWidth = currentRight - currentLeft + 1;
+    const croppedRLE = [];
+
+    let x = 0; // mask-relative
+    let y = 0; // mask-relative
+    let value = 0;
+    let croppedCount = 0;
+    for (let idx = 0; idx < rle.length - 4; idx++) {
+        let count = rle[idx];
+        while (count) {
+            // get image-relative coordinates
+            const absY = y + currentTop;
+            const absX = x + currentLeft;
+
+            if (!(absX > right || absY > bottom || absX < left || absY < top)) {
+                // absolute coordinates stay within the image
+                croppedCount++;
+            }
+
+            // shift coordinates and count
+            x++;
+            if (x === maskWidth) {
+                y++;
+                x = 0;
+            }
+            count--;
+        }
+
+        // switch current rle value
+        value = Math.abs(value - 1);
+        if (croppedCount === 0 && croppedRLE.length) {
+            croppedCount = croppedRLE.pop();
+        } else {
+            croppedRLE.push(croppedCount);
+            croppedCount = 0;
         }
     }
 
-    truncatedPoints.push(left, top, right, bottom);
-    if (!checkShapeArea(ShapeType.MASK, truncatedPoints)) {
-        return [];
+    croppedRLE.push(left, top, right, bottom);
+    if (!checkShapeArea(ShapeType.MASK, croppedRLE)) {
+        return [0, 0, 0, 0];
     }
 
-    return truncatedPoints;
+    return croppedRLE;
 }
 
 export function mask2Rle(mask: number[]): number[] {
