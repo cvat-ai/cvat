@@ -90,13 +90,13 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         shutil.copytree(repo_root / "site", content_loc, symlinks=True)
 
         def run_npm_install():
-            subprocess.run(["npm", "install"], cwd=content_loc) # nosec
+            subprocess.run(["npm", "install"], cwd=content_loc)  # nosec
 
         def run_hugo(
             destination_dir: os.PathLike,
             *,
             extra_env_vars: Dict[str, str] = None,
-            binary: Optional[str] = "hugo",
+            executable: Optional[str] = "hugo",
         ):
             extra_kwargs = {}
 
@@ -106,7 +106,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
 
             subprocess.run(  # nosec
                 [
-                    binary,
+                    executable,
                     "--destination",
                     str(destination_dir),
                     "--config",
@@ -122,7 +122,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         # Process the develop version
         generate_versioning_config(versioning_toml_path, (t.name for t in tags))
         change_version_menu_toml(versioning_toml_path, "develop")
-        run_hugo(output_dir, binary=hugo110)
+        run_hugo(output_dir, executable=hugo110)
 
         # Create a temp repo for checkouts
         temp_repo_path = Path(temp_dir) / "tmp_repo"
@@ -135,19 +135,22 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         for tag in tags:
             git_checkout(tag.name, temp_repo, Path(temp_dir))
             change_version_menu_toml(versioning_toml_path, tag.name)
+            subprocess.run(
+                ["tree", temp_dir + "/site/themes/docsy/assets/vendor"]
+            )  # nosec
             run_npm_install()
             run_hugo(
                 output_dir / tag.name,
                 # Docsy doesn't forward the current version url to templates
                 extra_env_vars={VERSION_URL_ENV_VAR: f"/cvat/{tag.name}/docs"},
-                binary=hugo83,
+                executable=hugo83,
             )
 
 
 def validate_env():
     for hugo in [hugo83, hugo110]:
         try:
-            subprocess.run([hugo, "version"], capture_output=True) # nosec
+            subprocess.run([hugo, "version"], capture_output=True)  # nosec
         except (subprocess.CalledProcessError, FileNotFoundError) as ex:
             raise Exception(
                 f"Failed to run '{hugo}', please make sure it exists."
