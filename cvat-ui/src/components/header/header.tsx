@@ -150,12 +150,7 @@ function HeaderComponent(props: Props): JSX.Element {
     const [organizationsList, setOrganizationList] = useState<Organization[] | null>(null);
 
     const searchCallback = useCallback((search?: string): Promise<Organization[]> => new Promise((resolve, reject) => {
-        let promise = null;
-        if (search) {
-            promise = core.organizations.get({ search });
-        } else {
-            promise = core.organizations.get();
-        }
+        const promise = core.organizations.get(search ? { search } : {})
 
         setListFetching(true);
         promise.then((organizations: Organization[]) => {
