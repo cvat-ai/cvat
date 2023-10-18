@@ -377,7 +377,9 @@ class TestListLabels(_TestLabelsPermissionsBase):
             labels_by_source = labels_by_project
             is_staff = is_project_staff
         elif source_type == "task":
-            sources = [t for t in tasks_wlc if t["labels"]["count"] > 0 and t["organization"] == org_id]
+            sources = [
+                t for t in tasks_wlc if t["labels"]["count"] > 0 and t["organization"] == org_id
+            ]
             labels_by_source = {
                 task["id"]: (
                     labels_by_task.get(task["id"]) or labels_by_project.get(task.get("project_id"))
@@ -449,7 +451,9 @@ class TestListLabels(_TestLabelsPermissionsBase):
             ]
             labels_by_source = labels_by_project
         elif source_type == "task":
-            sources = [t for t in tasks_wlc if t["labels"]["count"] > 0 and t["organization"] == org_id]
+            sources = [
+                t for t in tasks_wlc if t["labels"]["count"] > 0 and t["organization"] == org_id
+            ]
             labels_by_source = {
                 task["id"]: (
                     labels_by_task.get(task["id"]) or labels_by_project.get(task.get("project_id"))
