@@ -368,19 +368,16 @@ class TestListLabels(_TestLabelsPermissionsBase):
         memberships,
         users_by_name,
     ):
-        jobs = jobs_wlc
-        tasks = tasks_wlc
-        projects = projects_wlc
         labels_by_project = self._labels_by_source(labels, source_key="project_id")
         labels_by_task = self._labels_by_source(labels, source_key="task_id")
         if source_type == "project":
             sources = [
-                p for p in projects if p["labels"]["count"] > 0 and p["organization"] == org_id
+                p for p in projects_wlc if p["labels"]["count"] > 0 and p["organization"] == org_id
             ]
             labels_by_source = labels_by_project
             is_staff = is_project_staff
         elif source_type == "task":
-            sources = [t for t in tasks if t["labels"]["count"] > 0 and t["organization"] == org_id]
+            sources = [t for t in tasks_wlc if t["labels"]["count"] > 0 and t["organization"] == org_id]
             labels_by_source = {
                 task["id"]: (
                     labels_by_task.get(task["id"]) or labels_by_project.get(task.get("project_id"))
@@ -391,9 +388,9 @@ class TestListLabels(_TestLabelsPermissionsBase):
         elif source_type == "job":
             sources = [
                 j
-                for j in jobs
+                for j in jobs_wlc
                 if j["labels"]["count"] > 0
-                if next(t for t in tasks if t["id"] == j["task_id"])["organization"] == org_id
+                if next(t for t in tasks_wlc if t["id"] == j["task_id"])["organization"] == org_id
             ]
             labels_by_source = {
                 job["id"]: (
@@ -444,16 +441,15 @@ class TestListLabels(_TestLabelsPermissionsBase):
     def test_only_1st_level_labels_included(
         self, projects_wlc, tasks_wlc, jobs_wlc, labels, admin_user, source_type, org_id
     ):
-        projects, tasks, jobs = projects_wlc, tasks_wlc, jobs_wlc
         labels_by_project = self._labels_by_source(labels, source_key="project_id")
         labels_by_task = self._labels_by_source(labels, source_key="task_id")
         if source_type == "project":
             sources = [
-                p for p in projects if p["labels"]["count"] > 0 and p["organization"] == org_id
+                p for p in projects_wlc if p["labels"]["count"] > 0 and p["organization"] == org_id
             ]
             labels_by_source = labels_by_project
         elif source_type == "task":
-            sources = [t for t in tasks if t["labels"]["count"] > 0 and t["organization"] == org_id]
+            sources = [t for t in tasks_wlc if t["labels"]["count"] > 0 and t["organization"] == org_id]
             labels_by_source = {
                 task["id"]: (
                     labels_by_task.get(task["id"]) or labels_by_project.get(task.get("project_id"))
@@ -463,9 +459,9 @@ class TestListLabels(_TestLabelsPermissionsBase):
         elif source_type == "job":
             sources = [
                 j
-                for j in jobs
+                for j in jobs_wlc
                 if j["labels"]["count"] > 0
-                if next(t for t in tasks if t["id"] == j["task_id"])["organization"] == org_id
+                if next(t for t in tasks_wlc if t["id"] == j["task_id"])["organization"] == org_id
             ]
             labels_by_source = {
                 job["id"]: (

@@ -102,7 +102,7 @@ def projects_wlc(projects, labels):  # projects with labels count
 
 
 @pytest.fixture(scope="session")
-def jobs():  # jobs with labels count
+def jobs():
     with open(ASSETS_DIR / "jobs.json") as f:
         return Container(json.load(f)["results"])
 
@@ -110,10 +110,9 @@ def jobs():  # jobs with labels count
 @pytest.fixture(scope="session")
 def jobs_wlc(jobs, tasks_wlc):  # jobs with labels count
     jobs = deepcopy(jobs)
-    tasks = tasks_wlc
     for job in jobs:
         tid = job["task_id"]
-        job["labels"]["count"] = tasks[tid]["labels"]["count"]
+        job["labels"]["count"] = tasks_wlc[tid]["labels"]["count"]
     return jobs
 
 
