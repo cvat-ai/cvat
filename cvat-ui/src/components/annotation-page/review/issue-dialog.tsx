@@ -15,7 +15,6 @@ import Comment from 'antd/lib/comment';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import Button from 'antd/lib/button';
-import Spin from 'antd/lib/spin';
 import Input from 'antd/lib/input';
 import moment from 'moment';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -148,7 +147,9 @@ export default function IssueDialog(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-issue-dialog-chat' justify='start'>
                 {
-                    lines.length > 0 ? <Col style={{ display: 'block' }}>{lines}</Col> : <Spin />
+                    lines.length > 0 ? <Col style={{ display: 'block' }}>{lines}</Col> : (
+                        <Col>No comments found</Col>
+                    )
                 }
             </Row>
             <Row className='cvat-issue-dialog-input' justify='start'>

@@ -5,36 +5,154 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[Unreleased\]
-### Added
-- TDB
+<!--
+  Developers: this project uses scriv (<https://scriv.readthedocs.io/en/stable/index.html>)
+  to maintain the changelog. To add an entry, create a fragment:
+
+    $ scriv create --edit
+
+  Fragments will be merged into this file whenever a release is made.
+-->
+
+<!-- scriv-insert-here -->
+
+<a id='changelog-2.7.6'></a>
+## \[2.7.6\] - 2023-10-13
 
 ### Changed
+
+- Enabled nginx proxy buffering
+  (<https://github.com/opencv/cvat/pull/6991>)
+
+- Helm: set memory request for keydb
+  (<https://github.com/opencv/cvat/pull/6945>)
+
+- Supervisord (<https://github.com/opencv/cvat/pull/6945>):
+  - added `autorestart=true` option for all workers
+  - unified program names to use dashes as delimiter instead of mixed '_' and '-'
+  - minor improvements to supervisor configurations
+
+### Removed
+
+- Removed gitter link from about modal
+  (<https://github.com/opencv/cvat/pull/7002>)
+
+### Fixed
+
+- Persist image filters across jobs
+  (<https://github.com/opencv/cvat/pull/6953>)
+
+- Splitting skeleton tracks on jobs
+  (<https://github.com/opencv/cvat/pull/6968>)
+
+- Uploading skeleton tracks in COCO Keypoints format
+  (<https://github.com/opencv/cvat/pull/6969>)
+
+- Fixed Siammask tracker error on grayscale images
+  (<https://github.com/opencv/cvat/pull/6982>)
+
+- Fixed memory leak on client side when event listener was not removed together with its context
+  (<https://github.com/opencv/cvat/pull/6984>)
+
+- Fixed crash related to issue tries to mount to not existing parent
+  (<https://github.com/opencv/cvat/pull/6977>)
+
+- Added 'notranslate' markers to avoid issues caused by extension translators
+  (<https://github.com/opencv/cvat/pull/6993>)
+
+- Getting CS content when S3 bucket contains manually created directories
+  (<https://github.com/opencv/cvat/pull/6997>)
+
+- Optimized huge memory consumption when working with masks in the interface
+  (<https://github.com/opencv/cvat/pull/6996>)
+
+### Security
+
+- Security upgrade opencv-python-headless from 4.5.5.62 to 4.8.1.78
+  (<https://github.com/opencv/cvat/pull/6931>)
+
+- Added X-Frame-Options: deny
+  (<https://github.com/opencv/cvat/pull/6992>)
+
+<a id='changelog-2.7.5'></a>
+## \[2.7.5\] - 2023-10-09
+
+### Added
+
+- Temporary workaround to fix corrupted zip file
+  (<https://github.com/opencv/cvat/pull/6965>)
+
+<a id='changelog-2.7.4'></a>
+## \[2.7.4\] - 2023-10-06
+
+### Added
+
+- The latest comment displayed in issues sidebar (<https://github.com/opencv/cvat/pull/6937>)
+
+### Fixed
+
+- It was not possible to copy issue comment from issue dialog (<https://github.com/opencv/cvat/pull/6937>)
+
+### Security
+
+- Update Grafana from 9.3.6 to 10.1.2
+
+## \[2.7.3\] - 2023-10-02
+
+### Added
+
+- New , form-based Issue templates for Github repository
+
+### Removed
+
+- Functionality for synchronizing a task with a Git repository
+  (<https://github.com/opencv/cvat/pull/6904>)
+
+### Fixed
+
+- PCD files with nan values could not be opened on 3D workspace
+ (<https://github.com/opencv/cvat/pull/6862>)
+- Fixed direct navigation to neightbour chunk on 3D workspace
+ (<https://github.com/opencv/cvat/pull/6862>)
+- Intencity level from .bin lidar data ignored when converting .bin -> .pcd
+ (<https://github.com/opencv/cvat/pull/6862>)
+- Incorrectly determined video frame count when the video contains an MP4 edit list
+  (<https://github.com/opencv/cvat/pull/6929>)
+- Internal server error when retrieving data from CS and cache=True
+  (<https://github.com/opencv/cvat/pull/6932>)
+
+### Security
+
+- Security upgrade Pillow from 9.3.0 to 10.0.1
+  (<https://github.com/opencv/cvat/pull/6907>)
+- Security update cryptography from 41.0.3 to 41.0.4
+  (<https://github.com/opencv/cvat/pull/6914>)
+
+## \[2.7.2\] - 2023-09-25
+
+### Changed
+
 - Do not reload annotation view when renew the job or update job state (<https://github.com/opencv/cvat/pull/6851>)
 - Now images from cloud buckets are loaded in parallel when preparing a chunk (<https://github.com/opencv/cvat/pull/6881>)
 
-### Deprecated
-- TDB
-
-### Removed
-- TDB
-
 ### Fixed
+
 - Downloading additional data from cloud storage if use_cache=true and job_file_mapping are specified
   (<https://github.com/opencv/cvat/pull/6879>)
 - Added `CVAT_HOST` to trusted CSRF origins (<https://github.com/opencv/cvat/pull/6322>)
 - Leaving an organization (<https://github.com/opencv/cvat/pull/6422>)
-
-### Security
-- TDB
+- Order of images in annotation file when dumping project in CVAT format (<https://github.com/opencv/cvat/pull/6927>)
+- Validation on Cloud Storage form / error message on create task form (<https://github.com/opencv/cvat/pull/6890>)
 
 ## \[2.7.1\] - 2023-09-15
+
 ### Fixed
 
 - Include cloud storage manifest file to selected files if manifest was used as data source (<https://github.com/opencv/cvat/pull/6850>)
 - Keep sequence of files when directories were specified in server_files (<https://github.com/opencv/cvat/pull/6850>)
 
 ## \[2.7.0\] - 2023-09-10
+
 ### Added
 
 - Admin actions for easy activation/deactivation of users (<https://github.com/opencv/cvat/pull/6314>)
@@ -1721,26 +1839,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial version
-
-## Template
-
-```
-## \[Unreleased]
-### Added
-- TDB
-
-### Changed
-- TDB
-
-### Deprecated
-- TDB
-
-### Removed
-- TDB
-
-### Fixed
-- TDB
-
-### Security
-- TDB
-```

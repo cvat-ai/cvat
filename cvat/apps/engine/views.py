@@ -19,7 +19,6 @@ from tempfile import NamedTemporaryFile
 from textwrap import dedent
 
 import django_rq
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
@@ -195,7 +194,7 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
     def plugins(request):
         data = {
-            'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
+            'GIT_INTEGRATION': False, # kept for backwards compatibility
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
             'PREDICT': False, # FIXME: it is unused anymore (for UI only)
@@ -941,10 +940,11 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         task_data.client_files.get_or_create(file=filename)
 
     def _append_upload_info_entries(self, client_files: List[Dict[str, Any]]):
-        # batch version without optional insertion
+        # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
         task_data.client_files.bulk_create([
-            ClientFile(**cf, data=task_data) for cf in client_files
+            ClientFile(file=self._prepare_upload_info_entry(cf['file'].name), data=task_data)
+            for cf in client_files
         ])
 
     def _sort_uploaded_files(self, uploaded_files: List[str], ordering: List[str]) -> List[str]:
@@ -988,6 +988,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return response
 
     # UploadMixin method
+    @transaction.atomic
     def append_files(self, request):
         client_files = self._get_request_client_files(request)
         if self._is_data_uploading() and client_files:
@@ -1024,7 +1025,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             # Append new files to the previous ones
             if uploaded_files := serializer.validated_data.get('client_files', None):
-                self._append_upload_info_entries(uploaded_files)
+                self.append_files(request)
                 serializer.validated_data['client_files'] = [] # avoid file info duplication
 
             # Refresh the db value with the updated file list and other request parameters

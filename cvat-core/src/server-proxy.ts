@@ -13,7 +13,7 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, FunctionsResponseBody,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAcceptInvitation,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -34,6 +34,8 @@ type Params = {
     filename?: string,
     action?: string,
 };
+
+tus.defaultOptions.storeFingerprintForResuming = false;
 
 function enableOrganization(): { org: string } {
     return { org: config.organization.organizationSlug || '' };
@@ -199,7 +201,7 @@ class WorkerWrappedAxios {
             if (e.data.id in requests) {
                 try {
                     if (e.data.isSuccess) {
-                        requests[e.data.id].resolve(e.data.responseData);
+                        requests[e.data.id].resolve({ data: e.data.responseData, headers: e.data.headers });
                     } else {
                         requests[e.data.id].reject(new AxiosError(e.data.message, e.data.code));
                     }
@@ -452,6 +454,34 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
     } catch (errorData) {
         throw generateError(errorData);
     }
+}
+
+async function acceptOrganizationInvitation(
+    username: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    confirmations: Record<string, string>,
+    key: string,
+): Promise<SerializedAcceptInvitation> {
+    let response = null;
+    let orgSlug = null;
+    try {
+        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`, {
+            username,
+            first_name: firstName,
+            last_name: lastName,
+            password1: password,
+            password2: password,
+            confirmations,
+        });
+        orgSlug = response.data.organization_slug;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return orgSlug;
 }
 
 async function getSelf(): Promise<SerializedUser> {
@@ -1495,7 +1525,7 @@ async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer>
     }
 }
 
-async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
+async function getData(jid: number, chunk: number, quality: ChunkQuality, retry = 0): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
     try {
@@ -1509,7 +1539,29 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality): Promi
             responseType: 'arraybuffer',
         });
 
-        return response;
+        const contentLength = +(response.headers || {})['content-length'];
+        if (Number.isInteger(contentLength) && response.data.byteLength < +contentLength) {
+            if (retry < 10) {
+                // corrupted zip tmp workaround
+                // if content length more than received byteLength, request the chunk again
+                // and log this error
+                setTimeout(() => {
+                    throw new Error(
+                        `Truncated chunk, try: ${retry}. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
+                        `Body size: ${response.data.byteLength}`,
+                    );
+                });
+                return await getData(jid, chunk, quality, retry + 1);
+            }
+
+            // not to try anymore, throw explicit error
+            throw new Error(
+                `Truncated chunk. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
+                `Body size: ${response.data.byteLength}`,
+            );
+        }
+
+        return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2059,6 +2111,15 @@ async function inviteOrganizationMembers(orgId, data) {
     }
 }
 
+async function resendOrganizationInvitation(key) {
+    const { backendAPI } = config;
+    try {
+        await Axios.post(`${backendAPI}/invitations/${key}/resend`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function updateOrganizationMembership(membershipId, data) {
     const { backendAPI } = config;
     let response = null;
@@ -2481,8 +2542,10 @@ export default Object.freeze({
         invitation: getMembershipInvitation,
         delete: deleteOrganization,
         invite: inviteOrganizationMembers,
+        resendInvitation: resendOrganizationInvitation,
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
+        acceptInvitation: acceptOrganizationInvitation,
     }),
 
     webhooks: Object.freeze({

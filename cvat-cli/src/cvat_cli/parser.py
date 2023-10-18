@@ -194,17 +194,6 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         ),
     )
     task_create_parser.add_argument(
-        "--dataset_repository_url",
-        default="",
-        type=str,
-        help=textwrap.dedent(
-            """\
-            git repository to store annotations e.g.
-            https://github.com/user/repos [annotation/<anno_file_name.zip>]
-        """
-        ),
-    )
-    task_create_parser.add_argument(
         "--frame_step",
         default=None,
         type=int,
@@ -231,12 +220,6 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
         default="[]",
         type=parse_label_arg,
         help="string or file containing JSON labels specification",
-    )
-    task_create_parser.add_argument(
-        "--lfs",
-        default=False,
-        action="store_true",
-        help="using lfs for dataset repository (default: %(default)s)",
     )
     task_create_parser.add_argument(
         "--project_id", default=None, type=int, help="project ID if project exists"

@@ -90,11 +90,17 @@ export default function ManifestsManager(props: Props): JSX.Element {
                                                         required: true,
                                                         message: 'Please specify a manifest name',
                                                     },
+                                                    {
+                                                        type: 'string',
+                                                        pattern: /^.*\.(jsonl)$/,
+                                                        message: 'Manifest file must have .jsonl extension',
+                                                    },
                                                 ]}
                                                 initialValue={field.name}
                                             >
                                                 <Input
                                                     placeholder='manifest.jsonl'
+                                                    className='cvat-cloud-storage-manifest-field'
                                                     onChange={(event) => onChangeManifestPath(event.target.value, idx)}
                                                 />
                                             </Form.Item>
