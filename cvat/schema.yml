@@ -1531,6 +1531,60 @@ paths:
       responses:
         '204':
           description: The invitation has been deleted
+  /api/invitations/{key}/accept:
+    post:
+      operationId: invitations_accept
+      summary: Method registers user and accepts invitation to organization
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationWriteRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AcceptInvitationRead'
+          description: The invitation is accepted
+        '400':
+          description: The invitation is expired or already accepted
+  /api/invitations/{key}/resend:
+    post:
+      operationId: invitations_resend
+      summary: Method resends the invitation
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: Invitation has been sent
+        '400':
+          description: The invitation is already accepted
   /api/issues:
     get:
       operationId: issues_list
@@ -6100,6 +6154,38 @@ components:
       - description
       - name
       - version
+    AcceptInvitationRead:
+      type: object
+      properties:
+        organization_slug:
+          type: string
+      required:
+      - organization_slug
+    AcceptInvitationWriteRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 5
+          maxLength: 150
+        password1:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password2:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          minLength: 1
+        last_name:
+          type: string
+          minLength: 1
+      required:
+      - password1
+      - password2
+      - username
     AnalyticsReport:
       type: object
       properties:
@@ -6546,7 +6632,7 @@ components:
           maxLength: 40
         secret_key:
           type: string
-          maxLength: 44
+          maxLength: 64
         connection_string:
           type: string
           maxLength: 440
@@ -8500,7 +8586,7 @@ components:
           maxLength: 40
         secret_key:
           type: string
-          maxLength: 44
+          maxLength: 64
         connection_string:
           type: string
           maxLength: 440

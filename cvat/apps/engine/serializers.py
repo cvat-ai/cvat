@@ -1720,7 +1720,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
     key = serializers.CharField(max_length=40, allow_blank=True, required=False)
-    secret_key = serializers.CharField(max_length=44, allow_blank=True, required=False)
+    secret_key = serializers.CharField(max_length=64, allow_blank=True, required=False)
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])

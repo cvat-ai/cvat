@@ -142,7 +142,7 @@ function HeaderComponent(props: Props): JSX.Element {
     } = props;
 
     const {
-        CHANGELOG_URL, LICENSE_URL, GITTER_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
+        CHANGELOG_URL, LICENSE_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
     } = config;
 
     const isMounted = useIsMounted();
@@ -150,7 +150,7 @@ function HeaderComponent(props: Props): JSX.Element {
     const [organizationsList, setOrganizationList] = useState<Organization[] | null>(null);
 
     const searchCallback = useCallback((search?: string): Promise<Organization[]> => new Promise((resolve, reject) => {
-        const promise = core.organizations.get(search ? { search } : {})
+        const promise = core.organizations.get(search ? { search } : {});
 
         setListFetching(true);
         promise.then((organizations: Organization[]) => {
@@ -213,18 +213,11 @@ function HeaderComponent(props: Props): JSX.Element {
     ), 10]);
     aboutLinks.push([(
         <Col>
-            <a href={GITTER_URL} target='_blank' rel='noopener noreferrer'>
-                Need help?
-            </a>
-        </Col>
-    ), 20]);
-    aboutLinks.push([(
-        <Col>
             <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
                 Find us on Discord
             </a>
         </Col>
-    ), 30]);
+    ), 20]);
     aboutLinks.push(...aboutPlugins.map(({ component: Component, weight }, index: number) => (
         [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
     )));
