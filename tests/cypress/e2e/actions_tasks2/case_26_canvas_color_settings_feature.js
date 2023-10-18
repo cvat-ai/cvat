@@ -58,6 +58,7 @@ context('Canvas color settings feature', () => {
                     });
             });
         });
+        cy.get('.ant-tooltip').invoke('hide');
     }
 
     function checkSlidersValue(wrapper, slidersClassNames, expectedResult) {
@@ -112,6 +113,27 @@ context('Canvas color settings feature', () => {
             checkSlidersValue(
                 '.cvat-image-setups-filters', filterSlidersClassNames, defaultValueInSettingFilters,
             );
+        });
+
+        it('Check persisting image filters across jobs', () => {
+            const sliderAction = generateString(countActionMoveSlider, 'rightarrow');
+            const filterAction = generateString(countActionMoveFilterSlider, 'rightarrow');
+            applyStringAction(
+                '.cvat-canvas-image-setups-content', classNameSliders, sliderAction,
+            );
+            applyStringAction(
+                '.cvat-image-setups-filters', filterSlidersClassNames, filterAction,
+            );
+            cy.interactMenu('Open the task');
+            cy.openJob(1);
+            cy.get('.cvat-canvas-image-setups-trigger').click();
+            checkSlidersValue(
+                '.cvat-canvas-image-setups-content', classNameSliders, expectedResultInSetting,
+            );
+            checkSlidersValue(
+                '.cvat-image-setups-filters', filterSlidersClassNames, expectedResultInSettingFilters,
+            );
+            cy.get('.cvat-notification-notice-image-processing-error').should('not.exist');
         });
     });
 });

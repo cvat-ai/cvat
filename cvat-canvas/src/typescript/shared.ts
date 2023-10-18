@@ -383,24 +383,53 @@ export function imageDataToDataURL(
     }, 'image/png');
 }
 
-export function alphaChannelOnly(imageData: Uint8ClampedArray): number[] {
-    const alpha = new Array(imageData.length / 4);
+export function zipChannels(imageData: Uint8ClampedArray): number[] {
+    const rle = [];
+
+    let prev = 0;
+    let summ = 0;
     for (let i = 3; i < imageData.length; i += 4) {
-        alpha[Math.floor(i / 4)] = imageData[i] > 0 ? 1 : 0;
+        const alpha = imageData[i] > 0 ? 1 : 0;
+        if (prev !== alpha) {
+            rle.push(summ);
+            prev = alpha;
+            summ = 1;
+        } else {
+            summ++;
+        }
     }
-    return alpha;
+
+    rle.push(summ);
+    return rle;
 }
 
-export function expandChannels(r: number, g: number, b: number, alpha: number[], endOffset = 0): Uint8ClampedArray {
-    const imageBitmap = new Uint8ClampedArray((alpha.length - endOffset) * 4);
-    for (let i = 0; i < alpha.length - endOffset; i++) {
-        const val = alpha[i] ? 1 : 0;
-        imageBitmap[i * 4] = r;
-        imageBitmap[i * 4 + 1] = g;
-        imageBitmap[i * 4 + 2] = b;
-        imageBitmap[i * 4 + 3] = val * 255;
+export function expandChannels(r: number, g: number, b: number, encoded: number[]): Uint8ClampedArray {
+    function rle2Mask(rle: number[], width: number, height: number): Uint8ClampedArray {
+        const decoded = new Uint8ClampedArray(width * height * 4).fill(0);
+        const { length } = rle;
+        let decodedIdx = 0;
+        let value = 0;
+        let i = 0;
+
+        while (i < length - 4) {
+            let count = rle[i];
+            while (count > 0) {
+                decoded[decodedIdx + 0] = r;
+                decoded[decodedIdx + 1] = g;
+                decoded[decodedIdx + 2] = b;
+                decoded[decodedIdx + 3] = value * 255;
+                decodedIdx += 4;
+                count--;
+            }
+            i++;
+            value = Math.abs(value - 1);
+        }
+
+        return decoded;
     }
-    return imageBitmap;
+
+    const [left, top, right, bottom] = encoded.slice(-4);
+    return rle2Mask(encoded, right - left + 1, bottom - top + 1);
 }
 
 export type PropType<T, Prop extends keyof T> = T[Prop];
