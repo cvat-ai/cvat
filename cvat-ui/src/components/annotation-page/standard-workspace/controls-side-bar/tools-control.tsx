@@ -1159,13 +1159,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 </Row>
             );
         }
-        const attrsMap: Record<string, Record<string, number>> = {};
-        jobInstance.labels.forEach((label: any) => {
-            attrsMap[label.name] = {};
-            label.attributes.forEach((attr: any) => {
-                attrsMap[label.name][attr.name] = attr.id;
-            });
-        });
+        // const attrsMap: Record<string, Record<string, number>> = {};
+        // jobInstance.labels.forEach((label: any) => {
+        //     attrsMap[label.name] = {};
+        //     label.attributes.forEach((attr: any) => {
+        //         attrsMap[label.name][attr.name] = attr.id;
+        //     });
+        // });
 
         function checkAttributesCompatibility(
             functionAttribute: ModelAttribute | undefined,
@@ -1240,27 +1240,33 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         ShapeType.RECTANGLE, ShapeType.ELLIPSE,
                                     ].includes(data.type) ? (data.rotation || 0) : 0,
                                     source: core.enums.Source.AUTO,
-                                    attributes: (data.attributes as { name: string, value: string }[])
-                                        .reduce((acc, attr) => {
-                                            const [modelAttr] = Object.entries(body.mapping[modelLabel].attributes)
-                                                .find((value: string[]) => value[1] === attr.name) || [];
-                                            const areCompatible = checkAttributesCompatibility(
-                                                model.attributes[modelLabel]
-                                                    .find((mAttr) => mAttr.name === modelAttr),
-                                                jobLabel.attributes.find((jobAttr: Attribute) => (
-                                                    jobAttr.name === attr.name
-                                                )),
-                                                attr.value,
-                                            );
+                                    // attributes: (data.attributes as { name: string, value: string }[])
+                                    //     .reduce((acc, attr) => {
+                                    //         const [modelAttr] = Object.entries(body.mapping[modelLabel].attributes)
+                                    //             .find((value: string[]) => value[1] === attr.name) || [];
+                                    //         const areCompatible = checkAttributesCompatibility(
+                                    //             model.attributes[modelLabel]
+                                    //                 .find((mAttr) => mAttr.name === modelAttr),
+                                    //             jobLabel.attributes.find((jobAttr: Attribute) => (
+                                    //                 jobAttr.name === attr.name
+                                    //             )),
+                                    //             attr.value,
+                                    //         );
 
-                                            if (areCompatible) {
-                                                acc[attrsMap[data.label][attr.name]] = attr.value;
-                                            }
+                                    //         if (areCompatible) {
+                                    //             acc[attrsMap[data.label][attr.name]] = attr.value;
+                                    //         }
 
-                                            return acc;
-                                        }, {} as Record<number, string>),
+                                    //         return acc;
+                                    //     }, {} as Record<number, string>),
                                     zOrder: curZOrder,
                                 };
+
+                                if (data.type === 'skeleton') {
+                                    const elements = data.elements
+                                    const jobLabel = (jobInstance.labels as Label[])
+                                    .find((jLabel: Label): boolean => jLabel.name === data.label);
+                                }
 
                                 if (data.type === 'mask' && data.points && body.convMaskToPoly) {
                                     return new core.classes.ObjectState({

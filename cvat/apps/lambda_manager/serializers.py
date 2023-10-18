@@ -5,7 +5,6 @@
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
-
 class LabelMappingEntrySerializer(serializers.DictField):
     name = serializers.CharField()
 
@@ -25,6 +24,7 @@ class FunctionCallRequestSerializer(serializers.Serializer):
     cleanup = serializers.BooleanField(default=False)
     convMaskToPoly = serializers.BooleanField(default=False) # TODO: use lowercase naming
     threshold = serializers.FloatField(required=False)
+    matching = serializers.JSONField()
     mapping = serializers.DictField(child=LabelMappingEntrySerializer(), required=False,
         help_text="Label mapping from the model to the task labels"
     )

@@ -45,9 +45,7 @@ class LambdaManager {
 
         for (const model of result) {
             models.push(
-                new MLModel({
-                    ...model,
-                }),
+                new MLModel({ ...model }),
             );
         }
 

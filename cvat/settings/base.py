@@ -465,16 +465,16 @@ IAM_OPA_BUNDLE_PATH = os.path.join(STATIC_ROOT, 'opa', 'bundle.tar.gz')
 os.makedirs(Path(IAM_OPA_BUNDLE_PATH).parent, exist_ok=True)
 
 # logging is known to be unreliable with RQ when using async transports
-vector_log_handler = os.getenv('VECTOR_EVENT_HANDLER', 'AsynchronousLogstashHandler')
+# vector_log_handler = os.getenv('VECTOR_EVENT_HANDLER', 'AsynchronousLogstashHandler')
 
 logstash_async_constants.QUEUED_EVENTS_FLUSH_INTERVAL = 2.0
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'vector': {
-            'format': '%(message)s',
-        },
+        # 'vector': {
+        #     'format': '%(message)s',
+        # },
         'standard': {
             'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'
         }
@@ -493,19 +493,19 @@ LOGGING = {
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
         },
-        'vector': {
-            'level': 'INFO',
-            'class': f'logstash_async.handler.{vector_log_handler}',
-            'formatter': 'vector',
-            'transport': 'logstash_async.transport.HttpTransport',
-            'ssl_enable': False,
-            'ssl_verify': False,
-            'host': os.getenv('DJANGO_LOG_SERVER_HOST', 'localhost'),
-            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8282),
-            'version': 1,
-            'message_type': 'django',
-            'database_path': EVENTS_LOCAL_DB_FILE,
-        }
+        # 'vector': {
+        #     'level': 'INFO',
+        #     'class': f'logstash_async.handler.{vector_log_handler}',
+        #     'formatter': 'vector',
+        #     'transport': 'logstash_async.transport.HttpTransport',
+        #     'ssl_enable': False,
+        #     'ssl_verify': False,
+        #     'host': os.getenv('DJANGO_LOG_SERVER_HOST', 'localhost'),
+        #     'port': os.getenv('DJANGO_LOG_SERVER_PORT', 8282),
+        #     'version': 1,
+        #     'message_type': 'django',
+        #     'database_path': EVENTS_LOCAL_DB_FILE,
+        # }
     },
     'root': {
         'handlers': ['console', 'server_file'],
@@ -519,17 +519,17 @@ LOGGING = {
             'level': 'INFO',
         },
 
-        'vector': {
-            'handlers': [],
-            'level': 'INFO',
-            # set True for debug
-            'propagate': False
-        }
+        # 'vector': {
+        #     'handlers': [],
+        #     'level': 'INFO',
+        #     # set True for debug
+        #     'propagate': False
+        # }
     },
 }
 
-if os.getenv('DJANGO_LOG_SERVER_HOST'):
-    LOGGING['loggers']['vector']['handlers'] += ['vector']
+# if os.getenv('DJANGO_LOG_SERVER_HOST'):
+#     LOGGING['loggers']['vector']['handlers'] += ['vector']
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled

@@ -138,8 +138,26 @@ class LambdaFunction:
             self.kind = LambdaType.UNKNOWN
         # dictionary of labels for the function (e.g. car, person)
         spec = json.loads(meta_anno.get('spec') or '[]')
-        labels = [item['name'] for item in spec]
-        if len(labels) != len(set(labels)):
+
+        def parse_labels(spec):
+            def parse_attributes(attrs_spec):
+                return [{
+                    'name': attr.get('name'),
+                    'input_type': attr.get('input_type'),
+                    'values': attr.get('values'),
+                } for attr in attrs_spec]
+
+            return [{
+                'name': label.get('name'),
+                'type': label.get('type', 'any'),
+                'attributes': parse_attributes(label.get('attributes', [])),
+                'elements': parse_labels(label.get('elements', []))
+            } for label in spec]
+
+        # todo: validate labels type / attribute input type
+        # todo: check sublabel names are unique in skeletons
+        labels = parse_labels(spec)
+        if len(labels) != len(set([label['name'] for label in labels])):
             raise ValidationError(
                 "`{}` lambda function has non-unique labels".format(self.id),
                 code=status.HTTP_404_NOT_FOUND)
@@ -173,7 +191,8 @@ class LambdaFunction:
         response = {
             'id': self.id,
             'kind': str(self.kind),
-            'labels': self.labels,
+            'labels': [label['name'] for label in self.labels],
+            'labels_v2': self.labels,
             'description': self.description,
             'framework': self.framework,
             'name': self.name,
@@ -230,47 +249,59 @@ class LambdaFunction:
         if threshold:
             payload.update({ "threshold": threshold })
         quality = data.get("quality")
-        mapping = data.get("mapping", {})
+        mapping = data.get("mapping_v2", {})
 
-        task_attributes = {}
-        mapping_by_default = {}
-        for db_label in (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all():
-            mapping_by_default[db_label.name] = {
-                'name': db_label.name,
-                'attributes': {}
-            }
-            task_attributes[db_label.name] = {}
-            for attribute in db_label.attributespec_set.all():
-                task_attributes[db_label.name][attribute.name] = {
-                    'input_type': attribute.input_type,
-                    'values': attribute.values.split('\n')
-                }
+        model_labels = self.labels
+        task_labels = db_task.get_labels()
+        task_labels = list(filter(lambda x: not x.has_parent_label(), task_labels))
+
+        def make_default_mapping(model_labels, task_labels):
+            mapping_by_default = {}
+            for model_label in model_labels:
+                for task_label in task_labels:
+                    same_type = task_label.type == model_label['type']
+                    if task_label.name == model_label['name'] and same_type:
+                        # todo: handle one more case
+                        # todo: support attributes
+                        # model does not return skeleton and task_label.type is any
+                        mapping_by_default[model_label['name']] = {
+                            'name': task_label.name,
+                            'attributes': {},
+                        }
+
+                        if model_label['type'] == 'skeleton' and task_label.type == 'skeleton':
+                            mapping_by_default[model_label['name']]['elements'] = make_default_mapping(
+                                model_label['elements'],
+                                task_label.sublabels.all(),
+                            )
+
+            return mapping_by_default
+
+        mapping_by_default = make_default_mapping(model_labels, task_labels)
         if not mapping:
-            # use mapping by default to avoid labels in mapping which
-            # don't exist in the task
             mapping = mapping_by_default
-        else:
-            # filter labels in mapping which don't exist in the task
-            mapping = {k:v for k,v in mapping.items() if v['name'] in mapping_by_default}
+        # else:
+            # todo: filter labels in mapping which don't exist in the task
+            # mapping = {k:v for k,v in mapping.items() if v['name'] in mapping_by_default}
 
-        attr_mapping = { label: mapping[label]['attributes'] if 'attributes' in mapping[label] else {} for label in mapping }
-        mapping = { modelLabel: mapping[modelLabel]['name'] for modelLabel in mapping }
+        # attr_mapping = { label: mapping[label]['attributes'] if 'attributes' in mapping[label] else {} for label in mapping }
+        # mapping = { modelLabel: mapping[modelLabel]['name'] for modelLabel in mapping }
 
-        supported_attrs = {}
-        for func_label, func_attrs in self.func_attributes.items():
-            if func_label not in mapping:
-                continue
+        # supported_attrs = {}
+        # for func_label, func_attrs in self.func_attributes.items():
+        #     if func_label not in mapping:
+        #         continue
 
-            mapped_label = mapping[func_label]
-            mapped_attributes = attr_mapping.get(func_label, {})
-            supported_attrs[func_label] = {}
+        #     mapped_label = mapping[func_label]
+        #     mapped_attributes = attr_mapping.get(func_label, {})
+        #     supported_attrs[func_label] = {}
 
-            if mapped_attributes:
-                task_attr_names = [task_attr for task_attr in task_attributes[mapped_label]]
-                for attr in func_attrs:
-                    mapped_attr = mapped_attributes.get(attr["name"])
-                    if mapped_attr in task_attr_names:
-                        supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
+        #     if mapped_attributes:
+        #         task_attr_names = [task_attr for task_attr in task_attributes[mapped_label]]
+        #         for attr in func_attrs:
+        #             mapped_attr = mapped_attributes.get(attr["name"])
+        #             if mapped_attr in task_attr_names:
+        #                 supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
 
         # Check job frame boundaries
         if db_job:
@@ -333,35 +364,37 @@ class LambdaFunction:
         response = self.gateway.invoke(self, payload)
 
         response_filtered = []
-        def check_attr_value(value, func_attr, db_attr):
-            if db_attr is None:
-                return False
-            func_attr_type = func_attr["input_type"]
-            db_attr_type = db_attr["input_type"]
-            # Check if attribute types are equal for function configuration and db spec
-            if func_attr_type == db_attr_type:
-                if func_attr_type == "number":
-                    return value.isnumeric()
-                elif func_attr_type == "checkbox":
-                    return value in ["true", "false"]
-                elif func_attr_type in ["select", "radio", "text"]:
-                    return True
-                else:
-                    return False
-            else:
-                if func_attr_type == "number":
-                    return db_attr_type in ["select", "radio", "text"] and value.isnumeric()
-                elif func_attr_type == "text":
-                    return db_attr_type == "text" or \
-                           (db_attr_type in ["select", "radio"] and len(value.split(" ")) == 1)
-                elif func_attr_type == "select":
-                    return db_attr_type in ["radio", "text"]
-                elif func_attr_type == "radio":
-                    return db_attr_type in ["select", "text"]
-                elif func_attr_type == "checkbox":
-                    return value in ["true", "false"]
-                else:
-                    return False
+
+        # def check_attr_value(value, func_attr, db_attr):
+        #     if db_attr is None:
+        #         return False
+        #     func_attr_type = func_attr["input_type"]
+        #     db_attr_type = db_attr["input_type"]
+        #     # Check if attribute types are equal for function configuration and db spec
+        #     if func_attr_type == db_attr_type:
+        #         if func_attr_type == "number":
+        #             return value.isnumeric()
+        #         elif func_attr_type == "checkbox":
+        #             return value in ["true", "false"]
+        #         elif func_attr_type in ["select", "radio", "text"]:
+        #             return True
+        #         else:
+        #             return False
+        #     else:
+        #         if func_attr_type == "number":
+        #             return db_attr_type in ["select", "radio", "text"] and value.isnumeric()
+        #         elif func_attr_type == "text":
+        #             return db_attr_type == "text" or \
+        #                    (db_attr_type in ["select", "radio"] and len(value.split(" ")) == 1)
+        #         elif func_attr_type == "select":
+        #             return db_attr_type in ["radio", "text"]
+        #         elif func_attr_type == "radio":
+        #             return db_attr_type in ["select", "text"]
+        #         elif func_attr_type == "checkbox":
+        #             return value in ["true", "false"]
+        #         else:
+        #             return False
+
         if self.kind == LambdaType.DETECTOR:
             for item in response:
                 item_label = item['label']
@@ -369,26 +402,28 @@ class LambdaFunction:
                 if item_label not in mapping:
                     continue
 
-                attributes = deepcopy(item.get("attributes", []))
-                item["attributes"] = []
-                mapped_attributes = attr_mapping[item_label]
+                # attributes = deepcopy(item.get("attributes", []))
+                # item["attributes"] = []
+                # mapped_attributes = attr_mapping[item_label]
 
-                for attr in attributes:
-                    if attr['name'] not in mapped_attributes:
-                        continue
+                # for attr in attributes:
+                #     if attr['name'] not in mapped_attributes:
+                #         continue
 
-                    func_attr = [func_attr for func_attr in self.func_attributes.get(item_label, []) if func_attr['name'] == attr["name"]]
-                    # Skip current attribute if it was not declared as supported in function config
-                    if not func_attr:
-                        continue
+                #     func_attr = [func_attr for func_attr in self.func_attributes.get(item_label, []) if func_attr['name'] == attr["name"]]
+                #     # Skip current attribute if it was not declared as supported in function config
+                #     if not func_attr:
+                #         continue
 
-                    db_attr = supported_attrs.get(item_label, {}).get(attr["name"])
+                #     db_attr = supported_attrs.get(item_label, {}).get(attr["name"])
 
-                    if check_attr_value(attr["value"], func_attr[0], db_attr):
-                        attr["name"] = mapped_attributes[attr['name']]
-                        item["attributes"].append(attr)
+                #     if check_attr_value(attr["value"], func_attr[0], db_attr):
+                #         attr["name"] = mapped_attributes[attr['name']]
+                #         item["attributes"].append(attr)
 
-                item['label'] = mapping[item['label']]
+                item['label'] = mapping[item_label]
+                if 'elements' in item:
+                    item['elements'] = filter(lambda x: x['label'] in mapping[item_label]['elements'], item['elements'])
                 response_filtered.append(item)
                 response = response_filtered
 

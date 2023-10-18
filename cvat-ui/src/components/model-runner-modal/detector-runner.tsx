@@ -6,23 +6,21 @@
 import './styles.scss';
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { DeleteOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import Select, { BaseOptionType } from 'antd/lib/select';
-import Tag from 'antd/lib/tag';
+import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
 import notification from 'antd/lib/notification';
 
-import { ModelAttribute, StringObject } from 'reducers';
-
+import { StringObject } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
-import config from 'config';
 import {
     MLModel, ModelKind, ModelReturnType, DimensionType, Label as LabelInterface,
 } from 'cvat-core-wrapper';
+
+import LabelsMatcher, { Match } from './matcher';
 
 interface Props {
     withCleanup: boolean;
@@ -31,6 +29,12 @@ interface Props {
     dimension: DimensionType;
     runInference(model: MLModel, body: object): void;
 }
+
+type Mapping = Record<string, {
+    name: string;
+    attributes: { [index: string]: { name: string } };
+    elements?: Mapping;
+}>
 
 interface MappedLabel {
     name: string;
@@ -45,9 +49,17 @@ export interface DetectorRequestBody {
     convMaskToPoly: boolean;
 }
 
-interface Match {
-    model: string | null;
-    task: string | null;
+function convertMappingToServer(mapping: Match): Mapping {
+    return mapping.reduce<Mapping>((acc, [modelLabel, taskLabel, subMapping]) => (
+        {
+            ...acc,
+            [modelLabel.name]: {
+                name: taskLabel.name,
+                attributes: {},
+                ...(subMapping.length ? { elements: convertMappingToServer(subMapping) } : {}),
+            },
+        }
+    ), {});
 }
 
 function DetectorRunner(props: Props): JSX.Element {
@@ -56,172 +68,28 @@ function DetectorRunner(props: Props): JSX.Element {
     } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
-    const [mapping, setMapping] = useState<MappedLabelsList>({});
     const [threshold, setThreshold] = useState<number>(0.5);
     const [distance, setDistance] = useState<number>(50);
     const [cleanup, setCleanup] = useState<boolean>(false);
+    const [match, setMatch] = useState<Match>([]);
     const [convertMasksToPolygons, setConvertMasksToPolygons] = useState<boolean>(false);
-    const [match, setMatch] = useState<Match>({ model: null, task: null });
-    const [attrMatches, setAttrMatch] = useState<Record<string, Match>>({});
 
     const model = models.filter((_model): boolean => _model.id === modelID)[0];
     const isDetector = model && model.kind === ModelKind.DETECTOR;
     const isReId = model && model.kind === ModelKind.REID;
     const isClassifier = model && model.kind === ModelKind.CLASSIFIER;
     const convertMasksToPolygonsAvailable = isDetector &&
-                    (!model.returnType || model.returnType === ModelReturnType.MASK);
+        (!model.returnType || model.returnType === ModelReturnType.MASK);
     const buttonEnabled =
         model && (model.kind === ModelKind.REID ||
-            (model.kind === ModelKind.DETECTOR && !!Object.keys(mapping).length) ||
-            (model.kind === ModelKind.CLASSIFIER && !!Object.keys(mapping).length));
+            (model.kind === ModelKind.DETECTOR && match.length) ||
+            (model.kind === ModelKind.CLASSIFIER && match.length));
     const canHaveMapping = isDetector || isClassifier;
-    const modelLabels = (canHaveMapping ? model.labels : []).filter((_label: string): boolean => !(_label in mapping));
-    const taskLabels = canHaveMapping ? labels.map((label: any): string => label.name) : [];
 
     if (model && model.kind === ModelKind.REID && !model.labels.length) {
         notification.warning({
             message: 'The selected model does not include any labels',
         });
-    }
-
-    function matchAttributes(
-        labelAttributes: LabelInterface['attributes'],
-        modelAttributes: ModelAttribute[],
-    ): StringObject {
-        if (Array.isArray(labelAttributes) && Array.isArray(modelAttributes)) {
-            return labelAttributes
-                .reduce((attrAcc: StringObject, attr: any): StringObject => {
-                    if (modelAttributes.some((mAttr) => mAttr.name === attr.name)) {
-                        attrAcc[attr.name] = attr.name;
-                    }
-
-                    return attrAcc;
-                }, {});
-        }
-
-        return {};
-    }
-
-    function updateMatch(modelLabel: string | null, taskLabel: string | null): void {
-        function addMatch(modelLbl: string, taskLbl: string): void {
-            const newMatch: MappedLabelsList = {};
-            const label = labels.find((l) => l.name === taskLbl) as LabelInterface;
-            const currentModel = models.filter((_model): boolean => _model.id === modelID)[0];
-            const attributes = matchAttributes(label.attributes, currentModel.attributes[modelLbl]);
-
-            newMatch[modelLbl] = { name: taskLbl, attributes };
-            setMapping({ ...mapping, ...newMatch });
-            setMatch({ model: null, task: null });
-        }
-
-        if (match.model && taskLabel) {
-            addMatch(match.model, taskLabel);
-            return;
-        }
-
-        if (match.task && modelLabel) {
-            addMatch(modelLabel, match.task);
-            return;
-        }
-
-        setMatch({
-            model: modelLabel,
-            task: taskLabel,
-        });
-    }
-
-    function updateAttrMatch(modelLabel: string, modelAttrLabel: string | null, taskAttrLabel: string | null): void {
-        function addAttributeMatch(modelAttr: string, attrLabel: string): void {
-            const newMatch: StringObject = {};
-            newMatch[modelAttr] = attrLabel;
-            mapping[modelLabel].attributes = { ...mapping[modelLabel].attributes, ...newMatch };
-
-            delete attrMatches[modelLabel];
-            setAttrMatch({ ...attrMatches });
-        }
-
-        const modelAttr = attrMatches[modelLabel]?.model;
-        if (modelAttr && taskAttrLabel) {
-            addAttributeMatch(modelAttr, taskAttrLabel);
-            return;
-        }
-
-        const taskAttrModel = attrMatches[modelLabel]?.task;
-        if (taskAttrModel && modelAttrLabel) {
-            addAttributeMatch(modelAttrLabel, taskAttrModel);
-            return;
-        }
-
-        attrMatches[modelLabel] = {
-            model: modelAttrLabel,
-            task: taskAttrLabel,
-        };
-        setAttrMatch({ ...attrMatches });
-    }
-
-    function renderMappingRow(
-        color: string,
-        leftLabel: string,
-        rightLabel: string,
-        removalTitle: string,
-        onClick: () => void,
-        className = '',
-    ): JSX.Element {
-        return (
-            <Row key={leftLabel} justify='start' align='middle'>
-                <Col span={10} className={className}>
-                    <Tag color={color}>{leftLabel}</Tag>
-                </Col>
-                <Col span={10} offset={1} className={className}>
-                    <Tag color={color}>{rightLabel}</Tag>
-                </Col>
-                <Col offset={1}>
-                    <CVATTooltip title={removalTitle}>
-                        <DeleteOutlined
-                            className='cvat-danger-circle-icon'
-                            onClick={onClick}
-                        />
-                    </CVATTooltip>
-                </Col>
-            </Row>
-        );
-    }
-
-    function renderSelector(
-        value: string,
-        tooltip: string,
-        labelsToRender: string[],
-        onChange: (label: string) => void,
-        className = '',
-    ): JSX.Element {
-        return (
-            <CVATTooltip title={tooltip} className={className}>
-                <Select
-                    value={value}
-                    onChange={onChange}
-                    style={{ width: '100%' }}
-                    showSearch
-                    filterOption={(input: string, option: BaseOptionType | undefined) => {
-                        if (option) {
-                            const { children } = option.props;
-                            if (typeof children === 'string') {
-                                return children.toLowerCase().includes(input.toLowerCase());
-                            }
-                        }
-
-                        return false;
-                    }}
-                >
-                    {labelsToRender.map(
-                        (label: string): JSX.Element => (
-                            <Select.Option value={label} key={label}>
-                                {label}
-                            </Select.Option>
-                        ),
-                    )}
-                </Select>
-            </CVATTooltip>
-        );
     }
 
     return (
@@ -234,23 +102,6 @@ function DetectorRunner(props: Props): JSX.Element {
                         disabled={dimension !== DimensionType.DIMENSION_2D}
                         style={{ width: '100%' }}
                         onChange={(_modelID: string): void => {
-                            const chosenModel = models.filter((_model): boolean => _model.id === _modelID)[0];
-                            const defaultMapping = labels.reduce(
-                                (acc: MappedLabelsList, label: LabelInterface): MappedLabelsList => {
-                                    if (chosenModel.labels.includes(label.name)) {
-                                        acc[label.name] = {
-                                            name: label.name,
-                                            attributes: matchAttributes(
-                                                label.attributes, chosenModel.attributes[label.name],
-                                            ),
-                                        };
-                                    }
-                                    return acc;
-                                }, {},
-                            );
-                            setMapping(defaultMapping);
-                            setMatch({ model: null, task: null });
-                            setAttrMatch({});
                             setModelID(_modelID);
                         }}
                     >
@@ -264,99 +115,31 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            {canHaveMapping &&
-                Object.keys(mapping).length ?
-                Object.keys(mapping).map((modelLabel: string) => {
-                    const label = labels
-                        .find((_label: LabelInterface): boolean => (
-                            _label.name === mapping[modelLabel].name)) as LabelInterface;
-
-                    const color = label ? label.color : config.NEW_LABEL_COLOR;
-                    const notMatchedModelAttributes = model.attributes[modelLabel]
-                        .filter((_attribute: ModelAttribute): boolean => (
-                            !(_attribute.name in (mapping[modelLabel].attributes || {}))
-                        ));
-                    const taskAttributes = label.attributes.map((_attrLabel: any): string => _attrLabel.name);
-                    return (
-                        <React.Fragment key={modelLabel}>
-                            {
-                                renderMappingRow(color,
-                                    modelLabel,
-                                    label.name,
-                                    'Remove the mapped label',
-                                    (): void => {
-                                        const newMapping = { ...mapping };
-                                        delete newMapping[modelLabel];
-                                        setMapping(newMapping);
-
-                                        const newAttrMatches = { ...attrMatches };
-                                        delete newAttrMatches[modelLabel];
-                                        setAttrMatch({ ...newAttrMatches });
-                                    })
-                            }
-                            {
-                                Object.keys(mapping[modelLabel].attributes || {})
-                                    .map((mappedModelAttr: string) => (
-                                        renderMappingRow(
-                                            config.NEW_LABEL_COLOR,
-                                            mappedModelAttr,
-                                            mapping[modelLabel].attributes[mappedModelAttr],
-                                            'Remove the mapped attribute',
-                                            (): void => {
-                                                const newMapping = { ...mapping };
-                                                delete mapping[modelLabel].attributes[mappedModelAttr];
-                                                setMapping(newMapping);
-                                            },
-                                            'cvat-run-model-label-attribute-block',
-                                        )
-                                    ))
-                            }
-                            {notMatchedModelAttributes.length && taskAttributes.length ? (
-                                <Row justify='start' align='middle'>
-                                    <Col span={10}>
-                                        {renderSelector(
-                                            attrMatches[modelLabel]?.model || '',
-                                            'Model attr labels', notMatchedModelAttributes.map((l) => l.name),
-                                            (modelAttrLabel: string) => updateAttrMatch(
-                                                modelLabel, modelAttrLabel, null,
-                                            ),
-                                            'cvat-run-model-label-attribute-block',
-                                        )}
-                                    </Col>
-                                    <Col span={10} offset={1}>
-                                        {renderSelector(
-                                            attrMatches[modelLabel]?.task || '',
-                                            'Task attr labels', taskAttributes,
-                                            (taskAttrLabel: string) => updateAttrMatch(
-                                                modelLabel, null, taskAttrLabel,
-                                            ),
-                                            'cvat-run-model-label-attribute-block',
-                                        )}
-                                    </Col>
-                                    <Col span={1} offset={1}>
-                                        <CVATTooltip title='Specify an attribute mapping between model label and task label attributes'>
-                                            <QuestionCircleOutlined className='cvat-info-circle-icon' />
-                                        </CVATTooltip>
-                                    </Col>
-                                </Row>
-                            ) : null}
-                        </React.Fragment>
-                    );
-                }) : null}
-            {canHaveMapping && !!taskLabels.length && !!modelLabels.length ? (
+            {canHaveMapping ? (
                 <>
                     <Row justify='start' align='middle'>
-                        <Col span={10}>
-                            {renderSelector(match.model || '', 'Model labels', modelLabels, (modelLabel: string) => updateMatch(modelLabel, null))}
-                        </Col>
-                        <Col span={10} offset={1}>
-                            {renderSelector(match.task || '', 'Task labels', taskLabels, (taskLabel: string) => updateMatch(null, taskLabel))}
-                        </Col>
-                        <Col span={1} offset={1}>
-                            <CVATTooltip title='Specify a label mapping between model labels and task labels'>
-                                <QuestionCircleOutlined className='cvat-info-circle-icon' />
-                            </CVATTooltip>
-                        </Col>
+                        <LabelsMatcher
+                            onUpdateMatch={(_match: Match) => setMatch(_match)}
+                            modelLabels={model.labels}
+                            taskLabels={labels.map((label) => ({
+                                name: label.name,
+                                type: label.type,
+                                attributes: label.attributes.map((attr) => ({
+                                    name: attr.name,
+                                    input_type: attr.inputType,
+                                    values: [...attr.values],
+                                })),
+                                elements: (label.structure?.sublabels || []).map((sublabel) => ({
+                                    name: sublabel.name,
+                                    type: sublabel.type,
+                                    attributes: sublabel.attributes.map((attr) => ({
+                                        name: attr.name,
+                                        input_type: attr.inputType,
+                                        values: [...attr.values],
+                                    })),
+                                })),
+                            }))}
+                        />
                     </Row>
                 </>
             ) : null}
@@ -433,7 +216,13 @@ function DetectorRunner(props: Props): JSX.Element {
                             let requestBody: object = {};
                             if (model.kind === ModelKind.DETECTOR) {
                                 requestBody = {
-                                    mapping,
+                                    mapping_v2: convertMappingToServer(match),
+                                    mapping: Object.fromEntries(match.map(([modelLabel, taskLabel]) => (
+                                        [modelLabel.name, {
+                                            name: taskLabel.name,
+                                            attributes: {},
+                                        }]
+                                    ))),
                                     cleanup,
                                     convMaskToPoly: convertMasksToPolygons,
                                 };
@@ -444,7 +233,11 @@ function DetectorRunner(props: Props): JSX.Element {
                                 };
                             } else if (model.kind === ModelKind.CLASSIFIER) {
                                 requestBody = {
-                                    mapping,
+                                    mapping_v2: convertMappingToServer(match),
+                                    mapping: Object.fromEntries(match.map(([modelLabel, taskLabel]) => (
+                                        [modelLabel.name, taskLabel.name]
+                                    ))),
+                                    attributes: {},
                                 };
                             }
 
