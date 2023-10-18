@@ -756,7 +756,7 @@
                         }
                     },
                     "queryType": "sql",
-                    "rawSql": "SELECT\r\n     DATE_TRUNC('day', e2.timestamp) as time,\r\n    AVG(TIMESTAMPDIFF(MINUTE, e1.timestamp, e2.timestamp)) AS \"Overall average minutes to complete a job\"\r\nFROM events e1\r\nLEFT JOIN events e2 ON e1.job_id = e2.job_id\r\nWHERE\r\n    $__timeFilter(e1.timestamp) AND e1.scope = 'load:job'\r\n    AND (($__timeFilter(e2.timestamp) AND e2.scope = 'update:job' AND (e2.obj_val = 'completed' OR e2.obj_val = 'rejected')))\r\n    AND e1.timestamp < e2.timestamp\r\n    AND e1.user_name = e2.user_name\r\n    AND (e1.user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com', 'rswords', 'psherrod@sewerai.com'])\r\nGROUP BY time\r\nORDER BY time",
+                    "rawSql": "SELECT\r\n     DATE_TRUNC('day', e2.timestamp) as time,\r\n    AVG(TIMESTAMPDIFF(MINUTE, e1.timestamp, e2.timestamp)) AS \"Overall average minutes to complete a job\"\r\nFROM events e1\r\nLEFT JOIN events e2 ON e1.job_id = e2.job_id\r\nWHERE\r\n    $__timeFilter(e1.timestamp) AND e1.scope = 'load:job'\r\n    AND (($__timeFilter(e2.timestamp) AND e2.scope = 'update:job' AND (e2.obj_val = 'completed' OR e2.obj_val = 'rejected')))\r\n    AND e1.timestamp < e2.timestamp\r\n    AND e1.user_name = e2.user_name\r\nGROUP BY time\r\nORDER BY time",
                     "refId": "A"
                 }
             ],
@@ -857,7 +857,7 @@
                         }
                     },
                     "queryType": "sql",
-                    "rawSql": "SELECT\r\n     DATE_TRUNC('day', e2.timestamp) as time,\r\n    e2.user_name AS user,\r\n    AVG(TIMESTAMPDIFF(MINUTE, e1.timestamp, e2.timestamp)) AS \"Avg minutes from opening to completing job by\"\r\nFROM events e1\r\nLEFT JOIN events e2 ON e1.job_id = e2.job_id\r\nWHERE\r\n    $__timeFilter(e1.timestamp) AND e1.scope = 'load:job'\r\n    AND (($__timeFilter(e2.timestamp) AND e2.scope = 'update:job' AND (e2.obj_val = 'completed' OR e2.obj_val = 'rejected')))\r\n    AND e1.timestamp < e2.timestamp\r\n    AND e1.user_name = e2.user_name\r\n    AND (e1.user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com', 'rswords', 'psherrod@sewerai.com'])\r\nGROUP BY time, user\r\nORDER BY time, user",
+                    "rawSql": "SELECT\r\n     DATE_TRUNC('day', e2.timestamp) as time,\r\n    e2.user_name AS user,\r\n    AVG(TIMESTAMPDIFF(MINUTE, e1.timestamp, e2.timestamp)) AS \"Avg minutes from opening to completing job by\"\r\nFROM events e1\r\nLEFT JOIN events e2 ON e1.job_id = e2.job_id\r\nWHERE\r\n    $__timeFilter(e1.timestamp) AND e1.scope = 'load:job'\r\n    AND (($__timeFilter(e2.timestamp) AND e2.scope = 'update:job' AND (e2.obj_val = 'completed' OR e2.obj_val = 'rejected')))\r\n    AND e1.timestamp < e2.timestamp\r\n    AND e1.user_name = e2.user_name\r\nORDER BY time, user",
                     "refId": "A"
                 }
             ],
@@ -1154,22 +1154,6 @@
                 {
                     "builderOptions": {
                         "fields": [],
-                        "filters": [
-                            {
-                                "condition": "AND",
-                                "filterType": "custom",
-                                "key": "user_name",
-                                "operator": "IN",
-                                "type": "Nullable(String)",
-                                "value": [
-                                    "kyle",
-                                    "rpalugod@sewerai.com",
-                                    "rswords@sewerai.com",
-                                    "rswords",
-                                    "psherrod@sewerai.com"
-                                ]
-                            }
-                        ],
                         "limit": 100,
                         "metrics": [
                             {
@@ -1190,7 +1174,7 @@
                     },
                     "format": 0,
                     "queryType": "builder",
-                    "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) \"Number_of_activities\" FROM events WHERE $__timeFilter(timestamp) AND   ( user_name IN ('kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com', 'rswords', 'psherrod@sewerai.com' ) ) GROUP BY time ORDER BY time ASC LIMIT 100",
+                    "rawSql": "SELECT $__timeInterval(timestamp) as time,  count(*) \"Number_of_activities\" FROM events WHERE $__timeFilter(timestamp) GROUP BY time ORDER BY time ASC LIMIT 100",
                     "refId": "A"
                 }
             ],
@@ -1351,7 +1335,7 @@
                         }
                     },
                     "queryType": "sql",
-                    "rawSql": "SELECT DATE_TRUNC('hour', timestamp) as time, toString(user_name), count() as User\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nAND (user_name IN ['kyle', 'rpalugod@sewerai.com', 'rswords@sewerai.com', 'rswords', 'psherrod@sewerai.com'])\r\nGROUP BY time, user_name\r\nORDER BY time ASC, user_name ASC",
+                    "rawSql": "SELECT DATE_TRUNC('hour', timestamp) as time, toString(user_name), count() as User\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nGROUP BY time, user_name\r\nORDER BY time ASC, user_name ASC",
                     "refId": "A"
                 }
             ],
