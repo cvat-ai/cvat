@@ -622,10 +622,8 @@ class TestGetCloudStorageContent:
             cloud_storage_id,
         )["content"]
         assert len(initial_content) + 1 == len(content)
-        assert list(
-            filter(
-                lambda x: new_directory.strip() == x["name"] and "DIR" == x["mime_type"], content
-            )
+        assert any(
+            new_directory.strip("/") == x["name"] and "DIR" == str(x["type"]) for x in content
         )
 
         content = self._test_get_cloud_storage_content(
