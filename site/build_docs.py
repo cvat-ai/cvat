@@ -66,6 +66,7 @@ def git_checkout(ref: str, temp_repo: git.Repo, temp_dir: Path):
     ]
 
     temp_repo.git.checkout(ref, recurse_submodules=True, force=True)
+    temp_repo.git.submodule("update", "--init", "--recursive")
     tmp_repo_root = Path(temp_repo.working_tree_dir)
 
     for subdir in subdirs:
