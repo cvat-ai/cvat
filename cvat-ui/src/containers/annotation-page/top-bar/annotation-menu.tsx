@@ -6,6 +6,7 @@
 import React from 'react';
 import { withRouter, RouteComponentProps } from 'react-router';
 import { connect } from 'react-redux';
+import mixpanel from 'mixpanel-browser';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
@@ -155,6 +156,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             jobInstance.stage = JobStage.ANNOTATION;
             updateJob(jobInstance).then((success) => {
                 if (success) {
+                    mixpanel.track('Renewed job', { jobId: jobInstance.id });
                     message.info('Job renewed', 2);
                 }
             });
@@ -163,6 +165,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             jobInstance.state = core.enums.JobState.COMPLETED;
             updateJob(jobInstance).then((success) => {
                 if (success) {
+                    mixpanel.track('Finished Job', { jobId: jobInstance.id });
                     history.push(`/tasks/${jobInstance.taskId}`);
                 }
             });
@@ -170,10 +173,12 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             await loadNextJob();
         } else if (action === Actions.OPEN_TASK) {
             history.push(`/tasks/${jobInstance.taskId}`);
+            mixpanel.track('Opened task for job', { jobId: jobInstance.id, taskId: jobInstance.taskId });
         } else if (action.startsWith('state:')) {
             [, jobInstance.state] = action.split(':') as [string, JobState];
             updateJob(jobInstance).then((success) => {
                 if (success) {
+                    mixpanel.track('Updated job state', { jobId: jobInstance.id, newState: jobInstance.state });
                     message.info('Job state updated', 2);
                     if (['rejected', 'completed'].includes(jobInstance.state)) {
                         loadNextJob();

@@ -16,6 +16,7 @@ import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
 import ReactMarkdown from 'react-markdown';
 import 'antd/dist/antd.css';
+import mixpanel from 'mixpanel-browser';
 
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';
@@ -119,7 +120,7 @@ interface CVATAppState {
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
     constructor(props: CVATAppProps & RouteComponentProps) {
         super(props);
-
+        mixpanel.init('13350b599231e588d2d37e720840fc72', { debug: true, track_pageview: true, persistence: 'localStorage' });
         this.state = {
             healthIinitialized: false,
             backendIsHealthy: false,

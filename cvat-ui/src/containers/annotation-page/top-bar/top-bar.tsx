@@ -9,6 +9,7 @@ import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
 import Input from 'antd/lib/input';
 import copy from 'copy-to-clipboard';
+import mixpanel from 'mixpanel-browser';
 
 import {
     changeFrameAsync,
@@ -173,10 +174,28 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(redoActionAsync(sessionInstance, frameNumber));
         },
         searchAnnotations(sessionInstance: any, frameFrom: number, frameTo: number): void {
-            dispatch(searchAnnotationsAsync(sessionInstance, frameFrom, frameTo));
+            dispatch(searchAnnotationsAsync(sessionInstance, frameFrom, frameTo)).then((frame: number | null) => {
+                if (frame != null) {
+                    mixpanel.track('Searched for annotation frame',
+                        {
+                            jobId: sessionInstance.jobId,
+                            oldFrame: frameFrom,
+                            newFrame: frame,
+                        });
+                }
+            });
         },
         searchEmptyFrame(sessionInstance: any, frameFrom: number, frameTo: number): void {
-            dispatch(searchEmptyFrameAsync(sessionInstance, frameFrom, frameTo));
+            dispatch(searchEmptyFrameAsync(sessionInstance, frameFrom, frameTo)).then((frame: number | null) => {
+                if (frame != null) {
+                    mixpanel.track('Search for empty frame',
+                        {
+                            jobId: sessionInstance.jobId,
+                            oldFrame: frameFrom,
+                            newFrame: frame,
+                        });
+                }
+            });
         },
         changeWorkspace(workspace: Workspace): void {
             dispatch(changeWorkspaceAction(workspace));
@@ -315,6 +334,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 onSwitchPlay(false);
             }
             this.changeFrame(newFrame);
+            mixpanel.track('Went to first frame',
+                {
+                    jobId: jobInstance.jobId,
+                    oldFrame: frameNumber,
+                    newFrame,
+                });
         }
     };
 
@@ -334,6 +359,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 onSwitchPlay(false);
             }
             this.changeFrame(newFrame);
+            mixpanel.track('Went backwards to frame',
+                {
+                    jobId: jobInstance.jobId,
+                    oldFrame: frameNumber,
+                    newFrame,
+                });
         }
     };
 
@@ -358,6 +389,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
             if (prevButtonType === 'regular') {
                 this.changeFrame(newFrame);
+                mixpanel.track('Went to prev frame',
+                    {
+                        jobId: jobInstance.jobId,
+                        oldFrame: frameNumber,
+                        newFrame,
+                    });
             } else if (prevButtonType === 'filtered') {
                 this.searchAnnotations(newFrame, startFrame);
             } else {
@@ -386,6 +423,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
             if (nextButtonType === 'regular') {
                 this.changeFrame(newFrame);
+                mixpanel.track('Went to next frame',
+                    {
+                        jobId: jobInstance.jobId,
+                        oldFrame: frameNumber,
+                        newFrame,
+                    });
             } else if (nextButtonType === 'filtered') {
                 this.searchAnnotations(newFrame, stopFrame);
             } else {
@@ -410,6 +453,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 onSwitchPlay(false);
             }
             this.changeFrame(newFrame);
+            mixpanel.track('Went forwards to frame',
+                {
+                    jobId: jobInstance.jobId,
+                    oldFrame: frameNumber,
+                    newFrame,
+                });
         }
     };
 
@@ -425,6 +474,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 onSwitchPlay(false);
             }
             this.changeFrame(newFrame);
+            mixpanel.track('Went to last frame',
+                {
+                    jobId: jobInstance.jobId,
+                    oldFrame: frameNumber,
+                    newFrame,
+                });
         }
     };
 
@@ -447,7 +502,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
     private onChangePlayerSliderValue = async (value: number): Promise<void> => {
         const {
-            playing, onSwitchPlay, jobInstance, showDeletedFrames,
+            frameNumber, playing, onSwitchPlay, jobInstance, showDeletedFrames,
         } = this.props;
         if (playing) {
             onSwitchPlay(false);
@@ -459,6 +514,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         );
         if (newFrame !== null) {
             this.changeFrame(newFrame);
+            mixpanel.track('Slid to frame',
+                {
+                    jobId: jobInstance.jobId,
+                    oldFrame: frameNumber,
+                    newFrame,
+                });
         }
     };
 
@@ -478,6 +539,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             );
             if (newFrame !== null) {
                 this.changeFrame(newFrame);
+                mixpanel.track('Input frame number',
+                    {
+                        jobId: jobInstance.jobId,
+                        oldFrame: frameNumber,
+                        newFrame,
+                    });
             }
         }
     };

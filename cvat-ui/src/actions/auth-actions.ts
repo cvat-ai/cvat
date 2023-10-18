@@ -7,6 +7,7 @@ import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { UserConfirmation } from 'components/register-page/register-form';
 import { getCore } from 'cvat-core-wrapper';
 import isReachable from 'utils/url-checker';
+import mixpanel from 'mixpanel-browser';
 
 const cvat = getCore();
 
@@ -109,6 +110,11 @@ export const loginAsync = (credential: string, password: string): ThunkAction =>
     try {
         await cvat.server.login(credential, password);
         const users = await cvat.users.get({ self: true });
+        if (users && users.length > 0) {
+            console.log(`Setting mixpanel user: ${users[0].email}`);
+            mixpanel.people.set(users[0].email);
+            mixpanel.identify(users[0].email);
+        }
         dispatch(authActions.loginSuccess(users[0]));
     } catch (error) {
         const hasEmailVerificationBeenSent = error.message.includes('Unverified email');
@@ -122,6 +128,7 @@ export const logoutAsync = (): ThunkAction => async (dispatch) => {
     try {
         await cvat.organizations.deactivate();
         await cvat.server.logout();
+        mixpanel.reset();
         dispatch(authActions.logoutSuccess());
     } catch (error) {
         dispatch(authActions.logoutFailed(error));

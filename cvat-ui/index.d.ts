@@ -7,3 +7,4 @@ import 'redux-thunk/extend-redux';
 
 declare module '*.svg';
 declare module 'cvat-core/src/api';
+declare module 'mixpanel-browser';
