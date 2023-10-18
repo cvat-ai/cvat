@@ -1046,6 +1046,7 @@ export function getJobAsync(
 export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => void): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+        const hasUnsavedChanges = sessionInstance.annotations.hasUnsavedChanges();
 
         dispatch({
             type: AnnotationActionTypes.SAVE_ANNOTATIONS,
@@ -1077,8 +1078,9 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
                     states,
                 },
             });
-            if (sessionInstance.annotations.hasUnsavedChanges()) {
-                const annotationData = sessionInstance.annotations.map((annotation: any) => ({
+
+            if (hasUnsavedChanges) {
+                const annotationData = states.map((annotation: any) => ({
                     annotationId: annotation.label.id,
                     shape: annotation.shapeType,
                     points: annotation.points,
