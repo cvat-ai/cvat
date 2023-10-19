@@ -271,6 +271,19 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
                 return result;
             },
+            async acceptInvitation(username, firstName, lastName, email, password, userConfirmations, key) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.organizations.acceptInvitation,
+                    username,
+                    firstName,
+                    lastName,
+                    email,
+                    password,
+                    userConfirmations,
+                    key,
+                );
+                return result;
+            },
         },
         webhooks: {
             async get(filter: any) {

@@ -341,6 +341,28 @@ export default function implementAPI(cvat) {
         };
     };
 
+    cvat.organizations.acceptInvitation.implementation = async (
+        username,
+        firstName,
+        lastName,
+        email,
+        password,
+        userConfirmations,
+        key,
+    ) => {
+        const orgSlug = await serverProxy.organizations.acceptInvitation(
+            username,
+            firstName,
+            lastName,
+            email,
+            password,
+            userConfirmations,
+            key,
+        );
+
+        return orgSlug;
+    };
+
     cvat.webhooks.get.implementation = async (filter) => {
         checkFilter(filter, {
             page: isInteger,

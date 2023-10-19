@@ -775,16 +775,18 @@ class TestPatchProjectLabel:
                 api_client.labels_api.list_endpoint, project_id=pid, **kwargs
             )
 
-    def test_can_delete_label(self, projects, labels, admin_user):
-        project = [p for p in projects if p["labels"]["count"] > 0][0]
+    def test_can_delete_label(self, projects_wlc, labels, admin_user):
+        project = [p for p in projects_wlc if p["labels"]["count"] > 0][0]
         label = deepcopy([l for l in labels if l.get("project_id") == project["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
+        prev_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         response = patch_method(
             admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
+        curr_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK, response.content
-        assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
+        assert curr_lc == prev_lc - 1
 
     def test_can_delete_skeleton_label(self, projects, labels, admin_user):
         project = next(
@@ -802,17 +804,19 @@ class TestPatchProjectLabel:
         project_labels.remove(label)
         label_payload = {"id": label["id"], "deleted": True}
 
+        prev_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         response = patch_method(
             admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
+        curr_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
+        assert curr_lc == prev_lc - 1
 
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
 
-    def test_can_rename_label(self, projects, labels, admin_user):
-        project = [p for p in projects if p["labels"]["count"] > 0][0]
+    def test_can_rename_label(self, projects_wlc, labels, admin_user):
+        project = [p for p in projects_wlc if p["labels"]["count"] > 0][0]
         project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
         project_labels[0].update({"name": "new name"})
 
@@ -824,8 +828,8 @@ class TestPatchProjectLabel:
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
 
-    def test_cannot_rename_label_to_duplicate_name(self, projects, labels, admin_user):
-        project = [p for p in projects if p["labels"]["count"] > 1][0]
+    def test_cannot_rename_label_to_duplicate_name(self, projects_wlc, labels, admin_user):
+        project = [p for p in projects_wlc if p["labels"]["count"] > 1][0]
         project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
         project_labels[0].update({"name": project_labels[1]["name"]})
 
@@ -849,9 +853,11 @@ class TestPatchProjectLabel:
         project = list(projects)[0]
         new_label = {"name": "new name"}
 
+        prev_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_label]})
+        curr_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     @pytest.mark.parametrize("role", ["maintainer", "owner"])
     def test_non_project_staff_privileged_org_members_can_add_label(
@@ -872,14 +878,16 @@ class TestPatchProjectLabel:
             and is_org_member(user["id"], project["organization"])
         )
 
+        prev_lc = get_method(user["username"], "labels", project_id=project["id"]).json()["count"]
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'projects/{project["id"]}',
             {"labels": [new_label]},
         )
+        curr_lc = get_method(user["username"], "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     @pytest.mark.parametrize("role", ["supervisor", "worker"])
     def test_non_project_staff_org_members_cannot_add_label(
@@ -924,14 +932,16 @@ class TestPatchProjectLabel:
             and any(label.get("project_id") == project["id"] for label in labels)
         )
 
+        prev_lc = get_method(user["username"], "labels", project_id=project["id"]).json()["count"]
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'projects/{project["id"]}',
             {"labels": [new_label]},
         )
+        curr_lc = get_method(user["username"], "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     def test_admin_can_add_skeleton(self, projects, admin_user):
         project = list(projects)[0]
@@ -949,9 +959,11 @@ class TestPatchProjectLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
+        prev_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_skeleton]})
+        curr_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
