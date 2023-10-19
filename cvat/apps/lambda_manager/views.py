@@ -426,13 +426,13 @@ class LambdaFunction:
                 if item_label not in mapping:
                     continue
                 item['label'] = mapping[item_label]['name']
-                item['attributes'] = filter_attributes(item['attributes'], mapping)
+                item['attributes'] = filter_attributes(item.get('attributes', {}), mapping)
                 if 'elements' in item:
                     item['elements'] = list(filter(lambda x: x['label'] in mapping[item_label]['elements'], item['elements']))
                     for element in item['elements']:
                         element_label = element['label']
                         element['label'] = mapping[item_label]['elements'][element_label]['name']
-                        element['attributes'] = filter_attributes(element['attributes'], mapping[item_label]['elements'])
+                        element['attributes'] = filter_attributes(element.get('attributes', {}), mapping[item_label]['elements'])
                 response_filtered.append(item)
                 response = response_filtered
 
