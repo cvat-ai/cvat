@@ -366,23 +366,6 @@ class Project(models.Model):
         return self.name
 
 class TaskQuerySet(models.QuerySet):
-    def with_label_summary(self):
-        return self.prefetch_related(
-            'label_set',
-            'label_set__parent',
-            'project__label_set',
-            'project__label_set__parent',
-        ).annotate(
-            task_labels_count=models.Count('label',
-                filter=models.Q(label__parent__isnull=True),
-                distinct=True
-            ),
-            proj_labels_count=models.Count('project__label',
-                filter=models.Q(project__label__parent__isnull=True),
-                distinct=True
-            )
-        )
-
     def with_job_summary(self):
         return self.prefetch_related(
             'segment_set__job_set',
