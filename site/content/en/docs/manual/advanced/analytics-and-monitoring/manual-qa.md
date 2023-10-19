@@ -41,7 +41,7 @@ and describe issues with objects or areas within the frame.
 
 ### Assigning reviewer
 
-> **Note**: Only project owners and maintainers can assign reviewers.
+> **Note**: Reviewers can be assigned by project or task owner, assignee, and maintainer.
 
 To assign a reviewer to the job, do the following:
 
@@ -67,12 +67,6 @@ To report an issue, do the following:
 
 4. In the text field of the **Issue report popup**, enter the issue description.
 5. Click **Submit**.
-6. After finishing the review, save the work.
-
-You can easily access multiple issues created in one
-location by hovering over an issue and scrolling the mouse wheel.
-
-![](/images/issues_scroll.gif)
 
 ### Quick issue
 
@@ -92,8 +86,6 @@ To create a **Quick issue** do the following:
    - **Quick issue: incorrect position**: to report incorrect position of the label.
    - **Quick issue: incorrect attribute**: to report incorrect attribute of the label.
    - **Quick issue...**: to open the list of issues that were reported by you before.
-
-3. After finishing the review, save the work.
 
 ### Assigning corrector
 
@@ -130,11 +122,6 @@ To correct the reported issue, do the following:
    change state to **Complete**.
 
    ![Change job status](/images/image197.jpg)
-
-You can easily access multiple issues created in one
-location by hovering over an issue and scrolling the mouse wheel.
-
-![](/images/issues_scroll.gif)
 
 ## Review and report issues: review and correct mode
 
@@ -182,6 +169,11 @@ comment on the issue, remove (**Remove**) it, or resolve (**Resolve**) it.
 ![](/images/image232.jpg)
 
 To reopen the resolved issue, click **Reopen**.
+
+You can easily access multiple issues created in one
+location by hovering over an issue and scrolling the mouse wheel.
+
+![](/images/issues_scroll.gif)
 
 ### Issues comments
 
