@@ -51,16 +51,14 @@ def init_context(context):
     with open("/opt/nuclio/function.yaml", 'rb') as function_file:
         functionconfig = yaml.safe_load(function_file)
         labels_spec = functionconfig['metadata']['annotations']['spec']
-        labels = {
-            item["id"]: {
-                "name": item["name"],
-                "elements": {
-                    element["id"]: {
-                        "name": element["name"]
-                    } for element in item["elements"]
-                }
-            } for item in json.loads(labels_spec)
-        }
+        labels = [{
+            "name": item["name"],
+            "elements": {
+                element["id"]: {
+                    "name": element["name"]
+                } for element in item["elements"]
+            }
+        } for item in json.loads(labels_spec)]
 
     context.user_data.labels = labels
     context.user_data.detector = detector
@@ -89,55 +87,25 @@ def handler(context, event):
 
     results = []
     for i in range(len(bboxes)):
-        instance_box = bboxes[i]
+        # instance_box = bboxes[i]
         instance_keypoints = keypoints[i]
         instance_scores = keypoint_scores[i]
 
-        obj_label = context.user_data.labels[0]
-        results.append({
-            "confidence": 1,
-            "label": obj_label["name"],
-            "type": "skeleton",
-            "elements": [{
-                "label": obj_label["elements"][j]["name"],
-                "type": "points",
-                "points": [float(instance_keypoints[j][0]), float(instance_keypoints[j][1])],
-                "confidence": str(instance_scores[j]),
-            } for j in obj_label["elements"]],
-        })
-
-        offset = len(obj_label["elements"])
-        obj_label = context.user_data.labels[1]
-        results.append({
-            "confidence": 1,
-            "label": obj_label["name"],
-            "type": "skeleton",
-            "elements": [{
-                "label": obj_label["elements"][j]["name"],
-                "type": "points",
-                "points": [
-                    float(instance_keypoints[j + offset][0]),
-                    float(instance_keypoints[j + offset][1])
-                ],
-                "confidence": str(instance_scores[j]),
-            } for j in obj_label["elements"]],
-        })
-
-        offset += len(obj_label["elements"])
-        obj_label = context.user_data.labels[2]
-        results.append({
-            "confidence": 1,
-            "label": obj_label["name"],
-            "type": "skeleton",
-            "elements": [{
-                "label": obj_label["elements"][j]["name"],
-                "type": "points",
-                "points": [
-                    float(instance_keypoints[j + offset][0]),
-                    float(instance_keypoints[j + offset][1])
-                ],
-                "confidence": str(instance_scores[j]),
-            } for j in obj_label["elements"]],
-        })
+        for label in context.user_data.labels:
+            context.logger.info(f'handling {label}')
+            results.append({
+                "confidence": 1,
+                "label": label["name"],
+                "type": "skeleton",
+                "elements": [{
+                    "label": label["elements"][j]["name"],
+                    "type": "points",
+                    "points": [
+                        float(instance_keypoints[j - 1][0]),
+                        float(instance_keypoints[j - 1][1])
+                    ],
+                    "confidence": str(instance_scores[j  - 1]),
+                } for j in label["elements"]],
+            })
 
     return context.Response(body=json.dumps(results), headers={}, content_type='application/json', status_code=200)
