@@ -1009,6 +1009,7 @@ class DataSerializer(serializers.ModelSerializer):
 
 
     # pylint: disable=no-self-use
+    @transaction.atomic
     def _create_files(self, instance, files):
         if 'client_files' in files:
             models.ClientFile.objects.bulk_create(
