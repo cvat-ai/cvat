@@ -7,11 +7,11 @@
 .cvat-settings-tabs {
     height: 100%;
     overflow-y: auto;
-    padding-bottom: 15px;
+    padding-bottom: $grid-unit-size * 2;
 
     > div:nth-child(1) {
-        margin-top: 10px;
-        margin-bottom: 10px;
+        margin-top: $grid-unit-size;
+        margin-bottom: $grid-unit-size;
     }
 }
 

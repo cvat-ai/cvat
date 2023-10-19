@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
@@ -17,40 +17,37 @@ import { StringObject } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 import {
-    MLModel, ModelKind, ModelReturnType, DimensionType, Label as LabelInterface,
+    MLModel, ModelKind, ModelReturnType, DimensionType, Label,
 } from 'cvat-core-wrapper';
 
-import LabelsMatcher, { Match } from './matcher';
+import LabelsMapperComponent, { Md2JobLabelsMapping, LabelInterface } from './matcher';
 
 interface Props {
     withCleanup: boolean;
     models: MLModel[];
-    labels: LabelInterface[];
+    labels: Label[];
     dimension: DimensionType;
     runInference(model: MLModel, body: object): void;
 }
 
-type Mapping = Record<string, {
+type ServerMappingV2 = Record<string, {
     name: string;
     attributes: { [index: string]: { name: string } };
-    elements?: Mapping;
-}>
+    elements?: ServerMappingV2;
+}>;
 
-interface MappedLabel {
-    name: string;
-    attributes: StringObject;
-}
-
-type MappedLabelsList = Record<string, MappedLabel>;
-
+// todo: reimplement types, add mapping_v2
 export interface DetectorRequestBody {
-    mapping: MappedLabelsList;
+    mapping: Record<string, {
+        name: string;
+        attributes: StringObject;
+    }>;
     cleanup: boolean;
     convMaskToPoly: boolean;
 }
 
-function convertMappingToServer(mapping: Match): Mapping {
-    return mapping.reduce<Mapping>((acc, [modelLabel, taskLabel, subMapping]) => (
+function convertMappingToServer(mapping: Md2JobLabelsMapping): ServerMappingV2 {
+    return mapping.reduce<ServerMappingV2>((acc, [modelLabel, taskLabel, subMapping]) => (
         {
             ...acc,
             [modelLabel.name]: {
@@ -71,22 +68,55 @@ function DetectorRunner(props: Props): JSX.Element {
     const [threshold, setThreshold] = useState<number>(0.5);
     const [distance, setDistance] = useState<number>(50);
     const [cleanup, setCleanup] = useState<boolean>(false);
-    const [match, setMatch] = useState<Match>([]);
+    const [mapping, setMapping] = useState<Md2JobLabelsMapping>([]);
     const [convertMasksToPolygons, setConvertMasksToPolygons] = useState<boolean>(false);
+    const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
+    const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
 
-    const model = models.filter((_model): boolean => _model.id === modelID)[0];
-    const isDetector = model && model.kind === ModelKind.DETECTOR;
-    const isReId = model && model.kind === ModelKind.REID;
-    const isClassifier = model && model.kind === ModelKind.CLASSIFIER;
-    const convertMasksToPolygonsAvailable = isDetector &&
+    const model = models.find((_model): boolean => _model.id === modelID);
+    const isDetector = model?.kind === ModelKind.DETECTOR;
+    const isReId = model?.kind === ModelKind.REID;
+    const isClassifier = model?.kind === ModelKind.CLASSIFIER;
+    const convertMasks2PolygonVisible = isDetector &&
         (!model.returnType || model.returnType === ModelReturnType.MASK);
+    const labelsMappingVisible = isDetector || isClassifier;
+
     const buttonEnabled =
         model && (model.kind === ModelKind.REID ||
-            (model.kind === ModelKind.DETECTOR && match.length) ||
-            (model.kind === ModelKind.CLASSIFIER && match.length));
-    const canHaveMapping = isDetector || isClassifier;
+            (model.kind === ModelKind.DETECTOR && mapping.length) ||
+            (model.kind === ModelKind.CLASSIFIER && mapping.length));
 
-    if (model && model.kind === ModelKind.REID && !model.labels.length) {
+    useEffect(() => {
+        const converted = labels.map((label) => ({
+            name: label.name,
+            type: label.type,
+            color: label.color,
+            attributes: label.attributes.map((attr) => ({
+                name: attr.name,
+                input_type: attr.inputType,
+                values: [...attr.values],
+            })),
+            elements: (label.structure?.sublabels || []).map((sublabel) => ({
+                name: sublabel.name,
+                type: sublabel.type,
+                color: sublabel.color,
+                attributes: sublabel.attributes.map((attr) => ({
+                    name: attr.name,
+                    input_type: attr.inputType,
+                    values: [...attr.values],
+                })),
+            })),
+        }));
+
+        setTaskLabels(converted);
+        if (model) {
+            setModelLabels(model.labels);
+        } else {
+            setModelLabels([]);
+        }
+    }, [labels, model]);
+
+    if (model && model.kind !== ModelKind.REID && !model.labels.length) {
         notification.warning({
             message: 'The selected model does not include any labels',
         });
@@ -115,35 +145,19 @@ function DetectorRunner(props: Props): JSX.Element {
                     </Select>
                 </Col>
             </Row>
-            {canHaveMapping ? (
+            {labelsMappingVisible && (
                 <>
                     <Row justify='start' align='middle'>
-                        <LabelsMatcher
-                            onUpdateMatch={(_match: Match) => setMatch(_match)}
-                            modelLabels={model.labels}
-                            taskLabels={labels.map((label) => ({
-                                name: label.name,
-                                type: label.type,
-                                attributes: label.attributes.map((attr) => ({
-                                    name: attr.name,
-                                    input_type: attr.inputType,
-                                    values: [...attr.values],
-                                })),
-                                elements: (label.structure?.sublabels || []).map((sublabel) => ({
-                                    name: sublabel.name,
-                                    type: sublabel.type,
-                                    attributes: sublabel.attributes.map((attr) => ({
-                                        name: attr.name,
-                                        input_type: attr.inputType,
-                                        values: [...attr.values],
-                                    })),
-                                })),
-                            }))}
+                        <LabelsMapperComponent
+                            allowManyToOne
+                            onUpdateMapping={(_mapping: Md2JobLabelsMapping) => setMapping(_mapping)}
+                            modelLabels={modelLabels}
+                            taskLabels={taskLabels}
                         />
                     </Row>
                 </>
-            ) : null}
-            {convertMasksToPolygonsAvailable && (
+            )}
+            {convertMasks2PolygonVisible && (
                 <div className='detector-runner-convert-masks-to-polygons-wrapper'>
                     <Switch
                         checked={convertMasksToPolygons}
@@ -154,7 +168,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     <Text>Convert masks to polygons</Text>
                 </div>
             )}
-            {isDetector && withCleanup ? (
+            {isDetector && withCleanup && (
                 <div className='detector-runner-clean-previous-annotations-wrapper'>
                     <Switch
                         checked={cleanup}
@@ -162,7 +176,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     />
                     <Text>Clean previous annotations</Text>
                 </div>
-            ) : null}
+            )}
             {isReId ? (
                 <div>
                     <Row align='middle' justify='start'>
@@ -213,11 +227,15 @@ function DetectorRunner(props: Props): JSX.Element {
                         disabled={!buttonEnabled}
                         type='primary'
                         onClick={() => {
+                            if (!model) {
+                                return;
+                            }
+
                             let requestBody: object = {};
                             if (model.kind === ModelKind.DETECTOR) {
                                 requestBody = {
-                                    mapping_v2: convertMappingToServer(match),
-                                    mapping: Object.fromEntries(match.map(([modelLabel, taskLabel]) => (
+                                    mapping_v2: convertMappingToServer(mapping),
+                                    mapping: Object.fromEntries(mapping.map(([modelLabel, taskLabel]) => (
                                         [modelLabel.name, {
                                             name: taskLabel.name,
                                             attributes: {},
@@ -233,8 +251,8 @@ function DetectorRunner(props: Props): JSX.Element {
                                 };
                             } else if (model.kind === ModelKind.CLASSIFIER) {
                                 requestBody = {
-                                    mapping_v2: convertMappingToServer(match),
-                                    mapping: Object.fromEntries(match.map(([modelLabel, taskLabel]) => (
+                                    mapping_v2: convertMappingToServer(mapping),
+                                    mapping: Object.fromEntries(mapping.map(([modelLabel, taskLabel]) => (
                                         [modelLabel.name, taskLabel.name]
                                     ))),
                                     attributes: {},

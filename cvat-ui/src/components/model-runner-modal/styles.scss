@@ -4,7 +4,7 @@
 
 @import '../../base.scss';
 
-.cvat-runner-label-matcher-row {
+.cvat-runner-label-mapping-row {
     width: 100%;
     margin-bottom: $grid-unit-size;
     align-items: baseline;
@@ -14,12 +14,15 @@
     }
 }
 
-.cvat-runner-label-matcher {
+.cvat-runner-label-mapper {
     width: 100%;
-}
 
-.cvat-runner-label-matcher {
-    .cvat-runner-label-matcher {
+    &:has(.cvat-runner-label-mapper) {
+        max-height: $grid-unit-size * 64;
+        overflow-y: auto;
+    }
+
+    > .cvat-runner-label-mapper {
         margin-top: $grid-unit-size * 2;
         margin-bottom: $grid-unit-size * 2;
         padding-left: $grid-unit-size * 4;
@@ -30,7 +33,7 @@
 
 
 .cvat-run-model-content > div:not(first-child) {
-    margin-top: 10px;
+    margin-top: $grid-unit-size;
 }
 
 .cvat-run-model-content-remove-mapping-icon {

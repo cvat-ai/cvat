@@ -28,7 +28,7 @@ import lodash from 'lodash';
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
-    getCore, Attribute, Label, MLModel, ObjectState,
+    getCore, Attribute, Label, MLModel, ObjectState, Job,
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -55,10 +55,10 @@ import ToolsTooltips from './interactor-tooltips';
 
 interface StateToProps {
     canvasInstance: Canvas;
-    labels: any[];
-    states: any[];
+    labels: Label[];
+    states: ObjectState[];
     activeLabelID: number;
-    jobInstance: any;
+    jobInstance: Job;
     isActivated: boolean;
     frame: number;
     interactors: MLModel[];
@@ -1225,7 +1225,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                         const states = result.map(
                             (data: any): any => {
-                                const jobLabel = (jobInstance.labels as Label[])
+                                const jobLabel = jobInstance.labels
                                     .find((jLabel: Label): boolean => jLabel.name === data.label);
 
                                 // const [modelLabel] = Object.entries(body.mapping)
