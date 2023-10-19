@@ -467,7 +467,7 @@ class AWS_S3(_CloudStorage):
             **({'Prefix': prefix} if prefix else {}),
             **({'ContinuationToken': next_token} if next_token else {}),
         )
-        files = [f['Key'] for f in response.get('Contents', [])]
+        files = [f['Key'] for f in response.get('Contents', []) if not f['Key'].endswith('/')]
         directories = [p['Prefix'] for p in response.get('CommonPrefixes', [])]
 
         return {
@@ -773,7 +773,7 @@ class GoogleCloudStorage(_CloudStorage):
             **({'page_token': next_token} if next_token else {}),
         )
         # NOTE: we should firstly iterate and only then we can define common prefixes
-        files = [f.name for f in iterator]
+        files = [f.name for f in iterator if not f.name.endswith('/')] # skip manually created "directories"
         directories = iterator.prefixes
 
         return {

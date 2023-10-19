@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,6 +38,9 @@ export enum OrganizationActionsTypes {
     UPDATE_ORGANIZATION_MEMBER = 'UPDATE_ORGANIZATION_MEMBER',
     UPDATE_ORGANIZATION_MEMBER_SUCCESS = 'UPDATE_ORGANIZATION_MEMBER_SUCCESS',
     UPDATE_ORGANIZATION_MEMBER_FAILED = 'UPDATE_ORGANIZATION_MEMBER_FAILED',
+    RESEND_ORGANIZATION_INVITATION = 'RESEND_ORGANIZATION_INVITATION',
+    RESEND_ORGANIZATION_INVITATION_SUCCESS = 'RESEND_ORGANIZATION_INVITATION_SUCCESS',
+    RESEND_ORGANIZATION_INVITATION_FAILED = 'RESEND_ORGANIZATION_INVITATION_FAILED',
 }
 
 const organizationActions = {
@@ -96,6 +100,13 @@ const organizationActions = {
     updateOrganizationMemberSuccess: () => createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_SUCCESS),
     updateOrganizationMemberFailed: (username: string, role: string, error: any) => createAction(
         OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_FAILED, { username, role, error },
+    ),
+    resendOrganizationInvitation: () => createAction(OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION),
+    resendOrganizationInvitationSuccess: () => createAction(
+        OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION_SUCCESS,
+    ),
+    resendOrganizationInvitationFailed: (error: any) => createAction(
+        OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION_FAILED, { error },
     ),
 };
 
@@ -260,6 +271,24 @@ export function updateOrganizationMemberAsync(
             onFinish();
         } catch (error) {
             dispatch(organizationActions.updateOrganizationMemberFailed(user.username, role, error));
+        }
+    };
+}
+
+export function resendOrganizationInvitationAsync(
+    organization: any,
+    invitationKey: string,
+    onFinish?: () => void,
+): ThunkAction {
+    return async function (dispatch) {
+        dispatch(organizationActions.resendOrganizationInvitation());
+
+        try {
+            await organization.resendInvitation(invitationKey);
+            dispatch(organizationActions.resendOrganizationInvitationSuccess());
+            if (onFinish) onFinish();
+        } catch (error) {
+            dispatch(organizationActions.resendOrganizationInvitationFailed(error));
         }
     };
 }

@@ -3,10 +3,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-from distutils.util import strtobool
+from datetime import timedelta
 from django.conf import settings
+from allauth.account.adapter import get_adapter
+from django.contrib.sites.shortcuts import get_current_site
+
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ImproperlyConfigured
 from django.utils import timezone
 
 class Organization(models.Model):
@@ -53,6 +57,7 @@ class Membership(models.Model):
 class Invitation(models.Model):
     key = models.CharField(max_length=64, primary_key=True)
     created_date = models.DateTimeField(auto_now_add=True)
+    sent_date = models.DateTimeField(null=True)
     owner = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
     membership = models.OneToOneField(Membership, on_delete=models.CASCADE)
 
@@ -60,11 +65,39 @@ class Invitation(models.Model):
     def organization_id(self):
         return self.membership.organization_id
 
-    def send(self):
-        if not strtobool(settings.ORG_INVITATION_CONFIRM):
-            self.accept(self.created_date)
+    @property
+    def expired(self):
+        expiration_date = self.sent_date + timedelta(
+            days=settings.ORG_INVITATION_EXPIRY_DAYS,
+        )
+        return expiration_date <= timezone.now()
 
-        # TODO: use email backend to send invitations as well
+    @property
+    def organization_slug(self):
+        return self.membership.organization.slug
+
+    def send(self, request):
+        if settings.EMAIL_BACKEND is None:
+            raise ImproperlyConfigured("Email backend is not configured")
+
+        target_email = self.membership.user.email
+        current_site = get_current_site(request)
+        site_name = current_site.name
+        domain = current_site.domain
+        context = {
+                'email': target_email,
+                'invitation_key': self.key,
+                'domain': domain,
+                'site_name': site_name,
+                'invitation_owner': self.owner.get_username(),
+                'organization_name': self.membership.organization.slug,
+                'protocol': 'https' if request.is_secure() else 'http',
+        }
+
+        get_adapter(request).send_mail('invitation/invitation', target_email, context)
+
+        self.sent_date = timezone.now()
+        self.save()
 
     def accept(self, date=None):
         if not self.membership.is_active:

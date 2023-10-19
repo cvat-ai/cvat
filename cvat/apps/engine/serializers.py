@@ -150,9 +150,33 @@ class TasksSummarySerializer(_CollectionSummarySerializer):
 class CommentsSummarySerializer(_CollectionSummarySerializer):
     pass
 
-class BasicSummarySerializer(serializers.Serializer):
+class LabelsSummarySerializer(serializers.Serializer):
+    url = serializers.URLField(read_only=True)
+
+    def get_url(self, request, instance):
+        filter_key = instance.__class__.__name__.lower() + '_id'
+        return reverse('label-list', request=request,
+            query_params={ filter_key: instance.id })
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        if not request:
+            return None
+
+        return {
+            'url': self.get_url(request, instance),
+        }
+
+class IssuesSummarySerializer(serializers.Serializer):
     url = serializers.URLField(read_only=True)
     count = serializers.IntegerField(read_only=True)
+
+    def get_url(self, request, instance):
+        return reverse('issue-list', request=request,
+            query_params={ 'job_id': instance.id })
+
+    def get_count(self, instance):
+        return getattr(instance, 'issues__count', 0)
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -164,22 +188,6 @@ class BasicSummarySerializer(serializers.Serializer):
             'count': self.get_count(instance)
         }
 
-class LabelsSummarySerializer(BasicSummarySerializer):
-    def get_url(self, request, instance):
-        filter_key = instance.__class__.__name__.lower() + '_id'
-        return reverse('label-list', request=request,
-            query_params={ filter_key: instance.id })
-
-    def get_count(self, instance):
-        return getattr(instance, 'task_labels_count', 0) + getattr(instance, 'proj_labels_count', 0)
-
-class IssuesSummarySerializer(BasicSummarySerializer):
-    def get_url(self, request, instance):
-        return reverse('issue-list', request=request,
-            query_params={ 'job_id': instance.id })
-
-    def get_count(self, instance):
-        return getattr(instance, 'issues__count', 0)
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
@@ -1196,10 +1204,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         _update_related_storages(instance, validated_data)
 
         instance.save()
-        instance.task_labels_count = instance.label_set.filter(
-            parent__isnull=True).count()
-        instance.proj_labels_count = instance.project.label_set.filter(
-            parent__isnull=True).count() if instance.project else 0
         return instance
 
     def validate(self, attrs):
@@ -1340,9 +1344,6 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         _update_related_storages(instance, validated_data)
 
         instance.save()
-        instance.proj_labels_count = instance.label_set.filter(
-            parent__isnull=True).count()
-
         return instance
 
 class AboutSerializer(serializers.Serializer):
@@ -1720,7 +1721,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
     key = serializers.CharField(max_length=40, allow_blank=True, required=False)
-    secret_key = serializers.CharField(max_length=44, allow_blank=True, required=False)
+    secret_key = serializers.CharField(max_length=64, allow_blank=True, required=False)
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
