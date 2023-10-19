@@ -1198,7 +1198,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.save()
 
         if 'label_set' in validated_data and not instance.project_id:
-            self.update_children_objects_on_labels_update(instance)
+            self.update_child_objects_on_labels_update(instance)
 
         instance.task_labels_count = instance.label_set.filter(
             parent__isnull=True).count()
@@ -1206,18 +1206,10 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             parent__isnull=True).count() if instance.project else 0
         return instance
 
-    def update_children_objects_on_labels_update(self, instance: models.Task):
-        # Use light wrappers and load only necessary values to avoid heavy requests
-        updated_jobs = [
-            models.Job(**v)
-            for v in models.Job.objects.filter(
-                segment__task=instance
-            ).values("id", "updated_date")
-        ]
-        for job in updated_jobs:
-            job.updated_date = instance.updated_date
-
-        models.Job.objects.bulk_update(updated_jobs, fields=["updated_date"], batch_size=1000)
+    def update_child_objects_on_labels_update(self, instance: models.Task):
+        models.Job.objects.filter(
+            updated_date__lt=instance.updated_date
+        ).update(updated_date=instance.updated_date)
 
     def validate(self, attrs):
         # When moving task labels can be mapped to one, but when not names must be unique
@@ -1358,32 +1350,21 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
 
         instance.save()
         if 'label_set' in validated_data:
-            self.update_children_objects_on_labels_update(instance)
+            self.update_child_objects_on_labels_update(instance)
 
         instance.proj_labels_count = instance.label_set.filter(parent__isnull=True).count()
 
         return instance
 
-    def update_children_objects_on_labels_update(self, instance: models.Project):
-        # Use light wrappers and load only necessary values to avoid heavy requests
-        updated_tasks = [models.Task(**v) for v in instance.tasks.values("id", "updated_date")]
-        for task in updated_tasks:
-            task.updated_date = instance.updated_date
+    @transaction.atomic
+    def update_child_objects_on_labels_update(self, instance: models.Project):
+        models.Task.objects.filter(
+            updated_date__lt=instance.updated_date
+        ).update(updated_date=instance.updated_date)
 
-        models.Task.objects.bulk_update(
-            updated_tasks, fields=['updated_date'], batch_size=1000
-        )
-
-        updated_jobs = [
-            models.Job(**v)
-            for v in models.Job.objects.filter(
-                segment__task__project=instance
-            ).values("id", "updated_date")
-        ]
-        for job in updated_jobs:
-            job.updated_date = instance.updated_date
-
-        models.Job.objects.bulk_update(updated_jobs, fields=["updated_date"], batch_size=1000)
+        models.Job.objects.filter(
+            updated_date__lt=instance.updated_date
+        ).update(updated_date=instance.updated_date)
 
 
 class AboutSerializer(serializers.Serializer):

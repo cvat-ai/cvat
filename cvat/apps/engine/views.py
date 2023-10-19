@@ -2268,10 +2268,10 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if project := instance.project:
             project.save(update_fields=['updated_date'])
-            ProjectWriteSerializer(project).update_children_objects_on_labels_update(project)
+            ProjectWriteSerializer(project).update_child_objects_on_labels_update(project)
         elif task := instance.task:
             task.save(update_fields=['updated_date'])
-            TaskWriteSerializer(task).update_children_objects_on_labels_update(task)
+            TaskWriteSerializer(task).update_child_objects_on_labels_update(task)
 
         return super().perform_destroy(instance)
 
