@@ -1212,7 +1212,7 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     def update_child_objects_on_labels_update(self, instance: models.Task):
         models.Job.objects.filter(
-            updated_date__lt=instance.updated_date
+            updated_date__lt=instance.updated_date, segment__task=instance
         ).update(updated_date=instance.updated_date)
 
     def validate(self, attrs):
@@ -1362,11 +1362,11 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update_child_objects_on_labels_update(self, instance: models.Project):
         models.Task.objects.filter(
-            updated_date__lt=instance.updated_date
+            updated_date__lt=instance.updated_date, project=instance
         ).update(updated_date=instance.updated_date)
 
         models.Job.objects.filter(
-            updated_date__lt=instance.updated_date
+            updated_date__lt=instance.updated_date, segment__task__project=instance
         ).update(updated_date=instance.updated_date)
 
 
