@@ -1159,56 +1159,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 </Row>
             );
         }
-        // const attrsMap: Record<string, Record<string, number>> = {};
-        // jobInstance.labels.forEach((label: any) => {
-        //     attrsMap[label.name] = {};
-        //     label.attributes.forEach((attr: any) => {
-        //         attrsMap[label.name][attr.name] = attr.id;
-        //     });
-        // });
-
-        function checkAttributesCompatibility(
-            functionAttribute: ModelAttribute | undefined,
-            dbAttribute: Attribute | undefined,
-            value: string,
-        ): boolean {
-            if (!dbAttribute || !functionAttribute) {
-                return false;
-            }
-
-            const { inputType } = (dbAttribute as any as { inputType: string });
-            if (functionAttribute.input_type === inputType) {
-                if (functionAttribute.input_type === 'number') {
-                    const [min, max, step] = dbAttribute.values;
-                    return !Number.isNaN(+value) && +value >= +min && +value <= +max && !(+value % +step);
-                }
-
-                if (functionAttribute.input_type === 'checkbox') {
-                    return ['true', 'false'].includes(value.toLowerCase());
-                }
-
-                if (['select', 'radio'].includes(functionAttribute.input_type)) {
-                    return dbAttribute.values.includes(value);
-                }
-
-                return true;
-            }
-
-            switch (functionAttribute.input_type) {
-                case 'number':
-                    return dbAttribute.values.includes(value) || inputType === 'text';
-                case 'text':
-                    return ['select', 'radio'].includes(dbAttribute.inputType) && dbAttribute.values.includes(value);
-                case 'select':
-                    return (inputType === 'radio' && dbAttribute.values.includes(value)) || inputType === 'text';
-                case 'radio':
-                    return (inputType === 'select' && dbAttribute.values.includes(value)) || inputType === 'text';
-                case 'checkbox':
-                    return dbAttribute.values.includes(value) || inputType === 'text';
-                default:
-                    return false;
-            }
-        }
 
         return (
             <DetectorRunner
@@ -1217,6 +1167,61 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 labels={jobInstance.labels}
                 dimension={jobInstance.dimension}
                 runInference={async (model: MLModel, body: DetectorRequestBody) => {
+                    function loadAttributes(
+                        attributes: { name: string; value: string }[],
+                        label: Label,
+                    ): Record<number, string> {
+                        return attributes.reduce((acc, { name, value }) => {
+                            const attributeSpec = label.attributes.find((_attr) => _attr.name === name);
+
+                            if (!attributeSpec) {
+                                return acc;
+                            }
+
+                            switch (attributeSpec.inputType) {
+                                case 'number': {
+                                    const [min, max, step] = attributeSpec.values;
+                                    if (
+                                        Number.isFinite(+value) &&
+                                        +value >= +min &&
+                                        +value <= +max &&
+                                        !(+value % +step)
+                                    ) {
+                                        return {
+                                            ...acc,
+                                            [attributeSpec.id as number]: `${value}`,
+                                        };
+                                    }
+
+                                    return acc;
+                                }
+                                case 'text': {
+                                    return {
+                                        ...acc,
+                                        [attributeSpec.id as number]: value,
+                                    };
+                                }
+                                case 'select':
+                                case 'radio': {
+                                    if (attributeSpec.values.includes(value)) {
+                                        return {
+                                            ...acc,
+                                            [attributeSpec.id as number]: value,
+                                        };
+                                    }
+                                    return acc;
+                                }
+                                case 'checkbox':
+                                    return {
+                                        ...acc,
+                                        [attributeSpec.id as number]: `${'true'.toLowerCase() === 'true'}`,
+                                    };
+                                default:
+                                    return acc;
+                            }
+                        }, {} as Record<number, string>);
+                    }
+
                     try {
                         this.setState({ mode: 'detection', fetching: true });
                         const result = await core.lambda.call(jobInstance.taskId, model, {
@@ -1228,14 +1233,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 const jobLabel = jobInstance.labels
                                     .find((jLabel: Label): boolean => jLabel.name === data.label);
 
-                                // const [modelLabel] = Object.entries(body.mapping)
-                                //     .find(([, { name }]) => name === data.label) || [];
-
-                                // if (!jobLabel || !modelLabel) return null;
-
-                                if (!jobLabel) {
-                                    return null;
-                                }
+                                if (!jobLabel) return null;
 
                                 const objectData = {
                                     label: jobLabel,
@@ -1246,25 +1244,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         ShapeType.RECTANGLE, ShapeType.ELLIPSE,
                                     ].includes(data.type) ? (data.rotation || 0) : 0,
                                     source: core.enums.Source.AUTO,
-                                    // attributes: (data.attributes as { name: string, value: string }[])
-                                    //     .reduce((acc, attr) => {
-                                    //         const [modelAttr] = Object.entries(body.mapping[modelLabel].attributes)
-                                    //             .find((value: string[]) => value[1] === attr.name) || [];
-                                    //         const areCompatible = checkAttributesCompatibility(
-                                    //             model.attributes[modelLabel]
-                                    //                 .find((mAttr) => mAttr.name === modelAttr),
-                                    //             jobLabel.attributes.find((jobAttr: Attribute) => (
-                                    //                 jobAttr.name === attr.name
-                                    //             )),
-                                    //             attr.value,
-                                    //         );
-
-                                    //         if (areCompatible) {
-                                    //             acc[attrsMap[data.label][attr.name]] = attr.value;
-                                    //         }
-
-                                    //         return acc;
-                                    //     }, {} as Record<number, string>),
+                                    attributes: loadAttributes(data.attributes, jobLabel),
                                     zOrder: curZOrder,
                                 };
 
@@ -1276,6 +1256,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                                 label: sublabel,
                                                 objectType: ObjectType.SHAPE,
                                                 shapeType: sublabel.type,
+                                                attributes: loadAttributes(element.attributes, sublabel),
                                                 frame,
                                                 soruce: core.enums.Source.AUTO,
                                                 points: element.points,
@@ -1287,6 +1268,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             label: sublabel,
                                             objectType: ObjectType.SHAPE,
                                             shapeType: sublabel.type,
+                                            attributes: {},
                                             frame,
                                             soruce: core.enums.Source.AUTO,
                                             points: [0, 0],

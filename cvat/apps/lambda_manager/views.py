@@ -260,11 +260,12 @@ class LambdaFunction:
             for model_label in model_labels:
                 for task_label in task_labels:
                     same_type = task_label.type == model_label['type']
-                    if task_label.name == model_label['name'] and same_type:
-                        # todo: handle one more case
-                        # todo: support attributes
-                        # model does not return skeleton and task_label.type is any
+                    compatible_type = same_type or (model_label['type'] == 'unknown' and task_label.type != 'skeleton')
+                    if task_label.name == model_label['name'] and compatible_type:
+                        # todo: add attributes to default mapping
                         mapping_by_default[model_label['name']] = {
+                            'db_label': task_label,
+                            'md_label': model_label,
                             'name': task_label.name,
                             'attributes': {},
                         }
@@ -277,31 +278,38 @@ class LambdaFunction:
 
             return mapping_by_default
 
-        mapping_by_default = make_default_mapping(model_labels, task_labels)
         if not mapping:
-            mapping = mapping_by_default
-        # else:
-            # todo: filter labels in mapping which don't exist in the task
-            # mapping = {k:v for k,v in mapping.items() if v['name'] in mapping_by_default}
+            mapping = make_default_mapping(model_labels, task_labels)
+        else:
+            def validate_labels_mapping(_mapping, _model_labels, _task_labels):
+                def validate_attributes_mapping(attributes_mapping, model_attributes, task_attributes):
+                    task_attr_names = [attr.name for attr in task_attributes]
+                    model_attr_names = [attr['name'] for attr in model_attributes]
+                    return { k:v for k,v in attributes_mapping.items() if v in task_attr_names and k in model_attr_names }
 
-        # attr_mapping = { label: mapping[label]['attributes'] if 'attributes' in mapping[label] else {} for label in mapping }
-        # mapping = { modelLabel: mapping[modelLabel]['name'] for modelLabel in mapping }
+                task_label_names = [label.name for label in _task_labels]
+                model_label_names = [label['name'] for label in _model_labels]
 
-        # supported_attrs = {}
-        # for func_label, func_attrs in self.func_attributes.items():
-        #     if func_label not in mapping:
-        #         continue
+                # todo: check also label types
+                _mapping = { k:v for k,v in _mapping.items() if v['name'] in task_label_names and k in model_label_names }
+                for md_label_name in _mapping:
+                    mapping_item = _mapping[md_label_name]
+                    mapping_item['db_label'] = next(filter(lambda x: x.name == mapping_item['name'], _task_labels))
+                    mapping_item['md_label'] = next(filter(lambda x: x['name'] == md_label_name, _model_labels))
+                    mapping_item['attributes'] = validate_attributes_mapping(
+                        mapping_item.get('attributes', {}),
+                        mapping_item['md_label']['attributes'],
+                        mapping_item['db_label'].attributespec_set.all()
+                    )
 
-        #     mapped_label = mapping[func_label]
-        #     mapped_attributes = attr_mapping.get(func_label, {})
-        #     supported_attrs[func_label] = {}
+                    if mapping_item['md_label']['type'] == 'skeleton' and mapping_item['db_label'].type == 'skeleton':
+                        validate_labels_mapping(
+                            mapping_item['elements'],
+                            mapping_item['md_label']['elements'],
+                            mapping_item['db_label'].sublabels.all()
+                        )
 
-        #     if mapped_attributes:
-        #         task_attr_names = [task_attr for task_attr in task_attributes[mapped_label]]
-        #         for attr in func_attrs:
-        #             mapped_attr = mapped_attributes.get(attr["name"])
-        #             if mapped_attr in task_attr_names:
-        #                 supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
+            validate_labels_mapping(mapping, self.labels, task_labels)
 
         # Check job frame boundaries
         if db_job:
@@ -365,68 +373,66 @@ class LambdaFunction:
 
         response_filtered = []
 
-        # def check_attr_value(value, func_attr, db_attr):
-        #     if db_attr is None:
-        #         return False
-        #     func_attr_type = func_attr["input_type"]
-        #     db_attr_type = db_attr["input_type"]
-        #     # Check if attribute types are equal for function configuration and db spec
-        #     if func_attr_type == db_attr_type:
-        #         if func_attr_type == "number":
-        #             return value.isnumeric()
-        #         elif func_attr_type == "checkbox":
-        #             return value in ["true", "false"]
-        #         elif func_attr_type in ["select", "radio", "text"]:
-        #             return True
-        #         else:
-        #             return False
-        #     else:
-        #         if func_attr_type == "number":
-        #             return db_attr_type in ["select", "radio", "text"] and value.isnumeric()
-        #         elif func_attr_type == "text":
-        #             return db_attr_type == "text" or \
-        #                    (db_attr_type in ["select", "radio"] and len(value.split(" ")) == 1)
-        #         elif func_attr_type == "select":
-        #             return db_attr_type in ["radio", "text"]
-        #         elif func_attr_type == "radio":
-        #             return db_attr_type in ["select", "text"]
-        #         elif func_attr_type == "checkbox":
-        #             return value in ["true", "false"]
-        #         else:
-        #             return False
+        def check_attr_value(value, func_attr, db_attr):
+            if db_attr is None:
+                return False
+            func_attr_type = func_attr["input_type"]
+            db_attr_type = db_attr["input_type"]
+            # Check if attribute types are equal for function configuration and db spec
+            if func_attr_type == db_attr_type:
+                if func_attr_type == "number":
+                    return value.isnumeric()
+                elif func_attr_type == "checkbox":
+                    return value in ["true", "false"]
+                elif func_attr_type in ["select", "radio", "text"]:
+                    return True
+                else:
+                    return False
+            else:
+                if func_attr_type == "number":
+                    return db_attr_type in ["select", "radio", "text"] and value.isnumeric()
+                elif func_attr_type == "text":
+                    return db_attr_type == "text" or \
+                           (db_attr_type in ["select", "radio"] and len(value.split(" ")) == 1)
+                elif func_attr_type == "select":
+                    return db_attr_type in ["radio", "text"]
+                elif func_attr_type == "radio":
+                    return db_attr_type in ["select", "text"]
+                elif func_attr_type == "checkbox":
+                    return value in ["true", "false"]
+                else:
+                    return False
+
+        def filter_attributes(input_attributes, target_mapping):
+            attributes = []
+            for attr in input_attributes:
+                md_attr = next(filter(
+                    lambda x: x['name'] == attr['name'], target_mapping[item_label]['md_label']['attributes']
+                ), None)
+                db_attr = next(filter(
+                    lambda x: x['name'] == attr['name'], target_mapping[item_label]['db_label'].attributespec_set.values()
+                ), None)
+
+                if db_attr is not None and check_attr_value(attr['value'], md_attr, db_attr):
+                    attributes.append({
+                        'name': db_attr['name'],
+                        'value': attr['value']
+                    })
+            return attributes
 
         if self.kind == LambdaType.DETECTOR:
             for item in response:
                 item_label = item['label']
-
                 if item_label not in mapping:
                     continue
-
-                # attributes = deepcopy(item.get("attributes", []))
-                # item["attributes"] = []
-                # mapped_attributes = attr_mapping[item_label]
-
-                # for attr in attributes:
-                #     if attr['name'] not in mapped_attributes:
-                #         continue
-
-                #     func_attr = [func_attr for func_attr in self.func_attributes.get(item_label, []) if func_attr['name'] == attr["name"]]
-                #     # Skip current attribute if it was not declared as supported in function config
-                #     if not func_attr:
-                #         continue
-
-                #     db_attr = supported_attrs.get(item_label, {}).get(attr["name"])
-
-                #     if check_attr_value(attr["value"], func_attr[0], db_attr):
-                #         attr["name"] = mapped_attributes[attr['name']]
-                #         item["attributes"].append(attr)
-
                 item['label'] = mapping[item_label]['name']
+                item['attributes'] = filter_attributes(item['attributes'], mapping)
                 if 'elements' in item:
                     item['elements'] = list(filter(lambda x: x['label'] in mapping[item_label]['elements'], item['elements']))
                     for element in item['elements']:
                         element_label = element['label']
                         element['label'] = mapping[item_label]['elements'][element_label]['name']
+                        element['attributes'] = filter_attributes(element['attributes'], mapping[item_label]['elements'])
                 response_filtered.append(item)
                 response = response_filtered
 

@@ -10,19 +10,28 @@ import {
 } from 'antd';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
+import ObjectMatcher from './object-matcher';
 
-// The third tuple element is child mapping (e.g. for skeleton points)
-export type Md2JobLabelsMapping = [LabelInterface, LabelInterface, Md2JobLabelsMapping][];
+// The third tuple element  is attributes mapping
+// The latest tuple element is child mapping (e.g. for skeleton points)
+export type Md2JobLabelsMapping = [
+    LabelInterface,
+    LabelInterface,
+    [AttributeInterface | null, AttributeInterface | null][],
+    Md2JobLabelsMapping,
+][];
+
+export interface AttributeInterface {
+    name: Attribute['name'];
+    values: Attribute['values'];
+    input_type: Attribute['inputType'];
+}
 
 export interface LabelInterface {
     name: Label['name'];
     type: Label['type'];
     color?: Label['color'];
-    attributes?: {
-        name: Attribute['name'];
-        values: Attribute['values'];
-        input_type: Attribute['inputType'];
-    }[];
+    attributes?: AttributeInterface[];
     elements?: Omit<LabelInterface, 'elements'>[];
 }
 
@@ -40,14 +49,14 @@ function labelsCompatible(modelLabel: LabelInterface, taskLabel: LabelInterface)
 function computeAutoMapping(
     modelLabels: LabelInterface[],
     taskLabels: LabelInterface[],
-): [LabelInterface, LabelInterface][] {
-    const autoMapping: [LabelInterface, LabelInterface][] = [];
+): Md2JobLabelsMapping {
+    const autoMapping: Md2JobLabelsMapping = [];
     for (let i = 0; i < modelLabels.length; i++) {
         for (let j = 0; j < taskLabels.length; j++) {
             const modelLabel = modelLabels[i];
             const taskLabel = taskLabels[j];
             if (modelLabel.name === taskLabel.name && labelsCompatible(modelLabel, taskLabel)) {
-                autoMapping.push([modelLabel, taskLabel]);
+                autoMapping.push([modelLabel, taskLabel, [], []]);
             }
         }
     }
@@ -71,15 +80,13 @@ function LabelsMapperComponent(props: Props): JSX.Element {
     };
 
     useEffect(() => {
-        setMapping(
-            computeAutoMapping(modelLabels, taskLabels).map((el) => [...el, []]),
-        );
+        setMapping(computeAutoMapping(modelLabels, taskLabels));
     }, [modelLabels, taskLabels]);
 
     useEffect(() => {
         if (taskLabelValue && modelLabelValue) {
             const copy = mapping.slice(0);
-            copy.push([modelLabelValue, taskLabelValue, []]);
+            copy.push([modelLabelValue, taskLabelValue, [], []]);
             setMapping(copy);
             setTaskLabelValue(null);
             setModelLabelValue(null);
@@ -123,7 +130,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                     taskLabels={mappingItem[1].elements || []}
                                     onUpdateMapping={(pointsMapping) => {
                                         const copy = [...mapping];
-                                        copy[idx][2] = pointsMapping;
+                                        copy[idx][3] = pointsMapping;
                                         setMapping(copy);
                                     }}
                                 />
@@ -135,8 +142,38 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                         !!mappingItem[0].attributes?.length && !!mappingItem[1].attributes?.length && (
                             <>
                                 <hr />
-                                <Text strong>Map attributes: </Text>
-                                <div>todo</div>
+                                <Text strong>Label attributes mapping: </Text>
+                                <ObjectMatcher
+                                    leftData={mappingItem[0].attributes}
+                                    rightData={mappingItem[1].attributes}
+                                    allowManyToOne={false}
+                                    defaultMapping={[]}
+                                    rowClassName='cvat-runner-attribute-mapping-row'
+                                    containerClassName='cvat-runner-attribute-mapper'
+                                    deleteMappingLabel='Remove mapped attribute'
+                                    infoMappingLabel='Specify mapping between model attributes and job attributes'
+                                    getObjectName={(object: AttributeInterface) => object.name}
+                                    filterObjects={(
+                                        left: AttributeInterface | null | AttributeInterface[],
+                                        right: AttributeInterface | null | AttributeInterface[]
+                                    ): AttributeInterface[] => {
+                                        if (Array.isArray(left)) return left;
+                                        if (Array.isArray(right)) return right;
+                                        return [];
+                                    }}
+                                    onUpdateMapping={(_mapping: [AttributeInterface, AttributeInterface][]) => {
+                                        const mapped = mapping.map((_mappingItem) => {
+                                            if (_mappingItem === mappingItem) {
+                                                return [
+                                                    mappingItem[0], mappingItem[1], _mapping, mappingItem[3],
+                                                ] as Md2JobLabelsMapping[0];
+                                            }
+
+                                            return _mappingItem;
+                                        });
+                                        setMapping(mapped);
+                                    }}
+                                />
                                 <hr />
                             </>
                         )
@@ -158,7 +195,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                         >
                             {notMappedTaskLabels()
                                 .filter((label) => labelsCompatible(modelLabelValue, label)).map((label) => (
-                                    <Select.Option value={label.name}>{label.name}</Select.Option>
+                                    <Select.Option key={label.name} value={label.name}>{label.name}</Select.Option>
                                 ))}
                         </Select>
                     </Col>
@@ -184,7 +221,12 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                         >
                             {notMappedModelLabels
                                 .filter((label) => labelsCompatible(label, taskLabelValue)).map((label) => (
-                                    <Select.Option value={label.name}>{label.name}</Select.Option>
+                                    <Select.Option
+                                        key={label.name}
+                                        value={label.name}
+                                    >
+                                        {label.name}
+                                    </Select.Option>
                                 ))}
                         </Select>
                     </Col>
@@ -212,7 +254,12 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                             }}
                         >
                             {notMappedModelLabels.map((label) => (
-                                <Select.Option value={label.name}>{label.name}</Select.Option>
+                                <Select.Option
+                                    key={label.name}
+                                    value={label.name}
+                                >
+                                    {label.name}
+                                </Select.Option>
                             ))}
                         </Select>
                     </Col>
@@ -224,7 +271,12 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                             }}
                         >
                             {notMappedTaskLabels().map((label) => (
-                                <Select.Option value={label.name}>{label.name}</Select.Option>
+                                <Select.Option
+                                    key={label.name}
+                                    value={label.name}
+                                >
+                                    {label.name}
+                                </Select.Option>
                             ))}
                         </Select>
                     </Col>

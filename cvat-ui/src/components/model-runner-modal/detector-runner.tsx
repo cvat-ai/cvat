@@ -32,7 +32,7 @@ interface Props {
 
 type ServerMappingV2 = Record<string, {
     name: string;
-    attributes: { [index: string]: { name: string } };
+    attributes: StringObject;
     elements?: ServerMappingV2;
 }>;
 
@@ -42,17 +42,23 @@ export interface DetectorRequestBody {
         name: string;
         attributes: StringObject;
     }>;
+    mapping_v2: ServerMappingV2;
     cleanup: boolean;
     convMaskToPoly: boolean;
 }
 
 function convertMappingToServer(mapping: Md2JobLabelsMapping): ServerMappingV2 {
-    return mapping.reduce<ServerMappingV2>((acc, [modelLabel, taskLabel, subMapping]) => (
+    return mapping.reduce<ServerMappingV2>((acc, [modelLabel, taskLabel, attributesMapping, subMapping]) => (
         {
             ...acc,
             [modelLabel.name]: {
                 name: taskLabel.name,
-                attributes: {},
+                attributes: attributesMapping.reduce<Record<string, string>>((attrAcc, val) => {
+                    if (val[0]?.name && val[1]?.name) {
+                        attrAcc[val[0].name] = val[1].name;
+                    }
+                    return attrAcc;
+                }, {}),
                 ...(subMapping.length ? { elements: convertMappingToServer(subMapping) } : {}),
             },
         }
@@ -227,18 +233,16 @@ function DetectorRunner(props: Props): JSX.Element {
                         disabled={!buttonEnabled}
                         type='primary'
                         onClick={() => {
-                            if (!model) {
-                                return;
-                            }
-
+                            if (!model) return;
+                            const mappingV2 = convertMappingToServer(mapping);
                             let requestBody: object = {};
                             if (model.kind === ModelKind.DETECTOR) {
                                 requestBody = {
-                                    mapping_v2: convertMappingToServer(mapping),
+                                    mapping_v2: mappingV2,
                                     mapping: Object.fromEntries(mapping.map(([modelLabel, taskLabel]) => (
                                         [modelLabel.name, {
                                             name: taskLabel.name,
-                                            attributes: {},
+                                            attributes: mappingV2[modelLabel.name].attributes,
                                         }]
                                     ))),
                                     cleanup,
@@ -251,11 +255,13 @@ function DetectorRunner(props: Props): JSX.Element {
                                 };
                             } else if (model.kind === ModelKind.CLASSIFIER) {
                                 requestBody = {
-                                    mapping_v2: convertMappingToServer(mapping),
+                                    mapping_v2: mappingV2,
                                     mapping: Object.fromEntries(mapping.map(([modelLabel, taskLabel]) => (
-                                        [modelLabel.name, taskLabel.name]
+                                        [modelLabel.name, {
+                                            name: taskLabel.name,
+                                            attributes: mappingV2[modelLabel.name].attributes,
+                                        }]
                                     ))),
-                                    attributes: {},
                                 };
                             }
 

@@ -5,7 +5,6 @@
 @import '../../base.scss';
 
 .cvat-runner-label-mapping-row {
-    width: 100%;
     margin-bottom: $grid-unit-size;
     align-items: baseline;
 
@@ -23,6 +22,23 @@
     }
 
     > .cvat-runner-label-mapper {
+        margin-top: $grid-unit-size * 2;
+        margin-bottom: $grid-unit-size * 2;
+        padding-left: $grid-unit-size * 4;
+        padding-right: $grid-unit-size * 4;
+    }
+
+    .cvat-runner-attribute-mapper {
+        .cvat-runner-attribute-mapping-row {
+            align-items: baseline;
+            margin-bottom: 8px;
+
+            .ant-select {
+                width: 100%;
+            }
+        }
+
+        width: 100%;
         margin-top: $grid-unit-size * 2;
         margin-bottom: $grid-unit-size * 2;
         padding-left: $grid-unit-size * 4;
