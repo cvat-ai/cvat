@@ -830,11 +830,11 @@ class TestDeleteLabels(_TestLabelsPermissionsBase):
 class TestLabelUpdates:
     @pytest.mark.parametrize("update_kind", ["addition", "removal", "modification"])
     def test_project_label_update_triggers_nested_task_and_job_update(
-        self, update_kind, admin_user, labels, projects, tasks, jobs
+        self, update_kind, admin_user, labels, projects_wlc, tasks, jobs
     ):
         # Checks for regressions against the issue https://github.com/opencv/cvat/issues/6871
 
-        project = next(p for p in projects if p["tasks"]["count"] and p["labels"]["count"])
+        project = next(p for p in projects_wlc if p["tasks"]["count"] and p["labels"]["count"])
         project_labels = [l for l in labels if l.get("project_id") == project["id"]]
         nested_tasks = [t for t in tasks if t["project_id"] == project["id"]]
         nested_task_ids = set(t["id"] for t in nested_tasks)
@@ -883,11 +883,11 @@ class TestLabelUpdates:
 
     @pytest.mark.parametrize("update_kind", ["addition", "removal", "modification"])
     def test_task_label_update_triggers_nested_task_and_job_update(
-        self, update_kind, admin_user, labels, tasks, jobs
+        self, update_kind, admin_user, labels, tasks_wlc, jobs
     ):
         # Checks for regressions against the issue https://github.com/opencv/cvat/issues/6871
 
-        task = next(t for t in tasks if t["jobs"]["count"] and t["labels"]["count"])
+        task = next(t for t in tasks_wlc if t["jobs"]["count"] and t["labels"]["count"])
         task_labels = [l for l in labels if l.get("task_id") == task["id"]]
         nested_jobs = [j for j in jobs if j["task_id"] == task["id"]]
 
