@@ -101,7 +101,7 @@ export class OpenCVWrapper {
 
         const global = window as any;
 
-        this.cv = await global.cv;
+        this.cv = global.cv;
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {
