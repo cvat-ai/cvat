@@ -1,12 +1,12 @@
-// eslint-disable
+// Copyright (C) 2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
-import { Attribute, Label } from 'cvat-core-wrapper';
+import { Row, Col } from 'antd/lib/grid';
+import Select from 'antd/lib/select';
+import Tag from 'antd/lib/tag';
 import { DeleteOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-
-import {
-    Col, Row, Select, Tag,
-} from 'antd';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 

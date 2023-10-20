@@ -1,23 +1,24 @@
-// eslint-disable
+// Copyright (C) 2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
-import { Attribute, Label } from 'cvat-core-wrapper';
 import { DeleteOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-
 import Text from 'antd/lib/typography/Text';
-import {
-    Col, Row, Select, Tag,
-} from 'antd';
+import { Row, Col } from 'antd/lib/grid';
+import Select from 'antd/lib/select';
+import Tag from 'antd/lib/tag';
 
+import { Attribute, Label, ShapeType } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ObjectMatcher from './object-matcher';
 
-// The third tuple element  is attributes mapping
+export type Md2JobAttributesMapping = [AttributeInterface | null, AttributeInterface | null][];
 // The latest tuple element is child mapping (e.g. for skeleton points)
 export type Md2JobLabelsMapping = [
     LabelInterface,
     LabelInterface,
-    [AttributeInterface | null, AttributeInterface | null][],
+    Md2JobAttributesMapping,
     Md2JobLabelsMapping,
 ][];
 
@@ -42,11 +43,16 @@ interface Props {
     onUpdateMapping(mapping: Md2JobLabelsMapping): void;
 }
 
-function labelsCompatible(modelLabel: LabelInterface, taskLabel: LabelInterface): boolean {
-    return modelLabel.type === taskLabel.type || (modelLabel.type === 'unknown' && taskLabel.type !== 'skeleton');
+function labelsCompatible(modelLabel: LabelInterface, jobLabel: LabelInterface): boolean {
+    const { type: modelType } = modelLabel;
+    const { type: jobType } = jobLabel;
+    const compatibleTypes = [[ShapeType.MASK, ShapeType.POLYGON]];
+    return modelType === jobType ||
+        (modelType === 'unknown' && jobType !== 'skeleton') || // legacy support
+        compatibleTypes.some((compatible) => compatible.includes(jobType) && compatible.includes(modelType));
 }
 
-function computeAutoMapping(
+function computeLabelsAutoMapping(
     modelLabels: LabelInterface[],
     taskLabels: LabelInterface[],
 ): Md2JobLabelsMapping {
@@ -57,6 +63,23 @@ function computeAutoMapping(
             const taskLabel = taskLabels[j];
             if (modelLabel.name === taskLabel.name && labelsCompatible(modelLabel, taskLabel)) {
                 autoMapping.push([modelLabel, taskLabel, [], []]);
+            }
+        }
+    }
+    return autoMapping;
+}
+
+function computeAttributesAutoMapping(
+    modelAttributes: AttributeInterface[],
+    taskAttributes: AttributeInterface[],
+): Md2JobAttributesMapping {
+    const autoMapping: Md2JobAttributesMapping = [];
+    for (let i = 0; i < modelAttributes.length; i++) {
+        for (let j = 0; j < taskAttributes.length; j++) {
+            const modelAttribute = modelAttributes[i];
+            const taskAttribute = taskAttributes[j];
+            if (modelAttribute.name === taskAttribute.name) {
+                autoMapping.push([modelAttribute, taskAttribute]);
             }
         }
     }
@@ -80,7 +103,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
     };
 
     useEffect(() => {
-        setMapping(computeAutoMapping(modelLabels, taskLabels));
+        setMapping(computeLabelsAutoMapping(modelLabels, taskLabels));
     }, [modelLabels, taskLabels]);
 
     useEffect(() => {
@@ -147,7 +170,12 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                     leftData={mappingItem[0].attributes}
                                     rightData={mappingItem[1].attributes}
                                     allowManyToOne={false}
-                                    defaultMapping={[]}
+                                    defaultMapping={
+                                        computeAttributesAutoMapping(
+                                            mappingItem[0].attributes,
+                                            mappingItem[1].attributes,
+                                        ) as [object, object][]
+                                    }
                                     rowClassName='cvat-runner-attribute-mapping-row'
                                     containerClassName='cvat-runner-attribute-mapper'
                                     deleteMappingLabel='Remove mapped attribute'
@@ -155,7 +183,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                     getObjectName={(object: AttributeInterface) => object.name}
                                     filterObjects={(
                                         left: AttributeInterface | null | AttributeInterface[],
-                                        right: AttributeInterface | null | AttributeInterface[]
+                                        right: AttributeInterface | null | AttributeInterface[],
                                     ): AttributeInterface[] => {
                                         if (Array.isArray(left)) return left;
                                         if (Array.isArray(right)) return right;
