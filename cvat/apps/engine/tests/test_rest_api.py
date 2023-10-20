@@ -4057,21 +4057,16 @@ class TaskDataAPITestCase(ApiTestBase):
                     image_sizes, StorageMethodChoice.CACHE,
                     StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
 
-        with self.subTest(current_function_name() + ' file order mismatch'), ExitStack() as es:
-            es.enter_context(self.assertRaisesMessage(Exception,
-                "Incorrect file mapping to manifest content"
-            ))
-
-            # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(logging_disabled())
-
+        with self.subTest(current_function_name() + ' file order mismatch'):
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' mismatching file order'
             task_data_copy = task_data.copy()
             task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
+                expected_task_creation_status_state='Failed',
+                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
 
         for copy_data in [True, False]:
             with self.subTest(current_function_name(), copy=copy_data):
@@ -4083,21 +4078,16 @@ class TaskDataAPITestCase(ApiTestBase):
                     image_sizes, StorageMethodChoice.CACHE,
                     StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
 
-        with self.subTest(current_function_name() + ' file order mismatch'), ExitStack() as es:
-            es.enter_context(self.assertRaisesMessage(Exception,
-                "Incorrect file mapping to manifest content"
-            ))
-
-            # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(logging_disabled())
-
+        with self.subTest(current_function_name() + ' file order mismatch'):
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' mismatching file order'
             task_data_copy = task_data.copy()
             task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
+                expected_task_creation_status_state='Failed',
+                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
 
         for copy_data in [True, False]:
             with self.subTest(current_function_name(), copy=copy_data):
@@ -4109,35 +4099,18 @@ class TaskDataAPITestCase(ApiTestBase):
                     image_sizes, StorageMethodChoice.CACHE,
                     StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
 
-        with self.subTest(current_function_name() + ' file order mismatch'), ExitStack() as es:
-            es.enter_context(self.assertRaisesMessage(Exception,
-                "Incorrect file mapping to manifest content"
-            ))
-
-            # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(logging_disabled())
-
+        with self.subTest(current_function_name() + ' file order mismatch'):
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' mismatching file order'
             task_data_copy = task_data.copy()
             task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
+                expected_task_creation_status_state='Failed',
+                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
 
-        with self.subTest(current_function_name() + ' without use cache'), ExitStack() as es:
-            es.enter_context(self.assertRaisesMessage(Exception,
-                "A manifest file can only be used with the 'use cache' option"
-            ))
-
-            # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(logging_disabled())
-
-            def _send_callback(*args, **kwargs):
-                response = self._run_api_v2_tasks_id_data_post(*args, **kwargs)
-                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-                raise Exception(response.content.decode(response.charset))
-
+        with self.subTest(current_function_name() + ' without use cache'):
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' manifest without cache'
             task_data_copy = task_data.copy()
@@ -4145,7 +4118,8 @@ class TaskDataAPITestCase(ApiTestBase):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                 image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
-                send_data_callback=_send_callback)
+                expected_task_creation_status_state='Failed',
+                expected_task_creation_status_reason="A manifest file can only be used with the 'use cache' option")
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting(self, user):
         task_spec = {
@@ -4377,19 +4351,17 @@ class TaskDataAPITestCase(ApiTestBase):
 
                     task_data[f"client_files[0]"] = es.enter_context(open(archive_path, 'rb'))
 
+                    kwargs = {}
                     if manifest:
                         task_data[f"client_files[1]"] = es.enter_context(open(manifest_path))
                     else:
-                        es.enter_context(self.assertRaisesMessage(FileNotFoundError,
-                            "Can't find upload manifest file"
-                        ))
-
-                        # Suppress stacktrace spam from another thread from the expected error
-                        es.enter_context(logging_disabled())
-
+                        kwargs.update({
+                            'expected_task_creation_status_state': 'Failed',
+                            'expected_task_creation_status_reason': "Can't find upload manifest file",
+                        })
                     self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                         self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                        image_sizes, storage_method, StorageChoice.LOCAL)
+                        image_sizes, storage_method, StorageChoice.LOCAL, **kwargs)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_natural_sorting(self, user):
         task_spec = {

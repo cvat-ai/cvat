@@ -1031,9 +1031,8 @@ def export(db_instance, request, queue_name):
 def _download_file_from_bucket(db_storage, filename, key):
     storage = db_storage_to_storage_instance(db_storage)
 
-    with storage.download_fileobj(key) as data:
-        with open(filename, 'wb+') as f:
-            f.write(data.getbuffer())
+    with storage.download_fileobj(key) as data, open(filename, 'wb+') as f:
+        f.write(data.getbuffer())
 
 def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
     rq_job = queue.fetch_job(rq_id)
