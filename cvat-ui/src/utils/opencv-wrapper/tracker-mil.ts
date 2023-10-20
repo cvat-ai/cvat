@@ -69,9 +69,6 @@ export default class TrackerMILImplementation implements TrackerMIL {
     }
 
     public delete(): void {
-        this.imageData = null;
         this.trackerMIL.delete();
-        this.trackerMIL = null;
-        this.cv = null;
     }
 }
