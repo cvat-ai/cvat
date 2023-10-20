@@ -320,6 +320,7 @@ function HeaderComponent(props: Props): JSX.Element {
                     key='switch_organization'
                     onClick={() => {
                         Modal.confirm({
+                            icon: undefined,
                             title: 'Select an organization',
                             okButtonProps: {
                                 style: { display: 'none' },

@@ -37,14 +37,14 @@ function OrganizationsSearch(props: {
             showSearch
             onSearch={_.debounce(setSearchPhrase, 500)}
             options={[{
-                value: '$personal',
+                value: '',
                 label: 'Personal workspace',
             }, ...organizationsList.map((organization) => ({
                 value: organization.slug,
                 label: `${organization.slug}${organization.name === organization.slug ? '' : ` (${organization.name})`}`,
             }))]}
             onSelect={(value: string) => {
-                if (value === '$personal') {
+                if (value === '') {
                     resetOrganization();
                 } else {
                     const organization = organizationsList
