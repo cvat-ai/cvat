@@ -14,6 +14,7 @@ See:
 - [User registration with social accounts](#user-registration-with-social-accounts)
 - [Account access](#account-access)
 - [Password reset](#password-reset)
+- [Change password](#change-password)
 
 To create account or log in, go to the [CVAT.ai Cloud](https://app.cvat.ai/) login page:
 
@@ -71,3 +72,15 @@ To reset password, do the following:
 4. Enter new password in both fields and click **Change password**.
 
    ![Reset password](/images/reset-password-01.jpg)
+
+## Change password
+
+To change password, do the following:
+
+1. Log in to your CVAT account.
+2. In the top right corner, click on the arrow next to
+your nickname.
+3. Select Change password.
+4. Follow instructions on the screen.
+
+   ![Reset password](/images/change_password.jpg)
