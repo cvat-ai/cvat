@@ -40,7 +40,7 @@ from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.tests.utils import get_paginated_collection
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin, logging_disabled,
+from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin,
     generate_image_file, generate_video_file)
 
 #suppress av warnings
