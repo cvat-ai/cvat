@@ -83,7 +83,6 @@ def handler(context, event):
     bboxes = pred_instances["bboxes"]
     keypoints = pred_instances["keypoints"]
     keypoint_scores = pred_instances["keypoint_scores"]
-    # keypoints_visible = pred_instances["keypoints_visible"]
 
     results = []
     for i in range(len(bboxes)):
@@ -92,20 +91,22 @@ def handler(context, event):
         instance_scores = keypoint_scores[i]
 
         for label in context.user_data.labels:
-            context.logger.info(f'handling {label}')
-            results.append({
+            object = {
                 "confidence": 1,
                 "label": label["name"],
                 "type": "skeleton",
                 "elements": [{
                     "label": label["elements"][j]["name"],
                     "type": "points",
+                    "outside": 0 if instance_scores[j - 1] > 0.66 and instance_scores[j  - 1] < 0.98 else 1,
                     "points": [
                         float(instance_keypoints[j - 1][0]),
                         float(instance_keypoints[j - 1][1])
                     ],
                     "confidence": str(instance_scores[j  - 1]),
                 } for j in label["elements"]],
-            })
+            }
+            if any([not element['outside'] for element in object['elements']]):
+                results.append(object)
 
     return context.Response(body=json.dumps(results), headers={}, content_type='application/json', status_code=200)

@@ -1260,7 +1260,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                                 frame,
                                                 soruce: core.enums.Source.AUTO,
                                                 points: element.points,
-                                                outside: false,
+                                                occluded: false,
+                                                outside: !!element.outside || false,
                                             };
                                         }
 
@@ -1272,6 +1273,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             frame,
                                             soruce: core.enums.Source.AUTO,
                                             points: [0, 0],
+                                            occluded: false,
                                             outside: true,
                                         };
                                     }).map((elementData) => new core.classes.ObjectState({ ...elementData }));
