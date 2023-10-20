@@ -2251,13 +2251,20 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return super().perform_update(serializer)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: models.Label):
         if instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
                 "Sublabels cannot be deleted this way. "
                 "Please send a PATCH request with updated parent label data instead.",
                 code=status.HTTP_400_BAD_REQUEST)
+
+        if project := instance.project:
+            project.save(update_fields=['updated_date'])
+            ProjectWriteSerializer(project).update_child_objects_on_labels_update(project)
+        elif task := instance.task:
+            task.save(update_fields=['updated_date'])
+            TaskWriteSerializer(task).update_child_objects_on_labels_update(task)
 
         return super().perform_destroy(instance)
 

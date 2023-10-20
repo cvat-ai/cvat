@@ -642,6 +642,9 @@ class JobQuerySet(models.QuerySet):
         return super().update_or_create(*args, **kwargs)
 
     def _validate_constraints(self, obj: Dict[str, Any]):
+        if 'type' not in obj:
+            return
+
         # Constraints can't be set on the related model fields
         # This method requires the save operation to be called as a transaction
         if obj['type'] == JobType.GROUND_TRUTH and self.filter(
