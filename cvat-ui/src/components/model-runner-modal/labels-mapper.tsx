@@ -39,6 +39,7 @@ function labelsCompatible(modelLabel: LabelInterface, jobLabel: LabelInterface):
     const { type: jobType } = jobLabel;
     const compatibleTypes = [[ShapeType.MASK, ShapeType.POLYGON]];
     return modelType === jobType ||
+        (jobType === 'any' && modelType !== 'skeleton') ||
         (modelType === 'unknown' && jobType !== 'skeleton') || // legacy support
         compatibleTypes.some((compatible) => compatible.includes(jobType) && compatible.includes(modelType));
 }
