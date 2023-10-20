@@ -279,6 +279,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         circle.addEventListener('mouseover', () => {
             circle.setAttribute('stroke-width', '0.3');
+            circle.setAttribute('r', '1');
             const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
             if (text) {
                 text.setAttribute('fill', 'red');
@@ -291,6 +292,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         circle.addEventListener('mouseout', () => {
             circle.setAttribute('stroke-width', '0.1');
+            circle.setAttribute('r', '0.75');
             const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
             if (text) {
                 text.setAttribute('fill', 'darkorange');
@@ -428,7 +430,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             const elementID = this.elementCounter + 1;
             const nodeID = this.nodeCounter + 1;
             setAttributes(circle, {
-                r: 1.5,
+                r: 0.75,
                 stroke: 'black',
                 fill: config.NEW_LABEL_COLOR,
                 cx: x,
@@ -438,6 +440,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                 'data-element-id': elementID,
                 'data-node-id': nodeID,
             });
+            circle.style.transition = 'all 0.25s';
             svg.appendChild(circle);
 
             if (this.setupCircle(svg, circle)) {
@@ -453,7 +456,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const svg = svgRef.current;
 
         if (svg) {
-            const TEXT_MARGIN = 2;
+            const TEXT_MARGIN = 1;
             const array = Array.from(svg.children);
             array.forEach((el: Element) => {
                 if (el.tagName === 'text') {

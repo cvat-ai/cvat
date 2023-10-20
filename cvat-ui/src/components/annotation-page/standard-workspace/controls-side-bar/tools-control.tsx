@@ -1145,7 +1145,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderDetectorBlock(): JSX.Element {
         const {
-            jobInstance, detectors, curZOrder, frame, createAnnotations,
+            jobInstance, detectors, curZOrder, frame, labels, createAnnotations,
         } = this.props;
 
         if (!detectors.length) {
@@ -1164,7 +1164,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             <DetectorRunner
                 withCleanup={false}
                 models={detectors}
-                labels={jobInstance.labels}
+                labels={labels}
                 dimension={jobInstance.dimension}
                 runInference={async (model: MLModel, body: DetectorRequestBody) => {
                     function loadAttributes(
