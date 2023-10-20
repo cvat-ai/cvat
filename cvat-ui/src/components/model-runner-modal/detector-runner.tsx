@@ -20,7 +20,7 @@ import {
     MLModel, ModelKind, ModelReturnType, DimensionType, Label,
 } from 'cvat-core-wrapper';
 
-import LabelsMapperComponent, { Md2JobLabelsMapping, LabelInterface } from './matcher';
+import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
 
 interface Props {
     withCleanup: boolean;
@@ -47,7 +47,7 @@ export interface DetectorRequestBody {
     convMaskToPoly: boolean;
 }
 
-function convertMappingToServer(mapping: Md2JobLabelsMapping): ServerMappingV2 {
+function convertMappingToServer(mapping: FullMapping): ServerMappingV2 {
     return mapping.reduce<ServerMappingV2>((acc, [modelLabel, taskLabel, attributesMapping, subMapping]) => (
         {
             ...acc,
@@ -74,7 +74,7 @@ function DetectorRunner(props: Props): JSX.Element {
     const [threshold, setThreshold] = useState<number>(0.5);
     const [distance, setDistance] = useState<number>(50);
     const [cleanup, setCleanup] = useState<boolean>(false);
-    const [mapping, setMapping] = useState<Md2JobLabelsMapping>([]);
+    const [mapping, setMapping] = useState<FullMapping>([]);
     const [convertMasksToPolygons, setConvertMasksToPolygons] = useState<boolean>(false);
     const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
     const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
@@ -155,8 +155,8 @@ function DetectorRunner(props: Props): JSX.Element {
                 <>
                     <Row justify='start' align='middle'>
                         <LabelsMapperComponent
-                            allowManyToOne
-                            onUpdateMapping={(_mapping: Md2JobLabelsMapping) => setMapping(_mapping)}
+                            key={modelID} // rerender when model switched
+                            onUpdateMapping={(_mapping: FullMapping) => setMapping(_mapping)}
                             modelLabels={modelLabels}
                             taskLabels={taskLabels}
                         />
