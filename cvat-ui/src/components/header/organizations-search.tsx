@@ -41,7 +41,7 @@ function OrganizationsSearch(props: {
                 label: 'Personal workspace',
             }, ...organizationsList.map((organization) => ({
                 value: organization.slug,
-                label: organization.name,
+                label: `${organization.slug}${organization.name === organization.slug ? '' : ` (${organization.name})`}`,
             }))]}
             onSelect={(value: string) => {
                 if (value === '$personal') {
