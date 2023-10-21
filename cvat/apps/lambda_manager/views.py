@@ -11,6 +11,7 @@ import os
 import textwrap
 from copy import deepcopy
 from contextlib import nullcontext
+from datetime import timedelta
 from enum import Enum
 from functools import wraps
 from typing import Any, Dict, Optional
@@ -413,6 +414,9 @@ class LambdaFunction:
         return base64.b64encode(image[0].getvalue()).decode('utf-8')
 
 class LambdaQueue:
+    RESULT_TTL = timedelta(minutes=30)
+    FAILED_TTL = timedelta(hours=3)
+
     def _get_queue(self):
         return django_rq.get_queue(settings.CVAT_QUEUES.AUTO_ANNOTATION.value)
 
@@ -471,7 +475,9 @@ class LambdaQueue:
                     "mapping": mapping,
                     "max_distance": max_distance
                 },
-                depends_on=define_dependent_job(queue, user_id, settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME)
+                depends_on=define_dependent_job(queue, user_id, settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME),
+                result_ttl=self.RESULT_TTL.total_seconds(),
+                failure_ttl=self.FAILED_TTL.total_seconds(),
             )
 
             queue.enqueue_job(rq_job)
