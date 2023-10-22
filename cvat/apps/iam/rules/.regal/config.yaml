@@ -1,0 +1,33 @@
+ignore:
+  files:
+    - "*_test.gen.rego"
+rules:
+  custom:
+    naming-convention:
+      conventions:
+        - pattern: '^[a-z_]+$|^[A-Z_]+$'
+          targets:
+            - rule
+            - function
+            - variable
+      level: error
+  idiomatic:
+    no-defined-entrypoint:
+      # This would likely be the allow rule in each package
+      # Not critical though, so ignoring for the time being
+      level: ignore
+  style:
+    avoid-get-and-list-prefix:
+      # Mainly a style preference
+      # https://docs.styra.com/regal/rules/style/avoid-get-and-list-prefix
+      level: ignore
+    opa-fmt:
+      # https://docs.styra.com/regal/rules/style/opa-fmt
+      level: ignore
+    prefer-snake-case:
+      # Disabled in favor of custom naming-convention rule above
+      level: ignore
+    rule-length:
+      # Many rules longer than the default limit of 30 lines
+      level: error
+      max-rule-length: 60
