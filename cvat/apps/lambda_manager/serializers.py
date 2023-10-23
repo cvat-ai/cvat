@@ -31,7 +31,6 @@ class FunctionCallRequestSerializer(serializers.Serializer):
     function = serializers.CharField(help_text="The name of the function to execute")
     task = serializers.IntegerField(help_text="The id of the task to be annotated")
     job = serializers.IntegerField(required=False, help_text="The id of the job to be annotated")
-    frame = serializers.IntegerField(required=False, help_text="Frame number within a job to be annotated")
     quality = serializers.ChoiceField(choices=['compressed', 'original'], default="original",
         help_text="The quality of the images to use in the model run"
     )

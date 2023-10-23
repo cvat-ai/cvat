@@ -35,7 +35,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, Label
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
-    FunctionCallRequestSerializer, FunctionCallSerializer
+    FunctionCallRequestSerializer, FunctionCallSerializer, LabelMappingEntrySerializer
 )
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
@@ -1016,13 +1016,14 @@ class FunctionViewSet(viewsets.ViewSet):
 
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
-        data = deepcopy(request.data)
-        data.update({ 'function': func_id })
-        request_serializer = FunctionCallRequestSerializer(data=data)
-        request_serializer.is_valid(raise_exception=True)
-        request_data = request_serializer.validated_data
 
-        return lambda_func.invoke(db_task, request_data, db_job=job, is_interactive=True, request=request)
+        return lambda_func.invoke(
+            db_task,
+            request.data, # TODO: better to add validation via serializer for these data
+            db_job=job,
+            is_interactive=True,
+            request=request
+        )
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
