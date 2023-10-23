@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 textarea.ant-input.cvat-raw-labels-viewer {
     border-color: $border-color-1;
@@ -196,7 +196,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     font-size: 0.2em;
     font-weight: bold;
     pointer-events: none;
-    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 1);
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 100%);
 }
 
 .ant-menu.cvat-skeleton-configurator-context-menu {

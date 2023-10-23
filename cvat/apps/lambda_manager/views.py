@@ -32,7 +32,7 @@ from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, Label, LabelType
+from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, Label
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
