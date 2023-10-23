@@ -91,7 +91,7 @@ def handler(context, event):
         instance_scores = keypoint_scores[i]
 
         for label in context.user_data.labels:
-            object = {
+            skeleton = {
                 "confidence": 1,
                 "label": label["name"],
                 "type": "skeleton",
@@ -106,7 +106,7 @@ def handler(context, event):
                     "confidence": str(instance_scores[j  - 1]),
                 } for j in label["elements"]],
             }
-            if any([not element['outside'] for element in object['elements']]):
-                results.append(object)
+            if any([not element['outside'] for element in skeleton['elements']]):
+                results.append(skeleton)
 
     return context.Response(body=json.dumps(results), headers={}, content_type='application/json', status_code=200)

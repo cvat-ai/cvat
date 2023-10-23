@@ -35,7 +35,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, Label
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
-    FunctionCallRequestSerializer, FunctionCallSerializer, LabelMappingEntrySerializer
+    FunctionCallRequestSerializer, FunctionCallSerializer
 )
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
