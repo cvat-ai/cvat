@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,16 +15,26 @@ function sleep(ms): Promise<void> {
     });
 }
 
+function defaultUpdate(previousLog: EventLogger, currentPayload: any): object {
+    return {
+        ...previousLog.payload,
+        ...currentPayload,
+    };
+}
+
 interface IgnoreRule {
     lastLog: EventLogger | null;
     timeThreshold?: number;
     ignore: (previousLog: EventLogger, currentPayload: any) => boolean;
+    update: (previousLog: EventLogger, currentPayload: any) => object;
 }
+
+type IgnoredRules = LogType.zoomImage | LogType.changeAttribute | LogType.changeFrame;
 
 class LoggerStorage {
     public clientID: string;
     public collection: Array<EventLogger>;
-    public ignoreRules: Record<LogType.zoomImage | LogType.changeAttribute, IgnoreRule>;
+    public ignoreRules: Record<IgnoredRules, IgnoreRule>;
     public isActiveChecker: (() => boolean) | null;
     public saving: boolean;
 
@@ -36,18 +46,36 @@ class LoggerStorage {
         this.ignoreRules = {
             [LogType.zoomImage]: {
                 lastLog: null,
-                timeThreshold: 1000,
-                ignore(previousLog: EventLogger) {
+                timeThreshold: 4000,
+                ignore(previousLog: EventLogger): boolean {
                     return (Date.now() - previousLog.time.getTime()) < this.timeThreshold;
                 },
+                update: defaultUpdate,
             },
             [LogType.changeAttribute]: {
                 lastLog: null,
-                ignore(previousLog: EventLogger, currentPayload: any) {
+                ignore(previousLog: EventLogger, currentPayload: any): boolean {
                     return (
                         currentPayload.object_id === previousLog.payload.object_id &&
                         currentPayload.id === previousLog.payload.id
                     );
+                },
+                update: defaultUpdate,
+            },
+            [LogType.changeFrame]: {
+                lastLog: null,
+                timeThreshold: 4000,
+                ignore(previousLog: EventLogger, currentPayload: any): boolean {
+                    return (
+                        currentPayload.job_id === previousLog.payload.job_id &&
+                        (Date.now() - previousLog.time.getTime()) < this.timeThreshold
+                    );
+                },
+                update(previousLog: EventLogger, currentPayload: any): object {
+                    return {
+                        ...previousLog.payload,
+                        to: currentPayload.to,
+                    };
                 },
             },
         };
@@ -109,11 +137,7 @@ Object.defineProperties(LoggerStorage.prototype.log, {
                 const ignoreRule = this.ignoreRules[logType];
                 const { lastLog } = ignoreRule;
                 if (lastLog && ignoreRule.ignore(lastLog, payload)) {
-                    lastLog.payload = {
-                        ...lastLog.payload,
-                        ...payload,
-                    };
-
+                    lastLog.payload = ignoreRule.update(lastLog, payload);
                     return ignoreRule.lastLog;
                 }
             }
