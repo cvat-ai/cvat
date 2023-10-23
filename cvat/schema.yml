@@ -6632,7 +6632,7 @@ components:
           maxLength: 40
         secret_key:
           type: string
-          maxLength: 44
+          maxLength: 64
         connection_string:
           type: string
           maxLength: 440
@@ -8001,9 +8001,6 @@ components:
           type: string
           format: uri
           readOnly: true
-        count:
-          type: integer
-          readOnly: true
     LocationEnum:
       enum:
       - cloud_storage
@@ -8586,7 +8583,7 @@ components:
           maxLength: 40
         secret_key:
           type: string
-          maxLength: 44
+          maxLength: 64
         connection_string:
           type: string
           maxLength: 440

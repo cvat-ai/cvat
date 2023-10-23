@@ -773,7 +773,7 @@ class GoogleCloudStorage(_CloudStorage):
             **({'page_token': next_token} if next_token else {}),
         )
         # NOTE: we should firstly iterate and only then we can define common prefixes
-        files = [f.name for f in iterator]
+        files = [f.name for f in iterator if not f.name.endswith('/')] # skip manually created "directories"
         directories = iterator.prefixes
 
         return {

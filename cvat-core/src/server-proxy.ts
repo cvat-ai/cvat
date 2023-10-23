@@ -276,9 +276,9 @@ Axios.interceptors.response.use((response) => {
     if (isResourceURL(response.config.url) &&
         'organization' in (response.data || {})
     ) {
-        const newOrg: number | null = response.data.organization;
-        if (config.organization.organizationID !== newOrg) {
-            config?.onOrganizationChange(newOrg);
+        const newOrgId: number | null = response.data.organization;
+        if (config.organization.organizationID !== newOrgId) {
+            config?.onOrganizationChange(newOrgId);
         }
     }
 
@@ -2023,17 +2023,21 @@ async function deleteCloudStorage(id) {
     }
 }
 
-async function getOrganizations() {
+async function getOrganizations(filter) {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await fetchAll(`${backendAPI}/organizations`);
+        response = await Axios.get(`${backendAPI}/organizations`, {
+            params: {
+                ...filter,
+            },
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.results;
+    return response.data.results;
 }
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {
