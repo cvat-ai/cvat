@@ -16,6 +16,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.8.0'></a>
+## \[2.8.0\] - 2023-10-23
+
+### Added
+
+- Invite users to organization by email
+  (<https://github.com/opencv/cvat/pull/6901>)
+
+- \[SDK\] A parameter to `TaskDataset` that allows you to disable annotation loading
+  (<https://github.com/opencv/cvat/pull/7019>)
+
+- Test for retrieving bucket content when bucket contains manually created dirs
+  (<https://github.com/opencv/cvat/pull/7018>)
+
+### Changed
+
+- Increased max length of secret access key to 64
+  (<https://github.com/opencv/cvat/pull/6701>)
+
+- Client does not load all the organizations onload anymore
+  (<https://github.com/opencv/cvat/pull/7004>)
+
+- Helm: Set disabled as default value for Zookeeper from Clickhouse subchart
+  (<https://github.com/opencv/cvat/pull/7003>)
+
+### Removed
+
+- /api/projects, /api/tasks, /api/jobs don't return information about the count
+  of labels anymore. The information significantly complicates SQL queries and
+  it is hard to optimize them. Use /api/labels?task_id=tid or
+  /api/labels?project_id=pid instead.
+  (<https://github.com/opencv/cvat/pull/6918>)
+
+### Fixed
+
+- Potential double-sized file writes in task data uploading
+  (<https://github.com/opencv/cvat/pull/6952>)
+
+- Getting CS content when GCS bucket contains manually created directories
+  (<https://github.com/opencv/cvat/pull/7006>)
+
+- \[SDK\] `cvat_sdk.auto_annotation.annotate_task` no longer performs
+  unnecessary fetches of existing annotations
+  (<https://github.com/opencv/cvat/pull/7019>)
+
+- Label updates didn't change project/task/job update time
+  (<https://github.com/opencv/cvat/pull/6958>)
+
 <a id='changelog-2.7.6'></a>
 ## \[2.7.6\] - 2023-10-13
 
