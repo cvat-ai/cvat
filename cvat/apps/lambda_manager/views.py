@@ -252,8 +252,7 @@ class LambdaFunction:
         mapping = data.get("mapping", {})
 
         model_labels = self.labels
-        task_labels = db_task.get_labels()
-        task_labels = list(filter(lambda x: not x.has_parent_label(), task_labels))
+        task_labels = db_task.get_labels(prefetch_attributes=True)
 
         def labels_compatible(model_label: Dict, task_label: Label) -> bool:
             model_type = model_label['type']
@@ -644,6 +643,88 @@ class LambdaJob:
                 # FIXME: need to provide the correct version here
                 self.data = {"version": 0, "tags": [], "shapes": [], "tracks": []}
 
+        def parse_anno(anno, labels):
+            label = labels.get(anno["label"])
+            if label is None:
+                # Invalid label provided
+                return None
+
+            if anno.get('attributes'):
+                attrs = [{
+                    'spec_id': label['attributes'][attr['name']],
+                    'value': attr['value']
+                } for attr in anno.get('attributes') if attr['name'] in label['attributes']]
+            else:
+                attrs = []
+
+            if anno["type"].lower() == "tag":
+                return {
+                    "frame": frame,
+                    "label_id": label['id'],
+                    "source": "auto",
+                    "attributes": attrs,
+                    "group": None,
+                }
+            else:
+                shape = {
+                    "frame": frame,
+                    "label_id": label['id'],
+                    "source": "auto",
+                    "attributes": attrs,
+                    "group": anno["group_id"] if "group_id" in anno else None,
+                    "type": anno["type"],
+                    "occluded": False,
+                    "points": anno.get("mask", []) if anno["type"] == "mask" else anno.get("points", []),
+                    "z_order": 0,
+                }
+
+                if shape["type"] in ("rectangle", "ellipse"):
+                    shape["rotation"] = anno.get("rotation", 0)
+
+                if anno["type"] == "mask" and "points" in anno and conv_mask_to_poly:
+                    shape["type"] = "polygon"
+                    shape["points"] = anno["points"]
+                elif anno["type"] == "mask":
+                    [xtl, ytl, xbr, ybr] = shape["points"][-4:]
+                    cut_points = shape["points"][:-4]
+                    rle = mask_tools.mask_to_rle(np.array(cut_points))["counts"].tolist()
+                    rle.extend([xtl, ytl, xbr, ybr])
+                    shape["points"] = rle
+
+                if shape["type"] == "skeleton":
+                    parsed_elements = list(map(lambda x: parse_anno(x, label['sublabels']), anno["elements"]))
+
+                    def _map(sublabel):
+                        sublabel_name, sublabel_body = sublabel
+                        parsed_element = next(filter(lambda x: x['label_id'] == sublabel_body['id'], parsed_elements), None)
+                        not_parsed_element = next(filter(lambda x: x['label'] == sublabel_name, anno["elements"]))
+
+                        if parsed_element:
+                            parsed_element.update({
+                                "outside": not_parsed_element.get('outside', False),
+                                "z_order": 0,
+                            })
+                            return parsed_element
+
+                        return {
+                            "frame": frame,
+                            "label_id": sublabel_body['id'],
+                            "source": "auto",
+                            "attributes": [],
+                            "group": None,
+                            "type": sublabel_body['type'],
+                            "occluded": False,
+                            "points": [0, 0],
+                            "outside": True,
+                            "z_order": 0,
+                        }
+
+                    shape["elements"] = list(map(_map, label['sublabels'].items()))
+                    if all([element["outside"] for element in shape["elements"]]):
+                        return None
+
+                return shape
+
         results = Results(db_task.id, job_id=db_job.id if db_job else None)
 
         frame_set = cls._get_frame_set(db_task, db_job)
@@ -662,48 +743,12 @@ class LambdaJob:
                 break
 
             for anno in annotations:
-                label = labels.get(anno["label"])
-                if label is None:
-                    continue # Invalid label provided
-                if anno.get('attributes'):
-                    attrs = [{'spec_id': label['attributes'][attr['name']], 'value': attr['value']} for attr in anno.get('attributes') if attr['name'] in label['attributes']]
-                else:
-                    attrs = []
-                if anno["type"].lower() == "tag":
-                    results.append_tag({
-                        "frame": frame,
-                        "label_id": label['id'],
-                        "source": "auto",
-                        "attributes": attrs,
-                        "group": None,
-                    })
-                else:
-                    shape = {
-                        "frame": frame,
-                        "label_id": label['id'],
-                        "type": anno["type"],
-                        "occluded": False,
-                        "points": anno["mask"] if anno["type"] == "mask" else anno["points"],
-                        "z_order": 0,
-                        "group": anno["group_id"] if "group_id" in anno else None,
-                        "attributes": attrs,
-                        "source": "auto"
-                    }
-
-                    if shape["type"] in ("rectangle", "ellipse"):
-                        shape["rotation"] = anno.get("rotation", 0)
-
-                    if anno["type"] == "mask" and "points" in anno and conv_mask_to_poly:
-                        shape["type"] = "polygon"
-                        shape["points"] = anno["points"]
-                    elif anno["type"] == "mask":
-                        [xtl, ytl, xbr, ybr] = shape["points"][-4:]
-                        cut_points = shape["points"][:-4]
-                        rle = mask_tools.mask_to_rle(np.array(cut_points))["counts"].tolist()
-                        rle.extend([xtl, ytl, xbr, ybr])
-                        shape["points"] = rle
-
-                    results.append_shape(shape)
+                parsed = parse_anno(anno, labels)
+                if parsed is not None:
+                    if anno["type"].lower() == "tag":
+                        results.append_tag(parsed)
+                    else:
+                        results.append_shape(parsed)
 
             # Accumulate data during 100 frames before submitting results.
             # It is optimization to make fewer calls to our server. Also
@@ -854,12 +899,17 @@ class LambdaJob:
             else:
                 assert False
 
-        db_labels = (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all()
-        labels = {}
-        for label in db_labels:
-            labels[label.name] = {'id':label.id, 'attributes': {}}
-            for attr in label.attributespec_set.values():
-                labels[label.name]['attributes'][attr['name']] = attr['id']
+        def _convert_labels(db_labels):
+            labels = {}
+            for label in db_labels:
+                labels[label.name] = { 'id':label.id, 'attributes': {}, 'type': label.type }
+                if label.type == 'skeleton':
+                    labels[label.name]['sublabels'] = _convert_labels(label.sublabels.all())
+                for attr in label.attributespec_set.values():
+                    labels[label.name]['attributes'][attr['name']] = attr['id']
+            return labels
+
+        labels = _convert_labels(db_task.get_labels(prefetch_attributes=True))
 
         if function.kind == LambdaType.DETECTOR:
             cls._call_detector(function, db_task, labels, quality,
