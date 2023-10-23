@@ -30,25 +30,20 @@ interface Props {
     runInference(model: MLModel, body: object): void;
 }
 
-type ServerMappingV2 = Record<string, {
+type ServerMapping = Record<string, {
     name: string;
     attributes: StringObject;
-    elements?: ServerMappingV2;
+    elements?: ServerMapping;
 }>;
 
-// todo: reimplement types, add mapping_v2
 export interface DetectorRequestBody {
-    mapping: Record<string, {
-        name: string;
-        attributes: StringObject;
-    }>;
-    mapping_v2: ServerMappingV2;
+    mapping: ServerMapping;
     cleanup: boolean;
     convMaskToPoly: boolean;
 }
 
-function convertMappingToServer(mapping: FullMapping): ServerMappingV2 {
-    return mapping.reduce<ServerMappingV2>((acc, [modelLabel, taskLabel, attributesMapping, subMapping]) => (
+function convertMappingToServer(mapping: FullMapping): ServerMapping {
+    return mapping.reduce<ServerMapping>((acc, [modelLabel, taskLabel, attributesMapping, subMapping]) => (
         {
             ...acc,
             [modelLabel.name]: {
@@ -234,38 +229,18 @@ function DetectorRunner(props: Props): JSX.Element {
                         type='primary'
                         onClick={() => {
                             if (!model) return;
-                            const mappingV2 = convertMappingToServer(mapping);
-                            let requestBody: object = {};
+                            const serverMapping = convertMappingToServer(mapping);
                             if (model.kind === ModelKind.DETECTOR) {
-                                requestBody = {
-                                    mapping_v2: mappingV2,
-                                    mapping: Object.fromEntries(mapping.map(([modelLabel, taskLabel]) => (
-                                        [modelLabel.name, {
-                                            name: taskLabel.name,
-                                            attributes: mappingV2[modelLabel.name].attributes,
-                                        }]
-                                    ))),
+                                runInference(model, {
+                                    mapping: serverMapping,
                                     cleanup,
                                     convMaskToPoly: convertMasksToPolygons,
-                                };
+                                });
                             } else if (model.kind === ModelKind.REID) {
-                                requestBody = {
-                                    threshold,
-                                    max_distance: distance,
-                                };
+                                runInference(model, { threshold, max_distance: distance });
                             } else if (model.kind === ModelKind.CLASSIFIER) {
-                                requestBody = {
-                                    mapping_v2: mappingV2,
-                                    mapping: Object.fromEntries(mapping.map(([modelLabel, taskLabel]) => (
-                                        [modelLabel.name, {
-                                            name: taskLabel.name,
-                                            attributes: mappingV2[modelLabel.name].attributes,
-                                        }]
-                                    ))),
-                                };
+                                runInference(model, { cleanup, mapping: serverMapping });
                             }
-
-                            runInference(model, requestBody);
                         }}
                     >
                         Annotate

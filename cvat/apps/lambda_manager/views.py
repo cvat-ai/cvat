@@ -249,7 +249,7 @@ class LambdaFunction:
         if threshold:
             payload.update({ "threshold": threshold })
         quality = data.get("quality")
-        mapping = data.get("mapping_v2", {})
+        mapping = data.get("mapping", {})
 
         model_labels = self.labels
         task_labels = db_task.get_labels()
@@ -941,8 +941,13 @@ class FunctionViewSet(viewsets.ViewSet):
 
         gateway = LambdaGateway()
         lambda_func = gateway.get(func_id)
+        data = deepcopy(request.data)
+        data.update({ 'function': func_id })
+        request_serializer = FunctionCallRequestSerializer(data=data)
+        request_serializer.is_valid(raise_exception=True)
+        request_data = request_serializer.validated_data
 
-        return lambda_func.invoke(db_task, request.data, db_job=job, is_interactive=True, request=request)
+        return lambda_func.invoke(db_task, request_data, db_job=job, is_interactive=True, request=request)
 
 @extend_schema(tags=['lambda'])
 @extend_schema_view(
