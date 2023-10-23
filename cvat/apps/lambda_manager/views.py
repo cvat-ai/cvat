@@ -32,7 +32,7 @@ from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
+from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, Label, LabelType
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
@@ -255,61 +255,103 @@ class LambdaFunction:
         task_labels = db_task.get_labels()
         task_labels = list(filter(lambda x: not x.has_parent_label(), task_labels))
 
-        def make_default_mapping(model_labels, task_labels):
+        def labels_compatible(model_label: Dict, task_label: Label) -> bool:
+            model_type = model_label['type']
+            db_type = task_label.type
+            compatible_types = [[ShapeType.MASK, ShapeType.POLYGON]]
+            return model_type == db_type or \
+                (db_type == 'any' and model_type != 'skeleton') or \
+                (model_type == 'unknown' and db_type != 'skeleton') or \
+                any([model_type in compatible and db_type in compatible for compatible in compatible_types])
+
+        def _make_default_mapping(model_labels, task_labels):
             mapping_by_default = {}
             for model_label in model_labels:
                 for task_label in task_labels:
-                    same_type = task_label.type == model_label['type']
-                    compatible_type = same_type or (model_label['type'] == 'unknown' and task_label.type != 'skeleton')
-                    if task_label.name == model_label['name'] and compatible_type:
-                        # todo: add attributes to default mapping
+                    if task_label.name == model_label['name'] and labels_compatible(model_label, task_label):
+                        attributes_default_mapping = {}
+                        for model_attr in model_label.get('attriubtes', {}):
+                            for db_attr in model_label.attributespec_set.all():
+                                if db_attr.name == model_attr['name']:
+                                    attributes_default_mapping[model_attr] = db_attr.name
+
                         mapping_by_default[model_label['name']] = {
-                            'db_label': task_label,
-                            'md_label': model_label,
                             'name': task_label.name,
-                            'attributes': {},
+                            'attributes': attributes_default_mapping,
                         }
 
                         if model_label['type'] == 'skeleton' and task_label.type == 'skeleton':
-                            mapping_by_default[model_label['name']]['elements'] = make_default_mapping(
+                            mapping_by_default[model_label['name']]['elements'] = _make_default_mapping(
                                 model_label['elements'],
                                 task_label.sublabels.all(),
                             )
 
             return mapping_by_default
 
-        if not mapping:
-            mapping = make_default_mapping(model_labels, task_labels)
-        else:
-            def validate_labels_mapping(_mapping, _model_labels, _task_labels):
-                def validate_attributes_mapping(attributes_mapping, model_attributes, task_attributes):
-                    task_attr_names = [attr.name for attr in task_attributes]
-                    model_attr_names = [attr['name'] for attr in model_attributes]
-                    return { k:v for k,v in attributes_mapping.items() if v in task_attr_names and k in model_attr_names }
+        def _update_mapping(_mapping, _model_labels, _db_labels):
+            copy = deepcopy(_mapping)
+            for model_label_name in copy:
+                mapping_item = copy[model_label_name]
+                md_label = next(filter(lambda x: x['name'] == model_label_name, _model_labels))
+                db_label = next(filter(lambda x: x.name == mapping_item['name'], _db_labels))
+                mapping_item['md_label'] = md_label
+                mapping_item['db_label'] = db_label
+                if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
+                    mapping_item['elements'] = _update_mapping(
+                        mapping_item['elements'],
+                        md_label['elements'],
+                        db_label.sublabels.all()
+                    )
+            return copy
 
-                task_label_names = [label.name for label in _task_labels]
-                model_label_names = [label['name'] for label in _model_labels]
+        def _validate_labels_mapping(_mapping, _model_labels, _db_labels):
+            def _validate_attributes_mapping(attributes_mapping, model_attributes, db_attributes):
+                db_attr_names = [attr.name for attr in db_attributes]
+                model_attr_names = [attr['name'] for attr in model_attributes]
+                for model_attr in attributes_mapping:
+                    task_attr = attributes_mapping[model_attr]
+                    if model_attr not in model_attr_names:
+                        raise ValidationError(f'Invalid mapping. Unknown model attribute "{model_attr}"')
+                    if task_attr not in db_attr_names:
+                        raise ValidationError(f'Invalid mapping. Unknown db attribute "{task_attr}"')
 
-                # todo: check also label types
-                _mapping = { k:v for k,v in _mapping.items() if v['name'] in task_label_names and k in model_label_names }
-                for md_label_name in _mapping:
-                    mapping_item = _mapping[md_label_name]
-                    mapping_item['db_label'] = next(filter(lambda x: x.name == mapping_item['name'], _task_labels))
-                    mapping_item['md_label'] = next(filter(lambda x: x['name'] == md_label_name, _model_labels))
-                    mapping_item['attributes'] = validate_attributes_mapping(
-                        mapping_item.get('attributes', {}),
-                        mapping_item['md_label']['attributes'],
-                        mapping_item['db_label'].attributespec_set.all()
+            db_label_names = [label.name for label in _db_labels]
+            model_label_names = [label['name'] for label in _model_labels]
+            for model_label_name in _mapping:
+                mapping_item = _mapping[model_label_name]
+                db_label_name = mapping_item['name']
+                if model_label_name not in model_label_names:
+                    raise ValidationError(f'Invalid mapping. Unknown model label "{model_label_name}"')
+                if db_label_name not in db_label_names:
+                    raise ValidationError(f'Invalid mapping. Unknown db label "{db_label_name}"')
+
+                md_label = next(filter(lambda x: x['name'] == model_label_name, _model_labels))
+                db_label = next(filter(lambda x: x.name == mapping_item['name'], _db_labels))
+                if not labels_compatible(md_label, db_label):
+                    raise ValidationError(
+                        f'Invalid mapping. Model label "{db_label_name}" and' + \
+                            'database label "{db_label_name}" are not compatible'
                     )
 
-                    if mapping_item['md_label']['type'] == 'skeleton' and mapping_item['db_label'].type == 'skeleton':
-                        validate_labels_mapping(
-                            mapping_item['elements'],
-                            mapping_item['md_label']['elements'],
-                            mapping_item['db_label'].sublabels.all()
-                        )
+                _validate_attributes_mapping(
+                    mapping_item.get('attributes', {}),
+                    md_label['attributes'],
+                    db_label.attributespec_set.all()
+                )
 
-            validate_labels_mapping(mapping, self.labels, task_labels)
+                if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
+                    _validate_labels_mapping(
+                        mapping_item['elements'],
+                        md_label['elements'],
+                        db_label.sublabels.all()
+                    )
+
+        if not mapping:
+            mapping = _make_default_mapping(model_labels, task_labels)
+        else:
+            _validate_labels_mapping(mapping, self.labels, task_labels)
+
+        mapping = _update_mapping(mapping, self.labels, task_labels)
 
         # Check job frame boundaries
         if db_job:
@@ -373,47 +415,30 @@ class LambdaFunction:
 
         response_filtered = []
 
-        def check_attr_value(value, func_attr, db_attr):
+        def check_attr_value(value, db_attr):
             if db_attr is None:
                 return False
-            func_attr_type = func_attr["input_type"]
+
             db_attr_type = db_attr["input_type"]
-            # Check if attribute types are equal for function configuration and db spec
-            if func_attr_type == db_attr_type:
-                if func_attr_type == "number":
-                    return value.isnumeric()
-                elif func_attr_type == "checkbox":
-                    return value in ["true", "false"]
-                elif func_attr_type in ["select", "radio", "text"]:
-                    return True
-                else:
-                    return False
+            if db_attr_type == "number":
+                return value.isnumeric()
+            elif db_attr_type == "checkbox":
+                return value in ["true", "false"]
+            elif db_attr_type == "text":
+                return True
+            elif db_attr_type in ["select", "radio"]:
+                return value in db_attr["values"]
             else:
-                if func_attr_type == "number":
-                    return db_attr_type in ["select", "radio", "text"] and value.isnumeric()
-                elif func_attr_type == "text":
-                    return db_attr_type == "text" or \
-                           (db_attr_type in ["select", "radio"] and len(value.split(" ")) == 1)
-                elif func_attr_type == "select":
-                    return db_attr_type in ["radio", "text"]
-                elif func_attr_type == "radio":
-                    return db_attr_type in ["select", "text"]
-                elif func_attr_type == "checkbox":
-                    return value in ["true", "false"]
-                else:
-                    return False
+                return False
 
         def filter_attributes(input_attributes, target_mapping):
             attributes = []
             for attr in input_attributes:
-                md_attr = next(filter(
-                    lambda x: x['name'] == attr['name'], target_mapping[item_label]['md_label']['attributes']
-                ), None)
                 db_attr = next(filter(
                     lambda x: x['name'] == attr['name'], target_mapping[item_label]['db_label'].attributespec_set.values()
                 ), None)
 
-                if db_attr is not None and check_attr_value(attr['value'], md_attr, db_attr):
+                if db_attr is not None and check_attr_value(attr['value'], db_attr):
                     attributes.append({
                         'name': db_attr['name'],
                         'value': attr['value']
