@@ -28,11 +28,11 @@ import lodash from 'lodash';
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
-    getCore, Attribute, Label, MLModel, ObjectState, Job,
+    getCore, Label, MLModel, ObjectState, Job,
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, ObjectType, ShapeType, ToolsBlockerState, ModelAttribute,
+    CombinedState, ActiveControl, ObjectType, ShapeType, ToolsBlockerState,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -210,9 +210,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         id: string | null;
         isAborted: boolean;
         latestResponse: {
-            rle: number[],
-            points: number[][],
-            bounds?: [number, number, number, number],
+            rle: number[];
+            points: number[][];
+            bounds?: [number, number, number, number];
         };
         lastestApproximatedPoints: number[][];
         latestRequest: null | {
@@ -1228,8 +1228,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             ...body, frame, job: jobInstance.id,
                         });
 
+                        type SerializedShape = {
+                            type: ShapeType;
+                            rotation?: number;
+                            attributes: { name: string; value: string }[];
+                            label: string;
+                            outside?: boolean;
+                            points?: number[];
+                            mask?: number[];
+                            elements: SerializedShape[];
+                        };
+
                         const states = result.map(
-                            (data: any): any => {
+                            (data: SerializedShape): ObjectState | null => {
                                 const jobLabel = jobInstance.labels
                                     .find((jLabel: Label): boolean => jLabel.name === data.label);
 
@@ -1278,6 +1289,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         };
                                     }).map((elementData) => new core.classes.ObjectState({ ...elementData }));
 
+                                    if (elements.every((element) => element.outside)) {
+                                        return null;
+                                    }
+
                                     return new core.classes.ObjectState({
                                         ...objectData,
                                         shapeType: ShapeType.SKELETON,
@@ -1295,7 +1310,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }
 
                                 if (data.type === 'mask') {
-                                    const [left, top, right, bottom] = data.mask.splice(-4);
+                                    const [left, top, right, bottom] = (data.mask as number[]).splice(-4);
                                     const rle = core.utils.mask2Rle(data.mask);
                                     rle.push(left, top, right, bottom);
                                     return new core.classes.ObjectState({
