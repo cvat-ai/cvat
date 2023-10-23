@@ -230,10 +230,15 @@ function LabelsMapperComponent(props: Props): JSX.Element {
             }}
             onUpdateMapping={(_mapping: [LabelInterface, LabelInterface][]) => {
                 const updateFullMapping = _mapping.reduce<FullMapping>(
-                    (acc, [modelLabel, taskLabel]) => ([
-                        ...acc,
-                        [modelLabel, taskLabel, [], []],
-                    ]), [],
+                    (acc, [modelLabel, taskLabel]) => {
+                        for (const existingMappingItem of mappingRef.current) {
+                            if (existingMappingItem[0] === modelLabel && existingMappingItem[1] === taskLabel) {
+                                return [...acc, existingMappingItem];
+                            }
+                        }
+
+                        return [...acc, [modelLabel, taskLabel, [], []]];
+                    }, [],
                 );
                 setMapping(updateFullMapping);
             }}
