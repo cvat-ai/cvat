@@ -2925,9 +2925,6 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 )
 
         av_scan_paths(filename)
-        meta = {
-            'tmp_file': filename,
-        }
         user_id = request.user.id
         cm = queue.connection.lock(f'{queue.name}-lock-{user_id}') if settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME and not dependent_job else nullcontext()
         with cm:
@@ -2936,7 +2933,10 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
                 job_id=rq_id,
                 depends_on=dependent_job or define_dependent_job(queue, user_id, settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME),
-                meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)},
+                meta={
+                    'tmp_file': filename,
+                    **get_rq_job_meta(request=request, db_obj=db_obj),
+                },
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
@@ -2946,6 +2946,8 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     else:
         if rq_job.is_finished:
+            if rq_job.dependency:
+                rq_job.dependency.delete()
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \

@@ -1104,6 +1104,8 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             )
     else:
         if rq_job.is_finished:
+            if rq_job.dependency:
+                rq_job.dependency.delete()
             project_id = rq_job.return_value()
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)

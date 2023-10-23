@@ -188,6 +188,11 @@ def configure_dependent_job_to_download_from_cs(
 ) -> Job:
     rq_job_id_download_file = rq_id + f'?action=download_{key.replace("/", ".")}'
     rq_job_download_file = queue.fetch_job(rq_job_id_download_file)
+
+    if rq_job_download_file and rq_job_download_file.is_finished or rq_job_download_file.is_failed:
+        rq_job_download_file.delete()
+        rq_job_download_file = None
+
     if not rq_job_download_file:
         # note: boto3 resource isn't pickleable, so we can't use storage
         user_id = request.user.id

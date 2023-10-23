@@ -499,7 +499,7 @@ class LambdaJob:
 
     def to_dict(self):
         lambda_func = self.job.kwargs.get("function")
-        return {
+        dict_ =  {
             "id": self.job.id,
             "function": {
                 "id": lambda_func.id if lambda_func else None,
@@ -516,6 +516,10 @@ class LambdaJob:
             "ended": self.job.ended_at,
             "exc_info": self.job.exc_info
         }
+        if dict_['status'] == 'Deferred':
+            dict_['status'] = 'Queued'
+
+        return dict_
 
     def get_task(self):
         return self.job.kwargs.get("task")
