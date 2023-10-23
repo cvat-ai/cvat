@@ -5,13 +5,20 @@
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
+class AttributeMappingSerializer(serializers.JSONField):
+    def validate(self, attrs):
+        for attr_name in self.initial_data:
+            if not isinstance(self.initial_data[attr_name], str):
+                raise serializers.ValidationError(f"Not valid field value type: {attr_name}, must be string")
+        return attrs
+
 class SkeletonLabelMappingEntrySerializer(serializers.DictField):
     name = serializers.CharField()
-    attributes = serializers.JSONField(required=False)
+    attributes = AttributeMappingSerializer(required=False)
 
 class LabelMappingEntrySerializer(serializers.DictField):
     name = serializers.CharField()
-    attributes = serializers.JSONField(required=False)
+    attributes = AttributeMappingSerializer(required=False)
     elements = serializers.DictField(child=SkeletonLabelMappingEntrySerializer(), required=False,
         help_text="Label mapping from the model skeleton elements to the task skeleton elements"
     )
