@@ -366,23 +366,6 @@ class Project(models.Model):
         return self.name
 
 class TaskQuerySet(models.QuerySet):
-    def with_label_summary(self):
-        return self.prefetch_related(
-            'label_set',
-            'label_set__parent',
-            'project__label_set',
-            'project__label_set__parent',
-        ).annotate(
-            task_labels_count=models.Count('label',
-                filter=models.Q(label__parent__isnull=True),
-                distinct=True
-            ),
-            proj_labels_count=models.Count('project__label',
-                filter=models.Q(project__label__parent__isnull=True),
-                distinct=True
-            )
-        )
-
     def with_job_summary(self):
         return self.prefetch_related(
             'segment_set__job_set',
@@ -659,6 +642,9 @@ class JobQuerySet(models.QuerySet):
         return super().update_or_create(*args, **kwargs)
 
     def _validate_constraints(self, obj: Dict[str, Any]):
+        if 'type' not in obj:
+            return
+
         # Constraints can't be set on the related model fields
         # This method requires the save operation to be called as a transaction
         if obj['type'] == JobType.GROUND_TRUTH and self.filter(
@@ -1083,7 +1069,7 @@ class CloudStorage(models.Model):
     # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
     # https://cloud.google.com/storage/docs/naming-buckets#requirements
     # AWS access key id - 20, Oracle OCI access key id - 40
-    # AWS secret access key - 40, Oracle OCI secret key id - 44
+    # AWS secret access key - 40, Oracle OCI secret access key - 44, Cloudflare R2 secret access key - 64
     # AWS temporary session token - None
     # The size of the security token that AWS STS API operations return is not fixed.
     # We strongly recommend that you make no assumptions about the maximum size.

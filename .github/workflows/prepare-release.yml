@@ -19,6 +19,20 @@ jobs:
             exit 1
           fi
 
+      # When you use the default github.token to make changes in the repository,
+      # it does not trigger further GitHub pipelines. We want to trigger CI for
+      # the pull request, so we have to use an app token.
+      - name: Generate authentication token
+        id: gen-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: "${{ secrets.CVAT_BOT_APP_ID }}"
+          private-key: "${{ secrets.CVAT_BOT_PRIVATE_KEY }}"
+
+      - name: Install dependencies
+        run:
+          sudo apt-get install -y pandoc
+
       - uses: actions/checkout@v4
 
       - name: Verify that the release is new
@@ -42,7 +56,7 @@ jobs:
 
       - name: Commit release preparation changes
         run: |
-          git -c user.name='github-actions[bot]' -c user.email='github-actions[bot]@users.noreply.github.com' \
+          git -c user.name='cvat-bot[bot]' -c user.email='147643061+cvat-bot[bot]@users.noreply.github.com' \
             commit -a -m "Prepare release v${{ inputs.newVersion }}"
 
       - name: Push release branch
@@ -51,9 +65,10 @@ jobs:
 
       - name: Create release pull request
         env:
-          GH_TOKEN: "${{ github.token }}"
+          GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
         run: |
-          gh pr create \
-            --base=master \
-            --title="Release v${{ inputs.newVersion }}" \
-            --body="$(awk '/^## / { hn += 1; next } hn == 1 && !/^</' CHANGELOG.md)"
+          ./dev/gh_release_notes.sh \
+            | gh pr create \
+              --base=master \
+              --title="Release v${{ inputs.newVersion }}" \
+              --body-file=-
