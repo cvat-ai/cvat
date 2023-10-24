@@ -7315,10 +7315,10 @@ components:
           description: The name of the function to execute
         task:
           type: integer
-          description: The id of the task to annotate
+          description: The id of the task to be annotated
         job:
           type: integer
-          description: The id of the job to annotate
+          description: The id of the job to be annotated
         quality:
           allOf:
           - $ref: '#/components/schemas/QualityEnum'
@@ -7328,22 +7328,23 @@ components:
 
             * `compressed` - compressed
             * `original` - original
-        cleanup:
-          type: boolean
-          default: false
-        convMaskToPoly:
-          type: boolean
-          default: false
+        max_distance:
+          type: integer
         threshold:
           type: number
           format: double
+        cleanup:
+          type: boolean
+          default: false
+          description: Whether existing annotation should be removed
+        convMaskToPoly:
+          type: boolean
+          default: false
         mapping:
           type: object
           additionalProperties:
             type: object
           description: Label mapping from the model to the task labels
-        max_distance:
-          type: integer
       required:
       - function
       - task
