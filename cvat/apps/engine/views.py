@@ -22,7 +22,7 @@ import django_rq
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
@@ -238,13 +238,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = models.Project.objects.select_related(
         'assignee', 'owner', 'target_storage', 'source_storage', 'annotation_guide',
-    ).prefetch_related(
-        'tasks', 'label_set__sublabels__attributespec_set',
-        'label_set__attributespec_set'
-    ).annotate(
-        proj_labels_count=Count('label',
-            filter=Q(label__parent__isnull=True), distinct=True)
-    ).all()
+    ).prefetch_related('tasks').all()
 
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
@@ -761,6 +755,7 @@ class JobDataGetter(DataChunkGetter):
             '200': TaskReadSerializer, # check TaskWriteSerializer.to_representation
         })
 )
+
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -771,7 +766,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).prefetch_related(
         'segment_set__job_set',
         'segment_set__job_set__assignee',
-    ).with_label_summary().with_job_summary().all()
+    ).with_job_summary().all()
 
     lookup_fields = {
         'project_name': 'project__name',
@@ -1585,10 +1580,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
     ).annotate(
         Count('issues', distinct=True),
-        task_labels_count=Count('segment__task__label',
-            filter=Q(segment__task__label__parent__isnull=True), distinct=True),
-        proj_labels_count=Count('segment__task__project__label',
-            filter=Q(segment__task__project__label__parent__isnull=True), distinct=True)
     ).all()
 
     iam_organization_field = 'segment__task__organization'
@@ -2282,13 +2273,20 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return super().perform_update(serializer)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: models.Label):
         if instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
                 "Sublabels cannot be deleted this way. "
                 "Please send a PATCH request with updated parent label data instead.",
                 code=status.HTTP_400_BAD_REQUEST)
+
+        if project := instance.project:
+            project.save(update_fields=['updated_date'])
+            ProjectWriteSerializer(project).update_child_objects_on_labels_update(project)
+        elif task := instance.task:
+            task.save(update_fields=['updated_date'])
+            TaskWriteSerializer(task).update_child_objects_on_labels_update(task)
 
         return super().perform_destroy(instance)
 

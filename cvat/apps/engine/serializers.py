@@ -150,9 +150,33 @@ class TasksSummarySerializer(_CollectionSummarySerializer):
 class CommentsSummarySerializer(_CollectionSummarySerializer):
     pass
 
-class BasicSummarySerializer(serializers.Serializer):
+class LabelsSummarySerializer(serializers.Serializer):
+    url = serializers.URLField(read_only=True)
+
+    def get_url(self, request, instance):
+        filter_key = instance.__class__.__name__.lower() + '_id'
+        return reverse('label-list', request=request,
+            query_params={ filter_key: instance.id })
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        if not request:
+            return None
+
+        return {
+            'url': self.get_url(request, instance),
+        }
+
+class IssuesSummarySerializer(serializers.Serializer):
     url = serializers.URLField(read_only=True)
     count = serializers.IntegerField(read_only=True)
+
+    def get_url(self, request, instance):
+        return reverse('issue-list', request=request,
+            query_params={ 'job_id': instance.id })
+
+    def get_count(self, instance):
+        return getattr(instance, 'issues__count', 0)
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -164,22 +188,6 @@ class BasicSummarySerializer(serializers.Serializer):
             'count': self.get_count(instance)
         }
 
-class LabelsSummarySerializer(BasicSummarySerializer):
-    def get_url(self, request, instance):
-        filter_key = instance.__class__.__name__.lower() + '_id'
-        return reverse('label-list', request=request,
-            query_params={ filter_key: instance.id })
-
-    def get_count(self, instance):
-        return getattr(instance, 'task_labels_count', 0) + getattr(instance, 'proj_labels_count', 0)
-
-class IssuesSummarySerializer(BasicSummarySerializer):
-    def get_url(self, request, instance):
-        return reverse('issue-list', request=request,
-            query_params={ 'job_id': instance.id })
-
-    def get_count(self, instance):
-        return getattr(instance, 'issues__count', 0)
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
@@ -1189,11 +1197,16 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         _update_related_storages(instance, validated_data)
 
         instance.save()
-        instance.task_labels_count = instance.label_set.filter(
-            parent__isnull=True).count()
-        instance.proj_labels_count = instance.project.label_set.filter(
-            parent__isnull=True).count() if instance.project else 0
+
+        if 'label_set' in validated_data and not instance.project_id:
+            self.update_child_objects_on_labels_update(instance)
+
         return instance
+
+    def update_child_objects_on_labels_update(self, instance: models.Task):
+        models.Job.objects.filter(
+            updated_date__lt=instance.updated_date, segment__task=instance
+        ).update(updated_date=instance.updated_date)
 
     def validate(self, attrs):
         # When moving task labels can be mapped to one, but when not names must be unique
@@ -1333,10 +1346,22 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         _update_related_storages(instance, validated_data)
 
         instance.save()
-        instance.proj_labels_count = instance.label_set.filter(
-            parent__isnull=True).count()
+
+        if 'label_set' in validated_data:
+            self.update_child_objects_on_labels_update(instance)
 
         return instance
+
+    @transaction.atomic
+    def update_child_objects_on_labels_update(self, instance: models.Project):
+        models.Task.objects.filter(
+            updated_date__lt=instance.updated_date, project=instance
+        ).update(updated_date=instance.updated_date)
+
+        models.Job.objects.filter(
+            updated_date__lt=instance.updated_date, segment__task__project=instance
+        ).update(updated_date=instance.updated_date)
+
 
 class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
