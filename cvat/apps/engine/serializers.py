@@ -1011,20 +1011,14 @@ class DataSerializer(serializers.ModelSerializer):
     # pylint: disable=no-self-use
     @transaction.atomic
     def _create_files(self, instance, files):
-        if 'client_files' in files:
-            models.ClientFile.objects.bulk_create(
-                models.ClientFile(data=instance, **f) for f in files['client_files']
-            )
-
-        if 'server_files' in files:
-            models.ServerFile.objects.bulk_create(
-                models.ServerFile(data=instance, **f) for f in files['server_files']
-            )
-
-        if 'remote_files' in files:
-            models.RemoteFile.objects.bulk_create(
-                models.RemoteFile(data=instance, **f) for f in files['remote_files']
-            )
+        for files_type, files_model in zip(
+            ('client_files', 'server_files', 'remote_files'),
+            (models.ClientFile, models.ServerFile, models.RemoteFile),
+        ):
+            if files_type in files:
+                files_model.objects.bulk_create(
+                    files_model(data=instance, **f) for f in files[files_type]
+                )
 
 class StorageSerializer(serializers.ModelSerializer):
     class Meta:
