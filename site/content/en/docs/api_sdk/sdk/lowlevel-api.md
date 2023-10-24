@@ -279,7 +279,7 @@ Most models provide corresponding interface classes called like `I<model name>`.
 used to implement your own classes or describe APIs. They just provide type annotations
 and descriptions for model fields.
 
-You can export model values to plain Python dicts using the `as_dict()` method and
+You can export model values to plain Python dicts using the `to_dict()` method and
 the `cvat_sdk.api_client.model_utils.to_json()` function.
 
 You can find the list of the available models and their documentation [here](../reference/models/).

@@ -320,8 +320,13 @@ export default function implementAPI(cvat) {
         return cloudStorages;
     };
 
-    cvat.organizations.get.implementation = async () => {
-        const organizationsData = await serverProxy.organizations.get();
+    cvat.organizations.get.implementation = async (filter) => {
+        checkFilter(filter, {
+            search: isString,
+            filter: isString,
+        });
+
+        const organizationsData = await serverProxy.organizations.get(filter);
         const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
         return organizations;
     };
@@ -339,6 +344,28 @@ export default function implementAPI(cvat) {
             organizationID: null,
             organizationSlug: null,
         };
+    };
+
+    cvat.organizations.acceptInvitation.implementation = async (
+        username,
+        firstName,
+        lastName,
+        email,
+        password,
+        userConfirmations,
+        key,
+    ) => {
+        const orgSlug = await serverProxy.organizations.acceptInvitation(
+            username,
+            firstName,
+            lastName,
+            email,
+            password,
+            userConfirmations,
+            key,
+        );
+
+        return orgSlug;
     };
 
     cvat.webhooks.get.implementation = async (filter) => {

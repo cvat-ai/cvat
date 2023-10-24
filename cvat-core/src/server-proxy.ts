@@ -13,7 +13,7 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, FunctionsResponseBody,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAcceptInvitation,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -276,9 +276,9 @@ Axios.interceptors.response.use((response) => {
     if (isResourceURL(response.config.url) &&
         'organization' in (response.data || {})
     ) {
-        const newOrg: number | null = response.data.organization;
-        if (config.organization.organizationID !== newOrg) {
-            config?.onOrganizationChange(newOrg);
+        const newOrgId: number | null = response.data.organization;
+        if (config.organization.organizationID !== newOrgId) {
+            config?.onOrganizationChange(newOrgId);
         }
     }
 
@@ -454,6 +454,34 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
     } catch (errorData) {
         throw generateError(errorData);
     }
+}
+
+async function acceptOrganizationInvitation(
+    username: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    confirmations: Record<string, string>,
+    key: string,
+): Promise<SerializedAcceptInvitation> {
+    let response = null;
+    let orgSlug = null;
+    try {
+        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`, {
+            username,
+            first_name: firstName,
+            last_name: lastName,
+            password1: password,
+            password2: password,
+            confirmations,
+        });
+        orgSlug = response.data.organization_slug;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return orgSlug;
 }
 
 async function getSelf(): Promise<SerializedUser> {
@@ -1995,17 +2023,21 @@ async function deleteCloudStorage(id) {
     }
 }
 
-async function getOrganizations() {
+async function getOrganizations(filter) {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await fetchAll(`${backendAPI}/organizations`);
+        response = await Axios.get(`${backendAPI}/organizations`, {
+            params: {
+                ...filter,
+            },
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.results;
+    return response.data.results;
 }
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {
@@ -2078,6 +2110,15 @@ async function inviteOrganizationMembers(orgId, data) {
                 organization: orgId,
             },
         );
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function resendOrganizationInvitation(key) {
+    const { backendAPI } = config;
+    try {
+        await Axios.post(`${backendAPI}/invitations/${key}/resend`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2505,8 +2546,10 @@ export default Object.freeze({
         invitation: getMembershipInvitation,
         delete: deleteOrganization,
         invite: inviteOrganizationMembers,
+        resendInvitation: resendOrganizationInvitation,
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
+        acceptInvitation: acceptOrganizationInvitation,
     }),
 
     webhooks: Object.freeze({

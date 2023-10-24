@@ -259,8 +259,8 @@ function build() {
             },
         },
         organizations: {
-            async get() {
-                const result = await PluginRegistry.apiWrapper(cvat.organizations.get);
+            async get(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.get, filter);
                 return result;
             },
             async activate(organization) {
@@ -269,6 +269,19 @@ function build() {
             },
             async deactivate() {
                 const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
+                return result;
+            },
+            async acceptInvitation(username, firstName, lastName, email, password, userConfirmations, key) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.organizations.acceptInvitation,
+                    username,
+                    firstName,
+                    lastName,
+                    email,
+                    password,
+                    userConfirmations,
+                    key,
+                );
                 return result;
             },
         },

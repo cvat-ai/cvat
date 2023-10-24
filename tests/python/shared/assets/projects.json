@@ -11,7 +11,6 @@
       "guide_id": null,
       "id": 13,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=13"
       },
       "name": "project with attributes 2",
@@ -50,7 +49,6 @@
       "guide_id": null,
       "id": 12,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=12"
       },
       "name": "project with attributes",
@@ -89,7 +87,6 @@
       "guide_id": null,
       "id": 11,
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?project_id=11"
       },
       "name": "project7",
@@ -134,7 +131,6 @@
       "guide_id": null,
       "id": 10,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=10"
       },
       "name": "project 6",
@@ -173,7 +169,6 @@
       "guide_id": null,
       "id": 8,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=8"
       },
       "name": "project with video data",
@@ -218,7 +213,6 @@
       "guide_id": null,
       "id": 7,
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?project_id=7"
       },
       "name": "admin1_project",
@@ -263,7 +257,6 @@
       "guide_id": null,
       "id": 6,
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?project_id=6"
       },
       "name": "user1_project",
@@ -302,7 +295,6 @@
       "guide_id": null,
       "id": 5,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=5"
       },
       "name": "project5",
@@ -341,7 +333,6 @@
       "guide_id": null,
       "id": 4,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=4"
       },
       "name": "project4",
@@ -378,7 +369,6 @@
       "guide_id": null,
       "id": 3,
       "labels": {
-        "count": 0,
         "url": "http://localhost:8080/api/labels?project_id=3"
       },
       "name": "project 3",
@@ -415,7 +405,6 @@
       "guide_id": null,
       "id": 2,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=2"
       },
       "name": "project2",
@@ -462,7 +451,6 @@
       "guide_id": null,
       "id": 1,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=1"
       },
       "name": "project1",

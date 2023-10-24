@@ -527,8 +527,7 @@
                 "server: RQ - scheduler",
                 "server: RQ - quality reports",
                 "server: RQ - analytics reports",
-                "server: RQ - cleaning",
-                "server: git",
+                "server: RQ - cleaning"
             ]
         }
     ]
