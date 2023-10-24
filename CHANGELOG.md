@@ -16,7 +16,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.8.0'></a>
+
+## \[2.8.0\] - 2023-10-23
+
+### Added
+
+- A new feature allowing users to invite others to the organization via email.
+  (<https://github.com/opencv/cvat/pull/6901>)
+
+- \[SDK\] In the SDK, a parameter has been introduced to `TaskDataset`
+  which enables the option to disable annotation loading
+  (<https://github.com/opencv/cvat/pull/7019>)
+
+- A test has been incorporated for retrieving bucket content in
+  cases where the bucket includes manually created directories.
+  (<https://github.com/opencv/cvat/pull/7018>)
+
+### Changed
+
+- The maximum length of the secret access key has been
+  increased to 64 characters.
+  (<https://github.com/opencv/cvat/pull/6701>)
+
+- The client will no longer load all organizations upon start
+  (<https://github.com/opencv/cvat/pull/7004>)
+
+- The default value for Zookeeper from the
+  Clickhouse subchart has been set to disabled.
+  (<https://github.com/opencv/cvat/pull/7003>)
+
+### Removed
+
+- The endpoints `/api/projects`, `/api/tasks`, and `/api/jobs`
+  will no longer return information regarding the count of labels.
+  This information was complicating SQL queries,
+  making them hard to optimize.
+  Instead, use `/api/labels?task_id=tid` or `/api/labels?project_id=pid`.
+  (<https://github.com/opencv/cvat/pull/6918>)
+
+### Fixed
+
+- Issues causing potential double-sized file writes during task
+  data uploading have been addressed.
+  (<https://github.com/opencv/cvat/pull/6952>)
+
+- Issues encountered when retrieving CS content from GCS
+  buckets containing manually created directories have been resolved.
+  (<https://github.com/opencv/cvat/pull/7006>)
+
+- \[SDK\] In the SDK, `cvat_sdk.auto_annotation.annotate_task`
+  has been optimized to avoid unnecessary fetching of
+  existing annotations.
+  (<https://github.com/opencv/cvat/pull/7019>)
+
+- The project/task/job update time is now correctly
+  modified upon label updates.
+  (<https://github.com/opencv/cvat/pull/6958>)
+
 <a id='changelog-2.7.6'></a>
+
 ## \[2.7.6\] - 2023-10-13
 
 ### Changed
@@ -29,7 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Supervisord (<https://github.com/opencv/cvat/pull/6945>):
   - added `autorestart=true` option for all workers
-  - unified program names to use dashes as delimiter instead of mixed '_' and '-'
+  - unified program names to use dashes as delimiter instead of mixed '\_' and '-'
   - minor improvements to supervisor configurations
 
 ### Removed
@@ -75,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6992>)
 
 <a id='changelog-2.7.5'></a>
+
 ## \[2.7.5\] - 2023-10-09
 
 ### Added
@@ -83,6 +143,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6965>)
 
 <a id='changelog-2.7.4'></a>
+
 ## \[2.7.4\] - 2023-10-06
 
 ### Added
@@ -111,11 +172,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - PCD files with nan values could not be opened on 3D workspace
- (<https://github.com/opencv/cvat/pull/6862>)
+  (<https://github.com/opencv/cvat/pull/6862>)
 - Fixed direct navigation to neightbour chunk on 3D workspace
- (<https://github.com/opencv/cvat/pull/6862>)
+  (<https://github.com/opencv/cvat/pull/6862>)
 - Intencity level from .bin lidar data ignored when converting .bin -> .pcd
- (<https://github.com/opencv/cvat/pull/6862>)
+  (<https://github.com/opencv/cvat/pull/6862>)
 - Incorrectly determined video frame count when the video contains an MP4 edit list
   (<https://github.com/opencv/cvat/pull/6929>)
 - Internal server error when retrieving data from CS and cache=True

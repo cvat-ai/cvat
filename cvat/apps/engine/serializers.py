@@ -8,6 +8,7 @@ from inspect import isclass
 import os
 import re
 import shutil
+import string
 
 from tempfile import NamedTemporaryFile
 import textwrap
@@ -150,9 +151,33 @@ class TasksSummarySerializer(_CollectionSummarySerializer):
 class CommentsSummarySerializer(_CollectionSummarySerializer):
     pass
 
-class BasicSummarySerializer(serializers.Serializer):
+class LabelsSummarySerializer(serializers.Serializer):
+    url = serializers.URLField(read_only=True)
+
+    def get_url(self, request, instance):
+        filter_key = instance.__class__.__name__.lower() + '_id'
+        return reverse('label-list', request=request,
+            query_params={ filter_key: instance.id })
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        if not request:
+            return None
+
+        return {
+            'url': self.get_url(request, instance),
+        }
+
+class IssuesSummarySerializer(serializers.Serializer):
     url = serializers.URLField(read_only=True)
     count = serializers.IntegerField(read_only=True)
+
+    def get_url(self, request, instance):
+        return reverse('issue-list', request=request,
+            query_params={ 'job_id': instance.id })
+
+    def get_count(self, instance):
+        return getattr(instance, 'issues__count', 0)
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -164,22 +189,6 @@ class BasicSummarySerializer(serializers.Serializer):
             'count': self.get_count(instance)
         }
 
-class LabelsSummarySerializer(BasicSummarySerializer):
-    def get_url(self, request, instance):
-        filter_key = instance.__class__.__name__.lower() + '_id'
-        return reverse('label-list', request=request,
-            query_params={ filter_key: instance.id })
-
-    def get_count(self, instance):
-        return getattr(instance, 'task_labels_count', 0) + getattr(instance, 'proj_labels_count', 0)
-
-class IssuesSummarySerializer(BasicSummarySerializer):
-    def get_url(self, request, instance):
-        return reverse('issue-list', request=request,
-            query_params={ 'job_id': instance.id })
-
-    def get_count(self, instance):
-        return getattr(instance, 'issues__count', 0)
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
@@ -1196,11 +1205,16 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         _update_related_storages(instance, validated_data)
 
         instance.save()
-        instance.task_labels_count = instance.label_set.filter(
-            parent__isnull=True).count()
-        instance.proj_labels_count = instance.project.label_set.filter(
-            parent__isnull=True).count() if instance.project else 0
+
+        if 'label_set' in validated_data and not instance.project_id:
+            self.update_child_objects_on_labels_update(instance)
+
         return instance
+
+    def update_child_objects_on_labels_update(self, instance: models.Task):
+        models.Job.objects.filter(
+            updated_date__lt=instance.updated_date, segment__task=instance
+        ).update(updated_date=instance.updated_date)
 
     def validate(self, attrs):
         # When moving task labels can be mapped to one, but when not names must be unique
@@ -1340,10 +1354,22 @@ class ProjectWriteSerializer(serializers.ModelSerializer):
         _update_related_storages(instance, validated_data)
 
         instance.save()
-        instance.proj_labels_count = instance.label_set.filter(
-            parent__isnull=True).count()
+
+        if 'label_set' in validated_data:
+            self.update_child_objects_on_labels_update(instance)
 
         return instance
+
+    @transaction.atomic
+    def update_child_objects_on_labels_update(self, instance: models.Project):
+        models.Task.objects.filter(
+            updated_date__lt=instance.updated_date, project=instance
+        ).update(updated_date=instance.updated_date)
+
+        models.Job.objects.filter(
+            updated_date__lt=instance.updated_date, segment__task__project=instance
+        ).update(updated_date=instance.updated_date)
+
 
 class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
@@ -1751,7 +1777,34 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', '') and not attrs.get('connection_string', ''):
                 raise serializers.ValidationError('Account name or connection string for Azure container was not specified')
+
+        # AWS S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
+        # Azure Container: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
+        # GCS: https://cloud.google.com/storage/docs/buckets#naming
+        COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS = (
+            string.ascii_lowercase + string.digits + "-"
+        )
+        ALLOWED_RESOURCE_NAME_SYMBOLS = (
+            COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS
+            if provider_type != models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE
+            else COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS + "_"
+        )
+
+        # We need to check only basic naming rule
+        if (resource := attrs.get("resource")) and (
+            diff := (set(resource) - set(ALLOWED_RESOURCE_NAME_SYMBOLS))
+        ):
+            raise serializers.ValidationError({
+                'resource': f"Invalid characters ({','.join(diff)}) were found.",
+            })
+
         return attrs
+
+    def _validate_prefix(self, value: str) -> None:
+        if value.startswith('/'):
+            raise serializers.ValidationError('Prefix cannot start with forward slash ("/").')
+        if '' in value.strip('/').split('/'):
+            raise serializers.ValidationError('Prefix cannot contain multiple slashes in a row.')
 
     @staticmethod
     def _manifests_validation(storage, manifests):
@@ -1796,6 +1849,10 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             'credentials': credentials,
             'specific_attributes': parse_specific_attributes(validated_data.get('specific_attributes', ''))
         }
+
+        if (prefix := details['specific_attributes'].get('prefix')):
+            self._validate_prefix(prefix)
+
         storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
         if should_be_created:
             try:
@@ -1844,7 +1901,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 
-    # pylint: disable=no-self-use
+    @transaction.atomic
     def update(self, instance, validated_data):
         credentials = Credentials()
         credentials.convert_from_db({
@@ -1866,13 +1923,15 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             key_file.close()
             del key_file
 
+        if (prefix := parse_specific_attributes(validated_data.get('specific_attributes', '')).get('prefix')):
+            self._validate_prefix(prefix)
+
         credentials.mapping_with_new_values(credentials_dict)
         instance.credentials = credentials.convert_to_db()
-        instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
-        instance.resource = validated_data.get('resource', instance.resource)
-        instance.display_name = validated_data.get('display_name', instance.display_name)
-        instance.description = validated_data.get('description', instance.description)
-        instance.specific_attributes = validated_data.get('specific_attributes', instance.specific_attributes)
+
+        for field in ('credentials_type', 'resource', 'display_name', 'description', 'specific_attributes'):
+            if field in validated_data:
+                setattr(instance, field, validated_data[field])
 
         # check cloud storage existing
         details = {

@@ -22,7 +22,7 @@ import django_rq
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
@@ -34,6 +34,7 @@ from drf_spectacular.utils import (
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
+from pathlib import Path
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
@@ -132,6 +133,8 @@ class ServerViewSet(viewsets.ViewSet):
         summary='Returns all files and folders that are on the server along specified path',
         parameters=[
             OpenApiParameter('directory', description='Directory to browse',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('search', description='Search for specific files',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR)
         ],
         responses={
@@ -139,25 +142,27 @@ class ServerViewSet(viewsets.ViewSet):
         })
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
     def share(request):
-        param = request.query_params.get('directory', '/')
-        if param.startswith("/"):
-            param = param[1:]
-        directory = os.path.abspath(os.path.join(settings.SHARE_ROOT, param))
+        directory_param = request.query_params.get('directory', '/')
+        search_param = request.query_params.get('search', '')
 
-        if directory.startswith(settings.SHARE_ROOT) and os.path.isdir(directory):
+        if directory_param.startswith("/"):
+            directory_param = directory_param[1:]
+
+        directory = (Path(settings.SHARE_ROOT) / directory_param).absolute()
+
+        if str(directory).startswith(settings.SHARE_ROOT) and directory.is_dir():
             data = []
-            content = os.scandir(directory)
-            for entry in content:
-                entry_type = None
-                entry_mime_type = None
+            generator = directory.iterdir() if not search_param else (f for f in directory.iterdir() if f.name.startswith(search_param))
+
+            for entry in generator:
+                entry_type, entry_mime_type = None, None
                 if entry.is_file():
                     entry_type = "REG"
-                    entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
+                    entry_mime_type = get_mime(entry)
                     if entry_mime_type == 'zip':
                         entry_mime_type = 'archive'
                 elif entry.is_dir():
-                    entry_type = "DIR"
-                    entry_mime_type = "DIR"
+                    entry_type = entry_mime_type = "DIR"
 
                 if entry_type:
                     data.append({
@@ -171,7 +176,7 @@ class ServerViewSet(viewsets.ViewSet):
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         else:
-            return Response("{} is an invalid directory".format(param),
+            return Response("{} is an invalid directory".format(directory_param),
                 status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
@@ -238,13 +243,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 ):
     queryset = models.Project.objects.select_related(
         'assignee', 'owner', 'target_storage', 'source_storage', 'annotation_guide',
-    ).prefetch_related(
-        'tasks', 'label_set__sublabels__attributespec_set',
-        'label_set__attributespec_set'
-    ).annotate(
-        proj_labels_count=Count('label',
-            filter=Q(label__parent__isnull=True), distinct=True)
-    ).all()
+    ).prefetch_related('tasks').all()
 
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
@@ -761,6 +760,7 @@ class JobDataGetter(DataChunkGetter):
             '200': TaskReadSerializer, # check TaskWriteSerializer.to_representation
         })
 )
+
 class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin,
     PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -771,7 +771,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     ).prefetch_related(
         'segment_set__job_set',
         'segment_set__job_set__assignee',
-    ).with_label_summary().with_job_summary().all()
+    ).with_job_summary().all()
 
     lookup_fields = {
         'project_name': 'project__name',
@@ -1563,10 +1563,6 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         'segment__task__project', 'segment__task__annotation_guide', 'segment__task__project__annotation_guide',
     ).annotate(
         Count('issues', distinct=True),
-        task_labels_count=Count('segment__task__label',
-            filter=Q(segment__task__label__parent__isnull=True), distinct=True),
-        proj_labels_count=Count('segment__task__project__label',
-            filter=Q(segment__task__project__label__parent__isnull=True), distinct=True)
     ).all()
 
     iam_organization_field = 'segment__task__organization'
@@ -2260,13 +2256,20 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return super().perform_update(serializer)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: models.Label):
         if instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
                 "Sublabels cannot be deleted this way. "
                 "Please send a PATCH request with updated parent label data instead.",
                 code=status.HTTP_400_BAD_REQUEST)
+
+        if project := instance.project:
+            project.save(update_fields=['updated_date'])
+            ProjectWriteSerializer(project).update_child_objects_on_labels_update(project)
+        elif task := instance.task:
+            task.save(update_fields=['updated_date'])
+            TaskWriteSerializer(task).update_child_objects_on_labels_update(task)
 
         return super().perform_destroy(instance)
 
@@ -2530,7 +2533,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         try:
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
-            prefix = request.query_params.get('prefix')
+            prefix = request.query_params.get('prefix', "")
             page_size = request.query_params.get('page_size', str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE))
             if not page_size.isnumeric():
                 return HttpResponseBadRequest('Wrong value for page_size was found')
@@ -2539,6 +2542,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # make api identical to share api
             if prefix and prefix.startswith('/'):
                 prefix = prefix[1:]
+
+
             next_token = request.query_params.get('next_token')
 
             if (manifest_path := request.query_params.get('manifest_path')):
@@ -2556,9 +2561,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 except ValueError:
                     return HttpResponseBadRequest('Wrong value for the next_token parameter was found.')
                 content = manifest.emulate_hierarchical_structure(
-                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
+                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, default_prefix=storage.prefix, start_index=start_index)
             else:
-                content = storage.list_files_on_one_page(prefix, next_token, page_size,_use_sort=True)
+                content = storage.list_files_on_one_page(prefix, next_token, page_size, _use_sort=True)
             for i in content['content']:
                 mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
                 if mime_type == 'zip':

@@ -55,6 +55,9 @@ class Config:
     """Directory in which to store cached server data"""
 
 
+_VERSION_OBJ = pv.Version(VERSION)
+
+
 class Client:
     """
     Provides session management, implements authentication operations
@@ -62,8 +65,8 @@ class Client:
     """
 
     SUPPORTED_SERVER_VERSIONS = (
-        pv.Version("2.7"),
-        pv.Version("2.8"),
+        pv.Version(f"{_VERSION_OBJ.epoch}!{_VERSION_OBJ.major}.{_VERSION_OBJ.minor}"),
+        pv.Version(f"{_VERSION_OBJ.epoch}!{_VERSION_OBJ.major}.{_VERSION_OBJ.minor+1}"),
     )
 
     def __init__(

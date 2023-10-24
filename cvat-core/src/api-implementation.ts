@@ -51,8 +51,8 @@ export default function implementAPI(cvat) {
         return result;
     };
 
-    cvat.server.share.implementation = async (directory) => {
-        const result = await serverProxy.server.share(directory);
+    cvat.server.share.implementation = async (directory: string, searchPrefix?: string) => {
+        const result = await serverProxy.server.share(directory, searchPrefix);
         return result.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type }));
     };
 
@@ -320,8 +320,13 @@ export default function implementAPI(cvat) {
         return cloudStorages;
     };
 
-    cvat.organizations.get.implementation = async () => {
-        const organizationsData = await serverProxy.organizations.get();
+    cvat.organizations.get.implementation = async (filter) => {
+        checkFilter(filter, {
+            search: isString,
+            filter: isString,
+        });
+
+        const organizationsData = await serverProxy.organizations.get(filter);
         const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
         return organizations;
     };
