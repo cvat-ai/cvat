@@ -103,6 +103,8 @@ function ObjectMapperComponent(props: Props): JSX.Element {
                 <Row className={rowClassName}>
                     <Col span={10}>
                         <Select
+                            virtual
+                            showSearch
                             value={leftValue ? getObjectName(leftValue) : null}
                             size='small'
                             onChange={(value) => {

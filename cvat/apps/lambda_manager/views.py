@@ -329,7 +329,7 @@ class LambdaFunction:
                 if not labels_compatible(md_label, db_label):
                     raise ValidationError(
                         f'Invalid mapping. Model label "{db_label_name}" and' + \
-                            'database label "{db_label_name}" are not compatible'
+                            f'database label "{db_label_name}" are not compatible'
                     )
 
                 _validate_attributes_mapping(

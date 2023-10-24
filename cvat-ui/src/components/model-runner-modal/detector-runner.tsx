@@ -112,16 +112,13 @@ function DetectorRunner(props: Props): JSX.Element {
         setTaskLabels(converted);
         if (model) {
             setModelLabels(model.labels);
+            if (!model.labels.length && model.kind !== ModelKind.REID) {
+                notification.warning({ message: 'This model does not have specified labels' });
+            }
         } else {
             setModelLabels([]);
         }
     }, [labels, model]);
-
-    if (model && model.kind !== ModelKind.REID && !model.labels.length) {
-        notification.warning({
-            message: 'The selected model does not include any labels',
-        });
-    }
 
     return (
         <div className='cvat-run-model-content'>
