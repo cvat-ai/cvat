@@ -124,6 +124,8 @@ function ObjectMapperComponent(props: Props): JSX.Element {
                     </Col>
                     <Col span={10} offset={1}>
                         <Select
+                            virtual
+                            showSearch
                             value={rightValue ? getObjectName(rightValue) : null}
                             size='small'
                             onChange={(value) => {
