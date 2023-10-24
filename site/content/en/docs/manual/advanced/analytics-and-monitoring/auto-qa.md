@@ -1,8 +1,8 @@
 ---
-title: 'Annotation quality & Honeypot'
-linkTitle: 'Annotation quality'
+title: 'Automated QA, Review & Honeypot'
+linkTitle: 'Automated QA'
 weight: 1
-description: 'How to check the quality of annotation in CVAT'
+description: 'Guidelines for assessing annotation quality in CVAT automatically'
 ---
 
 In CVAT, it's possible to evaluate the quality of annotation through
