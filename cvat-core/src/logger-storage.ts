@@ -64,17 +64,17 @@ class LoggerStorage {
             },
             [LogType.changeFrame]: {
                 lastLog: null,
-                timeThreshold: 4000,
                 ignore(previousLog: EventLogger, currentPayload: any): boolean {
                     return (
                         currentPayload.job_id === previousLog.payload.job_id &&
-                        (Date.now() - previousLog.time.getTime()) < this.timeThreshold
+                        currentPayload.step === previousLog.payload.step
                     );
                 },
                 update(previousLog: EventLogger, currentPayload: any): object {
                     return {
                         ...previousLog.payload,
                         to: currentPayload.to,
+                        count: previousLog.payload.count + 1,
                     };
                 },
             },

@@ -665,6 +665,9 @@ export function changeFrameAsync(
             await job.logger.log(LogType.changeFrame, {
                 from: frame,
                 to: toFrame,
+                // step is passed with sign so we can know the direction
+                step: toFrame - frame,
+                count: 1,
             });
 
             const [minZ, maxZ] = computeZRange(states);
