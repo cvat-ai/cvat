@@ -8,6 +8,7 @@ from inspect import isclass
 import os
 import re
 import shutil
+import string
 
 from tempfile import NamedTemporaryFile
 import textwrap
@@ -1776,7 +1777,34 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', '') and not attrs.get('connection_string', ''):
                 raise serializers.ValidationError('Account name or connection string for Azure container was not specified')
+
+        # AWS S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
+        # Azure Container: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
+        # GCS: https://cloud.google.com/storage/docs/buckets#naming
+        COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS = (
+            string.ascii_lowercase + string.digits + "-"
+        )
+        ALLOWED_RESOURCE_NAME_SYMBOLS = (
+            COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS
+            if provider_type != models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE
+            else COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS + "_"
+        )
+
+        # We need to check only basic naming rule
+        if (resource := attrs.get("resource")) and (
+            diff := (set(resource) - set(ALLOWED_RESOURCE_NAME_SYMBOLS))
+        ):
+            raise serializers.ValidationError({
+                'resource': f"Invalid characters ({','.join(diff)}) were found.",
+            })
+
         return attrs
+
+    def _validate_prefix(self, value: str) -> None:
+        if value.startswith('/'):
+            raise serializers.ValidationError('Prefix cannot start with forward slash ("/").')
+        if '' in value.strip('/').split('/'):
+            raise serializers.ValidationError('Prefix cannot contain multiple slashes in a row.')
 
     @staticmethod
     def _manifests_validation(storage, manifests):
@@ -1821,6 +1849,10 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             'credentials': credentials,
             'specific_attributes': parse_specific_attributes(validated_data.get('specific_attributes', ''))
         }
+
+        if (prefix := details['specific_attributes'].get('prefix')):
+            self._validate_prefix(prefix)
+
         storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
         if should_be_created:
             try:
@@ -1869,7 +1901,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 
-    # pylint: disable=no-self-use
+    @transaction.atomic
     def update(self, instance, validated_data):
         credentials = Credentials()
         credentials.convert_from_db({
@@ -1891,13 +1923,15 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             key_file.close()
             del key_file
 
+        if (prefix := parse_specific_attributes(validated_data.get('specific_attributes', '')).get('prefix')):
+            self._validate_prefix(prefix)
+
         credentials.mapping_with_new_values(credentials_dict)
         instance.credentials = credentials.convert_to_db()
-        instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
-        instance.resource = validated_data.get('resource', instance.resource)
-        instance.display_name = validated_data.get('display_name', instance.display_name)
-        instance.description = validated_data.get('description', instance.description)
-        instance.specific_attributes = validated_data.get('specific_attributes', instance.specific_attributes)
+
+        for field in ('credentials_type', 'resource', 'display_name', 'description', 'specific_attributes'):
+            if field in validated_data:
+                setattr(instance, field, validated_data[field])
 
         # check cloud storage existing
         details = {

@@ -4533,6 +4533,11 @@ paths:
         schema:
           type: string
         description: Directory to browse
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search for specific files
       tags:
       - server
       security:
