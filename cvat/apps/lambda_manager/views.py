@@ -32,7 +32,7 @@ from rest_framework.request import Request
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import Job, ShapeType, SourceType, Task
+from cvat.apps.engine.models import Job, ShapeType, SourceType, Task, DataChoice
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
@@ -293,8 +293,15 @@ class LambdaFunction:
 
 
         if self.kind == LambdaType.DETECTOR:
+            if db_task.data.original_chunk_type == DataChoice.VIDEO:
+                data_path = db_task.data.video.path
+            elif db_task.data.original_chunk_type == DataChoice.IMAGESET:
+                data_path = db_task.data.images.get(frame=data["frame"]).path
+            else:
+                data_path = ""
             payload.update({
-                "image": self._get_image(db_task, mandatory_arg("frame"), quality)
+                "image": self._get_image(db_task, data["frame"], quality),
+                "data_path": data_path
             })
         elif self.kind == LambdaType.INTERACTOR:
             payload.update({
