@@ -151,7 +151,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-appearance-opacity-slider').click('right');
             cy.get('.cvat-appearance-opacity-slider').click('center');
             cy.get('#cvat_canvas_shape_1')
-                .should('exist').and('be.visible').and('have.class', 'cvat_canvas_hidden');
+                .should('exist').and('have.class', 'cvat_canvas_hidden').and('not.be.visible');
         });
 
         it('Editing a drawn mask', () => {
