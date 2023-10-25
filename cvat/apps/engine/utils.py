@@ -37,6 +37,8 @@ from django.conf import settings
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
+KEY_TO_EXCLUDE_FROM_DEPENDENCY = 'exclude_from_dependency'
+
 def parse_imports(source_code: str):
     root = ast.parse(source_code)
 
@@ -170,7 +172,7 @@ def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: boo
         )
         if job and job.meta.get("user", {}).get("id") == user_id
     ]
-    user_jobs = list(filter(lambda job: not job.meta.get(settings.KEY_TO_EXCLUDE_FROM_DEPENDENCY), started_user_jobs + deferred_user_jobs))
+    user_jobs = list(filter(lambda job: not job.meta.get(KEY_TO_EXCLUDE_FROM_DEPENDENCY), started_user_jobs + deferred_user_jobs))
 
     return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
 
@@ -205,7 +207,7 @@ def configure_dependent_job_to_download_from_cs(
                 job_id=rq_job_id_download_file,
                 meta={
                     **get_rq_job_meta(request=request, db_obj=db_storage),
-                    settings.KEY_TO_EXCLUDE_FROM_DEPENDENCY: True,
+                    KEY_TO_EXCLUDE_FROM_DEPENDENCY: True,
                 },
                 result_ttl=result_ttl,
                 failure_ttl=failure_ttl,
