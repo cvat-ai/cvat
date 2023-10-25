@@ -37,12 +37,14 @@ class LoggerStorage {
     public ignoreRules: Record<IgnoredRules, IgnoreRule>;
     public isActiveChecker: (() => boolean) | null;
     public saving: boolean;
+    private closeOnLog: Array<LogType>;
 
     constructor() {
         this.clientID = Date.now().toString().substr(-6);
         this.collection = [];
         this.isActiveChecker = null;
         this.saving = false;
+        this.closeOnLog = [LogType.changeFrame];
         this.ignoreRules = {
             [LogType.zoomImage]: {
                 lastLog: null,
@@ -138,6 +140,11 @@ Object.defineProperties(LoggerStorage.prototype.log, {
                 const { lastLog } = ignoreRule;
                 if (lastLog && ignoreRule.ignore(lastLog, payload)) {
                     lastLog.payload = ignoreRule.update(lastLog, payload);
+
+                    if (this.closeOnLog.includes(logType)) {
+                        await lastLog.close();
+                    }
+
                     return ignoreRule.lastLog;
                 }
             }
