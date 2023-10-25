@@ -58,9 +58,7 @@ services:
       NUMPROCS: 2
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
-      LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME:
-      LIMIT_ONE_USER_TO_ONE_EXPORT_TASK_AT_A_TIME:
-      LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME:
+      ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
     command: init run server
     labels:
       - traefik.enable=true
