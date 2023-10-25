@@ -2725,8 +2725,8 @@ class TestTaskCreationOrder:
         rq_jobs = queue.job_class.fetch_many(rq_job_ids, connection=queue.connection)
 
         for rq_job in rq_jobs:
-            assert len(rq_job.dependency_ids) <= 1
+            assert len(rq_job.dependency_ids) <= 1, "Several tasks should not depend on one task"
 
         assert any(
             [rq_job.dependency_ids for rq_job in rq_jobs]
-        ), "At least one task depends on another"
+        ), "At least one task should depend on another"
