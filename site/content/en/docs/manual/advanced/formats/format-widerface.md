@@ -1,9 +1,11 @@
 ---
+title: 'Wider Face'
 linkTitle: 'Wider Face'
 weight: 9
+description: 'How to export and import data in Wider Face format'
 ---
 
-he WIDER Face dataset is widely used for face detection tasks.
+The WIDER Face dataset is widely used for face detection tasks.
 Many popular models for object detection and face detection
 specifically are trained on this dataset for benchmarking and deployment.
 

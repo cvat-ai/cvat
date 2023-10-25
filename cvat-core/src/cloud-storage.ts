@@ -60,6 +60,7 @@ export default class CloudStorage {
     public readonly owner: User;
     public readonly createdDate: string;
     public readonly updatedDate: string;
+    public readonly prefix: string | null;
 
     constructor(initialData: RawCloudStorageData) {
         const data: RawCloudStorageData = {
@@ -230,6 +231,9 @@ export default class CloudStorage {
                             throw new ArgumentError('Value must be an array');
                         }
                     },
+                },
+                prefix: {
+                    get: () => new URLSearchParams(this.specificAttributes).get('prefix'),
                 },
             }),
         );

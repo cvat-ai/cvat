@@ -1,6 +1,8 @@
 ---
+title: 'CamVid'
 linkTitle: 'CamVid'
 weight: 10
+description: 'How to export and import data in CamVid format'
 ---
 
 The CamVid (Cambridge-driving Labeled Video Database) format is most commonly used

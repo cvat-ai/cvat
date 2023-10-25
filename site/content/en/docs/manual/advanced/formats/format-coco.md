@@ -1,6 +1,8 @@
 ---
+title: 'COCO'
 linkTitle: 'COCO'
 weight: 5
+description: 'How to export and import data in COCO format'
 ---
 
 A widely-used machine learning structure, the COCO dataset is instrumental

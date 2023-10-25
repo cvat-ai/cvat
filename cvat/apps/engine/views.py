@@ -34,6 +34,7 @@ from drf_spectacular.utils import (
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
+from pathlib import Path
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
@@ -132,6 +133,8 @@ class ServerViewSet(viewsets.ViewSet):
         summary='Returns all files and folders that are on the server along specified path',
         parameters=[
             OpenApiParameter('directory', description='Directory to browse',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('search', description='Search for specific files',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR)
         ],
         responses={
@@ -139,25 +142,27 @@ class ServerViewSet(viewsets.ViewSet):
         })
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
     def share(request):
-        param = request.query_params.get('directory', '/')
-        if param.startswith("/"):
-            param = param[1:]
-        directory = os.path.abspath(os.path.join(settings.SHARE_ROOT, param))
+        directory_param = request.query_params.get('directory', '/')
+        search_param = request.query_params.get('search', '')
 
-        if directory.startswith(settings.SHARE_ROOT) and os.path.isdir(directory):
+        if directory_param.startswith("/"):
+            directory_param = directory_param[1:]
+
+        directory = (Path(settings.SHARE_ROOT) / directory_param).absolute()
+
+        if str(directory).startswith(settings.SHARE_ROOT) and directory.is_dir():
             data = []
-            content = os.scandir(directory)
-            for entry in content:
-                entry_type = None
-                entry_mime_type = None
+            generator = directory.iterdir() if not search_param else (f for f in directory.iterdir() if f.name.startswith(search_param))
+
+            for entry in generator:
+                entry_type, entry_mime_type = None, None
                 if entry.is_file():
                     entry_type = "REG"
-                    entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
+                    entry_mime_type = get_mime(entry)
                     if entry_mime_type == 'zip':
                         entry_mime_type = 'archive'
                 elif entry.is_dir():
-                    entry_type = "DIR"
-                    entry_mime_type = "DIR"
+                    entry_type = entry_mime_type = "DIR"
 
                 if entry_type:
                     data.append({
@@ -171,7 +176,7 @@ class ServerViewSet(viewsets.ViewSet):
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         else:
-            return Response("{} is an invalid directory".format(param),
+            return Response("{} is an invalid directory".format(directory_param),
                 status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
@@ -2528,7 +2533,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         try:
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
-            prefix = request.query_params.get('prefix')
+            prefix = request.query_params.get('prefix', "")
             page_size = request.query_params.get('page_size', str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE))
             if not page_size.isnumeric():
                 return HttpResponseBadRequest('Wrong value for page_size was found')
@@ -2537,6 +2542,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # make api identical to share api
             if prefix and prefix.startswith('/'):
                 prefix = prefix[1:]
+
+
             next_token = request.query_params.get('next_token')
 
             if (manifest_path := request.query_params.get('manifest_path')):
@@ -2554,9 +2561,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 except ValueError:
                     return HttpResponseBadRequest('Wrong value for the next_token parameter was found.')
                 content = manifest.emulate_hierarchical_structure(
-                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
+                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, default_prefix=storage.prefix, start_index=start_index)
             else:
-                content = storage.list_files_on_one_page(prefix, next_token, page_size,_use_sort=True)
+                content = storage.list_files_on_one_page(prefix, next_token, page_size, _use_sort=True)
             for i in content['content']:
                 mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
                 if mime_type == 'zip':

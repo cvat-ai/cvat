@@ -131,13 +131,13 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
             cy.get('[title="Key file"]').should('be.visible');
             cy.get('#key_file').should('be.visible');
             cy.get('[title="fakeKey.json"]').should('be.visible');
-            cy.get('#prefix')
-                .should('be.visible')
-                .and('have.value', '');
             cy.get('#project_id')
                 .should('be.visible')
                 .and('have.value', '');
             cy.get('#location').should('exist');
+            cy.get('#prefix')
+                .should('exist')
+                .and('have.value', '');
             cy.get('[placeholder="manifest.jsonl"]')
                 .should('have.attr', 'value', 'manifest.jsonl');
         });
