@@ -3409,7 +3409,7 @@ class TaskDataAPITestCase(ApiTestBase):
                 state = response.data['state']
                 sleep(0.01)
                 max_number_of_attempt -= 1
-            self.assertEqual(response.data['state'], expected_task_creation_status_state)
+            self.assertEqual(state, expected_task_creation_status_state)
             if expected_task_creation_status_state == 'Failed':
                 self.assertIn(expected_task_creation_status_reason, response.data['message'])
                 return
