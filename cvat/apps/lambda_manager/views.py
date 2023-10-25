@@ -452,7 +452,7 @@ class LambdaQueue:
         # staticmethod, it cannot run a callable class. Thus I provide an object
         # which has __call__ function.
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}') if settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME else nullcontext()
+        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
         with cm:
             rq_job = queue.create_job(LambdaJob(None),
                 meta={
@@ -475,7 +475,7 @@ class LambdaQueue:
                     "mapping": mapping,
                     "max_distance": max_distance
                 },
-                depends_on=define_dependent_job(queue, user_id, settings.LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME),
+                depends_on=define_dependent_job(queue, user_id),
                 result_ttl=self.RESULT_TTL.total_seconds(),
                 failure_ttl=self.FAILED_TTL.total_seconds(),
             )
@@ -516,8 +516,8 @@ class LambdaJob:
             "ended": self.job.ended_at,
             "exc_info": self.job.exc_info
         }
-        if dict_['status'] == 'Deferred':
-            dict_['status'] = 'Queued'
+        if dict_['status'] == rq.job.JobStatus.DEFERRED:
+            dict_['status'] = str(rq.job.JobStatus.QUEUED)
 
         return dict_
 

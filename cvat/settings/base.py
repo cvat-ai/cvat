@@ -706,6 +706,5 @@ EXTRA_RULES_PATHS = []
 # to check configuration and throw ImproperlyConfigured if thats a case
 EMAIL_BACKEND = None
 
-LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME = strtobool(os.getenv('LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME', 'false'))
-LIMIT_ONE_USER_TO_ONE_EXPORT_TASK_AT_A_TIME = strtobool(os.getenv('LIMIT_ONE_USER_TO_ONE_EXPORT_TASK_AT_A_TIME', 'false'))
-LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME = strtobool(os.getenv('LIMIT_ONE_USER_TO_ONE_AUTO_ANNOTATION_TASK_AT_A_TIME', 'false'))
+ONE_RUNNING_JOB_IN_QUEUE_PER_USER = strtobool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_PER_USER', 'false'))
+KEY_TO_EXCLUDE_FROM_DEPENDENCY = 'exclude_from_dependency'

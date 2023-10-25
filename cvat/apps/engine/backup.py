@@ -1014,14 +1014,14 @@ def export(db_instance, request, queue_name):
 
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     user_id = request.user.id
-    cm = queue.connection.lock(f'{queue.name}-lock-{user_id}') if settings.LIMIT_ONE_USER_TO_ONE_EXPORT_TASK_AT_A_TIME else nullcontext()
+    cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
     with cm:
         queue.enqueue_call(
             func=_create_backup,
             args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
             job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_instance),
-            depends_on=define_dependent_job(queue, user_id, settings.LIMIT_ONE_USER_TO_ONE_EXPORT_TASK_AT_A_TIME),
+            depends_on=define_dependent_job(queue, user_id),
             result_ttl=ttl,
             failure_ttl=ttl,
         )
@@ -1088,7 +1088,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             )
 
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}') if settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME else nullcontext()
+        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
         with cm:
             rq_job = queue.enqueue_call(
                 func=import_resource_with_clean_up_after,
@@ -1098,7 +1098,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=None)
                 },
-                depends_on=dependent_job or define_dependent_job(queue, user_id, settings.LIMIT_ONE_USER_TO_ONE_IMPORT_TASK_AT_A_TIME),
+                depends_on=dependent_job or define_dependent_job(queue, user_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )

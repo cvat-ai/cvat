@@ -17,6 +17,7 @@ from enum import Enum
 from glob import glob
 from io import BytesIO, IOBase
 from unittest import mock
+from time import sleep
 import logging
 import copy
 import json
@@ -3400,9 +3401,14 @@ class TaskDataAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
 
         if get_status_callback:
-            response = get_status_callback(task_id, user)
-            while response.data['state'] not in ('Failed', 'Finished'):
+            max_number_of_attempt = 10
+            state = None
+            while state not in ('Failed', 'Finished'):
+                assert max_number_of_attempt, "Too much time to create a task"
                 response = get_status_callback(task_id, user)
+                state = response.data['state']
+                sleep(0.01)
+                max_number_of_attempt -= 1
             self.assertEqual(response.data['state'], expected_task_creation_status_state)
             if expected_task_creation_status_state == 'Failed':
                 self.assertIn(expected_task_creation_status_reason, response.data['message'])

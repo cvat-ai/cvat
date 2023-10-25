@@ -33,6 +33,7 @@ from multiprocessing import cpu_count
 
 from django.core.exceptions import ValidationError
 from django_sendfile import sendfile as _sendfile
+from django.conf import settings
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -151,7 +152,7 @@ def process_failed_job(rq_job: Job):
     return msg
 
 
-def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: bool = False) -> Optional[Dependency]:
+def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER) -> Optional[Dependency]:
     if not should_be_dependent:
         return None
 
@@ -169,7 +170,7 @@ def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: boo
         )
         if job and job.meta.get("user", {}).get("id") == user_id
     ]
-    user_jobs = list(filter(lambda job: not job.meta.get('exclude_from_dependency'), started_user_jobs + deferred_user_jobs))
+    user_jobs = list(filter(lambda job: not job.meta.get(settings.KEY_TO_EXCLUDE_FROM_DEPENDENCY), started_user_jobs + deferred_user_jobs))
 
     return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
 
@@ -184,7 +185,7 @@ def configure_dependent_job_to_download_from_cs(
     request: HttpRequest,
     result_ttl: float,
     failure_ttl: float,
-    should_be_dependent: bool = False,
+    should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
 ) -> Job:
     rq_job_id_download_file = rq_id + f'?action=download_{key.replace("/", ".")}'
     rq_job_download_file = queue.fetch_job(rq_job_id_download_file)
@@ -196,7 +197,7 @@ def configure_dependent_job_to_download_from_cs(
     if not rq_job_download_file:
         # note: boto3 resource isn't pickleable, so we can't use storage
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}') if should_be_dependent else nullcontext()
+        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if should_be_dependent else nullcontext()
         with cm:
             rq_job_download_file = queue.enqueue_call(
                 func=rq_func,
@@ -204,7 +205,7 @@ def configure_dependent_job_to_download_from_cs(
                 job_id=rq_job_id_download_file,
                 meta={
                     **get_rq_job_meta(request=request, db_obj=db_storage),
-                    'exclude_from_dependency': True,
+                    settings.KEY_TO_EXCLUDE_FROM_DEPENDENCY: True,
                 },
                 result_ttl=result_ttl,
                 failure_ttl=failure_ttl,
