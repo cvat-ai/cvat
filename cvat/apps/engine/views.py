@@ -2926,7 +2926,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
 
         av_scan_paths(filename)
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER and not dependent_job else nullcontext()
+        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER and not dependent_job else nullcontext()
         with cm:
             rq_job = queue.enqueue_call(
                 func=import_resource_with_clean_up_after,
@@ -3057,7 +3057,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
     }
     ttl = TTL_CONSTS[db_instance.__class__.__name__.lower()].total_seconds()
     user_id = request.user.id
-    cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
+    cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
     with cm:
         queue.enqueue_call(
             func=callback,
@@ -3136,7 +3136,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
             )
 
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER and not dependent_job else nullcontext()
+        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER and not dependent_job else nullcontext()
         with cm:
             rq_job = queue.enqueue_call(
                 func=import_resource_with_clean_up_after,

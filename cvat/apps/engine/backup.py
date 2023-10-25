@@ -1014,7 +1014,7 @@ def export(db_instance, request, queue_name):
 
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     user_id = request.user.id
-    cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
+    cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
     with cm:
         queue.enqueue_call(
             func=_create_backup,
@@ -1088,7 +1088,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             )
 
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
+        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
         with cm:
             rq_job = queue.enqueue_call(
                 func=import_resource_with_clean_up_after,

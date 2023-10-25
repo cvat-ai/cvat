@@ -199,7 +199,7 @@ def configure_dependent_job_to_download_from_cs(
     if not rq_job_download_file:
         # note: boto3 resource isn't pickleable, so we can't use storage
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if should_be_dependent else nullcontext()
+        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if should_be_dependent else nullcontext()
         with cm:
             rq_job_download_file = queue.enqueue_call(
                 func=rq_func,

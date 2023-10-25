@@ -452,7 +452,7 @@ class LambdaQueue:
         # staticmethod, it cannot run a callable class. Thus I provide an object
         # which has __call__ function.
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=600) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
+        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
         with cm:
             rq_job = queue.create_job(LambdaJob(None),
                 meta={
