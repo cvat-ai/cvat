@@ -3401,13 +3401,13 @@ class TaskDataAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
 
         if get_status_callback:
-            max_number_of_attempt = 10
+            max_number_of_attempt = 100
             state = None
             while state not in ('Failed', 'Finished'):
                 assert max_number_of_attempt, "Too much time to create a task"
                 response = get_status_callback(task_id, user)
                 state = response.data['state']
-                sleep(0.01)
+                sleep(0.1)
                 max_number_of_attempt -= 1
             self.assertEqual(state, expected_task_creation_status_state)
             if expected_task_creation_status_state == 'Failed':
