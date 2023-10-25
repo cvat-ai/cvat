@@ -31,7 +31,6 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.test_servers.yml",
-    "tests/docker-compose.adjusted.yml",
 ]
 
 
@@ -91,6 +90,12 @@ def pytest_addoption(parser):
         default="local",
         choices=("kube", "local"),
         help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
+    )
+
+    group._addoption(
+        "--adjusted-server-conf",
+        action="store_true",
+        help=". (default: %(default)s)",
     )
 
 
@@ -371,22 +376,26 @@ def session_start(
     rebuild = session.config.getoption("--rebuild")
     cleanup = session.config.getoption("--cleanup")
     dumpdb = session.config.getoption("--dumpdb")
+    adjusted_server_conf = session.config.getoption("--adjusted-server-conf")
 
     if session.config.getoption("--collect-only"):
-        if any((stop, start, rebuild, cleanup, dumpdb)):
+        if any((stop, start, rebuild, cleanup, dumpdb, adjusted_server_conf)):
             raise Exception(
                 """--collect-only is not compatible with any of the other options:
-                --stop-services --start-services --rebuild --cleanup --dumpdb"""
+                --stop-services --start-services --rebuild --cleanup --dumpdb --adjusted-server-conf"""
             )
         return  # don't need to start the services to collect tests
 
     platform = session.config.getoption("--platform")
 
-    if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb)):
+    if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb, adjusted_server_conf)):
         raise Exception(
             """--platform=kube is not compatible with any of the other options
-            --stop-services --start-services --rebuild --cleanup --dumpdb"""
+            --stop-services --start-services --rebuild --cleanup --dumpdb --adjusted-server-conf"""
         )
+
+    if adjusted_server_conf:
+        DC_FILES.append("tests/docker-compose.adjusted.yml")
 
     if platform == "local":
         local_start(
