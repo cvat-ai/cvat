@@ -517,7 +517,7 @@ class LambdaJob:
             "exc_info": self.job.exc_info
         }
         if dict_['status'] == rq.job.JobStatus.DEFERRED:
-            dict_['status'] = str(rq.job.JobStatus.QUEUED)
+            dict_['status'] = rq.job.JobStatus.QUEUED.value
 
         return dict_
 
