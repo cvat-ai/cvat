@@ -34,6 +34,7 @@ from drf_spectacular.utils import (
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
+from pathlib import Path
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
@@ -132,6 +133,8 @@ class ServerViewSet(viewsets.ViewSet):
         summary='Returns all files and folders that are on the server along specified path',
         parameters=[
             OpenApiParameter('directory', description='Directory to browse',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('search', description='Search for specific files',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR)
         ],
         responses={
@@ -139,25 +142,27 @@ class ServerViewSet(viewsets.ViewSet):
         })
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
     def share(request):
-        param = request.query_params.get('directory', '/')
-        if param.startswith("/"):
-            param = param[1:]
-        directory = os.path.abspath(os.path.join(settings.SHARE_ROOT, param))
+        directory_param = request.query_params.get('directory', '/')
+        search_param = request.query_params.get('search', '')
 
-        if directory.startswith(settings.SHARE_ROOT) and os.path.isdir(directory):
+        if directory_param.startswith("/"):
+            directory_param = directory_param[1:]
+
+        directory = (Path(settings.SHARE_ROOT) / directory_param).absolute()
+
+        if str(directory).startswith(settings.SHARE_ROOT) and directory.is_dir():
             data = []
-            content = os.scandir(directory)
-            for entry in content:
-                entry_type = None
-                entry_mime_type = None
+            generator = directory.iterdir() if not search_param else (f for f in directory.iterdir() if f.name.startswith(search_param))
+
+            for entry in generator:
+                entry_type, entry_mime_type = None, None
                 if entry.is_file():
                     entry_type = "REG"
-                    entry_mime_type = get_mime(os.path.join(settings.SHARE_ROOT, entry))
+                    entry_mime_type = get_mime(entry)
                     if entry_mime_type == 'zip':
                         entry_mime_type = 'archive'
                 elif entry.is_dir():
-                    entry_type = "DIR"
-                    entry_mime_type = "DIR"
+                    entry_type = entry_mime_type = "DIR"
 
                 if entry_type:
                     data.append({
@@ -171,7 +176,7 @@ class ServerViewSet(viewsets.ViewSet):
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         else:
-            return Response("{} is an invalid directory".format(param),
+            return Response("{} is an invalid directory".format(directory_param),
                 status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
@@ -992,9 +997,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return super().append_files(request)
 
     # UploadMixin method
-    @transaction.atomic
     def upload_finished(self, request):
-        if self.action == 'annotations':
+        @transaction.atomic
+        def _handle_upload_annotations(request):
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
@@ -1010,64 +1015,70 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         format_name=format_name,
                         conv_mask_to_poly=conv_mask_to_poly,
                     )
-            else:
-                return Response(data='No such file were uploaded',
-                        status=status.HTTP_400_BAD_REQUEST)
-        elif self.action == 'data':
-            task_data = self._object.data
-            serializer = DataSerializer(task_data, data=request.data)
-            serializer.is_valid(raise_exception=True)
+            return Response(data='No such file were uploaded',
+                    status=status.HTTP_400_BAD_REQUEST)
 
-            # Append new files to the previous ones
-            if uploaded_files := serializer.validated_data.get('client_files', None):
-                self.append_files(request)
-                serializer.validated_data['client_files'] = [] # avoid file info duplication
+        def _handle_upload_data(request):
+            with transaction.atomic():
+                task_data = self._object.data
+                serializer = DataSerializer(task_data, data=request.data)
+                serializer.is_valid(raise_exception=True)
 
-            # Refresh the db value with the updated file list and other request parameters
-            db_data = serializer.save()
-            self._object.data = db_data
-            self._object.save()
+                # Append new files to the previous ones
+                if uploaded_files := serializer.validated_data.get('client_files', None):
+                    self.append_files(request)
+                    serializer.validated_data['client_files'] = [] # avoid file info duplication
 
-            # Create a temporary copy of the parameters we will try to create the task with
-            data = copy(serializer.data)
+                # Refresh the db value with the updated file list and other request parameters
+                db_data = serializer.save()
+                self._object.data = db_data
+                self._object.save()
 
-            for optional_field in ['job_file_mapping', 'server_files_exclude']:
-                if optional_field in serializer.validated_data:
-                    data[optional_field] = serializer.validated_data[optional_field]
+                # Create a temporary copy of the parameters we will try to create the task with
+                data = copy(serializer.data)
 
-            if (
-                data['sorting_method'] == models.SortingMethod.PREDEFINED
-                and (uploaded_files := data['client_files'])
-                and (
-                    uploaded_file_order := serializer.validated_data[self._UPLOAD_FILE_ORDER_FIELD]
-                )
-            ):
-                # In the case of predefined sorting and custom file ordering,
-                # the requested order must be applied
-                data['client_files'] = self._sort_uploaded_files(
-                    uploaded_files, uploaded_file_order
-                )
+                for optional_field in ['job_file_mapping', 'server_files_exclude']:
+                    if optional_field in serializer.validated_data:
+                        data[optional_field] = serializer.validated_data[optional_field]
 
-            data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
-            data['use_cache'] = serializer.validated_data['use_cache']
-            data['copy_data'] = serializer.validated_data['copy_data']
+                if (
+                    data['sorting_method'] == models.SortingMethod.PREDEFINED
+                    and (uploaded_files := data['client_files'])
+                    and (
+                        uploaded_file_order := serializer.validated_data[self._UPLOAD_FILE_ORDER_FIELD]
+                    )
+                ):
+                    # In the case of predefined sorting and custom file ordering,
+                    # the requested order must be applied
+                    data['client_files'] = self._sort_uploaded_files(
+                        uploaded_files, uploaded_file_order
+                    )
 
-            if data['use_cache']:
-                self._object.data.storage_method = StorageMethodChoice.CACHE
-                self._object.data.save(update_fields=['storage_method'])
-            if data['server_files'] and not data.get('copy_data'):
-                self._object.data.storage = StorageChoice.SHARE
-                self._object.data.save(update_fields=['storage'])
-            if db_data.cloud_storage:
-                self._object.data.storage = StorageChoice.CLOUD_STORAGE
-                self._object.data.save(update_fields=['storage'])
-            if 'stop_frame' not in serializer.validated_data:
-                # if the value of stop_frame is 0, then inside the function we cannot know
-                # the value specified by the user or it's default value from the database
-                data['stop_frame'] = None
+                data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+                data['use_cache'] = serializer.validated_data['use_cache']
+                data['copy_data'] = serializer.validated_data['copy_data']
+
+                if data['use_cache']:
+                    self._object.data.storage_method = StorageMethodChoice.CACHE
+                    self._object.data.save(update_fields=['storage_method'])
+                if data['server_files'] and not data.get('copy_data'):
+                    self._object.data.storage = StorageChoice.SHARE
+                    self._object.data.save(update_fields=['storage'])
+                if db_data.cloud_storage:
+                    self._object.data.storage = StorageChoice.CLOUD_STORAGE
+                    self._object.data.save(update_fields=['storage'])
+                if 'stop_frame' not in serializer.validated_data:
+                    # if the value of stop_frame is 0, then inside the function we cannot know
+                    # the value specified by the user or it's default value from the database
+                    data['stop_frame'] = None
+
+            # Need to process task data when the transaction is committed
             task.create(self._object, data, request)
+
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-        elif self.action == 'import_backup':
+
+        @transaction.atomic
+        def _handle_upload_backup(request):
             filename = request.query_params.get("filename", "")
             if filename:
                 tmp_dir = backup.get_backup_dirname()
@@ -1081,6 +1092,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data='No such file were uploaded',
                         status=status.HTTP_400_BAD_REQUEST)
             return backup.import_task(request, settings.CVAT_QUEUES.IMPORT_DATA.value)
+
+        if self.action == 'annotations':
+            return _handle_upload_annotations(request)
+        elif self.action == 'data':
+            return _handle_upload_data(request)
+        elif self.action == 'import_backup':
+            return _handle_upload_backup(request)
+
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -1175,17 +1194,25 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def data(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
-            task_data = self._object.data
-            if not task_data:
-                task_data = Data.objects.create()
-                task_data.make_dirs()
-                self._object.data = task_data
-                self._object.save()
-            elif task_data.size != 0:
-                return Response(data='Adding more data is not supported',
-                    status=status.HTTP_400_BAD_REQUEST)
-            return self.upload_data(request)
-
+            with transaction.atomic():
+                # Need to make sure that only one Data object can be attached to the task,
+                # otherwise this can lead to many problems such as Data objects without a task,
+                # multiple RQ data processing jobs at least.
+                # It is not possible to use select_for_update with GROUP BY statement and
+                # other aggregations that are defined by the viewset queryset,
+                # we just need to lock 1 row with the target Task entity.
+                locked_instance = Task.objects.select_for_update().get(pk=pk)
+                task_data = locked_instance.data
+                if not task_data:
+                    task_data = Data.objects.create()
+                    task_data.make_dirs()
+                    locked_instance.data = task_data
+                    self._object.data = task_data
+                    locked_instance.save()
+                elif task_data.size != 0:
+                    return Response(data='Adding more data is not supported',
+                        status=status.HTTP_400_BAD_REQUEST)
+                return self.upload_data(request)
         else:
             data_type = request.query_params.get('type', None)
             data_num = request.query_params.get('number', None)
@@ -2251,13 +2278,20 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return super().perform_update(serializer)
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: models.Label):
         if instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
                 "Sublabels cannot be deleted this way. "
                 "Please send a PATCH request with updated parent label data instead.",
                 code=status.HTTP_400_BAD_REQUEST)
+
+        if project := instance.project:
+            project.save(update_fields=['updated_date'])
+            ProjectWriteSerializer(project).update_child_objects_on_labels_update(project)
+        elif task := instance.task:
+            task.save(update_fields=['updated_date'])
+            TaskWriteSerializer(task).update_child_objects_on_labels_update(task)
 
         return super().perform_destroy(instance)
 
@@ -2521,7 +2555,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         try:
             db_storage = self.get_object()
             storage = db_storage_to_storage_instance(db_storage)
-            prefix = request.query_params.get('prefix')
+            prefix = request.query_params.get('prefix', "")
             page_size = request.query_params.get('page_size', str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE))
             if not page_size.isnumeric():
                 return HttpResponseBadRequest('Wrong value for page_size was found')
@@ -2530,6 +2564,8 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             # make api identical to share api
             if prefix and prefix.startswith('/'):
                 prefix = prefix[1:]
+
+
             next_token = request.query_params.get('next_token')
 
             if (manifest_path := request.query_params.get('manifest_path')):
@@ -2547,9 +2583,9 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 except ValueError:
                     return HttpResponseBadRequest('Wrong value for the next_token parameter was found.')
                 content = manifest.emulate_hierarchical_structure(
-                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, start_index=start_index)
+                    page_size, manifest_prefix=manifest_prefix, prefix=prefix, default_prefix=storage.prefix, start_index=start_index)
             else:
-                content = storage.list_files_on_one_page(prefix, next_token, page_size,_use_sort=True)
+                content = storage.list_files_on_one_page(prefix, next_token, page_size, _use_sort=True)
             for i in content['content']:
                 mime_type = get_mime(i['name']) if i['type'] != 'DIR' else 'DIR' # identical to share point
                 if mime_type == 'zip':

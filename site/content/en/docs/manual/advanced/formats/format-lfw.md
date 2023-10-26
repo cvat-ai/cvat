@@ -1,6 +1,8 @@
 ---
+title: 'LFW'
 linkTitle: 'LFW'
 weight: 17
+description: 'How to export and import data in LFW format'
 ---
 
 The Labeled Faces in the Wild (LFW) format
@@ -25,6 +27,7 @@ For export of images:
     list of image names with mismatched persons.
   - `positive_pairs` (should be defined for labels as `text`):
     list of image names with matched persons.
+
 - Tracks: Not supported.
 
 The downloaded file is a .zip archive with the following structure:

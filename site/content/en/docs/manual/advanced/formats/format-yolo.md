@@ -1,10 +1,15 @@
 ---
+title: 'YOLO'
 linkTitle: 'YOLO'
 weight: 7
+description: 'How to export and import data in YOLO format'
 ---
 
-models, which are designed for real-time object detection tasks.
-However, the format can also be adapted for use with other object detection models.
+YOLO, which stands for "You Only Look Once," is a renowned framework
+predominantly utilized for real-time object detection tasks.
+Its efficiency and speed make it an ideal choice for many applications.
+While YOLO has its unique data format,
+this format can be tailored to suit other object detection models as well.
 
 For more information, see:
 
@@ -83,14 +88,14 @@ and annotation file name. There are 2 options:
 
 ## How to create a task from YOLO formatted dataset (from VOC for example)
 
-1. Follow the official [guide](https://pjreddie.com/darknet/yolo/)(see Training YOLO on VOC section)
+1. Follow the official [guide](https://pjreddie.com/darknet/yolo/) (see Training YOLO on VOC section)
    and prepare the YOLO formatted annotation files.
 
 1. Zip train images
 
-```bash
-zip images.zip -j -@ < train.txt
-```
+   ```bash
+   zip images.zip -j -@ < train.txt
+   ```
 
 1. Create a CVAT task with the following labels:
 
@@ -129,12 +134,11 @@ zip images.zip -j -@ < train.txt
    tvmonitor
    ```
 
-1. Zip all label files together (we need to add only label files that correspond to the train subset)
+1. Zip all label files together (we need to add only label files that correspond to the train subset):
 
    ```bash
    cat train.txt | while read p; do echo ${p%/*/*}/labels/${${p##*/}%%.*}.txt; done | zip labels.zip -j -@ obj.names
    ```
 
 1. Click `Upload annotation` button, choose `YOLO 1.1` and select the zip
-
    file with labels from the previous step.

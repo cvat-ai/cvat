@@ -13,10 +13,11 @@ import pytest
 from cvat_sdk import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
+from dateutil.parser import isoparse as parse_datetime
 from deepdiff import DeepDiff
 from pytest_cases import fixture, fixture_ref, parametrize
 
-from shared.utils.config import make_api_client
+from shared.utils.config import delete_method, get_method, make_api_client, patch_method
 
 from .utils import CollectionSimpleFilterTestBase, build_exclude_paths_expr, get_attrs
 
@@ -823,3 +824,99 @@ class TestDeleteLabels(_TestLabelsPermissionsBase):
             self._test_delete_ok(user["username"], label["id"])
         else:
             self._test_delete_denied(user["username"], label["id"])
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestLabelUpdates:
+    @pytest.mark.parametrize("update_kind", ["addition", "removal", "modification"])
+    def test_project_label_update_triggers_nested_task_and_job_update(
+        self, update_kind, admin_user, labels, projects_wlc, tasks, jobs
+    ):
+        # Checks for regressions against the issue https://github.com/opencv/cvat/issues/6871
+
+        project = next(p for p in projects_wlc if p["tasks"]["count"] and p["labels"]["count"])
+        project_labels = [l for l in labels if l.get("project_id") == project["id"]]
+        nested_tasks = [t for t in tasks if t["project_id"] == project["id"]]
+        nested_task_ids = set(t["id"] for t in nested_tasks)
+        nested_jobs = [j for j in jobs if j["task_id"] in nested_task_ids]
+
+        if update_kind == "addition":
+            response = patch_method(
+                admin_user, f'projects/{project["id"]}', {"labels": [{"name": "dog2"}]}
+            )
+            updated_project = response.json()
+        elif update_kind == "modification":
+            label = project_labels[0]
+            patch_method(admin_user, f'labels/{label["id"]}', {"name": label["name"] + "-updated"})
+
+            response = get_method(admin_user, f'projects/{project["id"]}')
+            updated_project = response.json()
+        elif update_kind == "removal":
+            label = project_labels[0]
+            delete_method(admin_user, f'labels/{label["id"]}')
+
+            response = get_method(admin_user, f'projects/{project["id"]}')
+            updated_project = response.json()
+        else:
+            assert False
+
+        with make_api_client(admin_user) as api_client:
+            updated_tasks = get_paginated_collection(
+                api_client.tasks_api.list_endpoint, project_id=project["id"], return_json=True
+            )
+
+            updated_jobs = [
+                j
+                for j in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, return_json=True
+                )
+                if j["task_id"] in nested_task_ids
+            ]
+
+        assert parse_datetime(project["updated_date"]) < parse_datetime(
+            updated_project["updated_date"]
+        )
+        assert len(updated_tasks) == len(nested_tasks)
+        assert len(updated_jobs) == len(nested_jobs)
+        for entity in updated_tasks + updated_jobs:
+            assert updated_project["updated_date"] == entity["updated_date"]
+
+    @pytest.mark.parametrize("update_kind", ["addition", "removal", "modification"])
+    def test_task_label_update_triggers_nested_task_and_job_update(
+        self, update_kind, admin_user, labels, tasks_wlc, jobs
+    ):
+        # Checks for regressions against the issue https://github.com/opencv/cvat/issues/6871
+
+        task = next(t for t in tasks_wlc if t["jobs"]["count"] and t["labels"]["count"])
+        task_labels = [l for l in labels if l.get("task_id") == task["id"]]
+        nested_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+
+        if update_kind == "addition":
+            response = patch_method(
+                admin_user, f'tasks/{task["id"]}', {"labels": [{"name": "dog2"}]}
+            )
+            updated_task = response.json()
+        elif update_kind == "modification":
+            label = task_labels[0]
+            patch_method(admin_user, f'labels/{label["id"]}', {"name": label["name"] + "-updated"})
+
+            response = get_method(admin_user, f'tasks/{task["id"]}')
+            updated_task = response.json()
+        elif update_kind == "removal":
+            label = task_labels[0]
+            delete_method(admin_user, f'labels/{label["id"]}')
+
+            response = get_method(admin_user, f'tasks/{task["id"]}')
+            updated_task = response.json()
+        else:
+            assert False
+
+        with make_api_client(admin_user) as api_client:
+            updated_jobs = get_paginated_collection(
+                api_client.jobs_api.list_endpoint, task_id=task["id"], return_json=True
+            )
+
+        assert parse_datetime(task["updated_date"]) < parse_datetime(updated_task["updated_date"])
+        assert len(updated_jobs) == len(nested_jobs)
+        for job in updated_jobs:
+            assert updated_task["updated_date"] == job["updated_date"]

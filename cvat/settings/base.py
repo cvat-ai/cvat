@@ -33,6 +33,8 @@ mimetypes.add_type("application/wasm", ".wasm", True)
 
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
 
@@ -673,6 +675,17 @@ CLICKHOUSE = {
     }
 }
 
+if (postgres_password_file := os.getenv('CVAT_POSTGRES_PASSWORD_FILE')) is not None:
+    if 'CVAT_POSTGRES_PASSWORD' in os.environ:
+        raise ImproperlyConfigured(
+            'The CVAT_POSTGRES_PASSWORD and CVAT_POSTGRES_PASSWORD_FILE'
+            ' environment variables must not be set at the same time'
+        )
+
+    postgres_password = Path(postgres_password_file).read_text(encoding='UTF-8').rstrip('\n')
+else:
+    postgres_password = os.getenv('CVAT_POSTGRES_PASSWORD', '')
+
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 DATABASES = {
@@ -681,7 +694,7 @@ DATABASES = {
         'HOST': os.getenv('CVAT_POSTGRES_HOST', 'cvat_db'),
         'NAME': os.getenv('CVAT_POSTGRES_DBNAME', 'cvat'),
         'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
-        'PASSWORD': os.getenv('CVAT_POSTGRES_PASSWORD', ''),
+        'PASSWORD': postgres_password,
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
     }
 }

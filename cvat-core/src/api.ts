@@ -42,8 +42,8 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.about);
                 return result;
             },
-            async share(directory = '/') {
-                const result = await PluginRegistry.apiWrapper(cvat.server.share, directory);
+            async share(directory = '/', searchPrefix?: string) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.share, directory, searchPrefix);
                 return result;
             },
             async formats() {
@@ -259,8 +259,8 @@ function build() {
             },
         },
         organizations: {
-            async get() {
-                const result = await PluginRegistry.apiWrapper(cvat.organizations.get);
+            async get(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.get, filter);
                 return result;
             },
             async activate(organization) {
