@@ -1,6 +1,8 @@
 ---
+title: 'Cityscapes'
 linkTitle: 'Cityscapes'
 weight: 16
+description: 'How to export and import data in Cityscapes format'
 ---
 
 The Cityscapes format is a widely-used standard in the field of computer vision,
@@ -20,7 +22,6 @@ For more information, see:
 - [Cityscapes format specification](https://github.com/mcordts/cityscapesScripts#the-cityscapes-dataset)
 - [Cityscapes dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cityscapes_dataset)
 
-
 # Cityscapes export
 
 For export of images:
@@ -31,7 +32,6 @@ For export of images:
     Specifies if the annotation label can distinguish between different instances.
     If False, the annotation id field encodes the instance id.
 - Tracks: Not supported.
-
 
 The downloaded file is a .zip archive with the following structure:
 
@@ -97,8 +97,6 @@ To work with the Cityscapes format, you must have a black color label
 for the background.
 
 Original Cityscapes color map:
-
-<details>
 
 ```JSON
 [

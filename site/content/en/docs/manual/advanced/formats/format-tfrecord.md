@@ -1,6 +1,8 @@
 ---
+title: 'TFRecord'
 linkTitle: 'TFRecord'
 weight: 8
+description: 'How to export and import data in TFRecord format'
 ---
 
 The TFRecord format is tightly integrated with TensorFlow

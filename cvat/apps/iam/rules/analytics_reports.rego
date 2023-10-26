@@ -22,7 +22,8 @@ import data.organizations
 #     }
 # }
 
-default allow = false
+default allow := false
+
 allow {
     utils.is_admin
 }

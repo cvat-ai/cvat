@@ -1,6 +1,8 @@
 ---
+title: 'MOTS'
 linkTitle: 'MOTS'
 weight: 4
+description: 'How to export and import data in MOTS format'
 ---
 
 The MOT (Multiple Object Tracking) sequence format is widely
