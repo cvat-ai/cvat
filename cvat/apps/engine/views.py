@@ -997,9 +997,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return super().append_files(request)
 
     # UploadMixin method
-    @transaction.atomic
     def upload_finished(self, request):
-        if self.action == 'annotations':
+        @transaction.atomic
+        def _handle_upload_annotations(request):
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
@@ -1015,64 +1015,70 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         format_name=format_name,
                         conv_mask_to_poly=conv_mask_to_poly,
                     )
-            else:
-                return Response(data='No such file were uploaded',
-                        status=status.HTTP_400_BAD_REQUEST)
-        elif self.action == 'data':
-            task_data = self._object.data
-            serializer = DataSerializer(task_data, data=request.data)
-            serializer.is_valid(raise_exception=True)
+            return Response(data='No such file were uploaded',
+                    status=status.HTTP_400_BAD_REQUEST)
 
-            # Append new files to the previous ones
-            if uploaded_files := serializer.validated_data.get('client_files', None):
-                self.append_files(request)
-                serializer.validated_data['client_files'] = [] # avoid file info duplication
+        def _handle_upload_data(request):
+            with transaction.atomic():
+                task_data = self._object.data
+                serializer = DataSerializer(task_data, data=request.data)
+                serializer.is_valid(raise_exception=True)
 
-            # Refresh the db value with the updated file list and other request parameters
-            db_data = serializer.save()
-            self._object.data = db_data
-            self._object.save()
+                # Append new files to the previous ones
+                if uploaded_files := serializer.validated_data.get('client_files', None):
+                    self.append_files(request)
+                    serializer.validated_data['client_files'] = [] # avoid file info duplication
 
-            # Create a temporary copy of the parameters we will try to create the task with
-            data = copy(serializer.data)
+                # Refresh the db value with the updated file list and other request parameters
+                db_data = serializer.save()
+                self._object.data = db_data
+                self._object.save()
 
-            for optional_field in ['job_file_mapping', 'server_files_exclude']:
-                if optional_field in serializer.validated_data:
-                    data[optional_field] = serializer.validated_data[optional_field]
+                # Create a temporary copy of the parameters we will try to create the task with
+                data = copy(serializer.data)
 
-            if (
-                data['sorting_method'] == models.SortingMethod.PREDEFINED
-                and (uploaded_files := data['client_files'])
-                and (
-                    uploaded_file_order := serializer.validated_data[self._UPLOAD_FILE_ORDER_FIELD]
-                )
-            ):
-                # In the case of predefined sorting and custom file ordering,
-                # the requested order must be applied
-                data['client_files'] = self._sort_uploaded_files(
-                    uploaded_files, uploaded_file_order
-                )
+                for optional_field in ['job_file_mapping', 'server_files_exclude']:
+                    if optional_field in serializer.validated_data:
+                        data[optional_field] = serializer.validated_data[optional_field]
 
-            data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
-            data['use_cache'] = serializer.validated_data['use_cache']
-            data['copy_data'] = serializer.validated_data['copy_data']
+                if (
+                    data['sorting_method'] == models.SortingMethod.PREDEFINED
+                    and (uploaded_files := data['client_files'])
+                    and (
+                        uploaded_file_order := serializer.validated_data[self._UPLOAD_FILE_ORDER_FIELD]
+                    )
+                ):
+                    # In the case of predefined sorting and custom file ordering,
+                    # the requested order must be applied
+                    data['client_files'] = self._sort_uploaded_files(
+                        uploaded_files, uploaded_file_order
+                    )
 
-            if data['use_cache']:
-                self._object.data.storage_method = StorageMethodChoice.CACHE
-                self._object.data.save(update_fields=['storage_method'])
-            if data['server_files'] and not data.get('copy_data'):
-                self._object.data.storage = StorageChoice.SHARE
-                self._object.data.save(update_fields=['storage'])
-            if db_data.cloud_storage:
-                self._object.data.storage = StorageChoice.CLOUD_STORAGE
-                self._object.data.save(update_fields=['storage'])
-            if 'stop_frame' not in serializer.validated_data:
-                # if the value of stop_frame is 0, then inside the function we cannot know
-                # the value specified by the user or it's default value from the database
-                data['stop_frame'] = None
+                data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+                data['use_cache'] = serializer.validated_data['use_cache']
+                data['copy_data'] = serializer.validated_data['copy_data']
+
+                if data['use_cache']:
+                    self._object.data.storage_method = StorageMethodChoice.CACHE
+                    self._object.data.save(update_fields=['storage_method'])
+                if data['server_files'] and not data.get('copy_data'):
+                    self._object.data.storage = StorageChoice.SHARE
+                    self._object.data.save(update_fields=['storage'])
+                if db_data.cloud_storage:
+                    self._object.data.storage = StorageChoice.CLOUD_STORAGE
+                    self._object.data.save(update_fields=['storage'])
+                if 'stop_frame' not in serializer.validated_data:
+                    # if the value of stop_frame is 0, then inside the function we cannot know
+                    # the value specified by the user or it's default value from the database
+                    data['stop_frame'] = None
+
+            # Need to process task data when the transaction is committed
             task.create(self._object, data, request)
+
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-        elif self.action == 'import_backup':
+
+        @transaction.atomic
+        def _handle_upload_backup(request):
             filename = request.query_params.get("filename", "")
             if filename:
                 tmp_dir = backup.get_backup_dirname()
@@ -1086,6 +1092,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data='No such file were uploaded',
                         status=status.HTTP_400_BAD_REQUEST)
             return backup.import_task(request, settings.CVAT_QUEUES.IMPORT_DATA.value)
+
+        if self.action == 'annotations':
+            return _handle_upload_annotations(request)
+        elif self.action == 'data':
+            return _handle_upload_data(request)
+        elif self.action == 'import_backup':
+            return _handle_upload_backup(request)
+
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -1180,17 +1194,25 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def data(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
-            task_data = self._object.data
-            if not task_data:
-                task_data = Data.objects.create()
-                task_data.make_dirs()
-                self._object.data = task_data
-                self._object.save()
-            elif task_data.size != 0:
-                return Response(data='Adding more data is not supported',
-                    status=status.HTTP_400_BAD_REQUEST)
-            return self.upload_data(request)
-
+            with transaction.atomic():
+                # Need to make sure that only one Data object can be attached to the task,
+                # otherwise this can lead to many problems such as Data objects without a task,
+                # multiple RQ data processing jobs at least.
+                # It is not possible to use select_for_update with GROUP BY statement and
+                # other aggregations that are defined by the viewset queryset,
+                # we just need to lock 1 row with the target Task entity.
+                locked_instance = Task.objects.select_for_update().get(pk=pk)
+                task_data = locked_instance.data
+                if not task_data:
+                    task_data = Data.objects.create()
+                    task_data.make_dirs()
+                    locked_instance.data = task_data
+                    self._object.data = task_data
+                    locked_instance.save()
+                elif task_data.size != 0:
+                    return Response(data='Adding more data is not supported',
+                        status=status.HTTP_400_BAD_REQUEST)
+                return self.upload_data(request)
         else:
             data_type = request.query_params.get('type', None)
             data_num = request.query_params.get('number', None)
