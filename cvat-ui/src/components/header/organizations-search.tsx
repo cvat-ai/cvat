@@ -27,11 +27,11 @@ function OrganizationsSearch(props: {
             searchOrganizations(searchPhrase).then((organizations) => {
                 setSearchResults(organizations);
             }).catch((error: unknown) => {
+                setSearchResults([]);
                 notification.error({
                     message: 'Could not receive a list of organizations',
                     description: error instanceof Error ? error.message : '',
                 });
-                setSearchResults([]);
             });
         }
     }, [searchPhrase]);
