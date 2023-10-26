@@ -13,7 +13,7 @@ import Statistics from './statistics';
 import { Label } from './labels';
 import { ArgumentError, ScriptingError } from './exceptions';
 import ObjectState from './object-state';
-import { mask2Rle, truncateMask } from './object-utils';
+import { cropMask } from './object-utils';
 import config from './config';
 import {
     HistoryActions, ShapeType, ObjectType, colors, Source,
@@ -844,11 +844,7 @@ export default class Collection {
                         occluded: state.occluded || false,
                         points: state.shapeType === 'mask' ? (() => {
                             const { width, height } = this.frameMeta[state.frame];
-                            const points = truncateMask(state.points, 0, width, height);
-                            const [left, top, right, bottom] = points.splice(-4);
-                            const rlePoints = mask2Rle(points);
-                            rlePoints.push(left, top, right, bottom);
-                            return rlePoints;
+                            return cropMask(state.points, width, height);
                         })() : state.points,
                         rotation: state.rotation || 0,
                         type: state.shapeType,

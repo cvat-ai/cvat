@@ -94,6 +94,8 @@ If you have updated the test database and want to update the assets/*.json
 files as well, run the appropriate script:
 
 ```
+cd tests/python
+pytest ./ --start-services
 python shared/utils/dump_objects.py
 ```
 

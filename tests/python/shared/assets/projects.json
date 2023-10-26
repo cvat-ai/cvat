@@ -6,12 +6,11 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2023-03-10T11:58:04.216000Z",
       "dimension": null,
+      "guide_id": null,
       "id": 13,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=13"
       },
       "name": "project with attributes 2",
@@ -45,12 +44,11 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2023-03-10T11:57:14.944000Z",
       "dimension": "2d",
+      "guide_id": null,
       "id": 12,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=12"
       },
       "name": "project with attributes",
@@ -84,12 +82,11 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2023-03-01T15:36:11.840000Z",
       "dimension": "2d",
+      "guide_id": null,
       "id": 11,
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?project_id=11"
       },
       "name": "project7",
@@ -129,12 +126,11 @@
         "username": "worker3"
       },
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2023-02-10T11:42:43.192000Z",
       "dimension": null,
+      "guide_id": null,
       "id": 10,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=10"
       },
       "name": "project 6",
@@ -168,12 +164,11 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-12-01T12:52:42.454000Z",
       "dimension": "2d",
+      "guide_id": null,
       "id": 8,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=8"
       },
       "name": "project with video data",
@@ -213,12 +208,11 @@
         "username": "worker4"
       },
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-09-28T12:26:25.296000Z",
       "dimension": null,
+      "guide_id": null,
       "id": 7,
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?project_id=7"
       },
       "name": "admin1_project",
@@ -258,12 +252,11 @@
         "username": "business4"
       },
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-09-28T12:15:50.768000Z",
       "dimension": null,
+      "guide_id": null,
       "id": 6,
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?project_id=6"
       },
       "name": "user1_project",
@@ -297,12 +290,11 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-09-22T14:21:53.791000Z",
       "dimension": "2d",
+      "guide_id": null,
       "id": 5,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=5"
       },
       "name": "project5",
@@ -336,12 +328,11 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-06-08T08:32:45.521000Z",
       "dimension": "2d",
+      "guide_id": null,
       "id": 4,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=4"
       },
       "name": "project4",
@@ -373,12 +364,11 @@
         "username": "user5"
       },
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2022-03-28T13:05:24.659000Z",
       "dimension": null,
+      "guide_id": null,
       "id": 3,
       "labels": {
-        "count": 0,
         "url": "http://localhost:8080/api/labels?project_id=3"
       },
       "name": "project 3",
@@ -410,12 +400,11 @@
         "username": "user2"
       },
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2021-12-14T19:52:37.278000Z",
       "dimension": "2d",
+      "guide_id": null,
       "id": 2,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=2"
       },
       "name": "project2",
@@ -457,12 +446,11 @@
         "username": "user6"
       },
       "bug_tracker": "",
-      "guide_id": null,
       "created_date": "2021-12-14T19:46:37.969000Z",
       "dimension": "2d",
+      "guide_id": null,
       "id": 1,
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?project_id=1"
       },
       "name": "project1",

@@ -40,13 +40,26 @@ context('Cloud storage.', () => {
                     cy.get($el).should('exist');
                 });
             });
+        });
+
+        it('Check "Cloud Storage" manifest field.', () => {
             // Check add/remove manifest file
             cy.get('.cvat-add-manifest-button').should('be.visible').click();
-            cy.get('[placeholder="manifest.jsonl"]').should('exist').should('have.attr', 'value', '');
-            cy.get('[placeholder="manifest.jsonl"]').type(dummyData.manifest);
-            cy.get('[placeholder="manifest.jsonl"]').should('have.attr', 'value', dummyData.manifest);
+            cy.get('.cvat-cloud-storage-manifest-field').should('exist').should('have.attr', 'value', '');
+            cy.get('.cvat-cloud-storage-manifest-field').type(dummyData.manifest);
+            cy.get('.cvat-cloud-storage-manifest-field').should('have.attr', 'value', dummyData.manifest);
             cy.get('[data-icon="delete"]').should('be.visible').click();
-            cy.get('[placeholder="manifest.jsonl"]').should('not.exist');
+            cy.get('.cvat-cloud-storage-manifest-field').should('not.exist');
+
+            // Check we can't add non-jsonl file
+            cy.get('.cvat-add-manifest-button').should('be.visible').click();
+            cy.get('.cvat-cloud-storage-manifest-field').type('manifest.json');
+            cy.get('.cvat-cloud-storage-manifest-field').should('have.attr', 'value', 'manifest.json');
+            cy.get('.cvat-cloud-storage-form').within(() => {
+                cy.contains('Manifest file must have .jsonl extension').should('exist');
+            });
+            cy.get('[data-icon="delete"]').should('be.visible').click();
+            cy.get('.cvat-cloud-storage-manifest-field').should('not.exist');
         });
 
         it('Check "AWS S3" provider fields.', () => {

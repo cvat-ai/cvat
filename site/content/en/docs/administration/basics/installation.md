@@ -521,6 +521,30 @@ docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
 
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 
+### Deploy CVAT with an external database
+
+By default, `docker compose up` will start a PostgreSQL database server,
+which will be used to store CVAT's data.
+If you'd like to use your own PostgreSQL instance instead, you can do so as follows.
+Note that CVAT only supports the same major version of PostgreSQL
+as is used in `docker-compose.yml`.
+
+First, define environment variables with database connection settings:
+
+```shell
+export CVAT_POSTGRES_HOST=<PostgreSQL hostname> # mandatory
+export CVAT_POSTGRES_PORT=<PostgreSQL port> # defaults to 5432
+export CVAT_POSTGRES_DBNAME=<PostgreSQL database name> # defaults to "cvat"
+export CVAT_POSTGRES_USER=<PostgreSQL role name> # defaults to "root"
+export CVAT_POSTGRES_PASSWORD=<PostgreSQL role password> # mandatory
+```
+
+Then, add the `docker-compose.external_db.yml` file to your `docker compose up` command:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.external_db.yml up -d
+```
+
 ### How to pull/build/update CVAT images
 
 - **For a CVAT version lower or equal to 2.1.0**, you need to pull images using docker because
