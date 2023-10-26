@@ -84,7 +84,7 @@ is_job_staff {
     is_job_assignee
 }
 
-default allow = false
+default allow := false
 
 allow {
     utils.is_admin
@@ -101,16 +101,16 @@ allow {
 }
 
 
-filter = [] { # Django Q object to filter list of entries
+filter := [] { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else = qobject {
+} else := qobject {
     utils.is_admin
     utils.is_organization
     qobject := [
         {"segment__task__organization": input.auth.organization.id},
         {"segment__task__project__organization": input.auth.organization.id}, "|" ]
-} else = qobject {
+} else := qobject {
     utils.is_sandbox
     user := input.auth.user
     qobject := [
@@ -119,14 +119,14 @@ filter = [] { # Django Q object to filter list of entries
         {"segment__task__assignee_id": user.id}, "|",
         {"segment__task__project__owner_id": user.id}, "|",
         {"segment__task__project__assignee_id": user.id}, "|"]
-} else = qobject {
+} else := qobject {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
     qobject := [
         {"segment__task__organization": input.auth.organization.id},
         {"segment__task__project__organization": input.auth.organization.id}, "|"]
-} else = qobject {
+} else := qobject {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
     qobject := [
