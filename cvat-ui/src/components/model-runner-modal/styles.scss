@@ -32,7 +32,7 @@
     .cvat-runner-attribute-mapper {
         .cvat-runner-attribute-mapping-row {
             align-items: baseline;
-            margin-bottom: 8px;
+            margin-bottom: $grid-unit-size;
 
             .ant-select {
                 width: 100%;

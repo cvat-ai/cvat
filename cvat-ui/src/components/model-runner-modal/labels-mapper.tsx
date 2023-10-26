@@ -35,13 +35,13 @@ interface Props {
 }
 
 function labelsCompatible(modelLabel: LabelInterface, jobLabel: LabelInterface): boolean {
-    const { type: modelType } = modelLabel;
-    const { type: jobType } = jobLabel;
+    const { type: modelLabelType } = modelLabel;
+    const { type: jobLabelType } = jobLabel;
     const compatibleTypes = [[ShapeType.MASK, ShapeType.POLYGON]];
-    return modelType === jobType ||
-        (jobType === 'any' && modelType !== 'skeleton') ||
-        (modelType === 'unknown' && jobType !== 'skeleton') || // legacy support
-        compatibleTypes.some((compatible) => compatible.includes(jobType) && compatible.includes(modelType));
+    return modelLabelType === jobLabelType ||
+        (jobLabelType === 'any' && modelLabelType !== ShapeType.SKELETON) ||
+        (modelLabelType === 'unknown' && jobLabelType !== ShapeType.SKELETON) || // legacy support
+        compatibleTypes.some((compatible) => compatible.includes(jobLabelType) && compatible.includes(modelLabelType));
 }
 
 function computeLabelsAutoMapping(
@@ -152,7 +152,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                 }}
                                 onUpdateMapping={(elementsMapping: [LabelInterface, LabelInterface][]) => {
                                     const mapping = mappingRef.current;
-                                    const updateFullMapping = mapping.map((mappingItem) => {
+                                    const updatedFullMapping = mapping.map((mappingItem) => {
                                         if (mappingItem[0] === modelLabel && mappingItem[1] === taskLabel) {
                                             return [
                                                 modelLabel,
@@ -169,7 +169,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
 
                                         return mappingItem;
                                     });
-                                    setMapping(updateFullMapping);
+                                    setMapping(updatedFullMapping);
                                 }}
                             />
                             <hr />
@@ -177,7 +177,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                     );
                 }
 
-                if (modelLabel.attributes?.length && !!taskLabel.attributes?.length) {
+                if (modelLabel.attributes?.length && taskLabel.attributes?.length) {
                     extras.push(
                         <React.Fragment key='attributes'>
                             <hr />
@@ -206,7 +206,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                 }}
                                 onUpdateMapping={(_attrMapping: [AttributeInterface, AttributeInterface][]) => {
                                     const mapping = mappingRef.current;
-                                    const updateFullMapping = mapping.map((mappingItem) => {
+                                    const updatedFullMapping = mapping.map((mappingItem) => {
                                         if (mappingItem[0] === modelLabel && mappingItem[1] === taskLabel) {
                                             return [
                                                 modelLabel,
@@ -218,7 +218,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
 
                                         return mappingItem;
                                     });
-                                    setMapping(updateFullMapping);
+                                    setMapping(updatedFullMapping);
                                 }}
                             />
                             <hr />
@@ -229,7 +229,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                 return extras;
             }}
             onUpdateMapping={(_mapping: [LabelInterface, LabelInterface][]) => {
-                const updateFullMapping = _mapping.reduce<FullMapping>(
+                const updatedFullMapping = _mapping.reduce<FullMapping>(
                     (acc, [modelLabel, taskLabel]) => {
                         for (const existingMappingItem of mappingRef.current) {
                             if (existingMappingItem[0] === modelLabel && existingMappingItem[1] === taskLabel) {
@@ -240,7 +240,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                         return [...acc, [modelLabel, taskLabel, [], []]];
                     }, [],
                 );
-                setMapping(updateFullMapping);
+                setMapping(updatedFullMapping);
             }}
         />
     );

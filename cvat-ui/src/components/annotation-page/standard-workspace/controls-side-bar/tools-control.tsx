@@ -1198,7 +1198,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 case 'text': {
                                     return {
                                         ...acc,
-                                        [attributeSpec.id as number]: value,
+                                        [attributeSpec.id as number]: `${value}`,
                                     };
                                 }
                                 case 'select':
@@ -1214,7 +1214,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 case 'checkbox':
                                     return {
                                         ...acc,
-                                        [attributeSpec.id as number]: `${'true'.toLowerCase() === 'true'}`,
+                                        [attributeSpec.id as number]: `${value}`.toLowerCase() === 'true' ? 'true' : 'false',
                                     };
                                 default:
                                     return acc;
@@ -1259,23 +1259,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     zOrder: curZOrder,
                                 };
 
-                                if (data.type === 'skeleton' && jobLabel.type === ShapeType.SKELETON) {
+                                if (data.type === ShapeType.SKELETON && jobLabel.type === ShapeType.SKELETON) {
                                     const elements = (jobLabel.structure?.sublabels || []).map((sublabel) => {
                                         const element = data.elements.find((el) => el.label === sublabel.name);
-                                        if (element) {
-                                            return {
-                                                label: sublabel,
-                                                objectType: ObjectType.SHAPE,
-                                                shapeType: sublabel.type,
-                                                attributes: loadAttributes(element.attributes, sublabel),
-                                                frame,
-                                                source: core.enums.Source.AUTO,
-                                                points: element.points,
-                                                occluded: false,
-                                                outside: !!element.outside || false,
-                                            };
-                                        }
-
                                         return {
                                             label: sublabel,
                                             objectType: ObjectType.SHAPE,
@@ -1286,6 +1272,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             points: [0, 0],
                                             occluded: false,
                                             outside: true,
+                                            ...(element ? {
+                                                attributes: loadAttributes(element.attributes, sublabel),
+                                                points: element.points,
+                                                outside: !!element.outside || false,
+                                            } : {}),
                                         };
                                     }).map((elementData) => new core.classes.ObjectState({ ...elementData }));
 
