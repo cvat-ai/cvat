@@ -13,7 +13,6 @@ import pytz
 import traceback
 import textwrap
 from copy import copy
-from contextlib import nullcontext
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
@@ -74,7 +73,7 @@ from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job_to_download_from_cs,
     parse_exception_message, get_rq_job_meta, get_import_rq_id,
-    import_resource_with_clean_up_after, sendfile, define_dependent_job
+    import_resource_with_clean_up_after, sendfile, define_dependent_job, get_rq_lock_by_user
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -2926,8 +2925,8 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
 
         av_scan_paths(filename)
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER and not dependent_job else nullcontext()
-        with cm:
+
+        with get_rq_lock_by_user(queue, user_id, additional_condition=not dependent_job):
             rq_job = queue.enqueue_call(
                 func=import_resource_with_clean_up_after,
                 args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
@@ -3057,8 +3056,8 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
     }
     ttl = TTL_CONSTS[db_instance.__class__.__name__.lower()].total_seconds()
     user_id = request.user.id
-    cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
-    with cm:
+
+    with get_rq_lock_by_user(queue, user_id):
         queue.enqueue_call(
             func=callback,
             args=(db_instance.id, format_name, server_address),
@@ -3136,8 +3135,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
             )
 
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER and not dependent_job else nullcontext()
-        with cm:
+
+        with get_rq_lock_by_user(queue, user_id, additional_condition=not dependent_job):
             rq_job = queue.enqueue_call(
                 func=import_resource_with_clean_up_after,
                 args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),

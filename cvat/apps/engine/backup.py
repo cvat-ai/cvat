@@ -21,7 +21,6 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from contextlib import nullcontext
 from rest_framework import serializers, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
@@ -39,7 +38,7 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
 from cvat.apps.engine.utils import (
     av_scan_paths, process_failed_job, configure_dependent_job_to_download_from_cs,
     get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after,
-    sendfile, define_dependent_job
+    sendfile, define_dependent_job, get_rq_lock_by_user
 )
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
@@ -1014,8 +1013,8 @@ def export(db_instance, request, queue_name):
 
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     user_id = request.user.id
-    cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
-    with cm:
+
+    with get_rq_lock_by_user(queue, user_id):
         queue.enqueue_call(
             func=_create_backup,
             args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
@@ -1088,8 +1087,8 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             )
 
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
-        with cm:
+
+        with get_rq_lock_by_user(queue, user_id):
             rq_job = queue.enqueue_call(
                 func=import_resource_with_clean_up_after,
                 args=(importer, filename, request.user.id, org_id),

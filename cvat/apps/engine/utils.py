@@ -34,6 +34,7 @@ from multiprocessing import cpu_count
 from django.core.exceptions import ValidationError
 from django_sendfile import sendfile as _sendfile
 from django.conf import settings
+from redis.lock import Lock
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -177,6 +178,12 @@ def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: boo
     return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
 
 
+def get_rq_lock_by_user(queue: DjangoRQ, user_id: int, additional_condition: bool = True) -> Union[Lock, nullcontext]:
+    if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER and additional_condition:
+        return queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30)
+    return nullcontext()
+
+
 def configure_dependent_job_to_download_from_cs(
     queue: DjangoRQ,
     rq_id: str,
@@ -199,8 +206,8 @@ def configure_dependent_job_to_download_from_cs(
     if not rq_job_download_file:
         # note: boto3 resource isn't pickleable, so we can't use storage
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if should_be_dependent else nullcontext()
-        with cm:
+
+        with get_rq_lock_by_user(queue, user_id):
             rq_job_download_file = queue.enqueue_call(
                 func=rq_func,
                 args=(db_storage, filename, key),

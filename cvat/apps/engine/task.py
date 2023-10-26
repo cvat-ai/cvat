@@ -18,7 +18,6 @@ from urllib import request as urlrequest
 import django_rq
 import pytz
 
-from contextlib import nullcontext
 from django.conf import settings
 from django.db import transaction
 from datetime import datetime
@@ -28,7 +27,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
-from cvat.apps.engine.utils import av_scan_paths,get_rq_job_meta, define_dependent_job
+from cvat.apps.engine.utils import av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -43,9 +42,8 @@ def create(db_task, data, request):
     """Schedule the task"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
     user_id = request.user.id
-    cm = q.connection.lock(f'{q.name}-lock-{user_id}', timeout=600) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
 
-    with cm:
+    with get_rq_lock_by_user(q, user_id):
         q.enqueue_call(
             func=_create_thread,
             args=(db_task.pk, data),

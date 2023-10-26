@@ -10,7 +10,6 @@ import json
 import os
 import textwrap
 from copy import deepcopy
-from contextlib import nullcontext
 from datetime import timedelta
 from enum import Enum
 from functools import wraps
@@ -39,7 +38,7 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
 )
-from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta
+from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
@@ -452,8 +451,8 @@ class LambdaQueue:
         # staticmethod, it cannot run a callable class. Thus I provide an object
         # which has __call__ function.
         user_id = request.user.id
-        cm = queue.connection.lock(f'{queue.name}-lock-{user_id}', timeout=30) if settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER else nullcontext()
-        with cm:
+
+        with get_rq_lock_by_user(queue, user_id):
             rq_job = queue.create_job(LambdaJob(None),
                 meta={
                     **get_rq_job_meta(
