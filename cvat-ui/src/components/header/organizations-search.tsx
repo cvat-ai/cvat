@@ -6,6 +6,7 @@ import './styles.scss';
 import _ from 'lodash';
 import React, { useEffect, useState } from 'react';
 import AutoComplete from 'antd/lib/auto-complete';
+import notification from 'antd/lib/notification';
 
 import { Organization } from 'cvat-core-wrapper';
 
@@ -25,6 +26,12 @@ function OrganizationsSearch(props: {
         if (searchPhrase) {
             searchOrganizations(searchPhrase).then((organizations) => {
                 setSearchResults(organizations);
+            }).catch((error: unknown) => {
+                notification.error({
+                    message: 'Could not receive a list of organizations',
+                    description: error instanceof Error ? error.message : '',
+                });
+                setSearchResults([]);
             });
         }
     }, [searchPhrase]);
