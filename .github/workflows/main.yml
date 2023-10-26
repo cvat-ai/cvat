@@ -174,7 +174,7 @@ jobs:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
           pytest tests/python/ --cov --cov-report=json
-          pytest tests/python/rest_api/test_rq_job_dependencies.py --rebuild --adjusted-server-conf --cov --cov-report=json
+          pytest tests/python/rest_api/test_rq_job_dependencies.py --rebuild --one-user-active-rq-job --cov --cov-report=json
 
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v3.1.1

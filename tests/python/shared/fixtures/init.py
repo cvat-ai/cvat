@@ -93,7 +93,7 @@ def pytest_addoption(parser):
     )
 
     group._addoption(
-        "--adjusted-server-conf",
+        "--one-user-active-rq-job",
         action="store_true",
         help=". (default: %(default)s)",
     )
@@ -376,13 +376,13 @@ def session_start(
     rebuild = session.config.getoption("--rebuild")
     cleanup = session.config.getoption("--cleanup")
     dumpdb = session.config.getoption("--dumpdb")
-    adjusted_server_conf = session.config.getoption("--adjusted-server-conf")
+    adjusted_server_conf = session.config.getoption("--one-user-active-rq-job")
 
     if session.config.getoption("--collect-only"):
         if any((stop, start, rebuild, cleanup, dumpdb, adjusted_server_conf)):
             raise Exception(
                 """--collect-only is not compatible with any of the other options:
-                --stop-services --start-services --rebuild --cleanup --dumpdb --adjusted-server-conf"""
+                --stop-services --start-services --rebuild --cleanup --dumpdb --one-user-active-rq-job"""
             )
         return  # don't need to start the services to collect tests
 
@@ -391,7 +391,7 @@ def session_start(
     if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb, adjusted_server_conf)):
         raise Exception(
             """--platform=kube is not compatible with any of the other options
-            --stop-services --start-services --rebuild --cleanup --dumpdb --adjusted-server-conf"""
+            --stop-services --start-services --rebuild --cleanup --dumpdb --one-user-active-rq-job"""
         )
 
     if adjusted_server_conf:
