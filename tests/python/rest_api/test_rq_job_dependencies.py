@@ -62,5 +62,5 @@ class TestRqJobDependencies:
 
         for idx, rq_job in enumerate(sorted_rq_jobs):
             assert len(rq_job.dependency_ids) <= 1, "Several tasks should not depend on one task"
-            if not (len(sorted_rq_jobs) - 1 == idx):
+            if not len(sorted_rq_jobs) - 1 == idx:
                 assert rq_job.ended_at < sorted_rq_jobs[idx + 1].started_at
