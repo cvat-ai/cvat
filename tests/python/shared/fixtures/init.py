@@ -92,12 +92,6 @@ def pytest_addoption(parser):
         help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
     )
 
-    group._addoption(
-        "--one-user-active-rq-job",
-        action="store_true",
-        help=". (default: %(default)s)",
-    )
-
 
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
@@ -376,26 +370,22 @@ def session_start(
     rebuild = session.config.getoption("--rebuild")
     cleanup = session.config.getoption("--cleanup")
     dumpdb = session.config.getoption("--dumpdb")
-    adjusted_server_conf = session.config.getoption("--one-user-active-rq-job")
 
     if session.config.getoption("--collect-only"):
-        if any((stop, start, rebuild, cleanup, dumpdb, adjusted_server_conf)):
+        if any((stop, start, rebuild, cleanup, dumpdb)):
             raise Exception(
                 """--collect-only is not compatible with any of the other options:
-                --stop-services --start-services --rebuild --cleanup --dumpdb --one-user-active-rq-job"""
+                --stop-services --start-services --rebuild --cleanup --dumpdb"""
             )
         return  # don't need to start the services to collect tests
 
     platform = session.config.getoption("--platform")
 
-    if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb, adjusted_server_conf)):
+    if platform == "kube" and any((stop, start, rebuild, cleanup, dumpdb)):
         raise Exception(
             """--platform=kube is not compatible with any of the other options
-            --stop-services --start-services --rebuild --cleanup --dumpdb --one-user-active-rq-job"""
+            --stop-services --start-services --rebuild --cleanup --dumpdb"""
         )
-
-    if adjusted_server_conf:
-        DC_FILES.append("tests/docker-compose.adjusted.yml")
 
     if platform == "local":
         local_start(

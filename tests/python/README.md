@@ -44,14 +44,6 @@ This command will automatically start all necessary docker containers.
    See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
    to get more information about tests running.
 
-Several REST API tests require not default server configuration and are not executed by the previous command.
-To run these tests use the option `--one-user-active-rq-job`
-(don't forget to include the `--rebuild` option when running it the first time after the previous command)
-
-```
-pytest tests/python/rest_api/test_rq_job_dependencies.py --one-user-active-rq-job
-```
-
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already

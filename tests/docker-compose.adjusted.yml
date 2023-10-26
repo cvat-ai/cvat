@@ -1,9 +1,0 @@
-services:
-
-  cvat_redis:
-    ports:
-      - 9379:6379
-
-  cvat_server:
-    environment:
-      ONE_RUNNING_JOB_IN_QUEUE_PER_USER: 'true'
