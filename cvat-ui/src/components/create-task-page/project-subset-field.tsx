@@ -64,7 +64,7 @@ export default function ProjectSubsetField(props: Props): JSX.Element {
             value={internalValue}
             placeholder='Input subset'
             className='cvat-project-search-field cvat-project-subset-field'
-            onSearch={(_value) => setInternalValue(_value)}
+            onSearch={setInternalValue}
             onSelect={(_value) => {
                 if (_value !== internalValue) {
                     onChange(_value);

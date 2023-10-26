@@ -38,6 +38,7 @@ const defaultState: NotificationsState = {
             requestPasswordReset: null,
             resetPassword: null,
             loadAuthActions: null,
+            acceptingInvitation: null,
         },
         projects: {
             fetching: null,
@@ -148,6 +149,8 @@ const defaultState: NotificationsState = {
             inviting: null,
             updatingMembership: null,
             removingMembership: null,
+            resendingInvitation: null,
+            deletingInvitation: null,
         },
         webhooks: {
             fetching: null,
@@ -175,6 +178,7 @@ const defaultState: NotificationsState = {
             registerDone: '',
             requestPasswordResetDone: '',
             resetPasswordDone: '',
+            acceptInvitationDone: '',
         },
         projects: {
             restoringDone: '',
@@ -188,6 +192,9 @@ const defaultState: NotificationsState = {
             dataset: '',
             annotation: '',
             backup: '',
+        },
+        organizations: {
+            resendingInvitation: '',
         },
     },
 };
@@ -373,6 +380,35 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.auth,
                         loadAuthActions: {
                             message: 'Could not check available auth actions',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.ACCEPT_INVITATION_SUCCESS: {
+            return {
+                ...state,
+                ...state,
+                messages: {
+                    ...state.messages,
+                    auth: {
+                        ...state.messages.auth,
+                        acceptInvitationDone: 'Invitation accepted successfully. You can Sign in now.',
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.ACCEPT_INVITATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        acceptingInvitation: {
+                            message: 'Could not accept invitation',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                         },
@@ -1399,23 +1435,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    organizations: {
-                        ...state.errors.organizations,
-                        fetching: {
-                            message: 'Could not fetch organizations list',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-fetch-organizations-failed',
-                        },
-                    },
-                },
-            };
-        }
         case OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED: {
             return {
                 ...state,
@@ -1571,6 +1590,35 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        resendingInvitation: {
+                            message: 'Could not resend invitation',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-resend-organization-invintation-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    organizations: {
+                        ...state.messages.organizations,
+                        resendingInvitation: 'Invintation was sent sucessfully',
+                    },
+                },
+            };
+        }
         case JobsActionTypes.GET_JOBS_FAILED: {
             return {
                 ...state,
@@ -1600,6 +1648,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-create-job-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.UPDATE_JOB_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    jobs: {
+                        ...state.errors.jobs,
+                        updating: {
+                            message: 'Could not update job',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-job-failed',
                         },
                     },
                 },

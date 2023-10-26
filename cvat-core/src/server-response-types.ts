@@ -43,6 +43,7 @@ export interface SerializedUser {
     is_active?: boolean;
     last_login?: string;
     date_joined?: string;
+    email_verification_required: boolean;
 }
 
 export interface SerializedProject {
@@ -172,6 +173,10 @@ export interface SerializedRegister {
     first_name: string;
     last_name: string;
     username: string;
+}
+
+export interface SerializedAcceptInvitation {
+    organization_slug: string;
 }
 
 export interface SerializedGuide {

@@ -1,27 +1,29 @@
 ---
-linkTitle: "CVAT"
+title: 'CVAT for image'
+linkTitle: 'CVAT for image'
 weight: 1
+description: 'How to export and import data in CVAT for image format'
 ---
 
-# CVAT
+This is CVAT's native annotation format,
+which fully supports all of CVAT's annotation features.
+It is ideal for creating data backups.
+
+For more information, see:
 
 - [Format specification](/docs/manual/advanced/xml_format/)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/cvat_dataset)
 
-This is the native CVAT annotation format. It supports all CVAT annotations
-features, so it can be used to make data backups.
+## CVAT for image export
 
-- supported annotations CVAT for Images: Rectangles, Polygons, Polylines,
+For export of images:
+
+- Supported annotations: Bounding Boxes, Polygons, Polylines,
   Points, Cuboids, Skeletons, Tags, Tracks
+- Attributes: Supported.
+- Tracks: Supported (tracks are split by frames).
 
-- supported annotations CVAT for Videos: Rectangles, Polygons, Polylines,
-  Points, Cuboids, Skeletons, Tracks
-
-- attributes are supported
-
-## CVAT for images export
-
-Downloaded file: a ZIP file of the following structure:
+The downloaded file is a zip archive with following structure:
 
 ```bash
 taskname.zip/
@@ -31,11 +33,17 @@ taskname.zip/
 └── annotations.xml
 ```
 
-- tracks are split by frames
+## CVAT for video export
 
-## CVAT for videos export
+For export of images:
 
-Downloaded file: a ZIP file of the following structure:
+- Supported annotations: Bounding Boxes, Polygons, Polylines,
+  Points, Cuboids, Skeletons, Tags, Tracks
+- Attributes: Supported.
+- Tracks: Supported (tracks are split by frames).
+- Shapes are exported as single-frame tracks
+
+Downloaded file is a zip archive with following structure:
 
 ```bash
 taskname.zip/
@@ -45,8 +53,7 @@ taskname.zip/
 └── annotations.xml
 ```
 
-- shapes are exported as single-frame tracks
-
 ## CVAT loader
 
-Uploaded file: an XML file or a ZIP file of the structures above
+Uploaded file: either an XML file or a
+.zip file containing the aforementioned structures.

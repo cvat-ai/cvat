@@ -12,7 +12,6 @@ import Select from 'antd/lib/select';
 import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
-import Tooltip from 'antd/lib/tooltip';
 
 import { CombinedState, CloudStorage } from 'reducers';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
@@ -20,6 +19,7 @@ import { ProviderType, CredentialsType } from 'utils/enums';
 import { QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Space from 'antd/lib/space';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { AzureProvider, S3Provider, GoogleCloudProvider } from '../../icons';
 import S3Region from './s3-region';
 import GCSLocation from './gcs-locatiion';
@@ -352,7 +352,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         {...internalCommonProps}
                     >
                         <Input.Password
-                            maxLength={44}
+                            maxLength={64}
                             visibilityToggle={secretKeyVisibility}
                             onChange={() => setSecretKeyVisibility(true)}
                             onFocus={() => onFocusCredentialsItem('secretKey', 'secret_key')}
@@ -447,7 +447,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     name='key_file'
                     {...internalCommonProps}
                     label={(
-                        <Tooltip title='You can upload a key file.
+                        <CVATTooltip title='You can upload a key file.
                                 If you leave this field blank, the environment variable
                                 GOOGLE_APPLICATION_CREDENTIALS will be used.'
                         >
@@ -460,7 +460,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             >
                                 <QuestionCircleOutlined />
                             </Button>
-                        </Tooltip>
+                        </CVATTooltip>
 
                     )}
                 >
@@ -610,13 +610,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                 </Form.Item>
                 {credentialsBlok()}
                 <Form.Item
-                    label='Prefix'
-                    name='prefix'
-                    {...internalCommonProps}
-                >
-                    <Input />
-                </Form.Item>
-                <Form.Item
                     label='Project ID'
                     name='project_id'
                     {...internalCommonProps}
@@ -687,6 +680,17 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             {providerType === ProviderType.AWS_S3_BUCKET && AWSS3Configuration()}
             {providerType === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
             {providerType === ProviderType.GOOGLE_CLOUD_STORAGE && GoogleCloudStorageConfiguration()}
+            <Form.Item
+                label={(
+                    <CVATTooltip title='Prefix is used to filter bucket content'>
+                        Prefix
+                        <QuestionCircleOutlined className='cvat-cloud-storage-help-button' />
+                    </CVATTooltip>
+                )}
+                name='prefix'
+            >
+                <Input />
+            </Form.Item>
             <ManifestsManager form={form} manifestNames={manifestNames} setManifestNames={setManifestNames} />
             <Row justify='end'>
                 <Col>

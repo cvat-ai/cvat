@@ -1149,7 +1149,7 @@ class ProjectData(InstanceLabelData):
             return frames[(frame_info["subset"], abs_frame)]
 
         if include_empty:
-            for ident in self._frame_info:
+            for ident in sorted(self._frame_info):
                 if ident not in self._deleted_frames:
                     get_frame(*ident)
 
@@ -1786,6 +1786,7 @@ class CvatToDmAnnotationConverter:
                     label=self.map_label(element.label, shape.label),
                     attributes=element_attr))
 
+            dm_attr["keyframe"] = any([element.attributes.get("keyframe") for element in elements])
             anno = dm.Skeleton(elements, label=dm_label,
                 attributes=dm_attr, group=dm_group, z_order=shape.z_order)
         else:
@@ -1899,6 +1900,15 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
         dm.AnnotationType.mask: ShapeType.MASK
     }
 
+    track_formats = [
+        'cvat',
+        'datumaro',
+        'sly_pointcloud',
+        'coco',
+        'coco_instances',
+        'coco_person_keypoints'
+    ]
+
     label_cat = dm_dataset.categories()[dm.AnnotationType.label]
 
     root_hint = find_dataset_root(dm_dataset, instance_data)
@@ -1983,7 +1993,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                         if ann.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
 
                     shape_type = shapes[ann.type]
-                    if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in ['cvat', 'datumaro', 'sly_pointcloud']:
+                    if track_id is None or 'keyframe' not in ann.attributes or dm_dataset.format not in track_formats:
                         elements = []
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
@@ -2050,7 +2060,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
 
                         if ann.type == dm.AnnotationType.skeleton:
                             for element in ann.elements:
-                                element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), bool) is True
+                                element_keyframe = dm.util.cast(element.attributes.get('keyframe', None), bool, True)
                                 element_occluded = element.visibility[0] == dm.Points.Visibility.hidden
                                 element_outside = element.visibility[0] == dm.Points.Visibility.absent
                                 if not element_keyframe and not element_outside:
@@ -2069,6 +2079,7 @@ def import_dm_annotations(dm_dataset: dm.Dataset, instance_data: Union[ProjectDa
                                 ]
                                 element_source = element.attributes.pop('source').lower() \
                                     if element.attributes.get('source', '').lower() in {'auto', 'semi-auto', 'manual', 'file'} else 'manual'
+
                                 tracks[track_id]['elements'][element.label].shapes.append(instance_data.TrackedShape(
                                     type=shapes[element.type],
                                     frame=frame_number,

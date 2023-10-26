@@ -260,7 +260,6 @@ export interface CloudStoragesState {
 }
 
 export enum SupportedPlugins {
-    GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
 }
@@ -327,7 +326,12 @@ export interface PluginsState {
             };
         };
         settings: {
-            player: PluginComponent[],
+            player: PluginComponent[];
+        }
+        about: {
+            links: {
+                items: PluginComponent[];
+            }
         }
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
@@ -388,12 +392,6 @@ export enum TaskStatus {
     COMPLETED = 'completed',
 }
 
-export enum JobStage {
-    ANNOTATION = 'annotation',
-    REVIEW = 'validation',
-    ACCEPTANCE = 'acceptance',
-}
-
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
@@ -441,6 +439,7 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             loadAuthActions: null | ErrorState;
+            acceptingInvitation: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;
@@ -551,6 +550,8 @@ export interface NotificationsState {
             inviting: null | ErrorState;
             updatingMembership: null | ErrorState;
             removingMembership: null | ErrorState;
+            resendingInvitation: null | ErrorState;
+            deletingInvitation: null | ErrorState;
         };
         webhooks: {
             fetching: null | ErrorState;
@@ -578,6 +579,7 @@ export interface NotificationsState {
             registerDone: string;
             requestPasswordResetDone: string;
             resetPasswordDone: string;
+            acceptInvitationDone: string;
         };
         projects: {
             restoringDone: string;
@@ -592,6 +594,9 @@ export interface NotificationsState {
             annotation: string;
             backup: string;
         };
+        organizations: {
+            resendingInvitation: string;
+        }
     };
 }
 
@@ -874,7 +879,6 @@ export interface ReviewState {
 }
 
 export interface OrganizationState {
-    list: any[];
     current?: Organization | null;
     initialized: boolean;
     fetching: boolean;

@@ -28,6 +28,7 @@ import {
     Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
+import { mask2Rle, rle2Mask } from './object-utils';
 import User from './user';
 import pjson from '../package.json';
 import config from './config';
@@ -41,8 +42,8 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.about);
                 return result;
             },
-            async share(directory = '/') {
-                const result = await PluginRegistry.apiWrapper(cvat.server.share, directory);
+            async share(directory = '/', searchPrefix?: string) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.share, directory, searchPrefix);
                 return result;
             },
             async formats() {
@@ -266,8 +267,8 @@ function build() {
             },
         },
         organizations: {
-            async get() {
-                const result = await PluginRegistry.apiWrapper(cvat.organizations.get);
+            async get(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.get, filter);
                 return result;
             },
             async activate(organization) {
@@ -276,6 +277,19 @@ function build() {
             },
             async deactivate() {
                 const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
+                return result;
+            },
+            async acceptInvitation(username, firstName, lastName, email, password, userConfirmations, key) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.organizations.acceptInvitation,
+                    username,
+                    firstName,
+                    lastName,
+                    email,
+                    password,
+                    userConfirmations,
+                    key,
+                );
                 return result;
             },
         },
@@ -328,6 +342,10 @@ function build() {
             Webhook,
             AnnotationGuide,
         },
+        utils: {
+            mask2Rle,
+            rle2Mask,
+        },
     };
 
     cvat.server = Object.freeze(cvat.server);
@@ -348,8 +366,8 @@ function build() {
     cvat.organizations = Object.freeze(cvat.organizations);
     cvat.webhooks = Object.freeze(cvat.webhooks);
     cvat.analytics = Object.freeze(cvat.analytics);
-    cvat.storage = Object.freeze(cvat.storage);
     cvat.classes = Object.freeze(cvat.classes);
+    cvat.utils = Object.freeze(cvat.utils);
 
     const implemented = Object.freeze(implementAPI(cvat));
     return implemented;

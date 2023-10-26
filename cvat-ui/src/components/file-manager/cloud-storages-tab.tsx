@@ -83,6 +83,7 @@ export default function CloudStorageTab(props: Props): JSX.Element {
                         resource={cloudStorage}
                         manifestPath={selectedSource === config.BUCKET_CONTENT_KEY ? undefined : selectedSource}
                         onSelectFiles={onSelectFiles}
+                        defaultPrefix={cloudStorage.prefix}
                     />
                 </Form.Item>
             ) : null}

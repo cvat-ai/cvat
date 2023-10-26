@@ -381,7 +381,7 @@ export class Job extends Session {
         log: CallableFunction;
     };
 
-    constructor(initialData: SerializedJob) {
+    constructor(initialData: Readonly<SerializedJob>) {
         super();
         const data = {
             id: undefined,
@@ -535,6 +535,9 @@ export class Job extends Session {
                 },
                 _updateTrigger: {
                     get: () => updateTrigger,
+                },
+                _initialData: {
+                    get: () => initialData,
                 },
             }),
         );

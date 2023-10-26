@@ -22,7 +22,8 @@ import data.organizations
 #     }
 # }
 
-default allow = false
+default allow := false
+
 allow {
     utils.is_admin
 }
@@ -40,26 +41,26 @@ allow {
     utils.has_perm(utils.WORKER)
 }
 
-filter = [] { # Django Q object to filter list of entries
+filter := [] { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else = qobject {
+} else := qobject {
     utils.is_admin
     utils.is_organization
     qobject := [ {"organization": input.auth.organization.id},
         {"project__organization": input.auth.organization.id}, "|"]
-} else = qobject {
+} else := qobject {
     utils.is_sandbox
     user := input.auth.user
     qobject := [ {"owner_id": user.id}, {"assignee_id": user.id}, "|",
         {"project__owner_id": user.id}, "|", {"project__assignee_id": user.id}, "|"]
-} else = qobject {
+} else := qobject {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
     qobject := [ {"organization": input.auth.organization.id},
         {"project__organization": input.auth.organization.id}, "|"]
-} else = qobject {
+} else := qobject {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
     qobject := [ {"owner_id": user.id}, {"assignee_id": user.id}, "|",

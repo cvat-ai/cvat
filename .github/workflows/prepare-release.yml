@@ -1,0 +1,74 @@
+name: Prepare release
+on:
+  workflow_dispatch:
+    inputs:
+      newVersion:
+        description: "Version number for the new release"
+        required: true
+        default: X.Y.Z
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate version number
+        env:
+          NEW_VERSION: "${{ inputs.newVersion }}"
+        run: |
+          if ! [[ "$NEW_VERSION" =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "Invalid version number"
+            exit 1
+          fi
+
+      # When you use the default github.token to make changes in the repository,
+      # it does not trigger further GitHub pipelines. We want to trigger CI for
+      # the pull request, so we have to use an app token.
+      - name: Generate authentication token
+        id: gen-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: "${{ secrets.CVAT_BOT_APP_ID }}"
+          private-key: "${{ secrets.CVAT_BOT_PRIVATE_KEY }}"
+
+      - name: Install dependencies
+        run:
+          sudo apt-get install -y pandoc
+
+      - uses: actions/checkout@v4
+
+      - name: Verify that the release is new
+        run: |
+          if git ls-remote --exit-code origin refs/tags/v${{ inputs.newVersion }} > /dev/null; then
+            echo "Release v${{ inputs.newVersion }} already exists"
+            exit 1
+          fi
+
+      - name: Create release branch
+        run:
+          git checkout -b "release-${{ inputs.newVersion }}"
+
+      - name: Collect changelog
+        run:
+          pipx run scriv collect --version="${{ inputs.newVersion }}"
+
+      - name: Set the new version
+        run:
+          ./dev/update_version.py --set="${{ inputs.newVersion }}"
+
+      - name: Commit release preparation changes
+        run: |
+          git -c user.name='cvat-bot[bot]' -c user.email='147643061+cvat-bot[bot]@users.noreply.github.com' \
+            commit -a -m "Prepare release v${{ inputs.newVersion }}"
+
+      - name: Push release branch
+        run:
+          git push -u origin "release-${{ inputs.newVersion }}"
+
+      - name: Create release pull request
+        env:
+          GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
+        run: |
+          ./dev/gh_release_notes.sh \
+            | gh pr create \
+              --base=master \
+              --title="Release v${{ inputs.newVersion }}" \
+              --body-file=-

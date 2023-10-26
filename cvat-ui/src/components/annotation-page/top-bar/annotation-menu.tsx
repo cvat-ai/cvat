@@ -16,8 +16,7 @@ import Collapse from 'antd/lib/collapse';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { getCore } from 'cvat-core-wrapper';
-import { JobStage } from 'reducers';
+import { getCore, JobStage } from 'cvat-core-wrapper';
 
 const core = getCore();
 
@@ -213,7 +212,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                     <Text className={computeClassName(JobState.COMPLETED)}>{JobState.COMPLETED}</Text>
                 </Menu.Item>
             </Menu.SubMenu>
-            {[JobStage.ANNOTATION, JobStage.REVIEW].includes(jobStage) ?
+            {[JobStage.ANNOTATION, JobStage.VALIDATION].includes(jobStage) ?
                 <Menu.Item key={Actions.FINISH_JOB}>Finish the job</Menu.Item> : null}
             {jobStage === JobStage.ACCEPTANCE ?
                 <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item> : null}
