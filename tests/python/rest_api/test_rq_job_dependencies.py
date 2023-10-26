@@ -37,8 +37,9 @@ class TestRqJobDependencies:
         task_id, _ = create_task(self._USERNAME, task_spec, task_data)
         return task_id
 
-    def test_check_rq_job_dependencies_after_creating_tasks_in_parallel(self, request):
-        if not request.session.config.getoption("--adjusted-server-conf"):
+
+    def test_check_rq_job_dependencies_after_creating_tasks_in_parallel(self, pytestconfig):
+        if not pytestconfig.getoption("--adjusted-server-conf"):
             pytest.skip("Server is not configured with ONE_RUNNING_JOB_IN_QUEUE_PER_USER setting")
         RQ_JOB_TEMPLATE = "create:task.id{}"
         with ThreadPool(5) as pool:
