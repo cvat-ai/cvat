@@ -32,7 +32,7 @@ class ClientEventsSerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField()
     _TIME_THRESHOLD = datetime.timedelta(seconds=100)
     _WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
-    _COLLAPSED_EVENT_SCOPES = frozenset(('change:frame',))
+    _COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
 
     def to_internal_value(self, data):
         request = self.context.get("request")
@@ -47,7 +47,7 @@ class ClientEventsSerializer(serializers.Serializer):
         zero_t_delta = datetime.timedelta()
 
         for event in data["events"]:
-            timestamp = datetime_parser.isoparse(event['timestamp'])
+            timestamp = datetime_parser.isoparse(event["timestamp"])
             working_time = datetime.timedelta()
             event_duration = datetime.timedelta()
             t_diff = timestamp - last_timestamp
@@ -55,30 +55,31 @@ class ClientEventsSerializer(serializers.Serializer):
             if t_diff <= zero_t_delta:
                 continue
 
-            payload = json.loads(event.get('payload', "{}"))
+            payload = json.loads(event.get("payload", "{}"))
 
-            if event['scope'] in self._COLLAPSED_EVENT_SCOPES:
-                event_duration += datetime.timedelta(milliseconds=event['duration'])
+            if event["scope"] in self._COLLAPSED_EVENT_SCOPES:
+                event_duration += datetime.timedelta(milliseconds=event["duration"])
                 working_time += event_duration
 
             if t_diff < self._TIME_THRESHOLD:
                 working_time += t_diff
 
             payload.update({
-                'working_time': working_time // self._WORKING_TIME_RESOLUTION,
-                'username': request.user.username,
+                "working_time": working_time // self._WORKING_TIME_RESOLUTION,
+                "username": request.user.username,
             })
-            event['payload'] = json.dumps(payload)
+
+            event.update({
+                "timestamp": str((timestamp + time_correction).timestamp()),
+                "source": "client",
+                "org_id": org_id,
+                "org_slug": org_slug,
+                "user_id": request.user.id,
+                "user_name": request.user.username,
+                "user_email": request.user.email,
+                "payload": json.dumps(payload),
+            })
 
             last_timestamp = timestamp + event_duration
-            event.update({
-                'timestamp': str((timestamp + time_correction).timestamp()),
-                'source': 'client',
-                'org_id': org_id,
-                'org_slug': org_slug,
-                'user_id': request.user.id,
-                'user_name': request.user.username,
-                'user_email': request.user.email,
-            })
 
         return data
