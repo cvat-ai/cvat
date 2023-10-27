@@ -54,8 +54,12 @@ filter := [] { # Django Q object to filter list of entries
     org_id := input.auth.organization.id
     qobject := [ {"organization": org_id} ]
 } else := qobject {
+    organizations.is_staff
     org_id := input.auth.organization.id
     qobject := [ {"organization": org_id} ]
+} else := qobject {
+    org_id := input.auth.organization.id
+    qobject := [ {"organization": org_id}, {"is_active": true}, "&" ]
 }
 
 allow {
