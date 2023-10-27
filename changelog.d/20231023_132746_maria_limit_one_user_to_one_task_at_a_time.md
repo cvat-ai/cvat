@@ -5,8 +5,9 @@
 
 ### Fixed
 
-- Bug with viewing dependent rq jobs for downloading resources from
-cloud storage when file path contains sub-directories
+- Bug with viewing dependent RQ jobs for downloading resources from
+cloud storage when file path contains sub-directories.
+This is relevant for admins that can view detailed information about RQ queues.
   (<https://github.com/opencv/cvat/pull/6975>)
 
 ### Changed
