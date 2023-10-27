@@ -9,7 +9,6 @@ In CVAT you can use **AWS S3**, **Azure Blob Container**
 and **Google Cloud** storages to import and export
 image datasets for your tasks.
 
-
 See:
 
 - [AWS S3](#aws-s3)
@@ -35,6 +34,10 @@ See:
   - [Personal use](#personal-use)
   - [Attach Azure Blob Container](#attach-azure-blob-container)
 - [Prepare the dataset](#prepare-the-dataset)
+- [Video tutorials](#video-tutorials)
+  - [Add AWS as Cloud Storage in CVAT](#add-aws-as-cloud-storage-in-cvat)
+  - [Add Microsoft Azure Blob as Cloud Storage in CVAT](#add-microsoft-azure-blob-as-cloud-storage-in-cvat)
+  - [Add Google Cloud as Cloud Storage in CVAT](#add-google-cloud-as-cloud-storage-in-cvat)
 
 ## AWS S3
 
@@ -55,6 +58,8 @@ To create bucket, do the following:
 A new bucket will appear on the list of buckets.
 
 ### Upload data
+
+> **Note**: manifest file is optional.
 
 You need to upload data for annotation and the `manifest.jsonl` file.
 
@@ -131,6 +136,8 @@ After filling in all the fields, click **Submit**.
 
 ### AWS manifest file
 
+> **Note**: manifest file is optional.
+
 To prepare the manifest file, do the following:
 
 1. Go to [**AWS cli**](https://aws.amazon.com/cli/) and run
@@ -194,6 +201,8 @@ You will be forwarded to the bucket.
 
 ### Upload data
 
+> **Note**: manifest file is optional.
+
 You need to upload data for annotation and the `manifest.jsonl` file.
 
 1. Prepare data.
@@ -249,7 +258,7 @@ To configure anonymous access:
 
 ![](/images/google_cloud_storage_tutorial4.jpg)
 
-Now you can attach new Azure Blob container into CVAT.
+Now you can attach Google Cloud bucket to CVAT.
 
 ### Attach Google Cloud storage
 
@@ -423,3 +432,32 @@ For example, the dataset is [The Oxford-IIIT Pet Dataset](https://www.robots.ox.
 ```bash
 python <cvat repository>/utils/dataset_manifest/create.py --output-dir <your_folder> <your_folder>
 ```
+
+## Video tutorials
+
+### Add AWS as Cloud Storage in CVAT
+
+<!--lint disable maximum-line-length-->
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/zeW6wB6zUOA?si=d6t6S6k14wHmZT_5" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+
+<!--lint enable maximum-line-length-->
+
+### Add Microsoft Azure Blob as Cloud Storage in CVAT
+
+<!--lint disable maximum-line-length-->
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/nvrm8oFBKMY?si=v2z6Rjlc250niXPX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+
+<!--lint enable maximum-line-length-->
+
+### Add Google Cloud as Cloud Storage in CVAT
+
+<!--lint disable maximum-line-length-->
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/pl2KZqJouvI?si=58sziJGbHHc-Mcom" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+
+<!--lint enable maximum-line-length-->
