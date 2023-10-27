@@ -170,6 +170,14 @@ To invite members to **Organization** do the following:
 6. After account is created, the user will be visible
    on the [**Organization page**](#organization-page)
 
+
+The invited user, after setting up the account will
+need to confirm email address:
+
+1. Log into CVAT. User will see the **Confirm email** notification.
+2. Go to the mailbox, open the message from CVAT and click **Confirm**.
+3. Log in to CVAT account again.
+
 ## Delete organization
 
 You can remove an organization that you created.
