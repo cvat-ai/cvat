@@ -20,7 +20,8 @@ import data.utils
 #     }
 # }
 
-default allow = false
+default allow := false
+
 allow {
     input.scope == utils.VIEW
 }

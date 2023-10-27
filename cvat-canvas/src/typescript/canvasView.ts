@@ -2921,6 +2921,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }),
         );
 
+        if (state.occluded) {
+            image.addClass('cvat_canvas_shape_occluded');
+        }
+
+        if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
+            image.addClass('cvat_canvas_hidden');
+        }
+
+        if (state.isGroundTruth) {
+            image.addClass('cvat_canvas_ground_truth');
+        }
+
         return image;
     }
 

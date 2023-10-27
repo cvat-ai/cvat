@@ -1,0 +1,12 @@
+name: Regal
+on: pull_request
+jobs:
+  Linter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Regal
+        uses: StyraInc/setup-regal@v0.2.0
+        with:
+          version: v0.11.0
+      - run: regal lint --format=github cvat/apps/iam/rules

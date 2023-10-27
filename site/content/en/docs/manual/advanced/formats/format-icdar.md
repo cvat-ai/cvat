@@ -1,6 +1,8 @@
 ---
+title: 'ICDAR13/15'
 linkTitle: 'ICDAR13/15'
 weight: 14
+description: 'How to export and import data in ICDAR13/15 format'
 ---
 
 ICDAR 13/15 formats are typically used for text detection and recognition tasks
