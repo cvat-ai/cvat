@@ -129,7 +129,7 @@ It has the following fields:
 
 <!--lint enable maximum-line-length-->
 
-Members of **Organization** will appear on the **Organization page**.
+Members of **Organization** will appear on the **Organization page**:
 
 ![](/images/image237.jpg)
 
