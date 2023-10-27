@@ -55,7 +55,7 @@ filter := [] { # Django Q object to filter list of entries
     qobject := [ {"organization": org_id} ]
 } else := qobject {
     org_id := input.auth.organization.id
-    qobject := [ {"organization": org_id}, {"is_active": true}, "&" ]
+    qobject := [ {"organization": org_id} ]
 }
 
 allow {
@@ -76,7 +76,6 @@ allow {
 # himself/another maintainer/owner
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
-    input.resource.is_active
     input.resource.organization.id == input.auth.organization.id
     utils.has_perm(utils.USER)
     organizations.is_maintainer
@@ -91,7 +90,6 @@ allow {
 # owner of the organization can change the role of any member and remove any member except himself
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
-    input.resource.is_active
     input.resource.organization.id == input.auth.organization.id
     utils.has_perm(utils.USER)
     organizations.is_owner
