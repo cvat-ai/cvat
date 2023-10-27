@@ -337,7 +337,7 @@ def _validate_manifest(
             if not (
                 data_sorting_method == models.SortingMethod.PREDEFINED or
                 (settings.USE_CACHE and data_storage_method == models.StorageMethodChoice.CACHE) or
-                isBackupRestore
+                isBackupRestore or is_in_cloud
             ):
                 cache_disabled_message = ""
                 if data_storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
@@ -541,6 +541,8 @@ def _create_thread(
 
     manifest = None
     if is_data_in_cloud:
+        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
+
         if manifest_file:
             cloud_storage_manifest = ImageManifestManager(
                 os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
@@ -548,8 +550,9 @@ def _create_thread(
             )
             cloud_storage_manifest.set_index()
             cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
-        else:
-            cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
+
+        if manifest_file and not data['server_files'] and not data['filename_pattern']: # only manifest file was specified in server files by the user
+            data['filename_pattern'] = '*'
 
         # update the server_files list with files from the specified directories
         if (dirs:= list(filter(lambda x: x.endswith('/'), data['server_files']))):
@@ -567,7 +570,7 @@ def _create_thread(
                                 lambda x: x[1].full_name,
                                 filter(lambda x: x[1].full_name.startswith(directory), cloud_storage_manifest)
                             )
-                        )
+                        ) if directory else [x[1].full_name for x in cloud_storage_manifest]
                     )
                 if cloud_storage_manifest_prefix:
                     additional_files = [os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files]
@@ -595,9 +598,6 @@ def _create_thread(
                 data['server_files']
             ))
 
-        if manifest_file and not data['server_files'] and not data['filename_pattern']: # only manifest file was specified in server files by the user
-            data['filename_pattern'] = '*'
-
         # update list with server files if task creation approach with pattern and manifest file is used
         if data['filename_pattern']:
             additional_files = []
@@ -605,7 +605,7 @@ def _create_thread(
             if not manifest_file:
                 # NOTE: we cannot list files with specified pattern on the providers page because they don't provide such function
                 dirs = []
-                prefix = None
+                prefix = ""
 
                 while True:
                     for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
@@ -626,6 +626,10 @@ def _create_thread(
                     additional_files = fnmatch.filter(additional_files, data['filename_pattern'])
 
             data['server_files'].extend(additional_files)
+
+        if cloud_storage_instance.prefix:
+            # filter server_files based on default prefix
+            data['server_files'] = list(filter(lambda x: x.startswith(cloud_storage_instance.prefix), data['server_files']))
 
         # We only need to process the files specified in job_file_mapping
         if job_file_mapping is not None:

@@ -1,6 +1,8 @@
 ---
+title: 'Datumaro'
 linkTitle: 'Datumaro'
 weight: 1.5
+description: 'How to export and import data in Datumaro format'
 ---
 
 Datumaro serves as a versatile format capable of handling complex

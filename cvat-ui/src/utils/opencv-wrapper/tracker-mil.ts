@@ -51,6 +51,8 @@ export default class TrackerMILImplementation implements TrackerMIL {
         if (!this.imageData) {
             throw Error('TrackerMIL needs to be initialized before re-initialization');
         }
+        this.trackerMIL.delete();
+        this.trackerMIL = new this.cv.TrackerMIL();
         this.init(this.imageData, points);
     }
 
@@ -64,5 +66,9 @@ export default class TrackerMILImplementation implements TrackerMIL {
         } finally {
             if (matImage) matImage.delete();
         }
+    }
+
+    public delete(): void {
+        this.trackerMIL.delete();
     }
 }

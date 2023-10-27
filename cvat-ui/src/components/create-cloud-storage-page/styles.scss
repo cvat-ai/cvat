@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-update-cloud-storage-form-wrapper,
 .cvat-attach-cloud-storage-form-wrapper {
@@ -74,10 +74,27 @@
 .cvat-cloud-storage-help-button {
     padding-left: $grid-unit-size * 0.5;
     padding-right: 0;
+    color: #1890ff;
 }
 
 .cvat-manifests-manager-form-item {
+    margin-bottom: 0;
+
+    > div:first-child {
+        padding: 0;
+    }
+
     > .ant-form-item-control {
         display: none;
     }
+}
+
+.cvat-cs-manifest-wrapper {
+    > .ant-col > .ant-row {
+        margin-bottom: 0;
+    }
+}
+
+.cvat-add-manifest-button {
+    margin-bottom: $grid-unit-size;
 }

@@ -27,7 +27,8 @@ import data.organizations
 #     } or null
 # }
 
-default allow = false
+default allow := false
+
 allow {
     utils.is_admin
 }
@@ -42,17 +43,17 @@ allow {
     organizations.is_member
 }
 
-filter = [] { # Django Q object to filter list of entries
+filter := [] { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else = qobject {
+} else := qobject {
     utils.is_sandbox
     qobject := [ {"user": input.auth.user.id}, {"is_active": true}, "&" ]
-} else = qobject {
+} else := qobject {
     utils.is_admin
     org_id := input.auth.organization.id
     qobject := [ {"organization": org_id} ]
-} else = qobject {
+} else := qobject {
     org_id := input.auth.organization.id
     qobject := [ {"organization": org_id}, {"is_active": true}, "&" ]
 }
@@ -71,7 +72,8 @@ allow {
     input.resource.organization.id == input.auth.organization.id
 }
 
-# maintainer of the organization can change the role of any member and remove any member except himself/another maintainer/owner
+# maintainer of the organization can change the role of any member and remove any member except
+# himself/another maintainer/owner
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
     input.resource.is_active
