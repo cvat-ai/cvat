@@ -54,7 +54,7 @@ class ClientEventsSerializer(serializers.Serializer):
 
             payload = json.loads(event.get("payload", "{}"))
 
-            if t_diff < zero_t_delta:
+            if t_diff >= zero_t_delta:
                 if event["scope"] in self._COLLAPSED_EVENT_SCOPES:
                     event_duration += datetime.timedelta(milliseconds=event["duration"])
                     working_time += event_duration
