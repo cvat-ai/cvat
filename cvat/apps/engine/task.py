@@ -27,7 +27,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
-from cvat.apps.engine.utils import av_scan_paths, get_rq_job_meta
+from cvat.apps.engine.utils import av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -41,12 +41,16 @@ slogger = ServerLogManager(__name__)
 def create(db_task, data, request):
     """Schedule the task"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    q.enqueue_call(
-        func=_create_thread,
-        args=(db_task.pk, data),
-        job_id=f"create:task.id{db_task.pk}",
-        meta=get_rq_job_meta(request=request, db_obj=db_task),
-    )
+    user_id = request.user.id
+
+    with get_rq_lock_by_user(q, user_id):
+        q.enqueue_call(
+            func=_create_thread,
+            args=(db_task.pk, data),
+            job_id=f"create:task.id{db_task.pk}",
+            meta=get_rq_job_meta(request=request, db_obj=db_task),
+            depends_on=define_dependent_job(q, user_id),
+        )
 
 ############################# Internal implementation for server API
 
