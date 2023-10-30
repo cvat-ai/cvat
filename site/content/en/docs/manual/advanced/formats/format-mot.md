@@ -56,7 +56,7 @@ Uploaded file: a zip archive of the structure above or:
 archive.zip/
 └── gt/
     └── gt.txt
-    └── labels.txt
+    └── labels.txt # optional, mandatory for non-official labels
 ```
 
 - supported annotations: Rectangle tracks
