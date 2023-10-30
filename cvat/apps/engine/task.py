@@ -1036,7 +1036,9 @@ def _create_thread(
                 executor: concurrent.futures.ThreadPoolExecutor,
                 chunk_idx: int,
                 chunk_data: Iterable[tuple[str, str, str]]) -> list[tuple[str, int, tuple[int, int]]]:
-            if (isinstance(extractor, MEDIA_TYPES['image']['extractor']) or
+            nonlocal db_data, db_task, extractor, original_chunk_writer, compressed_chunk_writer
+            if db_task.dimension == models.DimensionType.DIM_2D and (
+                isinstance(extractor, MEDIA_TYPES['image']['extractor']) or
                 isinstance(extractor, MEDIA_TYPES['zip']['extractor']) or
                 isinstance(extractor, MEDIA_TYPES['pdf']['extractor']) or
                 isinstance(extractor, MEDIA_TYPES['archive']['extractor'])):
@@ -1060,7 +1062,6 @@ def _create_thread(
 
         def process_results(img_meta: list[tuple[str, int, tuple[int, int]]]):
             nonlocal db_images, db_data, video_path, video_size
-            db_data.size += len(img_meta)
 
             if db_task.mode == 'annotation':
                 db_images.extend(
@@ -1081,6 +1082,7 @@ def _create_thread(
         futures = queue.Queue(maxsize=settings.CVAT_CONCURRENT_CHUNK_PROCESSING)
         with concurrent.futures.ThreadPoolExecutor(max_workers=2*settings.CVAT_CONCURRENT_CHUNK_PROCESSING) as executor:
             for chunk_idx, chunk_data in generator:
+                db_data.size += len(chunk_data)
                 if not futures.full():
                     futures.put(executor.submit(save_chunks, executor, chunk_idx, chunk_data))
                     continue
