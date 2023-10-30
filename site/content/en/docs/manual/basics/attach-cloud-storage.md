@@ -5,7 +5,7 @@ weight: 23
 description: 'Instructions on how to attach cloud storage using UI'
 ---
 
-In CVAT you can use **AWS S3**, **Azure Blob Storage Container**
+In CVAT you can use **AWS S3**, **Azure Blob Storage**
 and **Google Cloud Storage** storages to import and export
 image datasets for your tasks.
 
