@@ -444,6 +444,7 @@ class TestGetCloudStoragePreview:
         else:
             self._test_cannot_see(username, storage_id)
 
+
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestGetCloudStorageContent:
     USER = "admin1"
