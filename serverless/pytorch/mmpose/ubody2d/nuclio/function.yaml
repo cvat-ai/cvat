@@ -1,8 +1,8 @@
 metadata:
-  name: pth-mmpose-ubody
+  name: ubody2d-pose_hrnet_w32
   namespace: cvat
   annotations:
-    name: UBody via MMPose
+    name: UBody 2D via MMPose
     type: detector
     framework: pytorch
     spec: |
@@ -172,25 +172,25 @@ spec:
   eventTimeout: 30s
 
   build:
-    image: cvat.pth.mmpose-ubody
+    image: cvat.pth.mmpose.ubody2d
     baseImage: python:3.8
 
     directives:
       preCopy:
         - kind: RUN
-          value: apt update && apt install -y curl git libgl1 --no-install-recommends && rm -rf /var/lib/apt/lists/*
+          value: apt update && apt install -y git libgl1 --no-install-recommends && rm -rf /var/lib/apt/lists/*
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: pip install torch==2.0.0+cpu torchvision==0.15.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+          value: pip install openmim torch==2.0.0+cpu torchvision==0.15.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
         - kind: RUN
-          value: pip install -U cython openmim && mim install mmengine && mim install "mmcv==2.0.1" && mim install "mmdet==3.2.0" && mim install "mmpose==1.2.0"
+          value: mim install mmcv==2.0.1 mmdet==3.2.0 mmpose==1.2.0
         - kind: RUN
           value: git clone https://github.com/open-mmlab/mmpose && cd mmpose && git checkout v1.2.0
-        - kind: RUN
-          value: curl -o td-hm_hrnet-w32_8xb64-210e_ubody-coco-256x192-7c227391_20230807.pth https://download.openmmlab.com/mmpose/v1/wholebody_2d_keypoint/ubody/td-hm_hrnet-w32_8xb64-210e_ubody-coco-256x192-7c227391_20230807.pth
-        - kind: RUN
-          value: curl -o rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth
+        - kind: ADD
+          value: https://download.openmmlab.com/mmpose/v1/wholebody_2d_keypoint/ubody/td-hm_hrnet-w32_8xb64-210e_ubody-coco-256x192-7c227391_20230807.pth ./
+        - kind: ADD
+          value: https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth ./
 
   triggers:
     myHttpTrigger:

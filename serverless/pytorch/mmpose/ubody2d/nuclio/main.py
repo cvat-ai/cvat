@@ -12,7 +12,6 @@ from mmpose.evaluation.functional import nms
 from mmpose.structures import merge_data_samples
 from mmpose.utils import adapt_mmdet_pipeline
 
-
 def process_one_image(img, detector, pose_estimator, threshold):
     category_ids = [0]
     # predict bbox
@@ -73,6 +72,7 @@ def handler(context, event):
     threshold = float(data.get("threshold", 0.3))
 
     image = Image.open(buf)
+    results = []
     pred_instances = process_one_image(
         np.array(image),
         context.user_data.detector,
@@ -80,33 +80,30 @@ def handler(context, event):
         threshold
     )
 
-    bboxes = pred_instances["bboxes"]
-    keypoints = pred_instances["keypoints"]
-    keypoint_scores = pred_instances["keypoint_scores"]
+    if pred_instances:
+        keypoints = pred_instances["keypoints"]
+        keypoint_scores = pred_instances["keypoint_scores"]
 
-    results = []
-    for i in range(len(bboxes)):
-        # instance_box = bboxes[i]
-        instance_keypoints = keypoints[i]
-        instance_scores = keypoint_scores[i]
+        for i, instance_keypoints in enumerate(keypoints):
+            instance_scores = keypoint_scores[i]
 
-        for label in context.user_data.labels:
-            skeleton = {
-                "confidence": 1,
-                "label": label["name"],
-                "type": "skeleton",
-                "elements": [{
-                    "label": label["elements"][j]["name"],
-                    "type": "points",
-                    "outside": 0 if instance_scores[j - 1] > 0.66 and instance_scores[j  - 1] < 0.98 else 1,
-                    "points": [
-                        float(instance_keypoints[j - 1][0]),
-                        float(instance_keypoints[j - 1][1])
-                    ],
-                    "confidence": str(instance_scores[j  - 1]),
-                } for j in label["elements"]],
-            }
-            if any([not element['outside'] for element in skeleton['elements']]):
-                results.append(skeleton)
+            for label in context.user_data.labels:
+                skeleton = {
+                    "confidence": 1,
+                    "label": label["name"],
+                    "type": "skeleton",
+                    "elements": [{
+                        "label": label["elements"][j]["name"],
+                        "type": "points",
+                        "outside": 0 if instance_scores[j - 1] > 0.66 and instance_scores[j  - 1] < 0.98 else 1,
+                        "points": [
+                            float(instance_keypoints[j - 1][0]),
+                            float(instance_keypoints[j - 1][1])
+                        ],
+                        "confidence": str(instance_scores[j  - 1]),
+                    } for j in label["elements"]],
+                }
+                if not all([element['outside'] for element in skeleton['elements']]):
+                    results.append(skeleton)
 
     return context.Response(body=json.dumps(results), headers={}, content_type='application/json', status_code=200)
