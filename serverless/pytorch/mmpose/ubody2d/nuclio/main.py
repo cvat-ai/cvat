@@ -10,10 +10,10 @@ from mmpose.apis import MMPoseInferencer
 def init_context(context):
     context.logger.info("Init detector...")
 
-    det_config = '/opt/nuclio/mmpose/projects/rtmpose/rtmdet/person/rtmdet_nano_320-8xb32_coco-person.py'
-    det_checkpoint = '/opt/nuclio/rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth'
-    pose_config = '/opt/nuclio/mmpose/configs/wholebody_2d_keypoint/topdown_heatmap/ubody2d/td-hm_hrnet-w32_8xb64-210e_ubody-256x192.py'
-    pose_checkpoint = '/opt/nuclio/td-hm_hrnet-w32_8xb64-210e_ubody-coco-256x192-7c227391_20230807.pth'
+    det_config = "/opt/nuclio/mmpose/projects/rtmpose/rtmdet/person/rtmdet_nano_320-8xb32_coco-person.py"
+    det_checkpoint = "/opt/nuclio/rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth"
+    pose_config = "/opt/nuclio/mmpose/configs/wholebody_2d_keypoint/topdown_heatmap/ubody2d/td-hm_hrnet-w32_8xb64-210e_ubody-256x192.py"
+    pose_checkpoint = "/opt/nuclio/td-hm_hrnet-w32_8xb64-210e_ubody-coco-256x192-7c227391_20230807.pth"
 
     inferencer = MMPoseInferencer(
         pose2d=pose_config,
@@ -26,16 +26,12 @@ def init_context(context):
 
     # build pose estimator
     context.logger.info("Init labels...")
-    with open("/opt/nuclio/function.yaml", 'rb') as function_file:
+    with open("/opt/nuclio/function.yaml", "rb") as function_file:
         functionconfig = yaml.safe_load(function_file)
-        labels_spec = functionconfig['metadata']['annotations']['spec']
+        labels_spec = functionconfig["metadata"]["annotations"]["spec"]
         labels = [{
             "name": item["name"],
-            "elements": {
-                element["id"]: {
-                    "name": element["name"]
-                } for element in item["elements"]
-            }
+            "elements": item["elements"]
         } for item in json.loads(labels_spec)]
 
     context.user_data.labels = labels
@@ -46,32 +42,32 @@ def handler(context, event):
     context.logger.info("Run mmpose ubody-2d model")
     data = event.body
     buf = io.BytesIO(base64.b64decode(data["image"]))
-    image = Image.open(buf).convert('RGB')
+    image = Image.open(buf).convert("RGB")
 
     results = []
-    pred_instances = next(context.user_data.inferencer(np.array(image)[...,::-1]))['predictions'][0]
+    pred_instances = next(context.user_data.inferencer(np.array(image)[...,::-1]))["predictions"][0]
 
     for pred_instance in pred_instances:
         keypoints = pred_instance["keypoints"]
         keypoint_scores = pred_instance["keypoint_scores"]
         for label in context.user_data.labels:
             skeleton = {
-                "confidence": 1,
+                "confidence": str(pred_instance["bbox_score"]),
                 "label": label["name"],
                 "type": "skeleton",
                 "elements": [{
-                    "label": label["elements"][j]["name"],
+                    "label": element["name"],
                     "type": "points",
-                    "outside": 0 if keypoint_scores[j - 1] > 0.66 and keypoint_scores[j  - 1] < 0.98 else 1,
+                    "outside": 0 if keypoint_scores[element["id"]] > 0.66 and keypoint_scores[element["id"]] < 0.98 else 1,
                     "points": [
-                        float(keypoints[j - 1][0]),
-                        float(keypoints[j - 1][1])
+                        float(keypoints[element["id"]][0]),
+                        float(keypoints[element["id"]][1])
                     ],
-                    "confidence": str(keypoint_scores[j  - 1]),
-                } for j in label["elements"]],
+                    "confidence": str(keypoint_scores[element["id"]]),
+                } for element in label["elements"]],
             }
 
-            if not all([element['outside'] for element in skeleton['elements']]):
+            if not all([element['outside'] for element in skeleton["elements"]]):
                 results.append(skeleton)
 
-    return context.Response(body=json.dumps(results), headers={}, content_type='application/json', status_code=200)
+    return context.Response(body=json.dumps(results), headers={}, content_type="application/json", status_code=200)
