@@ -24,7 +24,6 @@ def init_context(context):
         device='cpu'
     )
 
-    # build pose estimator
     context.logger.info("Init labels...")
     with open("/opt/nuclio/function.yaml", "rb") as function_file:
         functionconfig = yaml.safe_load(function_file)
