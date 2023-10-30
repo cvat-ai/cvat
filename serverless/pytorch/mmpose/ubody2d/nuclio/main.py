@@ -5,8 +5,7 @@ import yaml
 import numpy as np
 from PIL import Image
 
-from mmpose.apis import inference_topdown, MMPoseInferencer
-from mmpose.utils import adapt_mmdet_pipeline
+from mmpose.apis import MMPoseInferencer
 
 def init_context(context):
     context.logger.info("Init detector...")
