@@ -72,9 +72,9 @@ from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job,
+    av_scan_paths, process_failed_job, configure_dependent_job_to_download_from_cs,
     parse_exception_message, get_rq_job_meta, get_import_rq_id,
-    import_resource_with_clean_up_after, sendfile
+    import_resource_with_clean_up_after, sendfile, define_dependent_job, get_rq_lock_by_user
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -597,7 +597,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
-        elif job.is_queued:
+        elif job.is_queued or job.is_deferred:
             response = { "state": "Queued" }
         elif job.is_failed:
             response = { "state": "Failed", "message": job.exc_info }
@@ -997,9 +997,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return super().append_files(request)
 
     # UploadMixin method
-    @transaction.atomic
     def upload_finished(self, request):
-        if self.action == 'annotations':
+        @transaction.atomic
+        def _handle_upload_annotations(request):
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
@@ -1015,64 +1015,70 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                         format_name=format_name,
                         conv_mask_to_poly=conv_mask_to_poly,
                     )
-            else:
-                return Response(data='No such file were uploaded',
-                        status=status.HTTP_400_BAD_REQUEST)
-        elif self.action == 'data':
-            task_data = self._object.data
-            serializer = DataSerializer(task_data, data=request.data)
-            serializer.is_valid(raise_exception=True)
+            return Response(data='No such file were uploaded',
+                    status=status.HTTP_400_BAD_REQUEST)
 
-            # Append new files to the previous ones
-            if uploaded_files := serializer.validated_data.get('client_files', None):
-                self.append_files(request)
-                serializer.validated_data['client_files'] = [] # avoid file info duplication
+        def _handle_upload_data(request):
+            with transaction.atomic():
+                task_data = self._object.data
+                serializer = DataSerializer(task_data, data=request.data)
+                serializer.is_valid(raise_exception=True)
 
-            # Refresh the db value with the updated file list and other request parameters
-            db_data = serializer.save()
-            self._object.data = db_data
-            self._object.save()
+                # Append new files to the previous ones
+                if uploaded_files := serializer.validated_data.get('client_files', None):
+                    self.append_files(request)
+                    serializer.validated_data['client_files'] = [] # avoid file info duplication
 
-            # Create a temporary copy of the parameters we will try to create the task with
-            data = copy(serializer.data)
+                # Refresh the db value with the updated file list and other request parameters
+                db_data = serializer.save()
+                self._object.data = db_data
+                self._object.save()
 
-            for optional_field in ['job_file_mapping', 'server_files_exclude']:
-                if optional_field in serializer.validated_data:
-                    data[optional_field] = serializer.validated_data[optional_field]
+                # Create a temporary copy of the parameters we will try to create the task with
+                data = copy(serializer.data)
 
-            if (
-                data['sorting_method'] == models.SortingMethod.PREDEFINED
-                and (uploaded_files := data['client_files'])
-                and (
-                    uploaded_file_order := serializer.validated_data[self._UPLOAD_FILE_ORDER_FIELD]
-                )
-            ):
-                # In the case of predefined sorting and custom file ordering,
-                # the requested order must be applied
-                data['client_files'] = self._sort_uploaded_files(
-                    uploaded_files, uploaded_file_order
-                )
+                for optional_field in ['job_file_mapping', 'server_files_exclude']:
+                    if optional_field in serializer.validated_data:
+                        data[optional_field] = serializer.validated_data[optional_field]
 
-            data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
-            data['use_cache'] = serializer.validated_data['use_cache']
-            data['copy_data'] = serializer.validated_data['copy_data']
+                if (
+                    data['sorting_method'] == models.SortingMethod.PREDEFINED
+                    and (uploaded_files := data['client_files'])
+                    and (
+                        uploaded_file_order := serializer.validated_data[self._UPLOAD_FILE_ORDER_FIELD]
+                    )
+                ):
+                    # In the case of predefined sorting and custom file ordering,
+                    # the requested order must be applied
+                    data['client_files'] = self._sort_uploaded_files(
+                        uploaded_files, uploaded_file_order
+                    )
 
-            if data['use_cache']:
-                self._object.data.storage_method = StorageMethodChoice.CACHE
-                self._object.data.save(update_fields=['storage_method'])
-            if data['server_files'] and not data.get('copy_data'):
-                self._object.data.storage = StorageChoice.SHARE
-                self._object.data.save(update_fields=['storage'])
-            if db_data.cloud_storage:
-                self._object.data.storage = StorageChoice.CLOUD_STORAGE
-                self._object.data.save(update_fields=['storage'])
-            if 'stop_frame' not in serializer.validated_data:
-                # if the value of stop_frame is 0, then inside the function we cannot know
-                # the value specified by the user or it's default value from the database
-                data['stop_frame'] = None
+                data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+                data['use_cache'] = serializer.validated_data['use_cache']
+                data['copy_data'] = serializer.validated_data['copy_data']
+
+                if data['use_cache']:
+                    self._object.data.storage_method = StorageMethodChoice.CACHE
+                    self._object.data.save(update_fields=['storage_method'])
+                if data['server_files'] and not data.get('copy_data'):
+                    self._object.data.storage = StorageChoice.SHARE
+                    self._object.data.save(update_fields=['storage'])
+                if db_data.cloud_storage:
+                    self._object.data.storage = StorageChoice.CLOUD_STORAGE
+                    self._object.data.save(update_fields=['storage'])
+                if 'stop_frame' not in serializer.validated_data:
+                    # if the value of stop_frame is 0, then inside the function we cannot know
+                    # the value specified by the user or it's default value from the database
+                    data['stop_frame'] = None
+
+            # Need to process task data when the transaction is committed
             task.create(self._object, data, request)
+
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-        elif self.action == 'import_backup':
+
+        @transaction.atomic
+        def _handle_upload_backup(request):
             filename = request.query_params.get("filename", "")
             if filename:
                 tmp_dir = backup.get_backup_dirname()
@@ -1086,6 +1092,14 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 return Response(data='No such file were uploaded',
                         status=status.HTTP_400_BAD_REQUEST)
             return backup.import_task(request, settings.CVAT_QUEUES.IMPORT_DATA.value)
+
+        if self.action == 'annotations':
+            return _handle_upload_annotations(request)
+        elif self.action == 'data':
+            return _handle_upload_data(request)
+        elif self.action == 'import_backup':
+            return _handle_upload_backup(request)
+
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -1180,17 +1194,25 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def data(self, request, pk):
         self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
-            task_data = self._object.data
-            if not task_data:
-                task_data = Data.objects.create()
-                task_data.make_dirs()
-                self._object.data = task_data
-                self._object.save()
-            elif task_data.size != 0:
-                return Response(data='Adding more data is not supported',
-                    status=status.HTTP_400_BAD_REQUEST)
-            return self.upload_data(request)
-
+            with transaction.atomic():
+                # Need to make sure that only one Data object can be attached to the task,
+                # otherwise this can lead to many problems such as Data objects without a task,
+                # multiple RQ data processing jobs at least.
+                # It is not possible to use select_for_update with GROUP BY statement and
+                # other aggregations that are defined by the viewset queryset,
+                # we just need to lock 1 row with the target Task entity.
+                locked_instance = Task.objects.select_for_update().get(pk=pk)
+                task_data = locked_instance.data
+                if not task_data:
+                    task_data = Data.objects.create()
+                    task_data.make_dirs()
+                    locked_instance.data = task_data
+                    self._object.data = task_data
+                    locked_instance.save()
+                elif task_data.size != 0:
+                    return Response(data='Adding more data is not supported',
+                        status=status.HTTP_400_BAD_REQUEST)
+                return self.upload_data(request)
         else:
             data_type = request.query_params.get('type', None)
             data_num = request.query_params.get('number', None)
@@ -1389,8 +1411,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         )
         serializer = RqStatusSerializer(data=response)
 
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
 
     @staticmethod
     def _get_rq_response(queue, job_id):
@@ -1399,7 +1421,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
-        elif job.is_queued:
+        elif job.is_queued or job.is_deferred:
             response = { "state": "Queued" }
         elif job.is_failed:
             # FIXME: It seems that in some cases exc_info can be None.
@@ -2846,8 +2868,7 @@ def rq_exception_handler(rq_job, exc_type, exc_value, tb):
 def _download_file_from_bucket(db_storage, filename, key):
     storage = db_storage_to_storage_instance(db_storage)
 
-    data = storage.download_fileobj(key)
-    with open(filename, 'wb+') as f:
+    with storage.download_fileobj(key) as data, open(filename, 'wb+') as f:
         f.write(data.getbuffer())
 
 def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
@@ -2919,7 +2940,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                     delete=False) as tf:
                     filename = tf.name
 
-                dependent_job = configure_dependent_job(
+                dependent_job = configure_dependent_job_to_download_from_cs(
                     queue=queue,
                     rq_id=rq_id,
                     rq_func=_download_file_from_bucket,
@@ -2932,24 +2953,29 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 )
 
         av_scan_paths(filename)
-        meta = {
-            'tmp_file': filename,
-        }
-        rq_job = queue.enqueue_call(
-            func=import_resource_with_clean_up_after,
-            args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
-            job_id=rq_id,
-            depends_on=dependent_job,
-            meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)},
-            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-        )
+        user_id = request.user.id
+
+        with get_rq_lock_by_user(queue, user_id, additional_condition=not dependent_job):
+            rq_job = queue.enqueue_call(
+                func=import_resource_with_clean_up_after,
+                args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
+                job_id=rq_id,
+                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                meta={
+                    'tmp_file': filename,
+                    **get_rq_job_meta(request=request, db_obj=db_obj),
+                },
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+            )
         serializer = RqIdSerializer(data={'rq_id': rq_id})
         serializer.is_valid(raise_exception=True)
 
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     else:
         if rq_job.is_finished:
+            if rq_job.dependency:
+                rq_job.dependency.delete()
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \
@@ -2995,7 +3021,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
             rq_job.delete()
         else:
             if rq_job.is_finished:
-                file_path = rq_job.return_value
+                file_path = rq_job.return_value()
                 if action == "download" and osp.exists(file_path):
                     rq_job.delete()
 
@@ -3058,12 +3084,18 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         'job': dm.views.JOB_CACHE_TTL,
     }
     ttl = TTL_CONSTS[db_instance.__class__.__name__.lower()].total_seconds()
-    queue.enqueue_call(
-        func=callback,
-        args=(db_instance.id, format_name, server_address),
-        job_id=rq_id,
-        meta=get_rq_job_meta(request=request, db_obj=db_instance),
-        result_ttl=ttl, failure_ttl=ttl)
+    user_id = request.user.id
+
+    with get_rq_lock_by_user(queue, user_id):
+        queue.enqueue_call(
+            func=callback,
+            args=(db_instance.id, format_name, server_address),
+            job_id=rq_id,
+            meta=get_rq_job_meta(request=request, db_obj=db_instance),
+            depends_on=define_dependent_job(queue, user_id),
+            result_ttl=ttl,
+            failure_ttl=ttl,
+        )
     return Response(status=status.HTTP_202_ACCEPTED)
 
 def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
@@ -3119,7 +3151,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 delete=False) as tf:
                 filename = tf.name
 
-            dependent_job = configure_dependent_job(
+            dependent_job = configure_dependent_job_to_download_from_cs(
                 queue=queue,
                 rq_id=rq_id,
                 rq_func=_download_file_from_bucket,
@@ -3131,18 +3163,21 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
-        rq_job = queue.enqueue_call(
-            func=import_resource_with_clean_up_after,
-            args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
-            job_id=rq_id,
-            meta={
-                'tmp_file': filename,
-                **get_rq_job_meta(request=request, db_obj=db_obj),
-            },
-            depends_on=dependent_job,
-            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-        )
+        user_id = request.user.id
+
+        with get_rq_lock_by_user(queue, user_id, additional_condition=not dependent_job):
+            rq_job = queue.enqueue_call(
+                func=import_resource_with_clean_up_after,
+                args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
+                job_id=rq_id,
+                meta={
+                    'tmp_file': filename,
+                    **get_rq_job_meta(request=request, db_obj=db_obj),
+                },
+                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+            )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 

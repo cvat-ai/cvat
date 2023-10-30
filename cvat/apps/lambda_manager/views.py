@@ -10,6 +10,7 @@ import json
 import os
 import textwrap
 from copy import deepcopy
+from datetime import timedelta
 from enum import Enum
 from functools import wraps
 from typing import Any, Dict, Optional
@@ -37,6 +38,7 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer, FunctionCallSerializer
 )
+from cvat.apps.engine.utils import define_dependent_job, get_rq_job_meta, get_rq_lock_by_user
 from cvat.utils.http import make_requests_session
 from cvat.apps.iam.permissions import LambdaPermission
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
@@ -479,6 +481,9 @@ class LambdaFunction:
         return base64.b64encode(image[0].getvalue()).decode('utf-8')
 
 class LambdaQueue:
+    RESULT_TTL = timedelta(minutes=30)
+    FAILED_TTL = timedelta(hours=3)
+
     def _get_queue(self):
         return django_rq.get_queue(settings.CVAT_QUEUES.AUTO_ANNOTATION.value)
 
@@ -495,7 +500,7 @@ class LambdaQueue:
         return [LambdaJob(job) for job in jobs if job.meta.get("lambda")]
 
     def enqueue(self,
-        lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance,
+        lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance, request,
         *,
         job: Optional[int] = None
     ) -> LambdaJob:
@@ -513,21 +518,36 @@ class LambdaQueue:
         # with invocation of non-trivial functions. For example, it cannot run
         # staticmethod, it cannot run a callable class. Thus I provide an object
         # which has __call__ function.
-        rq_job = queue.create_job(LambdaJob(None),
-            meta = { "lambda": True },
-            kwargs = {
-                "function": lambda_func,
-                "threshold": threshold,
-                "task": task,
-                "job": job,
-                "quality": quality,
-                "cleanup": cleanup,
-                "conv_mask_to_poly": conv_mask_to_poly,
-                "mapping": mapping,
-                "max_distance": max_distance
-            })
+        user_id = request.user.id
 
-        queue.enqueue_job(rq_job)
+        with get_rq_lock_by_user(queue, user_id):
+            rq_job = queue.create_job(LambdaJob(None),
+                meta={
+                    **get_rq_job_meta(
+                        request,
+                        db_obj=(
+                            Job.objects.get(pk=job) if job else Task.objects.get(pk=task)
+                        ),
+                    ),
+                    "lambda": True,
+                },
+                kwargs={
+                    "function": lambda_func,
+                    "threshold": threshold,
+                    "task": task,
+                    "job": job,
+                    "quality": quality,
+                    "cleanup": cleanup,
+                    "conv_mask_to_poly": conv_mask_to_poly,
+                    "mapping": mapping,
+                    "max_distance": max_distance
+                },
+                depends_on=define_dependent_job(queue, user_id),
+                result_ttl=self.RESULT_TTL.total_seconds(),
+                failure_ttl=self.FAILED_TTL.total_seconds(),
+            )
+
+            queue.enqueue_job(rq_job)
 
         return LambdaJob(rq_job)
 
@@ -546,7 +566,7 @@ class LambdaJob:
 
     def to_dict(self):
         lambda_func = self.job.kwargs.get("function")
-        return {
+        dict_ =  {
             "id": self.job.id,
             "function": {
                 "id": lambda_func.id if lambda_func else None,
@@ -563,6 +583,10 @@ class LambdaJob:
             "ended": self.job.ended_at,
             "exc_info": self.job.exc_info
         }
+        if dict_['status'] == rq.job.JobStatus.DEFERRED:
+            dict_['status'] = rq.job.JobStatus.QUEUED.value
+
+        return dict_
 
     def get_task(self):
         return self.job.kwargs.get("task")
@@ -1114,7 +1138,7 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         lambda_func = gateway.get(function)
         rq_job = queue.enqueue(lambda_func, threshold, task, quality,
-            mapping, cleanup, conv_mask_to_poly, max_distance, job=job)
+            mapping, cleanup, conv_mask_to_poly, max_distance, request, job=job)
 
         response_serializer = FunctionCallSerializer(rq_job.to_dict())
         return response_serializer.data
