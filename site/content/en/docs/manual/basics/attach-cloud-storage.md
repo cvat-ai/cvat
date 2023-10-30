@@ -295,16 +295,13 @@ Fill in the following fields:
 
 After filling in all the fields, click **Submit**.
 
-
 ### Video tutorial: Add Google Cloud as Cloud Storage in CVAT
 
 <!--lint disable maximum-line-length-->
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/pl2KZqJouvI?si=58sziJGbHHc-Mcom" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
-
 <!--lint enable maximum-line-length-->
-
 
 ## Microsoft Azure
 
@@ -444,9 +441,7 @@ After filling in all the fields, click **Submit**.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/nvrm8oFBKMY?si=v2z6Rjlc250niXPX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
-
 <!--lint enable maximum-line-length-->
-
 
 ## Prepare the dataset
 
@@ -459,4 +454,3 @@ For example, the dataset is [The Oxford-IIIT Pet Dataset](https://www.robots.ox.
 ```bash
 python <cvat repository>/utils/dataset_manifest/create.py --output-dir <your_folder> <your_folder>
 ```
-
