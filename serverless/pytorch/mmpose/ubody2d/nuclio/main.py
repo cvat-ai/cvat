@@ -16,11 +16,11 @@ def process_one_image(img, detector, pose_estimator, threshold):
     category_ids = [0]
     # predict bbox
     det_result = inference_detector(detector, img)
-    pred_instance = det_result.pred_instances.cpu().numpy()
+    pred_instances = det_result.pred_instances.cpu().numpy()
     bboxes = np.concatenate(
-        (pred_instance.bboxes, pred_instance.scores[:, None]), axis=1)
-    bboxes = bboxes[np.logical_and(pred_instance.labels == category_ids,
-                                   pred_instance.scores > threshold)]
+        (pred_instances.bboxes, pred_instances.scores[:, None]), axis=1)
+    bboxes = bboxes[np.logical_and(pred_instances.labels == category_ids,
+                                   pred_instances.scores > threshold)]
     bboxes = bboxes[nms(bboxes, threshold), :4]
 
     # predict keypoints
