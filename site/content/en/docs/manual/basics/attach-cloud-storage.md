@@ -35,9 +35,9 @@ See:
   - [Attach Azure Blob Container](#attach-azure-blob-container)
 - [Prepare the dataset](#prepare-the-dataset)
 - [Video tutorials](#video-tutorials)
-  - [Add AWS as Cloud Storage in CVAT](#add-aws-as-cloud-storage-in-cvat)
-  - [Add Microsoft Azure Blob as Cloud Storage in CVAT](#add-microsoft-azure-blob-as-cloud-storage-in-cvat)
-  - [Add Google Cloud as Cloud Storage in CVAT](#add-google-cloud-as-cloud-storage-in-cvat)
+  - [Add AWS S3 as Cloud Storage in CVAT](#add-aws-s3-as-cloud-storage-in-cvat)
+  - [Add Microsoft Azure Blob Storage as Cloud Storage in CVAT](#add-microsoft-azure-blob-storage-as-cloud-storage-in-cvat)
+  - [Add Google Cloud Storage as Cloud Storage in CVAT](#add-google-cloud-storage-as-cloud-storage-in-cvat)
 
 ## AWS S3
 
