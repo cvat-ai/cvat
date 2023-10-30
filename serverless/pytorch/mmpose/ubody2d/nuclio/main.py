@@ -57,7 +57,7 @@ def handler(context, event):
                 "elements": [{
                     "label": element["name"],
                     "type": "points",
-                    "outside": 0 if keypoint_scores[element["id"]] > 0.66 and keypoint_scores[element["id"]] < 0.98 else 1,
+                    "outside": 0 if 0.66 < keypoint_scores[element["id"]] < 0.98 else 1,
                     "points": [
                         float(keypoints[element["id"]][0]),
                         float(keypoints[element["id"]][1])
