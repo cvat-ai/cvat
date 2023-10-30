@@ -70,13 +70,11 @@ def handler(context, event):
     data = event.body
     buf = io.BytesIO(base64.b64decode(data["image"]))
     threshold = float(data.get("threshold", 0.3))
-
-    r, g, b = Image.open(buf).convert('RGB').split()
-    image = Image.merge('RGB', (b, g, r))
+    image = Image.open(buf).convert('RGB')
 
     results = []
     pred_instances = process_one_image(
-        np.array(image),
+        np.array(image)[...,::-1],
         context.user_data.detector,
         context.user_data.pose_estimator,
         threshold
