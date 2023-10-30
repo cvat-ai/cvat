@@ -435,7 +435,7 @@ python <cvat repository>/utils/dataset_manifest/create.py --output-dir <your_fol
 
 ## Video tutorials
 
-### Add AWS as Cloud Storage in CVAT
+### Add AWS S3 as Cloud Storage in CVAT
 
 <!--lint disable maximum-line-length-->
 
