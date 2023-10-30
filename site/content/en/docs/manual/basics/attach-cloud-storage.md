@@ -5,8 +5,8 @@ weight: 23
 description: 'Instructions on how to attach cloud storage using UI'
 ---
 
-In CVAT you can use **AWS S3**, **Azure Blob Container**
-and **Google Cloud** storages to import and export
+In CVAT you can use **AWS S3**, **Azure Blob Storage Container**
+and **Google Cloud Storage** storages to import and export
 image datasets for your tasks.
 
 See:
@@ -18,24 +18,24 @@ See:
     - [Authorized access](#authorized-access)
     - [Anonymous access](#anonymous-access)
   - [Attach AWS S3 storage](#attach-aws-s3-storage)
-  - [AWS manifest file](#aws-manifest-file)
-  - [Video tutorial: Add AWS as Cloud Storage in CVAT](#video-tutorial-add-aws-as-cloud-storage-in-cvat)
-- [Google Cloud](#google-cloud)
+  - [AWS S3 manifest file](#aws-s3-manifest-file)
+  - [Video tutorial: Add AWS S3 as Cloud Storage in CVAT](#video-tutorial-add-aws-s3-as-cloud-storage-in-cvat)
+- [Google Cloud Storage](#google-cloud-storage)
   - [Create a bucket](#create-a-bucket-1)
   - [Upload data](#upload-data-1)
   - [Access permissions](#access-permissions-1)
     - [Authorized access](#authorized-access-1)
     - [Anonymous access](#anonymous-access-1)
-  - [Attach Google Cloud storage](#attach-google-cloud-storage)
-  - [Video tutorial: Add Google Cloud as Cloud Storage in CVAT](#video-tutorial-add-google-cloud-as-cloud-storage-in-cvat)
-- [Microsoft Azure](#microsoft-azure)
+  - [Attach Google Cloud Storage](#attach-google-cloud-storage)
+  - [Video tutorial: Add Google Cloud Storage as Cloud Storage in CVAT](#video-tutorial-add-google-cloud-storage-as-cloud-storage-in-cvat)
+- [Microsoft Azure Blob Storage](#microsoft-azure-blob-storage)
   - [Create a bucket](#create-a-bucket-2)
   - [Create a container](#create-a-container)
   - [Upload data](#upload-data-2)
   - [SAS token and connection string](#sas-token-and-connection-string)
   - [Personal use](#personal-use)
-  - [Attach Azure Blob Container](#attach-azure-blob-container)
-  - [Video tutorial: Add Microsoft Azure Blob as Cloud Storage in CVAT](#video-tutorial-add-microsoft-azure-blob-as-cloud-storage-in-cvat)
+  - [Attach Azure Blob Storage Container](#attach-azure-blob-storage-container)
+  - [Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT](#video-tutorial-add-microsoft-azure-blob-storage-as-cloud-storage-in-cvat)
 - [Prepare the dataset](#prepare-the-dataset)
 
 ## AWS S3
@@ -44,7 +44,7 @@ See:
 
 To create bucket, do the following:
 
-1. Create an [AWS account](https://portal.aws.amazon.com/billing/signup#/start).
+1. Create an [AWS S3 account](https://portal.aws.amazon.com/billing/signup#/start).
 2. Go to [console AWS-S3](https://s3.console.aws.amazon.com/s3/home), and click **Create bucket**.
 
    ![](/images/aws-s3_tutorial_1.jpg)
@@ -99,7 +99,7 @@ To add access permissions, do the following:
 ![](/images/aws-s3_tutorial_4.jpg)
 
 For more information,
-see [Creating an IAM user in your AWS account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html)
+see [Creating an IAM user in your AWS S3 account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html)
 
 #### Anonymous access
 
@@ -133,13 +133,13 @@ Fill in the following fields:
 
 After filling in all the fields, click **Submit**.
 
-### AWS manifest file
+### AWS S3 manifest file
 
 > **Note**: manifest file is optional.
 
 To prepare the manifest file, do the following:
 
-1. Go to [**AWS cli**](https://aws.amazon.com/cli/) and run
+1. Go to [**AWS S3 cli**](https://aws.amazon.com/cli/) and run
    [script for prepare manifest file](https://github.com/cvat-ai/cvat/tree/develop/utils/dataset_manifest).
 2. Perform the installation, following the [**aws-shell manual**](https://github.com/awslabs/aws-shell),
    <br>You can configure credentials by running `aws configure`.
@@ -176,21 +176,21 @@ aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
 
 ![](/images/aws-s3_tutorial_5.jpg)
 
-### Video tutorial: Add AWS as Cloud Storage in CVAT
+### Video tutorial: Add AWS S3 as Cloud Storage in CVAT
 
 <!--lint disable maximum-line-length-->
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/y6fgZ4X87Lc?si=5EewLS4XA7birS25" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 <!--lint enable maximum-line-length-->
 
-## Google Cloud
+## Google Cloud Storage
 
 ### Create a bucket
 
 To create bucket, do the following:
 
 1. Create [Google account](https://support.google.com/accounts/answer/27441?hl=en) and log into it.
-2. On the [Google Cloud](https://cloud.google.com/) page, click **Start Free**, then enter the required
+2. On the [Google Cloud Storage](https://cloud.google.com/) page, click **Start Free**, then enter the required
    data and accept the terms of service.
    > **Note:** Google requires to add payment, you will need a bank card to accomplish step 2.
 3. [Create a Bucket](https://cloud.google.com/storage/docs/creating-buckets) with the following parameters:
@@ -233,7 +233,7 @@ For authorized access you need to create a service account and key file.
 
 To create a service account:
 
-1. In Google Cloud platform, go to **IAM & Admin** > **Service Accounts** and click **+Create Service Account**.
+1. On the Google Cloud Storage platform, go to **IAM & Admin** > **Service Accounts** and click **+Create Service Account**.
 2. Enter your account name and click **Create And Continue**.
 3. Select a role, for example **Basic** > **Viewer**, and click **Continue**.
 4. (Optional) Give access rights to the service account.
@@ -264,9 +264,9 @@ To configure anonymous access:
 
 ![](/images/google_cloud_storage_tutorial4.jpg)
 
-Now you can attach Google Cloud bucket to CVAT.
+Now you can attach the Google Cloud Storage bucket to CVAT.
 
-### Attach Google Cloud storage
+### Attach Google Cloud Storage
 
 To attach storage, do the following:
 
@@ -279,7 +279,7 @@ Fill in the following fields:
 
 <!--lint disable maximum-line-length-->
 
-| CVAT                   | Google Cloud                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| CVAT                   | Google Cloud     Storage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Display name**       | Preferred display name for your storage.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | **Description**        | (Optional) Add description of storage.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
@@ -295,7 +295,7 @@ Fill in the following fields:
 
 After filling in all the fields, click **Submit**.
 
-### Video tutorial: Add Google Cloud as Cloud Storage in CVAT
+### Video tutorial: Add Google Cloud Storage as Cloud Storage in CVAT
 
 <!--lint disable maximum-line-length-->
 
@@ -303,7 +303,7 @@ After filling in all the fields, click **Submit**.
 
 <!--lint enable maximum-line-length-->
 
-## Microsoft Azure
+## Microsoft Azure Blob Storage
 
 ### Create a bucket
 
@@ -410,7 +410,7 @@ To get the **Access Key**:
 
 ![](/images/azure_blob_container_tutorial8.jpg)
 
-### Attach Azure Blob Container
+### Attach Azure Blob Storage Container
 
 To attach storage, do the following:
 
@@ -435,7 +435,7 @@ Fill in the following fields:
 
 After filling in all the fields, click **Submit**.
 
-### Video tutorial: Add Microsoft Azure Blob as Cloud Storage in CVAT
+### Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT
 
 <!--lint disable maximum-line-length-->
 
