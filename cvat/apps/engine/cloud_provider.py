@@ -256,7 +256,7 @@ class _CloudStorage(ABC):
 
         search_prefix = prefix
         if self.prefix and (len(prefix) < len(self.prefix)):
-            if '/' in self.prefix[len(prefix):]:
+            if prefix and '/' in self.prefix[len(prefix):]:
                 next_layer_and_tail = self.prefix[prefix.find('/') + 1:].split(
                     "/", maxsplit=1
                 )
