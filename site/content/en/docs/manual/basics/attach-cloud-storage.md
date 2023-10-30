@@ -444,7 +444,7 @@ python <cvat repository>/utils/dataset_manifest/create.py --output-dir <your_fol
 
 <!--lint enable maximum-line-length-->
 
-### Add Microsoft Azure Blob as Cloud Storage in CVAT
+### Add Microsoft Azure Blob Storage as Cloud Storage in CVAT
 
 <!--lint disable maximum-line-length-->
 
