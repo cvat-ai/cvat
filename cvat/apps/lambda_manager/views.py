@@ -718,10 +718,18 @@ class LambdaJob:
                 if shape["type"] == "skeleton":
                     parsed_elements = list(map(lambda x: parse_anno(x, label['sublabels']), anno["elements"]))
 
+                    # find a center to set position of lack points
+                    center = [0, 0]
+                    for element in parsed_elements:
+                        center[0] += element["points"][0]
+                        center[1] += element["points"][1]
+                    center[0] /= len(parsed_elements) or 1
+                    center[1] /= len(parsed_elements) or 1
+
                     def _map(sublabel):
                         sublabel_name, sublabel_body = sublabel
                         parsed_element = next(filter(lambda x: x['label_id'] == sublabel_body['id'], parsed_elements), None)
-                        not_parsed_element = next(filter(lambda x: x['label'] == sublabel_name, anno["elements"]))
+                        not_parsed_element = next(filter(lambda x: x['label'] == sublabel_name, anno["elements"]), None)
 
                         if parsed_element:
                             parsed_element.update({
@@ -738,7 +746,7 @@ class LambdaJob:
                             "group": None,
                             "type": sublabel_body['type'],
                             "occluded": False,
-                            "points": [0, 0],
+                            "points": center,
                             "outside": True,
                             "z_order": 0,
                         }

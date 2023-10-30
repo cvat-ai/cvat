@@ -1260,6 +1260,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 };
 
                                 if (data.type === ShapeType.SKELETON && jobLabel.type === ShapeType.SKELETON) {
+                                    // find a center of the skeleton
+                                    // to set this center as outside points position
+                                    const center = data.elements.reduce<[number, number]>((acc, { points }) => {
+                                        if (points) {
+                                            return [acc[0] + points[0], acc[1] + points[1]];
+                                        }
+                                        return acc;
+                                    }, [0, 0]).map((el) => el / (data.elements.length || 1));
+
                                     const elements = (jobLabel.structure?.sublabels || []).map((sublabel) => {
                                         const element = data.elements.find((el) => el.label === sublabel.name);
                                         return {
@@ -1269,7 +1278,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             attributes: {},
                                             frame,
                                             source: core.enums.Source.AUTO,
-                                            points: [0, 0],
+                                            points: [...center],
                                             occluded: false,
                                             outside: true,
                                             ...(element ? {
