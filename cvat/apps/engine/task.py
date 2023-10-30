@@ -20,8 +20,6 @@ import pytz
 import concurrent.futures
 import queue
 
-from PIL import Image
-
 from django.conf import settings
 from django.db import transaction
 from datetime import datetime
