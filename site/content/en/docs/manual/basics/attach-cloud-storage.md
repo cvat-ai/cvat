@@ -34,7 +34,7 @@ See:
   - [Upload data](#upload-data-2)
   - [SAS token and connection string](#sas-token-and-connection-string)
   - [Personal use](#personal-use)
-  - [Attach Azure Blob Storage](#attach-azure-blob-storage)
+  - [Attach Azure Blob Storage Container](#attach-azure-blob-storage-container)
   - [Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT](#video-tutorial-add-microsoft-azure-blob-storage-as-cloud-storage-in-cvat)
 - [Prepare the dataset](#prepare-the-dataset)
 
@@ -44,7 +44,7 @@ See:
 
 To create bucket, do the following:
 
-1. Create an [AWS S3 account](https://portal.aws.amazon.com/billing/signup#/start).
+1. Create an [AWS account](https://portal.aws.amazon.com/billing/signup#/start).
 2. Go to [console AWS-S3](https://s3.console.aws.amazon.com/s3/home), and click **Create bucket**.
 
    ![](/images/aws-s3_tutorial_1.jpg)
@@ -99,7 +99,7 @@ To add access permissions, do the following:
 ![](/images/aws-s3_tutorial_4.jpg)
 
 For more information,
-see [Creating an IAM user in your AWS S3 account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html)
+see [Creating an IAM user in your AWS account](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html)
 
 #### Anonymous access
 
@@ -190,7 +190,7 @@ aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
 To create bucket, do the following:
 
 1. Create [Google account](https://support.google.com/accounts/answer/27441?hl=en) and log into it.
-2. On the [Google Cloud Storage](https://cloud.google.com/) page, click **Start Free**, then enter the required
+2. On the [Google Cloud](https://cloud.google.com/) page, click **Start Free**, then enter the required
    data and accept the terms of service.
    > **Note:** Google requires to add payment, you will need a bank card to accomplish step 2.
 3. [Create a Bucket](https://cloud.google.com/storage/docs/creating-buckets) with the following parameters:
@@ -233,7 +233,7 @@ For authorized access you need to create a service account and key file.
 
 To create a service account:
 
-1. On the Google Cloud Storage platform, go to **IAM & Admin** > **Service Accounts** and click **+Create Service Account**.
+1. On the Google Cloud platform, go to **IAM & Admin** > **Service Accounts** and click **+Create Service Account**.
 2. Enter your account name and click **Create And Continue**.
 3. Select a role, for example **Basic** > **Viewer**, and click **Continue**.
 4. (Optional) Give access rights to the service account.
