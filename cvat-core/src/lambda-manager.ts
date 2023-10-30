@@ -6,7 +6,7 @@
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { ModelProviders, RQStatus } from './enums';
+import { RQStatus } from './enums';
 
 export interface ModelProvider {
     name: string;
@@ -19,15 +19,7 @@ export enum ModelRequestStatus {
     STARTED = 'started',
 }
 
-export interface ModelProxy {
-    run: (body: any) => Promise<any>;
-    call: (modelID: string | number, body: any) => Promise<any>;
-    status: (requestID: string) => Promise<any>;
-    cancel: (requestID: string) => Promise<any>;
-}
-
 class LambdaManager {
-    private proxyMap: Record<string, ModelProxy>;
     private cachedList: MLModel[];
     private listening: Record<number, {
         onUpdate: ((status: RQStatus, progress: number, message?: string) => void)[];
@@ -37,9 +29,6 @@ class LambdaManager {
 
     constructor() {
         this.listening = {};
-        this.proxyMap = {
-            [ModelProviders.CVAT]: serverProxy.lambda,
-        };
         this.cachedList = [];
     }
 
@@ -55,23 +44,8 @@ class LambdaManager {
             );
         }
 
-        this.updateModelList(models);
-        return { models, count: lambdaFunctions.length };
-    }
-
-    updateModelList(models: MLModel[] = []): void {
         this.cachedList = models;
-    }
-
-    getCachedList(): MLModel[] {
-        return this.cachedList;
-    }
-
-    setModelProxyMap(proxyMap: Record<string, ModelProxy>): void {
-        this.proxyMap = {
-            ...proxyMap,
-            [ModelProviders.CVAT]: serverProxy.lambda,
-        };
+        return { models, count: lambdaFunctions.length };
     }
 
     async run(taskID: number, model: MLModel, args: any) {
@@ -95,7 +69,7 @@ class LambdaManager {
             function: model.id,
         };
 
-        const result = await this.modelProxy(model)?.run(body);
+        const result = await serverProxy.lambda.run(body);
         return result.id;
     }
 
@@ -108,7 +82,7 @@ class LambdaManager {
             ...args,
             task: taskID,
         };
-        const result = await this.modelProxy(model)?.call(model.id, body);
+        const result = await serverProxy.lambda.call(model.id, body);
         return result;
     }
 
@@ -132,7 +106,7 @@ class LambdaManager {
             delete this.listening[requestID];
         }
 
-        await this.modelProxy(model).cancel(requestID);
+        await serverProxy.lambda.cancel(requestID);
     }
 
     async listen(
@@ -151,7 +125,7 @@ class LambdaManager {
             return;
         }
         const timeoutCallback = (): void => {
-            this.modelProxy(model).status(requestID).then((response) => {
+            serverProxy.lambda.status(requestID).then((response) => {
                 const { status } = response;
                 if (requestID in this.listening) {
                     // check it was not cancelled
@@ -194,10 +168,6 @@ class LambdaManager {
             functionID,
             timeout: window.setTimeout(timeoutCallback),
         };
-    }
-
-    modelProxy(model: MLModel): ModelProxy | undefined {
-        return this.proxyMap[model.provider];
     }
 }
 
