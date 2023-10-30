@@ -410,7 +410,7 @@ To get the **Access Key**:
 
 ![](/images/azure_blob_container_tutorial8.jpg)
 
-### Attach Azure Blob Storage Container
+### Attach Azure Blob Storage
 
 To attach storage, do the following:
 
