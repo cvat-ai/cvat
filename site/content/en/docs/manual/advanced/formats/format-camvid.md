@@ -1,15 +1,29 @@
 ---
+title: 'CamVid'
 linkTitle: 'CamVid'
 weight: 10
+description: 'How to export and import data in CamVid format'
 ---
 
-# [CamVid](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)
+The CamVid (Cambridge-driving Labeled Video Database) format is most commonly used
+in the realm of semantic segmentation tasks. It is particularly useful for training
+and evaluating models for autonomous driving and other vision-based robotics
+applications.
 
+For more information, see:
+
+- [CamVid Specification](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/camvid_dataset)
 
 ## CamVid export
 
-Downloaded file: a zip archive of the following structure:
+For export of images and videos:
+
+- Supported annotations: Bounding Boxes, Polygons.
+- Attributes: Not supported.
+- Tracks: Not supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -41,14 +55,18 @@ Bicyclist
 Bridge
 ```
 
-Mask is a `png` image with 1 or 3 channels where each pixel
-has own color which corresponds to a label.
-`(0, 0, 0)` is used for background by default.
+A mask in the CamVid dataset is typically a **.png**
+image with either one or three channels.
 
-- supported annotations: Rectangles, Polygons
+In this image, each pixel is assigned a specific color
+that corresponds to a particular label.
+
+By default, the color `(0, 0, 0)`—or `black`—is used
+to represent the background.
 
 ## CamVid import
 
-Uploaded file: a zip archive of the structure above
+For import of images:
 
+- Uploaded file: a _.zip_ archive of the structure above
 - supported annotations: Polygons

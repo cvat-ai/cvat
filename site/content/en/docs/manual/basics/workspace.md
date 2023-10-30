@@ -1,38 +1,126 @@
 ---
-title: 'Workspace'
-linkTitle: 'Workspace'
+title: 'CVAT Workspace'
+linkTitle: 'CVAT Workspace'
 weight: 12
-description: 'Overview of available functions on the workspace of the annotation tool.'
+description: 'Overview of available functions of the CVAT workspace.'
 ---
 
-This is the main field in which drawing and editing objects takes place.
-In addition the workspace also has the following functions:
+In CVAT the workspace serves as the central hub where annotators
+interact with images, videos, and the various tools
+available to create high-quality annotations.
 
-- Right-clicking on an object calls up the `Object card` - this is an element containing
-  the necessary controls for changing the label and attributes of the object, as well as the action menu.
+![CVAT Workspace](/images/cvat-workspace.jpg)
 
-  ![](/images/image138_mapillary_vistas.jpg)
+The workspace includes the following elements:
 
-- Right-clicking a point deletes it.
+| Element | Description                                                                                         |
+| ------- | --------------------------------------------------------------------------------------------------- |
+| 1       | [Top Panel](/docs/manual/basics/top-panel/) and [basic navigation](/docs/manual/basics/top-panel/). |
+| 2       | [Controls sidebar](/docs/manual/basics/controls-sidebar/)                                           |
+| 3       | [Objects sidebar](docs/manual/basics/objects-sidebar/)                                              |
+| 4       | Image annotation area, described in this article.                                                   |
 
-  ![](/images/image139_mapillary_vistas.jpg)
+See:
 
-- `Z-axis slider` - Allows you to switch annotation layers hiding the upper layers
-  (slider is enabled if several z layers are on a frame).
-  This element has a button for adding a new layer. When pressed, a new layer is added and switched to it.
-  You can move objects in layers using the `+` and `-` keys.
+- [Image settings in CVAT](#image-settings-in-cvat)
+  - [Adding grid overlay to image in CVAT](#adding-grid-overlay-to-image-in-cvat)
+  - [Changing color settings of image is CVAT](#changing-color-settings-of-image-is-cvat)
+- [Adding layers and Z-axis slider](#adding-layers-and-z-axis-slider)
+- [Interacting with Objects](#interacting-with-objects)
 
-  ![](/images/image140.jpg)
+## Image settings in CVAT
 
-- `Image settings panel` -  used to set up the grid and set up image brightness contrast saturation.
+The **Image settings** panel serves
+as a versatile tool for fine-tuning the visual aspects of your image.
+Whether you need to brighten the image,
+increase contrast, or make other adjustments, this panel is your go-to.
 
-  - Show `Grid`, change grid size, choose color and transparency:
+Additionally, the panel allows you
+to overlay a grid on the image for more precise annotation.
 
-  ![](/images/image068_mapillary_vistas.jpg)
+> **Note**: Adjusting the image settings only
+> alters how the pictures are displayed.
+> The images themselves will remain unmodified and unchanged.
 
-  - Adjust `Brightness`/`Contrast`/`Saturation` of too exposed or too
-    dark images using color settings (it affects only how a user sees the image, not the image itself).
+By default, the **Image settings** panel is not visible. To access
+it, click on the **Arrow Up** (![Image Grid Icon](/images/image-grid-icon.jpg))
+icon located at the bottom of the workspace.
 
-  ![](/images/image164_mapillary_vistas.jpg)
+![Image quality panel](/images/image-quality-panel.jpg)
 
-  - `Reset color settings` to default values.
+### Adding grid overlay to image in CVAT
+
+To add the grid to the image, do the following:
+
+1. Open the **Image Settings** panel.
+2. Locate and check the box that
+   allows you to overlay a grid on the image.
+3. Specify the grid cell size in square millimeters
+   by entering the desired number in the **Size** field.
+4. From the **Color** drop-down list,
+   select the color of the grid.
+5. Use the Opacity slider to change the
+   transparency of the grid overlay.
+
+### Changing color settings of image in CVAT
+
+To change the color setting of the image is CVAT, do the following:
+
+1. Open the **Image Settings** panel.
+2. Use the slider to change the color quality.
+
+There are four color quality settings in CVAT:
+
+**Brightness** increases and decreases
+the overall lightness of the image:
+
+![Image Brightness](/images/image-settings-brightness.png)
+
+**Contrast** is the range of brightness,
+from lightest to darkest, in an image.
+
+![Image Brightness](/images/image-settings-contrast.png)
+
+**Saturation** describes the intensity of the color.
+
+![Image Saturation](/images/image-settings-saturation.png)
+
+**Gamma** correction can be used to
+control the overall brightness of an image
+
+![Gamma Correction](/images/image-settings-gamma.jpg)
+
+To reset the setting to default values, click
+**Reset color settings**
+
+## Adding layers and Z-axis slider
+
+**Z-axis Slider** enables you to add annotation layers while
+hiding the layers positioned beyond.
+
+You can also move between layers by moving the slider
+to the layer you need.
+
+The slider becomes active when multiple Z-layers are present within a frame.
+Click **+** on the slider to add a new layer;
+upon pressing it, a new layer is automatically created and activated.
+
+You can also relocate objects between layers using the **+** and **-** keys.
+
+![Z-Order Slider](/images/image140.jpg)
+
+## Interacting with Objects
+
+The workspace is also equipped with the following features:
+
+- Right-clicking an object opens the Object Card.
+  This interface contains essential controls
+  for modifying the object's label and attributes,
+  as well as providing access to an action menu.
+
+  ![Object card](/images/image138_mapillary_vistas.jpg)
+
+- Right-clicking on a polygon point will open a menu, from which you can
+  **Delete point** or **Set start point**.
+
+  ![Polygon menu](/images/image139_mapillary_vistas.jpg)

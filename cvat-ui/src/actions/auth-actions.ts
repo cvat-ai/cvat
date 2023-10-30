@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { UserConfirmation } from 'components/register-page/register-form';
-import { getCore } from 'cvat-core-wrapper';
+import { RegisterData } from 'components/register-page/register-form';
+import { getCore, User } from 'cvat-core-wrapper';
 import isReachable from 'utils/url-checker';
 
 const cvat = getCore();
@@ -36,6 +36,9 @@ export enum AuthActionTypes {
     LOAD_AUTH_ACTIONS = 'LOAD_AUTH_ACTIONS',
     LOAD_AUTH_ACTIONS_SUCCESS = 'LOAD_AUTH_ACTIONS_SUCCESS',
     LOAD_AUTH_ACTIONS_FAILED = 'LOAD_AUTH_ACTIONS_FAILED',
+    ACCEPT_INVITATION = 'ACCEPT_INVITATION',
+    ACCEPT_INVITATION_SUCCESS = 'ACCEPT_INVITATION_SUCCESS',
+    ACCEPT_INVITATION_FAILED = 'ACCEPT_INVITATION_FAILED',
 }
 
 export const authActions = {
@@ -73,19 +76,26 @@ export const authActions = {
         })
     ),
     loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
+    acceptInvitation: () => createAction(AuthActionTypes.ACCEPT_INVITATION),
+    acceptInvitationSuccess: (user: User) => createAction(AuthActionTypes.ACCEPT_INVITATION_SUCCESS, { user }),
+    acceptInvitationFailed: (error: any) => createAction(AuthActionTypes.ACCEPT_INVITATION_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
 
 export const registerAsync = (
-    username: string,
-    firstName: string,
-    lastName: string,
-    email: string,
-    password: string,
-    confirmations: UserConfirmation[],
+    registerData: RegisterData,
 ): ThunkAction => async (dispatch) => {
     dispatch(authActions.register());
+
+    const {
+        username,
+        firstName,
+        lastName,
+        email,
+        password,
+        confirmations,
+    } = registerData;
 
     try {
         const user = await cvat.server.register(
@@ -198,5 +208,39 @@ export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
         dispatch(authActions.loadServerAuthActionsSuccess(allowChangePassword, allowResetPassword));
     } catch (error) {
         dispatch(authActions.loadServerAuthActionsFailed(error));
+    }
+};
+
+export const acceptInvitationAsync = (
+    registerData: RegisterData,
+    key: string,
+    onSuccess?: (orgSlug: string) => void,
+): ThunkAction => async (dispatch) => {
+    dispatch(authActions.acceptInvitation());
+
+    const {
+        username,
+        firstName,
+        lastName,
+        email,
+        password,
+        confirmations,
+    } = registerData;
+
+    try {
+        const orgSlug = await cvat.organizations.acceptInvitation(
+            username,
+            firstName,
+            lastName,
+            email,
+            password,
+            confirmations,
+            key,
+        );
+
+        if (onSuccess) onSuccess(orgSlug);
+        dispatch(authActions.acceptInvitationSuccess(orgSlug));
+    } catch (error) {
+        dispatch(authActions.acceptInvitationFailed(error));
     }
 };

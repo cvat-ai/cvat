@@ -3,20 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-interface RawUserData {
-    id: number;
-    username: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    groups: string[];
-    last_login: string;
-    date_joined: string;
-    is_staff: boolean;
-    is_superuser: boolean;
-    is_active: boolean;
-    email_verification_required: boolean;
-}
+import { SerializedUser } from './server-response-types';
 
 export default class User {
     public readonly id: number;
@@ -24,7 +11,7 @@ export default class User {
     public readonly email: string;
     public readonly firstName: string;
     public readonly lastName: string;
-    public readonly groups: string[];
+    public readonly groups: ('user' | 'business' | 'admin')[];
     public readonly lastLogin: string;
     public readonly dateJoined: string;
     public readonly isStaff: boolean;
@@ -32,7 +19,7 @@ export default class User {
     public readonly isActive: boolean;
     public readonly isVerified: boolean;
 
-    constructor(initialData: RawUserData) {
+    constructor(initialData: SerializedUser) {
         const data = {
             id: null,
             username: null,
@@ -97,7 +84,7 @@ export default class User {
         );
     }
 
-    serialize(): RawUserData {
+    serialize(): Partial<SerializedUser> {
         return {
             id: this.id,
             username: this.username,

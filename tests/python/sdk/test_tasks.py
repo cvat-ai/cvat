@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import json
 import os.path as osp
 import zipfile
 from logging import Logger
@@ -199,40 +198,6 @@ class TestTaskUsecases:
 
         assert capture.match("No media data found")
         assert self.stdout.getvalue() == ""
-
-    @pytest.mark.with_external_services
-    def test_can_create_task_with_git_repo(self, fxt_image_file: Path):
-        pbar_out = io.StringIO()
-        pbar = make_pbar(file=pbar_out)
-
-        task_spec = {
-            "name": f"task with Git repo",
-            "labels": [{"name": "car"}],
-        }
-
-        repository_url = "root@gitserver:repos/repo.git [annotations/annot.zip]"
-
-        task = self.client.tasks.create_from_data(
-            spec=task_spec,
-            resource_type=ResourceType.LOCAL,
-            resources=[fxt_image_file],
-            pbar=pbar,
-            dataset_repository_url=repository_url,
-        )
-
-        assert task.size == 1
-        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
-        assert self.stdout.getvalue() == ""
-
-        git_get_response = self.client.api_client.rest_client.GET(
-            self.client.api_map.git_get(task.id),
-            headers=self.client.api_client.get_common_headers(),
-        )
-
-        response_json = json.loads(git_get_response.data)
-        assert response_json["url"]["value"] == repository_url
-        assert response_json["format"] == "CVAT for images 1.1"
-        assert response_json["lfs"] is False
 
     def test_can_upload_data_to_empty_task(self):
         pbar_out = io.StringIO()

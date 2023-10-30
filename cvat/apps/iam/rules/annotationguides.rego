@@ -47,7 +47,7 @@ is_target_staff {
     is_target_assignee
 }
 
-default allow = false
+default allow := false
 
 allow {
     utils.is_admin

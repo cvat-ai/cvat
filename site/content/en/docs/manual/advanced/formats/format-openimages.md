@@ -1,51 +1,49 @@
 ---
-linkTitle: 'Open Images V6'
+title: 'Open Images'
+linkTitle: 'Open Images'
 weight: 15
+description: 'How to export and import data in Open Images format'
 ---
 
-# [Open Images](https://storage.googleapis.com/openimages/web/index.html)
+The Open Images format is based on a large-scale, diverse dataset
+that contains object detection, object segmentation, visual relationship,
+and localized narratives annotations.
 
+Its export data format is compatible with many object detection and segmentation models.
+
+For more information, see:
+
+- [Open Images site](https://storage.googleapis.com/openimages/web/index.html)
 - [Format specification](https://storage.googleapis.com/openimages/web/download.html)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/open_images_dataset)
 
-- Supported annotations:
-
-  - Rectangles (detection task)
-  - Tags (classification task)
-  - Polygons (segmentation task)
-
-- Supported attributes:
-
-  - Labels
-
-    - `score` (should be defined for labels as `text` or `number`).
-      The confidence level from 0 to 1.
-
-  - Bounding boxes
-
-    - `score` (should be defined for labels as `text` or `number`).
-      The confidence level from 0 to 1.
-    - `occluded` (both UI option and a separate attribute).
-      Whether the object is occluded by another object.
-    - `truncated` (should be defined for labels as `checkbox` -es).
-      Whether the object extends beyond the boundary of the image.
-    - `is_group_of` (should be defined for labels as `checkbox` -es).
-      Whether the object represents a group of objects of the same class.
-    - `is_depiction` (should be defined for labels as `checkbox` -es).
-      Whether the object is a depiction (such as a drawing)
-      rather than a real object.
-    - `is_inside` (should be defined for labels as `checkbox` -es).
-      Whether the object is seen from the inside.
-
-  - Masks
-    - `box_id` (should be defined for labels as `text`).
-      An identifier for the bounding box associated with the mask.
-    - `predicted_iou` (should be defined for labels as `text` or `number`).
-      Predicted IoU value with respect to the ground truth.
-
 ## Open Images export
 
-Downloaded file: a zip archive of the following structure:
+For export of images:
+
+- Supported annotations: Bounding Boxes (detection),
+  Tags (classification), Polygons (segmentation).
+
+- Supported attributes:
+  - Tags: `score` must be defined for labels as `text` or `number`.
+    The confidence level from 0 to 1.
+  - Bounding boxes: <br>`score` must be defined for labels as `text` or `number`.
+    The confidence level from 0 to 1. <br> `occluded` as both UI option
+    and a separate attribute. Whether the object is occluded by another object. <br>`truncated`
+    must be defined for labels as `checkbox`. Whether the object extends beyond the boundary of the image.
+    <br>`is_group_of` must be defined for labels as `checkbox`. Whether the object
+    represents a group of objects of the same class. <br>`is_depiction` must be
+    defined for labels as `checkbox`. Whether the object is a depiction (such as a drawing)
+    rather than a real object. <br>`is_inside` must be defined
+    for labels as `checkbox`. Whether the object is seen from the inside.
+  - Masks:
+    <br>`box_id` must be defined for labels as `text`. An identifier for
+    the bounding box associated with the mask.
+    <br>`predicted_iou` must be defined for labels as `text` or `number`.
+    Predicted IoU value with respect to the ground truth.
+- Tracks: Not supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```
 └─ taskname.zip/

@@ -58,8 +58,10 @@ import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-pag
 
 import GuidePage from 'components/md-guide/guide-page';
 
+import AcceptInvitationPage from 'components/accept-invitation-page/accept-invitation-page';
+
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
-import { getCore } from 'cvat-core-wrapper';
+import { Organization, getCore } from 'cvat-core-wrapper';
 import { ErrorState, NotificationsState, PluginsState } from 'reducers';
 import { customWaViewHit } from 'utils/environment';
 import showPlatformNotification, {
@@ -75,7 +77,6 @@ import EmailVerificationSentPage from './email-confirmation-pages/email-verifica
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateModelPage from './create-model-page/create-model-page';
 import CreateJobPage from './create-job-page/create-job-page';
-import OrganizationWatcher from './watchers/organization-watcher';
 import AnalyticsPage from './analytics-page/analytics-page';
 
 interface CVATAppProps {
@@ -88,11 +89,11 @@ interface CVATAppProps {
     resetErrors: () => void;
     resetMessages: () => void;
     loadAuthActions: () => void;
-    loadOrganizations: () => void;
+    loadOrganization: () => void;
     userInitialized: boolean;
     userFetching: boolean;
-    organizationsFetching: boolean;
-    organizationsInitialized: boolean;
+    organizationFetching: boolean;
+    organizationInitialized: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
     modelsInitialized: boolean;
@@ -143,6 +144,22 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
         EventRecorder.initSave();
+
+        core.config.onOrganizationChange = (newOrgId: number | null) => {
+            if (newOrgId === null) {
+                localStorage.removeItem('currentOrganization');
+                window.location.reload();
+            } else {
+                core.organizations.get({
+                    filter: `{"and":[{"==":[{"var":"id"},${newOrgId}]}]}`,
+                }).then(([organization]: Organization[]) => {
+                    if (organization) {
+                        localStorage.setItem('currentOrganization', organization.slug);
+                        window.location.reload();
+                    }
+                });
+            }
+        };
 
         customWaViewHit(location.pathname, location.search, location.hash);
         history.listen((newLocation) => {
@@ -239,12 +256,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadUserAgreements,
             initPlugins,
             initModels,
-            loadOrganizations,
+            loadOrganization,
             loadAuthActions,
             userInitialized,
             userFetching,
-            organizationsFetching,
-            organizationsInitialized,
+            organizationFetching,
+            organizationInitialized,
             formatsInitialized,
             formatsFetching,
             aboutInitialized,
@@ -288,8 +305,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (!organizationsInitialized && !organizationsFetching) {
-            loadOrganizations();
+        if (!organizationInitialized && !organizationFetching) {
+            loadOrganization();
         }
 
         if (!formatsInitialized && !formatsFetching) {
@@ -394,7 +411,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             pluginsInitialized,
             formatsInitialized,
             modelsInitialized,
-            organizationsInitialized,
+            organizationInitialized,
             userAgreementsInitialized,
             authActionsInitialized,
             pluginComponents,
@@ -413,7 +430,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 formatsInitialized &&
                 pluginsInitialized &&
                 aboutInitialized &&
-                organizationsInitialized &&
+                organizationInitialized &&
                 (!isModelPluginActive || modelsInitialized)
             )
         );
@@ -425,6 +442,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         const loggedInModals = pluginComponents.loggedInModals
             .filter(({ data: { shouldBeRendered } }) => shouldBeRendered(this.props, this.state))
             .map(({ component: Component }) => Component);
+
+        const queryParams = new URLSearchParams(location.search);
 
         if (readyForRender) {
             if (user && user.isVerified) {
@@ -490,7 +509,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         )}
                                         <Redirect
                                             push
-                                            to={new URLSearchParams(location.search).get('next') || '/tasks'}
+                                            to={{
+                                                pathname: queryParams.get('next') || '/tasks',
+                                            }}
                                         />
                                     </Switch>
                                     <ExportDatasetModal />
@@ -500,7 +521,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     { loggedInModals.map((Component, idx) => (
                                         <Component key={idx} targetProps={this.props} targetState={this.state} />
                                     ))}
-                                    <OrganizationWatcher />
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>
@@ -513,6 +533,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return (
                 <GlobalErrorBoundary>
                     <Switch>
+                        <Route exact path='/auth/register/invitation' component={AcceptInvitationPage} />
                         <Route exact path='/auth/register' component={RegisterPageContainer} />
                         <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
                         <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />

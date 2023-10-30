@@ -252,6 +252,9 @@ keydb:
   - storage-provider: ["flash", "/data/flash"]
   - maxmemory: "5G"
   - maxmemory-policy: "allkeys-lfu"
+  resources:
+    requests:
+      memory: "7G"
 
 nuclio:
   enabled: false
@@ -306,6 +309,9 @@ clickhouse:
     username: user
     existingSecret: cvat-analytics-secret
     existingSecretKey: CLICKHOUSE_PASSWORD
+  # Consider enabling zookeeper if a distributed configuration is used
+  zookeeper:
+    enabled: false
 
 grafana:
   datasources:
@@ -383,11 +389,6 @@ ingress:
 #            name: backend-service
 #            port: 8080
 #        - path: /django-rq
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path: /git
 #          pathType: "Prefix"
 #          service:
 #            name: backend-service
