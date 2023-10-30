@@ -139,7 +139,7 @@ After filling in all the fields, click **Submit**.
 
 To prepare the manifest file, do the following:
 
-1. Go to [**AWS S3 cli**](https://aws.amazon.com/cli/) and run
+1. Go to [**AWS CLI**](https://aws.amazon.com/cli/) and run
    [script for prepare manifest file](https://github.com/cvat-ai/cvat/tree/develop/utils/dataset_manifest).
 2. Perform the installation, following the [**aws-shell manual**](https://github.com/awslabs/aws-shell),
    <br>You can configure credentials by running `aws configure`.
