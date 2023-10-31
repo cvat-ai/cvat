@@ -183,14 +183,6 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.list);
                 return result;
             },
-            async getCachedList() {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.getCachedList);
-                return result;
-            },
-            async updateModelList(models) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.updateModelList, models);
-                return result;
-            },
             async run(task, model, args) {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.run, task, model, args);
                 return result;
@@ -209,10 +201,6 @@ function build() {
             },
             async requests() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.requests);
-                return result;
-            },
-            async setModelProxyMap(proxyMap) {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.setModelProxyMap, proxyMap);
                 return result;
             },
         },
