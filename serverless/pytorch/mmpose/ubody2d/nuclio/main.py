@@ -38,6 +38,7 @@ def handler(context, event):
     context.logger.info("Run mmpose ubody-2d model")
     data = event.body
     buf = io.BytesIO(base64.b64decode(data["image"]))
+    threshold = data.get('threshold', 0.66)
     image = Image.open(buf).convert("RGB")
 
     results = []
@@ -54,7 +55,7 @@ def handler(context, event):
                 "elements": [{
                     "label": element["name"],
                     "type": "points",
-                    "outside": 0 if 0.66 < keypoint_scores[element["id"]] < 0.98 else 1,
+                    "outside": 0 if threshold < keypoint_scores[element["id"]] else 1,
                     "points": [
                         float(keypoints[element["id"]][0]),
                         float(keypoints[element["id"]][1])
