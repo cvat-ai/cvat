@@ -159,7 +159,7 @@ Canvas itself handles:
 - All drawn objects (shapes, tracks) have an id `cvat_canvas_shape_{objectState.clientID}`
 - Drawn shapes and tracks have classes `cvat_canvas_shape`,
   `cvat_canvas_shape_activated`,
-  `cvat_canvas_shape_grouping`,
+  `cvat_canvas_shape_selection`,
   `cvat_canvas_shape_merging`,
   `cvat_canvas_shape_drawing`,
   `cvat_canvas_shape_occluded`

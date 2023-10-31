@@ -18,6 +18,7 @@ import { MasksHandler, MasksHandlerImpl } from './masksHandler';
 import { EditHandler, EditHandlerImpl } from './editHandler';
 import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
+import { ObjectSelector, ObjectSelectorImpl } from './objectSelector';
 import { GroupHandler, GroupHandlerImpl } from './groupHandler';
 import { RegionSelector, RegionSelectorImpl } from './regionSelector';
 import { ZoomHandler, ZoomHandlerImpl } from './zoomHandler';
@@ -96,6 +97,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private splitHandler: SplitHandler;
     private groupHandler: GroupHandler;
     private regionSelector: RegionSelector;
+    private objectSelector: ObjectSelector;
     private zoomHandler: ZoomHandler;
     private autoborderHandler: AutoborderHandler;
     private interactionHandler: InteractionHandler;
@@ -560,6 +562,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.autoborderHandler.transform(this.geometry);
         this.interactionHandler.transform(this.geometry);
         this.regionSelector.transform(this.geometry);
+        this.objectSelector.transform(this.geometry);
     }
 
     private transformCanvas(): void {
@@ -1212,12 +1215,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onFindObject.bind(this),
             this.adoptedContent,
         );
-        this.groupHandler = new GroupHandlerImpl(
-            this.onGroupDone.bind(this),
-            (): any[] => this.controller.objects,
+        this.objectSelector = new ObjectSelectorImpl(
             this.onFindObject.bind(this),
+            () => this.controller.objects,
+            this.geometry,
             this.adoptedContent,
         );
+        this.groupHandler = new GroupHandlerImpl(this.onGroupDone.bind(this), this.objectSelector);
         this.regionSelector = new RegionSelectorImpl(
             this.onRegionSelected.bind(this),
             this.adoptedContent,
@@ -1480,9 +1484,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.IMAGE_MOVED) {
             this.moveCanvas();
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
-            if (this.mode === Mode.GROUP) {
-                this.groupHandler.resetSelectedObjects();
-            }
+            this.objectSelector.resetSelected();
             this.setupObjects(this.controller.objects);
             if (this.mode === Mode.MERGE) {
                 this.mergeHandler.repeatSelection();
@@ -1642,12 +1644,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
             this.groupHandler.group(data);
         } else if (reason === UpdateReasons.SELECT) {
+            this.objectSelector.push(this.controller.selected);
             if (this.mode === Mode.MERGE) {
                 this.mergeHandler.select(this.controller.selected);
             } else if (this.mode === Mode.SPLIT) {
                 this.splitHandler.select(this.controller.selected);
-            } else if (this.mode === Mode.GROUP) {
-                this.groupHandler.select(this.controller.selected);
             }
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAW) {
