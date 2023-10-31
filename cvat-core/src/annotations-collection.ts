@@ -607,45 +607,64 @@ export default class Collection {
             return object;
         });
 
-        if (objectsToJoin.length) {
-            const { frame } = objectsToJoin[0];
-            const { width, height } = this.frameMeta[frame];
-            const joinedMask = Array(width * height).fill(0);
+        if (objectsToJoin.length > 1) {
+            // constructing a new mask
+            let {
+                left: resultLeft,
+                right: resultRight,
+                top: resultTop,
+                bottom: resultBottom,
+            } = objectsToJoin[0] as MaskShape;
+
+            objectsToJoin.forEach((object: MaskShape) => {
+                resultLeft = Math.min(resultLeft, object.left);
+                resultRight = Math.max(resultRight, object.right);
+                resultTop = Math.min(resultTop, object.top);
+                resultBottom = Math.max(resultBottom, object.bottom);
+            });
+
+            const joinedMaskWidth = resultRight - resultLeft + 1;
+            const joinedMaskHeight = resultBottom - resultTop + 1;
+            const joinedMask = Array(joinedMaskWidth * joinedMaskHeight).fill(0);
+
             objectsToJoin.forEach((object: MaskShape) => {
                 const maskWidth = object.right - object.left + 1;
                 const maskHeight = object.bottom - object.top + 1;
                 const mask = rle2Mask(object.points, maskWidth, maskHeight);
-                const offset = object.top * width + object.left;
                 mask.forEach((value, idx) => {
-                    joinedMask[offset + idx] = joinedMask[offset + idx] || value;
+                    const row = Math.round(idx / maskWidth);
+                    const col = idx % maskWidth;
+                    const joinedMaskRow = object.top - resultTop + row;
+                    const joinedMaskCol = object.left - resultLeft + col;
+                    const offset = joinedMaskRow * joinedMaskWidth + joinedMaskCol;
+                    joinedMask[offset] = joinedMask[offset] || value;
                 });
             });
 
-            const constructed = {
-                shapes: [],
+            const rle = mask2Rle(joinedMask);
+            rle.push(resultLeft, resultTop, resultRight, resultBottom);
+
+            // Import created
+            const imported = this.import({
+                shapes: [{
+                    attributes: [], // todo
+                    frame: objectsToJoin[0].frame,
+                    group: 0,
+                    label_id: objectsToJoin[0].label.id,
+                    outside: false,
+                    occluded: false, // todo
+                    points: rle,
+                    rotation: 0,
+                    type: ShapeType.MASK,
+                    z_order: 0, // todo
+                    source: Source.MANUAL,
+                    elements: [],
+                }],
                 tracks: [],
                 tags: [],
-            };
-
-            const rle = mask2Rle(joinedMask);
-            rle.push(0, 0, width - 1, height - 1);
-            constructed.shapes.push({
-                attributes: [],
-                descriptions: [],
-                frame,
-                group: 0,
-                label_id: objectsToJoin[0].label.id,
-                outside: false,
-                occluded: false,
-                points: cropMask(rle, width, height),
-                rotation: 0,
-                type: ShapeType.MASK,
-                z_order: 0,
-                source: Source.MANUAL,
             });
 
-            // Remove and import other shapes
-            const imported = this.import(constructed);
+            // and remove other shapes
             for (const object of objectsToJoin) {
                 object.removed = true;
             }
@@ -667,7 +686,7 @@ export default class Collection {
                     }
                 },
                 [...objectsToJoin.map((object) => object.clientID), importedShape.clientID],
-                frame,
+                objectsToJoin[0].frame,
             );
         }
     }
