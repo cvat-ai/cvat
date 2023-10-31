@@ -4,8 +4,6 @@
 
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { PlusOutlined } from '@ant-design/icons';
-import Button from 'antd/lib/button';
 import { Input } from 'antd';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { CombinedState, ModelsQuery } from 'reducers';
@@ -39,13 +37,8 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                 <Component key={index} targetProps={props} />
             )),
         );
-    } else {
-        controls.push((
-            <div className='cvat-models-add-wrapper' key={0}>
-                <Button disabled type='primary' className='cvat-create-model' icon={<PlusOutlined />} />
-            </div>
-        ));
     }
+
     return (
         <Row className='cvat-models-page-top-bar' justify='center' align='middle'>
             <Col md={22} lg={18} xl={16} xxl={16}>

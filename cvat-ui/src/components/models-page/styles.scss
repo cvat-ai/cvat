@@ -92,16 +92,11 @@
 
     > div {
         display: flex;
-        margin-right: $grid-unit-size * 4;
 
         > button {
             margin-right: $grid-unit-size;
         }
     }
-}
-
-.cvat-models-add-wrapper {
-    display: inline-block;
 }
 
 .cvat-model-delete {
