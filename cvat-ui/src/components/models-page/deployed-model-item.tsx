@@ -10,18 +10,19 @@ import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
 import { MoreOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
-import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 import Title from 'antd/lib/typography/Title';
 import Meta from 'antd/lib/card/Meta';
-import Preview from 'components/common/preview';
-import { usePlugins } from 'utils/hooks';
-import { CombinedState } from 'reducers';
 import moment from 'moment';
 import Divider from 'antd/lib/divider';
 import Card from 'antd/lib/card';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import Menu from 'antd/lib/menu';
+
+import Preview from 'components/common/preview';
+import { usePlugins } from 'utils/hooks';
+import { CombinedState } from 'reducers';
+import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 
 interface Props {
     model: MLModel;
@@ -65,7 +66,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
         provider: model.provider,
     };
     const topBarPlugins = usePlugins(
-        (state: CombinedState) => state.plugins.components.modelsPage.modelItem.topBar.items, topBarProps,
+        (state: CombinedState) => state.plugins.components.modelsPage.modelItem.topBar.menu.items, topBarProps,
     );
     topBarItems.push(
         ...topBarPlugins.map(({ component: Component, weight }, index) => (

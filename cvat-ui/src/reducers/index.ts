@@ -304,7 +304,9 @@ export interface PluginsState {
                     items: PluginComponent[],
                 },
                 topBar:{
-                    items: PluginComponent[],
+                    menu: {
+                        items: PluginComponent[],
+                    }
                 },
             }
         };

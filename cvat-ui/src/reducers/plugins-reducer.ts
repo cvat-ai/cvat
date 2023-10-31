@@ -32,7 +32,9 @@ const defaultState: PluginsState = {
                     items: [],
                 },
                 topBar: {
-                    items: [],
+                    menu: {
+                        items: [],
+                    },
                 },
             },
         },
