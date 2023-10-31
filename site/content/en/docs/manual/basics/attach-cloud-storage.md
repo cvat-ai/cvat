@@ -34,7 +34,7 @@ See:
   - [Upload data](#upload-data-2)
   - [SAS token and connection string](#sas-token-and-connection-string)
   - [Personal use](#personal-use)
-  - [Attach Azure Blob Storage Container](#attach-azure-blob-storage-container)
+  - [Attach Azure Blob Storage](#attach-azure-blob-storage)
   - [Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT](#video-tutorial-add-microsoft-azure-blob-storage-as-cloud-storage-in-cvat)
 - [Prepare the dataset](#prepare-the-dataset)
 
