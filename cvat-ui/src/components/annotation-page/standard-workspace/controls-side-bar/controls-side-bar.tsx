@@ -32,7 +32,9 @@ import DrawSkeletonControl, { Props as DrawSkeletonControlProps } from './draw-s
 import SetupTagControl, { Props as SetupTagControlProps } from './setup-tag-control';
 import MergeControl, { Props as MergeControlProps } from './merge-control';
 import GroupControl, { Props as GroupControlProps } from './group-control';
+import JoinControl, { Props as JoinControlProps } from './join-control';
 import SplitControl, { Props as SplitControlProps } from './split-control';
+import SliceControl, { Props as SliceControlProps } from './slice-control';
 
 interface Props {
     canvasInstance: Canvas;
@@ -72,7 +74,9 @@ const ObservedDrawSkeletonControl = ControlVisibilityObserver<DrawSkeletonContro
 const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
 const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
 const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
+const ObservedJoinControl = ControlVisibilityObserver<JoinControlProps>(JoinControl);
 const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl);
+const ObservedSliceControl = ControlVisibilityObserver<SliceControlProps>(SliceControl);
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
@@ -345,6 +349,31 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     SWITCH_SPLIT_MODE: {
                         details: keyMap.SWITCH_SPLIT_MODE,
                         displayValue: normalizedKeyMap.SWITCH_SPLIT_MODE,
+                    },
+                }}
+            />
+            <ObservedJoinControl
+                joinShapes={() => {}}
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                disabled={controlsDisabled}
+                shortcuts={{
+                    SWITCH_JOIN_MODE: {
+                        details: keyMap.SWITCH_JOIN_MODE,
+                        displayValue: normalizedKeyMap.SWITCH_JOIN_MODE,
+                    },
+                }}
+            />
+            <ObservedSliceControl
+                sliceShape={() => {}}
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                activatedStateID={null}
+                disabled={controlsDisabled}
+                shortcuts={{
+                    SWITCH_SLICE_MODE: {
+                        details: keyMap.SWITCH_JOIN_MODE,
+                        displayValue: normalizedKeyMap.SWITCH_JOIN_MODE,
                     },
                 }}
             />

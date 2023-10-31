@@ -37,7 +37,6 @@ const defaultKeyMap = ({
         action: 'keydown',
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
-
     SWITCH_ALL_LOCK: {
         name: 'Lock/unlock all objects',
         description: 'Change locked state for all objects in the side bar',
@@ -193,14 +192,14 @@ const defaultKeyMap = ({
         description: 'Activate or deactivate mode to merging shapes',
         sequences: ['m'],
         action: 'keydown',
-        applicable: [DimensionType.DIMENSION_2D],
+        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
     SWITCH_SPLIT_MODE: {
         name: 'Split mode',
         description: 'Activate or deactivate mode to splitting shapes',
         sequences: ['alt+m'],
         action: 'keydown',
-        applicable: [DimensionType.DIMENSION_2D],
+        applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
     },
     SWITCH_GROUP_MODE: {
         name: 'Group mode',
@@ -208,6 +207,20 @@ const defaultKeyMap = ({
         sequences: ['g'],
         action: 'keydown',
         applicable: [DimensionType.DIMENSION_2D, DimensionType.DIMENSION_3D],
+    },
+    SWITCH_JOIN_MODE: {
+        name: 'Join mode',
+        description: 'Activate or deactivate a mode where you can join masks',
+        sequences: ['j'],
+        action: 'keydown',
+        applicable: [DimensionType.DIMENSION_2D],
+    },
+    SWITCH_SLICE_MODE: {
+        name: 'Slice mode',
+        description: 'Activate or deactivate a mode to slice a polygon/mask',
+        sequences: ['alt+j'],
+        action: 'keydown',
+        applicable: [DimensionType.DIMENSION_2D],
     },
     RESET_GROUP: {
         name: 'Reset group',
