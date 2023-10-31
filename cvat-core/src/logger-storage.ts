@@ -37,13 +37,14 @@ class LoggerStorage {
     public ignoreRules: Record<IgnoredRules, IgnoreRule>;
     public isActiveChecker: (() => boolean) | null;
     public saving: boolean;
-    private closeOnLog: Array<LogType>;
+    public compressedLogs: Array<LogType>;
 
     constructor() {
         this.clientID = Date.now().toString().substr(-6);
         this.collection = [];
         this.isActiveChecker = null;
         this.saving = false;
+        this.compressedLogs = [LogType.changeFrame];
         this.ignoreRules = {
             [LogType.zoomImage]: {
                 lastLog: null,
@@ -134,6 +135,12 @@ Object.defineProperties(LoggerStorage.prototype.log, {
                 throw new ArgumentError('Wait must be boolean');
             }
 
+            if (!this.compressedLogs.includes(logType)) {
+                this.compressedLogs.forEach((compressedType: LogType) => {
+                    this.ignoreRules[compressedType].lastLog = null;
+                });
+            }
+
             if (logType in this.ignoreRules) {
                 const ignoreRule = this.ignoreRules[logType];
                 const { lastLog } = ignoreRule;
@@ -151,14 +158,15 @@ Object.defineProperties(LoggerStorage.prototype.log, {
             }
 
             const log = logFactory(logType, { ...logPayload });
-            if (logType in this.ignoreRules) {
-                this.ignoreRules[logType].lastLog = log;
-            }
 
             const pushEvent = (): void => {
                 log.validatePayload();
                 log.onClose(null);
                 this.collection.push(log);
+
+                if (logType in this.ignoreRules) {
+                    this.ignoreRules[logType].lastLog = log;
+                }
             };
 
             if (log.scope === LogType.exception) {
