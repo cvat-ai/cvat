@@ -45,10 +45,7 @@ function CursorControl(props: Props): JSX.Element {
     return (
         <>
             <GlobalHotKeys
-                keyMap={{
-                    SWITCH_GROUP_MODE: shortcuts.CANCEL.details,
-                    RESET_GROUP: shortcuts.CANCEL.details,
-                }}
+                keyMap={{ CANCEL: shortcuts.CANCEL.details }}
                 handlers={shortcutHandlers}
             />
             <CVATTooltip title={`Cursor ${cursorShortkey}`} placement='right'>

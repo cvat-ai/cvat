@@ -171,6 +171,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
                                 }),
                             );
 
+                            image.style('filter', 'drop-shadow(2px 4px 6px black)'); // for better visibility
                             image.attr('opacity', 0.5);
                             return () => {
                                 image.remove();

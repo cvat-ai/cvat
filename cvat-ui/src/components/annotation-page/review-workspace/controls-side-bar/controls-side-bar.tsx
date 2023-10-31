@@ -5,7 +5,7 @@
 import React from 'react';
 import Layout from 'antd/lib/layout';
 
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import { KeyMap } from 'utils/mousetrap-react';
 import { ActiveControl, Rotation } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
 
@@ -32,38 +32,9 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     } = props;
 
     const controlsDisabled = frameIsDeleted;
-    const preventDefault = (event: KeyboardEvent | undefined): void => {
-        if (event) {
-            event.preventDefault();
-        }
-    };
-
-    const subKeyMap = {
-        CANCEL: keyMap.CANCEL,
-        OPEN_REVIEW_ISSUE: keyMap.OPEN_REVIEW_ISSUE,
-    };
-
-    let handlers: any = {};
-    if (!controlsDisabled) {
-        handlers = {
-            ...handlers,
-            OPEN_REVIEW_ISSUE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                if (activeControl === ActiveControl.OPEN_ISSUE) {
-                    canvasInstance.selectRegion(false);
-                    updateActiveControl(ActiveControl.CURSOR);
-                } else {
-                    canvasInstance.cancel();
-                    canvasInstance.selectRegion(true);
-                    updateActiveControl(ActiveControl.OPEN_ISSUE);
-                }
-            },
-        };
-    }
 
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
-            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <CursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
@@ -93,6 +64,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 activeControl={activeControl}
                 updateActiveControl={updateActiveControl}
                 disabled={controlsDisabled}
+                shortcuts={{
+                    OPEN_REVIEW_ISSUE: {
+                        details: keyMap.OPEN_REVIEW_ISSUE,
+                        displayValue: normalizedKeyMap.OPEN_REVIEW_ISSUE,
+                    },
+                }}
             />
         </Layout.Sider>
     );
