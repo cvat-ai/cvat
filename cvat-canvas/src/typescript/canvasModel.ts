@@ -826,11 +826,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (this.data.groupData.enabled && joinData.enabled) {
+        if (this.data.joinData.enabled && joinData.enabled) {
             return;
         }
 
-        if (!this.data.groupData.enabled && !joinData.enabled) {
+        if (!this.data.joinData.enabled && !joinData.enabled) {
             return;
         }
 

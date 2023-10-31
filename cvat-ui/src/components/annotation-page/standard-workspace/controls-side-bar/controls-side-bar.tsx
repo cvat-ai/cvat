@@ -121,18 +121,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     };
 
     let subKeyMap: any = {
-        CANCEL: keyMap.CANCEL,
         CLOCKWISE_ROTATION: keyMap.CLOCKWISE_ROTATION,
         ANTICLOCKWISE_ROTATION: keyMap.ANTICLOCKWISE_ROTATION,
     };
 
     let handlers: any = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
-            if (activeControl !== ActiveControl.CURSOR) {
-                canvasInstance.cancel();
-            }
-        },
         CLOCKWISE_ROTATION: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             rotateFrame(Rotation.CLOCKWISE90);
@@ -209,6 +202,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
+                shortcuts={{
+                    CANCEL: {
+                        details: keyMap.CANCEL,
+                        displayValue: normalizedKeyMap.CANCEL,
+                    },
+                }}
             />
             <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedRotateControl

@@ -10,28 +10,59 @@ import { ActiveControl } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
 export interface Props {
     canvasInstance: Canvas | Canvas3d;
     cursorShortkey: string;
     activeControl: ActiveControl;
+    shortcuts: {
+        CANCEL: {
+            details: KeyMapItem;
+            displayValue: string;
+        };
+    }
 }
 
 function CursorControl(props: Props): JSX.Element {
-    const { canvasInstance, activeControl, cursorShortkey } = props;
+    const {
+        canvasInstance, activeControl, cursorShortkey, shortcuts,
+    } = props;
+
+    const handler = (): void => {
+        if (activeControl !== ActiveControl.CURSOR) {
+            canvasInstance.cancel();
+        }
+    };
+
+    const shortcutHandlers = {
+        CANCEL: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            handler();
+        },
+    };
 
     return (
-        <CVATTooltip title={`Cursor ${cursorShortkey}`} placement='right'>
-            <Icon
-                component={CursorIcon}
-                className={
-                    activeControl === ActiveControl.CURSOR ?
-                        'cvat-active-canvas-control cvat-cursor-control' :
-                        'cvat-cursor-control'
-                }
-                onClick={activeControl !== ActiveControl.CURSOR ? (): void => canvasInstance.cancel() : undefined}
+        <>
+            <GlobalHotKeys
+                keyMap={{
+                    SWITCH_GROUP_MODE: shortcuts.CANCEL.details,
+                    RESET_GROUP: shortcuts.CANCEL.details,
+                }}
+                handlers={shortcutHandlers}
             />
-        </CVATTooltip>
+            <CVATTooltip title={`Cursor ${cursorShortkey}`} placement='right'>
+                <Icon
+                    component={CursorIcon}
+                    className={
+                        activeControl === ActiveControl.CURSOR ?
+                            'cvat-active-canvas-control cvat-cursor-control' :
+                            'cvat-cursor-control'
+                    }
+                    onClick={handler}
+                />
+            </CVATTooltip>
+        </>
     );
 }
 

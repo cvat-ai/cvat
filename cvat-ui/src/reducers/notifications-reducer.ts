@@ -93,6 +93,7 @@ const defaultState: NotificationsState = {
             creating: null,
             merging: null,
             grouping: null,
+            joining: null,
             splitting: null,
             removing: null,
             propagating: null,

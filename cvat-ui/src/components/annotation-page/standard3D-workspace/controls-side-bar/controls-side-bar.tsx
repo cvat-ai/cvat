@@ -40,10 +40,8 @@ interface Props {
     repeatDrawShape(): void;
     redrawShape(): void;
     pasteShape(): void;
-    groupObjects(enabled: boolean): void;
-    mergeObjects(enabled: boolean): void;
-    splitTrack(enabled: boolean): void;
     resetGroup(): void;
+    updateActiveControl(activeControl: ActiveControl): void;
 }
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
@@ -63,9 +61,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         labels,
         redrawShape,
         repeatDrawShape,
-        groupObjects,
-        mergeObjects,
-        splitTrack,
+        updateActiveControl,
         resetGroup,
     } = props;
 
@@ -80,15 +76,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         CANCEL: keyMap.CANCEL,
     };
 
-    let handlers: any = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
-            if (activeControl !== ActiveControl.CURSOR) {
-                canvasInstance.cancel();
-            }
-        },
-    };
-
+    let handlers: any = {};
     if (applicableLabels.length) {
         handlers = {
             ...handlers,
@@ -128,6 +116,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
+                shortcuts={{
+                    CANCEL: {
+                        details: keyMap.CANCEL,
+                        displayValue: normalizedKeyMap.CANCEL,
+                    },
+                }}
             />
             <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedDrawCuboidControl
@@ -139,7 +133,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <ObservedMergeControl
-                mergeObjects={mergeObjects}
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
@@ -151,7 +145,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }}
             />
             <ObservedGroupControl
-                groupObjects={groupObjects}
+                updateActiveControl={updateActiveControl}
                 resetGroup={resetGroup}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
@@ -168,7 +162,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }}
             />
             <ObservedSplitControl
-                splitTrack={splitTrack}
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}

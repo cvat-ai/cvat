@@ -32,7 +32,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     } = props;
 
     const controlsDisabled = frameIsDeleted;
-
     const preventDefault = (event: KeyboardEvent | undefined): void => {
         if (event) {
             event.preventDefault();
@@ -44,15 +43,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         OPEN_REVIEW_ISSUE: keyMap.OPEN_REVIEW_ISSUE,
     };
 
-    let handlers: any = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
-            if (activeControl !== ActiveControl.CURSOR) {
-                canvasInstance.cancel();
-            }
-        },
-    };
-
+    let handlers: any = {};
     if (!controlsDisabled) {
         handlers = {
             ...handlers,
@@ -77,6 +68,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
+                shortcuts={{
+                    CANCEL: {
+                        details: keyMap.CANCEL,
+                        displayValue: normalizedKeyMap.CANCEL,
+                    },
+                }}
             />
             <MoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <RotateControl
