@@ -105,46 +105,11 @@ export default class MLModel {
         this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
     }
 
-    public async save(): Promise<MLModel> {
-        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.save);
-        return result;
-    }
-
-    public async delete(): Promise<MLModel> {
-        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.delete);
-        return result;
-    }
-
     public async preview(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.preview);
         return result;
     }
 }
-
-Object.defineProperties(MLModel.prototype.save, {
-    implementation: {
-        writable: false,
-        enumerable: false,
-        value: async function implementation(): Promise<MLModel> {
-            if (this.provider === ModelProviders.CVAT) {
-                throw Error('Saving built-in models is not available.');
-            }
-            return this;
-        },
-    },
-});
-
-Object.defineProperties(MLModel.prototype.delete, {
-    implementation: {
-        writable: false,
-        enumerable: false,
-        value: async function implementation(): Promise<void> {
-            if (!this.isDeletable) {
-                throw Error('Deleting built-in models is not available.');
-            }
-        },
-    },
-});
 
 Object.defineProperties(MLModel.prototype.preview, {
     implementation: {
