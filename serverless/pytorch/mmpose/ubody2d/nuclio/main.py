@@ -38,7 +38,7 @@ def handler(context, event):
     context.logger.info("Run mmpose ubody-2d model")
     data = event.body
     buf = io.BytesIO(base64.b64decode(data["image"]))
-    threshold = data.get('threshold', 0.66)
+    threshold = data.get('threshold', 0.55)
     image = Image.open(buf).convert("RGB")
 
     results = []
