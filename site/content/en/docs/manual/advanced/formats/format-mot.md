@@ -53,9 +53,10 @@ person
 Uploaded file: a zip archive of the structure above or:
 
 ```bash
-taskname.zip/
-├── labels.txt # optional, mandatory for non-official labels
-└── gt.txt
+archive.zip/
+└── gt/
+    └── gt.txt
+    └── labels.txt # optional, mandatory for non-official labels
 ```
 
 - supported annotations: Rectangle tracks
