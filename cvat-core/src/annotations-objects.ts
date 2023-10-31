@@ -2183,10 +2183,10 @@ export class SkeletonShape extends Shape {
 }
 
 export class MaskShape extends Shape {
-    private left: number;
-    private top: number;
-    private right: number;
-    private bottom: number;
+    public left: number;
+    public top: number;
+    public right: number;
+    public bottom: number;
     private getMasksOnFrame: AnnotationInjection['getMasksOnFrame'];
 
     constructor(data, clientID, color, injection) {

@@ -13,7 +13,7 @@ import Statistics from './statistics';
 import { Label } from './labels';
 import { ArgumentError, ScriptingError } from './exceptions';
 import ObjectState from './object-state';
-import { cropMask } from './object-utils';
+import { cropMask, mask2Rle, rle2Mask } from './object-utils';
 import config from './config';
 import {
     HistoryActions, ShapeType, ObjectType, colors, Source,
@@ -584,8 +584,22 @@ export default class Collection {
     join(objectStates: ObjectState[]): void {
         checkObjectType('shapes to join', objectStates, null, Array);
 
-        const objectsForGroup = objectStates.map((state) => {
+        if (objectStates.some((state, idx) => idx && state.frame !== objectStates[idx - 1].frame)) {
+            throw new ArgumentError('All the objects must be from one frame');
+        }
+
+        if (objectStates.some((state, idx) => idx && state.label.id !== objectStates[idx - 1].label.id)) {
+            throw new ArgumentError('All the objects must have the same label');
+        }
+
+        const objectsToJoin = objectStates.map((state) => {
             checkObjectType('object state', state, null, ObjectState);
+            if (state.objectType !== ObjectType.SHAPE || state.shapeType !== ShapeType.MASK) {
+                throw new ArgumentError(
+                    `Only shape masks can be joined. Found: "${state.objectType} ${state.shapeType}"`,
+                );
+            }
+
             const object = this.objects[state.clientID];
             if (typeof object === 'undefined') {
                 throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
@@ -593,7 +607,69 @@ export default class Collection {
             return object;
         });
 
-        console.log(objectsForGroup);
+        if (objectsToJoin.length) {
+            const { frame } = objectsToJoin[0];
+            const { width, height } = this.frameMeta[frame];
+            const joinedMask = Array(width * height).fill(0);
+            objectsToJoin.forEach((object: MaskShape) => {
+                const maskWidth = object.right - object.left + 1;
+                const maskHeight = object.bottom - object.top + 1;
+                const mask = rle2Mask(object.points, maskWidth, maskHeight);
+                const offset = object.top * width + object.left;
+                mask.forEach((value, idx) => {
+                    joinedMask[offset + idx] = joinedMask[offset + idx] || value;
+                });
+            });
+
+            const constructed = {
+                shapes: [],
+                tracks: [],
+                tags: [],
+            };
+
+            const rle = mask2Rle(joinedMask);
+            rle.push(0, 0, width - 1, height - 1);
+            constructed.shapes.push({
+                attributes: [],
+                descriptions: [],
+                frame,
+                group: 0,
+                label_id: objectsToJoin[0].label.id,
+                outside: false,
+                occluded: false,
+                points: cropMask(rle, width, height),
+                rotation: 0,
+                type: ShapeType.MASK,
+                z_order: 0,
+                source: Source.MANUAL,
+            });
+
+            // Remove and import other shapes
+            const imported = this.import(constructed);
+            for (const object of objectsToJoin) {
+                object.removed = true;
+            }
+
+            // handle history actions
+            const [importedShape] = imported.shapes;
+            this.history.do(
+                HistoryActions.JOINED_OBJECTS,
+                () => {
+                    importedShape.removed = true;
+                    for (const object of objectsToJoin) {
+                        object.removed = false;
+                    }
+                },
+                () => {
+                    importedShape.removed = false;
+                    for (const object of objectsToJoin) {
+                        object.removed = true;
+                    }
+                },
+                [...objectsToJoin.map((object) => object.clientID), importedShape.clientID],
+                frame,
+            );
+        }
     }
 
     clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {

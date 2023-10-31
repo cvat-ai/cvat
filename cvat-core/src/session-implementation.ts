@@ -29,9 +29,9 @@ import {
     getAnnotations, putAnnotations, saveAnnotations,
     hasUnsavedChanges, searchAnnotations, searchEmptyFrame,
     mergeAnnotations, splitAnnotations, groupAnnotations,
-    clearAnnotations, selectObject, annotationsStatistics,
-    importCollection, exportCollection, importDataset,
-    exportDataset, undoActions, redoActions,
+    joinAnnotations, clearAnnotations, selectObject,
+    annotationsStatistics, importCollection, exportCollection,
+    importDataset, exportDataset, undoActions, redoActions,
     freezeHistory, clearActions, getActions,
     clearCache, getHistory,
 } from './annotations';
@@ -295,6 +295,11 @@ export function implementJob(Job) {
 
     Job.prototype.annotations.group.implementation = async function (objectStates, reset) {
         const result = await groupAnnotations(this, objectStates, reset);
+        return result;
+    };
+
+    Job.prototype.annotations.join.implementation = async function (objectStates) {
+        const result = await joinAnnotations(this, objectStates);
         return result;
     };
 
@@ -768,6 +773,11 @@ export function implementTask(Task) {
 
     Task.prototype.annotations.group.implementation = async function (objectStates, reset) {
         const result = await groupAnnotations(this, objectStates, reset);
+        return result;
+    };
+
+    Task.prototype.annotations.join.implementation = async function (objectStates) {
+        const result = await joinAnnotations(this, objectStates);
         return result;
     };
 
