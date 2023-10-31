@@ -383,11 +383,9 @@ class AWS_S3(_CloudStorage):
         super().__init__(prefix=prefix)
         if (
             sum(
-                (
-                    1
-                    for credential in (access_key_id, secret_key, session_token)
-                    if credential
-                )
+                1
+                for credential in (access_key_id, secret_key, session_token)
+                if credential
             )
             == 1
         ):
