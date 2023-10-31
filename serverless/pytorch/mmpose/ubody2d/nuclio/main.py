@@ -28,10 +28,7 @@ def init_context(context):
     with open("/opt/nuclio/function.yaml", "rb") as function_file:
         functionconfig = yaml.safe_load(function_file)
         labels_spec = functionconfig["metadata"]["annotations"]["spec"]
-        labels = [{
-            "name": item["name"],
-            "elements": item["elements"]
-        } for item in json.loads(labels_spec)]
+        labels = json.loads(labels_spec)
 
     context.user_data.labels = labels
     context.user_data.inferencer = inferencer

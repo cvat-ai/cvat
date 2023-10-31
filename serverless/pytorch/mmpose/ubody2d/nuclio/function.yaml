@@ -186,7 +186,7 @@ spec:
         - kind: RUN
           value: mim install mmcv==2.0.1 mmdet==3.2.0 mmpose==1.2.0
         - kind: RUN
-          value: git clone https://github.com/open-mmlab/mmpose && cd mmpose && git checkout v1.2.0
+          value: git clone -b v1.2.0 --depth=1 https://github.com/open-mmlab/mmpose.git
         - kind: ADD
           value: https://download.openmmlab.com/mmpose/v1/wholebody_2d_keypoint/ubody/td-hm_hrnet-w32_8xb64-210e_ubody-coco-256x192-7c227391_20230807.pth ./
         - kind: ADD
