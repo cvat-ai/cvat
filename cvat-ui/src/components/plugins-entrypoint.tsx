@@ -12,6 +12,10 @@ import { modelsActions } from 'actions/models-actions';
 
 const core = getCore();
 
+export type PluginActionCreators = {
+    getModelsSuccess: typeof modelsActions['getModelsSuccess'],
+};
+
 export type ComponentBuilder = ({
     dispatch,
     REGISTER_ACTION,
@@ -20,10 +24,9 @@ export type ComponentBuilder = ({
     core,
 }: {
     dispatch: Dispatch<AnyAction>,
-    // TODO: pass register/remove as action creator
     REGISTER_ACTION: PluginsActionTypes.ADD_UI_COMPONENT,
     REMOVE_ACTION: PluginsActionTypes.REMOVE_UI_COMPONENT,
-    actionCreators: any,
+    actionCreators: PluginActionCreators,
     core: any,
 }) => {
     name: string;
