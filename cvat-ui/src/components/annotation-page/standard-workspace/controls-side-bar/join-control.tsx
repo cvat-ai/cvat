@@ -12,7 +12,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
 export interface Props {
-    joinShapes(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
     canvasInstance: Canvas;
     disabled?: boolean;
     activeControl: ActiveControl;
@@ -26,7 +26,7 @@ export interface Props {
 
 function JoinControl(props: Props): JSX.Element {
     const {
-        joinShapes,
+        updateActiveControl,
         canvasInstance,
         activeControl,
         disabled,
@@ -39,7 +39,7 @@ function JoinControl(props: Props): JSX.Element {
                 className: 'cvat-join-control cvat-active-canvas-control',
                 onClick: (): void => {
                     canvasInstance.join({ enabled: false });
-                    joinShapes(false);
+                    updateActiveControl(ActiveControl.CURSOR);
                 },
             } :
             {
@@ -47,7 +47,7 @@ function JoinControl(props: Props): JSX.Element {
                 onClick: (): void => {
                     canvasInstance.cancel();
                     canvasInstance.join({ enabled: true });
-                    joinShapes(true);
+                    updateActiveControl(ActiveControl.JOIN);
                 },
             };
 

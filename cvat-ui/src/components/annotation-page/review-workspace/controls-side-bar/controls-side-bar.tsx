@@ -22,14 +22,13 @@ interface Props {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     frameIsDeleted: boolean;
-
     rotateFrame(rotation: Rotation): void;
-    selectIssuePosition(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
 }
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
-        canvasInstance, activeControl, normalizedKeyMap, keyMap, rotateFrame, selectIssuePosition, frameIsDeleted,
+        canvasInstance, activeControl, normalizedKeyMap, keyMap, rotateFrame, updateActiveControl, frameIsDeleted,
     } = props;
 
     const controlsDisabled = frameIsDeleted;
@@ -61,11 +60,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 preventDefault(event);
                 if (activeControl === ActiveControl.OPEN_ISSUE) {
                     canvasInstance.selectRegion(false);
-                    selectIssuePosition(false);
+                    updateActiveControl(ActiveControl.CURSOR);
                 } else {
                     canvasInstance.cancel();
                     canvasInstance.selectRegion(true);
-                    selectIssuePosition(true);
+                    updateActiveControl(ActiveControl.OPEN_ISSUE);
                 }
             },
         };
@@ -95,7 +94,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <IssueControl
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                selectIssuePosition={selectIssuePosition}
+                updateActiveControl={updateActiveControl}
                 disabled={controlsDisabled}
             />
         </Layout.Sider>

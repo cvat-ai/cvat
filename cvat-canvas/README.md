@@ -188,6 +188,7 @@ Standard JS events are used.
     - canvas.edited => {state: ObjectState, points: number[]}
     - canvas.splitted => {state: ObjectState}
     - canvas.groupped => {states: ObjectState[]}
+    - canvas.joined => {states: ObjectState[]}
     - canvas.merged => {states: ObjectState[]}
     - canvas.canceled
     - canvas.dragstart

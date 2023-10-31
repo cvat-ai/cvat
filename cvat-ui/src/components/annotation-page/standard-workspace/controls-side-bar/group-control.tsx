@@ -14,7 +14,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
 export interface Props {
-    groupObjects(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
     resetGroup(): void;
     canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
@@ -33,7 +33,7 @@ export interface Props {
 
 function GroupControl(props: Props): JSX.Element {
     const {
-        groupObjects,
+        updateActiveControl,
         resetGroup,
         activeControl,
         canvasInstance,
@@ -47,7 +47,7 @@ function GroupControl(props: Props): JSX.Element {
                 className: 'cvat-group-control cvat-active-canvas-control',
                 onClick: (): void => {
                     canvasInstance.group({ enabled: false });
-                    groupObjects(false);
+                    updateActiveControl(ActiveControl.CURSOR);
                 },
             } :
             {
@@ -55,7 +55,7 @@ function GroupControl(props: Props): JSX.Element {
                 onClick: (): void => {
                     canvasInstance.cancel();
                     canvasInstance.group({ enabled: true });
-                    groupObjects(true);
+                    updateActiveControl(ActiveControl.GROUP);
                 },
             };
 
@@ -67,12 +67,7 @@ function GroupControl(props: Props): JSX.Element {
     const shortcutHandlers = {
         SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
-            const grouping = activeControl === ActiveControl.GROUP;
-            if (!grouping) {
-                canvasInstance.cancel();
-            }
-            canvasInstance.group({ enabled: !grouping });
-            groupObjects(!grouping);
+            dynamicIconProps.onClick();
         },
         RESET_GROUP: (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
@@ -82,7 +77,7 @@ function GroupControl(props: Props): JSX.Element {
             }
             resetGroup();
             canvasInstance.group({ enabled: false });
-            groupObjects(false);
+            updateActiveControl(ActiveControl.CURSOR);
         },
     };
 

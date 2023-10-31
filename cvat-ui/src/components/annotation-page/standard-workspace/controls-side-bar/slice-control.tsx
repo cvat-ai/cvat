@@ -12,7 +12,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
 export interface Props {
-    sliceShape(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
     activatedStateID: number | null;
     canvasInstance: Canvas;
     activeControl: ActiveControl;
@@ -27,7 +27,7 @@ export interface Props {
 
 function SliceControl(props: Props): JSX.Element {
     const {
-        sliceShape, activatedStateID, canvasInstance, activeControl, disabled, shortcuts,
+        updateActiveControl, activatedStateID, canvasInstance, activeControl, disabled, shortcuts,
     } = props;
 
     const dynamicIconProps =
@@ -36,7 +36,7 @@ function SliceControl(props: Props): JSX.Element {
                 className: 'cvat-slice-control cvat-active-canvas-control',
                 onClick: (): void => {
                     canvasInstance.slice({ enabled: false });
-                    sliceShape(false);
+                    updateActiveControl(ActiveControl.CURSOR);
                 },
             } :
             {
@@ -44,7 +44,7 @@ function SliceControl(props: Props): JSX.Element {
                 onClick: (): void => {
                     canvasInstance.cancel();
                     canvasInstance.slice({ enabled: true });
-                    sliceShape(true);
+                    updateActiveControl(ActiveControl.SLICE);
                 },
             };
 

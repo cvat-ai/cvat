@@ -31,9 +31,7 @@ import {
     zoomCanvas,
     resetCanvas,
     shapeDrawn,
-    mergeObjects,
-    groupObjects,
-    splitTrack,
+    updateActiveControl as updateActiveControlAction,
     editShape,
     updateAnnotationsAsync,
     createAnnotationsAsync,
@@ -126,9 +124,7 @@ interface DispatchToProps {
     onZoomCanvas: (enabled: boolean) => void;
     onResetCanvas: () => void;
     onShapeDrawn: () => void;
-    onMergeObjects: (enabled: boolean) => void;
-    onGroupObjects: (enabled: boolean) => void;
-    onSplitTrack: (enabled: boolean) => void;
+    resetActiveControl: () => void;
     onEditShape: (enabled: boolean) => void;
     onUpdateAnnotations(states: any[]): void;
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
@@ -281,14 +277,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onShapeDrawn(): void {
             dispatch(shapeDrawn());
         },
-        onMergeObjects(enabled: boolean): void {
-            dispatch(mergeObjects(enabled));
-        },
-        onGroupObjects(enabled: boolean): void {
-            dispatch(groupObjects(enabled));
-        },
-        onSplitTrack(enabled: boolean): void {
-            dispatch(splitTrack(enabled));
+        resetActiveControl(): void {
+            dispatch(updateActiveControlAction(ActiveControl.CURSOR));
         },
         onEditShape(enabled: boolean): void {
             dispatch(editShape(enabled));
@@ -679,11 +669,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasObjectsMerged = (event: any): void => {
         const {
-            jobInstance, frame, onMergeAnnotations, onMergeObjects,
+            jobInstance, frame, onMergeAnnotations, resetActiveControl,
         } = this.props;
 
-        onMergeObjects(false);
-
+        resetActiveControl();
         const { states, duration } = event.detail;
         jobInstance.logger.log(LogType.mergeObjects, {
             duration,
@@ -694,22 +683,32 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasObjectsGroupped = (event: any): void => {
         const {
-            jobInstance, frame, onGroupAnnotations, onGroupObjects,
+            jobInstance, frame, onGroupAnnotations, resetActiveControl,
         } = this.props;
 
-        onGroupObjects(false);
-
+        resetActiveControl();
         const { states } = event.detail;
         onGroupAnnotations(jobInstance, frame, states);
     };
 
     private onCanvasObjectsJoined = (event: any): void => {
         const {
-            jobInstance, frame, onJoinAnnotations,
+            jobInstance, frame, onJoinAnnotations, resetActiveControl,
         } = this.props;
 
+        resetActiveControl();
         const { states } = event.detail;
         onJoinAnnotations(jobInstance, frame, states);
+    };
+
+    private onCanvasTrackSplitted = (event: any): void => {
+        const {
+            jobInstance, frame, onSplitAnnotations, resetActiveControl,
+        } = this.props;
+
+        resetActiveControl();
+        const { state } = event.detail;
+        onSplitAnnotations(jobInstance, frame, state);
     };
 
     private onCanvasPositionSelected = (event: any): void => {
@@ -717,17 +716,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { points } = event.detail;
         onStartIssue(points);
         onResetCanvas();
-    };
-
-    private onCanvasTrackSplitted = (event: any): void => {
-        const {
-            jobInstance, frame, onSplitAnnotations, onSplitTrack,
-        } = this.props;
-
-        onSplitTrack(false);
-
-        const { state } = event.detail;
-        onSplitAnnotations(jobInstance, frame, state);
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {

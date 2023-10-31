@@ -44,9 +44,7 @@ interface Props {
     labels: any[];
     frameData: any;
 
-    mergeObjects(enabled: boolean): void;
-    groupObjects(enabled: boolean): void;
-    splitTrack(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(rotation: Rotation): void;
     repeatDrawShape(): void;
     pasteShape(): void;
@@ -85,9 +83,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         normalizedKeyMap,
         keyMap,
         labels,
-        mergeObjects,
-        groupObjects,
-        splitTrack,
+        updateActiveControl,
         rotateFrame,
         repeatDrawShape,
         pasteShape,
@@ -312,7 +308,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <ObservedMergeControl
-                mergeObjects={mergeObjects}
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
@@ -324,7 +320,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }}
             />
             <ObservedGroupControl
-                groupObjects={groupObjects}
+                updateActiveControl={updateActiveControl}
                 resetGroup={resetGroup}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
@@ -341,7 +337,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }}
             />
             <ObservedSplitControl
-                splitTrack={splitTrack}
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
@@ -353,7 +349,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }}
             />
             <ObservedJoinControl
-                joinShapes={() => {}}
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
@@ -365,7 +361,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }}
             />
             <ObservedSliceControl
-                sliceShape={() => {}}
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 activatedStateID={null}

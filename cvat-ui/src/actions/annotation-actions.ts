@@ -128,10 +128,9 @@ export enum AnnotationActionTypes {
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
     ZOOM_CANVAS = 'ZOOM_CANVAS',
-    SELECT_ISSUE_POSITION = 'SELECT_ISSUE_POSITION',
-    MERGE_OBJECTS = 'MERGE_OBJECTS',
-    GROUP_OBJECTS = 'GROUP_OBJECTS',
-    SPLIT_TRACK = 'SPLIT_TRACK',
+
+    UPDATE_ACTIVE_CONTROL = 'UPDATE_ACTIVE_CONTROL',
+
     COPY_SHAPE = 'COPY_SHAPE',
     PASTE_SHAPE = 'PASTE_SHAPE',
     EDIT_SHAPE = 'EDIT_SHAPE',
@@ -1076,38 +1075,11 @@ export function shapeDrawn(): AnyAction {
     };
 }
 
-export function selectIssuePosition(enabled: boolean): AnyAction {
+export function updateActiveControl(activeControl: ActiveControl): AnyAction {
     return {
-        type: AnnotationActionTypes.SELECT_ISSUE_POSITION,
+        type: AnnotationActionTypes.UPDATE_ACTIVE_CONTROL,
         payload: {
-            enabled,
-        },
-    };
-}
-
-export function mergeObjects(enabled: boolean): AnyAction {
-    return {
-        type: AnnotationActionTypes.MERGE_OBJECTS,
-        payload: {
-            enabled,
-        },
-    };
-}
-
-export function groupObjects(enabled: boolean): AnyAction {
-    return {
-        type: AnnotationActionTypes.GROUP_OBJECTS,
-        payload: {
-            enabled,
-        },
-    };
-}
-
-export function splitTrack(enabled: boolean): AnyAction {
-    return {
-        type: AnnotationActionTypes.SPLIT_TRACK,
-        payload: {
-            enabled,
+            activeControl,
         },
     };
 }
@@ -1256,12 +1228,6 @@ export function joinAnnotationsAsync(sessionInstance: any, frame: number, states
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
-
-            // The action below set resetFlag to false
-            dispatch({
-                type: AnnotationActionTypes.JOIN_ANNOTATIONS,
-                payload: {},
-            });
 
             await sessionInstance.annotations.join(statesToGroup);
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);

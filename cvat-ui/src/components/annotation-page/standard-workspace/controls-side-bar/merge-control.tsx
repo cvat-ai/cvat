@@ -14,7 +14,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
 export interface Props {
-    mergeObjects(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
     canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
     disabled?: boolean;
@@ -28,20 +28,8 @@ export interface Props {
 
 function MergeControl(props: Props): JSX.Element {
     const {
-        shortcuts, activeControl, canvasInstance, mergeObjects, disabled,
+        shortcuts, activeControl, canvasInstance, updateActiveControl, disabled,
     } = props;
-
-    const shortcutHandlers = {
-        SWITCH_MERGE_MODE: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            const merging = activeControl === ActiveControl.MERGE;
-            if (!merging) {
-                canvasInstance.cancel();
-            }
-            canvasInstance.merge({ enabled: !merging });
-            mergeObjects(!merging);
-        },
-    };
 
     const dynamicIconProps =
         activeControl === ActiveControl.MERGE ?
@@ -49,7 +37,7 @@ function MergeControl(props: Props): JSX.Element {
                 className: 'cvat-merge-control cvat-active-canvas-control',
                 onClick: (): void => {
                     canvasInstance.merge({ enabled: false });
-                    mergeObjects(false);
+                    updateActiveControl(ActiveControl.CURSOR);
                 },
             } :
             {
@@ -57,9 +45,16 @@ function MergeControl(props: Props): JSX.Element {
                 onClick: (): void => {
                     canvasInstance.cancel();
                     canvasInstance.merge({ enabled: true });
-                    mergeObjects(true);
+                    updateActiveControl(ActiveControl.MERGE);
                 },
             };
+
+    const shortcutHandlers = {
+        SWITCH_MERGE_MODE: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            dynamicIconProps.onClick();
+        },
+    };
 
     return disabled ? (
         <Icon className='cvat-merge-control cvat-disabled-canvas-control' component={MergeIcon} />

@@ -14,12 +14,12 @@ interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     disabled: boolean;
-    selectIssuePosition(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
 }
 
 function CreateIssueControl(props: Props): JSX.Element {
     const {
-        activeControl, canvasInstance, selectIssuePosition, disabled,
+        activeControl, canvasInstance, updateActiveControl, disabled,
     } = props;
 
     return (
@@ -37,11 +37,11 @@ function CreateIssueControl(props: Props): JSX.Element {
                     onClick={(): void => {
                         if (activeControl === ActiveControl.OPEN_ISSUE) {
                             canvasInstance.selectRegion(false);
-                            selectIssuePosition(false);
+                            updateActiveControl(ActiveControl.CURSOR);
                         } else {
                             canvasInstance.cancel();
                             canvasInstance.selectRegion(true);
-                            selectIssuePosition(true);
+                            updateActiveControl(ActiveControl.OPEN_ISSUE);
                         }
                     }}
                 />
