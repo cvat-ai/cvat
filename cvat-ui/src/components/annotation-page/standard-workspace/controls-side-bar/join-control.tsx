@@ -64,8 +64,7 @@ function JoinControl(props: Props): JSX.Element {
         <>
             <GlobalHotKeys
                 keyMap={{
-                    SWITCH_GROUP_MODE: shortcuts.SWITCH_JOIN_MODE.details,
-                    RESET_GROUP: shortcuts.SWITCH_JOIN_MODE.details,
+                    SWITCH_JOIN_MODE: shortcuts.SWITCH_JOIN_MODE.details,
                 }}
                 handlers={shortcutHandlers}
             />

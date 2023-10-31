@@ -367,8 +367,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 disabled={controlsDisabled}
                 shortcuts={{
                     SWITCH_SLICE_MODE: {
-                        details: keyMap.SWITCH_JOIN_MODE,
-                        displayValue: normalizedKeyMap.SWITCH_JOIN_MODE,
+                        details: keyMap.SWITCH_SLICE_MODE,
+                        displayValue: normalizedKeyMap.SWITCH_SLICE_MODE,
                     },
                 }}
             />
