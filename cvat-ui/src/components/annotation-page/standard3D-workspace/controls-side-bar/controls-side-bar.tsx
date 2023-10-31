@@ -72,41 +72,33 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
-    let subKeyMap: any = {
-        CANCEL: keyMap.CANCEL,
-    };
+    const subKeyMap: any = applicableLabels.length ? {
+        PASTE_SHAPE: keyMap.PASTE_SHAPE,
+        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
+    } : {};
 
-    let handlers: any = {};
-    if (applicableLabels.length) {
-        handlers = {
-            ...handlers,
-            PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
+    const handlers: any = applicableLabels.length ? {
+        PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            canvasInstance.cancel();
+            pasteShape();
+        },
+        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
+
+            if (!drawing) {
                 canvasInstance.cancel();
-                pasteShape();
-            },
-            SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
-
-                if (!drawing) {
-                    canvasInstance.cancel();
-                    if (event && event.shiftKey) {
-                        redrawShape();
-                    } else {
-                        repeatDrawShape();
-                    }
+                if (event && event.shiftKey) {
+                    redrawShape();
                 } else {
-                    canvasInstance.draw({ enabled: false });
+                    repeatDrawShape();
                 }
-            },
-        };
-        subKeyMap = {
-            ...subKeyMap,
-            PASTE_SHAPE: keyMap.PASTE_SHAPE,
-            SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-        };
-    }
+            } else {
+                canvasInstance.draw({ enabled: false });
+            }
+        },
+    } : {};
 
     const controlsDisabled = !applicableLabels.length;
     return (
