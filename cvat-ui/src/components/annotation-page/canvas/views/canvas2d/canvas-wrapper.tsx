@@ -39,6 +39,7 @@ import {
     createAnnotationsAsync,
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
+    joinAnnotationsAsync,
     splitAnnotationsAsync,
     activateObject,
     updateCanvasContextMenu,
@@ -133,6 +134,7 @@ interface DispatchToProps {
     onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
+    onJoinAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
@@ -302,6 +304,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void {
             dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
+        },
+        onJoinAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+            dispatch(joinAnnotationsAsync(sessionInstance, frame, states));
         },
         onSplitAnnotations(sessionInstance: any, frame: number, state: any): void {
             dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
@@ -609,6 +614,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().removeEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().removeEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
@@ -695,6 +701,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const { states } = event.detail;
         onGroupAnnotations(jobInstance, frame, states);
+    };
+
+    private onCanvasObjectsJoined = (event: any): void => {
+        const {
+            jobInstance, frame, onJoinAnnotations,
+        } = this.props;
+
+        const { states } = event.detail;
+        onJoinAnnotations(jobInstance, frame, states);
     };
 
     private onCanvasPositionSelected = (event: any): void => {
@@ -1040,6 +1055,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().addEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 

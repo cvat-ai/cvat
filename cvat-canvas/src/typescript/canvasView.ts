@@ -430,17 +430,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onGroupDone(objects?: any[]): void {
+    private onSelectDone(objects?: any[]): void {
         if (objects) {
-            const event: CustomEvent = new CustomEvent('canvas.groupped', {
-                bubbles: false,
-                cancelable: true,
-                detail: {
-                    states: objects,
-                },
-            });
-
-            this.canvas.dispatchEvent(event);
+            if (this.mode === Mode.GROUP) {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.groupped', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        states: objects,
+                    },
+                }));
+            } else if (this.mode === Mode.JOIN) {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        states: objects,
+                    },
+                }));
+            }
         } else {
             const event: CustomEvent = new CustomEvent('canvas.canceled', {
                 bubbles: false,
@@ -450,7 +458,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         }
 
-        this.controller.group({ enabled: false });
+        if (this.mode === Mode.GROUP) {
+            this.controller.group({ enabled: false });
+        } else {
+            this.controller.join({ enabled: false });
+        }
         this.mode = Mode.IDLE;
     }
 
@@ -1221,7 +1233,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.geometry,
             this.adoptedContent,
         );
-        this.groupHandler = new GroupHandlerImpl(this.onGroupDone.bind(this), this.objectSelector);
+        this.groupHandler = new GroupHandlerImpl(this.onSelectDone.bind(this), this.objectSelector);
         this.regionSelector = new RegionSelectorImpl(
             this.onRegionSelected.bind(this),
             this.adoptedContent,
@@ -1634,11 +1646,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.canvas.style.cursor = '';
             }
             this.splitHandler.split(data);
-        } else if (reason === UpdateReasons.GROUP) {
-            const data: GroupData = this.controller.groupData;
+        } else if (reason === UpdateReasons.GROUP || reason === UpdateReasons.JOIN) {
+            const data = (reason === UpdateReasons.GROUP) ?
+                this.controller.groupData : this.controller.joinData;
             if (data.enabled) {
                 this.canvas.style.cursor = 'copy';
-                this.mode = Mode.GROUP;
+                this.mode = (reason === UpdateReasons.GROUP) ? Mode.GROUP : Mode.JOIN;
             } else {
                 this.canvas.style.cursor = '';
             }
@@ -1663,7 +1676,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.mergeHandler.cancel();
             } else if (this.mode === Mode.SPLIT) {
                 this.splitHandler.cancel();
-            } else if (this.mode === Mode.GROUP) {
+            } else if (this.mode === Mode.GROUP || this.mode === Mode.JOIN) {
                 this.groupHandler.cancel();
             } else if (this.mode === Mode.SELECT_REGION) {
                 this.regionSelector.cancel();

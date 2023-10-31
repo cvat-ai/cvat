@@ -154,6 +154,10 @@ export interface GroupData {
     enabled: boolean;
 }
 
+export interface JoinData {
+    enabled: boolean;
+}
+
 export interface MergeData {
     enabled: boolean;
 }
@@ -189,6 +193,7 @@ export enum UpdateReasons {
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
+    JOIN = 'join',
     SELECT = 'select',
     CANCEL = 'cancel',
     BITMAP = 'bitmap',
@@ -209,6 +214,7 @@ export enum Mode {
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
+    JOIN = 'join',
     INTERACT = 'interact',
     SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
@@ -232,6 +238,7 @@ export interface CanvasModel {
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
     readonly groupData: GroupData;
+    readonly joinData: JoinData;
     readonly configuration: Configuration;
     readonly selected: any;
     geometry: Geometry;
@@ -253,6 +260,7 @@ export interface CanvasModel {
     draw(drawData: DrawData): void;
     edit(editData: MasksEditData): void;
     group(groupData: GroupData): void;
+    join(joinData: JoinData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
@@ -287,6 +295,9 @@ const defaultData = {
         enabled: false,
     },
     splitData: {
+        enabled: false,
+    },
+    joinData: {
         enabled: false,
     },
 };
@@ -341,6 +352,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         interactionData: InteractionData;
         mergeData: MergeData;
         groupData: GroupData;
+        joinData: JoinData;
         splitData: SplitData;
         selected: any;
         mode: Mode;
@@ -809,6 +821,23 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.GROUP);
     }
 
+    public join(joinData: JoinData): void {
+        if (![Mode.IDLE, Mode.JOIN].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (this.data.groupData.enabled && joinData.enabled) {
+            return;
+        }
+
+        if (!this.data.groupData.enabled && !joinData.enabled) {
+            return;
+        }
+
+        this.data.joinData = { ...joinData };
+        this.notify(UpdateReasons.JOIN);
+    }
+
     public merge(mergeData: MergeData): void {
         if (![Mode.IDLE, Mode.MERGE].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -1017,6 +1046,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get splitData(): SplitData {
         return { ...this.data.splitData };
+    }
+
+    public get joinData(): JoinData {
+        return { ...this.data.joinData };
     }
 
     public get groupData(): GroupData {

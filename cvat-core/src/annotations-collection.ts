@@ -541,7 +541,7 @@ export default class Collection {
     }
 
     group(objectStates: ObjectState[], reset: boolean): number {
-        checkObjectType('shapes for group', objectStates, null, Array);
+        checkObjectType('shapes to group', objectStates, null, Array);
 
         const objectsForGroup = objectStates.map((state) => {
             checkObjectType('object state', state, null, ObjectState);
@@ -579,6 +579,21 @@ export default class Collection {
         );
 
         return groupIdx;
+    }
+
+    join(objectStates: ObjectState[]): void {
+        checkObjectType('shapes to join', objectStates, null, Array);
+
+        const objectsForGroup = objectStates.map((state) => {
+            checkObjectType('object state', state, null, ObjectState);
+            const object = this.objects[state.clientID];
+            if (typeof object === 'undefined') {
+                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            }
+            return object;
+        });
+
+        console.log(objectsForGroup);
     }
 
     clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {

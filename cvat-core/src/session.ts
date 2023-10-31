@@ -142,6 +142,15 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
+                async join(objectStates) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.join,
+                        objectStates,
+                    );
+                    return result;
+                },
+
                 async import(data) {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.import, data);
                     return result;
@@ -345,6 +354,7 @@ export class Job extends Session {
         merge: CallableFunction;
         split: CallableFunction;
         group: CallableFunction;
+        join: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
         searchEmpty: CallableFunction;
@@ -552,6 +562,7 @@ export class Job extends Session {
             merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
             split: Object.getPrototypeOf(this).annotations.split.bind(this),
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
+            join: Object.getPrototypeOf(this).annotations.join.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
@@ -663,6 +674,7 @@ export class Task extends Session {
         merge: CallableFunction;
         split: CallableFunction;
         group: CallableFunction;
+        join: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
         searchEmpty: CallableFunction;
@@ -1085,6 +1097,7 @@ export class Task extends Session {
             merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
             split: Object.getPrototypeOf(this).annotations.split.bind(this),
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
+            join: Object.getPrototypeOf(this).annotations.join.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),

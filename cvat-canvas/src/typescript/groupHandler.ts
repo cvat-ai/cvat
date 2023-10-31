@@ -13,7 +13,7 @@ export interface GroupHandler {
 }
 
 export class GroupHandlerImpl implements GroupHandler {
-    private onGroupDone: (objects?: any[]) => void;
+    private onSelectDone: (objects?: any[]) => void;
     private selector: ObjectSelector;
     private initialized: boolean;
     private statesToBeGroupped: any[];
@@ -35,12 +35,12 @@ export class GroupHandlerImpl implements GroupHandler {
         if (this.initialized) {
             const { statesToBeGroupped } = this;
             this.release();
-            this.onGroupDone(statesToBeGroupped.length ? statesToBeGroupped : undefined);
+            this.onSelectDone(statesToBeGroupped.length ? statesToBeGroupped : undefined);
         }
     }
 
-    public constructor(onGroupDone: (objects?: any[]) => void, selector: ObjectSelector) {
-        this.onGroupDone = onGroupDone;
+    public constructor(onSelectDone: (objects?: any[]) => void, selector: ObjectSelector) {
+        this.onSelectDone = onSelectDone;
         this.selector = selector;
         this.statesToBeGroupped = [];
         this.initialized = false;
@@ -60,6 +60,6 @@ export class GroupHandlerImpl implements GroupHandler {
 
     public cancel(): void {
         this.release();
-        this.onGroupDone();
+        this.onSelectDone();
     }
 }

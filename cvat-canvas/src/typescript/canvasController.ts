@@ -18,6 +18,7 @@ import {
     Configuration,
     MasksEditData,
     HighlightedElements,
+    JoinData,
 } from './canvasModel';
 
 export interface CanvasController {
@@ -33,6 +34,7 @@ export interface CanvasController {
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
     readonly groupData: GroupData;
+    readonly joinData: JoinData;
     readonly selected: any;
     readonly configuration: Configuration;
     mode: Mode;
@@ -117,6 +119,10 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.group(groupData);
     }
 
+    public join(joinData: JoinData): void {
+        this.model.join(joinData);
+    }
+
     public selectRegion(enable: boolean): void {
         this.model.selectRegion(enable);
     }
@@ -175,6 +181,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get groupData(): GroupData {
         return this.model.groupData;
+    }
+
+    public get joinData(): JoinData {
+        return this.model.joinData;
     }
 
     public get selected(): any {

@@ -149,6 +149,8 @@ export enum AnnotationActionTypes {
     GROUP_ANNOTATIONS = 'GROUP_ANNOTATIONS',
     GROUP_ANNOTATIONS_SUCCESS = 'GROUP_ANNOTATIONS_SUCCESS',
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
+    JOIN_ANNOTATIONS_SUCCESS = 'JOIN_ANNOTATIONS_SUCCESS',
+    JOIN_ANNOTATIONS_FAILED = 'JOIN_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
@@ -1242,6 +1244,39 @@ export function groupAnnotationsAsync(sessionInstance: any, frame: number, state
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.GROUP_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function joinAnnotationsAsync(sessionInstance: any, frame: number, statesToGroup: any[]): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+
+            // The action below set resetFlag to false
+            dispatch({
+                type: AnnotationActionTypes.JOIN_ANNOTATIONS,
+                payload: {},
+            });
+
+            await sessionInstance.annotations.join(statesToGroup);
+            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const history = await sessionInstance.actions.get();
+
+            dispatch({
+                type: AnnotationActionTypes.JOIN_ANNOTATIONS_SUCCESS,
+                payload: {
+                    states,
+                    history,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.JOIN_ANNOTATIONS_FAILED,
                 payload: {
                     error,
                 },

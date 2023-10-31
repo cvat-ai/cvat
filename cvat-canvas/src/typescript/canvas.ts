@@ -9,6 +9,7 @@ import {
     MergeData,
     SplitData,
     GroupData,
+    JoinData,
     MasksEditData,
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
@@ -34,7 +35,7 @@ interface Canvas {
     setup(frameData: any, objectStates: any[], zLayer?: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     setupConflictRegions(clientID: number): number[];
-    activate(clientID: number | null, attributeID?: number): number[];
+    activate(clientID: number | null, attributeID?: number): void;
     highlight(clientIDs: number[] | null, severity: HighlightSeverity | null): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
@@ -45,6 +46,7 @@ interface Canvas {
     draw(drawData: DrawData): void;
     edit(editData: MasksEditData): void;
     group(groupData: GroupData): void;
+    join(joinData: JoinData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
@@ -153,6 +155,10 @@ class CanvasImpl implements Canvas {
 
     public group(groupData: GroupData): void {
         this.model.group(groupData);
+    }
+
+    public join(joinData: JoinData): void {
+        this.model.join(joinData);
     }
 
     public merge(mergeData: MergeData): void {
