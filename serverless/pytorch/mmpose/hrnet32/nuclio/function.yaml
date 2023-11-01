@@ -1,5 +1,5 @@
 metadata:
-  name: ubody2d-pose_hrnet_w32
+  name: pose_hrnet32
   namespace: cvat
   annotations:
     name: UBody 2D via MMPose
@@ -172,7 +172,7 @@ spec:
   eventTimeout: 30s
 
   build:
-    image: cvat.pth.mmpose.ubody2d
+    image: cvat.pth.mmpose.hrnet32
     baseImage: python:3.8
 
     directives:
