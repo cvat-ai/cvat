@@ -25,7 +25,7 @@ export interface LabelInterface {
     type: Label['type'];
     color?: Label['color'];
     attributes?: AttributeInterface[];
-    elements?: Omit<LabelInterface, 'elements'>[];
+    sublabels?: Omit<LabelInterface, 'sublabels'>[];
 }
 
 interface Props {
@@ -129,17 +129,17 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                             <hr />
                             <Text strong>Skeleton points mapping: </Text>
                             <ObjectMatcher
-                                leftData={modelLabel.elements || []}
-                                rightData={taskLabel.elements || []}
+                                leftData={modelLabel.sublabels || []}
+                                rightData={taskLabel.sublabels || []}
                                 allowManyToOne={false}
                                 defaultMapping={computeLabelsAutoMapping(
-                                    modelLabel.elements || [],
-                                    taskLabel.elements || [],
+                                    modelLabel.sublabels || [],
+                                    taskLabel.sublabels || [],
                                 )}
                                 rowClassName='cvat-runner-label-mapping-row'
                                 containerClassName='cvat-runner-label-mapper'
                                 deleteMappingLabel='Remove mapped label'
-                                infoMappingLabel='Specify mapping between skeleton elements'
+                                infoMappingLabel='Specify mapping between skeleton sublabels'
                                 getObjectName={(object: LabelInterface) => object.name}
                                 getObjectColor={(object: LabelInterface) => object.color}
                                 filterObjects={(
@@ -150,7 +150,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                     if (Array.isArray(right)) return right;
                                     return [];
                                 }}
-                                onUpdateMapping={(elementsMapping: [LabelInterface, LabelInterface][]) => {
+                                onUpdateMapping={(sublabelsMapping: [LabelInterface, LabelInterface][]) => {
                                     const mapping = mappingRef.current;
                                     const updatedFullMapping = mapping.map((mappingItem) => {
                                         if (mappingItem[0] === modelLabel && mappingItem[1] === taskLabel) {
@@ -158,7 +158,7 @@ function LabelsMapperComponent(props: Props): JSX.Element {
                                                 modelLabel,
                                                 taskLabel,
                                                 mappingItem[2],
-                                                elementsMapping.map(([modelElement, taskElement]) => ([
+                                                sublabelsMapping.map(([modelElement, taskElement]) => ([
                                                     modelElement,
                                                     taskElement,
                                                     [],

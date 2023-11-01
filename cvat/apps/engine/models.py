@@ -334,9 +334,7 @@ class Project(models.Model):
     target_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
-    def get_labels(self, prefetch_attributes=False):
-        if prefetch_attributes:
-            return self.label_set.prefetch_related('attributespec_set').filter(parent__isnull=True)
+    def get_labels(self):
         return self.label_set.filter(parent__isnull=True)
 
     def get_dirname(self):
@@ -420,12 +418,10 @@ class Task(models.Model):
     class Meta:
         default_permissions = ()
 
-    def get_labels(self, prefetch_attributes=False):
+    def get_labels(self):
         project = self.project
         if project:
-            return project.get_labels(prefetch_attributes=prefetch_attributes)
-        if prefetch_attributes:
-            return self.label_set.prefetch_related('attributespec_set').filter(parent__isnull=True)
+            return project.get_labels()
         return self.label_set.filter(parent__isnull=True)
 
     def get_dirname(self):

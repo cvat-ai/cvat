@@ -7337,7 +7337,7 @@ components:
         cleanup:
           type: boolean
           default: false
-          description: Whether existing annotation should be removed
+          description: Whether existing annotations should be removed
         convMaskToPoly:
           type: boolean
           default: false

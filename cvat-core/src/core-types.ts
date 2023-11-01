@@ -28,7 +28,7 @@ export interface MLModelLabel {
     name: string;
     type: ShapeType | 'unknown';
     attributes: ModelAttribute[];
-    elements?: MLModelLabel[];
+    sublabels?: MLModelLabel[];
 }
 
 export interface SerializedModel {

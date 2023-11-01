@@ -10,7 +10,7 @@ metadata:
         {
           "name": "body",
           "type": "skeleton",
-          "elements": [
+          "sublabels": [
               { "id": 0, "name": "1", "type": "points" },
               { "id": 1, "name": "2", "type": "points" },
               { "id": 2, "name": "3", "type": "points" },
@@ -33,7 +33,7 @@ metadata:
         {
           "name": "feet",
           "type": "skeleton",
-          "elements": [
+          "sublabels": [
               { "id": 17, "name": "1", "type": "points" },
               { "id": 18, "name": "2", "type": "points" },
               { "id": 19, "name": "3", "type": "points" },
@@ -45,7 +45,7 @@ metadata:
         {
           "name": "face",
           "type": "skeleton",
-          "elements": [
+          "sublabels": [
               { "id": 23, "name": "1", "type": "points" },
               { "id": 24, "name": "2", "type": "points" },
               { "id": 25, "name": "3", "type": "points" },
@@ -118,7 +118,7 @@ metadata:
         }, {
           "name": "hands",
           "type": "skeleton",
-          "elements": [
+          "sublabels": [
               { "id": 91, "name": "1", "type": "points" },
               { "id": 92, "name": "2", "type": "points" },
               { "id": 93, "name": "3", "type": "points" },

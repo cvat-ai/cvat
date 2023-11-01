@@ -19,8 +19,8 @@ class SkeletonLabelMappingEntrySerializer(serializers.DictField):
 class LabelMappingEntrySerializer(serializers.DictField):
     name = serializers.CharField()
     attributes = AttributeMappingSerializer(required=False)
-    elements = serializers.DictField(child=SkeletonLabelMappingEntrySerializer(), required=False,
-        help_text="Label mapping from the model skeleton elements to the task skeleton elements"
+    sublabels = serializers.DictField(child=SkeletonLabelMappingEntrySerializer(), required=False,
+        help_text="Label mapping for a label's sublabels from the model to the task"
     )
 
 @extend_schema_serializer(
@@ -36,7 +36,7 @@ class FunctionCallRequestSerializer(serializers.Serializer):
     )
     max_distance = serializers.IntegerField(required=False)
     threshold = serializers.FloatField(required=False)
-    cleanup = serializers.BooleanField(help_text="Whether existing annotation should be removed", default=False)
+    cleanup = serializers.BooleanField(help_text="Whether existing annotations should be removed", default=False)
     convMaskToPoly = serializers.BooleanField(default=False) # TODO: use lowercase naming
     mapping = serializers.DictField(child=LabelMappingEntrySerializer(), required=False,
         help_text="Label mapping from the model to the task labels"

@@ -33,7 +33,7 @@ interface Props {
 type ServerMapping = Record<string, {
     name: string;
     attributes: StringObject;
-    elements?: ServerMapping;
+    sublabels?: ServerMapping;
 }>;
 
 export interface DetectorRequestBody {
@@ -54,7 +54,7 @@ function convertMappingToServer(mapping: FullMapping): ServerMapping {
                     }
                     return attrAcc;
                 }, {}),
-                ...(subMapping.length ? { elements: convertMappingToServer(subMapping) } : {}),
+                ...(subMapping.length ? { sublabels: convertMappingToServer(subMapping) } : {}),
             },
         }
     ), {});
@@ -97,7 +97,7 @@ function DetectorRunner(props: Props): JSX.Element {
                 input_type: attr.inputType,
                 values: [...attr.values],
             })),
-            elements: (label.structure?.sublabels || []).map((sublabel) => ({
+            sublabels: (label.structure?.sublabels || []).map((sublabel) => ({
                 name: sublabel.name,
                 type: sublabel.type,
                 color: sublabel.color,

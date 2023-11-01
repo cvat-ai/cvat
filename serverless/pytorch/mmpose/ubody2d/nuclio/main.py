@@ -61,7 +61,7 @@ def handler(context, event):
                         float(keypoints[element["id"]][1])
                     ],
                     "confidence": str(keypoint_scores[element["id"]]),
-                } for element in label["elements"]],
+                } for element in label["sublabels"]],
             }
 
             if not all([element['outside'] for element in skeleton["elements"]]):

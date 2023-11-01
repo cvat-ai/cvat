@@ -153,7 +153,7 @@ class LambdaFunction:
                 'name': label.get('name'),
                 'type': label.get('type', 'unknown'),
                 'attributes': parse_attributes(label.get('attributes', [])),
-                'elements': parse_labels(label.get('elements', []))
+                'sublabels': parse_labels(label.get('sublabels', []))
             } for label in spec]
 
         # todo: validate labels type / attribute input type
@@ -254,7 +254,7 @@ class LambdaFunction:
         mapping = data.get("mapping", {})
 
         model_labels = self.labels
-        task_labels = db_task.get_labels(prefetch_attributes=True)
+        task_labels = db_task.get_labels().prefetch_related('attributespec_set')
 
         def labels_compatible(model_label: Dict, task_label: Label) -> bool:
             model_type = model_label['type']
@@ -282,8 +282,8 @@ class LambdaFunction:
                         }
 
                         if model_label['type'] == 'skeleton' and task_label.type == 'skeleton':
-                            mapping_by_default[model_label['name']]['elements'] = _make_default_mapping(
-                                model_label['elements'],
+                            mapping_by_default[model_label['name']]['sublabels'] = _make_default_mapping(
+                                model_label['sublabels'],
                                 task_label.sublabels.all(),
                             )
 
@@ -298,9 +298,9 @@ class LambdaFunction:
                 mapping_item['md_label'] = md_label
                 mapping_item['db_label'] = db_label
                 if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
-                    mapping_item['elements'] = _update_mapping(
-                        mapping_item['elements'],
-                        md_label['elements'],
+                    mapping_item['sublabels'] = _update_mapping(
+                        mapping_item['sublabels'],
+                        md_label['sublabels'],
                         db_label.sublabels.all()
                     )
             return copy
@@ -342,8 +342,8 @@ class LambdaFunction:
 
                 if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
                     _validate_labels_mapping(
-                        mapping_item['elements'],
-                        md_label['elements'],
+                        mapping_item['sublabels'],
+                        md_label['sublabels'],
                         db_label.sublabels.all()
                     )
 
@@ -454,11 +454,11 @@ class LambdaFunction:
                 item['label'] = mapping[item_label]['name']
                 item['attributes'] = filter_attributes(item.get('attributes', {}), mapping)
                 if 'elements' in item:
-                    item['elements'] = list(filter(lambda x: x['label'] in mapping[item_label]['elements'], item['elements']))
+                    item['elements'] = list(filter(lambda x: x['label'] in mapping[item_label]['sublabels'], item['elements']))
                     for element in item['elements']:
                         element_label = element['label']
-                        element['label'] = mapping[item_label]['elements'][element_label]['name']
-                        element['attributes'] = filter_attributes(element.get('attributes', {}), mapping[item_label]['elements'])
+                        element['label'] = mapping[item_label]['sublabels'][element_label]['name']
+                        element['attributes'] = filter_attributes(element.get('attributes', {}), mapping[item_label]['sublabels'])
                 response_filtered.append(item)
                 response = response_filtered
 
@@ -752,7 +752,7 @@ class LambdaJob:
                         }
 
                     shape["elements"] = list(map(_map, label['sublabels'].items()))
-                    if all([element["outside"] for element in shape["elements"]]):
+                    if all(element["outside"] for element in shape["elements"]):
                         return None
 
                 return shape
@@ -941,7 +941,7 @@ class LambdaJob:
                     labels[label.name]['attributes'][attr['name']] = attr['id']
             return labels
 
-        labels = _convert_labels(db_task.get_labels(prefetch_attributes=True))
+        labels = _convert_labels(db_task.get_labels().prefetch_related('attributespec_set'))
 
         if function.kind == LambdaType.DETECTOR:
             cls._call_detector(function, db_task, labels, quality,
