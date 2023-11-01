@@ -67,9 +67,9 @@ class OrganizationViewSet(viewsets.GenericViewSet,
                    PartialUpdateModelMixin,
     ):
     queryset = Organization.objects.select_related('owner').all()
-    search_fields = ('name', 'owner')
-    filter_fields = list(search_fields) + ['id', 'slug']
-    simple_filters = list(search_fields) + ['slug']
+    search_fields = ('name', 'owner', 'slug')
+    filter_fields = list(search_fields) + ['id']
+    simple_filters = list(search_fields)
     lookup_fields = {'owner': 'owner__username'}
     ordering_fields = list(filter_fields)
     ordering = '-id'
