@@ -108,6 +108,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
         editHidden: Record<number, boolean>;
+        sliceHidden: Record<number, boolean>;
     };
 
     private set mode(value: Mode) {
@@ -190,7 +191,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private isInnerHidden(clientID: number): boolean {
-        return this.innerObjectsFlags.drawHidden[clientID] || false;
+        return this.innerObjectsFlags.drawHidden[clientID] ||
+            this.innerObjectsFlags.editHidden[clientID] ||
+            this.innerObjectsFlags.sliceHidden[clientID] ||
+            false;
     }
 
     private setupInnerFlags(clientID: number, path: 'drawHidden' | 'editHidden', value: boolean): void {
@@ -1107,6 +1111,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.innerObjectsFlags = {
             drawHidden: {},
             editHidden: {},
+            sliceHidden: {},
         };
 
         // Create HTML elements
