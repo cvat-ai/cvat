@@ -17,6 +17,7 @@ from enum import Enum
 from glob import glob
 from io import BytesIO, IOBase
 from unittest import mock
+from time import sleep
 import logging
 import copy
 import json
@@ -40,7 +41,7 @@ from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.tests.utils import get_paginated_collection
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin, logging_disabled,
+from cvat.apps.engine.tests.utils import (ApiTestBase, ForceLogin,
     generate_image_file, generate_video_file)
 
 #suppress av warnings
@@ -3306,6 +3307,13 @@ class TaskDataAPITestCase(ApiTestBase):
 
         return response
 
+    def _get_task_creation_status(self, tid, user, *, headers=None):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/tasks/{}/status'.format(tid),
+                **{'HTTP_' + k: v for k, v in (headers or {}).items()})
+
+        return response
+
     def _create_task(self, user, data):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/tasks', data=data, format="json")
@@ -3370,10 +3378,17 @@ class TaskDataAPITestCase(ApiTestBase):
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
                                         expected_uploaded_data_location=StorageChoice.LOCAL,
                                         dimension=DimensionType.DIM_2D,
+                                        expected_task_creation_status_state='Finished',
+                                        expected_task_creation_status_reason=None,
                                         *,
-                                        send_data_callback=None):
+                                        send_data_callback=None,
+                                        get_status_callback=None,
+                                        ):
         if send_data_callback is None:
             send_data_callback = self._run_api_v2_tasks_id_data_post
+
+        if get_status_callback is None:
+            get_status_callback = self._get_task_creation_status
 
         # create task
         response = self._create_task(user, spec)
@@ -3384,6 +3399,20 @@ class TaskDataAPITestCase(ApiTestBase):
         # post data for the task
         response = send_data_callback(task_id, user, data)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
+
+        if get_status_callback:
+            max_number_of_attempt = 100
+            state = None
+            while state not in ('Failed', 'Finished'):
+                assert max_number_of_attempt, "Too much time to create a task"
+                response = get_status_callback(task_id, user)
+                state = response.data['state']
+                sleep(0.1)
+                max_number_of_attempt -= 1
+            self.assertEqual(state, expected_task_creation_status_state)
+            if expected_task_creation_status_state == 'Failed':
+                self.assertIn(expected_task_creation_status_reason, response.data['message'])
+                return
 
         response = self._get_task(user, task_id)
 
@@ -4034,21 +4063,16 @@ class TaskDataAPITestCase(ApiTestBase):
                     image_sizes, StorageMethodChoice.CACHE,
                     StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
 
-        with self.subTest(current_function_name() + ' file order mismatch'), ExitStack() as es:
-            es.enter_context(self.assertRaisesMessage(Exception,
-                "Incorrect file mapping to manifest content"
-            ))
-
-            # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(logging_disabled())
-
+        with self.subTest(current_function_name() + ' file order mismatch'):
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' mismatching file order'
             task_data_copy = task_data.copy()
             task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
+                expected_task_creation_status_state='Failed',
+                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
 
         for copy_data in [True, False]:
             with self.subTest(current_function_name(), copy=copy_data):
@@ -4060,21 +4084,16 @@ class TaskDataAPITestCase(ApiTestBase):
                     image_sizes, StorageMethodChoice.CACHE,
                     StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
 
-        with self.subTest(current_function_name() + ' file order mismatch'), ExitStack() as es:
-            es.enter_context(self.assertRaisesMessage(Exception,
-                "Incorrect file mapping to manifest content"
-            ))
-
-            # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(logging_disabled())
-
+        with self.subTest(current_function_name() + ' file order mismatch'):
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' mismatching file order'
             task_data_copy = task_data.copy()
             task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
+                expected_task_creation_status_state='Failed',
+                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
 
         for copy_data in [True, False]:
             with self.subTest(current_function_name(), copy=copy_data):
@@ -4086,35 +4105,18 @@ class TaskDataAPITestCase(ApiTestBase):
                     image_sizes, StorageMethodChoice.CACHE,
                     StorageChoice.LOCAL if copy_data else StorageChoice.SHARE)
 
-        with self.subTest(current_function_name() + ' file order mismatch'), ExitStack() as es:
-            es.enter_context(self.assertRaisesMessage(Exception,
-                "Incorrect file mapping to manifest content"
-            ))
-
-            # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(logging_disabled())
-
+        with self.subTest(current_function_name() + ' file order mismatch'):
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' mismatching file order'
             task_data_copy = task_data.copy()
             task_data_copy[f'server_files[{len(images)}]'] = "images_manifest.jsonl"
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+                image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
+                expected_task_creation_status_state='Failed',
+                expected_task_creation_status_reason='Incorrect file mapping to manifest content')
 
-        with self.subTest(current_function_name() + ' without use cache'), ExitStack() as es:
-            es.enter_context(self.assertRaisesMessage(Exception,
-                "A manifest file can only be used with the 'use cache' option"
-            ))
-
-            # Suppress stacktrace spam from another thread from the expected error
-            es.enter_context(logging_disabled())
-
-            def _send_callback(*args, **kwargs):
-                response = self._run_api_v2_tasks_id_data_post(*args, **kwargs)
-                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-                raise Exception(response.content.decode(response.charset))
-
+        with self.subTest(current_function_name() + ' without use cache'):
             task_spec = task_spec_common.copy()
             task_spec['name'] = task_spec['name'] + f' manifest without cache'
             task_data_copy = task_data.copy()
@@ -4122,7 +4124,8 @@ class TaskDataAPITestCase(ApiTestBase):
             self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data_copy,
                 self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
                 image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE,
-                send_data_callback=_send_callback)
+                expected_task_creation_status_state='Failed',
+                expected_task_creation_status_reason="A manifest file can only be used with the 'use cache' option")
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_predefined_sorting(self, user):
         task_spec = {
@@ -4270,7 +4273,7 @@ class TaskDataAPITestCase(ApiTestBase):
             with self.subTest(current_function_name(),
                 manifest=manifest,
                 caching_enabled=caching_enabled,
-            ), ExitStack() as es:
+            ):
                 task_data = task_data_common.copy()
 
                 task_data["use_cache"] = caching_enabled
@@ -4285,19 +4288,18 @@ class TaskDataAPITestCase(ApiTestBase):
                 images = get_manifest_images_list(os.path.join(settings.SHARE_ROOT, manifest_name))
                 image_sizes = [self._share_image_sizes[v] for v in images]
 
+                kwargs = {}
                 if manifest:
                     task_data["server_files[1]"] = manifest_name
                 else:
-                    es.enter_context(self.assertRaisesMessage(FileNotFoundError,
-                        "Can't find upload manifest file"
-                    ))
-
-                    # Suppress stacktrace spam from another thread from the expected error
-                    es.enter_context(logging_disabled())
+                    kwargs.update({
+                        'expected_task_creation_status_state': 'Failed',
+                        'expected_task_creation_status_reason': "Can't find upload manifest file",
+                    })
 
                 self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                     self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                    image_sizes, storage_method, StorageChoice.LOCAL)
+                    image_sizes, storage_method, StorageChoice.LOCAL, **kwargs)
 
     def _test_api_v2_tasks_id_data_create_can_use_local_archive_with_predefined_sorting(self, user):
         task_spec = {
@@ -4355,19 +4357,17 @@ class TaskDataAPITestCase(ApiTestBase):
 
                     task_data[f"client_files[0]"] = es.enter_context(open(archive_path, 'rb'))
 
+                    kwargs = {}
                     if manifest:
                         task_data[f"client_files[1]"] = es.enter_context(open(manifest_path))
                     else:
-                        es.enter_context(self.assertRaisesMessage(FileNotFoundError,
-                            "Can't find upload manifest file"
-                        ))
-
-                        # Suppress stacktrace spam from another thread from the expected error
-                        es.enter_context(logging_disabled())
-
+                        kwargs.update({
+                            'expected_task_creation_status_state': 'Failed',
+                            'expected_task_creation_status_reason': "Can't find upload manifest file",
+                        })
                     self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
                         self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-                        image_sizes, storage_method, StorageChoice.LOCAL)
+                        image_sizes, storage_method, StorageChoice.LOCAL, **kwargs)
 
     def _test_api_v2_tasks_id_data_create_can_use_server_images_with_natural_sorting(self, user):
         task_spec = {

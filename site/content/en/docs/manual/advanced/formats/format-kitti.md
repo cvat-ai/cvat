@@ -1,6 +1,8 @@
 ---
+title: 'KITTI'
 linkTitle: 'KITTI'
 weight: 17
+description: 'How to export and import data in KITTI format'
 ---
 
 The KITTI format is widely used for a range of computer

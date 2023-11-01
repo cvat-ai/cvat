@@ -1,6 +1,8 @@
 ---
+title: 'ImageNet'
 linkTitle: 'ImageNet'
 weight: 9
+description: 'How to export and import data in ImageNet format'
 ---
 
 The ImageNet is typically used for a variety of computer vision tasks,

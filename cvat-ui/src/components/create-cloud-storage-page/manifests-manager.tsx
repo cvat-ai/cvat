@@ -60,7 +60,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                 label={(
                     <>
                         Manifests
-                        <Tooltip title='More information'>
+                        <Tooltip title='Click to open guide'>
                             <Button
                                 type='link'
                                 target='_blank'
@@ -81,7 +81,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                         <>
                             {fields.map((field, idx): JSX.Element => (
                                 <Form.Item key={idx} shouldUpdate>
-                                    <Row justify='space-between' align='top'>
+                                    <Row justify='space-between' align='top' className='cvat-cs-manifest-wrapper'>
                                         <Col>
                                             <Form.Item
                                                 name={[idx, 'name']}
@@ -134,8 +134,12 @@ export default function ManifestsManager(props: Props): JSX.Element {
             </Row>
             {!manifestNames.length && (
                 <Row>
-                    <Col>
-                        <Alert type='info' message='We highly recommend attaching a manifest file to reduce the number of requests to the bucket.' />
+                    <Col span={24}>
+                        <Alert
+                            showIcon
+                            type='info'
+                            message='We highly recommend attaching a manifest file to reduce the number of requests to the bucket'
+                        />
                     </Col>
                 </Row>
             )}

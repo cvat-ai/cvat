@@ -18,7 +18,6 @@
         "url": "http://localhost:8080/api/issues?job_id=28"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=28"
       },
       "mode": "annotation",
@@ -49,7 +48,6 @@
         "url": "http://localhost:8080/api/issues?job_id=27"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=27"
       },
       "mode": "annotation",
@@ -80,7 +78,6 @@
         "url": "http://localhost:8080/api/issues?job_id=26"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=26"
       },
       "mode": "annotation",
@@ -111,7 +108,6 @@
         "url": "http://localhost:8080/api/issues?job_id=25"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=25"
       },
       "mode": "annotation",
@@ -142,7 +138,6 @@
         "url": "http://localhost:8080/api/issues?job_id=24"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=24"
       },
       "mode": "annotation",
@@ -173,7 +168,6 @@
         "url": "http://localhost:8080/api/issues?job_id=23"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=23"
       },
       "mode": "annotation",
@@ -204,7 +198,6 @@
         "url": "http://localhost:8080/api/issues?job_id=22"
       },
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?job_id=22"
       },
       "mode": "annotation",
@@ -235,7 +228,6 @@
         "url": "http://localhost:8080/api/issues?job_id=21"
       },
       "labels": {
-        "count": 3,
         "url": "http://localhost:8080/api/labels?job_id=21"
       },
       "mode": "annotation",
@@ -266,7 +258,6 @@
         "url": "http://localhost:8080/api/issues?job_id=19"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=19"
       },
       "mode": "interpolation",
@@ -297,7 +288,6 @@
         "url": "http://localhost:8080/api/issues?job_id=18"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=18"
       },
       "mode": "annotation",
@@ -328,7 +318,6 @@
         "url": "http://localhost:8080/api/issues?job_id=17"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=17"
       },
       "mode": "annotation",
@@ -365,7 +354,6 @@
         "url": "http://localhost:8080/api/issues?job_id=16"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=16"
       },
       "mode": "annotation",
@@ -396,7 +384,6 @@
         "url": "http://localhost:8080/api/issues?job_id=14"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=14"
       },
       "mode": "annotation",
@@ -427,7 +414,6 @@
         "url": "http://localhost:8080/api/issues?job_id=13"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=13"
       },
       "mode": "annotation",
@@ -458,7 +444,6 @@
         "url": "http://localhost:8080/api/issues?job_id=12"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=12"
       },
       "mode": "annotation",
@@ -495,7 +480,6 @@
         "url": "http://localhost:8080/api/issues?job_id=11"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=11"
       },
       "mode": "annotation",
@@ -532,7 +516,6 @@
         "url": "http://localhost:8080/api/issues?job_id=10"
       },
       "labels": {
-        "count": 3,
         "url": "http://localhost:8080/api/labels?job_id=10"
       },
       "mode": "annotation",
@@ -563,7 +546,6 @@
         "url": "http://localhost:8080/api/issues?job_id=9"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=9"
       },
       "mode": "annotation",
@@ -594,7 +576,6 @@
         "url": "http://localhost:8080/api/issues?job_id=8"
       },
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?job_id=8"
       },
       "mode": "annotation",
@@ -631,7 +612,6 @@
         "url": "http://localhost:8080/api/issues?job_id=7"
       },
       "labels": {
-        "count": 1,
         "url": "http://localhost:8080/api/labels?job_id=7"
       },
       "mode": "interpolation",
@@ -668,7 +648,6 @@
         "url": "http://localhost:8080/api/issues?job_id=2"
       },
       "labels": {
-        "count": 2,
         "url": "http://localhost:8080/api/labels?job_id=2"
       },
       "mode": "annotation",

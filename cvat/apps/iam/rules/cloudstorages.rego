@@ -26,7 +26,7 @@ import data.organizations
 #     }
 # }
 
-default allow = false
+default allow := false
 
 # Admin has no restrictions
 allow {
@@ -56,20 +56,20 @@ allow {
     organizations.is_member
 }
 
-filter = [] { # Django Q object to filter list of entries
+filter := [] { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else = qobject {
+} else := qobject {
     utils.is_admin
     qobject := [ {"organization": input.auth.organization.id} ]
-} else = qobject {
+} else := qobject {
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
     qobject := [ {"organization": input.auth.organization.id} ]
-} else = qobject {
+} else := qobject {
     utils.is_sandbox
     qobject := [ {"owner": input.auth.user.id} ]
-} else = qobject {
+} else := qobject {
     utils.is_organization
     qobject := [ {"owner": input.auth.user.id}, {"organization": input.auth.organization.id}, "&" ]
 }
