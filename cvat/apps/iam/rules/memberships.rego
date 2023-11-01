@@ -71,6 +71,12 @@ allow {
 
 allow {
     input.scope == utils.VIEW
+    organizations.is_staff
+    input.resource.organization.id == input.auth.organization.id
+}
+
+allow {
+    input.scope == utils.VIEW
     input.resource.is_active
     organizations.is_member
     input.resource.organization.id == input.auth.organization.id
