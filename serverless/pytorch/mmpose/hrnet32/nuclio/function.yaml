@@ -2,7 +2,7 @@ metadata:
   name: pose_hrnet32
   namespace: cvat
   annotations:
-    name: UBody 2D via MMPose
+    name: Human pose estimation
     type: detector
     framework: pytorch
     spec: |
