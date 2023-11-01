@@ -613,7 +613,7 @@ export function confirmCanvasReadyAsync(): ThunkAction {
             }, []).map(([start, end]) => `${start}:${end}`).join(';');
 
             dispatch(confirmCanvasReady(ranges));
-            changeFrameLog?.close();
+            await changeFrameLog?.close();
         } catch (error) {
             // even if error happens here, do not need to notify the users
             dispatch(confirmCanvasReady());
