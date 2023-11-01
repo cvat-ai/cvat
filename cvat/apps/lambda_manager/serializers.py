@@ -20,7 +20,7 @@ class LabelMappingEntrySerializer(serializers.DictField):
     name = serializers.CharField()
     attributes = AttributeMappingSerializer(required=False)
     sublabels = serializers.DictField(child=SkeletonLabelMappingEntrySerializer(), required=False,
-        help_text="Label mapping for a label's sublabels from the model to the task"
+        help_text="Label mapping for from the model to the task sublabels within a parent label"
     )
 
 @extend_schema_serializer(
