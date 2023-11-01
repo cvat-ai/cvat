@@ -658,6 +658,13 @@ def _create_thread(
                 upload_dir, data.get('server_files_path'), data.get('server_files_exclude'))
             manifest_root = upload_dir
         elif is_data_in_cloud:
+            for m_type in set(media.keys()) - set(['image']):
+                if media[m_type]:
+                    raise ValidationError(
+                        f'Creating tasks from cloud storage {m_type} files with an enabled use cache option '
+                        'is not currently supported. Disable this option to create a task.'
+                    )
+
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
             else:
