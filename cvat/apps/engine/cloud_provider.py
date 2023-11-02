@@ -381,29 +381,38 @@ class AWS_S3(_CloudStorage):
                 prefix: Optional[str] = None,
     ):
         super().__init__(prefix=prefix)
-        if all([access_key_id, secret_key, session_token]):
-            self._s3 = boto3.resource(
-                's3',
-                aws_access_key_id=access_key_id,
-                aws_secret_access_key=secret_key,
-                aws_session_token=session_token,
-                region_name=region,
-                endpoint_url=endpoint_url
+        if (
+            sum(
+                1
+                for credential in (access_key_id, secret_key, session_token)
+                if credential
             )
-        elif access_key_id and secret_key:
-            self._s3 = boto3.resource(
-                's3',
-                aws_access_key_id=access_key_id,
-                aws_secret_access_key=secret_key,
-                region_name=region,
-                endpoint_url=endpoint_url
-            )
-        elif any([access_key_id, secret_key, session_token]):
-            raise Exception('Insufficient data for authorization')
+            == 1
+        ):
+            raise Exception("Insufficient data for authorization")
+
+        kwargs = dict()
+        for key, arg_v in zip(
+            (
+                "aws_access_key_id",
+                "aws_secret_access_key",
+                "aws_session_token",
+                "region_name",
+            ),
+            (access_key_id, secret_key, session_token, region),
+        ):
+            if arg_v:
+                kwargs[key] = arg_v
+
+        session = boto3.Session(**kwargs)
+        self._s3 = session.resource("s3", endpoint_url=endpoint_url)
+
         # anonymous access
         if not any([access_key_id, secret_key, session_token]):
-            self._s3 = boto3.resource('s3', region_name=region, endpoint_url=endpoint_url)
-            self._s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
+            self._s3.meta.client.meta.events.register(
+                "choose-signer.s3.*", disable_signing
+            )
+
         self._client = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
         self.region = region
