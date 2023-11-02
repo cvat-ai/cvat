@@ -463,3 +463,12 @@ g.cvat_canvas_shape_occluded {
     fill: #838383;
     stroke: #838383;
 }
+
+.cvat_canvas_sliced_body  {
+    fill: white;
+}
+
+.cvat_canvas_slicing_line,
+.cvat_canvas_sliced_contour  {
+    fill: none;
+}

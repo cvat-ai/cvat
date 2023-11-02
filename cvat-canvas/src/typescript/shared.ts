@@ -434,4 +434,60 @@ export function expandChannels(r: number, g: number, b: number, encoded: number[
     return rle2Mask(encoded, right - left + 1, bottom - top + 1);
 }
 
+export function findIntersection(seg1: Segment, seg2: Segment): [number, number] | null {
+    const determinant2D = (a: number, b: number, c: number, d: number): number => a * d - b * c;
+    const numberIsBetween = (a: number, b: number, c: number): boolean => Math.min(a, b) <= c && c <= Math.max(a, b);
+    const projectionIntersected = (a: number, b: number, c: number, d: number): boolean => {
+        let [p1, p2] = [a, b];
+        let [p3, p4] = [c, d];
+
+        if (p1 > p2) {
+            [p1, p2] = [p2, p1];
+        }
+
+        if (p3 > p4) {
+            [p3, p4] = [p4, p3];
+        }
+
+        return Math.max(p1, p3) <= Math.min(p2, p4);
+    };
+
+    const [[x1, y1], [x2, y2]] = seg1;
+    const [[x3, y3], [x4, y4]] = seg2;
+    const A1 = y1 - y2;
+    const A2 = y3 - y4;
+    const B1 = x2 - x1;
+    const B2 = x4 - x3;
+    const C1 = -A1 * x1 - B1 * y1;
+    const C2 = -A2 * x3 - B2 * y3;
+    const determinant = determinant2D(A1, B1, A2, B2);
+    if (determinant === 0) {
+        if (
+            determinant2D(A1, C1, A2, C2) === 0 &&
+            determinant2D(B1, C1, B2, C2) === 0 &&
+            projectionIntersected(x1, x2, x3, x4) &&
+            projectionIntersected(y1, y2, y3, y4)
+        ) {
+            // lines match
+            return [NaN, NaN];
+        }
+
+        // lines are parallel
+        return null;
+    }
+
+    const x = -determinant2D(C1, B1, C2, B2) / determinant;
+    const y = -determinant2D(A1, C1, A2, C2) / determinant;
+    if (numberIsBetween(x1, x2, x) &&
+        numberIsBetween(y1, y2, y) &&
+        numberIsBetween(x3, x4, x) &&
+        numberIsBetween(y3, y4, y)
+    ) {
+        return [x, y];
+    }
+
+    return null;
+}
+
+export type Segment = [[number, number], [number, number]];
 export type PropType<T, Prop extends keyof T> = T[Prop];

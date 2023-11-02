@@ -1465,6 +1465,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.masksHandler.configurate(this.configuration);
             this.autoborderHandler.configurate(this.configuration);
             this.interactionHandler.configurate(this.configuration);
+            this.sliceHandler.configurate(this.configuration);
             this.transformCanvas();
 
             // remove if exist and not enabled
@@ -1696,9 +1697,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.groupHandler.group(data);
         } else if (reason === UpdateReasons.SLICE) {
             const data = this.controller.sliceData;
-            if (data.enabled) {
+
+            if (data.enabled && this.mode === Mode.IDLE) {
                 this.mode = Mode.SLICE;
+                this.canvas.dispatchEvent(
+                    new CustomEvent('canvas.slicestart', {
+                        bubbles: false,
+                        cancelable: true,
+                    }),
+                );
             }
+
             this.sliceHandler.slice(data);
         } else if (reason === UpdateReasons.SELECT) {
             this.objectSelector.push(this.controller.selected);

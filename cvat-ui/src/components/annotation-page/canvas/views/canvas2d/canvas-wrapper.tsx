@@ -806,6 +806,39 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { updateActiveControl } = this.props;
         updateActiveControl(ActiveControl.CURSOR);
         const { clientID, results, duration } = event.detail;
+
+
+        const {
+            jobInstance, activeLabelID, activeObjectType, frame, onCreateAnnotations,
+        } = this.props;
+
+
+        const state1 = {
+            objectType: ObjectType.SHAPE,
+            shapeType: ShapeType.POLYGON,
+            label: jobInstance.labels[0],
+            frame,
+            rotation: 0,
+            occluded: false,
+            outside: false,
+            points: results[0],
+        };
+
+        const state2 = {
+            objectType: ObjectType.SHAPE,
+            shapeType: ShapeType.POLYGON,
+            label: jobInstance.labels[0],
+            frame,
+            rotation: 0,
+            occluded: false,
+            outside: false,
+            points: results[1],
+        };
+
+        const objectState1 = new cvat.classes.ObjectState(state1);
+        const objectState2 = new cvat.classes.ObjectState(state2);
+        onCreateAnnotations(jobInstance, frame, [objectState1, objectState2]);
+
         console.log(clientID, results, duration);
     };
 
@@ -993,6 +1026,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('click', this.onCanvasClicked);
         canvasInstance.html().addEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().addEventListener('canvas.edited', this.onCanvasEditDone);
+        canvasInstance.html().addEventListener('canvas.slicestart', this.onCanvasSliceStart);
+        canvasInstance.html().addEventListener('canvas.sliced', this.onCanvasSliceDone);
         canvasInstance.html().addEventListener('canvas.dragstart', this.onCanvasDragStart);
         canvasInstance.html().addEventListener('canvas.dragstop', this.onCanvasDragDone);
         canvasInstance.html().addEventListener('canvas.zoomstart', this.onCanvasZoomStart);
