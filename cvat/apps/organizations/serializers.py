@@ -10,6 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
+from django.db import transaction
 
 from rest_framework import serializers
 from distutils.util import strtobool
@@ -80,6 +81,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
         fields = ['key', 'created_date', 'owner', 'role', 'organization', 'email']
         read_only_fields = ['key', 'created_date', 'owner', 'organization']
 
+    @transaction.atomic
     def create(self, validated_data):
         membership_data = validated_data.pop('membership')
         organization = validated_data.pop('organization')
