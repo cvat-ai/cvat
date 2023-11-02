@@ -296,8 +296,12 @@ export default function ItemMenu(props: Props): JSX.Element {
             {!readonly && objectType !== ObjectType.TAG && (
                 <MakeCopyItem key={MenuKeys.COPY} toolProps={props} />
             )}
-            {!readonly && <EditMaskItem key={MenuKeys.EDIT_MASK} toolProps={props} />}
-            {!readonly && <SliceItem key={MenuKeys.SLICE_ITEM} toolProps={props} />}
+            {!readonly && shapeType === ShapeType.MASK && (
+                <EditMaskItem key={MenuKeys.EDIT_MASK} toolProps={props} />
+            )}
+            {!readonly && [ShapeType.MASK, ShapeType.POLYGON].includes(shapeType) && (
+                <SliceItem key={MenuKeys.SLICE_ITEM} toolProps={props} />
+            )}
             {!readonly && <PropagateItem key={MenuKeys.PROPAGATE} toolProps={props} />}
             {is2D && !readonly && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
                 <SwitchOrientationItem key={MenuKeys.SWITCH_ORIENTATION} toolProps={props} />

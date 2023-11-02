@@ -3,12 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import * as SVG from 'svg.js';
-import { stringifyToCanvas } from './shared';
+import { stringifyPoints, translateToCanvas } from './shared';
 import { Geometry, SliceData } from './canvasModel';
 import consts from './consts';
 
 export interface SliceHandler {
     slice(sliceData: any): void;
+    transform(geometry: Geometry): void;
     cancel(): void;
 }
 
@@ -52,7 +53,9 @@ export class SliceHandlerImpl implements SliceHandler {
         });
 
         this.start = Date.now();
-        this.shapeContour = this.canvas.polygon(stringifyToCanvas(sliceData.contour));
+        this.shapeContour = this.canvas.polygon(
+            stringifyPoints(translateToCanvas(this.geometry.offset, sliceData.contour)),
+        );
         this.slicingLine = this.canvas.polyline();
         this.slicingLine.attr({ 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale });
         this.shapeContour.attr({ 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale });
@@ -61,7 +64,7 @@ export class SliceHandlerImpl implements SliceHandler {
         // мы не даем поставить точку вне контура в эвенте click
     }
 
-    private release() {
+    private release(): void {
         this.hiddenClientIDs.forEach((clientIDs) => {
             this.showObject(clientIDs);
         });
@@ -79,7 +82,7 @@ export class SliceHandlerImpl implements SliceHandler {
         this.sliceData = null;
     }
 
-    public slice(sliceData: SliceData) {
+    public slice(sliceData: SliceData): void {
         if (sliceData.enabled &&
             sliceData.clientID &&
             sliceData.contour &&

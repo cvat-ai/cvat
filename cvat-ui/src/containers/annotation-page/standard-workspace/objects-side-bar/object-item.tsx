@@ -175,7 +175,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     private edit = (): void => {
         const { objectState, readonly, canvasInstance } = this.props;
 
-        if (!readonly && canvasInstance instanceof Canvas) {
+        if (!readonly && canvasInstance instanceof Canvas &&
+            [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
+        ) {
             if (canvasInstance.mode() !== CanvasMode.IDLE) {
                 canvasInstance.cancel();
             }
@@ -187,15 +189,15 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     private slice = (): void => {
         const { objectState, readonly, canvasInstance } = this.props;
 
-        if (!readonly &&
-            [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType) &&
-            canvasInstance instanceof Canvas
+        if (!readonly && canvasInstance instanceof Canvas &&
+            [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
         ) {
             if (canvasInstance.mode() !== CanvasMode.IDLE) {
                 canvasInstance.cancel();
             }
 
             // todo: implement for a mask
+            // hide context menu after
 
             canvasInstance.slice({
                 enabled: true,

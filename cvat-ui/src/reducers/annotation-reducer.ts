@@ -441,38 +441,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.DRAG_CANVAS: {
-            const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.DRAG_CANVAS : ActiveControl.CURSOR;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: null,
-                },
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
-                },
-            };
-        }
-        case AnnotationActionTypes.ZOOM_CANVAS: {
-            const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.ZOOM_CANVAS : ActiveControl.CURSOR;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: null,
-                },
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
-                },
-            };
-        }
         case AnnotationActionTypes.REMEMBER_OBJECT: {
             const { payload } = action;
 
@@ -538,15 +506,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     activeControl,
-                },
-            };
-        }
-        case AnnotationActionTypes.SHAPE_DRAWN: {
-            return {
-                ...state,
-                canvas: {
-                    ...state.canvas,
-                    activeControl: ActiveControl.CURSOR,
                 },
             };
         }
@@ -758,18 +717,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 drawing: {
                     ...state.drawing,
                     activeInitialState: objectState,
-                },
-            };
-        }
-        case AnnotationActionTypes.EDIT_SHAPE: {
-            const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.EDIT : ActiveControl.CURSOR;
-
-            return {
-                ...state,
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
                 },
             };
         }

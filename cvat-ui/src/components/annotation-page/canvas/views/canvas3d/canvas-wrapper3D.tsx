@@ -18,18 +18,16 @@ import {
     activateObject,
     confirmCanvasReadyAsync,
     createAnnotationsAsync,
-    dragCanvas,
-    editShape,
     groupAnnotationsAsync,
-    groupObjects,
     mergeAnnotationsAsync,
     resetCanvas,
-    shapeDrawn,
     splitAnnotationsAsync,
+    updateActiveControl as updateActiveControlAction,
     updateAnnotationsAsync,
     updateCanvasContextMenu,
 } from 'actions/annotation-actions';
 import {
+    ActiveControl,
     ColorBy, CombinedState, ContextMenuType, ObjectType, Workspace,
 } from 'reducers';
 import { CameraAction, Canvas3d, ViewsDOM } from 'cvat-canvas3d-wrapper';
@@ -61,9 +59,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    onDragCanvas: (enabled: boolean) => void;
     onSetupCanvas(): void;
-    onGroupObjects: (enabled: boolean) => void;
     onResetCanvas(): void;
     onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
     onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
@@ -71,8 +67,7 @@ interface DispatchToProps {
     onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
     onUpdateAnnotations(states: ObjectState[]): void;
     onActivateObject: (activatedStateID: number | null) => void;
-    onShapeDrawn: () => void;
-    onEditShape: (enabled: boolean) => void;
+    updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
 }
 
@@ -127,20 +122,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onDragCanvas(enabled: boolean): void {
-            dispatch(dragCanvas(enabled));
-        },
         onSetupCanvas(): void {
             dispatch(confirmCanvasReadyAsync());
         },
         onResetCanvas(): void {
             dispatch(resetCanvas());
-        },
-        onGroupObjects(enabled: boolean): void {
-            dispatch(groupObjects(enabled));
-        },
-        onShapeDrawn(): void {
-            dispatch(shapeDrawn());
         },
         onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(createAnnotationsAsync(sessionInstance, frame, states));
@@ -161,9 +147,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
             dispatch(activateObject(activatedStateID, null, null));
         },
-        onEditShape(enabled: boolean): void {
-            dispatch(editShape(enabled));
-        },
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
@@ -175,6 +158,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             pointID?: number,
         ): void {
             dispatch(updateCanvasContextMenu(visible, left, top, pointID, type));
+        },
+        updateActiveControl(activeControl: ActiveControl): void {
+            dispatch(updateActiveControlAction(activeControl));
         },
     };
 }
@@ -417,8 +403,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
         activeObjectType,
         onResetCanvas,
         onSetupCanvas,
-        onShapeDrawn,
-        onGroupObjects,
+        updateActiveControl,
         onCreateAnnotations,
         onMergeAnnotations,
         onSplitAnnotations,
@@ -431,13 +416,11 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
     };
 
     const onCanvasDragStart = (): void => {
-        const { onDragCanvas } = props;
-        onDragCanvas(true);
+        updateActiveControl(ActiveControl.DRAG_CANVAS);
     };
 
     const onCanvasDragDone = (): void => {
-        const { onDragCanvas } = props;
-        onDragCanvas(false);
+        updateActiveControl(ActiveControl.CURSOR);
     };
 
     const animateCanvas = (): void => {
@@ -460,7 +443,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
 
     const onCanvasShapeDrawn = (event: any): void => {
         if (!event.detail.continue) {
-            onShapeDrawn();
+            updateActiveControl(ActiveControl.CURSOR);
         }
 
         const { state, duration } = event.detail;
@@ -516,8 +499,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
     };
 
     const onCanvasEditDone = (event: any): void => {
-        const { onEditShape, onUpdateAnnotations } = props;
-        onEditShape(false);
+        const { onUpdateAnnotations } = props;
         const { state, points } = event.detail;
         state.points = points;
         onUpdateAnnotations([state]);
@@ -585,7 +567,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): ReactElement => {
 
     const onCanvasObjectsGroupped = (event: CustomEvent<{ states: ObjectState[] }>): void => {
         const { states } = event.detail;
-        onGroupObjects(false);
+        updateActiveControl(ActiveControl.CURSOR);
         onGroupAnnotations(jobInstance, frame, states);
     };
 

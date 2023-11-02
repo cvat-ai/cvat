@@ -126,16 +126,12 @@ export enum AnnotationActionTypes {
     SAVE_ANNOTATIONS_FAILED = 'SAVE_ANNOTATIONS_FAILED',
     SWITCH_PLAY = 'SWITCH_PLAY',
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
-    DRAG_CANVAS = 'DRAG_CANVAS',
-    ZOOM_CANVAS = 'ZOOM_CANVAS',
 
     UPDATE_ACTIVE_CONTROL = 'UPDATE_ACTIVE_CONTROL',
 
     COPY_SHAPE = 'COPY_SHAPE',
     PASTE_SHAPE = 'PASTE_SHAPE',
-    EDIT_SHAPE = 'EDIT_SHAPE',
     REPEAT_DRAW_SHAPE = 'REPEAT_DRAW_SHAPE',
-    SHAPE_DRAWN = 'SHAPE_DRAWN',
     RESET_CANVAS = 'RESET_CANVAS',
     REMEMBER_OBJECT = 'REMEMBER_OBJECT',
     UPDATE_ANNOTATIONS_SUCCESS = 'UPDATE_ANNOTATIONS_SUCCESS',
@@ -513,15 +509,6 @@ export function removeObject(objectState: any, force: boolean): AnyAction {
     };
 }
 
-export function editShape(enabled: boolean): AnyAction {
-    return {
-        type: AnnotationActionTypes.EDIT_SHAPE,
-        payload: {
-            enabled,
-        },
-    };
-}
-
 export function copyShape(objectState: any): AnyAction {
     const job = getStore().getState().annotation.job.instance;
     job.logger.log(LogType.copyObject, { count: 1 });
@@ -852,24 +839,6 @@ export function rotateCurrentFrame(rotation: Rotation): AnyAction {
     };
 }
 
-export function dragCanvas(enabled: boolean): AnyAction {
-    return {
-        type: AnnotationActionTypes.DRAG_CANVAS,
-        payload: {
-            enabled,
-        },
-    };
-}
-
-export function zoomCanvas(enabled: boolean): AnyAction {
-    return {
-        type: AnnotationActionTypes.ZOOM_CANVAS,
-        payload: {
-            enabled,
-        },
-    };
-}
-
 export function resetCanvas(): AnyAction {
     return {
         type: AnnotationActionTypes.RESET_CANVAS,
@@ -1065,13 +1034,6 @@ export function rememberObject(createParams: {
     return {
         type: AnnotationActionTypes.REMEMBER_OBJECT,
         payload: createParams,
-    };
-}
-
-export function shapeDrawn(): AnyAction {
-    return {
-        type: AnnotationActionTypes.SHAPE_DRAWN,
-        payload: {},
     };
 }
 

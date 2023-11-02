@@ -209,6 +209,8 @@ export function readPointsFromShape(shape: SVG.Shape): number[] {
     return pointsToNumberArray(points);
 }
 
+export function stringifyPoints(points: number[]): string;
+export function stringifyPoints(points: Point[]): string;
 export function stringifyPoints(points: (Point | number)[]): string {
     if (typeof points[0] === 'number') {
         return points.reduce((acc: string, val: number, idx: number): string => {
@@ -430,16 +432,6 @@ export function expandChannels(r: number, g: number, b: number, encoded: number[
 
     const [left, top, right, bottom] = encoded.slice(-4);
     return rle2Mask(encoded, right - left + 1, bottom - top + 1);
-}
-
-export function stringifyToCanvas(points: number[]): string {
-    return points.reduce((acc: string, val: number, idx: number): string => {
-        if (idx % 2) {
-            return `${acc}${val} `;
-        }
-
-        return `${acc}${val},`;
-    }, '');
 }
 
 export type PropType<T, Prop extends keyof T> = T[Prop];

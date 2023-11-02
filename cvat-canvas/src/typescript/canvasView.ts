@@ -44,7 +44,7 @@ import {
     makeSVGFromTemplate,
     imageDataToDataURL,
     expandChannels,
-    stringifyToCanvas,
+    stringifyPoints,
 } from './shared';
 import {
     CanvasModel,
@@ -194,6 +194,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const shape = this.svgShapes[clientID];
         const text = this.svgTexts[clientID];
         const state = this.drawnStates[clientID];
+
+        if (value && clientID === this.controller.activeElement.clientID) {
+            this.deactivate();
+        }
 
         if (value) {
             if (shape) {
@@ -600,6 +604,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.interactionHandler.transform(this.geometry);
         this.regionSelector.transform(this.geometry);
         this.objectSelector.transform(this.geometry);
+        this.sliceHandler.transform(this.geometry);
     }
 
     private transformCanvas(): void {
@@ -724,7 +729,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         fill: 'url(#cvat_issue_region_pattern_1)',
                     });
             } else if (points.length === 4) {
-                const stringified = stringifyToCanvas([
+                const stringified = stringifyPoints([
                     points[0],
                     points[1],
                     points[2],
@@ -743,7 +748,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         'stroke-width': `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
                     });
             } else {
-                const stringified = stringifyToCanvas(points);
+                const stringified = stringifyPoints(points);
                 this.drawnIssueRegions[+issueRegion] = this.adoptedContent
                     .polygon(stringified)
                     .addClass('cvat_canvas_issue_region')
@@ -2047,7 +2052,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         cx, cy, rx, ry,
                     });
                 } else {
-                    const stringified = stringifyToCanvas(translatedPoints);
+                    const stringified = stringifyPoints(translatedPoints);
                     if (state.shapeType !== 'cuboid') {
                         (shape as any).clear();
                     }
@@ -2155,7 +2160,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.shapeType === 'rectangle') {
                     this.svgShapes[state.clientID] = this.addRect(translatedPoints, state);
                 } else {
-                    const stringified = stringifyToCanvas(translatedPoints);
+                    const stringified = stringifyPoints(translatedPoints);
 
                     if (state.shapeType === 'polygon') {
                         this.svgShapes[state.clientID] = this.addPolygon(stringified, state);
