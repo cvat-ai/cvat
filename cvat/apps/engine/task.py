@@ -1037,11 +1037,13 @@ def _create_thread(
                 chunk_idx: int,
                 chunk_data: Iterable[tuple[str, str, str]]) -> list[tuple[str, int, tuple[int, int]]]:
             nonlocal db_data, db_task, extractor, original_chunk_writer, compressed_chunk_writer
-            if db_task.dimension == models.DimensionType.DIM_2D and (
-                isinstance(extractor, MEDIA_TYPES['image']['extractor']) or
-                isinstance(extractor, MEDIA_TYPES['zip']['extractor']) or
-                isinstance(extractor, MEDIA_TYPES['pdf']['extractor']) or
-                isinstance(extractor, MEDIA_TYPES['archive']['extractor'])):
+            if (db_task.dimension == models.DimensionType.DIM_2D and
+                isinstance(extractor, (
+                    MEDIA_TYPES['image']['extractor'],
+                    MEDIA_TYPES['zip']['extractor'],
+                    MEDIA_TYPES['pdf']['extractor'],
+                    MEDIA_TYPES['archive']['extractor'],
+                ))):
                 chunk_data = preload_images(chunk_data)
 
             fs_original = executor.submit(
