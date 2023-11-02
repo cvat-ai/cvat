@@ -10,6 +10,7 @@ import {
     SplitData,
     GroupData,
     JoinData,
+    SliceData,
     MasksEditData,
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
@@ -47,6 +48,7 @@ interface Canvas {
     edit(editData: MasksEditData): void;
     group(groupData: GroupData): void;
     join(joinData: JoinData): void;
+    slice(sliceData: SliceData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
@@ -159,6 +161,10 @@ class CanvasImpl implements Canvas {
 
     public join(joinData: JoinData): void {
         this.model.join(joinData);
+    }
+
+    public slice(sliceData: SliceData): void {
+        this.model.slice(sliceData);
     }
 
     public merge(mergeData: MergeData): void {

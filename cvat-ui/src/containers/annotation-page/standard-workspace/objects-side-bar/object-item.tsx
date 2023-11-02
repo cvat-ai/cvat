@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +23,9 @@ import {
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
 import { shift } from 'utils/math';
-import { Label, ObjectState } from 'cvat-core-wrapper';
+import {
+    Label, ObjectState, Attribute, Job,
+} from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
@@ -31,20 +33,19 @@ import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 interface OwnProps {
     readonly: boolean;
     clientID: number;
-    objectStates: any[];
+    objectStates: ObjectState[];
 }
 
 interface StateToProps {
-    objectState: any;
-    labels: any[];
-    attributes: any[];
-    jobInstance: any;
+    objectState: ObjectState;
+    labels: Label[];
+    attributes: Attribute[];
+    jobInstance: Job;
     frameNumber: number;
     activated: boolean;
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
-    activatedElementID: number | null;
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
@@ -53,10 +54,10 @@ interface StateToProps {
 
 interface DispatchToProps {
     changeFrame(frame: number): void;
-    updateState(objectState: any): void;
+    updateState(objectState: ObjectState): void;
     activateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
-    removeObject: (objectState: any) => void;
-    copyShape: (objectState: any) => void;
+    removeObject: (objectState: ObjectState) => void;
+    copyShape: (objectState: ObjectState) => void;
     switchPropagateVisibility: (visible: boolean) => void;
     changeGroupColor(group: number, color: string): void;
 }
@@ -86,7 +87,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
     return {
         objectState: states[index],
-        attributes: jobAttributes[states[index].label.id],
+        attributes: jobAttributes[states[index].label.id as number],
         labels,
         ready,
         activeControl,
@@ -97,7 +98,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas | Canvas3d,
     };
 }
 
@@ -139,7 +140,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         super(props);
         this.state = {
             labels: props.labels,
-            elements: props.objectState.elements.map((el: ObjectState) => el.clientID),
+            elements: props.objectState.elements.map((el: ObjectState) => el.clientID as number),
         };
     }
 
@@ -183,6 +184,28 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     }
 
+    private slice = (): void => {
+        const { objectState, readonly, canvasInstance } = this.props;
+
+        if (!readonly &&
+            [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType) &&
+            canvasInstance instanceof Canvas
+        ) {
+            if (canvasInstance.mode() !== CanvasMode.IDLE) {
+                canvasInstance.cancel();
+            }
+
+            // todo: implement for a mask
+
+            canvasInstance.slice({
+                enabled: true,
+                contour: objectState.points as number[],
+                clientID: objectState.clientID as number,
+                shapeType: objectState.shapeType as ShapeType.MASK | ShapeType.POLYGON,
+            });
+        }
+    }
+
     private remove = (): void => {
         const {
             objectState, readonly, removeObject,
@@ -213,23 +236,25 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             return;
         }
 
-        const reducedPoints = objectState.points.reduce(
-            (acc: number[][], _: number, index: number, array: number[]): number[][] => {
-                if (index % 2) {
-                    acc.push([array[index - 1], array[index]]);
-                }
+        if ([ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
+            const reducedPoints = (objectState.points as number[]).reduce(
+                (acc: number[][], _: number, index: number, array: number[]): number[][] => {
+                    if (index % 2) {
+                        acc.push([array[index - 1], array[index]]);
+                    }
 
-                return acc;
-            },
-            [],
-        );
+                    return acc;
+                },
+                [],
+            );
 
-        if (objectState.shapeType === ShapeType.POLYGON) {
-            objectState.points = reducedPoints.slice(0, 1).concat(reducedPoints.reverse().slice(0, -1)).flat();
-            updateState(objectState);
-        } else if (objectState.shapeType === ShapeType.POLYLINE) {
-            objectState.points = reducedPoints.reverse().flat();
-            updateState(objectState);
+            if (objectState.shapeType === ShapeType.POLYGON) {
+                objectState.points = reducedPoints.slice(0, 1).concat(reducedPoints.reverse().slice(0, -1)).flat();
+                updateState(objectState);
+            } else if (objectState.shapeType === ShapeType.POLYLINE) {
+                objectState.points = reducedPoints.reverse().flat();
+                updateState(objectState);
+            }
         }
     };
 
@@ -270,7 +295,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         if (colorBy === ColorBy.INSTANCE) {
             objectState.color = color;
             this.commit();
-        } else if (colorBy === ColorBy.GROUP) {
+        } else if (colorBy === ColorBy.GROUP && objectState.group) {
             changeGroupColor(objectState.group.id, color);
         }
     };
@@ -290,10 +315,10 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
         const { objectState, readonly } = this.props;
 
-        if (!readonly) {
+        if (!readonly && objectState.shapeType === ShapeType.CUBOID) {
+            const points = objectState.points as number[];
             this.resetCuboidPerspective(false);
-            objectState.points = shift(objectState.points, cuboidOrientationIsLeft(objectState.points) ? 4 : -4);
-
+            objectState.points = shift(points, cuboidOrientationIsLeft(points) ? 4 : -4);
             this.commit();
         }
     };
@@ -304,8 +329,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
         const { objectState, readonly } = this.props;
 
-        if (!readonly) {
-            const { points } = objectState;
+        if (!readonly && objectState.shapeType === ShapeType.CUBOID) {
+            const points = objectState.points as number[];
             const minD = {
                 x: (points[6] - points[2]) * 0.001,
                 y: (points[3] - points[1]) * 0.001,
@@ -358,10 +383,10 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 activated={activated}
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
-                clientID={objectState.clientID}
+                clientID={objectState.clientID as number}
                 serverID={objectState.serverID}
                 locked={objectState.lock}
-                labelID={objectState.label.id}
+                labelID={objectState.label.id as number}
                 isGroundTruth={objectState.isGroundTruth}
                 color={getColor(objectState, colorBy)}
                 attributes={attributes}
@@ -380,6 +405,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 changeColor={this.changeColor}
                 changeLabel={this.changeLabel}
                 edit={this.edit}
+                slice={this.slice}
                 resetCuboidPerspective={this.resetCuboidPerspective}
             />
         );

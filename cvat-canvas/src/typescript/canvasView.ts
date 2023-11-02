@@ -20,6 +20,7 @@ import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
 import { ObjectSelector, ObjectSelectorImpl } from './objectSelector';
 import { GroupHandler, GroupHandlerImpl } from './groupHandler';
+import { SliceHandler, SliceHandlerImpl } from './sliceHandler';
 import { RegionSelector, RegionSelectorImpl } from './regionSelector';
 import { ZoomHandler, ZoomHandlerImpl } from './zoomHandler';
 import { InteractionHandler, InteractionHandlerImpl } from './interactionHandler';
@@ -43,6 +44,7 @@ import {
     makeSVGFromTemplate,
     imageDataToDataURL,
     expandChannels,
+    stringifyToCanvas,
 } from './shared';
 import {
     CanvasModel,
@@ -53,7 +55,6 @@ import {
     DrawData,
     MergeData,
     SplitData,
-    GroupData,
     Mode,
     Size,
     Configuration,
@@ -96,6 +97,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private mergeHandler: MergeHandler;
     private splitHandler: SplitHandler;
     private groupHandler: GroupHandler;
+    private sliceHandler: SliceHandler;
     private regionSelector: RegionSelector;
     private objectSelector: ObjectSelector;
     private zoomHandler: ZoomHandler;
@@ -180,16 +182,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return result;
     }
 
-    private stringifyToCanvas(points: number[]): string {
-        return points.reduce((acc: string, val: number, idx: number): string => {
-            if (idx % 2) {
-                return `${acc}${val} `;
-            }
-
-            return `${acc}${val},`;
-        }, '');
-    }
-
     private isInnerHidden(clientID: number): boolean {
         return this.innerObjectsFlags.drawHidden[clientID] ||
             this.innerObjectsFlags.editHidden[clientID] ||
@@ -197,7 +189,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             false;
     }
 
-    private setupInnerFlags(clientID: number, path: 'drawHidden' | 'editHidden', value: boolean): void {
+    private setupInnerFlags(clientID: number, path: keyof CanvasViewImpl['innerObjectsFlags'], value: boolean): void {
         this.innerObjectsFlags[path][clientID] = value;
         const shape = this.svgShapes[clientID];
         const text = this.svgTexts[clientID];
@@ -233,12 +225,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private onInteraction(
+    private onInteraction = (
         shapes: InteractionResult[] | null,
         shapesUpdated = true,
         isDone = false,
         threshold: number | null = null,
-    ): void {
+    ): void => {
         const { zLayer } = this.controller;
         if (Array.isArray(shapes)) {
             const event: CustomEvent = new CustomEvent('canvas.interacted', {
@@ -270,7 +262,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private onDrawDone(data: any | null, duration: number, continueDraw?: boolean, prevDrawData?: DrawData): void {
+    private onDrawDone = (
+        data: any | null,
+        duration: number,
+        continueDraw?: boolean,
+        prevDrawData?: DrawData,
+    ): void => {
         const hiddenBecauseOfDraw = Object.keys(this.innerObjectsFlags.drawHidden)
             .map((_clientID): number => +_clientID);
         if (hiddenBecauseOfDraw.length) {
@@ -384,7 +381,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     };
 
-    private onMergeDone(objects: any[] | null, duration?: number): void {
+    private onMergeDone = (objects: any[] | null, duration?: number): void => {
         if (objects) {
             const event: CustomEvent = new CustomEvent('canvas.merged', {
                 bubbles: false,
@@ -409,7 +406,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onSplitDone(object: any): void {
+    private onSplitDone = (object: any): void => {
         if (object) {
             const event: CustomEvent = new CustomEvent('canvas.splitted', {
                 bubbles: false,
@@ -434,7 +431,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onSelectDone(objects?: any[]): void {
+    private onSelectDone = (objects?: any[]): void => {
         if (objects) {
             if (this.mode === Mode.GROUP) {
                 this.canvas.dispatchEvent(new CustomEvent('canvas.groupped', {
@@ -470,7 +467,31 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onRegionSelected(points?: number[]): void {
+    private onSliceDone = (clientID: number, results?: number[][], duration?: number): void => {
+        if (results && duration) {
+            this.canvas.dispatchEvent(new CustomEvent('canvas.sliced', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    clientID,
+                    results,
+                    duration,
+                },
+            }));
+        } else {
+            const event: CustomEvent = new CustomEvent('canvas.canceled', {
+                bubbles: false,
+                cancelable: true,
+            });
+
+            this.canvas.dispatchEvent(event);
+        }
+
+        this.controller.slice({ enabled: false });
+        this.mode = Mode.IDLE;
+    }
+
+    private onRegionSelected = (points?: number[]): void => {
         if (points) {
             const event: CustomEvent = new CustomEvent('canvas.regionselected', {
                 bubbles: false,
@@ -494,7 +515,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onFindObject(e: MouseEvent): void {
+    private onFindObject = (e: MouseEvent): void => {
         if (e.button === 0) {
             const { offset } = this.controller.geometry;
             const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
@@ -513,7 +534,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private onFocusRegion(x: number, y: number, width: number, height: number): void {
+    private onFocusRegion = (x: number, y: number, width: number, height: number): void => {
         // First of all, compute and apply scale
         let scale = null;
 
@@ -703,7 +724,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         fill: 'url(#cvat_issue_region_pattern_1)',
                     });
             } else if (points.length === 4) {
-                const stringified = this.stringifyToCanvas([
+                const stringified = stringifyToCanvas([
                     points[0],
                     points[1],
                     points[2],
@@ -722,7 +743,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         'stroke-width': `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
                     });
             } else {
-                const stringified = this.stringifyToCanvas(points);
+                const stringified = stringifyToCanvas(points);
                 this.drawnIssueRegions[+issueRegion] = this.adoptedContent
                     .polygon(stringified)
                     .addClass('cvat_canvas_issue_region')
@@ -1206,7 +1227,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Setup API handlers
         this.autoborderHandler = new AutoborderHandlerImpl(this.content);
         this.drawHandler = new DrawHandlerImpl(
-            this.onDrawDone.bind(this),
+            this.onDrawDone,
             this.adoptedContent,
             this.adoptedText,
             this.autoborderHandler,
@@ -1214,7 +1235,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.configuration,
         );
         this.masksHandler = new MasksHandlerImpl(
-            this.onDrawDone.bind(this),
+            this.onDrawDone,
             this.controller.draw.bind(this.controller),
             this.onEditStart,
             this.onEditDone,
@@ -1223,30 +1244,37 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
         this.editHandler = new EditHandlerImpl(this.onEditDone, this.adoptedContent, this.autoborderHandler);
         this.mergeHandler = new MergeHandlerImpl(
-            this.onMergeDone.bind(this),
-            this.onFindObject.bind(this),
+            this.onMergeDone,
+            this.onFindObject,
             this.adoptedContent,
         );
         this.splitHandler = new SplitHandlerImpl(
-            this.onSplitDone.bind(this),
-            this.onFindObject.bind(this),
+            this.onSplitDone,
+            this.onFindObject,
             this.adoptedContent,
         );
         this.objectSelector = new ObjectSelectorImpl(
-            this.onFindObject.bind(this),
+            this.onFindObject,
             () => this.controller.objects,
             this.geometry,
             this.adoptedContent,
         );
-        this.groupHandler = new GroupHandlerImpl(this.onSelectDone.bind(this), this.objectSelector);
+        this.groupHandler = new GroupHandlerImpl(this.onSelectDone, this.objectSelector);
+        this.sliceHandler = new SliceHandlerImpl(
+            (clientID) => this.setupInnerFlags(clientID, 'sliceHidden', true),
+            (clientID) => this.setupInnerFlags(clientID, 'sliceHidden', false),
+            this.onSliceDone,
+            this.geometry,
+            this.adoptedContent,
+        );
         this.regionSelector = new RegionSelectorImpl(
-            this.onRegionSelected.bind(this),
+            this.onRegionSelected,
             this.adoptedContent,
             this.geometry,
         );
-        this.zoomHandler = new ZoomHandlerImpl(this.onFocusRegion.bind(this), this.adoptedContent, this.geometry);
+        this.zoomHandler = new ZoomHandlerImpl(this.onFocusRegion, this.adoptedContent, this.geometry);
         this.interactionHandler = new InteractionHandlerImpl(
-            this.onInteraction.bind(this),
+            this.onInteraction,
             this.adoptedContent,
             this.geometry,
             this.configuration,
@@ -1661,6 +1689,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.canvas.style.cursor = '';
             }
             this.groupHandler.group(data);
+        } else if (reason === UpdateReasons.SLICE) {
+            const data = this.controller.sliceData;
+            if (data.enabled) {
+                this.mode = Mode.SLICE;
+            }
+            this.sliceHandler.slice(data);
         } else if (reason === UpdateReasons.SELECT) {
             this.objectSelector.push(this.controller.selected);
             if (this.mode === Mode.MERGE) {
@@ -1683,6 +1717,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.splitHandler.cancel();
             } else if (this.mode === Mode.GROUP || this.mode === Mode.JOIN) {
                 this.groupHandler.cancel();
+            } else if (this.mode === Mode.SLICE) {
+                this.sliceHandler.cancel();
             } else if (this.mode === Mode.SELECT_REGION) {
                 this.regionSelector.cancel();
             } else if (this.mode === Mode.EDIT) {
@@ -2011,7 +2047,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         cx, cy, rx, ry,
                     });
                 } else {
-                    const stringified = this.stringifyToCanvas(translatedPoints);
+                    const stringified = stringifyToCanvas(translatedPoints);
                     if (state.shapeType !== 'cuboid') {
                         (shape as any).clear();
                     }
@@ -2119,7 +2155,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.shapeType === 'rectangle') {
                     this.svgShapes[state.clientID] = this.addRect(translatedPoints, state);
                 } else {
-                    const stringified = this.stringifyToCanvas(translatedPoints);
+                    const stringified = stringifyToCanvas(translatedPoints);
 
                     if (state.shapeType === 'polygon') {
                         this.svgShapes[state.clientID] = this.addPolygon(stringified, state);

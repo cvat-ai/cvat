@@ -166,6 +166,13 @@ export interface SplitData {
     enabled: boolean;
 }
 
+export interface SliceData {
+    enabled: boolean;
+    contour?: number[];
+    clientID?: number;
+    shapeType?: 'mask' | 'polygon';
+}
+
 export enum FrameZoom {
     MIN = 0.1,
     MAX = 10,
@@ -194,6 +201,7 @@ export enum UpdateReasons {
     SPLIT = 'split',
     GROUP = 'group',
     JOIN = 'join',
+    SLICE = 'slice',
     SELECT = 'select',
     CANCEL = 'cancel',
     BITMAP = 'bitmap',
@@ -215,6 +223,7 @@ export enum Mode {
     SPLIT = 'split',
     GROUP = 'group',
     JOIN = 'join',
+    SLICE = 'slice',
     INTERACT = 'interact',
     SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
@@ -239,6 +248,7 @@ export interface CanvasModel {
     readonly splitData: SplitData;
     readonly groupData: GroupData;
     readonly joinData: JoinData;
+    readonly sliceData: SliceData;
     readonly configuration: Configuration;
     readonly selected: any;
     geometry: Geometry;
@@ -261,6 +271,7 @@ export interface CanvasModel {
     edit(editData: MasksEditData): void;
     group(groupData: GroupData): void;
     join(joinData: JoinData): void;
+    slice(sliceData: SliceData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
@@ -298,6 +309,9 @@ const defaultData = {
         enabled: false,
     },
     joinData: {
+        enabled: false,
+    },
+    sliceData: {
         enabled: false,
     },
 };
@@ -353,6 +367,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         mergeData: MergeData;
         groupData: GroupData;
         joinData: JoinData;
+        sliceData: SliceData;
         splitData: SplitData;
         selected: any;
         mode: Mode;
@@ -838,6 +853,23 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.JOIN);
     }
 
+    public slice(sliceData: SliceData): void {
+        if (![Mode.IDLE, Mode.SLICE].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (this.data.sliceData.enabled && sliceData.enabled) {
+            return;
+        }
+
+        if (!this.data.sliceData.enabled && !sliceData.enabled) {
+            return;
+        }
+
+        this.data.sliceData = { ...sliceData };
+        this.notify(UpdateReasons.SLICE);
+    }
+
     public merge(mergeData: MergeData): void {
         if (![Mode.IDLE, Mode.MERGE].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -1050,6 +1082,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get joinData(): JoinData {
         return { ...this.data.joinData };
+    }
+
+    public get sliceData(): SliceData {
+        return { ...this.data.sliceData };
     }
 
     public get groupData(): GroupData {

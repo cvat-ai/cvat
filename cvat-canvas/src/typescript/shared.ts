@@ -432,4 +432,14 @@ export function expandChannels(r: number, g: number, b: number, encoded: number[
     return rle2Mask(encoded, right - left + 1, bottom - top + 1);
 }
 
+export function stringifyToCanvas(points: number[]): string {
+    return points.reduce((acc: string, val: number, idx: number): string => {
+        if (idx % 2) {
+            return `${acc}${val} `;
+        }
+
+        return `${acc}${val},`;
+    }, '');
+}
+
 export type PropType<T, Prop extends keyof T> = T[Prop];

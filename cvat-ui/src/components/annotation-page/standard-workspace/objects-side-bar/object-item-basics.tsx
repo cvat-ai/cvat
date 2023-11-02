@@ -18,7 +18,7 @@ interface Props {
     jobInstance: any;
     readonly: boolean;
     clientID: number;
-    serverID: number | undefined;
+    serverID: number | null;
     labelID: number;
     labels: any[];
     shapeType: ShapeType;
@@ -46,6 +46,7 @@ interface Props {
     toForeground(): void;
     resetCuboidPerspective(): void;
     edit(): void;
+    slice(): void;
 }
 
 function ItemTopComponent(props: Props): JSX.Element {
@@ -80,6 +81,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toForeground,
         resetCuboidPerspective,
         edit,
+        slice,
         jobInstance,
     } = props;
 
@@ -158,6 +160,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             resetCuboidPerspective,
                             changeColorPickerVisible,
                             edit,
+                            slice,
                         })}
                     >
                         <MoreOutlined />
