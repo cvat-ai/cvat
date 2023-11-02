@@ -168,8 +168,7 @@ class MediaCache:
                         images.append((fs_filename, fs_filename, None))
 
                     cloud_storage_instance.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
-                    if dimension == DimensionType.DIM_2D:
-                        images = preload_images(images)
+                    images = preload_images(images)
 
                     for checksum, (_, fs_filename, _) in zip(checksums, images):
                         if checksum and not md5_hash(fs_filename) == checksum:
