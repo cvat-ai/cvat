@@ -1085,11 +1085,8 @@ def _create_thread(
         with concurrent.futures.ThreadPoolExecutor(max_workers=2*settings.CVAT_CONCURRENT_CHUNK_PROCESSING) as executor:
             for chunk_idx, chunk_data in generator:
                 db_data.size += len(chunk_data)
-                if not futures.full():
-                    futures.put(executor.submit(save_chunks, executor, chunk_idx, chunk_data))
-                    continue
-
-                process_results(futures.get().result())
+                if futures.full():
+                    process_results(futures.get().result())
                 futures.put(executor.submit(save_chunks, executor, chunk_idx, chunk_data))
 
             while not futures.empty():
