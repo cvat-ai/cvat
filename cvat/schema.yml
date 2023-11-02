@@ -7344,7 +7344,7 @@ components:
         mapping:
           type: object
           additionalProperties:
-            type: object
+            $ref: '#/components/schemas/LabelMappingEntryRequest'
           description: Label mapping from the model to the task labels
       required:
       - function
@@ -7720,6 +7720,25 @@ components:
         has_parent:
           type: boolean
           readOnly: true
+      required:
+      - name
+    LabelMappingEntryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
+        sublabels:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/SublabelMappingEntryRequest'
+          description: Label mapping for from the model to the task sublabels within
+            a parent label
       required:
       - name
     LabeledData:
@@ -9623,6 +9642,19 @@ components:
           description: Associated annotation type for this label
         has_parent:
           type: boolean
+      required:
+      - name
+    SublabelMappingEntryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
       required:
       - name
     SublabelRequest:
