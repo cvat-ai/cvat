@@ -603,6 +603,16 @@ class TestGetCloudStorageContent:
                 [],
             ),
             (
+                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when default bucket prefix contains dirs and prefix starts with it
+                "sub/manifest.jsonl",
+                "s",
+                "sub/",
+                None,
+                [
+                    FileInfo(mime_type="DIR", name="sub", type="DIR"),
+                ],
+            ),
+            (
                 SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when default bucket prefix is set to directory
                 None,
                 None,
@@ -656,6 +666,16 @@ class TestGetCloudStorageContent:
                 "sub/image_case_65_2",
                 None,
                 [],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when default bucket prefix contains dirs and prefix starts with it
+                None,
+                "s",
+                "sub/",
+                None,
+                [
+                    FileInfo(mime_type="DIR", name="sub", type="DIR"),
+                ],
             ),
         ],
     )
