@@ -33,7 +33,7 @@ from cvat.apps.engine.media_extractors import (ImageDatasetManifestReader,
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (DataChoice, DimensionType, Job, Image,
                                      StorageChoice, CloudStorage)
-from cvat.apps.engine.utils import md5_hash
+from cvat.apps.engine.utils import md5_hash, preload_images
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -117,7 +117,7 @@ class MediaCache:
 
     @staticmethod
     @contextmanager
-    def _get_images(db_data, chunk_number):
+    def _get_images(db_data, chunk_number, dimension):
         images = []
         tmp_dir = None
         upload_dir = {
@@ -168,6 +168,7 @@ class MediaCache:
                         images.append((fs_filename, fs_filename, None))
 
                     cloud_storage_instance.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
+                    images = preload_images(images)
 
                     for checksum, (_, fs_filename, _) in zip(checksums, images):
                         if checksum and not md5_hash(fs_filename) == checksum:
@@ -176,6 +177,8 @@ class MediaCache:
                     for item in reader:
                         source_path = os.path.join(upload_dir, f"{item['name']}{item['extension']}")
                         images.append((source_path, source_path, None))
+                    if dimension == DimensionType.DIM_2D:
+                        images = preload_images(images)
 
             yield images
         finally:
@@ -199,7 +202,7 @@ class MediaCache:
         writer = writer_classes[quality](image_quality, **kwargs)
 
         buff = BytesIO()
-        with self._get_images(db_data, chunk_number) as images:
+        with self._get_images(db_data, chunk_number, self._dimension) as images:
             writer.save_as_chunk(images, buff)
         buff.seek(0)
 
