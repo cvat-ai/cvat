@@ -235,6 +235,11 @@ textarea.ant-input.cvat-raw-labels-viewer {
         display: flex;
         flex-wrap: wrap;
 
+        .ant-empty {
+            width: 100%;
+            margin-top: $grid-unit-size;
+        }
+
         > button {
             margin-top: $grid-unit-size;
             margin-right: $grid-unit-size;

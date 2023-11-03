@@ -33,7 +33,7 @@ function PickFromModelComponent(props: Props): JSX.Element {
     const { onCreate, onCancel, labelNames } = props;
     const [selectedModel, setSelectedModel] = useState<MLModel | null>(null);
     const models = useSelector((state: CombinedState) => state.models.detectors);
-    const labels = (selectedModel?.labels || []).filter((label) => label.type !== 'unknown');
+    const labels = selectedModel?.labels || [];
 
     return (
         <div className='cvat-label-constructor-pick-from-model'>
@@ -72,6 +72,9 @@ function PickFromModelComponent(props: Props): JSX.Element {
             )}
 
             <div className='cvat-label-constructor-pick-from-model-list'>
+                { !!selectedModel && !labels.length && (
+                    <Empty description='Labels not found in the specified model' />
+                )}
                 {labels.map((label) => (
                     <Button
                         type='ghost'
