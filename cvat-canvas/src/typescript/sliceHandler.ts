@@ -41,6 +41,31 @@ export interface SliceHandler {
 //         triangleArea([x2, y2], [x3, y3], [x0, y0]) * triangleArea([x2, y2], [x3, y3], [x1, y1]) < 0;
 // }
 
+function indexGenerator(length: number, from: number, to: number, direction: 'forward' | 'backward'): number[] {
+    const result = [];
+    const value = direction === 'forward' ? 1 : -1;
+
+    if (from < 0 || from >= length || to < 0 || to >= length) {
+        throw new Error('Incorrect index generator input');
+    }
+
+    let i = from;
+    while (i !== to) {
+        result.push(i);
+        i += value;
+
+        if (i >= length) {
+            i = 0;
+        }
+
+        if (i < 0) {
+            i = length - 1;
+        }
+    }
+    result.push(i);
+    return result;
+}
+
 export class SliceHandlerImpl implements SliceHandler {
     private canvas: SVG.Container;
     private start: number;
@@ -186,7 +211,7 @@ export class SliceHandlerImpl implements SliceHandler {
 
                 if (!isSelfIntersection && !errored && totalIntersections <= 2) {
                     points.push([x, y]);
-                    if (doneIntersections === 1) {
+                    if (totalIntersections === 1) {
                         intermediatePoints.push([x, y]);
                     }
 
@@ -206,42 +231,49 @@ export class SliceHandlerImpl implements SliceHandler {
                     const [firstSegmentKey, secondSegmentKey] = intersectedSegments;
                     const firstSegmentIdx = +firstSegmentKey.split('.')[1];
                     const secondSegmentIdx = +secondSegmentKey.split('.')[1];
-                    if (firstSegmentKey === secondSegmentKey) {
+                    if (firstSegmentIdx === secondSegmentIdx) {
                         // the same segment. Results in this case are:
-                        const contour1 = [
+                        let contour1 = [
                             ...contoursIntersections[firstSegmentKey], // first intersection
-                            ...intermediatePoints.flat(), // intermediate points
+                            ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
+                                (key) => key.startsWith('0.'),
+                            ).split('.')[1] ?
+                                intermediatePoints : intermediatePoints.toReversed()
+                            ).flat(),
                             ...contoursIntersections[secondSegmentKey], // last intersection
                         ];
 
-                        const contour2 = [
-                            ...contoursIntersections[secondSegmentKey], // last intersection
-                            ...Array(contourSegments.length).map((_, idx) => {
-                                if (firstSegmentIdx + idx + 1 < contourSegments.length) {
-                                    return firstSegmentKey + idx + 1;
-                                }
-
-                                return firstSegmentIdx + idx + 1 - contourSegments.length;
-                            }).map((idx) => contourSegments[idx][0]).flat(),
+                        let contour2 = [
                             ...contoursIntersections[firstSegmentKey], // first intersection
+                            ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
+                                (key) => key.startsWith('0.'),
+                            ).split('.')[1] ?
+                                intermediatePoints : intermediatePoints.toReversed()
+                            ).flat(),
+                            ...contoursIntersections[secondSegmentKey], // last intersection
                         ];
 
-                        const p1 = contoursIntersections[secondSegmentKey];
-                        const p2 = contoursIntersections[firstSegmentKey];
-                        const p = [contour2[2], contour2[3]];
+                        const otherPoints = Array(contourSegments.length).fill(0).map((_, idx) => {
+                            if (firstSegmentIdx + idx < contourSegments.length) {
+                                return firstSegmentIdx + idx;
+                            }
+
+                            return firstSegmentIdx + idx - contourSegments.length;
+                        }).map((idx) => contourSegments[idx][1]);
+
+                        const p1 = contoursIntersections[firstSegmentKey];
+                        const p2 = contoursIntersections[secondSegmentKey];
+                        const p = otherPoints[0];
                         const d1 = Math.sqrt((p1[0] - p[0]) ** 2 + (p1[1] - p[1]) ** 2);
                         const d2 = Math.sqrt((p2[0] - p[0]) ** 2 + (p2[1] - p[1]) ** 2);
 
-                        if (d2 < d1) {
-                            // first intersection is closer to the first point of the following segment
-                            [contour2[0]] = p2;
-                            [, contour2[1]] = p2;
-                            [contour2[contour2.length - 1]] = p1;
-                            [, contour2[contour2.length - 2]] = p1;
-                            contour2.push(...intermediatePoints.toReversed().flat());
-                        } else {
-                            contour2.push(...intermediatePoints.flat());
+                        if (d2 > d1) {
+                            otherPoints.reverse();
                         }
+
+                        contour2.push(...otherPoints.flat());
+
+                        // contour1 = [1,2,3,4,5,6];
 
                         this.onSliceDone(
                             sliceData.clientID,
@@ -252,49 +284,45 @@ export class SliceHandlerImpl implements SliceHandler {
                         );
                     } else {
                         // intersected different segments. Results in this case are:
-                        const contour1 = [
+                        let contour1 = [
                             // first intersection
                             ...contoursIntersections[firstSegmentKey],
-                            // all the following contours points until the second intersected segment  including
-                            ...Array(secondSegmentIdx - firstSegmentIdx)
-                                .fill(0).map((_, idx) => idx + 1 + firstSegmentIdx)
-                                .map((idx) => contourSegments[idx][0]).flat(),
-                            // second intersection
-                            ...contoursIntersections[secondSegmentKey],
                             // intermediate points (reversed if intersections order was swopped)
-                            ...(`${firstSegmentKey}` === Object.keys(contoursIntersections).find(
+                            ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
                                 (key) => key.startsWith('0.'),
                             ).split('.')[1] ?
                                 intermediatePoints : intermediatePoints.toReversed()
                             ).flat(),
+                            // all the following contours points until the second intersected segment  including
+//                                 // second intersection
+                            ...contoursIntersections[secondSegmentKey],
+                            ...indexGenerator(contourSegments.length, secondSegmentIdx, firstSegmentIdx, 'forward')
+                                .map((idx) => contourSegments[idx][1]).slice(0, -1).flat(),
+
                         ];
 
-                        const contour2 = [
+                        let contour2 = [
                             // first intersection
                             ...contoursIntersections[firstSegmentKey],
+                            ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
+                                (key) => key.startsWith('0.'),
+                            ).split('.')[1] ?
+                                intermediatePoints : intermediatePoints.toReversed()
+                            ).flat(),
+                            ...contoursIntersections[secondSegmentKey],
+                            ...indexGenerator(contourSegments.length, secondSegmentIdx, firstSegmentIdx, 'backward')
+                                .map((idx) => contourSegments[idx][0]).slice(0, -1).flat(),
+
+
                             // all the contours points in reversed direction
                             // until the second intersected segment including
-                            ...Array(contourSegments.length - (secondSegmentIdx - firstSegmentIdx))
-                                .map((_, idx) => {
-                                    // do not try to understand ;)
-                                    // actually here we generate indexes to go the array in back way
-                                    // like 3, 2, 1, 0, length - 1, length - 2, ...
-                                    if (firstSegmentIdx - (idx + 1) >= 0) {
-                                        return firstSegmentIdx - (idx + 1);
-                                    }
 
-                                    return contourSegments.length + firstSegmentIdx - (idx + 1);
-                                })
-                                .map((idx) => contourSegments[idx][1]).flat(),
-                            // second intersection
-                            ...contoursIntersections[secondSegmentKey],
                             // intermediate points (reversed if intersections order was swopped)
-                            ...(`${firstSegmentKey}` === Object.keys(contoursIntersections).find(
-                                (key) => key.startsWith('0.'),
-                            ).split('.')[1] ?
-                                intermediatePoints : intermediatePoints.toReversed()
-                            ).flat(),
+                            // second intersection
+
                         ];
+
+
 
                         this.onSliceDone(
                             sliceData.clientID,
@@ -342,6 +370,8 @@ export class SliceHandlerImpl implements SliceHandler {
             this.shapeBody = null;
         }
 
+        this.canvas.off('mousedown.slice');
+        this.canvas.off('mousemove.slice');
         this.sliceData = null;
     }
 
@@ -378,7 +408,7 @@ export class SliceHandlerImpl implements SliceHandler {
     public configurate(config: Configuration): void {
         this.outlinedBorders = config.outlinedBorders || 'black';
         this.shapeBodyOpacity = config.selectedShapeOpacity || this.shapeBodyOpacity;
-        if (this.shapeBody) this.shapeBody.attr('fill-opacity', this.shapeBodyOpacity)
+        if (this.shapeBody) this.shapeBody.attr('fill-opacity', this.shapeBodyOpacity);
         if (this.slicingLine) this.slicingLine.attr('stroke', this.outlinedBorders);
         if (this.shapeContour) this.shapeContour.attr('stroke', this.outlinedBorders);
     }
