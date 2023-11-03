@@ -143,7 +143,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT $__timeInterval(timestamp) as time, count(*)\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nAND scope IN (${scopes})\r\nAND source IN (${sources})\r\nAND (-1 IN (${users}) OR user_id IN (${users}))\r\nAND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\nAND (-1 IN (${projects}) OR project_id IN (${projects}))\r\nAND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\nAND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\nGROUP BY time ORDER BY time ASC",
+          "rawSql": "SELECT $__timeInterval(timestamp) as time, count(*)\r\nFROM events\r\nWHERE $__timeFilter(timestamp)\r\nAND scope IN (${scopes})\r\nAND source IN (${sources})\r\nAND user_name IN (${users})\r\nAND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\nAND (-1 IN (${projects}) OR project_id IN (${projects}))\r\nAND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\nAND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\nGROUP BY time ORDER BY time ASC",
           "refId": "A"
         }
       ],
@@ -291,7 +291,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT * \r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND scope IN (${scopes})\r\n    AND source IN (${sources})\r\n    AND (-1 IN (${users}) OR user_id IN (${users}))\r\n    AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n    AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n    AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n    AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\nORDER BY timestamp DESC\r\nLIMIT 1000",
+          "rawSql": "SELECT * \r\nFROM events \r\nWHERE $__timeFilter(timestamp)\r\n    AND scope IN (${scopes})\r\n    AND source IN (${sources})\r\n    AND user_name IN (${users})\r\n    AND (-1 IN (${organizations}) OR org_id IN (${organizations}))\r\n    AND (-1 IN (${projects}) OR project_id IN (${projects}))\r\n    AND (-1 IN (${tasks}) OR task_id IN (${tasks}))\r\n    AND (-1 IN (${jobs}) OR job_id IN (${jobs}))\r\nORDER BY timestamp DESC\r\nLIMIT 1000",
           "refId": "A"
         }
       ],
@@ -397,7 +397,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n    browser,\r\n    count()\r\nFROM\r\n(\r\n    SELECT\r\n        concat(JSON_VALUE(payload, '$.platform.name'), ' ', JSON_VALUE(payload, '$.platform.version')) AS browser,\r\n        user_id\r\n    FROM cvat.events\r\n    WHERE  $__timeFilter(timestamp) AND (scope = 'load:cvat') AND (browser != ' ')\r\n    GROUP BY\r\n        user_id,\r\n        browser\r\n)\r\nGROUP BY browser\r\nORDER BY count() DESC",
+          "rawSql": "SELECT\r\n    browser,\r\n    count()\r\nFROM\r\n(\r\n    SELECT\r\n        concat(JSON_VALUE(payload, '$.platform.name'), ' ', JSON_VALUE(payload, '$.platform.version')) AS browser,\r\n        user_name\r\n    FROM cvat.events\r\n    WHERE  $__timeFilter(timestamp) AND (scope = 'load:cvat') AND (browser != ' ')\r\n    GROUP BY\r\n        user_name,\r\n        browser\r\n)\r\nGROUP BY browser\r\nORDER BY count() DESC",
           "refId": "A"
         }
       ],
@@ -503,7 +503,7 @@
             }
           },
           "queryType": "sql",
-          "rawSql": "SELECT\r\n    os,\r\n    count()\r\nFROM\r\n(\r\n    SELECT\r\n        JSON_VALUE(payload, '$.platform.os') AS os,\r\n        user_id\r\n    FROM cvat.events\r\n    WHERE  $__timeFilter(timestamp) AND (scope = 'load:cvat') AND (os != '')\r\n    GROUP BY\r\n        user_id,\r\n        os\r\n)\r\nGROUP BY os\r\nORDER BY count() DESC",
+          "rawSql": "SELECT\r\n    os,\r\n    count()\r\nFROM\r\n(\r\n    SELECT\r\n        JSON_VALUE(payload, '$.platform.os') AS os,\r\n        user_name\r\n    FROM cvat.events\r\n    WHERE  $__timeFilter(timestamp) AND (scope = 'load:cvat') AND (os != '')\r\n    GROUP BY\r\n        user_name,\r\n        os\r\n)\r\nGROUP BY os\r\nORDER BY count() DESC",
           "refId": "A"
         }
       ],
@@ -576,7 +576,7 @@
         "type": "query"
       },
       {
-        "allValue": "-1",
+        "allValue": "",
         "current": {
           "selected": true,
           "text": [
@@ -590,14 +590,14 @@
           "type": "grafana-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
+        "definition": "SELECT DISTINCT user_name\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_name IS NOT NULL",
         "hide": 0,
         "includeAll": true,
         "label": "User",
         "multi": true,
         "name": "users",
         "options": [],
-        "query": "SELECT DISTINCT user_id\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_id IS NOT NULL",
+        "query": "SELECT DISTINCT user_name\nFROM events\nWHERE $__timeFilter(timestamp)\n  AND user_name IS NOT NULL",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
