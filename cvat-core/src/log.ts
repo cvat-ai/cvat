@@ -168,6 +168,7 @@ export default function logFactory(logType: LogType, payload: any): EventLogger 
         LogType.copyObject,
         LogType.undoAction,
         LogType.redoAction,
+        LogType.changeFrame,
     ];
 
     if (logsWithCount.includes(logType)) {
