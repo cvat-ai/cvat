@@ -154,7 +154,7 @@ class LambdaFunction:
                         f"{self.id} lambda function has non-unique attributes",
                         code=status.HTTP_404_NOT_FOUND)
 
-                return parse_attributes
+                return parsed_attributes
 
             parsed_labels = [{
                 'name': label['name'],
