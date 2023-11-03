@@ -33,8 +33,8 @@ function PickFromModelComponent(props: Props): JSX.Element {
     const { onCreate, onCancel, labelNames } = props;
     const [selectedModel, setSelectedModel] = useState<MLModel | null>(null);
     const models = useSelector((state: CombinedState) => state.models.detectors);
-
     const labels = (selectedModel?.labels || []).filter((label) => label.type !== 'unknown');
+
     return (
         <div className='cvat-label-constructor-pick-from-model'>
             { models.length ? (
@@ -51,21 +51,26 @@ function PickFromModelComponent(props: Props): JSX.Element {
                             <Select.Option value={_model.id} key={_model.id}>{_model.name}</Select.Option>
                         ))}
                     </Select>
+                    <Button
+                        className='cvat-label-constructor-done-pick-labels-button'
+                        type='primary'
+                        style={{ width: '150px' }}
+                        onClick={onCancel}
+                    >
+                        Done
+                    </Button>
                 </>
 
             ) : (
-                <div className='cvat-label-constructor-from-model'>
-                    <Empty description='No deployed models found' />
-                </div>
+                <Empty description={(
+                    <>
+                        <Text>No deployed models found</Text>
+                        <Button type='primary' onClick={onCancel}>Cancel</Button>
+                    </>
+                )}
+                />
             )}
-            <Button
-                className='cvat-label-constructor-done-pick-labels-button'
-                type='primary'
-                style={{ width: '150px' }}
-                onClick={onCancel}
-            >
-                Done
-            </Button>
+
             <div className='cvat-label-constructor-pick-from-model-list'>
                 {labels.map((label) => (
                     <Button

@@ -13,7 +13,6 @@ import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
 import notification from 'antd/lib/notification';
 
-import { StringObject } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 import {
@@ -32,7 +31,7 @@ interface Props {
 
 type ServerMapping = Record<string, {
     name: string;
-    attributes: StringObject;
+    attributes: Record<string, { name: string }>;
     sublabels?: ServerMapping;
 }>;
 
@@ -48,9 +47,9 @@ function convertMappingToServer(mapping: FullMapping): ServerMapping {
             ...acc,
             [modelLabel.name]: {
                 name: taskLabel.name,
-                attributes: attributesMapping.reduce<Record<string, string>>((attrAcc, val) => {
+                attributes: attributesMapping.reduce<Record<string, { name: string }>>((attrAcc, val) => {
                     if (val[0]?.name && val[1]?.name) {
-                        attrAcc[val[0].name] = val[1].name;
+                        attrAcc[val[0].name] = { name: val[1].name };
                     }
                     return attrAcc;
                 }, {}),

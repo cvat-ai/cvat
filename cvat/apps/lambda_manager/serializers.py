@@ -5,13 +5,16 @@
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
+class AttributeMappingEntrySerializer(serializers.Serializer):
+    name = serializers.CharField()
+
 class SublabelMappingEntrySerializer(serializers.Serializer):
     name = serializers.CharField()
-    attributes = serializers.DictField(child=serializers.CharField(), required=False)
+    attributes = serializers.DictField(child=AttributeMappingEntrySerializer(), required=False)
 
 class LabelMappingEntrySerializer(serializers.Serializer):
     name = serializers.CharField()
-    attributes = serializers.DictField(child=serializers.CharField(), required=False)
+    attributes = serializers.DictField(child=AttributeMappingEntrySerializer(), required=False)
     sublabels = serializers.DictField(child=SublabelMappingEntrySerializer(), required=False,
         help_text="Label mapping for from the model to the task sublabels within a parent label"
     )

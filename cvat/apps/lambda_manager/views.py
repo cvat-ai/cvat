@@ -288,7 +288,7 @@ class LambdaFunction:
                         for model_attr in model_label.get('attributes', {}):
                             for db_attr in model_label.attributespec_set.all():
                                 if db_attr.name == model_attr['name']:
-                                    attributes_default_mapping[model_attr] = db_attr.name
+                                    attributes_default_mapping[model_attr] = {'name': db_attr.name}
 
                         mapping_by_default[model_label['name']] = {
                             'name': task_label.name,
@@ -323,7 +323,7 @@ class LambdaFunction:
                 db_attr_names = [attr.name for attr in db_attributes]
                 model_attr_names = [attr['name'] for attr in model_attributes]
                 for model_attr in attributes_mapping:
-                    task_attr = attributes_mapping[model_attr]
+                    task_attr = attributes_mapping[model_attr]['name']
                     if model_attr not in model_attr_names:
                         raise ValidationError(f'Invalid mapping. Unknown model attribute "{model_attr}"')
                     if task_attr not in db_attr_names:
@@ -448,10 +448,13 @@ class LambdaFunction:
             else:
                 return False
 
-        def transform_attributes(input_attributes, db_attributes):
+        def transform_attributes(input_attributes, attr_mapping, db_attributes):
             attributes = []
             for attr in input_attributes:
-                db_attr = next(filter(lambda x: x['name'] == attr['name'], db_attributes), None)
+                if attr['name'] not in attr_mapping:
+                    continue
+                db_attr_name = attr_mapping[attr['name']]['name']
+                db_attr = next(filter(lambda x: x['name'] == db_attr_name, db_attributes), None)
                 if db_attr is not None and check_attr_value(attr['value'], db_attr):
                     attributes.append({
                         'name': db_attr['name'],
@@ -468,6 +471,7 @@ class LambdaFunction:
                 item['label'] = db_label.name
                 item['attributes'] = transform_attributes(
                     item.get('attributes', {}),
+                    mapping[item_label]['attributes'],
                     db_label.attributespec_set.values()
                 )
 
@@ -475,10 +479,12 @@ class LambdaFunction:
                     sublabels = mapping[item_label]['sublabels']
                     item['elements'] = [x for x in item['elements'] if x['label'] in sublabels]
                     for element in item['elements']:
-                        db_label = sublabels[element['label']]['db_label']
+                        element_label = element['label']
+                        db_label = sublabels[element_label]['db_label']
                         element['label'] = db_label.name
                         element['attributes'] = transform_attributes(
                             element.get('attributes', {}),
+                            sublabels[element_label]['attributes'],
                             db_label.attributespec_set.values()
                         )
                 response_filtered.append(item)
@@ -946,17 +952,17 @@ class LambdaJob:
             else:
                 assert False
 
-        def _convert_labels(db_labels):
+        def convert_labels(db_labels):
             labels = {}
             for label in db_labels:
                 labels[label.name] = {'id':label.id, 'attributes': {}, 'type': label.type}
                 if label.type == 'skeleton':
-                    labels[label.name]['sublabels'] = _convert_labels(label.sublabels.all())
+                    labels[label.name]['sublabels'] = convert_labels(label.sublabels.all())
                 for attr in label.attributespec_set.values():
                     labels[label.name]['attributes'][attr['name']] = attr['id']
             return labels
 
-        labels = _convert_labels(db_task.get_labels().prefetch_related('attributespec_set'))
+        labels = convert_labels(db_task.get_labels().prefetch_related('attributespec_set'))
 
         if function.kind == LambdaType.DETECTOR:
             cls._call_detector(function, db_task, labels, quality,

@@ -223,6 +223,12 @@ textarea.ant-input.cvat-raw-labels-viewer {
         margin-right: $grid-unit-size * 2;
     }
 
+    .ant-empty {
+        button {
+            margin-top: $grid-unit-size * 2;
+        }
+    }
+
     .cvat-label-constructor-pick-from-model-list {
         width: 100%;
         border-radius: 0 0 8px 8px;
