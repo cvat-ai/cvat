@@ -143,27 +143,34 @@ class LambdaFunction:
 
         def parse_labels(spec):
             def parse_attributes(attrs_spec):
-                return [{
-                    'name': attr.get('name'),
-                    'input_type': attr.get('input_type'),
-                    'values': attr.get('values'),
+                parsed_attributes = [{
+                    'name': attr['name'],
+                    'input_type': attr['input_type'],
+                    'values': attr['values'],
                 } for attr in attrs_spec]
 
-            return [{
-                'name': label.get('name'),
+                if len(parsed_attributes) != len({attr['name'] for attr in attrs_spec}):
+                    raise ValidationError(
+                        f"{self.id} lambda function has non-unique attributes",
+                        code=status.HTTP_404_NOT_FOUND)
+
+                return parse_attributes
+
+            parsed_labels = [{
+                'name': label['name'],
                 'type': label.get('type', 'unknown'),
                 'attributes': parse_attributes(label.get('attributes', [])),
                 'sublabels': parse_labels(label.get('sublabels', []))
             } for label in spec]
 
-        # todo: validate labels type / attribute input type
-        # todo: check sublabel names are unique in skeletons
-        labels = parse_labels(spec)
-        if len(labels) != len(set([label['name'] for label in labels])):
-            raise ValidationError(
-                "`{}` lambda function has non-unique labels".format(self.id),
-                code=status.HTTP_404_NOT_FOUND)
-        self.labels = labels
+            if len(parsed_labels) != len({label['name'] for label in spec}):
+                raise ValidationError(
+                    f"{self.id} lambda function has non-unique labels",
+                    code=status.HTTP_404_NOT_FOUND)
+
+            return parsed_labels
+
+        self.labels = parse_labels(spec)
         # mapping of labels and corresponding supported attributes
         self.func_attributes = {item['name']: item.get('attributes', []) for item in spec}
         for label, attributes in self.func_attributes.items():
@@ -265,13 +272,13 @@ class LambdaFunction:
                 (model_type == 'unknown' and db_type != 'skeleton') or \
                 any([model_type in compatible and db_type in compatible for compatible in compatible_types])
 
-        def _make_default_mapping(model_labels, task_labels):
+        def make_default_mapping(model_labels, task_labels):
             mapping_by_default = {}
             for model_label in model_labels:
                 for task_label in task_labels:
                     if task_label.name == model_label['name'] and labels_compatible(model_label, task_label):
                         attributes_default_mapping = {}
-                        for model_attr in model_label.get('attriubtes', {}):
+                        for model_attr in model_label.get('attributes', {}):
                             for db_attr in model_label.attributespec_set.all():
                                 if db_attr.name == model_attr['name']:
                                     attributes_default_mapping[model_attr] = db_attr.name
@@ -282,31 +289,30 @@ class LambdaFunction:
                         }
 
                         if model_label['type'] == 'skeleton' and task_label.type == 'skeleton':
-                            mapping_by_default[model_label['name']]['sublabels'] = _make_default_mapping(
+                            mapping_by_default[model_label['name']]['sublabels'] = make_default_mapping(
                                 model_label['sublabels'],
                                 task_label.sublabels.all(),
                             )
 
             return mapping_by_default
 
-        def _update_mapping(_mapping, _model_labels, _db_labels):
+        def update_mapping(_mapping, _model_labels, _db_labels):
             copy = deepcopy(_mapping)
-            for model_label_name in copy:
-                mapping_item = copy[model_label_name]
+            for model_label_name, mapping_item in copy.items():
                 md_label = next(filter(lambda x: x['name'] == model_label_name, _model_labels))
                 db_label = next(filter(lambda x: x.name == mapping_item['name'], _db_labels))
                 mapping_item['md_label'] = md_label
                 mapping_item['db_label'] = db_label
                 if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
-                    mapping_item['sublabels'] = _update_mapping(
+                    mapping_item['sublabels'] = update_mapping(
                         mapping_item['sublabels'],
                         md_label['sublabels'],
                         db_label.sublabels.all()
                     )
             return copy
 
-        def _validate_labels_mapping(_mapping, _model_labels, _db_labels):
-            def _validate_attributes_mapping(attributes_mapping, model_attributes, db_attributes):
+        def validate_labels_mapping(_mapping, _model_labels, _db_labels):
+            def validate_attributes_mapping(attributes_mapping, model_attributes, db_attributes):
                 db_attr_names = [attr.name for attr in db_attributes]
                 model_attr_names = [attr['name'] for attr in model_attributes]
                 for model_attr in attributes_mapping:
@@ -316,43 +322,46 @@ class LambdaFunction:
                     if task_attr not in db_attr_names:
                         raise ValidationError(f'Invalid mapping. Unknown db attribute "{task_attr}"')
 
-            db_label_names = [label.name for label in _db_labels]
-            model_label_names = [label['name'] for label in _model_labels]
-            for model_label_name in _mapping:
-                mapping_item = _mapping[model_label_name]
+            for model_label_name, mapping_item in _mapping.items():
                 db_label_name = mapping_item['name']
-                if model_label_name not in model_label_names:
+
+                md_label = None
+                db_label = None
+                try:
+                    md_label = next(x for x in _model_labels if x['name'] == model_label_name)
+                except StopIteration:
                     raise ValidationError(f'Invalid mapping. Unknown model label "{model_label_name}"')
-                if db_label_name not in db_label_names:
+
+                try:
+                    db_label = next(x for x in _db_labels if x.name == db_label_name)
+                except StopIteration:
                     raise ValidationError(f'Invalid mapping. Unknown db label "{db_label_name}"')
 
-                md_label = next(filter(lambda x: x['name'] == model_label_name, _model_labels))
-                db_label = next(filter(lambda x: x.name == mapping_item['name'], _db_labels))
                 if not labels_compatible(md_label, db_label):
                     raise ValidationError(
-                        f'Invalid mapping. Model label "{db_label_name}" and' + \
-                            f'database label "{db_label_name}" are not compatible'
+                        f'Invalid mapping. Model label "{model_label_name}" and' + \
+                            f' database label "{db_label_name}" are not compatible'
                     )
 
-                _validate_attributes_mapping(
+                validate_attributes_mapping(
                     mapping_item.get('attributes', {}),
                     md_label['attributes'],
                     db_label.attributespec_set.all()
                 )
 
                 if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
-                    _validate_labels_mapping(
+                    validate_labels_mapping(
                         mapping_item['sublabels'],
                         md_label['sublabels'],
                         db_label.sublabels.all()
                     )
 
         if not mapping:
-            mapping = _make_default_mapping(model_labels, task_labels)
+            mapping = make_default_mapping(model_labels, task_labels)
         else:
-            _validate_labels_mapping(mapping, self.labels, task_labels)
+            validate_labels_mapping(mapping, self.labels, task_labels)
 
-        mapping = _update_mapping(mapping, self.labels, task_labels)
+        mapping = update_mapping(mapping, self.labels, task_labels)
 
         # Check job frame boundaries
         if db_job:
@@ -432,11 +441,12 @@ class LambdaFunction:
             else:
                 return False
 
-        def filter_attributes(input_attributes, target_mapping):
+        def transform_attributes(input_attributes, target_mapping):
             attributes = []
             for attr in input_attributes:
                 db_attr = next(filter(
-                    lambda x: x['name'] == attr['name'], target_mapping[item_label]['db_label'].attributespec_set.values()
+                    lambda x: x['name'] == attr['name'],
+                    target_mapping[item_label]['db_label'].attributespec_set.values()
                 ), None)
 
                 if db_attr is not None and check_attr_value(attr['value'], db_attr):
@@ -451,14 +461,23 @@ class LambdaFunction:
                 item_label = item['label']
                 if item_label not in mapping:
                     continue
-                item['label'] = mapping[item_label]['name']
-                item['attributes'] = filter_attributes(item.get('attributes', {}), mapping)
+                db_label = mapping[item_label]['db_label']
+                item['label'] = db_label.name
+                item['attributes'] = transform_attributes(
+                    item.get('attributes', {}),
+                    db_label.attributespec_set.values()
+                )
+
                 if 'elements' in item:
-                    item['elements'] = list(filter(lambda x: x['label'] in mapping[item_label]['sublabels'], item['elements']))
+                    sublabels = mapping[item_label]['sublabels']
+                    item['elements'] = [x for x in item['elements'] if x['label'] in sublabels]
                     for element in item['elements']:
-                        element_label = element['label']
-                        element['label'] = mapping[item_label]['sublabels'][element_label]['name']
-                        element['attributes'] = filter_attributes(element.get('attributes', {}), mapping[item_label]['sublabels'])
+                        db_label = sublabels[element['label']]['db_label']
+                        element['label'] = db_label.name
+                        element['attributes'] = transform_attributes(
+                            element.get('attributes', {}),
+                            db_label.attributespec_set.values()
+                        )
                 response_filtered.append(item)
                 response = response_filtered
 
@@ -673,13 +692,10 @@ class LambdaJob:
                 # Invalid label provided
                 return None
 
-            if anno.get('attributes'):
-                attrs = [{
-                    'spec_id': label['attributes'][attr['name']],
-                    'value': attr['value']
-                } for attr in anno.get('attributes') if attr['name'] in label['attributes']]
-            else:
-                attrs = []
+            attrs = [{
+                'spec_id': label['attributes'][attr['name']],
+                'value': attr['value']
+            } for attr in anno.get('attributes', []) if attr['name'] in label['attributes']]
 
             if anno["type"].lower() == "tag":
                 return {
@@ -698,6 +714,7 @@ class LambdaJob:
                     "group": anno["group_id"] if "group_id" in anno else None,
                     "type": anno["type"],
                     "occluded": False,
+                    "outside": False,
                     "points": anno.get("mask", []) if anno["type"] == "mask" else anno.get("points", []),
                     "z_order": 0,
                 }
@@ -716,9 +733,9 @@ class LambdaJob:
                     shape["points"] = rle
 
                 if shape["type"] == "skeleton":
-                    parsed_elements = list(map(lambda x: parse_anno(x, label['sublabels']), anno["elements"]))
+                    parsed_elements = [parse_anno(x, label['sublabels']) for x in anno["elements"]]
 
-                    # find a center to set position of lack points
+                    # find a center to set position of missing points
                     center = [0, 0]
                     for element in parsed_elements:
                         center[0] += element["points"][0]
@@ -727,15 +744,10 @@ class LambdaJob:
                     center[1] /= len(parsed_elements) or 1
 
                     def _map(sublabel):
-                        sublabel_name, sublabel_body = sublabel
+                        sublabel_body = sublabel
                         parsed_element = next(filter(lambda x: x['label_id'] == sublabel_body['id'], parsed_elements), None)
-                        not_parsed_element = next(filter(lambda x: x['label'] == sublabel_name, anno["elements"]), None)
 
                         if parsed_element:
-                            parsed_element.update({
-                                "outside": not_parsed_element.get('outside', False),
-                                "z_order": 0,
-                            })
                             return parsed_element
 
                         return {
@@ -751,7 +763,7 @@ class LambdaJob:
                             "z_order": 0,
                         }
 
-                    shape["elements"] = list(map(_map, label['sublabels'].items()))
+                    shape["elements"] = list(map(_map, label['sublabels']))
                     if all(element["outside"] for element in shape["elements"]):
                         return None
 
@@ -934,7 +946,7 @@ class LambdaJob:
         def _convert_labels(db_labels):
             labels = {}
             for label in db_labels:
-                labels[label.name] = { 'id':label.id, 'attributes': {}, 'type': label.type }
+                labels[label.name] = {'id':label.id, 'attributes': {}, 'type': label.type}
                 if label.type == 'skeleton':
                     labels[label.name]['sublabels'] = _convert_labels(label.sublabels.all())
                 for attr in label.attributespec_set.values():
