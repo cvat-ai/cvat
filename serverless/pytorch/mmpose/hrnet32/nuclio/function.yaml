@@ -1,5 +1,5 @@
 metadata:
-  name: pose_hrnet32
+  name: pth-mmpose-hrnet32
   namespace: cvat
   annotations:
     name: Human pose estimation

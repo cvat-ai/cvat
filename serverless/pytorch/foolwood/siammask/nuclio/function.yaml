@@ -1,5 +1,5 @@
 metadata:
-  name: pth-mmpose-hrnet32
+  name: pth-foolwood-siammask
   namespace: cvat
   annotations:
     name: SiamMask
