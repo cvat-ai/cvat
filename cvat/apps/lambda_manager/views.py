@@ -717,7 +717,7 @@ class LambdaJob:
                     "group": anno["group_id"] if "group_id" in anno else None,
                     "type": anno["type"],
                     "occluded": False,
-                    "outside": False,
+                    "outside": anno.get("outside", False),
                     "points": anno.get("mask", []) if anno["type"] == "mask" else anno.get("points", []),
                     "z_order": 0,
                 }
