@@ -6404,6 +6404,14 @@ components:
       - mutable
       - name
       - values
+    AttributeMappingEntryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+      required:
+      - name
     AttributeRequest:
       type: object
       properties:
@@ -7731,8 +7739,7 @@ components:
         attributes:
           type: object
           additionalProperties:
-            type: string
-            minLength: 1
+            $ref: '#/components/schemas/AttributeMappingEntryRequest'
         sublabels:
           type: object
           additionalProperties:
@@ -9653,8 +9660,7 @@ components:
         attributes:
           type: object
           additionalProperties:
-            type: string
-            minLength: 1
+            $ref: '#/components/schemas/AttributeMappingEntryRequest'
       required:
       - name
     SublabelRequest:
