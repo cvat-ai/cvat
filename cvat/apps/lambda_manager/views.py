@@ -441,14 +441,10 @@ class LambdaFunction:
             else:
                 return False
 
-        def transform_attributes(input_attributes, target_mapping):
+        def transform_attributes(input_attributes, db_attributes):
             attributes = []
             for attr in input_attributes:
-                db_attr = next(filter(
-                    lambda x: x['name'] == attr['name'],
-                    target_mapping[item_label]['db_label'].attributespec_set.values()
-                ), None)
-
+                db_attr = next(filter(lambda x: x['name'] == attr['name'], db_attributes), None)
                 if db_attr is not None and check_attr_value(attr['value'], db_attr):
                     attributes.append({
                         'name': db_attr['name'],
