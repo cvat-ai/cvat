@@ -31,7 +31,7 @@ interface Props {
 
 type ServerMapping = Record<string, {
     name: string;
-    attributes: Record<string, { name: string }>;
+    attributes: Record<string, string>;
     sublabels?: ServerMapping;
 }>;
 
@@ -47,9 +47,9 @@ function convertMappingToServer(mapping: FullMapping): ServerMapping {
             ...acc,
             [modelLabel.name]: {
                 name: taskLabel.name,
-                attributes: attributesMapping.reduce<Record<string, { name: string }>>((attrAcc, val) => {
+                attributes: attributesMapping.reduce<Record<string, string>>((attrAcc, val) => {
                     if (val[0]?.name && val[1]?.name) {
-                        attrAcc[val[0].name] = { name: val[1].name };
+                        attrAcc[val[0].name] = val[1].name;
                     }
                     return attrAcc;
                 }, {}),

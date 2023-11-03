@@ -288,7 +288,7 @@ class LambdaFunction:
                         for model_attr in model_label.get('attributes', {}):
                             for db_attr in model_label.attributespec_set.all():
                                 if db_attr.name == model_attr['name']:
-                                    attributes_default_mapping[model_attr] = {'name': db_attr.name}
+                                    attributes_default_mapping[model_attr] = db_attr.name
 
                         mapping_by_default[model_label['name']] = {
                             'name': task_label.name,
@@ -323,7 +323,7 @@ class LambdaFunction:
                 db_attr_names = [attr.name for attr in db_attributes]
                 model_attr_names = [attr['name'] for attr in model_attributes]
                 for model_attr in attributes_mapping:
-                    task_attr = attributes_mapping[model_attr]['name']
+                    task_attr = attributes_mapping[model_attr]
                     if model_attr not in model_attr_names:
                         raise ValidationError(f'Invalid mapping. Unknown model attribute "{model_attr}"')
                     if task_attr not in db_attr_names:
@@ -453,7 +453,7 @@ class LambdaFunction:
             for attr in input_attributes:
                 if attr['name'] not in attr_mapping:
                     continue
-                db_attr_name = attr_mapping[attr['name']]['name']
+                db_attr_name = attr_mapping[attr['name']]
                 db_attr = next(filter(lambda x: x['name'] == db_attr_name, db_attributes), None)
                 if db_attr is not None and check_attr_value(attr['value'], db_attr):
                     attributes.append({
