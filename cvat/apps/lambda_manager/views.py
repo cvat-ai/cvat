@@ -746,27 +746,27 @@ class LambdaJob:
                     center[0] /= len(parsed_elements) or 1
                     center[1] /= len(parsed_elements) or 1
 
-                    def _map(sublabel):
-                        sublabel_body = sublabel
-                        parsed_element = next(filter(lambda x: x['label_id'] == sublabel_body['id'], parsed_elements), None)
+                    def _map(sublabel_body):
+                        try:
+                            return next(filter(
+                                lambda x: x['label_id'] == sublabel_body['id'],
+                                parsed_elements)
+                            )
+                        except StopIteration:
+                            return {
+                                "frame": frame,
+                                "label_id": sublabel_body['id'],
+                                "source": "auto",
+                                "attributes": [],
+                                "group": None,
+                                "type": sublabel_body['type'],
+                                "occluded": False,
+                                "points": center,
+                                "outside": True,
+                                "z_order": 0,
+                            }
 
-                        if parsed_element:
-                            return parsed_element
-
-                        return {
-                            "frame": frame,
-                            "label_id": sublabel_body['id'],
-                            "source": "auto",
-                            "attributes": [],
-                            "group": None,
-                            "type": sublabel_body['type'],
-                            "occluded": False,
-                            "points": center,
-                            "outside": True,
-                            "z_order": 0,
-                        }
-
-                    shape["elements"] = list(map(_map, label['sublabels']))
+                    shape["elements"] = list(map(_map, label['sublabels'].values()))
                     if all(element["outside"] for element in shape["elements"]):
                         return None
 
