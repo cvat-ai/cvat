@@ -243,6 +243,11 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             return false;
         }
 
+        setAttributes(edge, {
+            stroke: 'black',
+            'stroke-width': '0.5',
+        });
+
         const onClick = (): void => {
             if (edge) {
                 edge.remove();
@@ -625,7 +630,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         }
 
         const svgText = Array.from(svg.children)
-            .filter((element) => element.tagName === 'circle').map((element) => {
+            .filter((element) => element.tagName === 'circle' || element.tagName === 'line').map((element) => {
                 const clone = element.cloneNode() as SVGCircleElement;
                 clone.removeAttribute('style');
                 clone.removeAttribute('stroke');
