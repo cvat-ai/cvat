@@ -41,13 +41,7 @@ class LambdaManager {
         const { results: functions, count: functionsCount } = functionsResult;
 
         const result = [...lambdaFunctions, ...functions];
-        const models = [];
-
-        for (const model of result) {
-            models.push(
-                new MLModel({ ...model }),
-            );
-        }
+        const models = result.map((serialzedModel) => new MLModel({ ...serialzedModel }));
 
         this.cachedList = models;
         return { models, count: lambdaFunctions.length + functionsCount };

@@ -124,6 +124,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                     const elementID = element.getAttribute('data-element-id');
                     const labelName = element.getAttribute('data-label-name');
                     const labelID = element.getAttribute('data-label-id');
+
                     if (elementID && (labelName !== null || labelID !== null)) {
                         const sublabel = sublabels.find((_sublabel: LabelOptColor): boolean => {
                             if (labelName !== null) {
@@ -281,6 +282,12 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         this.elementCounter = Math.max(this.elementCounter, elementID);
         this.nodeCounter = Math.max(this.nodeCounter, nodeID);
 
+        setAttributes(circle, {
+            stroke: 'black',
+            fill: config.NEW_LABEL_COLOR,
+            'stroke-width': 0.1,
+        });
+
         circle.addEventListener('mouseover', () => {
             circle.setAttribute('stroke-width', '0.3');
             circle.setAttribute('r', '1');
@@ -435,11 +442,8 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             const nodeID = this.nodeCounter + 1;
             setAttributes(circle, {
                 r: 0.75,
-                stroke: 'black',
-                fill: config.NEW_LABEL_COLOR,
                 cx: x,
                 cy: y,
-                'stroke-width': 0.1,
                 'data-type': 'element node',
                 'data-element-id': elementID,
                 'data-node-id': nodeID,
@@ -620,16 +624,21 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             );
         }
 
-        try {
-            this.setupTextLabels(false);
-            return {
-                type: 'skeleton',
-                svg: svg.innerHTML,
-                sublabels,
-            };
-        } finally {
-            this.setupTextLabels();
-        }
+        const svgText = Array.from(svg.children)
+            .filter((element) => element.tagName === 'circle').map((element) => {
+                const clone = element.cloneNode() as SVGCircleElement;
+                clone.removeAttribute('style');
+                clone.removeAttribute('stroke');
+                clone.removeAttribute('fill');
+                clone.removeAttribute('stroke-width');
+                return clone.outerHTML;
+            }).join('\n');
+
+        return {
+            type: 'skeleton',
+            svg: svgText,
+            sublabels,
+        };
     }
 
     public render(): JSX.Element {

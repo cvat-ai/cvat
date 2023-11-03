@@ -156,12 +156,19 @@ class LambdaFunction:
 
                 return parsed_attributes
 
-            parsed_labels = [{
-                'name': label['name'],
-                'type': label.get('type', 'unknown'),
-                'attributes': parse_attributes(label.get('attributes', [])),
-                'sublabels': parse_labels(label.get('sublabels', []))
-            } for label in spec]
+            parsed_labels = []
+            for label in spec:
+                parsed_label = {
+                    'name': label['name'],
+                    'type': label.get('type', 'unknown'),
+                    'attributes': parse_attributes(label.get('attributes', []))
+                }
+                if parsed_label['type'] == 'skeleton':
+                    parsed_label.update({
+                        'sublabels': parse_labels(label['sublabels']),
+                        'svg': label['svg']
+                    })
+                parsed_labels.append(parsed_label)
 
             if len(parsed_labels) != len({label['name'] for label in spec}):
                 raise ValidationError(
