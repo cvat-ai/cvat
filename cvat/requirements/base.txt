@@ -407,3 +407,4 @@ setuptools==68.2.2
     # via
     #   tensorboard
     #   tensorflow
+pillow>=10.0.0 # not directly required, pinned by Snyk to avoid a vulnerability
