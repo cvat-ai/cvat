@@ -7,7 +7,7 @@ import itertools
 import fnmatch
 import os
 import sys
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Union
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Union, Iterable
 from rest_framework.serializers import ValidationError
 import rq
 import re
@@ -17,6 +17,8 @@ from urllib import parse as urlparse
 from urllib import request as urlrequest
 import django_rq
 import pytz
+import concurrent.futures
+import queue
 
 from django.conf import settings
 from django.db import transaction
@@ -27,7 +29,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
-from cvat.apps.engine.utils import av_scan_paths, get_rq_job_meta
+from cvat.apps.engine.utils import av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, is_manifest
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
@@ -41,12 +43,16 @@ slogger = ServerLogManager(__name__)
 def create(db_task, data, request):
     """Schedule the task"""
     q = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-    q.enqueue_call(
-        func=_create_thread,
-        args=(db_task.pk, data),
-        job_id=f"create:task.id{db_task.pk}",
-        meta=get_rq_job_meta(request=request, db_obj=db_task),
-    )
+    user_id = request.user.id
+
+    with get_rq_lock_by_user(q, user_id):
+        q.enqueue_call(
+            func=_create_thread,
+            args=(db_task.pk, data),
+            job_id=f"create:task.id{db_task.pk}",
+            meta=get_rq_job_meta(request=request, db_obj=db_task),
+            depends_on=define_dependent_job(q, user_id),
+        )
 
 ############################# Internal implementation for server API
 
@@ -333,7 +339,7 @@ def _validate_manifest(
             if not (
                 data_sorting_method == models.SortingMethod.PREDEFINED or
                 (settings.USE_CACHE and data_storage_method == models.StorageMethodChoice.CACHE) or
-                isBackupRestore
+                isBackupRestore or is_in_cloud
             ):
                 cache_disabled_message = ""
                 if data_storage_method == models.StorageMethodChoice.CACHE and not settings.USE_CACHE:
@@ -537,6 +543,8 @@ def _create_thread(
 
     manifest = None
     if is_data_in_cloud:
+        cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
+
         if manifest_file:
             cloud_storage_manifest = ImageManifestManager(
                 os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
@@ -544,8 +552,9 @@ def _create_thread(
             )
             cloud_storage_manifest.set_index()
             cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
-        else:
-            cloud_storage_instance = db_storage_to_storage_instance(db_data.cloud_storage)
+
+        if manifest_file and not data['server_files'] and not data['filename_pattern']: # only manifest file was specified in server files by the user
+            data['filename_pattern'] = '*'
 
         # update the server_files list with files from the specified directories
         if (dirs:= list(filter(lambda x: x.endswith('/'), data['server_files']))):
@@ -563,7 +572,7 @@ def _create_thread(
                                 lambda x: x[1].full_name,
                                 filter(lambda x: x[1].full_name.startswith(directory), cloud_storage_manifest)
                             )
-                        )
+                        ) if directory else [x[1].full_name for x in cloud_storage_manifest]
                     )
                 if cloud_storage_manifest_prefix:
                     additional_files = [os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files]
@@ -591,9 +600,6 @@ def _create_thread(
                 data['server_files']
             ))
 
-        if manifest_file and not data['server_files'] and not data['filename_pattern']: # only manifest file was specified in server files by the user
-            data['filename_pattern'] = '*'
-
         # update list with server files if task creation approach with pattern and manifest file is used
         if data['filename_pattern']:
             additional_files = []
@@ -601,7 +607,7 @@ def _create_thread(
             if not manifest_file:
                 # NOTE: we cannot list files with specified pattern on the providers page because they don't provide such function
                 dirs = []
-                prefix = None
+                prefix = ""
 
                 while True:
                     for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
@@ -622,6 +628,10 @@ def _create_thread(
                     additional_files = fnmatch.filter(additional_files, data['filename_pattern'])
 
             data['server_files'].extend(additional_files)
+
+        if cloud_storage_instance.prefix:
+            # filter server_files based on default prefix
+            data['server_files'] = list(filter(lambda x: x.startswith(cloud_storage_instance.prefix), data['server_files']))
 
         # We only need to process the files specified in job_file_mapping
         if job_file_mapping is not None:
@@ -1017,36 +1027,70 @@ def _create_thread(
                             frame=frame, width=w, height=h)
                         for (path, frame), (w, h) in zip(chunk_paths, img_sizes)
                     ])
-
     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
         counter = itertools.count()
-        generator = itertools.groupby(extractor, lambda x: next(counter) // db_data.chunk_size)
-        for chunk_idx, chunk_data in generator:
-            chunk_data = list(chunk_data)
-            original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
-            original_chunk_writer.save_as_chunk(chunk_data, original_chunk_path)
+        generator = itertools.groupby(extractor, lambda _: next(counter) // db_data.chunk_size)
+        generator = ((idx, list(chunk_data)) for idx, chunk_data in generator)
 
-            compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
-            img_sizes = compressed_chunk_writer.save_as_chunk(chunk_data, compressed_chunk_path)
+        def save_chunks(
+                executor: concurrent.futures.ThreadPoolExecutor,
+                chunk_idx: int,
+                chunk_data: Iterable[tuple[str, str, str]]) -> list[tuple[str, int, tuple[int, int]]]:
+            nonlocal db_data, db_task, extractor, original_chunk_writer, compressed_chunk_writer
+            if (db_task.dimension == models.DimensionType.DIM_2D and
+                isinstance(extractor, (
+                    MEDIA_TYPES['image']['extractor'],
+                    MEDIA_TYPES['zip']['extractor'],
+                    MEDIA_TYPES['pdf']['extractor'],
+                    MEDIA_TYPES['archive']['extractor'],
+                ))):
+                chunk_data = preload_images(chunk_data)
+
+            fs_original = executor.submit(
+                original_chunk_writer.save_as_chunk,
+                images=chunk_data,
+                chunk_path=db_data.get_original_chunk_path(chunk_idx)
+            )
+            fs_compressed = executor.submit(
+                compressed_chunk_writer.save_as_chunk,
+                images=chunk_data,
+                chunk_path=db_data.get_compressed_chunk_path(chunk_idx),
+            )
+            fs_original.result()
+            image_sizes = fs_compressed.result()
+
+            # (path, frame, size)
+            return list((i[0][1], i[0][2], i[1]) for i in zip(chunk_data, image_sizes))
+
+        def process_results(img_meta: list[tuple[str, int, tuple[int, int]]]):
+            nonlocal db_images, db_data, video_path, video_size
 
             if db_task.mode == 'annotation':
-                db_images.extend([
+                db_images.extend(
                     models.Image(
                         data=db_data,
-                        path=os.path.relpath(data[1], upload_dir),
-                        frame=data[2],
-                        width=size[0],
-                        height=size[1])
-
-                    for data, size in zip(chunk_data, img_sizes)
-                ])
+                        path=os.path.relpath(frame_path, upload_dir),
+                        frame=frame_number,
+                        width=frame_size[0],
+                        height=frame_size[1])
+                    for frame_path, frame_number,  frame_size in img_meta)
             else:
-                video_size = img_sizes[0]
-                video_path = chunk_data[0][1]
+                video_size = img_meta[0][2]
+                video_path = img_meta[0][0]
 
-            db_data.size += len(chunk_data)
-            progress = extractor.get_progress(chunk_data[-1][2])
+            progress = extractor.get_progress(img_meta[-1][1])
             update_progress(progress)
+
+        futures = queue.Queue(maxsize=settings.CVAT_CONCURRENT_CHUNK_PROCESSING)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2*settings.CVAT_CONCURRENT_CHUNK_PROCESSING) as executor:
+            for chunk_idx, chunk_data in generator:
+                db_data.size += len(chunk_data)
+                if futures.full():
+                    process_results(futures.get().result())
+                futures.put(executor.submit(save_chunks, executor, chunk_idx, chunk_data))
+
+            while not futures.empty():
+                process_results(futures.get().result())
 
     if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)

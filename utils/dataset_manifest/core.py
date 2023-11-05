@@ -609,9 +609,33 @@ class ImageManifestManager(_ManifestManager):
         self,
         page_size: int,
         manifest_prefix: Optional[str] = None,
-        prefix: Optional[str] = None,
+        prefix: str = "",
+        default_prefix: Optional[str] = None,
         start_index: Optional[int] = None,
     ) -> Dict:
+
+        if default_prefix and prefix and not (default_prefix.startswith(prefix) or prefix.startswith(default_prefix)):
+            return {
+                'content': [],
+                'next': None,
+            }
+
+        search_prefix = prefix
+        if default_prefix and (len(prefix) < len(default_prefix)):
+            if prefix and '/' in default_prefix[len(prefix):]:
+                next_layer_and_tail = default_prefix[prefix.find('/') + 1:].split(
+                    "/", maxsplit=1
+                )
+                if 2 == len(next_layer_and_tail):
+                    directory = next_layer_and_tail[0]
+                    return {
+                        "content": [{"name": directory, "type": "DIR"}],
+                        "next": None,
+                    }
+                else:
+                    search_prefix = default_prefix
+            else:
+                search_prefix = default_prefix
 
         next_start_index = None
         # get part of manifest content
@@ -622,11 +646,11 @@ class ImageManifestManager(_ManifestManager):
         else:
             content = [f[1].full_name for f in self]
 
-        if prefix:
-            content = list(filter(lambda x: x.startswith(prefix), content))
-            if os.path.sep in prefix:
-                last_dir_symbol = prefix.rindex(os.path.sep)
-                content = [f[last_dir_symbol + 1:] for f in content]
+        if search_prefix:
+            content = list(filter(lambda x: x.startswith(search_prefix), content))
+            if os.path.sep in search_prefix:
+                last_slash = search_prefix.rindex(os.path.sep)
+                content = [f[last_slash + 1:] for f in content]
 
         files_in_root, files_in_directories = [], []
 

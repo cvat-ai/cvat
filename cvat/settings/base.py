@@ -33,6 +33,8 @@ mimetypes.add_type("application/wasm", ".wasm", True)
 
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
 
@@ -673,6 +675,17 @@ CLICKHOUSE = {
     }
 }
 
+if (postgres_password_file := os.getenv('CVAT_POSTGRES_PASSWORD_FILE')) is not None:
+    if 'CVAT_POSTGRES_PASSWORD' in os.environ:
+        raise ImproperlyConfigured(
+            'The CVAT_POSTGRES_PASSWORD and CVAT_POSTGRES_PASSWORD_FILE'
+            ' environment variables must not be set at the same time'
+        )
+
+    postgres_password = Path(postgres_password_file).read_text(encoding='UTF-8').rstrip('\n')
+else:
+    postgres_password = os.getenv('CVAT_POSTGRES_PASSWORD', '')
+
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 DATABASES = {
@@ -681,7 +694,7 @@ DATABASES = {
         'HOST': os.getenv('CVAT_POSTGRES_HOST', 'cvat_db'),
         'NAME': os.getenv('CVAT_POSTGRES_DBNAME', 'cvat'),
         'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
-        'PASSWORD': os.getenv('CVAT_POSTGRES_PASSWORD', ''),
+        'PASSWORD': postgres_password,
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
     }
 }
@@ -690,7 +703,7 @@ BUCKET_CONTENT_MAX_PAGE_SIZE =  500
 
 IMPORT_CACHE_FAILED_TTL = timedelta(days=90)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
-IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=2)
+IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=12)
 
 ASSET_MAX_SIZE_MB = 10
 ASSET_SUPPORTED_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', )
@@ -705,3 +718,8 @@ EXTRA_RULES_PATHS = []
 # But it won't work without additional configuration, so we set it to None
 # to check configuration and throw ImproperlyConfigured if thats a case
 EMAIL_BACKEND = None
+
+ONE_RUNNING_JOB_IN_QUEUE_PER_USER = strtobool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_PER_USER', 'false'))
+
+# How many chunks can be prepared simultaneously during task creation in case the cache is not used
+CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSING', 1))

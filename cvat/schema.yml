@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.8.0
+  version: 2.8.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -3113,7 +3113,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'owner', 'id', 'slug'].
+           Available filter_fields: ['name', 'owner', 'slug', 'id'].
         schema:
           type: string
       - name: name
@@ -3141,7 +3141,8 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''owner'')'
+        description: 'A search term. Available search_fields: (''name'', ''owner'',
+          ''slug'')'
         schema:
           type: string
       - name: slug
@@ -3153,7 +3154,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''owner'', ''id'', ''slug'']'
+          [''name'', ''owner'', ''slug'', ''id'']'
         schema:
           type: string
       tags:
@@ -4533,6 +4534,11 @@ paths:
         schema:
           type: string
         description: Directory to browse
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search for specific files
       tags:
       - server
       security:

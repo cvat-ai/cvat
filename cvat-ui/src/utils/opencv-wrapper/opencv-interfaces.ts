@@ -13,6 +13,7 @@ export interface TrackerModel {
     init: (src: ImageData, points: number[]) => void;
     reinit: (points: number[]) => void;
     update: (src: ImageData) => TrackingResult;
+    delete: () => void;
 }
 
 export interface OpenCVTracker {
