@@ -489,5 +489,51 @@ export function findIntersection(seg1: Segment, seg2: Segment): [number, number]
     return null;
 }
 
+export function findClosestPointOnSegment(
+    segment: [[number, number], [number, number]],
+    point: [number, number],
+): [number, number] {
+    const numberIsBetween = (a: number, b: number, c: number): boolean => Math.min(a, b) <= c && c <= Math.max(a, b);
+    const [[x1, y1], [x2, y2]] = segment;
+    const [x3, y3] = point;
+
+    const x = (x1 * x1 * x3 - 2 * x1 * x2 * x3 + x2 * x2 * x3 + x2 *
+        (y1 - y2) * (y1 - y3) - x1 * (y1 - y2) * (y2 - y3)) /
+        ((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+    const y = (x2 * x2 * y1 + x1 * x1 * y2 + x2 * x3 * (y2 - y1) - x1 *
+        (x3 * (y2 - y1) + x2 * (y1 + y2)) + (y1 - y2) * (y1 - y2) * y3) /
+        ((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+
+    if (numberIsBetween(x1, x2, x) && numberIsBetween(y1, y2, y)) {
+        return [x, y];
+    }
+
+    // perpendicular point is not on the segment
+    // shortest distance is distance to one of edge points
+    const d1 = Math.sqrt((x - x1) ** 2 + (y - y1) ** 2);
+    const d2 = Math.sqrt((x - x2) ** 2 + (y - y2) ** 2);
+
+    if (d1 < d2) {
+        return [x1, y1];
+    }
+
+    return [x2, y2];
+}
+
+export function segmentsFromPoints(points: number[], circuit = false): Segment[] {
+    return points.reduce<Segment[]>((acc, val, idx, arr) => {
+        if (idx % 2 !== 0) {
+            if (idx === arr.length - 1) {
+                if (circuit) {
+                    acc.push([[arr[idx - 1], val], [arr[0], arr[1]]]);
+                }
+            } else {
+                acc.push([[arr[idx - 1], val], [arr[idx + 1], arr[idx + 2]]]);
+            }
+        }
+        return acc;
+    }, []);
+}
+
 export type Segment = [[number, number], [number, number]];
 export type PropType<T, Prop extends keyof T> = T[Prop];

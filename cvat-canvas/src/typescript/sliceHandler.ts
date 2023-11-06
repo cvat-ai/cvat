@@ -4,7 +4,8 @@
 
 import * as SVG from 'svg.js';
 import {
-    stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG, findIntersection, zipChannels, Segment,
+    stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG,
+    findIntersection, zipChannels, Segment, findClosestPointOnSegment, segmentsFromPoints,
 } from './shared';
 import { Geometry, SliceData, Configuration } from './canvasModel';
 import consts from './consts';
@@ -66,9 +67,29 @@ function indexGenerator(length: number, from: number, to: number, direction: 'fo
     return result;
 }
 
+function getAllIntersections(segment: Segment, segments: Segment[]): Record<number, [number, number]> {
+    const intersections: Record<number, [number, number]> = {};
+    for (let i = 0; i < segments.length; i++) {
+        const checkedSegment = segments[i];
+        const intersection = findIntersection(checkedSegment, segment);
+        if (i === segments.length - 1) {
+            // latest line always has intersection
+            // in at least one point, so we only check match here
+            if (intersection && Number.isNaN(intersection[0]) && Number.isNaN(intersection[1])) {
+                intersections[i] = intersection;
+            }
+        } else if (intersection !== null) {
+            intersections[i] = intersection;
+        }
+    }
+
+    return intersections;
+}
+
 export class SliceHandlerImpl implements SliceHandler {
     private canvas: SVG.Container;
     private start: number;
+    private controlPointSize: number;
     private outlinedBorders: string;
     private sliceData: Required<SliceData> | null;
     private shapeContour: SVG.PolyLine | null;
@@ -94,6 +115,7 @@ export class SliceHandlerImpl implements SliceHandler {
         this.canvas = canvas;
         this.sliceData = null;
         this.start = Date.now();
+        this.controlPointSize = consts.BASE_POINT_SIZE;
         this.outlinedBorders = 'black';
         this.shapeContour = null;
         this.slicingPoints = [];
@@ -117,117 +139,88 @@ export class SliceHandlerImpl implements SliceHandler {
         this.shapeContour.attr('stroke', this.outlinedBorders);
         this.shapeContour.addClass('cvat_canvas_sliced_contour');
 
+        // todo: check the contour to be correct (number of points and not to have dublicate points)
+        const contourSegments = segmentsFromPoints(translatedContour, true);
         const points: [number, number][] = [];
-        const intermediatePoints: [number, number][] = []; // points between first and last intersection
+        const contoursIntersections: Record<string, [number, number]> = {};
 
-        // todo: check the contour to be correct (number of poits and not to have dublicate points)
-        const contourSegments = translatedContour.reduce<Segment[]>((acc, val, idx, arr) => {
-            if (idx % 2 !== 0) {
-                if (idx === arr.length - 1) {
-                    acc.push([[arr[idx - 1], val], [arr[0], arr[1]]]);
-                } else {
-                    acc.push([[arr[idx - 1], val], [arr[idx + 1], arr[idx + 2]]]);
-                }
-            }
-            return acc;
-        }, []);
-
-        this.shapeContour.on('click', (event: MouseEvent) => {
-            const [x, y] = translateToSVG(this.canvas.node as any as SVGSVGElement, [event.clientX, event.clientY]);
-
-            if (points.length) {
-                // todo: finish algorithm
+        const initialClick = (event: MouseEvent): void => {
+            if (event.button !== 0) {
                 return;
             }
 
-            const circle = this.canvas.circle(consts.BASE_POINT_SIZE / this.geometry.scale).center(x, y);
-            circle.attr('stroke-width', 0);
-            this.slicingPoints.push(circle);
-            points.push([x, y], [x, y]);
-            this.slicingLine = this.canvas.polyline(stringifyPoints(points.flat()));
-            this.slicingLine.addClass('cvat_canvas_slicing_line');
-            this.slicingLine.attr({ 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale });
-            this.slicingLine.attr('stroke', this.outlinedBorders);
-        });
-
-        // contour index, intersection point. Order is important
-        const contoursIntersections: Record<string, [number, number]> = {};
-        this.canvas.on('mousedown.slice', (event: MouseEvent) => {
-            if (event.button !== 0 || !points.length) return;
-
             const [x, y] = translateToSVG(this.canvas.node as any as SVGSVGElement, [event.clientX, event.clientY]);
-            points[points.length - 1] = [x, y];
-            const [lastX, lastY] = points[points.length - 2];
-
-            // check self intersection first
-            let isSelfIntersection = false;
-            if (points.length > 2) {
-                // if there are less then three points, self-intersection is not possible
-                const lines = points.slice(0, -2).reduce<Segment[]>((acc, [px, py], idx) => {
-                    if (idx >= points.length - 1) {
-                        acc.push([[px, py], [lastX, lastY]]);
-                    } else {
-                        acc.push([[px, py], [...points[idx + 1]]]);
-                    }
-                    return acc;
-                }, []);
-
-                lines.forEach((line, i) => {
-                    const intersection = findIntersection(line, [[lastX, lastY], [x, y]]);
-                    if (i === lines.length - 1) {
-                        // latest line always have intersection
-                        // in at least one point, so we only check match here
-                        if (intersection && Number.isNaN(intersection[0]) && Number.isNaN(intersection[1])) {
-                            isSelfIntersection = true;
-                            console.log(`found match with line ${i}`);
-                        }
-                    } else if (intersection !== null) {
-                        console.log(`found intersection with line ${i}`);
-                        isSelfIntersection = true;
-                    }
-                });
-            }
-
-            // now compute intersections with segments
-            let errored = false;
-
-            // order is not important here, because generally it is important only for intermediate points
-            // but if we intersect contour twice at once, it means there was not intermediate points at all
-            const newContourIntersections: Record<number, [number, number]> = {};
-            contourSegments.forEach((segment, i) => {
-                const intersection = findIntersection(segment, [[lastX, lastY], [x, y]]);
-                if (intersection && Number.isNaN(intersection[0]) && Number.isNaN(intersection[1])) {
-                    // match a contour segment
-                    // it also means that intersect more then one contour segment
-                    // so, potentially this point is not allowed
-                    errored = true;
-                } else if (intersection !== null) {
-                    newContourIntersections[i] = [intersection[0], intersection[1]];
+            let shortestDistance = Number.MAX_SAFE_INTEGER;
+            let closestPoint: [number, number] = [x, y];
+            let segmentIdx = -1;
+            contourSegments.forEach((segment, idx) => {
+                const point = findClosestPointOnSegment(segment, [x, y]);
+                const distance = Math.sqrt((x - point[0]) ** 2 + (y - point[1]) ** 2);
+                if (distance < shortestDistance) {
+                    closestPoint = point;
+                    shortestDistance = distance;
+                    segmentIdx = idx;
                 }
             });
 
-            const doneIntersections = Object.keys(contoursIntersections).length;
-            const newIntersections = Object.keys(newContourIntersections).length;
-            const totalIntersections = doneIntersections + newIntersections;
+            const THRESHOLD = 10 / this.geometry.scale;
+            if (shortestDistance <= THRESHOLD) {
+                points.push([...closestPoint], [...closestPoint]);
+                contoursIntersections[`0.${segmentIdx}`] = closestPoint;
+                this.slicingLine = this.canvas.polyline(stringifyPoints(points.flat()));
+                this.slicingLine.addClass('cvat_canvas_slicing_line');
+                this.slicingLine.attr({ 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale });
+                this.slicingLine.attr('stroke', this.outlinedBorders);
+                const circle = this.canvas
+                    .circle((this.controlPointSize * 2) / this.geometry.scale)
+                    .center(closestPoint[0], closestPoint[1]);
+                circle.attr('fill', 'white');
+                circle.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
+                this.slicingPoints.push(circle);
+            }
+        };
 
-            if (!isSelfIntersection && !errored && totalIntersections <= 2) {
-                points.push([x, y]);
-                if (totalIntersections === 1) {
-                    intermediatePoints.push([x, y]);
-                }
-
-                const intersectedSegments = Object.keys(newContourIntersections);
-                for (let i = 0; i < intersectedSegments.length; i++) {
-                    // todo: check if do not intersect the same point twice
-                    const intersectedSegment = intersectedSegments[i];
-                    contoursIntersections[
-                        `${doneIntersections + i}.${intersectedSegment}`
-                    ] = newContourIntersections[intersectedSegment];
-                }
+        const click = (event: MouseEvent): void => {
+            if (event.button !== 0) {
+                return;
             }
 
-            if (totalIntersections === 2) {
-                // algorithm DONE
+            const [prevX, prevY] = points[points.length - 2];
+            const [x, y] = translateToSVG(this.canvas.node as any as SVGSVGElement, [event.clientX, event.clientY]);
+            points[points.length - 1] = [x, y];
+
+            // check slicing line does not intersect itself
+            const segment = [[prevX, prevY], [x, y]] as Segment;
+            const slicingLineSegments = segmentsFromPoints(points.slice(0, -1).flat());
+            const selfIntersections = getAllIntersections(segment, slicingLineSegments);
+            if (Object.keys(selfIntersections).length) {
+                // not allowed
+                return;
+            }
+
+            // find all intersections with contour
+            const firstIntersectedSegmentIdx = +Object.keys(contoursIntersections)[0].split('.')[1];
+            const intersections = getAllIntersections([[prevX, prevY], [x, y]], contourSegments);
+            if (firstIntersectedSegmentIdx in intersections && points.length < 3) {
+                // this is the second point of slicing line and it intersects
+                // the contour in first point of the slicing line, ignore
+                delete intersections[firstIntersectedSegmentIdx];
+            }
+
+            const numberOfIntersections = Object.keys(intersections).length;
+            if (numberOfIntersections > 1) {
+                // not allowed
+                return;
+            }
+
+            points.push([x, y]);
+            this.slicingLine.plot(stringifyPoints(points.flat()));
+
+            if (numberOfIntersections === 1) {
+                const [segmentIdx] = Object.keys(intersections);
+                contoursIntersections[`1.${segmentIdx}`] = intersections[segmentIdx];
+                points.pop();
+                const intermediatePoints: [number, number][] = points.slice(1, -1);
                 const intersectedSegments = Object.keys(contoursIntersections).sort((a, b) => +a.split('.')[1] - +b.split('.')[1]);
                 const [firstSegmentKey, secondSegmentKey] = intersectedSegments;
                 const firstSegmentIdx = +firstSegmentKey.split('.')[1];
@@ -381,10 +374,17 @@ export class SliceHandlerImpl implements SliceHandler {
                         ], Date.now() - this.start,
                     );
                 }
+
+                return;
             }
+        };
 
-            this.slicingLine.plot(stringifyPoints(points.flat()));
-
+        this.canvas.on('mousedown.slice', (event: MouseEvent) => {
+            if (!points.length) {
+                initialClick(event);
+            } else {
+                click(event);
+            }
         });
 
         this.canvas.on('mousemove.slice', (event: MouseEvent) => {
@@ -395,6 +395,39 @@ export class SliceHandlerImpl implements SliceHandler {
             }
 
             // todo: implement shift handle
+        });
+
+        this.shapeContour.on('mousedown.slice', (event: MouseEvent) => {
+            if (points.length) {
+                const [x, y] = translateToSVG(this.canvas.node as any as SVGSVGElement, [event.clientX, event.clientY]);
+                points[points.length - 1] = [x, y];
+
+                const [prevX, prevY] = points[points.length - 2];
+                const segment = [[prevX, prevY], [x, y]] as Segment;
+
+                // find all intersections with contour
+                const contourIntersection = getAllIntersections(segment, contourSegments);
+                const firstIntersectedSegmentIdx = +Object.keys(contoursIntersections)[0].split('.')[1];
+                if (firstIntersectedSegmentIdx in contourIntersection && points.length < 3) {
+                    // this is the second point of slicing line and it intersects
+                    // the contour in first point of the slicing line, ignore
+                    delete contourIntersection[firstIntersectedSegmentIdx];
+                }
+
+                if (Object.keys(contourIntersection).length) {
+                    // not allowed
+                    return;
+                }
+
+                const slicingLineSegments = segmentsFromPoints(points.slice(0, -1).flat());
+                const selfIntersections = getAllIntersections(segment, slicingLineSegments);
+                if (!Object.keys(selfIntersections).length) {
+                    points.push([x, y]);
+                }
+
+                this.slicingLine.plot(stringifyPoints(points.flat()));
+                event.stopPropagation();
+            }
         });
     }
 
@@ -409,10 +442,15 @@ export class SliceHandlerImpl implements SliceHandler {
         }
 
         if (this.shapeContour) {
-            this.shapeContour.off('mousemove');
+            this.shapeContour.off('mousedown.slice');
             this.shapeContour.remove();
             this.shapeContour = null;
         }
+
+        this.slicingPoints.forEach((circle) => {
+            circle.remove();
+        });
+        this.slicingPoints = [];
 
         this.canvas.off('mousedown.slice');
         this.canvas.off('mousemove.slice');
@@ -449,11 +487,13 @@ export class SliceHandlerImpl implements SliceHandler {
         }
 
         this.slicingPoints.forEach((point) => {
-            point.radius(consts.BASE_POINT_SIZE / geometry.scale);
+            point.radius(this.controlPointSize / geometry.scale);
+            point.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
         });
     }
 
     public configurate(config: Configuration): void {
+        this.controlPointSize = config.controlPointsSize || consts.BASE_POINT_SIZE;
         this.outlinedBorders = config.outlinedBorders || 'black';
         if (this.slicingLine) this.slicingLine.attr('stroke', this.outlinedBorders);
         if (this.shapeContour) this.shapeContour.attr('stroke', this.outlinedBorders);
