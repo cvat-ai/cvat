@@ -99,6 +99,7 @@ export class OpenCVWrapper {
         (window as any).Module = {
             onRuntimeInitialized: () => {
                 runtimeInitialized = true;
+                delete (window as any).Module;
             },
         };
         // Inject opencv to DOM
