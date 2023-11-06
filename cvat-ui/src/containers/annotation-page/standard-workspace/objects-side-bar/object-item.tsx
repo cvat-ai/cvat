@@ -22,6 +22,7 @@ import {
 } from 'reducers';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
+import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
     Label, ObjectState, Attribute, Job,
@@ -29,6 +30,7 @@ import {
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
+import { message, notification } from 'antd';
 
 interface OwnProps {
     readonly: boolean;
@@ -186,7 +188,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     }
 
-    private slice = (): void => {
+    private slice = async (): Promise<void> => {
         const { objectState, readonly, canvasInstance } = this.props;
 
         if (!readonly && canvasInstance instanceof Canvas &&
@@ -196,8 +198,43 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 canvasInstance.cancel();
             }
 
-            // todo: implement for a mask
-            // hide context menu after
+            if (objectState.shapeType === ShapeType.MASK) {
+                if (!openCVWrapper.isInitialized) {
+                    const hide = message.loading('OpenCV client initialization..', 0);
+                    try {
+                        await openCVWrapper.initialize(() => {});
+                    } catch (error: any) {
+                        notification.error({
+                            message: 'Could not initialize OpenCV',
+                            description: error.message,
+                            duration: null,
+                        });
+                    } finally {
+                        hide();
+                    }
+                }
+
+                const points = objectState.points as number[];
+                const [left, top, right, bottom] = points.slice(-4);
+                const width = right - left + 1;
+                const height = bottom - top + 1;
+
+                const src = openCVWrapper.mat.fromData(width, height, MatType.CV_8UC1, points.slice(0, -4));
+                const contours = openCVWrapper.matVector.empty();
+                try {
+                    const polygons = openCVWrapper.contours.findContours(src, contours);
+                    canvasInstance.slice({
+                        enabled: true,
+                        contour: polygons[0] as number[],
+                        clientID: objectState.clientID as number,
+                        shapeType: objectState.shapeType as ShapeType.MASK | ShapeType.POLYGON,
+                    });
+                    return;
+                } finally {
+                    src.delete();
+                    contours.delete();
+                }
+            }
 
             canvasInstance.slice({
                 enabled: true,
