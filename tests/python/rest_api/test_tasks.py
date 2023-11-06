@@ -867,7 +867,6 @@ class TestPostTaskData:
             chunk_image = chunk_zip.read(infos[0])
             assert chunk_image == image_bytes
 
-    @pytest.mark.skip(reason="need to wait new Pillow release till 15 October 2023")
     def test_can_create_task_with_exif_rotated_tif_image(self):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated tif image",

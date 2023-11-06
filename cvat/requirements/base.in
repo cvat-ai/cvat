@@ -39,7 +39,7 @@ opencv-python-headless~=4.8
 patool==1.12
 
 pdf2image==1.14.0
-Pillow>=10.0.1
+Pillow>=10.1.0
 psutil==5.9.4
 psycopg2-binary==2.9.5
 python-ldap==3.4.3
