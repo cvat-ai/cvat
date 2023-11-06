@@ -663,7 +663,7 @@ class ZipChunkWriter(IChunkWriter):
                     if has_exif_rotation(image):
                         rot_image = ImageOps.exif_transpose(image)
                         try:
-                            if rot_image.format == 'TIFF':
+                            if image.format == 'TIFF':
                             # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
                             # use loseless lzw compression for tiff images
                                 rot_image.save(output, format='TIFF', compression='tiff_lzw')
