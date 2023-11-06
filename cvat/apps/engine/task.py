@@ -508,6 +508,12 @@ def _create_thread(
     upload_dir = db_data.get_upload_dirname() if db_data.storage != models.StorageChoice.SHARE else settings.SHARE_ROOT
     is_data_in_cloud = db_data.storage == models.StorageChoice.CLOUD_STORAGE
 
+    job = rq.get_current_job()
+
+    def _update_status(msg: str) -> None:
+        job.meta['status'] = msg
+        job.save_meta()
+
     if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
@@ -636,16 +642,27 @@ def _create_thread(
                 filtered_files.append(f)
             data['server_files'] = filtered_files
 
+    # count and validate uploaded files
+    media = _count_files(data)
+    media, task_mode = _validate_data(media, manifest_files)
+
+    if is_data_in_cloud:
+        # first we need to filter files and keep only supported ones
+        if set(media.keys()) - set(['image']) and db_data.storage_method == models.StorageMethodChoice.CACHE:
+            # FUTURE-FIXME: This is a temporary workaround for creating tasks
+            # with unsupported cloud storage data (video, archive, pdf) when use_cache is enabled
+            db_data.storage_method = models.StorageMethodChoice.FILE_SYSTEM
+            _update_status("The 'use cache' option is ignored")
+
         if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
-            _download_data_from_cloud_storage(db_data.cloud_storage, data['server_files'], upload_dir)
+            filtered_data = []
+            for files in (i for i in media.values() if i):
+                filtered_data.extend(files)
+            _download_data_from_cloud_storage(db_data.cloud_storage, filtered_data, upload_dir)
             is_data_in_cloud = False
             db_data.storage = models.StorageChoice.LOCAL
         else:
             manifest = ImageManifestManager(db_data.get_manifest_path())
-
-    # count and validate uploaded files
-    media = _count_files(data)
-    media, task_mode = _validate_data(media, manifest_files)
 
     if job_file_mapping is not None and task_mode != 'annotation':
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
@@ -658,13 +675,6 @@ def _create_thread(
                 upload_dir, data.get('server_files_path'), data.get('server_files_exclude'))
             manifest_root = upload_dir
         elif is_data_in_cloud:
-            for m_type in set(media.keys()) - set(['image']):
-                if media[m_type]:
-                    raise ValidationError(
-                        f'Creating tasks from cloud storage {m_type} files with an enabled use cache option '
-                        'is not currently supported. Disable this option to create a task.'
-                    )
-
             if job_file_mapping is not None:
                 sorted_media = list(itertools.chain.from_iterable(job_file_mapping))
             else:
@@ -681,7 +691,6 @@ def _create_thread(
 
     av_scan_paths(upload_dir)
 
-    job = rq.get_current_job()
     job.meta['status'] = 'Media files are being extracted...'
     job.save_meta()
 
@@ -914,10 +923,6 @@ def _create_thread(
 
     video_path = ""
     video_size = (0, 0)
-
-    def _update_status(msg):
-        job.meta['status'] = msg
-        job.save_meta()
 
     db_images = []
 
