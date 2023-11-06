@@ -648,7 +648,7 @@ def _create_thread(
 
     if is_data_in_cloud:
         # first we need to filter files and keep only supported ones
-        if set(media.keys()) - set(['image']) and db_data.storage_method == models.StorageMethodChoice.CACHE:
+        if any([v for k, v in media.items() if k != 'image']) and db_data.storage_method == models.StorageMethodChoice.CACHE:
             # FUTURE-FIXME: This is a temporary workaround for creating tasks
             # with unsupported cloud storage data (video, archive, pdf) when use_cache is enabled
             db_data.storage_method = models.StorageMethodChoice.FILE_SYSTEM
