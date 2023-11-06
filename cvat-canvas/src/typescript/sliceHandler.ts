@@ -72,13 +72,7 @@ function getAllIntersections(segment: Segment, segments: Segment[]): Record<numb
     for (let i = 0; i < segments.length; i++) {
         const checkedSegment = segments[i];
         const intersection = findIntersection(checkedSegment, segment);
-        if (i === segments.length - 1) {
-            // latest line always has intersection
-            // in at least one point, so we only check match here
-            if (intersection && Number.isNaN(intersection[0]) && Number.isNaN(intersection[1])) {
-                intersections[i] = intersection;
-            }
-        } else if (intersection !== null) {
+        if (intersection !== null) {
             intersections[i] = intersection;
         }
     }
@@ -144,6 +138,34 @@ export class SliceHandlerImpl implements SliceHandler {
         const points: [number, number][] = [];
         const contoursIntersections: Record<string, [number, number]> = {};
 
+        const filterSelfIntersections = (
+            slicingLingSegments: Segment[],
+            intersections: ReturnType<typeof getAllIntersections>,
+        ): ReturnType<typeof getAllIntersections> => {
+            if (intersections[slicingLingSegments.length - 1]) {
+                // latest line always has intersection
+                // in at least one point, so we only check match here (NaN values)
+                const intersection = intersections[slicingLingSegments.length - 1];
+                if (!Number.isNaN(intersection[0] && !Number.isNaN(intersection[1]))) {
+                    delete intersections[slicingLingSegments.length - 1];
+                }
+            }
+            return intersections;
+        };
+
+        const filterContourIntersections = (
+            intersections: ReturnType<typeof getAllIntersections>,
+        ): ReturnType<typeof getAllIntersections> => {
+            const firstIntersectedSegmentIdx = +Object.keys(contoursIntersections)[0].split('.')[1];
+            if (firstIntersectedSegmentIdx in intersections && points.length < 3) {
+                // this is the second point of slicing line and it intersects
+                // the contour in first point of the slicing line, ignore
+                delete intersections[firstIntersectedSegmentIdx];
+            }
+
+            return intersections;
+        };
+
         const initialClick = (event: MouseEvent): void => {
             if (event.button !== 0) {
                 return;
@@ -192,20 +214,20 @@ export class SliceHandlerImpl implements SliceHandler {
             // check slicing line does not intersect itself
             const segment = [[prevX, prevY], [x, y]] as Segment;
             const slicingLineSegments = segmentsFromPoints(points.slice(0, -1).flat());
-            const selfIntersections = getAllIntersections(segment, slicingLineSegments);
+            const selfIntersections = filterSelfIntersections(
+                slicingLineSegments,
+                getAllIntersections(segment, slicingLineSegments),
+            );
+
             if (Object.keys(selfIntersections).length) {
                 // not allowed
                 return;
             }
 
             // find all intersections with contour
-            const firstIntersectedSegmentIdx = +Object.keys(contoursIntersections)[0].split('.')[1];
-            const intersections = getAllIntersections([[prevX, prevY], [x, y]], contourSegments);
-            if (firstIntersectedSegmentIdx in intersections && points.length < 3) {
-                // this is the second point of slicing line and it intersects
-                // the contour in first point of the slicing line, ignore
-                delete intersections[firstIntersectedSegmentIdx];
-            }
+            const intersections = filterContourIntersections(
+                getAllIntersections([[prevX, prevY], [x, y]], contourSegments),
+            );
 
             const numberOfIntersections = Object.keys(intersections).length;
             if (numberOfIntersections > 1) {
@@ -374,8 +396,6 @@ export class SliceHandlerImpl implements SliceHandler {
                         ], Date.now() - this.start,
                     );
                 }
-
-                return;
             }
         };
 
@@ -395,6 +415,7 @@ export class SliceHandlerImpl implements SliceHandler {
             }
 
             // todo: implement shift handle
+            // todo: implement undo point
         });
 
         this.shapeContour.on('mousedown.slice', (event: MouseEvent) => {
@@ -405,26 +426,26 @@ export class SliceHandlerImpl implements SliceHandler {
                 const [prevX, prevY] = points[points.length - 2];
                 const segment = [[prevX, prevY], [x, y]] as Segment;
 
-                // find all intersections with contour
-                const contourIntersection = getAllIntersections(segment, contourSegments);
-                const firstIntersectedSegmentIdx = +Object.keys(contoursIntersections)[0].split('.')[1];
-                if (firstIntersectedSegmentIdx in contourIntersection && points.length < 3) {
-                    // this is the second point of slicing line and it intersects
-                    // the contour in first point of the slicing line, ignore
-                    delete contourIntersection[firstIntersectedSegmentIdx];
+                const slicingLineSegments = segmentsFromPoints(points.slice(0, -1).flat());
+                const selfIntersections = filterSelfIntersections(
+                    slicingLineSegments,
+                    getAllIntersections(segment, slicingLineSegments),
+                );
+                if (Object.keys(selfIntersections).length) {
+                    return;
                 }
+
+                // find all intersections with contour
+                const contourIntersection = filterContourIntersections(
+                    getAllIntersections([[prevX, prevY], [x, y]], contourSegments),
+                );
 
                 if (Object.keys(contourIntersection).length) {
                     // not allowed
                     return;
                 }
 
-                const slicingLineSegments = segmentsFromPoints(points.slice(0, -1).flat());
-                const selfIntersections = getAllIntersections(segment, slicingLineSegments);
-                if (!Object.keys(selfIntersections).length) {
-                    points.push([x, y]);
-                }
-
+                points.push([x, y]);
                 this.slicingLine.plot(stringifyPoints(points.flat()));
                 event.stopPropagation();
             }
