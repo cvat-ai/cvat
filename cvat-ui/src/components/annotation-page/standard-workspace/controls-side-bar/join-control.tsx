@@ -3,9 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Icon from '@ant-design/icons';
+import { LinkOutlined } from '@ant-design/icons';
 
-import { GroupIcon } from 'icons';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -59,7 +58,7 @@ function JoinControl(props: Props): JSX.Element {
     };
 
     return disabled ? (
-        <Icon className='cvat-group-control cvat-disabled-canvas-control' component={GroupIcon} />
+        <LinkOutlined className='cvat-group-control cvat-disabled-canvas-control' />
     ) : (
         <>
             <GlobalHotKeys
@@ -69,7 +68,7 @@ function JoinControl(props: Props): JSX.Element {
                 handlers={shortcutHandlers}
             />
             <CVATTooltip title='Join masks' placement='right'>
-                <Icon {...dynamicIconProps} component={GroupIcon} />
+                <LinkOutlined {...dynamicIconProps} />
             </CVATTooltip>
         </>
     );

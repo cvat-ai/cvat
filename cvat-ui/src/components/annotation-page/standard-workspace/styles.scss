@@ -89,6 +89,14 @@
     transform: scale(0.65);
     padding: 2px;
 
+    &.cvat-join-control,
+    &.cvat-slice-control {
+        > svg {
+            width: 40px;
+            height: 40px;
+        }
+    }
+
     &:hover:not(.cvat-disabled-canvas-control) {
         background: $header-color;
         transform: scale(0.75);

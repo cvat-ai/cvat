@@ -7,7 +7,7 @@ import React from 'react';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Icon, {
-    LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
+    LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined, ScissorOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -118,7 +118,7 @@ function SliceItem(props: ItemProps): JSX.Element {
             <CVATTooltip title='Cut the shape into two parts'>
                 <Button
                     type='link'
-                    icon={<EditOutlined />}
+                    icon={<ScissorOutlined />}
                     onClick={slice}
                     className='cvat-object-item-menu-slice-object'
                 >
