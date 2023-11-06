@@ -551,30 +551,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS: {
-            const { states, history } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    states,
-                    history,
-                },
-            };
-        }
-        case AnnotationActionTypes.MERGE_ANNOTATIONS_SUCCESS: {
-            const { states, history } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    states,
-                    history,
-                },
-            };
-        }
         case AnnotationActionTypes.RESET_ANNOTATIONS_GROUP: {
             return {
                 ...state,
@@ -593,20 +569,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SPLIT_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.MERGE_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.SLICE_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.JOIN_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.GROUP_ANNOTATIONS_SUCCESS: {
-            const { states, history } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    states,
-                    history,
-                },
-            };
-        }
-        case AnnotationActionTypes.SPLIT_ANNOTATIONS_SUCCESS: {
             const { states, history } = action.payload;
 
             return {

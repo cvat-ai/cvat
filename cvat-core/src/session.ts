@@ -151,6 +151,17 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
+                async slice(clientID, contour1, contour2) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.slice,
+                        clientID,
+                        contour1,
+                        contour2,
+                    );
+                    return result;
+                },
+
                 async import(data) {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.import, data);
                     return result;
@@ -355,6 +366,7 @@ export class Job extends Session {
         split: CallableFunction;
         group: CallableFunction;
         join: CallableFunction;
+        slice: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
         searchEmpty: CallableFunction;
@@ -563,6 +575,7 @@ export class Job extends Session {
             split: Object.getPrototypeOf(this).annotations.split.bind(this),
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
             join: Object.getPrototypeOf(this).annotations.join.bind(this),
+            slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
@@ -675,6 +688,7 @@ export class Task extends Session {
         split: CallableFunction;
         group: CallableFunction;
         join: CallableFunction;
+        slice: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
         searchEmpty: CallableFunction;
@@ -1098,6 +1112,7 @@ export class Task extends Session {
             split: Object.getPrototypeOf(this).annotations.split.bind(this),
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
             join: Object.getPrototypeOf(this).annotations.join.bind(this),
+            slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),

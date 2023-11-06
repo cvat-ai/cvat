@@ -691,6 +691,80 @@ export default class Collection {
         }
     }
 
+    slice(clientID: number, contour1: number[], contour2: number[]): void {
+        checkObjectType('sliced object id', clientID, 'number');
+        checkObjectType('first slicing contour', contour1, null, Array);
+        checkObjectType('second slicing contour', contour2, null, Array);
+
+        contour1.forEach(
+            (el: number) => checkObjectType('first slicing contour element', el, 'number'),
+        );
+        contour2.forEach(
+            (el: number) => checkObjectType('second slicing contour element', el, 'number'),
+        );
+
+        const slicedObject = this.objects[clientID];
+        if (!(slicedObject instanceof Shape)) {
+            throw new ArgumentError('Only shape object can be sliced');
+        }
+
+        if (![ShapeType.POLYGON, ShapeType.MASK].includes(slicedObject.shapeType)) {
+            throw new ArgumentError(`Only polygon or mask can be sliced. Got "${slicedObject.shapeType}"`);
+        }
+
+        // todo: prepare and crop mask contours
+        slicedObject.removed = true;
+        const imported = this.import({
+            shapes: [{
+                attributes: [], // todo
+                frame: slicedObject.frame,
+                group: slicedObject.group,
+                label_id: slicedObject.label.id,
+                outside: false,
+                occluded: slicedObject.occluded,
+                points: slicedObject.shapeType === ShapeType.POLYGON ? contour1 : [],
+                rotation: 0,
+                type: slicedObject.shapeType,
+                z_order: slicedObject.zOrder,
+                source: Source.MANUAL,
+                elements: [],
+            }, {
+                attributes: [], // todo
+                frame: slicedObject.frame,
+                group: slicedObject.group,
+                label_id: slicedObject.label.id,
+                outside: false,
+                occluded: slicedObject.occluded,
+                points: slicedObject.shapeType === ShapeType.POLYGON ? contour2 : [],
+                rotation: 0,
+                type: slicedObject.shapeType,
+                z_order: slicedObject.zOrder,
+                source: Source.MANUAL,
+                elements: [],
+            }],
+            tracks: [],
+            tags: [],
+        });
+
+        this.history.do(
+            HistoryActions.SLICED_OBJECT,
+            () => {
+                slicedObject.removed = false;
+                imported.shapes.forEach((shape) => {
+                    shape.removed = true;
+                });
+            },
+            () => {
+                slicedObject.removed = true;
+                imported.shapes.forEach((shape) => {
+                    shape.removed = false;
+                });
+            },
+            [...imported.shapes.map((object) => object.clientID), slicedObject.clientID],
+            slicedObject.frame,
+        );
+    }
+
     clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {
         if (startframe !== undefined && endframe !== undefined) {
             // If only a range of annotations need to be cleared

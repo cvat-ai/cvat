@@ -29,7 +29,7 @@ import {
     getAnnotations, putAnnotations, saveAnnotations,
     hasUnsavedChanges, searchAnnotations, searchEmptyFrame,
     mergeAnnotations, splitAnnotations, groupAnnotations,
-    joinAnnotations, clearAnnotations, selectObject,
+    joinAnnotations, sliceAnnotations, clearAnnotations, selectObject,
     annotationsStatistics, importCollection, exportCollection,
     importDataset, exportDataset, undoActions, redoActions,
     freezeHistory, clearActions, getActions,
@@ -300,6 +300,11 @@ export function implementJob(Job) {
 
     Job.prototype.annotations.join.implementation = async function (objectStates) {
         const result = await joinAnnotations(this, objectStates);
+        return result;
+    };
+
+    Job.prototype.annotations.slice.implementation = async function (clientID, contour1, contour2) {
+        const result = await sliceAnnotations(this, clientID, contour1, contour2);
         return result;
     };
 
@@ -778,6 +783,11 @@ export function implementTask(Task) {
 
     Task.prototype.annotations.join.implementation = async function (objectStates) {
         const result = await joinAnnotations(this, objectStates);
+        return result;
+    };
+
+    Task.prototype.annotations.slice.implementation = async function (clientID, contour1, contour2) {
+        const result = await sliceAnnotations(this, clientID, contour1, contour2);
         return result;
     };
 

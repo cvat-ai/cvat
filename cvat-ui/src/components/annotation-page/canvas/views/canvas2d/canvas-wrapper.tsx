@@ -20,7 +20,7 @@ import { LogType } from 'cvat-logger';
 import { Canvas, HighlightSeverity } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, FramesMetaData, QualityConflict, getCore,
+    AnnotationConflict, FramesMetaData, Job, ObjectState, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -34,6 +34,7 @@ import {
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
     joinAnnotationsAsync,
+    sliceAnnotationsAsync,
     splitAnnotationsAsync,
     activateObject,
     updateCanvasContextMenu,
@@ -118,12 +119,18 @@ interface DispatchToProps {
     onSetupCanvas(): void;
     onResetCanvas: () => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
-    onUpdateAnnotations(states: any[]): void;
-    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onJoinAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
+    onUpdateAnnotations(states: ObjectState[]): void;
+    onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
+    onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onJoinAnnotations(sessionInstance: Job, states: ObjectState[]): void;
+    onSliceAnnotations(
+        sessionInstance: Job,
+        clientID: number,
+        contour1: number[],
+        contour2: number[],
+    ): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
@@ -262,22 +269,30 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateActiveControl(activeControl: ActiveControl): void {
             dispatch(updateActiveControlAction(activeControl));
         },
-        onUpdateAnnotations(states: any[]): void {
+        onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+        onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(createAnnotationsAsync(sessionInstance, frame, states));
         },
-        onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+        onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(mergeAnnotationsAsync(sessionInstance, frame, states));
         },
-        onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+        onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
         },
-        onJoinAnnotations(sessionInstance: any, frame: number, states: any[]): void {
-            dispatch(joinAnnotationsAsync(sessionInstance, frame, states));
+        onJoinAnnotations(sessionInstance: Job, states: ObjectState[]): void {
+            dispatch(joinAnnotationsAsync(sessionInstance, states));
         },
-        onSplitAnnotations(sessionInstance: any, frame: number, state: any): void {
+        onSliceAnnotations(
+            sessionInstance: Job,
+            clientID: number,
+            contour1: number[],
+            contour2: number[],
+        ): void {
+            dispatch(sliceAnnotationsAsync(sessionInstance, clientID, contour1, contour2));
+        },
+        onSplitAnnotations(sessionInstance: any, frame: number, state: ObjectState): void {
             dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
         },
         onActivateObject(activatedStateID: number | null, activatedElementID: number | null = null): void {
@@ -665,12 +680,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasObjectsJoined = (event: any): void => {
         const {
-            jobInstance, frame, onJoinAnnotations, updateActiveControl,
+            jobInstance, onJoinAnnotations, updateActiveControl,
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
         const { states } = event.detail;
-        onJoinAnnotations(jobInstance, frame, states);
+        onJoinAnnotations(jobInstance, states);
     };
 
     private onCanvasTrackSplitted = (event: any): void => {
@@ -803,43 +818,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasSliceDone = (event: any): void => {
-        const { updateActiveControl } = this.props;
-        updateActiveControl(ActiveControl.CURSOR);
+        const { jobInstance, updateActiveControl, onSliceAnnotations } = this.props;
         const { clientID, results, duration } = event.detail;
 
+        // todo: add log with duration
 
-        const {
-            jobInstance, activeLabelID, activeObjectType, frame, onCreateAnnotations,
-        } = this.props;
-
-
-        const state1 = {
-            objectType: ObjectType.SHAPE,
-            shapeType: ShapeType.POLYGON,
-            label: jobInstance.labels[0],
-            frame,
-            rotation: 0,
-            occluded: false,
-            outside: false,
-            points: results[0],
-        };
-
-        const state2 = {
-            objectType: ObjectType.SHAPE,
-            shapeType: ShapeType.POLYGON,
-            label: jobInstance.labels[0],
-            frame,
-            rotation: 0,
-            occluded: false,
-            outside: false,
-            points: results[1],
-        };
-
-        const objectState1 = new cvat.classes.ObjectState(state1);
-        const objectState2 = new cvat.classes.ObjectState(state2);
-        onCreateAnnotations(jobInstance, frame, [objectState1, objectState2]);
-
-        console.log(clientID, results, duration);
+        updateActiveControl(ActiveControl.CURSOR);
+        onSliceAnnotations(jobInstance, clientID, results[0], results[1]);
     };
 
     private onCanvasDragStart = (): void => {

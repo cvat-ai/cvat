@@ -142,6 +142,7 @@ export enum HistoryActions {
     CHANGED_SOURCE = 'Changed source',
     MERGED_OBJECTS = 'Merged objects',
     JOINED_OBJECTS = 'Joined objects',
+    SLICED_OBJECT = 'Sliced object',
     SPLITTED_TRACK = 'Splitted track',
     GROUPED_OBJECTS = 'Grouped objects',
     CREATED_OBJECTS = 'Created objects',

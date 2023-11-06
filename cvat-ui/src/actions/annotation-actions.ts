@@ -146,6 +146,8 @@ export enum AnnotationActionTypes {
     GROUP_ANNOTATIONS_FAILED = 'GROUP_ANNOTATIONS_FAILED',
     JOIN_ANNOTATIONS_SUCCESS = 'JOIN_ANNOTATIONS_SUCCESS',
     JOIN_ANNOTATIONS_FAILED = 'JOIN_ANNOTATIONS_FAILED',
+    SLICE_ANNOTATIONS_SUCCESS = 'SLICE_ANNOTATIONS_SUCCESS',
+    SLICE_ANNOTATIONS_FAILED = 'SLICE_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
@@ -1186,10 +1188,10 @@ export function groupAnnotationsAsync(sessionInstance: any, frame: number, state
     };
 }
 
-export function joinAnnotationsAsync(sessionInstance: any, frame: number, statesToGroup: any[]): ThunkAction {
+export function joinAnnotationsAsync(sessionInstance: any, statesToGroup: any[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
+            const { filters, showAllInterpolationTracks, frame } = receiveAnnotationsParameters();
 
             await sessionInstance.annotations.join(statesToGroup);
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
@@ -1205,6 +1207,37 @@ export function joinAnnotationsAsync(sessionInstance: any, frame: number, states
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.JOIN_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function sliceAnnotationsAsync(
+    sessionInstance: any,
+    clientID: number,
+    contour1: number[],
+    contour2: number[],
+): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const { filters, showAllInterpolationTracks, frame } = receiveAnnotationsParameters();
+            await sessionInstance.annotations.slice(clientID, contour1, contour2);
+            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const history = await sessionInstance.actions.get();
+
+            dispatch({
+                type: AnnotationActionTypes.SLICE_ANNOTATIONS_SUCCESS,
+                payload: {
+                    states,
+                    history,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.SLICE_ANNOTATIONS_FAILED,
                 payload: {
                     error,
                 },

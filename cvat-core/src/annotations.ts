@@ -207,6 +207,19 @@ export function joinAnnotations(session, objectStates) {
     );
 }
 
+export function sliceAnnotations(session, clientID, contour1, contour2) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (cache.has(session)) {
+        return cache.get(session).collection.slice(clientID, contour1, contour2);
+    }
+
+    throw new DataError(
+        'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+    );
+}
+
 export function hasUnsavedChanges(session) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
