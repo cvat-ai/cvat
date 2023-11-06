@@ -9,6 +9,7 @@ import {
 } from './shared';
 import { Geometry, SliceData, Configuration } from './canvasModel';
 import consts from './consts';
+import { ObjectSelector } from './objectSelector';
 
 export interface SliceHandler {
     slice(sliceData: any): void;
@@ -93,6 +94,7 @@ export class SliceHandlerImpl implements SliceHandler {
     private showObject: (clientID: number) => void;
     private onSliceDone: (clientID: number, fragments: number[][], duration: number) => void;
     private geometry: Geometry;
+    private objectSelector: ObjectSelector;
     private hiddenClientIDs: number[];
 
     public constructor(
@@ -101,6 +103,7 @@ export class SliceHandlerImpl implements SliceHandler {
         onSliceDone: SliceHandlerImpl['onSliceDone'],
         geometry: Geometry,
         canvas: SVG.Container,
+        objectSelector: ObjectSelector,
     ) {
         this.hideObject = hideObject;
         this.showObject = showObject;
@@ -114,6 +117,7 @@ export class SliceHandlerImpl implements SliceHandler {
         this.shapeContour = null;
         this.slicingPoints = [];
         this.slicingLine = null;
+        this.objectSelector = objectSelector;
         this.hiddenClientIDs = [];
     }
 
@@ -453,6 +457,8 @@ export class SliceHandlerImpl implements SliceHandler {
     }
 
     private release(): void {
+        this.objectSelector.resetSelected();
+        this.objectSelector.disable();
         this.hiddenClientIDs.forEach((clientIDs) => {
             this.showObject(clientIDs);
         });
@@ -480,12 +486,20 @@ export class SliceHandlerImpl implements SliceHandler {
 
     public slice(sliceData: SliceData): void {
         if (sliceData.enabled &&
-            sliceData.clientID &&
             sliceData.contour &&
             sliceData.shapeType &&
             !this.sliceData?.enabled
         ) {
-            this.initialize(sliceData as Required<SliceData>);
+            if (sliceData.clientID) {
+                this.initialize(sliceData as Required<SliceData>);
+            } else {
+                this.objectSelector.enable(([{ clientID }]) => {
+                    this.initialize({
+                        ...sliceData,
+                        clientID,
+                    } as Required<SliceData>);
+                }, { maxCount: 1 });
+            }
         } else if (this.sliceData?.enabled && !sliceData.enabled) {
             this.release();
         }

@@ -1271,6 +1271,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onSliceDone,
             this.geometry,
             this.adoptedContent,
+            this.objectSelector,
         );
         this.regionSelector = new RegionSelectorImpl(
             this.onRegionSelected,
@@ -1694,7 +1695,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else {
                 this.canvas.style.cursor = '';
             }
-            this.groupHandler.group(data);
+            this.groupHandler.group(data, (reason === UpdateReasons.GROUP) ? {} : {
+                shapeType: ['mask'],
+                objectType: ['shape'],
+            });
         } else if (reason === UpdateReasons.SLICE) {
             const data = this.controller.sliceData;
 

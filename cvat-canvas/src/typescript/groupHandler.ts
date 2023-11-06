@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import { GroupData } from './canvasModel';
-import { ObjectSelector } from './objectSelector';
+import { ObjectSelector, SelectionFilter } from './objectSelector';
 
 export interface GroupHandler {
-    group(groupData: GroupData): void;
+    group(groupData: GroupData, selectionFilter: SelectionFilter): void;
     select(state: any): void;
     cancel(): void;
 }
@@ -23,11 +23,11 @@ export class GroupHandlerImpl implements GroupHandler {
         this.initialized = false;
     }
 
-    private initGrouping(): void {
+    private initGrouping(selectionFilter: SelectionFilter): void {
         this.statesToBeGroupped = [];
         this.selector.enable((selected) => {
             this.statesToBeGroupped = selected;
-        });
+        }, selectionFilter);
         this.initialized = true;
     }
 
@@ -49,9 +49,9 @@ export class GroupHandlerImpl implements GroupHandler {
         this.initialized = false;
     }
 
-    public group(groupData: GroupData): void {
+    public group(groupData: GroupData, selectionFilter: SelectionFilter): void {
         if (groupData.enabled) {
-            this.initGrouping();
+            this.initGrouping(selectionFilter);
         } else {
             this.closeGrouping();
         }

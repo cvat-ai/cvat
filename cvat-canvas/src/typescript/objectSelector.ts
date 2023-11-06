@@ -8,8 +8,9 @@ import { Geometry } from './canvasModel';
 import consts from './consts';
 
 export interface SelectionFilter {
-    objectType: [] | null;
-    shapeType: [] | null;
+    objectType?: string[];
+    shapeType?: string[];
+    maxCount?: number;
 }
 
 export interface ObjectSelector {
@@ -71,6 +72,25 @@ export class ObjectSelectorImpl implements ObjectSelector {
         };
     }
 
+    private filterObjects(states: ObjectState[]): ObjectState[] {
+        let count = Object.keys(this.selectedObjects).length;
+        const maxCount = this.selectionFilter.maxCount || Number.MAX_SAFE_INTEGER;
+        const filtered = [];
+        for (const state of states) {
+            const { objectType, shapeType } = state;
+            const objectTypes = this.selectionFilter.objectType || [objectType];
+            const shapeTypes = this.selectionFilter.shapeType || [shapeType];
+            if (objectTypes.includes(objectType) && shapeTypes.includes(shapeType)) {
+                if (count < maxCount) {
+                    filtered.push(state);
+                    count++;
+                }
+            }
+        }
+
+        return filtered;
+    }
+
     private onMouseDown = (event: MouseEvent) => {
         const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
         this.mouseDownPosition = { x: point[0], y: point[1] };
@@ -80,7 +100,6 @@ export class ObjectSelectorImpl implements ObjectSelector {
     };
 
     private onMouseUp = (event: MouseEvent) => {
-        let updated = false;
         if (this.selectionRect) {
             this.selectionRect.remove();
             this.selectionRect = null;
@@ -91,6 +110,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
                 (shape: SVG.Shape): boolean => !shape.hasClass('cvat_canvas_hidden'),
             );
 
+            const newStates = [];
             for (const shape of shapes) {
                 // TODO: Doesn't work properly for groups
                 const bbox = shape.bbox();
@@ -104,13 +124,15 @@ export class ObjectSelectorImpl implements ObjectSelector {
                 ) {
                     const objectState = states.find((state: ObjectState): boolean => state.clientID === clientID);
                     if (objectState) {
-                        this.selectedObjects[objectState.clientID] = objectState;
-                        updated = true;
+                        newStates.push(objectState);
                     }
                 }
             }
 
-            if (updated) {
+            if (newStates.length) {
+                newStates.forEach((_state) => {
+                    this.selectedObjects[_state.clientID] = _state;
+                });
                 this.onSelectCallback(Object.values(this.selectedObjects));
             }
         }
@@ -219,15 +241,17 @@ export class ObjectSelectorImpl implements ObjectSelector {
         for (const clientID of Object.keys(this.resetAppearance)) {
             this.resetAppearance[clientID]();
         }
-        this.resetAppearance = {};
 
+        this.resetAppearance = {};
         this.isEnabled = false;
     }
 
     public push(state: ObjectState): void {
         if (this.isEnabled) {
             if (!Object.hasOwn(this.selectedObjects, state.clientID)) {
-                this.selectedObjects[state.clientID] = state;
+                this.filterObjects([state]).forEach((_state) => {
+                    this.selectedObjects[_state.clientID] = _state;
+                });
             } else {
                 delete this.selectedObjects[state.clientID];
             }
