@@ -1,4 +1,4 @@
 ### Fixed
 
 - OpenCV runtime initialization
-  (<https://github.com/opencv/cvat/pull/XXXX>)
+  (<https://github.com/opencv/cvat/pull/7101>)
