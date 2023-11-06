@@ -704,6 +704,7 @@ export default class Collection {
         );
 
         const slicedObject = this.objects[clientID];
+
         if (!(slicedObject instanceof Shape)) {
             throw new ArgumentError('Only shape object can be sliced');
         }
@@ -713,7 +714,13 @@ export default class Collection {
         }
 
         // todo: prepare and crop mask contours
-        slicedObject.removed = true;
+        const { width, height } = this.frameMeta[slicedObject.frame];
+
+        if (slicedObject instanceof MaskShape) {
+            contour1.push(slicedObject.left, slicedObject.top, slicedObject.right, slicedObject.bottom);
+            contour2.push(slicedObject.left, slicedObject.top, slicedObject.right, slicedObject.bottom);
+        }
+
         const imported = this.import({
             shapes: [{
                 attributes: [], // todo
@@ -722,7 +729,7 @@ export default class Collection {
                 label_id: slicedObject.label.id,
                 outside: false,
                 occluded: slicedObject.occluded,
-                points: slicedObject.shapeType === ShapeType.POLYGON ? contour1 : [],
+                points: slicedObject.shapeType === ShapeType.POLYGON ? contour1 : cropMask(contour1, width, height),
                 rotation: 0,
                 type: slicedObject.shapeType,
                 z_order: slicedObject.zOrder,
@@ -735,7 +742,7 @@ export default class Collection {
                 label_id: slicedObject.label.id,
                 outside: false,
                 occluded: slicedObject.occluded,
-                points: slicedObject.shapeType === ShapeType.POLYGON ? contour2 : [],
+                points: slicedObject.shapeType === ShapeType.POLYGON ? contour2 : cropMask(contour2, width, height),
                 rotation: 0,
                 type: slicedObject.shapeType,
                 z_order: slicedObject.zOrder,
@@ -745,6 +752,7 @@ export default class Collection {
             tracks: [],
             tags: [],
         });
+        slicedObject.removed = true;
 
         this.history.do(
             HistoryActions.SLICED_OBJECT,

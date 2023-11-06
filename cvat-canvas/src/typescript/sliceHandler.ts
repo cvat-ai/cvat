@@ -4,7 +4,7 @@
 
 import * as SVG from 'svg.js';
 import {
-    stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG, findIntersection,
+    stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG, findIntersection, zipChannels,
 } from './shared';
 import { Geometry, SliceData, Configuration } from './canvasModel';
 import consts from './consts';
@@ -323,6 +323,54 @@ export class SliceHandlerImpl implements SliceHandler {
                         ];
 
 
+                        if (sliceData.shapeType === 'mask') {
+                            const shape = window.document
+                                .getElementById(`cvat_canvas_shape_${sliceData.clientID}`) as SVGImageElement;
+                            const width = +shape.getAttribute('width');
+                            const height = +shape.getAttribute('height');
+                            const left = +shape.getAttribute('x');
+                            const top = +shape.getAttribute('y');
+
+                            const offscreenCanvas = new OffscreenCanvas(width, height);
+                            const context = offscreenCanvas.getContext('2d');
+                            context.fillStyle = 'black';
+                            context.globalCompositeOperation = 'source-over';
+                            context.drawImage(shape, 0, 0);
+                            context.globalCompositeOperation = 'destination-in';
+                            context.beginPath();
+                            context.moveTo(contour1[0] - left, contour1[1] - top);
+                            contour1.forEach((_, idx) => {
+                                if (idx > 1 && !(idx % 2)) {
+                                    context.lineTo(contour1[idx] - left, contour1[idx + 1] - top);
+                                }
+                            });
+                            context.closePath();
+                            context.fill();
+
+                            const result1 = zipChannels(context.getImageData(0, 0, width, height).data);
+                            context.reset();
+
+                            context.fillStyle = 'black';
+                            context.globalCompositeOperation = 'source-over';
+                            context.drawImage(shape, 0, 0);
+                            context.globalCompositeOperation = 'destination-in';
+                            context.beginPath();
+                            context.moveTo(contour2[0] - left, contour2[1] - top);
+                            contour2.forEach((_, idx) => {
+                                if (idx > 1 && !(idx % 2)) {
+                                    context.lineTo(contour2[idx] - left, contour2[idx + 1] - top);
+                                }
+                            });
+                            context.closePath();
+                            context.fill();
+
+                            const result2 = zipChannels(context.getImageData(0, 0, width, height).data);
+
+                            this.onSliceDone(
+                                sliceData.clientID, [result1, result2], Date.now() - this.start,
+                            );
+                            return;
+                        }
 
                         this.onSliceDone(
                             sliceData.clientID,
