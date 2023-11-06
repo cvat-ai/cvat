@@ -25,7 +25,7 @@ import { getColor } from 'components/annotation-page/standard-workspace/objects-
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
-    Label, ObjectState, Attribute, Job,
+    Label, ObjectState, Attribute, Job, getCore,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
@@ -131,6 +131,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
+const core = getCore();
+
 type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     labels: Label[];
@@ -219,20 +221,25 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 const width = right - left + 1;
                 const height = bottom - top + 1;
 
-                const src = openCVWrapper.mat.fromData(width, height, MatType.CV_8UC1, points.slice(0, -4));
-                const contours = openCVWrapper.matVector.empty();
+                const mask = core.utils.rle2Mask(points.slice(0, -4), width, height);
+                const src = openCVWrapper.mat.fromData(width, height, MatType.CV_8UC1, mask);
                 try {
-                    const polygons = openCVWrapper.contours.findContours(src, contours);
+                    const convexHull = openCVWrapper.contours.convexHullContours(src);
                     canvasInstance.slice({
                         enabled: true,
-                        contour: polygons[0] as number[],
+                        contour: convexHull.map((val, idx) => {
+                            if (idx % 2) {
+                                return val + top;
+                            }
+
+                            return val + left;
+                        }),
                         clientID: objectState.clientID as number,
                         shapeType: objectState.shapeType as ShapeType.MASK | ShapeType.POLYGON,
                     });
                     return;
                 } finally {
                     src.delete();
-                    contours.delete();
                 }
             }
 

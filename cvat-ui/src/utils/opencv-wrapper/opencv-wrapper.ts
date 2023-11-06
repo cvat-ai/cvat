@@ -23,7 +23,8 @@ export interface MatVectorSpace {
 }
 
 export interface Contours {
-    findContours: (src: any, contours: any) => number[][];
+    convexHullContours: (src: any) => number[];
+    findContours: (src: any, findLongest: boolean) => number[][];
     approxPoly: (points: number[] | any, threshold: number, closed?: boolean) => number[][];
 }
 
@@ -165,9 +166,23 @@ export class OpenCVWrapper {
         this.checkInitialization();
         const { cv } = this;
         return {
-            findContours: (src: any, contours: any): number[][] => {
-                const jsContours: number[][] = [];
+            convexHullContours: (src: any): number[] => {
+                const contours = this.contours.findContours(src, false);
+                const points = contours.flat();
+                const input = cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
+                const output = new cv.Mat();
+                try {
+                    cv.convexHull(input, output, false, true);
+                    return Array.from(output.data32S);
+                } finally {
+                    output.delete();
+                    input.delete();
+                }
+            },
+            findContours: (src: any, findLongest: boolean): number[][] => {
+                const contours = this.matVector.empty();
                 const hierarchy = new cv.Mat();
+                const jsContours: number[][] = [];
                 try {
                     cv.findContours(src, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
                     for (let i = 0; i < contours.size(); i++) {
@@ -177,10 +192,14 @@ export class OpenCVWrapper {
                     }
                 } finally {
                     hierarchy.delete();
+                    contours.delete();
                 }
 
-                const longest = jsContours.sort((arr1, arr2) => arr2.length - arr1.length)[0];
-                return [longest];
+                if (findLongest) {
+                    return [jsContours.sort((arr1, arr2) => arr2.length - arr1.length)[0]];
+                }
+
+                return jsContours;
             },
 
             approxPoly: (points: number[] | number[][], threshold: number, closed = true): number[][] => {
