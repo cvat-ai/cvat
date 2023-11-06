@@ -7,7 +7,7 @@ metadata:
     framework: openvino
     spec: |
       [
-        { "id": 0, "name": "face", "attributes": [
+        { "id": 0, "name": "face", "type": "rectangle", "attributes": [
           {
             "name": "age",
             "input_type": "number",

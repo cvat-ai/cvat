@@ -14,10 +14,6 @@ import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 import { ImageFilter } from 'utils/image-processing';
 
-export type StringObject = {
-    [index: string]: string;
-};
-
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
