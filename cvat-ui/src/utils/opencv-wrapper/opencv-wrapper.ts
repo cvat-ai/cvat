@@ -96,14 +96,16 @@ export class OpenCVWrapper {
         }
 
         let runtimeInitialized = false;
+        (window as any).Module = {
+            onRuntimeInitialized: () => {
+                runtimeInitialized = true;
+            },
+        };
         // Inject opencv to DOM
         // eslint-disable-next-line @typescript-eslint/no-implied-eval
         const OpenCVConstructor = new Function(decodedScript);
         OpenCVConstructor();
         this.cv = (window as any).cv;
-        this.cv.onRuntimeInitialized = () => {
-            runtimeInitialized = true;
-        };
         await waitFor(2, () => runtimeInitialized);
     }
 
