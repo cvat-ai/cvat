@@ -308,7 +308,7 @@ class LambdaFunction:
             for model_label_name, mapping_item in copy.items():
                 md_label = next(filter(lambda x: x['name'] == model_label_name, _model_labels))
                 db_label = next(filter(lambda x: x.name == mapping_item['name'], _db_labels))
-                mapping_item['attributes'] = mapping_item.get('attributes', {})
+                mapping_item.setdefault('attributes', {})
                 mapping_item['md_label'] = md_label
                 mapping_item['db_label'] = db_label
                 if md_label['type'] == 'skeleton' and db_label.type == 'skeleton':
