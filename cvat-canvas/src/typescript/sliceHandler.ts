@@ -4,7 +4,7 @@
 
 import * as SVG from 'svg.js';
 import {
-    stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG, findIntersection, zipChannels,
+    stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG, findIntersection, zipChannels, Segment,
 } from './shared';
 import { Geometry, SliceData, Configuration } from './canvasModel';
 import consts from './consts';
@@ -70,11 +70,10 @@ export class SliceHandlerImpl implements SliceHandler {
     private canvas: SVG.Container;
     private start: number;
     private outlinedBorders: string;
-    private shapeBodyOpacity: number;
     private sliceData: Required<SliceData> | null;
-    private shapeBody: SVG.Polygon | null;
     private shapeContour: SVG.PolyLine | null;
     private slicingLine: SVG.PolyLine | null;
+    private slicingPoints: SVG.Circle[];
     private hideObject: (clientID: number) => void;
     private showObject: (clientID: number) => void;
     private onSliceDone: (clientID: number, fragments: number[][], duration: number) => void;
@@ -96,9 +95,8 @@ export class SliceHandlerImpl implements SliceHandler {
         this.sliceData = null;
         this.start = Date.now();
         this.outlinedBorders = 'black';
-        this.shapeBodyOpacity = 0.5;
         this.shapeContour = null;
-        this.shapeBody = null;
+        this.slicingPoints = [];
         this.slicingLine = null;
         this.hiddenClientIDs = [];
     }
@@ -106,7 +104,7 @@ export class SliceHandlerImpl implements SliceHandler {
     private initialize(sliceData: Required<SliceData>): void {
         this.sliceData = { ...sliceData, contour: [...sliceData.contour] };
         this.hiddenClientIDs = (this.canvas.select('.cvat_canvas_shape') as any).members
-            .map((shape) => +shape.attr('clientID'));
+            .map((shape) => +shape.attr('clientID')).filter((clientID: number) => clientID !== sliceData.clientID);
         this.hiddenClientIDs.forEach((clientIDs) => {
             this.hideObject(clientIDs);
         });
@@ -114,14 +112,7 @@ export class SliceHandlerImpl implements SliceHandler {
         this.start = Date.now();
 
         const translatedContour = translateToCanvas(this.geometry.offset, sliceData.contour);
-        this.shapeBody = this.canvas.polygon(stringifyPoints(translatedContour));
-        this.shapeBody.addClass('cvat_canvas_sliced_body');
-        this.shapeBody.attr({ 'stroke-width': 0 });
-        this.shapeBody.attr({ 'fill-opacity': this.shapeBodyOpacity });
-
-        this.shapeContour = this.canvas.polyline(
-            stringifyPoints([...translatedContour, ...translatedContour.slice(-2)]),
-        );
+        this.shapeContour = this.canvas.polygon(stringifyPoints(translatedContour));
         this.shapeContour.attr({ 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale });
         this.shapeContour.attr('stroke', this.outlinedBorders);
         this.shapeContour.addClass('cvat_canvas_sliced_contour');
@@ -141,249 +132,259 @@ export class SliceHandlerImpl implements SliceHandler {
             return acc;
         }, []);
 
+        this.shapeContour.on('click', (event: MouseEvent) => {
+            const [x, y] = translateToSVG(this.canvas.node as any as SVGSVGElement, [event.clientX, event.clientY]);
+
+            if (points.length) {
+                // todo: finish algorithm
+                return;
+            }
+
+            const circle = this.canvas.circle(consts.BASE_POINT_SIZE / this.geometry.scale).center(x, y);
+            circle.attr('stroke-width', 0);
+            this.slicingPoints.push(circle);
+            points.push([x, y], [x, y]);
+            this.slicingLine = this.canvas.polyline(stringifyPoints(points.flat()));
+            this.slicingLine.addClass('cvat_canvas_slicing_line');
+            this.slicingLine.attr({ 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale });
+            this.slicingLine.attr('stroke', this.outlinedBorders);
+        });
+
         // contour index, intersection point. Order is important
         const contoursIntersections: Record<string, [number, number]> = {};
         this.canvas.on('mousedown.slice', (event: MouseEvent) => {
-            if (event.button !== 0) return;
+            if (event.button !== 0 || !points.length) return;
 
             const [x, y] = translateToSVG(this.canvas.node as any as SVGSVGElement, [event.clientX, event.clientY]);
+            points[points.length - 1] = [x, y];
+            const [lastX, lastY] = points[points.length - 2];
 
-            if (!this.slicingLine) {
-                points.push([x, y], [x, y]);
-                this.slicingLine = this.canvas.polyline(stringifyPoints(points.flat()));
-                this.slicingLine.addClass('cvat_canvas_slicing_line');
-                this.slicingLine.attr({ 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale });
-                this.slicingLine.attr('stroke', this.outlinedBorders);
-            } else {
-                points[points.length - 1] = [x, y];
-                const [lastX, lastY] = points[points.length - 2];
+            // check self intersection first
+            let isSelfIntersection = false;
+            if (points.length > 2) {
+                // if there are less then three points, self-intersection is not possible
+                const lines = points.slice(0, -2).reduce<Segment[]>((acc, [px, py], idx) => {
+                    if (idx >= points.length - 1) {
+                        acc.push([[px, py], [lastX, lastY]]);
+                    } else {
+                        acc.push([[px, py], [...points[idx + 1]]]);
+                    }
+                    return acc;
+                }, []);
 
-                // check self intersection first
-                let isSelfIntersection = false;
-                if (points.length > 2) {
-                    // if there are less then three points, self-intersection is not possible
-                    const lines = points.slice(0, -2).reduce<Segment[]>((acc, [px, py], idx) => {
-                        if (idx >= points.length - 1) {
-                            acc.push([[px, py], [lastX, lastY]]);
-                        } else {
-                            acc.push([[px, py], [...points[idx + 1]]]);
-                        }
-                        return acc;
-                    }, []);
-
-                    lines.forEach((line, i) => {
-                        const intersection = findIntersection(line, [[lastX, lastY], [x, y]]);
-                        if (i === lines.length - 1) {
-                            // latest line always have intersection
-                            // in at least one point, so we only check match here
-                            if (intersection && Number.isNaN(intersection[0]) && Number.isNaN(intersection[1])) {
-                                isSelfIntersection = true;
-                                console.log(`found match with line ${i}`);
-                            }
-                        } else if (intersection !== null) {
-                            console.log(`found intersection with line ${i}`);
+                lines.forEach((line, i) => {
+                    const intersection = findIntersection(line, [[lastX, lastY], [x, y]]);
+                    if (i === lines.length - 1) {
+                        // latest line always have intersection
+                        // in at least one point, so we only check match here
+                        if (intersection && Number.isNaN(intersection[0]) && Number.isNaN(intersection[1])) {
                             isSelfIntersection = true;
+                            console.log(`found match with line ${i}`);
                         }
-                    });
-                }
-
-                // now compute intersections with segments
-                let errored = false;
-
-                // order is not important here, because generally it is important only for intermediate points
-                // but if we intersect contour twice at once, it means there was not intermediate points at all
-                const newContourIntersections: Record<number, [number, number]> = {};
-                contourSegments.forEach((segment, i) => {
-                    const intersection = findIntersection(segment, [[lastX, lastY], [x, y]]);
-                    if (intersection && Number.isNaN(intersection[0]) && Number.isNaN(intersection[1])) {
-                        // match a contour segment
-                        // it also means that intersect more then one contour segment
-                        // so, potentially this point is not allowed
-                        errored = true;
                     } else if (intersection !== null) {
-                        newContourIntersections[i] = [intersection[0], intersection[1]];
+                        console.log(`found intersection with line ${i}`);
+                        isSelfIntersection = true;
                     }
                 });
-
-                const doneIntersections = Object.keys(contoursIntersections).length;
-                const newIntersections = Object.keys(newContourIntersections).length;
-                const totalIntersections = doneIntersections + newIntersections;
-
-                if (!isSelfIntersection && !errored && totalIntersections <= 2) {
-                    points.push([x, y]);
-                    if (totalIntersections === 1) {
-                        intermediatePoints.push([x, y]);
-                    }
-
-                    const intersectedSegments = Object.keys(newContourIntersections);
-                    for (let i = 0; i < intersectedSegments.length; i++) {
-                        // todo: check if do not intersect the same point twice
-                        const intersectedSegment = intersectedSegments[i];
-                        contoursIntersections[
-                            `${doneIntersections + i}.${intersectedSegment}`
-                        ] = newContourIntersections[intersectedSegment];
-                    }
-                }
-
-                if (totalIntersections === 2) {
-                    // algorithm DONE
-                    const intersectedSegments = Object.keys(contoursIntersections).sort((a, b) => +a.split('.')[1] - +b.split('.')[1]);
-                    const [firstSegmentKey, secondSegmentKey] = intersectedSegments;
-                    const firstSegmentIdx = +firstSegmentKey.split('.')[1];
-                    const secondSegmentIdx = +secondSegmentKey.split('.')[1];
-                    if (firstSegmentIdx === secondSegmentIdx) {
-                        // the same segment. Results in this case are:
-                        let contour1 = [
-                            ...contoursIntersections[firstSegmentKey], // first intersection
-                            ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
-                                (key) => key.startsWith('0.'),
-                            ).split('.')[1] ?
-                                intermediatePoints : intermediatePoints.toReversed()
-                            ).flat(),
-                            ...contoursIntersections[secondSegmentKey], // last intersection
-                        ];
-
-                        let contour2 = [
-                            ...contoursIntersections[firstSegmentKey], // first intersection
-                            ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
-                                (key) => key.startsWith('0.'),
-                            ).split('.')[1] ?
-                                intermediatePoints : intermediatePoints.toReversed()
-                            ).flat(),
-                            ...contoursIntersections[secondSegmentKey], // last intersection
-                        ];
-
-                        const otherPoints = Array(contourSegments.length).fill(0).map((_, idx) => {
-                            if (firstSegmentIdx + idx < contourSegments.length) {
-                                return firstSegmentIdx + idx;
-                            }
-
-                            return firstSegmentIdx + idx - contourSegments.length;
-                        }).map((idx) => contourSegments[idx][1]);
-
-                        const p1 = contoursIntersections[firstSegmentKey];
-                        const p2 = contoursIntersections[secondSegmentKey];
-                        const p = otherPoints[0];
-                        const d1 = Math.sqrt((p1[0] - p[0]) ** 2 + (p1[1] - p[1]) ** 2);
-                        const d2 = Math.sqrt((p2[0] - p[0]) ** 2 + (p2[1] - p[1]) ** 2);
-
-                        if (d2 > d1) {
-                            otherPoints.reverse();
-                        }
-
-                        contour2.push(...otherPoints.flat());
-
-                        // contour1 = [1,2,3,4,5,6];
-
-                        this.onSliceDone(
-                            sliceData.clientID,
-                            [
-                                translateFromCanvas(this.geometry.offset, contour1),
-                                translateFromCanvas(this.geometry.offset, contour2),
-                            ], Date.now() - this.start,
-                        );
-                    } else {
-                        // intersected different segments. Results in this case are:
-                        let contour1 = [
-                            // first intersection
-                            ...contoursIntersections[firstSegmentKey],
-                            // intermediate points (reversed if intersections order was swopped)
-                            ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
-                                (key) => key.startsWith('0.'),
-                            ).split('.')[1] ?
-                                intermediatePoints : intermediatePoints.toReversed()
-                            ).flat(),
-                            // all the following contours points until the second intersected segment  including
-//                                 // second intersection
-                            ...contoursIntersections[secondSegmentKey],
-                            ...indexGenerator(contourSegments.length, secondSegmentIdx, firstSegmentIdx, 'forward')
-                                .map((idx) => contourSegments[idx][1]).slice(0, -1).flat(),
-
-                        ];
-
-                        let contour2 = [
-                            // first intersection
-                            ...contoursIntersections[firstSegmentKey],
-                            ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
-                                (key) => key.startsWith('0.'),
-                            ).split('.')[1] ?
-                                intermediatePoints : intermediatePoints.toReversed()
-                            ).flat(),
-                            ...contoursIntersections[secondSegmentKey],
-                            ...indexGenerator(contourSegments.length, secondSegmentIdx, firstSegmentIdx, 'backward')
-                                .map((idx) => contourSegments[idx][0]).slice(0, -1).flat(),
-
-
-                            // all the contours points in reversed direction
-                            // until the second intersected segment including
-
-                            // intermediate points (reversed if intersections order was swopped)
-                            // second intersection
-
-                        ];
-
-
-                        if (sliceData.shapeType === 'mask') {
-                            const shape = window.document
-                                .getElementById(`cvat_canvas_shape_${sliceData.clientID}`) as SVGImageElement;
-                            const width = +shape.getAttribute('width');
-                            const height = +shape.getAttribute('height');
-                            const left = +shape.getAttribute('x');
-                            const top = +shape.getAttribute('y');
-
-                            const offscreenCanvas = new OffscreenCanvas(width, height);
-                            const context = offscreenCanvas.getContext('2d');
-                            context.fillStyle = 'black';
-                            context.globalCompositeOperation = 'source-over';
-                            context.drawImage(shape, 0, 0);
-                            context.globalCompositeOperation = 'destination-in';
-                            context.beginPath();
-                            context.moveTo(contour1[0] - left, contour1[1] - top);
-                            contour1.forEach((_, idx) => {
-                                if (idx > 1 && !(idx % 2)) {
-                                    context.lineTo(contour1[idx] - left, contour1[idx + 1] - top);
-                                }
-                            });
-                            context.closePath();
-                            context.fill();
-
-                            const result1 = zipChannels(context.getImageData(0, 0, width, height).data);
-                            context.reset();
-
-                            context.fillStyle = 'black';
-                            context.globalCompositeOperation = 'source-over';
-                            context.drawImage(shape, 0, 0);
-                            context.globalCompositeOperation = 'destination-in';
-                            context.beginPath();
-                            context.moveTo(contour2[0] - left, contour2[1] - top);
-                            contour2.forEach((_, idx) => {
-                                if (idx > 1 && !(idx % 2)) {
-                                    context.lineTo(contour2[idx] - left, contour2[idx + 1] - top);
-                                }
-                            });
-                            context.closePath();
-                            context.fill();
-
-                            const result2 = zipChannels(context.getImageData(0, 0, width, height).data);
-
-                            this.onSliceDone(
-                                sliceData.clientID, [result1, result2], Date.now() - this.start,
-                            );
-                            return;
-                        }
-
-                        this.onSliceDone(
-                            sliceData.clientID,
-                            [
-                                translateFromCanvas(this.geometry.offset, contour1),
-                                translateFromCanvas(this.geometry.offset, contour2),
-                            ], Date.now() - this.start,
-                        );
-                    }
-                }
-
-                this.slicingLine.plot(stringifyPoints(points.flat()));
             }
+
+            // now compute intersections with segments
+            let errored = false;
+
+            // order is not important here, because generally it is important only for intermediate points
+            // but if we intersect contour twice at once, it means there was not intermediate points at all
+            const newContourIntersections: Record<number, [number, number]> = {};
+            contourSegments.forEach((segment, i) => {
+                const intersection = findIntersection(segment, [[lastX, lastY], [x, y]]);
+                if (intersection && Number.isNaN(intersection[0]) && Number.isNaN(intersection[1])) {
+                    // match a contour segment
+                    // it also means that intersect more then one contour segment
+                    // so, potentially this point is not allowed
+                    errored = true;
+                } else if (intersection !== null) {
+                    newContourIntersections[i] = [intersection[0], intersection[1]];
+                }
+            });
+
+            const doneIntersections = Object.keys(contoursIntersections).length;
+            const newIntersections = Object.keys(newContourIntersections).length;
+            const totalIntersections = doneIntersections + newIntersections;
+
+            if (!isSelfIntersection && !errored && totalIntersections <= 2) {
+                points.push([x, y]);
+                if (totalIntersections === 1) {
+                    intermediatePoints.push([x, y]);
+                }
+
+                const intersectedSegments = Object.keys(newContourIntersections);
+                for (let i = 0; i < intersectedSegments.length; i++) {
+                    // todo: check if do not intersect the same point twice
+                    const intersectedSegment = intersectedSegments[i];
+                    contoursIntersections[
+                        `${doneIntersections + i}.${intersectedSegment}`
+                    ] = newContourIntersections[intersectedSegment];
+                }
+            }
+
+            if (totalIntersections === 2) {
+                // algorithm DONE
+                const intersectedSegments = Object.keys(contoursIntersections).sort((a, b) => +a.split('.')[1] - +b.split('.')[1]);
+                const [firstSegmentKey, secondSegmentKey] = intersectedSegments;
+                const firstSegmentIdx = +firstSegmentKey.split('.')[1];
+                const secondSegmentIdx = +secondSegmentKey.split('.')[1];
+                if (firstSegmentIdx === secondSegmentIdx) {
+                    // the same segment. Results in this case are:
+                    let contour1 = [
+                        ...contoursIntersections[firstSegmentKey], // first intersection
+                        ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
+                            (key) => key.startsWith('0.'),
+                        ).split('.')[1] ?
+                            intermediatePoints : intermediatePoints.toReversed()
+                        ).flat(),
+                        ...contoursIntersections[secondSegmentKey], // last intersection
+                    ];
+
+                    let contour2 = [
+                        ...contoursIntersections[firstSegmentKey], // first intersection
+                        ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
+                            (key) => key.startsWith('0.'),
+                        ).split('.')[1] ?
+                            intermediatePoints : intermediatePoints.toReversed()
+                        ).flat(),
+                        ...contoursIntersections[secondSegmentKey], // last intersection
+                    ];
+
+                    const otherPoints = Array(contourSegments.length).fill(0).map((_, idx) => {
+                        if (firstSegmentIdx + idx < contourSegments.length) {
+                            return firstSegmentIdx + idx;
+                        }
+
+                        return firstSegmentIdx + idx - contourSegments.length;
+                    }).map((idx) => contourSegments[idx][1]);
+
+                    const p1 = contoursIntersections[firstSegmentKey];
+                    const p2 = contoursIntersections[secondSegmentKey];
+                    const p = otherPoints[0];
+                    const d1 = Math.sqrt((p1[0] - p[0]) ** 2 + (p1[1] - p[1]) ** 2);
+                    const d2 = Math.sqrt((p2[0] - p[0]) ** 2 + (p2[1] - p[1]) ** 2);
+
+                    if (d2 > d1) {
+                        otherPoints.reverse();
+                    }
+
+                    contour2.push(...otherPoints.flat());
+
+                    // contour1 = [1,2,3,4,5,6];
+
+                    this.onSliceDone(
+                        sliceData.clientID,
+                        [
+                            translateFromCanvas(this.geometry.offset, contour1),
+                            translateFromCanvas(this.geometry.offset, contour2),
+                        ], Date.now() - this.start,
+                    );
+                } else {
+                    // intersected different segments. Results in this case are:
+                    let contour1 = [
+                        // first intersection
+                        ...contoursIntersections[firstSegmentKey],
+                        // intermediate points (reversed if intersections order was swopped)
+                        ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
+                            (key) => key.startsWith('0.'),
+                        ).split('.')[1] ?
+                            intermediatePoints : intermediatePoints.toReversed()
+                        ).flat(),
+                        // all the following contours points until the second intersected segment  including
+//                                 // second intersection
+                        ...contoursIntersections[secondSegmentKey],
+                        ...indexGenerator(contourSegments.length, secondSegmentIdx, firstSegmentIdx, 'forward')
+                            .map((idx) => contourSegments[idx][1]).slice(0, -1).flat(),
+
+                    ];
+
+                    let contour2 = [
+                        // first intersection
+                        ...contoursIntersections[firstSegmentKey],
+                        ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
+                            (key) => key.startsWith('0.'),
+                        ).split('.')[1] ?
+                            intermediatePoints : intermediatePoints.toReversed()
+                        ).flat(),
+                        ...contoursIntersections[secondSegmentKey],
+                        ...indexGenerator(contourSegments.length, secondSegmentIdx, firstSegmentIdx, 'backward')
+                            .map((idx) => contourSegments[idx][0]).slice(0, -1).flat(),
+
+
+                        // all the contours points in reversed direction
+                        // until the second intersected segment including
+
+                        // intermediate points (reversed if intersections order was swopped)
+                        // second intersection
+
+                    ];
+
+
+                    if (sliceData.shapeType === 'mask') {
+                        const shape = window.document
+                            .getElementById(`cvat_canvas_shape_${sliceData.clientID}`) as SVGImageElement;
+                        const width = +shape.getAttribute('width');
+                        const height = +shape.getAttribute('height');
+                        const left = +shape.getAttribute('x');
+                        const top = +shape.getAttribute('y');
+
+                        const offscreenCanvas = new OffscreenCanvas(width, height);
+                        const context = offscreenCanvas.getContext('2d');
+                        context.fillStyle = 'black';
+                        context.globalCompositeOperation = 'source-over';
+                        context.drawImage(shape, 0, 0);
+                        context.globalCompositeOperation = 'destination-in';
+                        context.beginPath();
+                        context.moveTo(contour1[0] - left, contour1[1] - top);
+                        contour1.forEach((_, idx) => {
+                            if (idx > 1 && !(idx % 2)) {
+                                context.lineTo(contour1[idx] - left, contour1[idx + 1] - top);
+                            }
+                        });
+                        context.closePath();
+                        context.fill();
+
+                        const result1 = zipChannels(context.getImageData(0, 0, width, height).data);
+                        context.reset();
+
+                        context.fillStyle = 'black';
+                        context.globalCompositeOperation = 'source-over';
+                        context.drawImage(shape, 0, 0);
+                        context.globalCompositeOperation = 'destination-in';
+                        context.beginPath();
+                        context.moveTo(contour2[0] - left, contour2[1] - top);
+                        contour2.forEach((_, idx) => {
+                            if (idx > 1 && !(idx % 2)) {
+                                context.lineTo(contour2[idx] - left, contour2[idx + 1] - top);
+                            }
+                        });
+                        context.closePath();
+                        context.fill();
+
+                        const result2 = zipChannels(context.getImageData(0, 0, width, height).data);
+
+                        this.onSliceDone(
+                            sliceData.clientID, [result1, result2], Date.now() - this.start,
+                        );
+                        return;
+                    }
+
+                    this.onSliceDone(
+                        sliceData.clientID,
+                        [
+                            translateFromCanvas(this.geometry.offset, contour1),
+                            translateFromCanvas(this.geometry.offset, contour2),
+                        ], Date.now() - this.start,
+                    );
+                }
+            }
+
+            this.slicingLine.plot(stringifyPoints(points.flat()));
+
         });
 
         this.canvas.on('mousemove.slice', (event: MouseEvent) => {
@@ -411,11 +412,6 @@ export class SliceHandlerImpl implements SliceHandler {
             this.shapeContour.off('mousemove');
             this.shapeContour.remove();
             this.shapeContour = null;
-        }
-
-        if (this.shapeBody) {
-            this.shapeBody.remove();
-            this.shapeBody = null;
         }
 
         this.canvas.off('mousedown.slice');
@@ -451,12 +447,14 @@ export class SliceHandlerImpl implements SliceHandler {
         if (this.shapeContour) {
             this.shapeContour.attr({ 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale });
         }
+
+        this.slicingPoints.forEach((point) => {
+            point.radius(consts.BASE_POINT_SIZE / geometry.scale);
+        });
     }
 
     public configurate(config: Configuration): void {
         this.outlinedBorders = config.outlinedBorders || 'black';
-        this.shapeBodyOpacity = config.selectedShapeOpacity || this.shapeBodyOpacity;
-        if (this.shapeBody) this.shapeBody.attr('fill-opacity', this.shapeBodyOpacity);
         if (this.slicingLine) this.slicingLine.attr('stroke', this.outlinedBorders);
         if (this.shapeContour) this.shapeContour.attr('stroke', this.outlinedBorders);
     }
