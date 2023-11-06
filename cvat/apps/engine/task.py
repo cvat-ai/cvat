@@ -16,13 +16,12 @@ from distutils.dir_util import copy_tree
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 import django_rq
-import pytz
 import concurrent.futures
 import queue
 
 from django.conf import settings
 from django.db import transaction
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from cvat.apps.engine import models
@@ -331,7 +330,7 @@ def _validate_manifest(
             cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
             # check that cloud storage manifest file exists and is up to date
             if not os.path.exists(full_manifest_path) or \
-                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) \
+                    datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) \
                     < cloud_storage_instance.get_file_last_modified(manifest_file):
                 cloud_storage_instance.download_file(manifest_file, full_manifest_path)
 

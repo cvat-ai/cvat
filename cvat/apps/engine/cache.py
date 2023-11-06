@@ -6,7 +6,7 @@
 import io
 import os
 import zipfile
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 import shutil
 import tempfile
@@ -15,7 +15,6 @@ from typing import Optional, Tuple
 
 import cv2
 import PIL.Image
-import pytz
 from django.conf import settings
 from django.core.cache import caches
 from rest_framework.exceptions import NotFound, ValidationError
@@ -282,7 +281,7 @@ class MediaCache:
             manifest_prefix = os.path.dirname(manifest_model.filename)
             full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_model.filename)
             if not os.path.exists(full_manifest_path) or \
-                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
+                    datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_model.filename):
                 storage.download_file(manifest_model.filename, full_manifest_path)
             manifest = ImageManifestManager(
                 os.path.join(db_storage.get_storage_dirname(), manifest_model.filename),
