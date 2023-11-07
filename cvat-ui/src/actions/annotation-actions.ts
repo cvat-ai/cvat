@@ -593,6 +593,7 @@ export function confirmCanvasReadyAsync(): ThunkAction {
         try {
             const state: CombinedState = getState();
             const { instance: job } = state.annotation.job;
+            const { changeFrameLog } = state.annotation.player.frame;
             const chunks = await job.frames.cachedChunks() as number[];
             const { startFrame, stopFrame, dataChunkSize } = job;
 
@@ -612,6 +613,7 @@ export function confirmCanvasReadyAsync(): ThunkAction {
             }, []).map(([start, end]) => `${start}:${end}`).join(';');
 
             dispatch(confirmCanvasReady(ranges));
+            await changeFrameLog?.close();
         } catch (error) {
             // even if error happens here, do not need to notify the users
             dispatch(confirmCanvasReady());
@@ -662,10 +664,12 @@ export function changeFrameAsync(
 
             // commit the latest job frame to local storage
             localStorage.setItem(`Job_${job.id}_frame`, `${toFrame}`);
-            await job.logger.log(LogType.changeFrame, {
+            const changeFrameLog = await job.logger.log(LogType.changeFrame, {
                 from: frame,
                 to: toFrame,
-            });
+                step: toFrame - frame,
+                count: 1,
+            }, true);
 
             const [minZ, maxZ] = computeZRange(states);
             const currentTime = new Date().getTime();
@@ -701,6 +705,7 @@ export function changeFrameAsync(
                     curZ: maxZ,
                     changeTime: currentTime + delay,
                     delay,
+                    changeFrameLog,
                 },
             });
         } catch (error) {

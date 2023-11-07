@@ -5,9 +5,16 @@
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
-
-class LabelMappingEntrySerializer(serializers.DictField):
+class SublabelMappingEntrySerializer(serializers.Serializer):
     name = serializers.CharField()
+    attributes = serializers.DictField(child=serializers.CharField(), required=False)
+
+class LabelMappingEntrySerializer(serializers.Serializer):
+    name = serializers.CharField()
+    attributes = serializers.DictField(child=serializers.CharField(), required=False)
+    sublabels = serializers.DictField(child=SublabelMappingEntrySerializer(), required=False,
+        help_text="Label mapping for from the model to the task sublabels within a parent label"
+    )
 
 @extend_schema_serializer(
     # The "Request" suffix is added by drf-spectacular automatically
@@ -15,20 +22,18 @@ class LabelMappingEntrySerializer(serializers.DictField):
 )
 class FunctionCallRequestSerializer(serializers.Serializer):
     function = serializers.CharField(help_text="The name of the function to execute")
-
-    task = serializers.IntegerField(help_text="The id of the task to annotate")
-    job = serializers.IntegerField(required=False, help_text="The id of the job to annotate")
-
+    task = serializers.IntegerField(help_text="The id of the task to be annotated")
+    job = serializers.IntegerField(required=False, help_text="The id of the job to be annotated")
     quality = serializers.ChoiceField(choices=['compressed', 'original'], default="original",
         help_text="The quality of the images to use in the model run"
     )
-    cleanup = serializers.BooleanField(default=False)
-    convMaskToPoly = serializers.BooleanField(default=False) # TODO: use lowercase naming
+    max_distance = serializers.IntegerField(required=False)
     threshold = serializers.FloatField(required=False)
+    cleanup = serializers.BooleanField(help_text="Whether existing annotations should be removed", default=False)
+    convMaskToPoly = serializers.BooleanField(default=False) # TODO: use lowercase naming
     mapping = serializers.DictField(child=LabelMappingEntrySerializer(), required=False,
         help_text="Label mapping from the model to the task labels"
     )
-    max_distance = serializers.IntegerField(required=False)
 
 class FunctionCallParamsSerializer(serializers.Serializer):
     id = serializers.CharField(allow_null=True, help_text="The name of the function")

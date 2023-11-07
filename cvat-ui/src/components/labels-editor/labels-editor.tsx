@@ -32,7 +32,7 @@ interface LabelsEditorProps {
 
 interface LabelsEditorState {
     constructorMode: ConstructorMode;
-    creatorType: 'basic' | 'skeleton';
+    creatorType: 'basic' | 'skeleton' | 'model';
     savedLabels: LabelOptColor[];
     unsavedLabels: LabelOptColor[];
     labelForUpdate: LabelOptColor | null;
@@ -253,7 +253,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                                 });
                             }}
                             onDelete={this.handleDelete}
-                            onCreate={(_creatorType: 'basic' | 'skeleton'): void => {
+                            onCreate={(_creatorType: 'basic' | 'skeleton' | 'model'): void => {
                                 this.setState({
                                     creatorType: _creatorType,
                                     constructorMode: ConstructorMode.CREATE,

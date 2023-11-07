@@ -23,11 +23,11 @@ django-cors-headers==3.5.0
 django-crum==0.7.9
 django-filter==2.4.0
 django-health-check==3.17.0
-django-rq==2.3.2
+django-rq==2.8.1
 django-sendfile2==0.7.0
 Django~=4.2.1
 djangorestframework~=3.14.0
-drf-spectacular>=0.26.2
+drf-spectacular==0.26.2
 furl==2.1.0
 google-cloud-storage==1.42.0
 natsort==8.0.0
@@ -44,12 +44,11 @@ psutil==5.9.4
 psycopg2-binary==2.9.5
 python-ldap==3.4.3
 python-logstash-async==2.5.0
-pytz==2020.1
 pyunpack==0.2.1
 redis==4.5.4
 requests~=2.26
-rq-scheduler==0.10.0
-rq==1.5.2
+rq-scheduler==0.13.1
+rq==1.15.1
 rules>=3.3
 Shapely==1.7.1
 tensorflow==2.11.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1

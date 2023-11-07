@@ -1,3 +1,7 @@
+// Copyright (C) 2022-2023 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React, { CSSProperties } from 'react';
 import PropTypes from 'prop-types';
 import { Row, Col } from 'antd/lib/grid';
@@ -120,6 +124,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                     const elementID = element.getAttribute('data-element-id');
                     const labelName = element.getAttribute('data-label-name');
                     const labelID = element.getAttribute('data-label-id');
+
                     if (elementID && (labelName !== null || labelID !== null)) {
                         const sublabel = sublabels.find((_sublabel: LabelOptColor): boolean => {
                             if (labelName !== null) {
@@ -238,6 +243,11 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             return false;
         }
 
+        setAttributes(edge, {
+            stroke: 'black',
+            'stroke-width': '0.5',
+        });
+
         const onClick = (): void => {
             if (edge) {
                 edge.remove();
@@ -277,8 +287,15 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         this.elementCounter = Math.max(this.elementCounter, elementID);
         this.nodeCounter = Math.max(this.nodeCounter, nodeID);
 
+        setAttributes(circle, {
+            stroke: 'black',
+            fill: config.NEW_LABEL_COLOR,
+            'stroke-width': 0.1,
+        });
+
         circle.addEventListener('mouseover', () => {
             circle.setAttribute('stroke-width', '0.3');
+            circle.setAttribute('r', '1');
             const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
             if (text) {
                 text.setAttribute('fill', 'red');
@@ -291,6 +308,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         circle.addEventListener('mouseout', () => {
             circle.setAttribute('stroke-width', '0.1');
+            circle.setAttribute('r', '0.75');
             const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
             if (text) {
                 text.setAttribute('fill', 'darkorange');
@@ -428,16 +446,14 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             const elementID = this.elementCounter + 1;
             const nodeID = this.nodeCounter + 1;
             setAttributes(circle, {
-                r: 1.5,
-                stroke: 'black',
-                fill: config.NEW_LABEL_COLOR,
+                r: 0.75,
                 cx: x,
                 cy: y,
-                'stroke-width': 0.1,
                 'data-type': 'element node',
                 'data-element-id': elementID,
                 'data-node-id': nodeID,
             });
+            circle.style.transition = 'all 0.25s';
             svg.appendChild(circle);
 
             if (this.setupCircle(svg, circle)) {
@@ -453,7 +469,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         const svg = svgRef.current;
 
         if (svg) {
-            const TEXT_MARGIN = 2;
+            const TEXT_MARGIN = 1;
             const array = Array.from(svg.children);
             array.forEach((el: Element) => {
                 if (el.tagName === 'text') {
@@ -613,16 +629,21 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             );
         }
 
-        try {
-            this.setupTextLabels(false);
-            return {
-                type: 'skeleton',
-                svg: svg.innerHTML,
-                sublabels,
-            };
-        } finally {
-            this.setupTextLabels();
-        }
+        const svgText = Array.from(svg.children)
+            .filter((element) => element.tagName === 'circle' || element.tagName === 'line').map((element) => {
+                const clone = element.cloneNode() as SVGCircleElement;
+                clone.removeAttribute('style');
+                clone.removeAttribute('stroke');
+                clone.removeAttribute('fill');
+                clone.removeAttribute('stroke-width');
+                return clone.outerHTML;
+            }).join('\n');
+
+        return {
+            type: 'skeleton',
+            svg: svgText,
+            sublabels,
+        };
     }
 
     public render(): JSX.Element {
