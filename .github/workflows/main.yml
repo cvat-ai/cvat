@@ -31,6 +31,9 @@ jobs:
       - name: Verify version consistency
         run: ./dev/update_version.py --verify-current
 
+      - name: Check changelog fragments
+        run: ./dev/check_changelog_fragments.py
+
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
         with:
@@ -386,21 +389,11 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Download CVAT server images
-        uses: actions/download-artifact@v3
-        with:
-          name: cvat_server
-          path: /tmp/cvat_server/
-
-      - name: Download CVAT server images
+      - name: Download CVAT SDK
         uses: actions/download-artifact@v3
         with:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
-
-      - name: Load Docker images
-        run: |
-          docker load --input /tmp/cvat_server/image.tar
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
@@ -459,7 +452,7 @@ jobs:
           docker load --input /tmp/cvat_ui/image.tar
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}

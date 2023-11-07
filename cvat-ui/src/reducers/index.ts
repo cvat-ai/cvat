@@ -7,16 +7,12 @@ import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
     Webhook, MLModel, ModelProvider, Organization,
-    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus,
+    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 import { ImageFilter } from 'utils/image-processing';
-
-export type StringObject = {
-    [index: string]: string;
-};
 
 export interface AuthState {
     initialized: boolean;
@@ -430,6 +426,7 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             loadAuthActions: null | ErrorState;
+            acceptingInvitation: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;
@@ -540,6 +537,8 @@ export interface NotificationsState {
             inviting: null | ErrorState;
             updatingMembership: null | ErrorState;
             removingMembership: null | ErrorState;
+            resendingInvitation: null | ErrorState;
+            deletingInvitation: null | ErrorState;
         };
         webhooks: {
             fetching: null | ErrorState;
@@ -567,6 +566,7 @@ export interface NotificationsState {
             registerDone: string;
             requestPasswordResetDone: string;
             resetPasswordDone: string;
+            acceptInvitationDone: string;
         };
         projects: {
             restoringDone: string;
@@ -581,6 +581,9 @@ export interface NotificationsState {
             annotation: string;
             backup: string;
         };
+        organizations: {
+            resendingInvitation: string;
+        }
     };
 }
 
@@ -686,6 +689,7 @@ export interface AnnotationState {
             fetching: boolean;
             delay: number;
             changeTime: number | null;
+            changeFrameLog: EventLogger | null;
         };
         ranges: string;
         navigationBlocked: boolean;
@@ -863,7 +867,6 @@ export interface ReviewState {
 }
 
 export interface OrganizationState {
-    list: any[];
     current?: Organization | null;
     initialized: boolean;
     fetching: boolean;

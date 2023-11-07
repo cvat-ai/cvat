@@ -1,6 +1,8 @@
 ---
+title: 'Segmentation Mask'
 linkTitle: 'Segmentation Mask'
 weight: 6
+description: 'How to export and import data in Segmentation Mask format'
 ---
 
 Segmentation masks format is often used in the training of models for tasks

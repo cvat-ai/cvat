@@ -56,15 +56,13 @@ EXPORT_BACKUP := "export:backup"
 UPDATE_ORG := "update:organization"
 
 
-get_priority(privilege) = priority {
-    priority := {
-        ADMIN: 0,
-        BUSINESS: 50,
-        USER: 75,
-        WORKER: 100,
-        null: 1000
-    }[privilege]
-}
+get_priority(privilege) := {
+    ADMIN: 0,
+    BUSINESS: 50,
+    USER: 75,
+    WORKER: 100,
+    null: 1000
+}[privilege]
 
 has_perm(group) {
     get_priority(input.auth.user.privilege) <= get_priority(group)

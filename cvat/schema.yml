@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.8.0
+  version: 2.9.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -1495,6 +1495,60 @@ paths:
       responses:
         '204':
           description: The invitation has been deleted
+  /api/invitations/{key}/accept:
+    post:
+      operationId: invitations_accept
+      summary: Method registers user and accepts invitation to organization
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInvitationWriteRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AcceptInvitationRead'
+          description: The invitation is accepted
+        '400':
+          description: The invitation is expired or already accepted
+  /api/invitations/{key}/resend:
+    post:
+      operationId: invitations_resend
+      summary: Method resends the invitation
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: Invitation has been sent
+        '400':
+          description: The invitation is already accepted
   /api/issues:
     get:
       operationId: issues_list
@@ -3023,7 +3077,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'owner', 'id', 'slug'].
+           Available filter_fields: ['name', 'owner', 'slug', 'id'].
         schema:
           type: string
       - name: name
@@ -3051,7 +3105,8 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''owner'')'
+        description: 'A search term. Available search_fields: (''name'', ''owner'',
+          ''slug'')'
         schema:
           type: string
       - name: slug
@@ -3063,7 +3118,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''owner'', ''id'', ''slug'']'
+          [''name'', ''owner'', ''slug'', ''id'']'
         schema:
           type: string
       tags:
@@ -4443,6 +4498,11 @@ paths:
         schema:
           type: string
         description: Directory to browse
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search for specific files
       tags:
       - server
       security:
@@ -6064,6 +6124,38 @@ components:
       - description
       - name
       - version
+    AcceptInvitationRead:
+      type: object
+      properties:
+        organization_slug:
+          type: string
+      required:
+      - organization_slug
+    AcceptInvitationWriteRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 5
+          maxLength: 150
+        password1:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password2:
+          type: string
+          writeOnly: true
+          minLength: 1
+        first_name:
+          type: string
+          minLength: 1
+        last_name:
+          type: string
+          minLength: 1
+      required:
+      - password1
+      - password2
+      - username
     AnalyticsReport:
       type: object
       properties:
@@ -6510,7 +6602,7 @@ components:
           maxLength: 40
         secret_key:
           type: string
-          maxLength: 44
+          maxLength: 64
         connection_string:
           type: string
           maxLength: 440
@@ -7188,10 +7280,10 @@ components:
           description: The name of the function to execute
         task:
           type: integer
-          description: The id of the task to annotate
+          description: The id of the task to be annotated
         job:
           type: integer
-          description: The id of the job to annotate
+          description: The id of the job to be annotated
         quality:
           allOf:
           - $ref: '#/components/schemas/QualityEnum'
@@ -7201,22 +7293,23 @@ components:
 
             * `compressed` - compressed
             * `original` - original
-        cleanup:
-          type: boolean
-          default: false
-        convMaskToPoly:
-          type: boolean
-          default: false
+        max_distance:
+          type: integer
         threshold:
           type: number
           format: double
+        cleanup:
+          type: boolean
+          default: false
+          description: Whether existing annotations should be removed
+        convMaskToPoly:
+          type: boolean
+          default: false
         mapping:
           type: object
           additionalProperties:
-            type: object
+            $ref: '#/components/schemas/LabelMappingEntryRequest'
           description: Label mapping from the model to the task labels
-        max_distance:
-          type: integer
       required:
       - function
       - task
@@ -7593,6 +7686,25 @@ components:
           readOnly: true
       required:
       - name
+    LabelMappingEntryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
+        sublabels:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/SublabelMappingEntryRequest'
+          description: Label mapping for from the model to the task sublabels within
+            a parent label
+      required:
+      - name
     LabeledData:
       type: object
       properties:
@@ -7878,9 +7990,6 @@ components:
         url:
           type: string
           format: uri
-          readOnly: true
-        count:
-          type: integer
           readOnly: true
     LocationEnum:
       enum:
@@ -8464,7 +8573,7 @@ components:
           maxLength: 40
         secret_key:
           type: string
-          maxLength: 44
+          maxLength: 64
         connection_string:
           type: string
           maxLength: 440
@@ -9497,6 +9606,19 @@ components:
           description: Associated annotation type for this label
         has_parent:
           type: boolean
+      required:
+      - name
+    SublabelMappingEntryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
       required:
       - name
     SublabelRequest:

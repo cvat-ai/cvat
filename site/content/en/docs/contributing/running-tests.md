@@ -223,3 +223,21 @@ curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_sta
 chmod +x ./opa
 ./opa test cvat/apps/iam/rules
 ```
+
+### Linting Rego
+
+The Rego policies in this project are linted using [Regal](https://github.com/styrainc/regal).
+
+- In a Docker container
+```bash
+docker run --rm -v ${PWD}/cvat/apps/iam/rules:/rules \
+    ghcr.io/styrainc/regal:0.11.0 \
+    lint /rules
+```
+
+- or execute Regal directly
+```bash
+curl -L -o regal https://github.com/StyraInc/regal/releases/download/v0.11.0/regal_Linux_x86_64
+chmod +x ./regal
+./regal lint cvat/apps/iam/rules
+```

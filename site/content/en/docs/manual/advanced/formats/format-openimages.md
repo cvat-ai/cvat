@@ -1,6 +1,8 @@
 ---
-linkTitle: 'Open Images V6'
+title: 'Open Images'
+linkTitle: 'Open Images'
 weight: 15
+description: 'How to export and import data in Open Images format'
 ---
 
 The Open Images format is based on a large-scale, diverse dataset

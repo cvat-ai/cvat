@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import waitFor from 'utils/wait-for';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
@@ -60,7 +61,7 @@ export class OpenCVWrapper {
     }
 
     private async inject(): Promise<void> {
-        const response = await fetch('/assets/opencv.js');
+        const response = await fetch('/assets/opencv_4.8.0.js');
         if (response.status !== 200) {
             throw new Error(`Response status ${response.status}. ${response.statusText}`);
         }
@@ -94,14 +95,19 @@ export class OpenCVWrapper {
             }
         }
 
+        let runtimeInitialized = false;
+        (window as any).Module = {
+            onRuntimeInitialized: () => {
+                runtimeInitialized = true;
+                delete (window as any).Module;
+            },
+        };
         // Inject opencv to DOM
         // eslint-disable-next-line @typescript-eslint/no-implied-eval
         const OpenCVConstructor = new Function(decodedScript);
         OpenCVConstructor();
-
-        const global = window as any;
-
-        this.cv = await global.cv;
+        this.cv = (window as any).cv;
+        await waitFor(2, () => runtimeInitialized);
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {

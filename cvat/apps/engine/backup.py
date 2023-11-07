@@ -36,9 +36,9 @@ from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskReadSerializer,
     ProjectReadSerializer, ProjectFileSerializer, TaskFileSerializer, RqIdSerializer)
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job,
+    av_scan_paths, process_failed_job, configure_dependent_job_to_download_from_cs,
     get_rq_job_meta, get_import_rq_id, import_resource_with_clean_up_after,
-    sendfile
+    sendfile, define_dependent_job, get_rq_lock_by_user
 )
 from cvat.apps.engine.models import (
     StorageChoice, StorageMethodChoice, DataChoice, Task, Project, Location)
@@ -964,7 +964,7 @@ def export(db_instance, request, queue_name):
             rq_job.delete()
         else:
             if rq_job.is_finished:
-                file_path = rq_job.return_value
+                file_path = rq_job.return_value()
                 if action == "download" and os.path.exists(file_path):
                     rq_job.delete()
 
@@ -1012,20 +1012,25 @@ def export(db_instance, request, queue_name):
                 return Response(status=status.HTTP_202_ACCEPTED)
 
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
-    queue.enqueue_call(
-        func=_create_backup,
-        args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
-        job_id=rq_id,
-        meta=get_rq_job_meta(request=request, db_obj=db_instance),
-        result_ttl=ttl, failure_ttl=ttl)
+    user_id = request.user.id
+
+    with get_rq_lock_by_user(queue, user_id):
+        queue.enqueue_call(
+            func=_create_backup,
+            args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
+            job_id=rq_id,
+            meta=get_rq_job_meta(request=request, db_obj=db_instance),
+            depends_on=define_dependent_job(queue, user_id),
+            result_ttl=ttl,
+            failure_ttl=ttl,
+        )
     return Response(status=status.HTTP_202_ACCEPTED)
 
 
 def _download_file_from_bucket(db_storage, filename, key):
     storage = db_storage_to_storage_instance(db_storage)
 
-    data = storage.download_fileobj(key)
-    with open(filename, 'wb+') as f:
+    with storage.download_fileobj(key) as data, open(filename, 'wb+') as f:
         f.write(data.getbuffer())
 
 def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
@@ -1069,7 +1074,7 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as tf:
                 filename = tf.name
 
-            dependent_job = configure_dependent_job(
+            dependent_job = configure_dependent_job_to_download_from_cs(
                 queue=queue,
                 rq_id=rq_id,
                 rq_func=_download_file_from_bucket,
@@ -1081,21 +1086,26 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
-        rq_job = queue.enqueue_call(
-            func=import_resource_with_clean_up_after,
-            args=(importer, filename, request.user.id, org_id),
-            job_id=rq_id,
-            meta={
-                'tmp_file': filename,
-                **get_rq_job_meta(request=request, db_obj=None)
-            },
-            depends_on=dependent_job,
-            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-        )
+        user_id = request.user.id
+
+        with get_rq_lock_by_user(queue, user_id):
+            rq_job = queue.enqueue_call(
+                func=import_resource_with_clean_up_after,
+                args=(importer, filename, request.user.id, org_id),
+                job_id=rq_id,
+                meta={
+                    'tmp_file': filename,
+                    **get_rq_job_meta(request=request, db_obj=None)
+                },
+                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+            )
     else:
         if rq_job.is_finished:
-            project_id = rq_job.return_value
+            if rq_job.dependency:
+                rq_job.dependency.delete()
+            project_id = rq_job.return_value()
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \

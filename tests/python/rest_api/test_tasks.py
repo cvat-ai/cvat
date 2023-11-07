@@ -40,7 +40,7 @@ from shared.utils.config import (
     patch_method,
     post_method,
 )
-from shared.utils.helpers import generate_image_files, generate_manifest
+from shared.utils.helpers import generate_image_file, generate_image_files, generate_manifest
 
 from .utils import (
     CollectionSimpleFilterTestBase,
@@ -51,15 +51,10 @@ from .utils import (
 )
 
 
-def get_cloud_storage_content(
-    api_version: int, username: str, cloud_storage_id: int, manifest: Optional[str] = None
-):
+def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
     with make_api_client(username) as api_client:
         kwargs = {"manifest_path": manifest} if manifest else {}
 
-        if api_version == 1:
-            (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id, **kwargs)
-            return data
         (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
         return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
 
@@ -820,6 +815,53 @@ class TestPostTaskData:
                         # original is 480x640 with 90/-90 degrees rotation
                         assert im.height == 640 and im.width == 480
 
+    def test_can_create_task_with_big_images(self):
+        # Checks for regressions about the issue
+        # https://github.com/opencv/cvat/issues/6878
+        # In the case of big files (>2.5 MB by default),
+        # uploaded files could be write-appended twice,
+        # leading to bigger raw file sizes than expected.
+
+        task_spec = {
+            "name": f"test {self._USERNAME} to create a task with big images",
+            "labels": [
+                {
+                    "name": "car",
+                }
+            ],
+        }
+
+        # We need a big file to reproduce the problem
+        image_file = generate_image_file("big_image.bmp", size=(4000, 4000), color=(100, 200, 30))
+        image_bytes = image_file.getvalue()
+        file_size = len(image_bytes)
+        assert 10 * 2**20 < file_size
+
+        task_data = {
+            "client_files": [image_file],
+            "image_quality": 70,
+            "use_cache": False,
+            "use_zip_chunks": True,
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, task_data)
+
+        # check that the original chunk image have the original size
+        # this is less accurate than checking the uploaded file directly, but faster
+        with make_api_client(self._USERNAME) as api_client:
+            _, response = api_client.tasks_api.retrieve_data(
+                task_id, number=0, quality="original", type="chunk", _parse_response=False
+            )
+            chunk_file = io.BytesIO(response.data)
+
+        with zipfile.ZipFile(chunk_file) as chunk_zip:
+            infos = chunk_zip.infolist()
+            assert len(infos) == 1
+            assert infos[0].file_size == file_size
+
+            chunk_image = chunk_zip.read(infos[0])
+            assert chunk_image == image_bytes
+
     @pytest.mark.skip(reason="need to wait new Pillow release till 15 October 2023")
     def test_can_create_task_with_exif_rotated_tif_image(self):
         task_spec = {
@@ -1572,6 +1614,55 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize("use_manifest", [True, False])
+    @pytest.mark.parametrize("server_files", [["test/"]])
+    @pytest.mark.parametrize(
+        "default_prefix, expected_task_size",
+        [
+            (
+                "test/sub_1/img_0",
+                1,
+            ),
+            (
+                "test/sub_1/",
+                3,
+            ),
+        ],
+    )
+    @pytest.mark.parametrize("org", [""])
+    def test_create_task_with_cloud_storage_directories_and_default_bucket_prefix(
+        self,
+        cloud_storage_id: int,
+        use_manifest: bool,
+        server_files: List[str],
+        default_prefix: str,
+        expected_task_size: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        with make_api_client(self._USERNAME) as api_client:
+            (_, response) = api_client.cloudstorages_api.partial_update(
+                cloud_storage_id,
+                patched_cloud_storage_write_request={
+                    "specific_attributes": f'{cloud_storage["specific_attributes"]}&prefix={default_prefix}'
+                },
+            )
+            assert response.status == HTTPStatus.OK
+
+        task_id, _ = self._create_task_with_cloud_data(
+            request, cloud_storage, use_manifest, server_files, org=org
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, response) = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
+            assert task.size == expected_task_size
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskLabel:
@@ -1582,14 +1673,16 @@ class TestPatchTaskLabel:
                 api_client.labels_api.list_endpoint, task_id=pid, **kwargs
             )
 
-    def test_can_delete_label(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 0][0]
+    def test_can_delete_label(self, tasks_wlc, labels, admin_user):
+        task = [t for t in tasks_wlc if t["project_id"] is None and t["labels"]["count"] > 0][0]
         label = deepcopy([l for l in labels if l.get("task_id") == task["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
+        prev_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
+        curr_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK, response.content
-        assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
+        assert curr_lc == prev_lc - 1
 
     def test_can_delete_skeleton_label(self, tasks, labels, admin_user):
         task = next(
@@ -1607,15 +1700,17 @@ class TestPatchTaskLabel:
         task_labels.remove(label)
         label_payload = {"id": label["id"], "deleted": True}
 
+        prev_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [label_payload]})
+        curr_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == task["labels"]["count"] - 1
+        assert curr_lc == prev_lc - 1
 
         resulting_labels = self._get_task_labels(task["id"], admin_user)
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
-    def test_can_rename_label(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 0][0]
+    def test_can_rename_label(self, tasks_wlc, labels, admin_user):
+        task = [t for t in tasks_wlc if t["project_id"] is None and t["labels"]["count"] > 0][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": "new name"})
 
@@ -1625,8 +1720,8 @@ class TestPatchTaskLabel:
         resulting_labels = self._get_task_labels(task["id"], admin_user)
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
 
-    def test_cannot_rename_label_to_duplicate_name(self, tasks, labels, admin_user):
-        task = [t for t in tasks if t["project_id"] is None and t["labels"]["count"] > 1][0]
+    def test_cannot_rename_label_to_duplicate_name(self, tasks_wlc, labels, admin_user):
+        task = [t for t in tasks_wlc if t["project_id"] is None and t["labels"]["count"] > 1][0]
         task_labels = deepcopy([l for l in labels if l.get("task_id") == task["id"]])
         task_labels[0].update({"name": task_labels[1]["name"]})
 
@@ -1655,9 +1750,11 @@ class TestPatchTaskLabel:
         task = [t for t in tasks if t["project_id"] is None][0]
         new_label = {"name": "new name"}
 
+        prev_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_label]})
+        curr_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     @pytest.mark.parametrize("role", ["maintainer", "owner"])
     def test_non_task_staff_privileged_org_members_can_add_label(
@@ -1679,13 +1776,16 @@ class TestPatchTaskLabel:
         )
 
         new_label = {"name": "new name"}
+        prev_lc = get_method(user["username"], "labels", task_id=task["id"]).json()["count"]
+
         response = patch_method(
             user["username"],
             f'tasks/{task["id"]}',
             {"labels": [new_label]},
         )
+        curr_lc = get_method(user["username"], "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     @pytest.mark.parametrize("role", ["supervisor", "worker"])
     def test_non_task_staff_org_members_cannot_add_label(
@@ -1730,14 +1830,16 @@ class TestPatchTaskLabel:
             and any(label.get("task_id") == task["id"] for label in labels)
         )
 
+        prev_lc = get_method(user["username"], "labels", task_id=task["id"]).json()["count"]
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'tasks/{task["id"]}',
             {"labels": [new_label]},
         )
+        curr_lc = get_method(user["username"], "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     def test_admin_can_add_skeleton(self, tasks, admin_user):
         task = [t for t in tasks if t["project_id"] is None][0]
@@ -1755,9 +1857,11 @@ class TestPatchTaskLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
+        prev_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         response = patch_method(admin_user, f'tasks/{task["id"]}', {"labels": [new_skeleton]})
+        curr_lc = get_method(admin_user, "labels", task_id=task["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == task["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -2297,14 +2401,14 @@ class TestPatchTask:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-def test_can_report_correct_completed_jobs_count(tasks, jobs, admin_user):
+def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user):
     # Reproduces https://github.com/opencv/cvat/issues/6098
     task = next(
         t
-        for t in tasks
+        for t in tasks_wlc
         if t["jobs"]["count"] > 1 and t["jobs"]["completed"] == 0 and t["labels"]["count"] > 1
     )
-    task_jobs = [j for j in jobs if j["task_id"] == task["id"]]
+    task_jobs = [j for j in jobs_wlc if j["task_id"] == task["id"]]
 
     with make_api_client(admin_user) as api_client:
         api_client.jobs_api.partial_update(
@@ -2583,3 +2687,43 @@ class TestImportWithComplexFilenames:
                 task.import_annotations(self.format_name, dataset_file)
 
             assert b"Could not match item id" in capture.value.body
+
+    def test_can_export_and_import_skeleton_tracks_in_coco_format(self):
+        task = self.client.tasks.retrieve(14)
+        dataset_file = self.tmp_dir / "some_file.zip"
+        format_name = "COCO Keypoints 1.0"
+
+        original_annotations = task.get_annotations()
+
+        task.export_dataset(format_name, dataset_file, include_images=False)
+        task.remove_annotations()
+        task.import_annotations(format_name, dataset_file)
+
+        imported_annotations = task.get_annotations()
+
+        # Number of shapes and tracks hasn't changed
+        assert len(original_annotations.shapes) == len(imported_annotations.shapes)
+        assert len(original_annotations.tracks) == len(imported_annotations.tracks)
+
+        # Frames of shapes, tracks and track elements hasn't changed
+        assert set([s.frame for s in original_annotations.shapes]) == set(
+            [s.frame for s in imported_annotations.shapes]
+        )
+        assert set([t.frame for t in original_annotations.tracks]) == set(
+            [t.frame for t in imported_annotations.tracks]
+        )
+        assert set(
+            [
+                tes.frame
+                for t in original_annotations.tracks
+                for te in t.elements
+                for tes in te.shapes
+            ]
+        ) == set(
+            [
+                tes.frame
+                for t in imported_annotations.tracks
+                for te in t.elements
+                for tes in te.shapes
+            ]
+        )

@@ -207,8 +207,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
+        const { trackedShapes } = this.state;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         openCVWrapper.removeProgressCallback();
+        trackedShapes.forEach((shape: TrackedShape) => shape.trackerModel.delete());
     }
 
     private interactionListener = async (e: Event): Promise<void> => {
@@ -809,6 +811,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         } else if (libraryInitialized !== openCVWrapper.isInitialized) {
                             this.setState({
                                 libraryInitialized: openCVWrapper.isInitialized,
+                                trackers: Object.values(openCVWrapper.tracking),
+                                activeTracker: Object.values(openCVWrapper.tracking)[0] || null,
                             });
                         }
                     }}
