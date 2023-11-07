@@ -13,7 +13,7 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, JobType, Job, QualityConflict,
+    getCore, MLModel, JobType, Job, QualityConflict, ObjectState,
 } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -1193,12 +1193,16 @@ export function groupAnnotationsAsync(sessionInstance: any, frame: number, state
     };
 }
 
-export function joinAnnotationsAsync(sessionInstance: any, statesToGroup: any[]): ThunkAction {
+export function joinAnnotationsAsync(
+    sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>,
+    statesToGroup: CombinedState['annotation']['annotations']['states'],
+    results: number[],
+): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, showAllInterpolationTracks, frame } = receiveAnnotationsParameters();
 
-            await sessionInstance.annotations.join(statesToGroup);
+            await sessionInstance.annotations.join(statesToGroup, results);
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();
 

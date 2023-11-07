@@ -194,12 +194,12 @@ export function groupAnnotations(session, objectStates, reset) {
     );
 }
 
-export function joinAnnotations(session, objectStates) {
+export function joinAnnotations(session, objectStates, results) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
     if (cache.has(session)) {
-        return cache.get(session).collection.join(objectStates);
+        return cache.get(session).collection.join(objectStates, results);
     }
 
     throw new DataError(

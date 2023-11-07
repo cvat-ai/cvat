@@ -209,7 +209,7 @@ export class SliceHandlerImpl implements SliceHandler {
                 this.slicingPoints.push(circle);
                 this.onMessage({
                     lines: [
-                        { text: 'Set initial point on the shape contour' },
+                        { text: 'Set more points within the shape contour, if necessary. Intersect contour at another point to slice' },
                         { text: ' • Line must not intersect itself', type: 'warning' },
                         { text: ' • Line must not intersect contour more than twice', type: 'warning' },
                     ],
@@ -538,6 +538,7 @@ export class SliceHandlerImpl implements SliceHandler {
                     });
                 }
             }).catch((error: unknown) => {
+                this.release();
                 this.onError(error);
             });
         };

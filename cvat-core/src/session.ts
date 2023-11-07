@@ -142,11 +142,12 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async join(objectStates) {
+                async join(objectStates, results) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.join,
                         objectStates,
+                        results,
                     );
                     return result;
                 },

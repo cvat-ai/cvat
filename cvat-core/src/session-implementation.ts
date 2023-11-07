@@ -298,8 +298,8 @@ export function implementJob(Job) {
         return result;
     };
 
-    Job.prototype.annotations.join.implementation = async function (objectStates) {
-        const result = await joinAnnotations(this, objectStates);
+    Job.prototype.annotations.join.implementation = async function (objectStates, results) {
+        const result = await joinAnnotations(this, objectStates, results);
         return result;
     };
 
@@ -781,8 +781,8 @@ export function implementTask(Task) {
         return result;
     };
 
-    Task.prototype.annotations.join.implementation = async function (objectStates) {
-        const result = await joinAnnotations(this, objectStates);
+    Task.prototype.annotations.join.implementation = async function (objectStates, results) {
+        const result = await joinAnnotations(this, objectStates, results);
         return result;
     };
 

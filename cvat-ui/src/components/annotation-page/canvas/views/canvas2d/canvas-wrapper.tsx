@@ -60,7 +60,6 @@ import { filterAnnotations } from 'utils/filter-annotations';
 import { ImageFilter } from 'utils/image-processing';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
-import Paragraph from 'antd/lib/typography/Paragraph';
 
 const cvat = getCore();
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
@@ -127,7 +126,7 @@ interface DispatchToProps {
     onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
     onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
     onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onJoinAnnotations(sessionInstance: Job, states: ObjectState[]): void;
+    onJoinAnnotations(sessionInstance: Job, states: ObjectState[], result: number[]): void;
     onSliceAnnotations(
         sessionInstance: Job,
         clientID: number,
@@ -284,8 +283,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
         },
-        onJoinAnnotations(sessionInstance: Job, states: ObjectState[]): void {
-            dispatch(joinAnnotationsAsync(sessionInstance, states));
+        onJoinAnnotations(sessionInstance: Job, states: ObjectState[], result: number[]): void {
+            dispatch(joinAnnotationsAsync(sessionInstance, states, result));
         },
         onSliceAnnotations(
             sessionInstance: Job,
@@ -708,8 +707,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
-        const { states } = event.detail;
-        onJoinAnnotations(jobInstance, states);
+        const { states, result } = event.detail;
+        onJoinAnnotations(jobInstance, states, result);
     };
 
     private onCanvasTrackSplitted = (event: any): void => {

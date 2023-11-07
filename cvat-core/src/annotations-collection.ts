@@ -581,8 +581,9 @@ export default class Collection {
         return groupIdx;
     }
 
-    join(objectStates: ObjectState[]): void {
+    join(objectStates: ObjectState[], results: number[]): void {
         checkObjectType('shapes to join', objectStates, null, Array);
+        checkObjectType('joined rle mask', results, null, Array);
 
         if (objectStates.some((state, idx) => idx && state.frame !== objectStates[idx - 1].frame)) {
             throw new ArgumentError('All the objects must be from one frame');
@@ -608,41 +609,7 @@ export default class Collection {
         });
 
         if (objectsToJoin.length > 1) {
-            // constructing a new mask
-            let {
-                left: resultLeft,
-                right: resultRight,
-                top: resultTop,
-                bottom: resultBottom,
-            } = objectsToJoin[0] as MaskShape;
-
-            objectsToJoin.forEach((object: MaskShape) => {
-                resultLeft = Math.min(resultLeft, object.left);
-                resultRight = Math.max(resultRight, object.right);
-                resultTop = Math.min(resultTop, object.top);
-                resultBottom = Math.max(resultBottom, object.bottom);
-            });
-
-            const joinedMaskWidth = resultRight - resultLeft + 1;
-            const joinedMaskHeight = resultBottom - resultTop + 1;
-            const joinedMask = Array(joinedMaskWidth * joinedMaskHeight).fill(0);
-
-            objectsToJoin.forEach((object: MaskShape) => {
-                const maskWidth = object.right - object.left + 1;
-                const maskHeight = object.bottom - object.top + 1;
-                const mask = rle2Mask(object.points, maskWidth, maskHeight);
-                mask.forEach((value, idx) => {
-                    const row = Math.round(idx / maskWidth);
-                    const col = idx % maskWidth;
-                    const joinedMaskRow = object.top - resultTop + row;
-                    const joinedMaskCol = object.left - resultLeft + col;
-                    const offset = joinedMaskRow * joinedMaskWidth + joinedMaskCol;
-                    joinedMask[offset] = joinedMask[offset] || value;
-                });
-            });
-
-            const rle = mask2Rle(joinedMask);
-            rle.push(resultLeft, resultTop, resultRight, resultBottom);
+            const rle = results;
 
             // Import created
             const imported = this.import({

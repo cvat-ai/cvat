@@ -45,6 +45,7 @@ import {
     imageDataToDataURL,
     expandChannels,
     stringifyPoints,
+    zipChannels,
 } from './shared';
 import {
     CanvasModel,
@@ -466,7 +467,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onSelectDone = (objects?: any[]): void => {
         if (objects) {
-            if (this.mode === Mode.GROUP) {
+            if (this.mode === Mode.GROUP && objects.length > 1) {
                 this.canvas.dispatchEvent(new CustomEvent('canvas.groupped', {
                     bubbles: false,
                     cancelable: true,
@@ -474,14 +475,43 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         states: objects,
                     },
                 }));
-            } else if (this.mode === Mode.JOIN) {
-                this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
-                    bubbles: false,
-                    cancelable: true,
-                    detail: {
-                        states: objects,
-                    },
-                }));
+            } else if (this.mode === Mode.JOIN && objects.length > 1) {
+                let [left, top, right, bottom] = objects[0].points.slice(-4);
+                objects.forEach((state) => {
+                    const [curLeft, curTop, curRight, curBottom] = state.points.slice(-4);
+                    left = Math.min(left, curLeft);
+                    top = Math.min(top, curTop);
+                    right = Math.max(right, curRight);
+                    bottom = Math.max(bottom, curBottom);
+                });
+
+                const canvas = new OffscreenCanvas(right - left + 1, bottom - top + 1);
+                const promises: ReturnType<typeof createImageBitmap>[] = [];
+
+                objects.forEach((state) => {
+                    const [curLeft, , curRight] = state.points.slice(-4, -1);
+                    const image = new ImageData(expandChannels(255, 255, 255, state.points), curRight - curLeft + 1);
+                    promises.push(createImageBitmap(image));
+                });
+
+                Promise.all(promises).then((results) => {
+                    results.forEach((bitmap, idx) => {
+                        const [curLeft, curTop] = objects[idx].points.slice(-4, -2);
+                        canvas.getContext('2d').drawImage(bitmap, curLeft - left, curTop - top);
+                    });
+                    const imageData = canvas.getContext('2d').getImageData(0, 0, right - left + 1, bottom - top + 1);
+
+                    const rle = zipChannels(imageData.data);
+                    rle.push(left, top, right, bottom);
+                    this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            states: objects,
+                            result: rle,
+                        },
+                    }));
+                });
             }
         } else {
             const event: CustomEvent = new CustomEvent('canvas.canceled', {
