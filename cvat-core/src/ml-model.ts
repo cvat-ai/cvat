@@ -6,9 +6,11 @@
 import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
 import { decodePreview } from './frames';
-import { ModelProviders, ModelKind, ModelReturnType } from './enums';
 import {
-    SerializedModel, ModelAttribute, ModelParams, ModelTip,
+    ModelProviders, ModelKind, ModelReturnType,
+} from './enums';
+import {
+    SerializedModel, ModelParams, MLModelTip, MLModelLabel,
 } from './core-types';
 
 export default class MLModel {
@@ -27,16 +29,12 @@ export default class MLModel {
         return this.serialized.name;
     }
 
-    public get labels(): string[] {
-        return Array.isArray(this.serialized.labels) ? [...this.serialized.labels] : [];
+    public get labels(): MLModelLabel[] {
+        return Array.isArray(this.serialized.labels_v2) ? [...this.serialized.labels_v2] : [];
     }
 
     public get version(): number {
         return this.serialized.version;
-    }
-
-    public get attributes(): Record<string, ModelAttribute> {
-        return this.serialized.attributes || {};
     }
 
     public get framework(): string {
@@ -67,7 +65,7 @@ export default class MLModel {
         return result;
     }
 
-    public get tip(): ModelTip {
+    public get tip(): MLModelTip {
         return {
             message: this.serialized.help_message,
             gif: this.serialized.animated_gif,
@@ -146,7 +144,7 @@ Object.defineProperties(MLModel.prototype.delete, {
         enumerable: false,
         value: async function implementation(this: MLModel): Promise<void> {
             if (this.isDeletable) {
-                await serverProxy.functions.delete(this.id);
+                await serverProxy.functions.delete(this.id as number);
             }
         },
     },

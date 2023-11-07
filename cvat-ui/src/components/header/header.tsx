@@ -28,6 +28,7 @@ import Menu from 'antd/lib/menu';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
+import notification from 'antd/lib/notification';
 
 import config from 'config';
 
@@ -169,6 +170,12 @@ function HeaderComponent(props: Props): JSX.Element {
             if (isMounted()) {
                 setOrganizationList(organizations);
             }
+        }).catch((error: unknown) => {
+            setOrganizationList([]);
+            notification.error({
+                message: 'Could not receive a list of organizations',
+                description: error instanceof Error ? error.message : '',
+            });
         });
     }, []);
 
