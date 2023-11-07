@@ -80,6 +80,7 @@
 .cvat-group-control,
 .cvat-join-control,
 .cvat-slice-control,
+.cvat-convert-shapes-control,
 .cvat-split-track-control,
 .cvat-issue-control,
 .cvat-tools-control,
@@ -89,6 +90,7 @@
     transform: scale(0.65);
     padding: 2px;
 
+    &.cvat-convert-shapes-control,
     &.cvat-join-control,
     &.cvat-slice-control {
         > svg {

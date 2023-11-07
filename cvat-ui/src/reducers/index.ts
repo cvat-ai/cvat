@@ -604,6 +604,7 @@ export enum ActiveControl {
     JOIN = 'join',
     SPLIT = 'split',
     SLICE = 'slice',
+    CONVERT = 'convert',
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',

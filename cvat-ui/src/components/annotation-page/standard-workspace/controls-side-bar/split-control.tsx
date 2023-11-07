@@ -36,7 +36,7 @@ function SplitControl(props: Props): JSX.Element {
             className: 'cvat-split-track-control cvat-active-canvas-control',
             onClick: (): void => {
                 canvasInstance.split({ enabled: false });
-                updateActiveControl(ActiveControl.CURSOR);
+                updateActiveControl(ActiveControl.CURSOR); // todo: do we need to update here?
             },
         } :
         {
