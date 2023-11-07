@@ -292,6 +292,10 @@ export function cropMask(rle: number[], width: number, height: number): number[]
 
         // switch current rle value
         value = Math.abs(value - 1);
+
+        // length - 5 === latest iteration
+        // after this iteration we do not need to pop value
+        // just push found 0 elements instead
         if (croppedCount === 0 && croppedRLE.length && idx !== rle.length - 5) {
             croppedCount = croppedRLE.pop();
         } else {
