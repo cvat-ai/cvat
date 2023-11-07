@@ -5,7 +5,7 @@
 
 import {
     shapeFactory, trackFactory, Track, Shape, Tag,
-    MaskShape, BasicInjection, RawShapeData, RawTrackData, RawTagData, SkeletonShape, SkeletonTrack,
+    MaskShape, BasicInjection, RawShapeData, RawTrackData, RawTagData, SkeletonShape, SkeletonTrack, PolygonShape,
 } from './annotations-objects';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
@@ -16,7 +16,7 @@ import ObjectState from './object-state';
 import { cropMask, mask2Rle, rle2Mask } from './object-utils';
 import config from './config';
 import {
-    HistoryActions, ShapeType, ObjectType, colors, Source,
+    HistoryActions, ShapeType, ObjectType, colors, Source, ConversionOptions,
 } from './enums';
 import AnnotationHistory from './annotations-history';
 
@@ -740,9 +740,87 @@ export default class Collection {
         );
     }
 
-    convert(objectStates: ObjectState[], method: any, points: Record<number, number[][]>): void {
-        // todo
-        console.log(objectStates, method, points);
+    convert(objectStates: ObjectState[], method: ConversionOptions, points: Record<number, number[][]>): void {
+        checkObjectType('shapes to convert', objectStates, null, Array);
+        objectStates.forEach((state) => checkObjectType('shape to convert', state, null, ObjectState));
+
+        const objects = objectStates.map((state) => {
+            const object = this.objects[state.clientID];
+            if (!object) {
+                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            }
+
+            return object;
+        });
+
+        objects.forEach((object) => checkObjectType('object to convert', object, null, Shape));
+
+        let targetShapeType: ShapeType | null = null;
+        if (method === ConversionOptions.MASK_TO_POLYGON) {
+            objects.forEach((object) => checkObjectType('shape type to convert', object, null, MaskShape));
+            targetShapeType = ShapeType.POLYGON;
+        } else if (method === ConversionOptions.POLYGON_TO_MASK) {
+            objects.forEach((object) => checkObjectType('shape type to convert', object, null, PolygonShape));
+            targetShapeType = ShapeType.MASK;
+        } else {
+            throw new Error('Not supported conversion method');
+        }
+
+        const convertedShapes = objects.map((object: Shape) => {
+            const { clientID } = object;
+            if (!(clientID in points) || !points[clientID].length) {
+                throw new Error(`Not found result for object ${clientID}`);
+            }
+
+            const newPoints = points[clientID];
+            return newPoints.map((shapePoints) => ({
+                attributes: [], // todo
+                frame: object.frame,
+                group: object.group,
+                label_id: object.label.id,
+                outside: false,
+                occluded: object.occluded,
+                points: shapePoints,
+                rotation: 0,
+                type: targetShapeType,
+                z_order: object.zOrder,
+                source: Source.MANUAL,
+                elements: [],
+            }));
+        });
+
+        if (convertedShapes.length) {
+            objects.forEach((object) => {
+                object.removed = true;
+            });
+            const imported = this.import({
+                shapes: convertedShapes.flat(),
+                tracks: [],
+                tags: [],
+            });
+
+            this.history.do(
+                HistoryActions.CONVERTED_OBJECTS,
+                () => {
+                    objects.forEach((object) => {
+                        object.removed = true;
+                    });
+                    imported.shapes.forEach((shape) => {
+                        shape.removed = true;
+                    });
+                },
+                () => {
+                    objects.forEach((object) => {
+                        object.removed = true;
+                    });
+                    imported.shapes.forEach((shape) => {
+                        shape.removed = false;
+                    });
+                },
+                [...imported.shapes.map((object) => object.clientID), ...objects.map((object) => object.clientID)],
+                objects[0].frame,
+            );
+        }
     }
 
     clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {

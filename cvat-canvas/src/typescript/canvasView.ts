@@ -1791,10 +1791,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 } else if ((data as ConvertData).method === 'mask_to_polygons') {
                     shapeType.push('mask');
                 }
-
-                this.groupHandler.group(data, {
+                this.objectSelector.enable((selected) => this.onSelectDone(selected, 0), {
                     shapeType,
                     objectType: ['shape'],
+                    maxCount: 1,
                 });
             } else if (reason === UpdateReasons.GROUP) {
                 data = this.controller.groupData;
@@ -1802,6 +1802,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.groupHandler.group(data, (reason === UpdateReasons.GROUP) ? {} : {
                     shapeType: ['mask'],
                     objectType: ['shape'],
+                    maxCount: 1,
                 });
             } else {
                 data = this.controller.joinData;

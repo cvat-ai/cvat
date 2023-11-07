@@ -147,6 +147,7 @@ export enum HistoryActions {
     MERGED_OBJECTS = 'Merged objects',
     JOINED_OBJECTS = 'Joined objects',
     SLICED_OBJECT = 'Sliced object',
+    CONVERTED_OBJECTS = 'Converted objects',
     SPLITTED_TRACK = 'Splitted track',
     GROUPED_OBJECTS = 'Grouped objects',
     CREATED_OBJECTS = 'Created objects',
@@ -265,4 +266,9 @@ export enum LabelType {
     SKELETON = 'skeleton',
     MASK = 'mask',
     TAG = 'tag',
+}
+
+export enum ConversionOptions {
+    MASK_TO_POLYGON = 'mask_to_polygons',
+    POLYGON_TO_MASK = 'polygon_to_mask',
 }

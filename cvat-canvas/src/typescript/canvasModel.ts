@@ -900,7 +900,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.convertData = { ...convertData };
-        this.notify(UpdateReasons.SLICE);
+        this.notify(UpdateReasons.CONVERT);
     }
 
     public merge(mergeData: MergeData): void {

@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import Popover from 'antd/lib/popover';
 import { SwapOutlined } from '@ant-design/icons';
 
+import { ConversionOptions } from 'cvat-core-wrapper';
 import { Canvas } from 'cvat-canvas-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ActiveControl } from 'reducers';
@@ -22,11 +23,6 @@ export interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     disabled?: boolean;
-}
-
-enum ConversionOptions {
-    MASK_TO_POLYGON = 'mask_to_polygons',
-    POLYGON_TO_MASK = 'polygon_to_mask',
 }
 
 interface PopoverProps {
