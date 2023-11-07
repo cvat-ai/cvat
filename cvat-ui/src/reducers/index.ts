@@ -481,6 +481,7 @@ export interface NotificationsState {
             grouping: null | ErrorState;
             joining: null | ErrorState;
             slicing: null | ErrorState;
+            converting: null | ErrorState;
             splitting: null | ErrorState;
             removing: null | ErrorState;
             propagating: null | ErrorState;

@@ -740,6 +740,11 @@ export default class Collection {
         );
     }
 
+    convert(objectStates: ObjectState[], method: any, points: Record<number, number[][]>): void {
+        // todo
+        console.log(objectStates, method, points);
+    }
+
     clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {
         if (startframe !== undefined && endframe !== undefined) {
             // If only a range of annotations need to be cleared

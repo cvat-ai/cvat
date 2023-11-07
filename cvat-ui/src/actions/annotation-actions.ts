@@ -13,7 +13,7 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, JobType, Job, QualityConflict, ObjectState,
+    getCore, MLModel, JobType, Job, QualityConflict,
 } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -148,6 +148,8 @@ export enum AnnotationActionTypes {
     JOIN_ANNOTATIONS_FAILED = 'JOIN_ANNOTATIONS_FAILED',
     SLICE_ANNOTATIONS_SUCCESS = 'SLICE_ANNOTATIONS_SUCCESS',
     SLICE_ANNOTATIONS_FAILED = 'SLICE_ANNOTATIONS_FAILED',
+    CONVERT_ANNOTATIONS_SUCCESS = 'CONVERT_ANNOTATIONS_SUCCESS',
+    CONVERT_ANNOTATIONS_FAILED = 'CONVERT_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
@@ -358,7 +360,7 @@ export function removeAnnotationsAsync(
     };
 }
 
-export function collectStatisticsAsync(sessionInstance: any): ThunkAction {
+export function collectStatisticsAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch({
@@ -470,7 +472,7 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
     };
 }
 
-export function removeObjectAsync(sessionInstance: any, objectState: any, force: boolean): ThunkAction {
+export function removeObjectAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, objectState: any, force: boolean): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             await sessionInstance.logger.log(LogType.deleteObject, { count: 1 });
@@ -712,7 +714,7 @@ export function changeFrameAsync(
     };
 }
 
-export function undoActionAsync(sessionInstance: any, frame: number): ThunkAction {
+export function undoActionAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, frame: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const state = getStore().getState();
@@ -763,7 +765,7 @@ export function undoActionAsync(sessionInstance: any, frame: number): ThunkActio
     };
 }
 
-export function redoActionAsync(sessionInstance: any, frame: number): ThunkAction {
+export function redoActionAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, frame: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const state = getStore().getState();
@@ -984,7 +986,7 @@ export function getJobAsync(
     };
 }
 
-export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => void): ThunkAction {
+export function saveAnnotationsAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, afterSave?: () => void): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
@@ -1100,7 +1102,7 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
     };
 }
 
-export function createAnnotationsAsync(sessionInstance: any, frame: number, statesToCreate: any[]): ThunkAction {
+export function createAnnotationsAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, frame: number, statesToCreate: any[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
@@ -1126,7 +1128,7 @@ export function createAnnotationsAsync(sessionInstance: any, frame: number, stat
     };
 }
 
-export function mergeAnnotationsAsync(sessionInstance: any, frame: number, statesToMerge: any[]): ThunkAction {
+export function mergeAnnotationsAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, frame: number, statesToMerge: any[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
@@ -1159,7 +1161,7 @@ export function resetAnnotationsGroup(): AnyAction {
     };
 }
 
-export function groupAnnotationsAsync(sessionInstance: any, frame: number, statesToGroup: any[]): ThunkAction {
+export function groupAnnotationsAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, frame: number, statesToGroup: any[]): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
@@ -1225,7 +1227,7 @@ export function joinAnnotationsAsync(
 }
 
 export function sliceAnnotationsAsync(
-    sessionInstance: any,
+    sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>,
     clientID: number,
     contour1: number[],
     contour2: number[],
@@ -1255,7 +1257,38 @@ export function sliceAnnotationsAsync(
     };
 }
 
-export function splitAnnotationsAsync(sessionInstance: any, frame: number, stateToSplit: any): ThunkAction {
+export function convertAnnotationsAsync(
+    sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>,
+    objectStates: CombinedState['annotation']['annotations']['states'],
+    method: any,
+    points: Record<number, number[][]>,
+): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            const { filters, showAllInterpolationTracks, frame } = receiveAnnotationsParameters();
+            await sessionInstance.annotations.convert(objectStates, method, points);
+            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            const history = await sessionInstance.actions.get();
+
+            dispatch({
+                type: AnnotationActionTypes.CONVERT_ANNOTATIONS_SUCCESS,
+                payload: {
+                    states,
+                    history,
+                },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.CONVERT_ANNOTATIONS_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
+export function splitAnnotationsAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, frame: number, stateToSplit: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
         try {
@@ -1296,7 +1329,7 @@ export function changeGroupColorAsync(group: number, color: string): ThunkAction
     };
 }
 
-export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, frameTo: number): ThunkAction {
+export function searchAnnotationsAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, frameFrom: number, frameTo: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
             const {
@@ -1334,7 +1367,7 @@ export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, 
     };
 }
 
-export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, frameTo: number): ThunkAction {
+export function searchEmptyFrameAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, frameFrom: number, frameTo: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
             const {

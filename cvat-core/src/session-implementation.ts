@@ -28,7 +28,7 @@ import { checkObjectType } from './common';
 import {
     getAnnotations, putAnnotations, saveAnnotations,
     hasUnsavedChanges, searchAnnotations, searchEmptyFrame,
-    mergeAnnotations, splitAnnotations, groupAnnotations,
+    mergeAnnotations, splitAnnotations, groupAnnotations, convertAnnotations,
     joinAnnotations, sliceAnnotations, clearAnnotations, selectObject,
     annotationsStatistics, importCollection, exportCollection,
     importDataset, exportDataset, undoActions, redoActions,
@@ -305,6 +305,11 @@ export function implementJob(Job) {
 
     Job.prototype.annotations.slice.implementation = async function (clientID, contour1, contour2) {
         const result = await sliceAnnotations(this, clientID, contour1, contour2);
+        return result;
+    };
+
+    Job.prototype.annotations.convert.implementation = async function (objectStates, method, points) {
+        const result = await convertAnnotations(this, objectStates, method, points);
         return result;
     };
 
@@ -788,6 +793,11 @@ export function implementTask(Task) {
 
     Task.prototype.annotations.slice.implementation = async function (clientID, contour1, contour2) {
         const result = await sliceAnnotations(this, clientID, contour1, contour2);
+        return result;
+    };
+
+    Task.prototype.annotations.convert.implementation = async function (objectStates, method, points) {
+        const result = await convertAnnotations(this, objectStates, method, points);
         return result;
     };
 

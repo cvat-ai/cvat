@@ -13,6 +13,7 @@ import withVisibilityHandling from './handle-popover-visibility';
 import { Col, Row, Select } from 'antd';
 import Text from 'antd/lib/typography/Text';
 import { Button } from 'antd/lib/radio';
+import opencvWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 
 // import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
@@ -64,11 +65,16 @@ function PopoverContent({
                     </Select>
                     <CVATTooltip title={`Press ${'a shortcut'} to enable again`}>
                         <Button
+                            disabled={option === null}
                             type='primary'
                             className='cvat-convert-shape-button'
                             onClick={() => {
                                 canvasInstance.cancel();
-                                canvasInstance.convert({ enabled: true, method: option });
+                                canvasInstance.convert({
+                                    enabled: true,
+                                    method: option as ConversionOptions,
+                                    getContours: opencvWrapper.getContoursFromState,
+                                });
                                 updateActiveControl(ActiveControl.CONVERT);
                             }}
                         >

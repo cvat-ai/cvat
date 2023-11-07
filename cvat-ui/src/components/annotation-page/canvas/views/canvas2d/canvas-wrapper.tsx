@@ -37,6 +37,7 @@ import {
     groupAnnotationsAsync,
     joinAnnotationsAsync,
     sliceAnnotationsAsync,
+    convertAnnotationsAsync,
     splitAnnotationsAsync,
     activateObject,
     updateCanvasContextMenu,
@@ -132,6 +133,12 @@ interface DispatchToProps {
         clientID: number,
         contour1: number[],
         contour2: number[],
+    ): void;
+    onConvertAnnotations(
+        sessionInstance: Job,
+        objectStates: ObjectState[],
+        method: any,
+        points: Record<number, number[][]>,
     ): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onAddZLayer(): void;
@@ -293,6 +300,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             contour2: number[],
         ): void {
             dispatch(sliceAnnotationsAsync(sessionInstance, clientID, contour1, contour2));
+        },
+        onConvertAnnotations(
+            sessionInstance: Job,
+            objectStates: ObjectState[],
+            method: any,
+            points: Record<number, number[][]>,
+        ): void {
+            dispatch(convertAnnotationsAsync(sessionInstance, objectStates, method, points));
         },
         onSplitAnnotations(sessionInstance: any, frame: number, state: ObjectState): void {
             dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
@@ -574,6 +589,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.edited', this.onCanvasEditDone);
         canvasInstance.html().removeEventListener('canvas.slicestart', this.onCanvasSliceStart);
         canvasInstance.html().removeEventListener('canvas.sliced', this.onCanvasSliceDone);
+        canvasInstance.html().removeEventListener('canvas.converted', this.onCanvasConvertDone);
         canvasInstance.html().removeEventListener('canvas.dragstart', this.onCanvasDragStart);
         canvasInstance.html().removeEventListener('canvas.dragstop', this.onCanvasDragDone);
         canvasInstance.html().removeEventListener('canvas.zoomstart', this.onCanvasZoomStart);
@@ -865,6 +881,21 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         onSliceAnnotations(jobInstance, clientID, results[0], results[1]);
     };
 
+    private onCanvasConvertDone = (event: any): void => {
+        const { jobInstance, updateActiveControl, onConvertAnnotations } = this.props;
+        const {
+            states, method, points, duration,
+        } = event.detail;
+
+        updateActiveControl(ActiveControl.CURSOR);
+        jobInstance.logger.log(LogType.convertObjects, {
+            count: states.length,
+            duration,
+            method,
+        });
+        onConvertAnnotations(jobInstance, states, method, points);
+    };
+
     private onCanvasDragStart = (): void => {
         const { updateActiveControl } = this.props;
         updateActiveControl(ActiveControl.DRAG_CANVAS);
@@ -1051,6 +1082,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.edited', this.onCanvasEditDone);
         canvasInstance.html().addEventListener('canvas.slicestart', this.onCanvasSliceStart);
         canvasInstance.html().addEventListener('canvas.sliced', this.onCanvasSliceDone);
+        canvasInstance.html().addEventListener('canvas.converted', this.onCanvasConvertDone);
         canvasInstance.html().addEventListener('canvas.dragstart', this.onCanvasDragStart);
         canvasInstance.html().addEventListener('canvas.dragstop', this.onCanvasDragDone);
         canvasInstance.html().addEventListener('canvas.zoomstart', this.onCanvasZoomStart);

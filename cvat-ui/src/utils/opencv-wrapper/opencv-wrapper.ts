@@ -229,7 +229,7 @@ export class OpenCVWrapper {
         };
     }
 
-    public getContourFromState = async (state: ObjectState): Promise<number[]> => {
+    public getContoursFromState = async (state: ObjectState): Promise<number[][]> => {
         const points = state.points as number[];
         if (state.shapeType === ShapeType.MASK) {
             if (!this.isInitialized) {
@@ -250,23 +250,27 @@ export class OpenCVWrapper {
             try {
                 const contours = this.contours.findContours(src, false);
                 if (contours.length) {
-                    const convexHull = contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
-                    return convexHull.map((val, idx) => {
+                    return contours.map((contour) => contour.map((val, idx) => {
                         if (idx % 2) {
                             return val + top;
                         }
                         return val + left;
-                    });
+                    }));
                 }
                 throw new Error('Empty contour received from state');
             } finally {
                 src.delete();
             }
         } else if (state.shapeType === ShapeType.POLYGON) {
-            return points;
+            return [points];
         }
 
         throw new Error(`Not implemented getContour for ${state.shapeType}`);
+    }
+
+    public getContourFromState = async (state: ObjectState): Promise<number[]> => {
+        const contours = await this.getContoursFromState(state);
+        return contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
     }
 
     public get segmentation(): Segmentation {

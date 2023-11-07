@@ -64,6 +64,9 @@ import {
     ColorBy,
     HighlightedElements,
     HighlightSeverity,
+    ConvertData,
+    GroupData,
+    JoinData,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -468,7 +471,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onSelectDone = (objects?: any[], duration?: number): void => {
         if (objects && typeof duration !== 'undefined') {
-            if (this.mode === Mode.GROUP && objects.length > 1) {
+            if (this.mode === Mode.CONVERT) {
+                const convertData = this.controller.convertData as Required<ConvertData>;
+                const { method, getContours } = convertData;
+                if (method === 'mask_to_polygons') {
+                    const promises = objects.map((state) => getContours(state));
+                    Promise.all(promises).then((results) => {
+                        this.canvas.dispatchEvent(new CustomEvent('canvas.converted', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                states: objects,
+                                method,
+                                points: results.reduce<Record<number, number[][]>>((acc, val, idx) => {
+                                    acc[objects[idx].clientID] = val;
+                                    return acc;
+                                }, {}),
+                                duration,
+                            },
+                        }));
+                    });
+                } else if (method === 'polygon_to_mask') {
+                    // todo
+                }
+            } else if (this.mode === Mode.GROUP && objects.length > 1) {
                 this.canvas.dispatchEvent(new CustomEvent('canvas.groupped', {
                     bubbles: false,
                     cancelable: true,
@@ -527,9 +553,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (this.mode === Mode.GROUP) {
             this.controller.group({ enabled: false });
-        } else {
+        } else if (this.mode === Mode.JOIN) {
             this.controller.join({ enabled: false });
+        } else {
+            this.controller.convert({ enabled: false });
         }
+
         this.mode = Mode.IDLE;
     }
 
@@ -1751,19 +1780,43 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.canvas.style.cursor = '';
             }
             this.splitHandler.split(data);
-        } else if (reason === UpdateReasons.GROUP || reason === UpdateReasons.JOIN) {
-            const data = (reason === UpdateReasons.GROUP) ?
-                this.controller.groupData : this.controller.joinData;
+        } else if ([UpdateReasons.JOIN, UpdateReasons.GROUP, UpdateReasons.CONVERT].includes(reason)) {
+            let data: ConvertData | GroupData | JoinData = null;
+            if (reason === UpdateReasons.CONVERT) {
+                data = this.controller.convertData;
+                this.mode = Mode.CONVERT;
+                const shapeType = [];
+                if ((data as ConvertData).method === 'polygon_to_mask') {
+                    shapeType.push('polygon');
+                } else if ((data as ConvertData).method === 'mask_to_polygons') {
+                    shapeType.push('mask');
+                }
+
+                this.groupHandler.group(data, {
+                    shapeType,
+                    objectType: ['shape'],
+                });
+            } else if (reason === UpdateReasons.GROUP) {
+                data = this.controller.groupData;
+                this.mode = Mode.GROUP;
+                this.groupHandler.group(data, (reason === UpdateReasons.GROUP) ? {} : {
+                    shapeType: ['mask'],
+                    objectType: ['shape'],
+                });
+            } else {
+                data = this.controller.joinData;
+                this.mode = Mode.JOIN;
+                this.groupHandler.group(data, {
+                    shapeType: ['mask'],
+                    objectType: ['shape'],
+                });
+            }
+
             if (data.enabled) {
                 this.canvas.style.cursor = 'copy';
-                this.mode = (reason === UpdateReasons.GROUP) ? Mode.GROUP : Mode.JOIN;
             } else {
                 this.canvas.style.cursor = '';
             }
-            this.groupHandler.group(data, (reason === UpdateReasons.GROUP) ? {} : {
-                shapeType: ['mask'],
-                objectType: ['shape'],
-            });
         } else if (reason === UpdateReasons.SLICE) {
             const data = this.controller.sliceData;
 

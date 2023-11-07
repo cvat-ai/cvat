@@ -172,6 +172,13 @@ export interface SliceData {
     getContour?: (state: any) => Promise<number[]>;
 }
 
+export interface ConvertData {
+    enabled: boolean;
+    method?: string;
+    clientID?: number;
+    getContours?: (state: any) => Promise<number[][]>;
+}
+
 export enum FrameZoom {
     MIN = 0.1,
     MAX = 10,
@@ -201,6 +208,7 @@ export enum UpdateReasons {
     GROUP = 'group',
     JOIN = 'join',
     SLICE = 'slice',
+    CONVERT = 'convert',
     SELECT = 'select',
     CANCEL = 'cancel',
     BITMAP = 'bitmap',
@@ -223,6 +231,7 @@ export enum Mode {
     GROUP = 'group',
     JOIN = 'join',
     SLICE = 'slice',
+    CONVERT = 'convert',
     INTERACT = 'interact',
     SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
@@ -248,6 +257,7 @@ export interface CanvasModel {
     readonly groupData: GroupData;
     readonly joinData: JoinData;
     readonly sliceData: SliceData;
+    readonly convertData: ConvertData;
     readonly configuration: Configuration;
     readonly selected: any;
     geometry: Geometry;
@@ -271,6 +281,7 @@ export interface CanvasModel {
     group(groupData: GroupData): void;
     join(joinData: JoinData): void;
     slice(sliceData: SliceData): void;
+    convert(convertData: ConvertData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
@@ -311,6 +322,9 @@ const defaultData = {
         enabled: false,
     },
     sliceData: {
+        enabled: false,
+    },
+    convertData: {
         enabled: false,
     },
 };
@@ -367,6 +381,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         groupData: GroupData;
         joinData: JoinData;
         sliceData: SliceData;
+        convertData: ConvertData;
         splitData: SplitData;
         selected: any;
         mode: Mode;
@@ -840,11 +855,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (this.data.joinData.enabled && joinData.enabled) {
-            return;
-        }
-
-        if (!this.data.joinData.enabled && !joinData.enabled) {
+        if ((this.data.joinData.enabled && joinData.enabled) || (
+            !this.data.joinData.enabled && !joinData.enabled
+        )) {
             return;
         }
 
@@ -857,15 +870,36 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (this.data.sliceData.enabled && sliceData.enabled) {
+        if ((this.data.sliceData.enabled && sliceData.enabled) || (
+            !this.data.sliceData.enabled && !sliceData.enabled
+        )) {
             return;
         }
 
-        if (!this.data.sliceData.enabled && !sliceData.enabled) {
-            return;
+        if (sliceData.enabled && !sliceData.getContour) {
+            throw Error('Contours computing method was not provided');
         }
 
         this.data.sliceData = { ...sliceData };
+        this.notify(UpdateReasons.SLICE);
+    }
+
+    public convert(convertData: ConvertData): void {
+        if (![Mode.IDLE, Mode.CONVERT].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if ((this.data.convertData.enabled && convertData.enabled) || (
+            !this.data.convertData.enabled && !convertData.enabled
+        )) {
+            return;
+        }
+
+        if (convertData.enabled && !convertData.getContours) {
+            throw Error('Contours computing method was not provided');
+        }
+
+        this.data.convertData = { ...convertData };
         this.notify(UpdateReasons.SLICE);
     }
 
@@ -1085,6 +1119,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get sliceData(): SliceData {
         return { ...this.data.sliceData };
+    }
+
+    public get convertData(): ConvertData {
+        return { ...this.data.convertData };
     }
 
     public get groupData(): GroupData {
