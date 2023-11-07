@@ -10,6 +10,7 @@ import Spin from 'antd/lib/spin';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
+import message from 'antd/lib/message';
 import debounce from 'lodash/debounce';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -596,6 +597,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
+        canvasInstance.html().removeEventListener('canvas.message', this.onCanvasMessage);
     }
 
     private onCanvasErrorOccurrence = (event: any): void => {
@@ -603,6 +605,17 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { onGetDataFailed } = this.props;
         onGetDataFailed(exception);
     };
+
+    private onCanvasMessage = (event: any): void => {
+        const { message: text, type } = event.detail;
+        if (type === 'info') {
+            message.info({ content: text, key: 'canvas.message', duration: 0 });
+        } else if (type === 'loading') {
+            message.loading({ content: text, key: 'canvas.message', duration: 0 });
+        } else if (text === null) {
+            message.destroy('canvas.message');
+        }
+    }
 
     private onCanvasShapeDrawn = (event: any): void => {
         const {
@@ -1037,6 +1050,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
+        canvasInstance.html().addEventListener('canvas.message', this.onCanvasMessage);
+
     }
 
     public render(): JSX.Element {

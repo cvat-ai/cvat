@@ -97,7 +97,9 @@ export class SliceHandlerImpl implements SliceHandler {
     private slicingPoints: SVG.Circle[];
     private hideObject: (clientID: number) => void;
     private showObject: (clientID: number) => void;
-    private onSliceDone: (clientID: number, fragments: number[][], duration: number) => void;
+    private onSliceDone: (clientID?: number, fragments?: number[][], duration?: number) => void;
+    private onMessage: ({ message, type }: { message: string | null, type?: 'info' | 'loading' }) => void;
+    private onError: (exception: unknown) => void;
     private getObjects: () => any[];
     private geometry: Geometry;
     private objectSelector: ObjectSelector;
@@ -107,6 +109,8 @@ export class SliceHandlerImpl implements SliceHandler {
         hideObject: SliceHandlerImpl['hideObject'],
         showObject: SliceHandlerImpl['showObject'],
         onSliceDone: SliceHandlerImpl['onSliceDone'],
+        onMessage: SliceHandlerImpl['onMessage'],
+        onError: SliceHandlerImpl['onError'],
         getObjects: () => any[],
         geometry: Geometry,
         canvas: SVG.Container,
@@ -115,6 +119,8 @@ export class SliceHandlerImpl implements SliceHandler {
         this.hideObject = hideObject;
         this.showObject = showObject;
         this.onSliceDone = onSliceDone;
+        this.onMessage = onMessage;
+        this.onError = onError;
         this.getObjects = getObjects;
         this.geometry = geometry;
         this.canvas = canvas;
@@ -130,6 +136,7 @@ export class SliceHandlerImpl implements SliceHandler {
     }
 
     private initialize(sliceData: EnhancedSliceData): void {
+        this.onMessage({ message: 'Set initial point on the shape contour', type: 'info' });
         this.hiddenClientIDs = (this.canvas.select('.cvat_canvas_shape') as any).members
             .map((shape) => +shape.attr('clientID')).filter((clientID: number) => clientID !== sliceData.clientID);
         this.hiddenClientIDs.forEach((clientIDs) => {
@@ -169,7 +176,18 @@ export class SliceHandlerImpl implements SliceHandler {
             if (firstIntersectedSegmentIdx in intersections && points.length < 3) {
                 // this is the second point of slicing line and it intersects
                 // the contour in first point of the slicing line, ignore
+                const point = intersections[firstIntersectedSegmentIdx];
                 delete intersections[firstIntersectedSegmentIdx];
+
+                const leftKeys = Object.keys(intersections);
+                if (leftKeys.length === 1) {
+                    const latestKey = +leftKeys[0];
+                    const latestValue = intersections[latestKey];
+                    if (point[0] === latestValue[0] && point[1] === latestValue[1]) {
+                        // corner case, intersection point is in a vertex between two edges
+                        delete intersections[latestKey];
+                    }
+                }
             }
 
             return intersections;
@@ -208,6 +226,11 @@ export class SliceHandlerImpl implements SliceHandler {
                 circle.attr('fill', 'white');
                 circle.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
                 this.slicingPoints.push(circle);
+                this.onMessage({
+                    message: 'Set more points within the contour or click out of the contour to finish.' +
+                        'Line must not intersect itself',
+                    type: 'info',
+                });
             }
         };
 
@@ -411,7 +434,7 @@ export class SliceHandlerImpl implements SliceHandler {
         this.canvas.on('mousedown.slice', (event: MouseEvent) => {
             if (!points.length) {
                 initialClick(event);
-            } else {
+            } else if (event.target !== this.shapeContour.node) {
                 click(event);
             }
         });
@@ -456,7 +479,6 @@ export class SliceHandlerImpl implements SliceHandler {
 
                 points.push([x, y]);
                 this.slicingLine.plot(stringifyPoints(points.flat()));
-                event.stopPropagation();
             }
         });
     }
@@ -486,12 +508,15 @@ export class SliceHandlerImpl implements SliceHandler {
         this.canvas.off('mousedown.slice');
         this.canvas.off('mousemove.slice');
         this.enabled = false;
+        this.onSliceDone();
+        this.onMessage({ message: null });
     }
 
     public slice(sliceData: SliceData): void {
         const initializeWithContour = (state: any): void => {
             this.start = Date.now();
             const { start } = this;
+            this.onMessage({ message: 'Getting shape contour', type: 'loading' });
             sliceData.getContour(state).then((contour) => {
                 const { clientID, shapeType } = state;
                 if (this.start === start && this.enabled) {
@@ -503,9 +528,9 @@ export class SliceHandlerImpl implements SliceHandler {
                         shapeType,
                     });
                 }
-            }).catch(() => [
-                // todo
-            ]);
+            }).catch((error: unknown) => {
+                this.onError(error);
+            });
         };
 
         if (sliceData.enabled && !this.enabled && sliceData.getContour) {
@@ -518,6 +543,7 @@ export class SliceHandlerImpl implements SliceHandler {
                 }
             }
 
+            this.onMessage({ message: 'Click a mask/polygon shape you would like to slice', type: 'info' });
             this.objectSelector.enable(([state]) => {
                 this.objectSelector.disable();
                 initializeWithContour(state);

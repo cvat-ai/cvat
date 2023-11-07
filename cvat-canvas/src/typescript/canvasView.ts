@@ -121,6 +121,32 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.controller.mode;
     }
 
+    private onMessage = ({ message, type }: { message: string | null, type?: 'info' | 'loading' }) => {
+        this.canvas.dispatchEvent(
+            new CustomEvent('canvas.message', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    message,
+                    type,
+                },
+            }),
+        );
+    }
+
+    private onError = (exception: unknown): void => {
+        this.canvas.dispatchEvent(
+            new CustomEvent('canvas.error', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    exception: exception instanceof Error ?
+                        exception : new Error(`Unknown exception: "${exception}"`),
+                },
+            }),
+        );
+    }
+
     private stateIsLocked(state: any): boolean {
         const { configuration } = this.controller;
         return state.lock || configuration.forceDisableEditing;
@@ -471,8 +497,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onSliceDone = (clientID: number, results?: number[][], duration?: number): void => {
-        if (results && duration) {
+    private onSliceDone = (clientID?: number, results?: number[][], duration?: number): void => {
+        if (typeof clientID !== 'undefined' && results && duration) {
             this.canvas.dispatchEvent(new CustomEvent('canvas.sliced', {
                 bubbles: false,
                 cancelable: true,
@@ -1269,6 +1295,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (clientID) => this.setupInnerFlags(clientID, 'sliceHidden', true),
             (clientID) => this.setupInnerFlags(clientID, 'sliceHidden', false),
             this.onSliceDone,
+            this.onMessage,
+            this.onError,
             () => this.controller.objects,
             this.geometry,
             this.adoptedContent,
@@ -1765,12 +1793,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.mode = Mode.IDLE;
             this.canvas.style.cursor = '';
         } else if (reason === UpdateReasons.DATA_FAILED) {
-            const event: CustomEvent = new CustomEvent('canvas.error', {
-                detail: {
-                    exception: model.exception,
-                },
-            });
-            this.canvas.dispatchEvent(event);
+            this.onError(model.exception);
         } else if (reason === UpdateReasons.DESTROY) {
             this.canvas.dispatchEvent(
                 new CustomEvent('canvas.destroy', {
