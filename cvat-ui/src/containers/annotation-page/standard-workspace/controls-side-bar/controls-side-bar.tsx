@@ -23,7 +23,7 @@ interface StateToProps {
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    labels: any[];
+    labels: CombinedState['annotation']['job']['labels'];
     frameData: any;
 }
 

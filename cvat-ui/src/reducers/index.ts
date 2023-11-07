@@ -6,8 +6,8 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, ModelProvider, Organization,
-    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger,
+    Webhook, MLModel, ModelProvider, Organization, Job,
+    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger, Label,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -80,8 +80,6 @@ export interface JobsQuery {
     search: string | null;
     filter: string | null;
 }
-
-export type Job = any;
 
 export interface JobsState {
     query: JobsQuery;
@@ -675,11 +673,11 @@ export interface AnnotationState {
     };
     job: {
         openTime: null | number;
-        labels: any[];
+        labels: Label[];
         requestedId: number | null;
         groundTruthJobId: number | null;
         groundTruthJobFramesMeta: FramesMetaData | null;
-        instance: any | null | undefined;
+        instance: Job | null | undefined;
         attributes: Record<number, any[]>;
         fetching: boolean;
         saving: boolean;

@@ -5,6 +5,7 @@
 import React from 'react';
 import { ScissorOutlined } from '@ant-design/icons';
 
+import { getCVATStore } from 'cvat-store';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -13,7 +14,6 @@ import opencvWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 
 export interface Props {
     updateActiveControl(activeControl: ActiveControl): void;
-    activatedStateID: number | null;
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     disabled?: boolean;
@@ -27,7 +27,7 @@ export interface Props {
 
 function SliceControl(props: Props): JSX.Element {
     const {
-        updateActiveControl, activatedStateID, canvasInstance, activeControl, disabled, shortcuts,
+        updateActiveControl, canvasInstance, activeControl, disabled, shortcuts,
     } = props;
 
     const dynamicIconProps =
@@ -46,18 +46,11 @@ function SliceControl(props: Props): JSX.Element {
                     canvasInstance.slice({
                         enabled: true,
                         getContour: opencvWrapper.getContourFromState,
-                        clientID: activatedStateID || undefined,
+                        clientID: getCVATStore().getState().annotation.annotations.activatedStateID || undefined,
                     });
                     updateActiveControl(ActiveControl.SLICE);
                 },
             };
-
-    const shortcutHandlers = {
-        SWITCH_SLICE_MODE: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            dynamicIconProps.onClick();
-        },
-    };
 
     return disabled ? (
         <ScissorOutlined className='cvat-slice-control cvat-disabled-canvas-control' />
@@ -65,7 +58,12 @@ function SliceControl(props: Props): JSX.Element {
         <>
             <GlobalHotKeys
                 keyMap={{ SWITCH_SLICE_MODE: shortcuts.SWITCH_SLICE_MODE.details }}
-                handlers={shortcutHandlers}
+                handlers={{
+                    SWITCH_SLICE_MODE: (event: KeyboardEvent | undefined) => {
+                        if (event) event.preventDefault();
+                        dynamicIconProps.onClick();
+                    },
+                }}
             />
             <CVATTooltip title={`Slice a mask/polygon shape ${shortcuts.SWITCH_SLICE_MODE.displayValue}`} placement='right'>
                 <ScissorOutlined {...dynamicIconProps} />

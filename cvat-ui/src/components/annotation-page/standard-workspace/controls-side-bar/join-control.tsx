@@ -50,22 +50,18 @@ function JoinControl(props: Props): JSX.Element {
                 },
             };
 
-    const shortcutHandlers = {
-        SWITCH_JOIN_MODE: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            dynamicIconProps.onClick();
-        },
-    };
-
     return disabled ? (
         <LinkOutlined className='cvat-group-control cvat-disabled-canvas-control' />
     ) : (
         <>
             <GlobalHotKeys
-                keyMap={{
-                    SWITCH_JOIN_MODE: shortcuts.SWITCH_JOIN_MODE.details,
+                keyMap={{ SWITCH_JOIN_MODE: shortcuts.SWITCH_JOIN_MODE.details }}
+                handlers={{
+                    SWITCH_JOIN_MODE: (event: KeyboardEvent | undefined) => {
+                        if (event) event.preventDefault();
+                        dynamicIconProps.onClick();
+                    },
                 }}
-                handlers={shortcutHandlers}
             />
             <CVATTooltip title='Join masks' placement='right'>
                 <LinkOutlined {...dynamicIconProps} />

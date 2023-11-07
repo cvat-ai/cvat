@@ -7,11 +7,10 @@ import React from 'react';
 import Layout from 'antd/lib/layout';
 
 import {
-    ActiveControl, ObjectType, Rotation, ShapeType,
+    ActiveControl, ObjectType, Rotation, ShapeType, CombinedState,
 } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { LabelOptColor } from 'components/labels-editor/common';
 
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
@@ -36,12 +35,14 @@ import JoinControl, { Props as JoinControlProps } from './join-control';
 import SplitControl, { Props as SplitControlProps } from './split-control';
 import SliceControl, { Props as SliceControlProps } from './slice-control';
 
+type Label = CombinedState['annotation']['job']['labels'][0];
+
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    labels: any[];
+    labels: Label[];
     frameData: any;
 
     updateActiveControl(activeControl: ActiveControl): void;
@@ -102,8 +103,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     let cuboidControlVisible = withUnspecifiedType;
     let maskControlVisible = withUnspecifiedType;
     let tagControlVisible = withUnspecifiedType;
-    const skeletonControlVisible = labels.some((label: LabelOptColor) => label.type === 'skeleton');
-    labels.forEach((label: LabelOptColor) => {
+    const skeletonControlVisible = labels.some((label: Label) => label.type === 'skeleton');
+    labels.forEach((label: Label) => {
         rectangleControlVisible = rectangleControlVisible || label.type === ShapeType.RECTANGLE;
         polygonControlVisible = polygonControlVisible || label.type === ShapeType.POLYGON;
         polylineControlVisible = polylineControlVisible || label.type === ShapeType.POLYLINE;
@@ -363,7 +364,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
-                activatedStateID={null}
                 disabled={controlsDisabled}
                 shortcuts={{
                     SWITCH_SLICE_MODE: {

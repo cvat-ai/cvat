@@ -41,7 +41,7 @@ export default function createCVATStore(createRootReducer: () => Reducer): void 
     });
 }
 
-export function getCVATStore(): Store {
+export function getCVATStore(): Store<CombinedState> {
     if (store) {
         return store;
     }
