@@ -1,0 +1,90 @@
+# CONFIG
+metadata:
+  name: mediapipe-pose
+  namespace: cvat
+  annotations:
+    name: Mediapipe human pose estimation
+    type: detector
+    framework: tensorflow
+    spec: |
+      [
+        {
+          "name" : "body",
+          "type" : "skeleton",
+          "sublabels": [
+            { "id":  0, "name": "1", "type": "points" },
+            { "id":  1, "name": "2", "type": "points" },
+            { "id":  2, "name": "3", "type": "points" },
+            { "id":  3, "name": "4", "type": "points" },
+            { "id":  4, "name": "5", "type": "points" },
+            { "id":  5, "name": "6", "type": "points" },
+            { "id":  6, "name": "7", "type": "points" },
+            { "id":  7, "name": "8", "type": "points"},
+            { "id":  8, "name": "9", "type": "points" },
+            { "id":  9, "name": "10", "type": "points" },
+            { "id":  10, "name": "11", "type": "points" },
+            { "id":  11, "name": "12", "type": "points" },
+            { "id":  12, "name": "13", "type": "points" },
+            { "id":  13, "name": "14", "type": "points" },
+            { "id":  14, "name": "15", "type": "points" },
+            { "id":  15, "name": "16", "type": "points" },
+            { "id":  16, "name": "17", "type": "points" },
+            { "id":  17, "name": "18", "type": "points" },
+            { "id":  18, "name": "19", "type": "points" },
+            { "id":  19, "name": "20", "type": "points" },
+            { "id":  20, "name": "21", "type": "points" },
+            { "id":  21, "name": "22", "type": "points" },
+            { "id":  22, "name": "23", "type": "points" },
+            { "id":  23, "name": "24", "type": "points" },
+            { "id":  24, "name": "25", "type": "points" },
+            { "id":  25, "name": "26", "type": "points" },
+            { "id":  26, "name": "27", "type": "points" },
+            { "id":  27, "name": "28", "type": "points" },
+            { "id":  28, "name": "29", "type": "points" },
+            { "id":  29, "name": "30", "type": "points" },
+            { "id":  30, "name": "31", "type": "points" },
+            { "id":  31, "name": "32", "type": "points" },
+            { "id":  32, "name": "33", "type": "points" }
+          ]
+        }
+
+      ]
+
+spec:
+  description: Mediapipe body points 33 keypoints
+  runtime: 'python:3.9'
+  handler: main:handler
+  eventTimeout: 30s
+
+  build:
+    image: cvat.tf.mediapipe.33kps
+    baseImage: ubuntu:22.04
+
+    directives:
+      preCopy:
+        - kind: RUN
+          value: apt-get update && apt-get -y install curl python3 python3-pip libgl1-mesa-glx python-is-python3 libglib2.0-0
+        - kind: RUN
+          value: pip3 install mediapipe opencv-python numpy matplotlib pyyaml
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: curl -O https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task
+        - kind: RUN
+
+          value: ln -s /usr/bin/pip3 /usr/local/bin/pip
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume
