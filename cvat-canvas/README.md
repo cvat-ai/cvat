@@ -186,10 +186,10 @@ Standard JS events are used.
     - canvas.interacted => {shapes: InteractionResult[]}
     - canvas.editstart
     - canvas.edited => {state: ObjectState, points: number[]}
-    - canvas.splitted => {state: ObjectState}
-    - canvas.groupped => {states: ObjectState[]}
-    - canvas.joined => {states: ObjectState[], result: number[]}
-    - canvas.merged => {states: ObjectState[]}
+    - canvas.splitted => {state: ObjectState, , duration: number}
+    - canvas.groupped => {states: ObjectState[], , duration: number}
+    - canvas.joined => {states: ObjectState[], result: number[], duration: number}
+    - canvas.merged => {states: ObjectState[], , duration: number}
     - canvas.canceled
     - canvas.dragstart
     - canvas.dragstop

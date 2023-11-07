@@ -123,7 +123,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private onMessage = ({ lines, type }: {
-        lines: { text: string, type?: string, style?: CSSStyleDeclaration },
+        lines: { text: string, type?: string, style?: CSSStyleDeclaration }[],
         type: 'info' | 'loading'
     }) => {
         this.canvas.dispatchEvent(
@@ -440,12 +440,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onSplitDone = (object: any): void => {
-        if (object) {
+    private onSplitDone = (object?: any, duration?: number): void => {
+        if (object && typeof duration !== 'undefined') {
             const event: CustomEvent = new CustomEvent('canvas.splitted', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
+                    duration,
                     state: object,
                     frame: object.frame,
                 },
@@ -465,13 +466,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onSelectDone = (objects?: any[]): void => {
-        if (objects) {
+    private onSelectDone = (objects?: any[], duration?: number): void => {
+        if (objects && typeof duration !== 'undefined') {
             if (this.mode === Mode.GROUP && objects.length > 1) {
                 this.canvas.dispatchEvent(new CustomEvent('canvas.groupped', {
                     bubbles: false,
                     cancelable: true,
                     detail: {
+                        duration,
                         states: objects,
                     },
                 }));
@@ -507,6 +509,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         bubbles: false,
                         cancelable: true,
                         detail: {
+                            duration,
                             states: objects,
                             result: rle,
                         },

@@ -707,7 +707,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
-        const { states, result } = event.detail;
+        const { states, result, duration } = event.detail;
+        jobInstance.logger.log(LogType.joinObjects, {
+            duration,
+            count: states.length,
+        });
         onJoinAnnotations(jobInstance, states, result);
     };
 
@@ -844,9 +848,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { jobInstance, updateActiveControl, onSliceAnnotations } = this.props;
         const { clientID, results, duration } = event.detail;
 
-        // todo: add log with duration
-
         updateActiveControl(ActiveControl.CURSOR);
+        jobInstance.logger.log(LogType.sliceObject, {
+            duration,
+            clientID,
+        });
         onSliceAnnotations(jobInstance, clientID, results[0], results[1]);
     };
 
@@ -1061,7 +1067,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
         canvasInstance.html().addEventListener('canvas.message', this.onCanvasMessage);
-
     }
 
     public render(): JSX.Element {

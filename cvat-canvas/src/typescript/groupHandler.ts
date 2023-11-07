@@ -13,10 +13,11 @@ export interface GroupHandler {
 }
 
 export class GroupHandlerImpl implements GroupHandler {
-    private onSelectDone: (objects?: any[]) => void;
+    private onSelectDone: (objects?: any[], duration?: number) => void;
     private selector: ObjectSelector;
     private initialized: boolean;
     private statesToBeGroupped: any[];
+    private start: number;
 
     private release(): void {
         this.selector.disable();
@@ -29,13 +30,18 @@ export class GroupHandlerImpl implements GroupHandler {
             this.statesToBeGroupped = selected;
         }, selectionFilter);
         this.initialized = true;
+        this.start = Date.now();
     }
 
     private closeGrouping(): void {
         if (this.initialized) {
             const { statesToBeGroupped } = this;
             this.release();
-            this.onSelectDone(statesToBeGroupped.length ? statesToBeGroupped : undefined);
+            if (statesToBeGroupped.length) {
+                this.onSelectDone(statesToBeGroupped, Date.now() - this.start);
+            } else {
+                this.onSelectDone();
+            }
         }
     }
 
@@ -47,6 +53,7 @@ export class GroupHandlerImpl implements GroupHandler {
         this.selector = selector;
         this.statesToBeGroupped = [];
         this.initialized = false;
+        this.start = Date.now();
     }
 
     public group(groupData: GroupData, selectionFilter: SelectionFilter): void {
