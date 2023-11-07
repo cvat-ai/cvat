@@ -11,6 +11,7 @@ import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
+import Text from 'antd/lib/typography/Text';
 import debounce from 'lodash/debounce';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -59,6 +60,7 @@ import { filterAnnotations } from 'utils/filter-annotations';
 import { ImageFilter } from 'utils/image-processing';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
+import Paragraph from 'antd/lib/typography/Paragraph';
 
 const cvat = getCore();
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
@@ -607,12 +609,21 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasMessage = (event: any): void => {
-        const { message: text, type } = event.detail;
-        if (type === 'info') {
-            message.info({ content: text, key: 'canvas.message', duration: 0 });
-        } else if (type === 'loading') {
-            message.loading({ content: text, key: 'canvas.message', duration: 0 });
-        } else if (text === null) {
+        const { lines, type } = event.detail;
+        if (lines) {
+            const content = lines.map(({ text, type: lineType, style }: any, idx: number) => (
+                <React.Fragment key={idx}>
+                    <Text key={idx} type={lineType} style={style || {}}>{text}</Text>
+                    <br />
+                </React.Fragment>
+            ));
+
+            if (type === 'info') {
+                message.info({ content, key: 'canvas.message', duration: 0 });
+            } else if (type === 'loading') {
+                message.loading({ content, key: 'canvas.message', duration: 0 });
+            }
+        } else {
             message.destroy('canvas.message');
         }
     }

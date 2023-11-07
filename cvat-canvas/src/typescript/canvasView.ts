@@ -121,13 +121,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.controller.mode;
     }
 
-    private onMessage = ({ message, type }: { message: string | null, type?: 'info' | 'loading' }) => {
+    private onMessage = ({ lines, type }: {
+        lines: { text: string, type?: string, style?: CSSStyleDeclaration },
+        type: 'info' | 'loading'
+    }) => {
         this.canvas.dispatchEvent(
             new CustomEvent('canvas.message', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
-                    message,
+                    lines,
                     type,
                 },
             }),
