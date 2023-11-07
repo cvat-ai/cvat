@@ -292,7 +292,7 @@ export function cropMask(rle: number[], width: number, height: number): number[]
 
         // switch current rle value
         value = Math.abs(value - 1);
-        if (croppedCount === 0 && croppedRLE.length) {
+        if (croppedCount === 0 && croppedRLE.length && idx !== rle.length - 5) {
             croppedCount = croppedRLE.pop();
         } else {
             croppedRLE.push(croppedCount);
