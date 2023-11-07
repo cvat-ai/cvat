@@ -9,7 +9,6 @@ import os.path as osp
 from PIL import Image
 from types import SimpleNamespace
 from typing import Optional, Any, Dict, List, cast
-import pytz
 import traceback
 import textwrap
 from copy import copy
@@ -2521,7 +2520,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
                 full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
                 if not os.path.exists(full_manifest_path) or \
-                        datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
+                        datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
                     storage.download_file(manifest_path, full_manifest_path)
                 manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
                 # need to update index
