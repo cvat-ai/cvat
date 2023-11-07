@@ -23,7 +23,7 @@ export interface MatVectorSpace {
 }
 
 export interface Contours {
-    convexHullContours: (src: any) => number[];
+    convexHull: (src: any) => number[];
     findContours: (src: any, findLongest: boolean) => number[][];
     approxPoly: (points: number[] | any, threshold: number, closed?: boolean) => number[][];
 }
@@ -166,8 +166,7 @@ export class OpenCVWrapper {
         this.checkInitialization();
         const { cv } = this;
         return {
-            convexHullContours: (src: any): number[] => {
-                const contours = this.contours.findContours(src, false);
+            convexHull: (contours: number[][]): number[] => {
                 const points = contours.flat();
                 const input = cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
                 const output = new cv.Mat();

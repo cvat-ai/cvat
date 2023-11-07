@@ -224,19 +224,22 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 const mask = core.utils.rle2Mask(points.slice(0, -4), width, height);
                 const src = openCVWrapper.mat.fromData(width, height, MatType.CV_8UC1, mask);
                 try {
-                    const convexHull = openCVWrapper.contours.convexHullContours(src);
-                    canvasInstance.slice({
-                        enabled: true,
-                        contour: convexHull.map((val, idx) => {
-                            if (idx % 2) {
-                                return val + top;
-                            }
-
-                            return val + left;
-                        }),
-                        clientID: objectState.clientID as number,
-                        shapeType: objectState.shapeType as ShapeType.MASK | ShapeType.POLYGON,
-                    });
+                    const contours = openCVWrapper.contours.findContours(src, false);
+                    if (contours.length) {
+                        const convexHull = contours.length > 1 ?
+                            openCVWrapper.contours.convexHull(contours) : contours[0];
+                        canvasInstance.slice({
+                            enabled: true,
+                            contour: convexHull.map((val, idx) => {
+                                if (idx % 2) {
+                                    return val + top;
+                                }
+                                return val + left;
+                            }),
+                            clientID: objectState.clientID as number,
+                            shapeType: objectState.shapeType as ShapeType.MASK | ShapeType.POLYGON,
+                        });
+                    }
                     return;
                 } finally {
                     src.delete();
