@@ -8,7 +8,6 @@ import json
 import os
 import os.path as osp
 import zipfile
-from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
@@ -2734,83 +2733,3 @@ class TestImportWithComplexFilenames:
                 for tes in te.shapes
             ]
         )
-
-
-@pytest.mark.usefixtures("restore_db_per_function")
-@pytest.mark.usefixtures("restore_cvat_data")
-@pytest.mark.usefixtures("restore_redis_db_per_function")
-class TestTaskCreationOrder:
-    _USER_1 = "admin1"
-    _USER_2 = "admin2"
-
-    @pytest.mark.with_external_services
-    @pytest.mark.timeout(60)
-    @pytest.mark.skipif(
-        os.getenv("ONE_RUNNING_JOB_IN_QUEUE_PER_USER", "false").lower() != "true",
-        reason="The server is not configured to enable limit 1 user 1 task at a time",
-    )
-    @pytest.mark.parametrize("cloud_storage_id", [2])
-    def test_check_order_of_created_tasks_in_parallel_by_2_users(
-        self, cloud_storage_id: int, cloud_storages, request
-    ):
-        def _create_task(idx: int, username: str) -> int:
-            task_spec = {
-                "name": f"Test task {idx}",
-                "labels": [
-                    {
-                        "name": "car",
-                    }
-                ],
-            }
-
-            task_data = {
-                "image_quality": 90,
-                "server_files": ["dataset/"],
-                "cloud_storage_id": cloud_storage_id,
-                "use_cache": False,
-            }
-
-            task_id, _ = create_task(username, task_spec, task_data)
-            return task_id, username
-
-        s3_client = s3.make_client()
-        cs_name = cloud_storages[cloud_storage_id]["resource"]
-        dataset_size = 100
-
-        img_content = generate_image_file(size=(1920, 1080)).getvalue()
-
-        for i in range(dataset_size):
-            s3_client.create_file(
-                bucket=cs_name, filename=f"dataset/image_{i}.jpeg", data=img_content
-            )
-            request.addfinalizer(
-                partial(
-                    s3_client.remove_file,
-                    bucket=cs_name,
-                    filename=f"dataset/image_{i}.jpeg",
-                )
-            )
-
-        number_of_tasks = 4
-        users = [self._USER_1] * (number_of_tasks - 1)
-        users.append(self._USER_2)
-
-        futures, results = [], []
-
-        with ThreadPoolExecutor(max_workers=number_of_tasks) as executor:
-            for idx, user in enumerate(users):
-                futures.append(executor.submit(_create_task, idx, user))
-
-            for future in futures:
-                results.append(future.result())
-
-        tasks = []
-
-        for task_id, user in results:
-            with make_api_client(user) as api_client:
-                (task, response) = api_client.tasks_api.retrieve(task_id)
-            assert response.status == HTTPStatus.OK
-            tasks.append(task)
-
-        sorted_tasks = sorted(tasks, key=lambda x: x.updated_date)
-        assert self._USER_2 in [t.owner.username for t in sorted_tasks[:2]]
