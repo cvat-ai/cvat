@@ -22,15 +22,14 @@ import {
 } from 'reducers';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
-import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
+import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
-    Label, ObjectState, Attribute, Job, getCore,
+    Label, ObjectState, Attribute, Job,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
-import { message, notification } from 'antd';
 
 interface OwnProps {
     readonly: boolean;
@@ -131,8 +130,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-const core = getCore();
-
 type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     labels: Label[];
@@ -200,57 +197,10 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 canvasInstance.cancel();
             }
 
-            if (objectState.shapeType === ShapeType.MASK) {
-                if (!openCVWrapper.isInitialized) {
-                    const hide = message.loading('OpenCV client initialization..', 0);
-                    try {
-                        await openCVWrapper.initialize(() => {});
-                    } catch (error: any) {
-                        notification.error({
-                            message: 'Could not initialize OpenCV',
-                            description: error.message,
-                            duration: null,
-                        });
-                    } finally {
-                        hide();
-                    }
-                }
-
-                const points = objectState.points as number[];
-                const [left, top, right, bottom] = points.slice(-4);
-                const width = right - left + 1;
-                const height = bottom - top + 1;
-
-                const mask = core.utils.rle2Mask(points.slice(0, -4), width, height);
-                const src = openCVWrapper.mat.fromData(width, height, MatType.CV_8UC1, mask);
-                try {
-                    const contours = openCVWrapper.contours.findContours(src, false);
-                    if (contours.length) {
-                        const convexHull = contours.length > 1 ?
-                            openCVWrapper.contours.convexHull(contours) : contours[0];
-                        canvasInstance.slice({
-                            enabled: true,
-                            contour: convexHull.map((val, idx) => {
-                                if (idx % 2) {
-                                    return val + top;
-                                }
-                                return val + left;
-                            }),
-                            clientID: objectState.clientID as number,
-                            shapeType: objectState.shapeType as ShapeType.MASK | ShapeType.POLYGON,
-                        });
-                    }
-                    return;
-                } finally {
-                    src.delete();
-                }
-            }
-
             canvasInstance.slice({
                 enabled: true,
-                contour: objectState.points as number[],
+                getContour: openCVWrapper.getContourFromState,
                 clientID: objectState.clientID as number,
-                shapeType: objectState.shapeType as ShapeType.MASK | ShapeType.POLYGON,
             });
         }
     }

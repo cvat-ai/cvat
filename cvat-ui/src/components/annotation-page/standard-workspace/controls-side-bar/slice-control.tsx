@@ -9,6 +9,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
+import opencvWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 
 export interface Props {
     updateActiveControl(activeControl: ActiveControl): void;
@@ -42,7 +43,11 @@ function SliceControl(props: Props): JSX.Element {
                 className: 'cvat-slice-control',
                 onClick: (): void => {
                     canvasInstance.cancel();
-                    canvasInstance.slice({ enabled: true, clientID: activatedStateID || undefined });
+                    canvasInstance.slice({
+                        enabled: true,
+                        getContour: opencvWrapper.getContourFromState,
+                        clientID: activatedStateID || undefined,
+                    });
                     updateActiveControl(ActiveControl.SLICE);
                 },
             };

@@ -3,11 +3,14 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
 import waitFor from 'utils/wait-for';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 import { OpenCVTracker } from './opencv-interfaces';
+
+const core = getCore();
 
 export interface Segmentation {
     intelligentScissorsFactory: (onChangeToolsBlockerState:(event:string)=>void) => IntelligentScissors;
@@ -200,7 +203,6 @@ export class OpenCVWrapper {
 
                 return jsContours;
             },
-
             approxPoly: (points: number[] | number[][], threshold: number, closed = true): number[][] => {
                 const isArrayOfArrays = Array.isArray(points[0]);
                 if (points.length < 3) {
@@ -225,6 +227,46 @@ export class OpenCVWrapper {
                 }
             },
         };
+    }
+
+    public getContourFromState = async (state: ObjectState): Promise<number[]> => {
+        const points = state.points as number[];
+        if (state.shapeType === ShapeType.MASK) {
+            if (!this.isInitialized) {
+                try {
+                    await this.initialize(() => {});
+                } catch (error: any) {
+                    throw new Error('Could not initialize OpenCV');
+                }
+            }
+
+            const [left, top, right, bottom] = points.slice(-4);
+            const width = right - left + 1;
+            const height = bottom - top + 1;
+
+            const mask = core.utils.rle2Mask(points.slice(0, -4), width, height);
+            const src = this.mat.fromData(width, height, MatType.CV_8UC1, mask);
+
+            try {
+                const contours = this.contours.findContours(src, false);
+                if (contours.length) {
+                    const convexHull = contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
+                    return convexHull.map((val, idx) => {
+                        if (idx % 2) {
+                            return val + top;
+                        }
+                        return val + left;
+                    });
+                }
+                throw new Error('Empty contour received from state');
+            } finally {
+                src.delete();
+            }
+        } else if (state.shapeType === ShapeType.POLYGON) {
+            return points;
+        }
+
+        throw new Error(`Not implemented getContour for ${state.shapeType}`);
     }
 
     public get segmentation(): Segmentation {

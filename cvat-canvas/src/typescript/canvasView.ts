@@ -1269,6 +1269,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (clientID) => this.setupInnerFlags(clientID, 'sliceHidden', true),
             (clientID) => this.setupInnerFlags(clientID, 'sliceHidden', false),
             this.onSliceDone,
+            () => this.controller.objects,
             this.geometry,
             this.adoptedContent,
             this.objectSelector,

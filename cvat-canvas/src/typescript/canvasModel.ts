@@ -168,9 +168,8 @@ export interface SplitData {
 
 export interface SliceData {
     enabled: boolean;
-    contour?: number[];
     clientID?: number;
-    shapeType?: 'mask' | 'polygon';
+    getContour?: (state: any) => Promise<number[]>;
 }
 
 export enum FrameZoom {

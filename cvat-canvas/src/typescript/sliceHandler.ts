@@ -18,6 +18,11 @@ export interface SliceHandler {
     cancel(): void;
 }
 
+type EnhancedSliceData = Omit<Required<SliceData> & {
+    contour: number[];
+    shapeType: 'mask' | 'polygon';
+}, 'getContour'>;
+
 // function triangleArea([x0, y0]: number[], [x1, y1]: number[], [x2, y2]: number[]): number {
 //     return (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0);
 // }
@@ -86,13 +91,14 @@ export class SliceHandlerImpl implements SliceHandler {
     private start: number;
     private controlPointSize: number;
     private outlinedBorders: string;
-    private sliceData: Required<SliceData> | null;
+    private enabled: boolean;
     private shapeContour: SVG.PolyLine | null;
     private slicingLine: SVG.PolyLine | null;
     private slicingPoints: SVG.Circle[];
     private hideObject: (clientID: number) => void;
     private showObject: (clientID: number) => void;
     private onSliceDone: (clientID: number, fragments: number[][], duration: number) => void;
+    private getObjects: () => any[];
     private geometry: Geometry;
     private objectSelector: ObjectSelector;
     private hiddenClientIDs: number[];
@@ -101,6 +107,7 @@ export class SliceHandlerImpl implements SliceHandler {
         hideObject: SliceHandlerImpl['hideObject'],
         showObject: SliceHandlerImpl['showObject'],
         onSliceDone: SliceHandlerImpl['onSliceDone'],
+        getObjects: () => any[],
         geometry: Geometry,
         canvas: SVG.Container,
         objectSelector: ObjectSelector,
@@ -108,9 +115,10 @@ export class SliceHandlerImpl implements SliceHandler {
         this.hideObject = hideObject;
         this.showObject = showObject;
         this.onSliceDone = onSliceDone;
+        this.getObjects = getObjects;
         this.geometry = geometry;
         this.canvas = canvas;
-        this.sliceData = null;
+        this.enabled = false;
         this.start = Date.now();
         this.controlPointSize = consts.BASE_POINT_SIZE;
         this.outlinedBorders = 'black';
@@ -121,15 +129,12 @@ export class SliceHandlerImpl implements SliceHandler {
         this.hiddenClientIDs = [];
     }
 
-    private initialize(sliceData: Required<SliceData>): void {
-        this.sliceData = { ...sliceData, contour: [...sliceData.contour] };
+    private initialize(sliceData: EnhancedSliceData): void {
         this.hiddenClientIDs = (this.canvas.select('.cvat_canvas_shape') as any).members
             .map((shape) => +shape.attr('clientID')).filter((clientID: number) => clientID !== sliceData.clientID);
         this.hiddenClientIDs.forEach((clientIDs) => {
             this.hideObject(clientIDs);
         });
-
-        this.start = Date.now();
 
         const translatedContour = translateToCanvas(this.geometry.offset, sliceData.contour);
         this.shapeContour = this.canvas.polygon(stringifyPoints(translatedContour));
@@ -457,7 +462,6 @@ export class SliceHandlerImpl implements SliceHandler {
     }
 
     private release(): void {
-        this.objectSelector.resetSelected();
         this.objectSelector.disable();
         this.hiddenClientIDs.forEach((clientIDs) => {
             this.showObject(clientIDs);
@@ -481,32 +485,50 @@ export class SliceHandlerImpl implements SliceHandler {
 
         this.canvas.off('mousedown.slice');
         this.canvas.off('mousemove.slice');
-        this.sliceData = null;
+        this.enabled = false;
     }
 
     public slice(sliceData: SliceData): void {
-        if (sliceData.enabled &&
-            sliceData.contour &&
-            sliceData.shapeType &&
-            !this.sliceData?.enabled
-        ) {
-            if (sliceData.clientID) {
-                this.initialize(sliceData as Required<SliceData>);
-            } else {
-                this.objectSelector.enable(([{ clientID }]) => {
+        const initializeWithContour = (state: any): void => {
+            this.start = Date.now();
+            const { start } = this;
+            sliceData.getContour(state).then((contour) => {
+                const { clientID, shapeType } = state;
+                if (this.start === start && this.enabled) {
+                    // check if user does not left mode / reinit it
                     this.initialize({
-                        ...sliceData,
+                        enabled: true,
+                        contour,
                         clientID,
-                    } as Required<SliceData>);
-                }, { maxCount: 1 });
+                        shapeType,
+                    });
+                }
+            }).catch(() => [
+                // todo
+            ]);
+        };
+
+        if (sliceData.enabled && !this.enabled && sliceData.getContour) {
+            this.enabled = true;
+            if (sliceData.clientID) {
+                const state = this.getObjects().find((_state) => _state.clientID === sliceData.clientID);
+                if (state) {
+                    initializeWithContour(state);
+                    return;
+                }
             }
-        } else if (this.sliceData?.enabled && !sliceData.enabled) {
+
+            this.objectSelector.enable(([state]) => {
+                this.objectSelector.disable();
+                initializeWithContour(state);
+            }, { maxCount: 1, shapeType: ['polygon', 'mask'] });
+        } else if (this.enabled && !sliceData.enabled) {
             this.release();
         }
     }
 
     public cancel(): void {
-        if (this.sliceData?.enabled) {
+        if (this.enabled) {
             this.release();
         }
     }
