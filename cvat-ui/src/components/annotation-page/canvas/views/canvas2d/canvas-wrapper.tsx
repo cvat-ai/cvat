@@ -858,6 +858,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         updateActiveControl(ActiveControl.CURSOR);
         jobInstance.logger.log(LogType.sliceObject, {
+            count: 1,
             duration,
             clientID,
         });
