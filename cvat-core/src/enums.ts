@@ -111,12 +111,11 @@ export enum LogType {
     splitObjects = 'split:objects',
     groupObjects = 'group:objects',
     sliceObject = 'slice:object',
-    joinObjects = 'slice:objects',
+    joinObjects = 'join:objects',
     changeAttribute = 'change:attribute',
     changeLabel = 'change:label',
 
     changeFrame = 'change:frame',
-    moveImage = 'move:image',
     zoomImage = 'zoom:image',
     fitImage = 'fit:image',
     rotateImage = 'rotate:image',

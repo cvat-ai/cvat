@@ -513,7 +513,7 @@ export function removeObject(objectState: any, force: boolean): AnyAction {
 
 export function copyShape(objectState: any): AnyAction {
     const job = getStore().getState().annotation.job.instance;
-    job.logger.log(LogType.copyObject, { count: 1 });
+    job?.logger.log(LogType.copyObject, { count: 1 });
 
     return {
         type: AnnotationActionTypes.COPY_SHAPE,

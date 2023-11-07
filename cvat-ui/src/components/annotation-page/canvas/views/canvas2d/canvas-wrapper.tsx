@@ -697,7 +697,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
-        const { states } = event.detail;
+        const { states, duration } = event.detail;
+        jobInstance.logger.log(LogType.groupObjects, {
+            duration,
+            count: states.length,
+        });
         onGroupAnnotations(jobInstance, frame, states);
     };
 
@@ -721,7 +725,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
-        const { state } = event.detail;
+        const { state, duration } = event.detail;
+        jobInstance.logger.log(LogType.splitObjects, {
+            duration,
+            count: 1,
+        });
         onSplitAnnotations(jobInstance, frame, state);
     };
 
