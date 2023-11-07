@@ -17,8 +17,10 @@ See:
 - [Create new organization](#create-new-organization)
   - [Switching between organizations](#switching-between-organizations)
 - [Organization page](#organization-page)
-  - [Invite members into organization](#invite-members-into-organization)
-  - [Delete organization](#delete-organization)
+- [Invite members into organization](#invite-members-into-organization)
+  - [Inviting members with existing CVAT accounts](#inviting-members-with-existing-cvat-accounts)
+  - [Inviting members without CVAT accounts](#inviting-members-without-cvat-accounts)
+- [Delete organization](#delete-organization)
 
 ## Personal workspace
 
@@ -109,18 +111,11 @@ To go to the **Organization page**, do the following:
 
 ![](/images/image235.jpg)
 
-### Invite members into organization
+## Invite members into organization
 
-To add members to **Organization** do the following:
+Invite members form is available from [Organization page](#organization-page).
 
-1. Go to the [**Organization page**](#organization-page), and click **Invite members**.
-2. Fill in the form (see below).
-
-   ![](/images/image236.jpg)
-
-3. Click **Ok**.
-
-The **Invite Members** form has the following fields:
+It has the following fields:
 
 ![](/images/invitemembers.jpg)
 
@@ -128,13 +123,13 @@ The **Invite Members** form has the following fields:
 
 | Field               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Email**           | Specifies the email address of the user who is being added to the **Organization**. <br><br>**Note**, that the user you're inviting must already have a CVAT account (on the same instance) registered to the email address you're sending the invitation to.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Email**           | Specifies the email address of the user who is being added to the **Organization**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Role drop-down list | Defines the role of the user which sets the level of access within the **Organization**: <br><li>**Worker**: Has access only to the tasks, projects, and jobs assigned to them. <li>**Supervisor**: Can create and assign jobs, tasks, and projects to the **Organization** members. <li>**Maintainer**: Has the same capabilities as the **Supervisor**, but with additional visibility over all tasks and projects created by other members, complete access to **Cloud Storages**, and the ability to modify members and their roles. <li>**Owner**: role assigned to the creator of the organization by default. Has maximum capabilities and cannot be changed or assigned to the other user. |
 | **Invite more**     | Button to add another user to the **Organization**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 <!--lint enable maximum-line-length-->
 
-Members of **Organization** will appear on the **Organization page**.
+Members of **Organization** will appear on the **Organization page**:
 
 ![](/images/image237.jpg)
 
@@ -144,7 +139,39 @@ by going to **Organization page** > **Leave organization**.
 The organization owner can remove members, by
 clicking on the **Bin** icon.
 
-### Delete organization
+### Inviting members with existing CVAT accounts
+
+To invite members to **Organization** do the following:
+
+1. Go to the [**Organization page**](#organization-page), and click **Invite members**.
+2. Fill in the form (see below).
+
+   ![](/images/image236.jpg)
+
+3. Click **Ok**.
+
+### Inviting members without CVAT accounts
+
+To invite members to **Organization** do the following:
+
+1. Go to the [**Organization page**](#organization-page), and click **Invite members**.
+2. Fill in the form (see below).
+
+   ![](/images/image236.jpg)
+
+3. Click **Ok**.
+4. The person being invited will receive an email with the link.
+
+   ![](/images/invitation_to_org.jpg)
+
+5. Person must click the link and
+   [**set up an account**](/docs/manual/basics/registration/#user-registration).
+
+Owners and maintainers can resend and remove invitations.
+
+![Resend revoke invitation](/images/remove-resend-inv.png)
+
+## Delete organization
 
 You can remove an organization that you created.
 
