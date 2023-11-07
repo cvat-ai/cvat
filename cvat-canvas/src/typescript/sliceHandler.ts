@@ -262,7 +262,7 @@ export class SliceHandlerImpl implements SliceHandler {
                 const secondSegmentIdx = +secondSegmentKey.split('.')[1];
                 if (firstSegmentIdx === secondSegmentIdx) {
                     // the same segment. Results in this case are:
-                    let contour1 = [
+                    const contour1 = [
                         ...contoursIntersections[firstSegmentKey], // first intersection
                         ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
                             (key) => key.startsWith('0.'),
@@ -272,7 +272,7 @@ export class SliceHandlerImpl implements SliceHandler {
                         ...contoursIntersections[secondSegmentKey], // last intersection
                     ];
 
-                    let contour2 = [
+                    const contour2 = [
                         ...contoursIntersections[firstSegmentKey], // first intersection
                         ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
                             (key) => key.startsWith('0.'),
@@ -313,7 +313,7 @@ export class SliceHandlerImpl implements SliceHandler {
                     );
                 } else {
                     // intersected different segments. Results in this case are:
-                    let contour1 = [
+                    const contour1 = [
                         // first intersection
                         ...contoursIntersections[firstSegmentKey],
                         // intermediate points (reversed if intersections order was swopped)
@@ -323,14 +323,14 @@ export class SliceHandlerImpl implements SliceHandler {
                             intermediatePoints : intermediatePoints.toReversed()
                         ).flat(),
                         // all the following contours points until the second intersected segment  including
-//                                 // second intersection
+                        //                                 // second intersection
                         ...contoursIntersections[secondSegmentKey],
                         ...indexGenerator(contourSegments.length, secondSegmentIdx, firstSegmentIdx, 'forward')
                             .map((idx) => contourSegments[idx][1]).slice(0, -1).flat(),
 
                     ];
 
-                    let contour2 = [
+                    const contour2 = [
                         // first intersection
                         ...contoursIntersections[firstSegmentKey],
                         ...(`${firstSegmentIdx}` === Object.keys(contoursIntersections).find(
@@ -410,6 +410,10 @@ export class SliceHandlerImpl implements SliceHandler {
         };
 
         const handleCanvasMousedown = (event: MouseEvent): void => {
+            if (event.altKey) {
+                return;
+            }
+
             if (event.button === 0 && !points.length) {
                 initialClick(event);
             } else if (event.button === 0 && event.target !== this.shapeContour.node) {
@@ -417,7 +421,7 @@ export class SliceHandlerImpl implements SliceHandler {
             } else if (event.button === 2) {
                 if (points.length > 2) {
                     points.splice(-2, 1);
-                    this.slicingLine.plot(stringifyPoints(points.flat()))
+                    this.slicingLine.plot(stringifyPoints(points.flat()));
                 } else if (points.length) {
                     this.slicingPoints.forEach((circle) => {
                         circle.remove();
@@ -432,7 +436,7 @@ export class SliceHandlerImpl implements SliceHandler {
         };
 
         const handleShapeMousedown = (event: MouseEvent): void => {
-            if (points.length && event.button === 0) {
+            if (points.length && event.button === 0 && !event.altKey) {
                 const [x, y] = translateToSVG(this.canvas.node as any as SVGSVGElement, [event.clientX, event.clientY]);
                 points[points.length - 1] = [x, y];
 
@@ -465,7 +469,7 @@ export class SliceHandlerImpl implements SliceHandler {
             }
         };
 
-        const handleShapeMousemove = (event: MouseEvent): void => {
+        const handleCanvasMousemove = (event: MouseEvent): void => {
             if (points.length) {
                 const [x, y] = translateToSVG(this.canvas.node as any as SVGSVGElement, [event.clientX, event.clientY]);
                 const [prevX, prevY] = points[points.length - 2];
@@ -485,7 +489,7 @@ export class SliceHandlerImpl implements SliceHandler {
 
         this.shapeContour.on('mousedown.slice', handleShapeMousedown);
         this.canvas.on('mousedown.slice', handleCanvasMousedown);
-        this.canvas.on('mousemove.slice', handleShapeMousemove);
+        this.canvas.on('mousemove.slice', handleCanvasMousemove);
     }
 
     private release(): void {
