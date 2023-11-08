@@ -110,7 +110,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
                 (shape: SVG.Shape): boolean => !shape.hasClass('cvat_canvas_hidden'),
             );
 
-            const newStates = [];
+            let newStates = [];
             for (const shape of shapes) {
                 const bbox = shape.bbox();
                 const clientID = shape.attr('clientID');
@@ -128,6 +128,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
                 }
             }
 
+            newStates = this.filterObjects(newStates);
             if (newStates.length) {
                 newStates.forEach((_state) => {
                     this.selectedObjects[_state.clientID] = _state;
@@ -221,6 +222,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
 
                 callback(_selected);
             };
+
             this.selectionFilter = filter;
             this.isEnabled = true;
         }
@@ -241,6 +243,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
             this.resetAppearance[clientID]();
         }
 
+        this.onSelectCallback = null;
         this.resetAppearance = {};
         this.isEnabled = false;
     }
@@ -270,14 +273,16 @@ export class ObjectSelectorImpl implements ObjectSelector {
     }
 
     public resetSelected(): void {
-        for (const clientID of Object.keys(this.resetAppearance)) {
-            this.resetAppearance[clientID]();
-        }
-        this.selectedObjects = {};
-        this.resetAppearance = {};
+        if (this.isEnabled) {
+            for (const clientID of Object.keys(this.resetAppearance)) {
+                this.resetAppearance[clientID]();
+            }
+            this.selectedObjects = {};
+            this.resetAppearance = {};
 
-        if (this.onSelectCallback) {
-            this.onSelectCallback([]);
+            if (this.onSelectCallback) {
+                this.onSelectCallback([]);
+            }
         }
     }
 }

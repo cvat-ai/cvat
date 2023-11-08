@@ -502,7 +502,8 @@ export class SliceHandlerImpl implements SliceHandler {
             this.enabled = true;
             if (sliceData.clientID) {
                 const state = this.getObjects().find((_state) => _state.clientID === sliceData.clientID);
-                if (state && state.objectType === 'shape') {
+                if (state && state.objectType === 'shape' &&
+                    ['polygon', 'mask'].includes(state.shapeType)) {
                     initializeWithContour(state);
                     return;
                 }
