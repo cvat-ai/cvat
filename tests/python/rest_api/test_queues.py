@@ -52,7 +52,7 @@ class TestRQQueueWorking:
             }
 
             task_id, _ = create_task(username, task_spec, task_data)
-            return task_id, username
+            return task_id
 
         s3_client = s3.make_client()
         cs_name = cloud_storages[cloud_storage_id]["resource"]
@@ -75,19 +75,19 @@ class TestRQQueueWorking:
         users = [self._USER_1] * (number_of_tasks - 1)
         users.append(self._USER_2)
 
-        futures, results = [], []
+        futures, task_ids = [], []
 
         with ThreadPoolExecutor(max_workers=number_of_tasks) as executor:
             for idx, user in enumerate(users):
                 futures.append(executor.submit(_create_task, idx, user))
 
             for future in futures:
-                results.append(future.result())
+                task_ids.append(future.result())
 
         tasks = []
 
-        for task_id, user in results:
-            with make_api_client(user) as api_client:
+        for idx, task_id in enumerate(task_ids):
+            with make_api_client(users[idx]) as api_client:
                 (task, response) = api_client.tasks_api.retrieve(task_id)
             assert response.status == HTTPStatus.OK
             tasks.append(task)
