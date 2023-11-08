@@ -63,7 +63,7 @@ function JoinControl(props: Props): JSX.Element {
                     },
                 }}
             />
-            <CVATTooltip title='Join masks' placement='right'>
+            <CVATTooltip title={`Join masks ${shortcuts.SWITCH_JOIN_MODE.displayValue}`} placement='right'>
                 <LinkOutlined {...dynamicIconProps} />
             </CVATTooltip>
         </>
