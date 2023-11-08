@@ -95,7 +95,6 @@ const defaultState: NotificationsState = {
             grouping: null,
             joining: null,
             slicing: null,
-            converting: null,
             splitting: null,
             removing: null,
             propagating: null,
@@ -978,21 +977,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         slicing: {
                             message: 'Could not slice the object',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                        },
-                    },
-                },
-            };
-        case AnnotationActionTypes.CONVERT_ANNOTATIONS_FAILED:
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        converting: {
-                            message: 'Could not convert annotations',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                         },

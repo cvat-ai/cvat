@@ -148,8 +148,6 @@ export enum AnnotationActionTypes {
     JOIN_ANNOTATIONS_FAILED = 'JOIN_ANNOTATIONS_FAILED',
     SLICE_ANNOTATIONS_SUCCESS = 'SLICE_ANNOTATIONS_SUCCESS',
     SLICE_ANNOTATIONS_FAILED = 'SLICE_ANNOTATIONS_FAILED',
-    CONVERT_ANNOTATIONS_SUCCESS = 'CONVERT_ANNOTATIONS_SUCCESS',
-    CONVERT_ANNOTATIONS_FAILED = 'CONVERT_ANNOTATIONS_FAILED',
     SPLIT_ANNOTATIONS_SUCCESS = 'SPLIT_ANNOTATIONS_SUCCESS',
     SPLIT_ANNOTATIONS_FAILED = 'SPLIT_ANNOTATIONS_FAILED',
     COLLAPSE_SIDEBAR = 'COLLAPSE_SIDEBAR',
@@ -1249,37 +1247,6 @@ export function sliceAnnotationsAsync(
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.SLICE_ANNOTATIONS_FAILED,
-                payload: {
-                    error,
-                },
-            });
-        }
-    };
-}
-
-export function convertAnnotationsAsync(
-    sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>,
-    objectStates: CombinedState['annotation']['annotations']['states'],
-    method: any,
-    points: Record<number, number[][]>,
-): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            const { filters, showAllInterpolationTracks, frame } = receiveAnnotationsParameters();
-            await sessionInstance.annotations.convert(objectStates, method, points);
-            const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
-            const history = await sessionInstance.actions.get();
-
-            dispatch({
-                type: AnnotationActionTypes.CONVERT_ANNOTATIONS_SUCCESS,
-                payload: {
-                    states,
-                    history,
-                },
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.CONVERT_ANNOTATIONS_FAILED,
                 payload: {
                     error,
                 },

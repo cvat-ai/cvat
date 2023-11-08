@@ -163,17 +163,6 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async convert(objectStates, method, points) {
-                    const result = await PluginRegistry.apiWrapper.call(
-                        this,
-                        prototype.annotations.convert,
-                        objectStates,
-                        method,
-                        points,
-                    );
-                    return result;
-                },
-
                 async import(data) {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.import, data);
                     return result;
@@ -379,7 +368,6 @@ export class Job extends Session {
         group: CallableFunction;
         join: CallableFunction;
         slice: CallableFunction;
-        convert: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
         searchEmpty: CallableFunction;
@@ -589,7 +577,6 @@ export class Job extends Session {
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
             join: Object.getPrototypeOf(this).annotations.join.bind(this),
             slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
-            convert: Object.getPrototypeOf(this).annotations.convert.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
@@ -703,7 +690,6 @@ export class Task extends Session {
         group: CallableFunction;
         join: CallableFunction;
         slice: CallableFunction;
-        convert: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
         searchEmpty: CallableFunction;
@@ -1128,7 +1114,6 @@ export class Task extends Session {
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
             join: Object.getPrototypeOf(this).annotations.join.bind(this),
             slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
-            convert: Object.getPrototypeOf(this).annotations.convert.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),

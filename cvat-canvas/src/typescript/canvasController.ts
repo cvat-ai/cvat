@@ -15,7 +15,6 @@ import {
     GroupData,
     JoinData,
     SliceData,
-    ConvertData,
     Mode,
     InteractionData,
     Configuration,
@@ -38,7 +37,6 @@ export interface CanvasController {
     readonly groupData: GroupData;
     readonly joinData: JoinData;
     readonly sliceData: SliceData;
-    readonly convertData: ConvertData;
     readonly selected: any;
     readonly configuration: Configuration;
     mode: Mode;
@@ -53,7 +51,6 @@ export interface CanvasController {
     group(groupData: GroupData): void;
     join(joinData: JoinData): void;
     slice(sliceData: SliceData): void;
-    convert(convertData: ConvertData): void;
     selectRegion(enabled: boolean): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
@@ -134,10 +131,6 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.slice(sliceData);
     }
 
-    public convert(convertData: ConvertData): void {
-        this.model.convert(convertData);
-    }
-
     public selectRegion(enable: boolean): void {
         this.model.selectRegion(enable);
     }
@@ -204,10 +197,6 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get sliceData(): SliceData {
         return this.model.sliceData;
-    }
-
-    public get convertData(): ConvertData {
-        return this.model.convertData;
     }
 
     public get selected(): any {

@@ -22,7 +22,7 @@ import { FramesMetaData } from 'cvat-core/src/frames';
 import { ServerError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
-    JobStage, JobState, RQStatus, ConversionOptions,
+    JobStage, JobState, RQStatus,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
@@ -78,7 +78,6 @@ export {
     JobStage,
     JobState,
     RQStatus,
-    ConversionOptions,
     QualityReport,
     QualityConflict,
     QualitySettings,

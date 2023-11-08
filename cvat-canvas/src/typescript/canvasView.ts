@@ -64,7 +64,6 @@ import {
     ColorBy,
     HighlightedElements,
     HighlightSeverity,
-    ConvertData,
     GroupData,
     JoinData,
 } from './canvasModel';
@@ -471,30 +470,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onSelectDone = (objects?: any[], duration?: number): void => {
         if (objects && typeof duration !== 'undefined') {
-            if (this.mode === Mode.CONVERT) {
-                const convertData = this.controller.convertData as Required<ConvertData>;
-                const { method, getContours } = convertData;
-                if (method === 'mask_to_polygons') {
-                    const promises = objects.map((state) => getContours(state));
-                    Promise.all(promises).then((results) => {
-                        this.canvas.dispatchEvent(new CustomEvent('canvas.converted', {
-                            bubbles: false,
-                            cancelable: true,
-                            detail: {
-                                states: objects,
-                                method,
-                                points: results.reduce<Record<number, number[][]>>((acc, val, idx) => {
-                                    acc[objects[idx].clientID] = val;
-                                    return acc;
-                                }, {}),
-                                duration,
-                            },
-                        }));
-                    });
-                } else if (method === 'polygon_to_mask') {
-                    // todo
-                }
-            } else if (this.mode === Mode.GROUP && objects.length > 1) {
+            if (this.mode === Mode.GROUP && objects.length > 1) {
                 this.canvas.dispatchEvent(new CustomEvent('canvas.groupped', {
                     bubbles: false,
                     cancelable: true,
@@ -555,8 +531,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.controller.group({ enabled: false });
         } else if (this.mode === Mode.JOIN) {
             this.controller.join({ enabled: false });
-        } else {
-            this.controller.convert({ enabled: false });
         }
 
         this.mode = Mode.IDLE;
@@ -1780,23 +1754,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.canvas.style.cursor = '';
             }
             this.splitHandler.split(data);
-        } else if ([UpdateReasons.JOIN, UpdateReasons.GROUP, UpdateReasons.CONVERT].includes(reason)) {
-            let data: ConvertData | GroupData | JoinData = null;
-            if (reason === UpdateReasons.CONVERT) {
-                data = this.controller.convertData;
-                this.mode = Mode.CONVERT;
-                const shapeType = [];
-                if ((data as ConvertData).method === 'polygon_to_mask') {
-                    shapeType.push('polygon');
-                } else if ((data as ConvertData).method === 'mask_to_polygons') {
-                    shapeType.push('mask');
-                }
-                this.objectSelector.enable((selected) => this.onSelectDone(selected, 0), {
-                    shapeType,
-                    objectType: ['shape'],
-                    maxCount: 1,
-                });
-            } else if (reason === UpdateReasons.GROUP) {
+        } else if ([UpdateReasons.JOIN, UpdateReasons.GROUP].includes(reason)) {
+            let data: GroupData | JoinData = null;
+            if (reason === UpdateReasons.GROUP) {
                 data = this.controller.groupData;
                 this.mode = Mode.GROUP;
                 this.groupHandler.group(data, (reason === UpdateReasons.GROUP) ? {} : {

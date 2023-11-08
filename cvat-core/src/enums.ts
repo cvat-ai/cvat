@@ -267,8 +267,3 @@ export enum LabelType {
     MASK = 'mask',
     TAG = 'tag',
 }
-
-export enum ConversionOptions {
-    MASK_TO_POLYGON = 'mask_to_polygons',
-    POLYGON_TO_MASK = 'polygon_to_mask',
-}

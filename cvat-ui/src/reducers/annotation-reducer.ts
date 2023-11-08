@@ -578,7 +578,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.MERGE_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.SLICE_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.JOIN_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.CONVERT_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.GROUP_ANNOTATIONS_SUCCESS: {
             const { states, history } = action.payload;
 

@@ -34,7 +34,6 @@ import GroupControl, { Props as GroupControlProps } from './group-control';
 import JoinControl, { Props as JoinControlProps } from './join-control';
 import SplitControl, { Props as SplitControlProps } from './split-control';
 import SliceControl, { Props as SliceControlProps } from './slice-control';
-import ShapeConverterControl, { Props as ShapeConverterProps } from './shape-converter-control';
 
 type Label = CombinedState['annotation']['job']['labels'][0];
 
@@ -77,7 +76,6 @@ const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupC
 const ObservedJoinControl = ControlVisibilityObserver<JoinControlProps>(JoinControl);
 const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl);
 const ObservedSliceControl = ControlVisibilityObserver<SliceControlProps>(SliceControl);
-const ObservedShapeConverterControl = ControlVisibilityObserver<ShapeConverterProps>(ShapeConverterControl);
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
@@ -309,18 +307,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             }
             <hr />
 
-            <ObservedShapeConverterControl
-                updateActiveControl={updateActiveControl}
-                canvasInstance={canvasInstance}
-                activeControl={activeControl}
-                disabled={controlsDisabled}
-                // shortcuts={{
-                //     SWITCH_MERGE_MODE: {
-                //         details: keyMap.SWITCH_MERGE_MODE,
-                //         displayValue: normalizedKeyMap.SWITCH_MERGE_MODE,
-                //     },
-                // }}
-            />
             <ObservedMergeControl
                 updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
