@@ -9,14 +9,30 @@ import { ShortcutsActions, ShortcutsActionsTypes } from 'actions/shortcuts-actio
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { ShortcutsState } from '.';
 
+const capitalize = (text: string): string => text.slice(0, 1).toUpperCase() + text.slice(1);
+const prettify = (key: string): string => {
+    switch (key.toLowerCase()) {
+        case 'arrowup':
+            return 'Arrow Up';
+        case 'arrowdown':
+            return 'Arrow Down';
+        case 'arrowleft':
+            return 'Arrow Left';
+        case 'arrowright':
+            return 'Arrow Right';
+        default:
+            return capitalize(key);
+    }
+};
+
 function formatShortcuts(shortcuts: KeyMapItem): string {
     const list: string[] = shortcuts.displayedSequences || (shortcuts.sequences as string[]);
     return `[${list
         .map((shortcut: string): string => {
-            let keys = shortcut.split('+');
-            keys = keys.map((key: string): string => `${key ? key[0].toUpperCase() : key}${key.slice(1)}`);
+            let keys = shortcut.toLowerCase().split('+');
+            keys = keys.map((key: string): string => prettify(key));
             keys = keys.join('+').split(/\s/g);
-            keys = keys.map((key: string): string => `${key ? key[0].toUpperCase() : key}${key.slice(1)}`);
+            keys = keys.map((key: string): string => prettify(key));
             return keys.join(' ');
         })
         .join(', ')}]`;

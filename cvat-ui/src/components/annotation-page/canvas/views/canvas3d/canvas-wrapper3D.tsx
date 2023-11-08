@@ -234,7 +234,7 @@ export const PerspectiveViewComponent = React.memo(
                             <ArrowLeftOutlined className='cvat-canvas3d-perspective-arrow-directions-icons-color' />
                         </Button>
                     </CVATTooltip>
-                    <CVATTooltip title={normalizedKeyMap.TILD_DOWN} placement='topRight'>
+                    <CVATTooltip title={normalizedKeyMap.TILT_DOWN} placement='topRight'>
                         <Button
                             size='small'
                             onClick={() => screenKeyControl(CameraAction.TILT_DOWN, false, true)}

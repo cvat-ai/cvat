@@ -834,6 +834,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.rotation = rotation;
 
         if (activeControl !== ActiveControl.CURSOR) {
+            // do not need to reset and deactivate if it was just resizing/dragging and other simple actions
             updateActiveControl(ActiveControl.CURSOR);
         }
         onUpdateAnnotations([state]);
