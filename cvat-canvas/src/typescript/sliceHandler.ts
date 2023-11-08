@@ -23,30 +23,26 @@ type EnhancedSliceData = Omit<Required<SliceData> & {
     shapeType: 'mask' | 'polygon';
 }, 'getContour'>;
 
-// function triangleArea([x0, y0]: number[], [x1, y1]: number[], [x2, y2]: number[]): number {
-//     return (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0);
-// }
+function drawOverOffscreenCanvas(context: OffscreenCanvasRenderingContext2D, image: CanvasImageSource): void {
+    context.fillStyle = 'black';
+    context.globalCompositeOperation = 'source-over';
+    context.drawImage(image, 0, 0);
+}
 
-// function checkPointsIntersection(x0: number, x1: number, x2: number, x3: number): boolean {
-//     if (x0 > x1) {
-//         [x0, x1] = [x1, x0];
-//     }
-
-//     if (x2 > x3) {
-//         [x2, x3] = [x3, x2];
-//     }
-
-//     // <= if consider intersection in one point, false in our case since we have polyline
-//     return Math.max(x0, x2) < Math.min(x1, x3);
-// }
-
-// function intersect([x0, y0]: number[], [x1, y1]: number[], [x2, y2]: number[], [x3, y3]: number[]): boolean {
-//     // <= if consider intersection in one point, false in our case since we have polyline
-//     return checkPointsIntersection(x0, x1, x2, x3) &&
-//         checkPointsIntersection(y0, y1, y2, y3) &&
-//         triangleArea([x0, y0], [x1, y1], [x2, y2]) * triangleArea([x0, y0], [x1, y1], [x3, y3]) < 0 &&
-//         triangleArea([x2, y2], [x3, y3], [x0, y0]) * triangleArea([x2, y2], [x3, y3], [x1, y1]) < 0;
-// }
+function applyOffscreenCanvasMask(context: OffscreenCanvasRenderingContext2D, polygon: number[]): void {
+    const currentCompositeOperation = context.globalCompositeOperation;
+    context.globalCompositeOperation = 'destination-in';
+    context.beginPath();
+    context.moveTo(polygon[0], polygon[1]);
+    polygon.forEach((_, idx) => {
+        if (idx > 1 && !(idx % 2)) {
+            context.lineTo(polygon[idx], polygon[idx + 1]);
+        }
+    });
+    context.closePath();
+    context.fill();
+    context.globalCompositeOperation = currentCompositeOperation;
+}
 
 function indexGenerator(length: number, from: number, to: number, direction: 'forward' | 'backward'): number[] {
     const result = [];
@@ -350,61 +346,47 @@ export class SliceHandlerImpl implements SliceHandler {
                     ];
 
                     if (sliceData.shapeType === 'mask') {
-                        const shape = window.document
-                            .getElementById(`cvat_canvas_shape_${sliceData.clientID}`) as SVGImageElement;
+                        const shape = this.canvas
+                            .select(`#cvat_canvas_shape_${sliceData.clientID}`).get(0).node;
                         const width = +shape.getAttribute('width');
                         const height = +shape.getAttribute('height');
                         const left = +shape.getAttribute('x');
                         const top = +shape.getAttribute('y');
 
+                        const polygon1 = contour1.map((val, idx) => {
+                            if (idx % 2) return val - top;
+                            return val - left;
+                        });
+
+                        const polygon2 = contour2.map((val, idx) => {
+                            if (idx % 2) return val - top;
+                            return val - left;
+                        });
+
                         const offscreenCanvas = new OffscreenCanvas(width, height);
                         const context = offscreenCanvas.getContext('2d');
-                        context.fillStyle = 'black';
-                        context.globalCompositeOperation = 'source-over';
-                        context.drawImage(shape, 0, 0);
-                        context.globalCompositeOperation = 'destination-in';
-                        context.beginPath();
-                        context.moveTo(contour1[0] - left, contour1[1] - top);
-                        contour1.forEach((_, idx) => {
-                            if (idx > 1 && !(idx % 2)) {
-                                context.lineTo(contour1[idx] - left, contour1[idx + 1] - top);
-                            }
-                        });
-                        context.closePath();
-                        context.fill();
-
-                        const result1 = zipChannels(context.getImageData(0, 0, width, height).data);
+                        drawOverOffscreenCanvas(context, shape);
+                        applyOffscreenCanvasMask(context, polygon1);
+                        const firstShape = zipChannels(context.getImageData(0, 0, width, height).data);
                         context.reset();
-
-                        context.fillStyle = 'black';
-                        context.globalCompositeOperation = 'source-over';
-                        context.drawImage(shape, 0, 0);
-                        context.globalCompositeOperation = 'destination-in';
-                        context.beginPath();
-                        context.moveTo(contour2[0] - left, contour2[1] - top);
-                        contour2.forEach((_, idx) => {
-                            if (idx > 1 && !(idx % 2)) {
-                                context.lineTo(contour2[idx] - left, contour2[idx + 1] - top);
-                            }
-                        });
-                        context.closePath();
-                        context.fill();
-
-                        const result2 = zipChannels(context.getImageData(0, 0, width, height).data);
+                        drawOverOffscreenCanvas(context, shape);
+                        applyOffscreenCanvasMask(context, polygon2);
+                        const secondShape = zipChannels(context.getImageData(0, 0, width, height).data);
 
                         this.onSliceDone(
-                            sliceData.clientID, [result1, result2], Date.now() - this.start,
+                            sliceData.clientID,
+                            [firstShape, secondShape],
+                            Date.now() - this.start,
                         );
-                        return;
+                    } else {
+                        this.onSliceDone(
+                            sliceData.clientID,
+                            [
+                                translateFromCanvas(this.geometry.offset, contour1),
+                                translateFromCanvas(this.geometry.offset, contour2),
+                            ], Date.now() - this.start,
+                        );
                     }
-
-                    this.onSliceDone(
-                        sliceData.clientID,
-                        [
-                            translateFromCanvas(this.geometry.offset, contour1),
-                            translateFromCanvas(this.geometry.offset, contour2),
-                        ], Date.now() - this.start,
-                    );
                 }
             }
         };
