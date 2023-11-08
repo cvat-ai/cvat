@@ -182,7 +182,7 @@ export class OpenCVWrapper {
                 const contours = this.matVector.empty();
                 const hierarchy = new cv.Mat();
                 const expanded = new cv.Mat();
-                const kernel = cv.Mat.ones(1, 2, cv.CV_8U);
+                const kernel = cv.Mat.ones(2, 2, cv.CV_8U);
                 const anchor = new cv.Point(-1, -1);
                 const jsContours: number[][] = [];
                 try {
@@ -193,7 +193,7 @@ export class OpenCVWrapper {
                         anchor, 1, cv.BORDER_CONSTANT,
                         cv.morphologyDefaultBorderValue(),
                     );
-                    cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+                    cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
                     for (let i = 0; i < contours.size(); i++) {
                         const contour = contours.get(i);
                         // substract offset we created when copied source image
