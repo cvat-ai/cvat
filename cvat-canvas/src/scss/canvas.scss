@@ -3,6 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+/* stylelint-disable selector-class-pattern, selector-id-pattern */
+
 .cvat_canvas_hidden {
     display: none;
 }
@@ -320,14 +322,10 @@ g.cvat_canvas_shape_occluded {
 }
 
 .cvat_canvas_pixelized {
-    image-rendering: optimizeSpeed;             /* Legal fallback */
-    image-rendering: -moz-crisp-edges;          /* Firefox        */
-    image-rendering: -o-crisp-edges;            /* Opera          */
-    image-rendering: -webkit-optimize-contrast; /* Safari         */
-    image-rendering: optimize-contrast;         /* CSS3 Proposed  */
-    image-rendering: crisp-edges;               /* CSS4 Proposed  */
-    image-rendering: pixelated;                 /* CSS4 Proposed  */
-    -ms-interpolation-mode: nearest-neighbor;   /* IE8+           */
+    image-rendering: optimizeSpeed;
+    image-rendering: optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
 }
 
 .cvat_canvas_removed_image {
@@ -391,7 +389,7 @@ g.cvat_canvas_shape_occluded {
     background-repeat: no-repeat;
     width: 100%;
     height: 100%;
-    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.75);
+    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 75%);
 }
 
 #cvat_canvas_bitmap {
@@ -403,7 +401,7 @@ g.cvat_canvas_shape_occluded {
     background: black;
     width: 100%;
     height: 100%;
-    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.75);
+    box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 75%);
 }
 
 #cvat_canvas_grid {
@@ -440,23 +438,6 @@ g.cvat_canvas_shape_occluded {
     width: 100%;
     height: 100%;
     user-select: none;
-}
-
-@keyframes loadingAnimation {
-    0% {
-        stroke-dashoffset: 1;
-        stroke: #09c;
-    }
-
-    50% {
-        stroke-dashoffset: 100;
-        stroke: #f44;
-    }
-
-    100% {
-        stroke-dashoffset: 300;
-        stroke: #09c;
-    }
 }
 
 .cvat_canvas_shape_darken {
