@@ -111,7 +111,6 @@ export enum LogType {
     splitObjects = 'split:objects',
     groupObjects = 'group:objects',
     sliceObject = 'slice:object',
-    convertObjects = 'convert:objects',
     joinObjects = 'join:objects',
     changeAttribute = 'change:attribute',
     changeLabel = 'change:label',

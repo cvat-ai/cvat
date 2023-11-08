@@ -48,20 +48,18 @@ function SplitControl(props: Props): JSX.Element {
             },
         };
 
-    const shortcutHandlers = {
-        SWITCH_SPLIT_MODE: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            dynamicIconProps.onClick();
-        },
-    };
-
     return disabled ? (
         <Icon className='cvat-split-track-control cvat-disabled-canvas-control' component={SplitIcon} />
     ) : (
         <>
             <GlobalHotKeys
                 keyMap={{ SWITCH_SPLIT_MODE: shortcuts.SWITCH_SPLIT_MODE.details }}
-                handlers={shortcutHandlers}
+                handlers={{
+                    SWITCH_SPLIT_MODE: (event: KeyboardEvent | undefined) => {
+                        if (event) event.preventDefault();
+                        dynamicIconProps.onClick();
+                    },
+                }}
             />
             <CVATTooltip title={`Split a track ${shortcuts.SWITCH_SPLIT_MODE.displayValue}`} placement='right'>
                 <Icon {...dynamicIconProps} component={SplitIcon} />

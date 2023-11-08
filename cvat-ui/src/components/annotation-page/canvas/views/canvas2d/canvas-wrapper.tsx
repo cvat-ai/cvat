@@ -128,12 +128,6 @@ interface DispatchToProps {
     onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
     onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void;
     onSliceAnnotations(sessionInstance: Job, state: ObjectState, results: number[][]): void;
-    onConvertAnnotations(
-        sessionInstance: Job,
-        objectStates: ObjectState[],
-        method: any,
-        points: Record<number, number[][]>,
-    ): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;

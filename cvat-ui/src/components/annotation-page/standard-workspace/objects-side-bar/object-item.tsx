@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import Collapse from 'antd/lib/collapse';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { ObjectType, ShapeType, ColorBy} from 'reducers';
+import { ObjectType, ShapeType, ColorBy } from 'reducers';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 

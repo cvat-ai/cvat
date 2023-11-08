@@ -49,20 +49,18 @@ function MergeControl(props: Props): JSX.Element {
                 },
             };
 
-    const shortcutHandlers = {
-        SWITCH_MERGE_MODE: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            dynamicIconProps.onClick();
-        },
-    };
-
     return disabled ? (
         <Icon className='cvat-merge-control cvat-disabled-canvas-control' component={MergeIcon} />
     ) : (
         <>
             <GlobalHotKeys
                 keyMap={{ SWITCH_MERGE_MODE: shortcuts.SWITCH_MERGE_MODE.details }}
-                handlers={shortcutHandlers}
+                handlers={{
+                    SWITCH_MERGE_MODE: (event: KeyboardEvent | undefined) => {
+                        if (event) event.preventDefault();
+                        dynamicIconProps.onClick();
+                    },
+                }}
             />
             <CVATTooltip title={`Merge shapes/tracks ${shortcuts.SWITCH_MERGE_MODE.displayValue}`} placement='right'>
                 <Icon {...dynamicIconProps} component={MergeIcon} />

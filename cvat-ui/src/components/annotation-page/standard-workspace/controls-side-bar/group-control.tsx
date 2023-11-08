@@ -64,23 +64,6 @@ function GroupControl(props: Props): JSX.Element {
         `Select and press ${shortcuts.RESET_GROUP.displayValue} to reset a group.`,
     ].join(' ');
 
-    const shortcutHandlers = {
-        SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            dynamicIconProps.onClick();
-        },
-        RESET_GROUP: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            const grouping = activeControl === ActiveControl.GROUP;
-            if (!grouping) {
-                return;
-            }
-            resetGroup();
-            canvasInstance.group({ enabled: false });
-            updateActiveControl(ActiveControl.CURSOR);
-        },
-    };
-
     return disabled ? (
         <Icon className='cvat-group-control cvat-disabled-canvas-control' component={GroupIcon} />
     ) : (
@@ -90,7 +73,22 @@ function GroupControl(props: Props): JSX.Element {
                     SWITCH_GROUP_MODE: shortcuts.SWITCH_GROUP_MODE.details,
                     RESET_GROUP: shortcuts.RESET_GROUP.details,
                 }}
-                handlers={shortcutHandlers}
+                handlers={{
+                    SWITCH_GROUP_MODE: (event: KeyboardEvent | undefined) => {
+                        if (event) event.preventDefault();
+                        dynamicIconProps.onClick();
+                    },
+                    RESET_GROUP: (event: KeyboardEvent | undefined) => {
+                        if (event) event.preventDefault();
+                        const grouping = activeControl === ActiveControl.GROUP;
+                        if (!grouping) {
+                            return;
+                        }
+                        resetGroup();
+                        canvasInstance.group({ enabled: false });
+                        updateActiveControl(ActiveControl.CURSOR);
+                    },
+                }}
             />
             <CVATTooltip title={title} placement='right'>
                 <Icon {...dynamicIconProps} component={GroupIcon} />

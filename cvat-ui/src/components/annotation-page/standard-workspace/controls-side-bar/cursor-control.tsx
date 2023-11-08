@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -35,18 +36,16 @@ function CursorControl(props: Props): JSX.Element {
         }
     };
 
-    const shortcutHandlers = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            handler();
-        },
-    };
-
     return (
         <>
             <GlobalHotKeys
                 keyMap={{ CANCEL: shortcuts.CANCEL.details }}
-                handlers={shortcutHandlers}
+                handlers={{
+                    CANCEL: (event: KeyboardEvent | undefined) => {
+                        if (event) event.preventDefault();
+                        handler();
+                    },
+                }}
             />
             <CVATTooltip title={`Cursor ${cursorShortkey}`} placement='right'>
                 <Icon

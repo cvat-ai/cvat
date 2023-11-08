@@ -51,7 +51,7 @@ function JoinControl(props: Props): JSX.Element {
             };
 
     return disabled ? (
-        <LinkOutlined className='cvat-group-control cvat-disabled-canvas-control' />
+        <LinkOutlined className='cvat-join-control cvat-disabled-canvas-control' />
     ) : (
         <>
             <GlobalHotKeys
