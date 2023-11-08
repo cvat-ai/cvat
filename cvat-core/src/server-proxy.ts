@@ -572,9 +572,11 @@ async function healthCheck(
 export interface ServerRequestConfig {
     fetchAll: boolean,
 }
+
 const defaultRequestConfig = {
     fetchAll: false,
 };
+
 async function serverRequest(
     url: string, data: object,
     requestConfig: ServerRequestConfig = defaultRequestConfig,

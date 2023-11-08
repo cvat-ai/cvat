@@ -14,11 +14,6 @@ export interface ModelProvider {
     attributes: Record<string, string>;
 }
 
-export enum ModelRequestStatus {
-    QUEUED = 'queued',
-    STARTED = 'started',
-}
-
 class LambdaManager {
     private cachedList: MLModel[];
     private listening: Record<number, {
@@ -89,7 +84,7 @@ class LambdaManager {
     async requests() {
         const lambdaRequests = await serverProxy.lambda.requests();
         return lambdaRequests
-            .filter((request) => [ModelRequestStatus.QUEUED, ModelRequestStatus.STARTED].includes(request.status));
+            .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
     }
 
     async cancel(requestID, functionID): Promise<void> {
