@@ -27,45 +27,17 @@ import { InteractionHandler, InteractionHandlerImpl } from './interactionHandler
 import { AutoborderHandler, AutoborderHandlerImpl } from './autoborderHandler';
 import consts from './consts';
 import {
-    translateToSVG,
-    translateFromSVG,
-    translateToCanvas,
-    translateFromCanvas,
-    pointsToNumberArray,
-    parsePoints,
-    displayShapeSize,
-    scalarProduct,
-    vectorLength,
-    ShapeSizeElement,
-    DrawnState,
-    rotate2DPoints,
-    readPointsFromShape,
-    setupSkeletonEdges,
-    makeSVGFromTemplate,
-    imageDataToDataURL,
-    expandChannels,
-    stringifyPoints,
-    zipChannels,
+    translateToSVG, translateFromSVG, translateToCanvas, translateFromCanvas,
+    pointsToNumberArray, parsePoints, displayShapeSize, scalarProduct,
+    vectorLength, ShapeSizeElement, DrawnState, rotate2DPoints,
+    readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
+    imageDataToDataURL, expandChannels, stringifyPoints, zipChannels,
 } from './shared';
 import {
-    CanvasModel,
-    Geometry,
-    UpdateReasons,
-    FrameZoom,
-    ActiveElement,
-    DrawData,
-    MergeData,
-    SplitData,
-    Mode,
-    Size,
-    Configuration,
-    InteractionResult,
-    InteractionData,
-    ColorBy,
-    HighlightedElements,
-    HighlightSeverity,
-    GroupData,
-    JoinData,
+    CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
+    DrawData, MergeData, SplitData, Mode, Size, Configuration,
+    InteractionResult, InteractionData, ColorBy, HighlightedElements,
+    HighlightSeverity, GroupData, JoinData,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -489,22 +461,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     bottom = Math.max(bottom, curBottom);
                 });
 
-                const canvas = new OffscreenCanvas(right - left + 1, bottom - top + 1);
-                const promises: ReturnType<typeof createImageBitmap>[] = [];
-
-                objects.forEach((state) => {
+                Promise.all(objects.map((state) => {
                     const [curLeft, , curRight] = state.points.slice(-4, -1);
                     const image = new ImageData(expandChannels(255, 255, 255, state.points), curRight - curLeft + 1);
-                    promises.push(createImageBitmap(image));
-                });
-
-                Promise.all(promises).then((results) => {
+                    return createImageBitmap(image);
+                })).then((results) => {
+                    const canvas = new OffscreenCanvas(right - left + 1, bottom - top + 1);
                     results.forEach((bitmap, idx) => {
                         const [curLeft, curTop] = objects[idx].points.slice(-4, -2);
                         canvas.getContext('2d').drawImage(bitmap, curLeft - left, curTop - top);
                     });
-                    const imageData = canvas.getContext('2d').getImageData(0, 0, right - left + 1, bottom - top + 1);
 
+                    const imageData = canvas.getContext('2d')
+                        .getImageData(0, 0, right - left + 1, bottom - top + 1);
                     const rle = zipChannels(imageData.data);
                     rle.push(left, top, right, bottom);
                     this.canvas.dispatchEvent(new CustomEvent('canvas.joined', {
@@ -516,7 +485,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             points: rle,
                         },
                     }));
-                });
+                }).catch(this.onError);
             }
         } else {
             const event: CustomEvent = new CustomEvent('canvas.canceled', {
@@ -537,7 +506,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private onSliceDone = (clientID?: number, results?: number[][], duration?: number): void => {
-        if (typeof clientID !== 'undefined' && results && duration) {
+        if (typeof clientID !== 'undefined' && results && typeof duration !== 'undefined') {
             this.canvas.dispatchEvent(new CustomEvent('canvas.sliced', {
                 bubbles: false,
                 cancelable: true,
@@ -1759,11 +1728,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (reason === UpdateReasons.GROUP) {
                 data = this.controller.groupData;
                 this.mode = Mode.GROUP;
-                this.groupHandler.group(data, (reason === UpdateReasons.GROUP) ? {} : {
-                    shapeType: ['mask'],
-                    objectType: ['shape'],
-                    maxCount: 1,
-                });
+                this.groupHandler.group(data, {});
             } else {
                 data = this.controller.joinData;
                 this.mode = Mode.JOIN;
@@ -1780,17 +1745,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.SLICE) {
             const data = this.controller.sliceData;
-
             if (data.enabled && this.mode === Mode.IDLE) {
                 this.mode = Mode.SLICE;
-                this.canvas.dispatchEvent(
-                    new CustomEvent('canvas.slicestart', {
-                        bubbles: false,
-                        cancelable: true,
-                    }),
-                );
             }
-
             this.sliceHandler.slice(data);
         } else if (reason === UpdateReasons.SELECT) {
             this.objectSelector.push(this.controller.selected);

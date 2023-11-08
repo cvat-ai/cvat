@@ -12,6 +12,7 @@ import {
     changeFrameAsync,
     changeGroupColorAsync,
     pasteShapeAsync,
+    updateActiveControl as updateActiveControlAction,
     copyShape as copyShapeAction,
     activateObject as activateObjectAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
@@ -62,6 +63,7 @@ interface DispatchToProps {
     copyShape: (objectState: ObjectState) => void;
     switchPropagateVisibility: (visible: boolean) => void;
     changeGroupColor(group: number, color: string): void;
+    updateActiveControl(activeControl: ActiveControl): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -128,6 +130,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         changeGroupColor(group: number, color: string): void {
             dispatch(changeGroupColorAsync(group, color));
         },
+        updateActiveControl(activeControl: ActiveControl): void {
+            dispatch(updateActiveControlAction(activeControl));
+        },
     };
 }
 
@@ -175,7 +180,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     };
 
     private edit = (): void => {
-        const { objectState, readonly, canvasInstance } = this.props;
+        const {
+            objectState, readonly, canvasInstance, updateActiveControl,
+        } = this.props;
 
         if (!readonly && canvasInstance instanceof Canvas &&
             [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
@@ -184,12 +191,15 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 canvasInstance.cancel();
             }
 
+            updateActiveControl(ActiveControl.EDIT);
             canvasInstance.edit({ enabled: true, state: objectState });
         }
     }
 
     private slice = async (): Promise<void> => {
-        const { objectState, readonly, canvasInstance } = this.props;
+        const {
+            objectState, readonly, canvasInstance, updateActiveControl,
+        } = this.props;
 
         if (!readonly && canvasInstance instanceof Canvas &&
             [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
@@ -198,6 +208,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 canvasInstance.cancel();
             }
 
+            updateActiveControl(ActiveControl.SLICE);
             canvasInstance.slice({
                 enabled: true,
                 getContour: openCVWrapper.getContourFromState,

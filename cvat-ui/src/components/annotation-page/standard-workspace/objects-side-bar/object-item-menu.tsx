@@ -299,7 +299,8 @@ export default function ItemMenu(props: Props): JSX.Element {
             {!readonly && shapeType === ShapeType.MASK && (
                 <EditMaskItem key={MenuKeys.EDIT_MASK} toolProps={props} />
             )}
-            {!readonly && [ShapeType.MASK, ShapeType.POLYGON].includes(shapeType) && (
+            {!readonly && objectType === ObjectType.SHAPE &&
+                [ShapeType.MASK, ShapeType.POLYGON].includes(shapeType) && (
                 <SliceItem key={MenuKeys.SLICE_ITEM} toolProps={props} />
             )}
             {!readonly && <PropagateItem key={MenuKeys.PROPAGATE} toolProps={props} />}

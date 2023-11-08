@@ -61,7 +61,7 @@ Standard JS events are used.
     - canvas.splitted => {state: ObjectState, frame: number, duration: number}
     - canvas.groupped => {states: ObjectState[], duration: number}
     - canvas.joined => {states: ObjectState[], points: number[], duration: number}
-    - canvas.merged => {states: ObjectState[], , duration: number}
+    - canvas.merged => {states: ObjectState[], duration: number}
     - canvas.canceled
     - canvas.dragstart
     - canvas.dragstop
@@ -70,6 +70,7 @@ Standard JS events are used.
     - canvas.zoom
     - canvas.reshape
     - canvas.fit
+    - canvas.regionselected => {points: number[]}
     - canvas.dragshape => {id: number}
     - canvas.roiselected => {points: number[]}
     - canvas.resizeshape => {id: number}

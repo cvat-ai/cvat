@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -154,15 +154,15 @@ export interface GroupData {
     enabled: boolean;
 }
 
-export interface JoinData {
-    enabled: boolean;
-}
-
 export interface MergeData {
     enabled: boolean;
 }
 
 export interface SplitData {
+    enabled: boolean;
+}
+
+export interface JoinData {
     enabled: boolean;
 }
 
@@ -806,11 +806,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (this.data.splitData.enabled && splitData.enabled) {
-            return;
-        }
-
-        if (!this.data.splitData.enabled && !splitData.enabled) {
+        if ((this.data.splitData.enabled && splitData.enabled) || (
+            !this.data.splitData.enabled && !splitData.enabled
+        )) {
             return;
         }
 
@@ -823,11 +821,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (this.data.groupData.enabled && groupData.enabled) {
-            return;
-        }
-
-        if (!this.data.groupData.enabled && !groupData.enabled) {
+        if ((this.data.groupData.enabled && groupData.enabled) || (
+            !this.data.groupData.enabled && !groupData.enabled
+        )) {
             return;
         }
 
@@ -874,11 +870,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (this.data.mergeData.enabled && mergeData.enabled) {
-            return;
-        }
-
-        if (!this.data.mergeData.enabled && !mergeData.enabled) {
+        if ((this.data.mergeData.enabled && mergeData.enabled) || (
+            !this.data.mergeData.enabled && !mergeData.enabled
+        )) {
             return;
         }
 

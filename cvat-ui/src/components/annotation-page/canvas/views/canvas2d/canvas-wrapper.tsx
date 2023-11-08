@@ -578,7 +578,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
         canvasInstance.html().removeEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().removeEventListener('canvas.edited', this.onCanvasEditDone);
-        canvasInstance.html().removeEventListener('canvas.slicestart', this.onCanvasSliceStart);
         canvasInstance.html().removeEventListener('canvas.sliced', this.onCanvasSliceDone);
         canvasInstance.html().removeEventListener('canvas.dragstart', this.onCanvasDragStart);
         canvasInstance.html().removeEventListener('canvas.dragstop', this.onCanvasDragDone);
@@ -609,6 +608,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasErrorOccurrence = (event: any): void => {
         const { exception } = event.detail;
+        // todo
         const { onGetDataFailed } = this.props;
         onGetDataFailed(exception);
     };
@@ -837,8 +837,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasEditStart = (): void => {
-        const { onActivateObject, updateActiveControl } = this.props;
-        onActivateObject(null, null);
+        const { updateActiveControl } = this.props;
         updateActiveControl(ActiveControl.EDIT);
     };
 
@@ -850,12 +849,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.points = points;
         state.rotation = rotation;
         onUpdateAnnotations([state]);
-    };
-
-    private onCanvasSliceStart = (): void => {
-        const { onActivateObject, updateActiveControl } = this.props;
-        onActivateObject(null, null);
-        updateActiveControl(ActiveControl.SLICE);
     };
 
     private onCanvasSliceDone = (event: any): void => {
@@ -1054,7 +1047,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('click', this.onCanvasClicked);
         canvasInstance.html().addEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().addEventListener('canvas.edited', this.onCanvasEditDone);
-        canvasInstance.html().addEventListener('canvas.slicestart', this.onCanvasSliceStart);
         canvasInstance.html().addEventListener('canvas.sliced', this.onCanvasSliceDone);
         canvasInstance.html().addEventListener('canvas.dragstart', this.onCanvasDragStart);
         canvasInstance.html().addEventListener('canvas.dragstop', this.onCanvasDragDone);

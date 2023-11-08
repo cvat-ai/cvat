@@ -9,7 +9,7 @@ import Collapse from 'antd/lib/collapse';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { ObjectType, ShapeType, ColorBy } from 'reducers';
+import { ObjectType, ShapeType, ColorBy} from 'reducers';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
