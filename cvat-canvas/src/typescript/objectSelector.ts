@@ -249,13 +249,17 @@ export class ObjectSelectorImpl implements ObjectSelector {
     public push(state: ObjectState): void {
         if (this.isEnabled) {
             if (!Object.hasOwn(this.selectedObjects, state.clientID)) {
-                this.filterObjects([state]).forEach((_state) => {
-                    this.selectedObjects[_state.clientID] = _state;
-                });
+                const filtered = this.filterObjects([state]);
+                if (filtered.length) {
+                    filtered.forEach((_state) => {
+                        this.selectedObjects[_state.clientID] = _state;
+                    });
+                    this.onSelectCallback(Object.values(this.selectedObjects));
+                }
             } else {
                 delete this.selectedObjects[state.clientID];
+                this.onSelectCallback(Object.values(this.selectedObjects));
             }
-            this.onSelectCallback(Object.values(this.selectedObjects));
         }
     }
 

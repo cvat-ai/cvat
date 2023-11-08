@@ -496,7 +496,7 @@ export class SliceHandlerImpl implements SliceHandler {
             this.enabled = true;
             if (sliceData.clientID) {
                 const state = this.getObjects().find((_state) => _state.clientID === sliceData.clientID);
-                if (state) {
+                if (state && state.objectType === 'shape') {
                     initializeWithContour(state);
                     return;
                 }
@@ -508,7 +508,7 @@ export class SliceHandlerImpl implements SliceHandler {
             this.objectSelector.enable(([state]) => {
                 this.objectSelector.disable();
                 initializeWithContour(state);
-            }, { maxCount: 1, shapeType: ['polygon', 'mask'] });
+            }, { maxCount: 1, shapeType: ['polygon', 'mask'], objectType: ['shape'] });
         } else if (this.enabled && !sliceData.enabled) {
             this.release();
         }
