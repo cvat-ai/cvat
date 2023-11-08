@@ -70,7 +70,7 @@ import {
 
 export interface CanvasView {
     html(): HTMLDivElement;
-    setupConflictsRegions(clientID: number): number[];
+    setupConflictRegions(clientID: number): number[];
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -1867,7 +1867,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.canvas;
     }
 
-    public setupConflictsRegions(state: any): number[] {
+    public setupConflictRegions(state: any): number[] {
         let cx = 0;
         let cy = 0;
         const shape = this.svgShapes[state.clientID];

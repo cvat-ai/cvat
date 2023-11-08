@@ -1,25 +1,15 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import {
-    Mode,
-    DrawData,
-    MergeData,
-    SplitData,
-    GroupData,
-    JoinData,
-    SliceData,
-    MasksEditData,
+    DrawData, MergeData, SplitData, GroupData,
+    JoinData, SliceData, MasksEditData,
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
-    CanvasModel,
-    CanvasModelImpl,
-    RectDrawingMethod,
-    CuboidDrawingMethod,
-    Configuration,
-    Geometry,
+    CanvasModel, CanvasModelImpl, RectDrawingMethod,
+    CuboidDrawingMethod, Configuration, Geometry, Mode,
     HighlightSeverity as _HighlightSeverity,
 } from './canvasModel';
 import { Master } from './master';
@@ -91,8 +81,8 @@ class CanvasImpl implements Canvas {
         this.model.setupIssueRegions(issueRegions);
     }
 
-    public setupConflictsRegions(clientID: number): number[] {
-        return this.view.setupConflictsRegions(clientID);
+    public setupConflictRegions(clientID: number): number[] {
+        return this.view.setupConflictRegions(clientID);
     }
 
     public fitCanvas(): void {
