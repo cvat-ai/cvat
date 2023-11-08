@@ -96,7 +96,7 @@ export class ZoomHandlerImpl implements ZoomHandler {
     }
 
     public constructor(
-        onZoomRegion: (x: number, y: number, width: number, height: number) => void,
+        onZoomRegion: ZoomHandlerImpl['onZoomRegion'],
         canvas: SVG.Container,
         geometry: Geometry,
     ) {

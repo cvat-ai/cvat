@@ -1235,7 +1235,7 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     public constructor(
-        onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean, prevDrawData?: DrawData) => void,
+        onDrawDone: DrawHandlerImpl['onDrawDoneDefault'],
         canvas: SVG.Container,
         text: SVG.Container,
         autoborderHandler: AutoborderHandler,

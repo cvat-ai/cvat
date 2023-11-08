@@ -384,7 +384,7 @@ export class EditHandlerImpl implements EditHandler {
     }
 
     public constructor(
-        onEditDone: (state: any, points: number[]) => void,
+        onEditDone: EditHandlerImpl['onEditDone'],
         canvas: SVG.Container,
         autoborderHandler: AutoborderHandler,
     ) {
