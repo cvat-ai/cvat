@@ -112,7 +112,6 @@ export class ObjectSelectorImpl implements ObjectSelector {
 
             const newStates = [];
             for (const shape of shapes) {
-                // TODO: Doesn't work properly for groups
                 const bbox = shape.bbox();
                 const clientID = shape.attr('clientID');
                 if (
@@ -271,6 +270,14 @@ export class ObjectSelectorImpl implements ObjectSelector {
     }
 
     public resetSelected(): void {
+        for (const clientID of Object.keys(this.resetAppearance)) {
+            this.resetAppearance[clientID]();
+        }
         this.selectedObjects = {};
+        this.resetAppearance = {};
+
+        if (this.onSelectCallback) {
+            this.onSelectCallback([]);
+        }
     }
 }
