@@ -388,6 +388,7 @@ export class SliceHandlerImpl implements SliceHandler {
             if (points.length && event.button === 0 && !event.altKey) {
                 const [x, y] = translateToSVG(this.canvas.node as any as SVGSVGElement, [event.clientX, event.clientY]);
                 points[points.length - 1] = [x, y];
+                this.slicingLine.plot(stringifyPoints(points.flat()));
 
                 const [prevX, prevY] = points[points.length - 2];
                 const segment = [[prevX, prevY], [x, y]] as Segment;
@@ -397,8 +398,8 @@ export class SliceHandlerImpl implements SliceHandler {
                     segment,
                     getAllIntersections(segment, slicingLineSegments),
                 );
-                if (Object.keys(selfIntersections).length) {
-                    // not allowed
+
+                if (Object.keys(selfIntersections).length !== 0) {
                     return;
                 }
 
@@ -408,8 +409,13 @@ export class SliceHandlerImpl implements SliceHandler {
                     getAllIntersections([[prevX, prevY], [x, y]], contourSegments),
                 );
 
-                if (Object.keys(contourIntersection).length) {
-                    // not allowed
+                const numberOfIntersections = Object.keys(contourIntersection).length;
+                if (numberOfIntersections) {
+                    // from canvas mousemove handler with hold shift key
+                    // not allowed, but we will consider it as a finish click
+                    if (numberOfIntersections === 1) {
+                        click(event);
+                    }
                     return;
                 }
 
