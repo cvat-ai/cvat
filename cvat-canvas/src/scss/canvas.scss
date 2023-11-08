@@ -418,6 +418,8 @@ g.cvat_canvas_shape_occluded {
 }
 
 #cvat_canvas_content {
+    @extend .cvat_canvas_pixelized;
+
     filter: contrast(120%) saturate(150%);
     position: absolute;
     z-index: 2;

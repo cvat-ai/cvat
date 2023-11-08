@@ -17,7 +17,6 @@ export interface Segmentation {
 }
 
 export interface MatSpace {
-    empty: () => any;
     fromData: (width: number, height: number, type: MatType, data: number[]) => any;
 }
 
@@ -142,8 +141,6 @@ export class OpenCVWrapper {
         this.checkInitialization();
         const { cv } = this;
         return {
-            empty: () => new cv.Mat(),
-
             fromData: (width: number, height: number, type: MatType, data: number[]) => {
                 const typeToCVType = {
                     [MatType.CV_8UC1]: cv.CV_8UC1,
@@ -184,15 +181,28 @@ export class OpenCVWrapper {
             findContours: (src: any, findLongest: boolean): number[][] => {
                 const contours = this.matVector.empty();
                 const hierarchy = new cv.Mat();
+                const expanded = new cv.Mat();
+                const kernel = cv.Mat.ones(1, 2, cv.CV_8U);
+                const anchor = new cv.Point(-1, -1);
                 const jsContours: number[][] = [];
                 try {
-                    cv.findContours(src, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
+                    cv.copyMakeBorder(src, expanded, 1, 1, 1, 1, cv.BORDER_CONSTANT);
+                    // morpth transform to get better contour including all the pixels
+                    cv.dilate(
+                        expanded, expanded, kernel,
+                        anchor, 1, cv.BORDER_CONSTANT,
+                        cv.morphologyDefaultBorderValue(),
+                    );
+                    cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
                     for (let i = 0; i < contours.size(); i++) {
                         const contour = contours.get(i);
-                        jsContours.push(Array.from(contour.data32S));
+                        // substract offset we created when copied source image
+                        jsContours.push(Array.from(contour.data32S as number[]).map((el) => el - 1));
                         contour.delete();
                     }
                 } finally {
+                    kernel.delete();
+                    expanded.delete();
                     hierarchy.delete();
                     contours.delete();
                 }
