@@ -1196,13 +1196,13 @@ export function groupAnnotationsAsync(sessionInstance: NonNullable<CombinedState
 export function joinAnnotationsAsync(
     sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>,
     statesToGroup: CombinedState['annotation']['annotations']['states'],
-    results: number[],
+    points: number[],
 ): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, showAllInterpolationTracks, frame } = receiveAnnotationsParameters();
 
-            await sessionInstance.annotations.join(statesToGroup, results);
+            await sessionInstance.annotations.join(statesToGroup, points);
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();
 

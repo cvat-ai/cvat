@@ -185,10 +185,10 @@ Standard JS events are used.
     - canvas.drawn => {state: DrawnData}
     - canvas.interacted => {shapes: InteractionResult[]}
     - canvas.editstart
-    - canvas.edited => {state: ObjectState, points: number[]}
-    - canvas.splitted => {state: ObjectState, , duration: number}
-    - canvas.groupped => {states: ObjectState[], , duration: number}
-    - canvas.joined => {states: ObjectState[], result: number[], duration: number}
+    - canvas.edited => {state: ObjectState, points: number[], rotation?: number}
+    - canvas.splitted => {state: ObjectState, frame: number, duration: number}
+    - canvas.groupped => {states: ObjectState[], duration: number}
+    - canvas.joined => {states: ObjectState[], points: number[], duration: number}
     - canvas.merged => {states: ObjectState[], , duration: number}
     - canvas.canceled
     - canvas.dragstart

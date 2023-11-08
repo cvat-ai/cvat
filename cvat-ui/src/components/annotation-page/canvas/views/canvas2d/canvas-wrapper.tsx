@@ -126,7 +126,7 @@ interface DispatchToProps {
     onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
     onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
     onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onJoinAnnotations(sessionInstance: Job, states: ObjectState[], result: number[]): void;
+    onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void;
     onSliceAnnotations(
         sessionInstance: Job,
         clientID: number,
@@ -289,8 +289,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
         },
-        onJoinAnnotations(sessionInstance: Job, states: ObjectState[], result: number[]): void {
-            dispatch(joinAnnotationsAsync(sessionInstance, states, result));
+        onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void {
+            dispatch(joinAnnotationsAsync(sessionInstance, states, points));
         },
         onSliceAnnotations(
             sessionInstance: Job,
@@ -717,12 +717,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
-        const { states, result, duration } = event.detail;
+        const { states, points, duration } = event.detail;
         jobInstance.logger.log(LogType.joinObjects, {
             duration,
             count: states.length,
         });
-        onJoinAnnotations(jobInstance, states, result);
+        onJoinAnnotations(jobInstance, states, points);
     };
 
     private onCanvasTrackSplitted = (event: any): void => {

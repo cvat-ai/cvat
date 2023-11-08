@@ -513,7 +513,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         detail: {
                             duration,
                             states: objects,
-                            result: rle,
+                            points: rle,
                         },
                     }));
                 });
