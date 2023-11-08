@@ -115,6 +115,7 @@ interface StateToProps {
     highlightedConflict: QualityConflict | null;
     groundTruthJobFramesMeta: FramesMetaData | null;
     imageFilters: ImageFilter[];
+    activeControl: ActiveControl;
 }
 
 interface DispatchToProps {
@@ -241,6 +242,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         intelligentPolygonCrop,
         workspace,
         keyMap,
+        activeControl,
         switchableAutomaticBordering:
             activeControl === ActiveControl.DRAW_POLYGON ||
             activeControl === ActiveControl.DRAW_POLYLINE ||
@@ -826,12 +828,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasEditDone = (event: any): void => {
-        const { onUpdateAnnotations, updateActiveControl } = this.props;
-
-        updateActiveControl(ActiveControl.CURSOR);
+        const { activeControl, onUpdateAnnotations, updateActiveControl } = this.props;
         const { state, points, rotation } = event.detail;
         state.points = points;
         state.rotation = rotation;
+
+        if (activeControl !== ActiveControl.CURSOR) {
+            updateActiveControl(ActiveControl.CURSOR);
+        }
         onUpdateAnnotations([state]);
     };
 
