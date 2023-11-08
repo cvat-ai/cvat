@@ -28,11 +28,11 @@ import lodash from 'lodash';
 import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import {
-    getCore, Attribute, Label, MLModel,
+    getCore, Label, MLModel, ObjectState, Job,
 } from 'cvat-core-wrapper';
 import openCVWrapper, { MatType } from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, ObjectType, ShapeType, ToolsBlockerState, ModelAttribute,
+    CombinedState, ActiveControl, ObjectType, ShapeType, ToolsBlockerState,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -55,10 +55,10 @@ import ToolsTooltips from './interactor-tooltips';
 
 interface StateToProps {
     canvasInstance: Canvas;
-    labels: any[];
-    states: any[];
+    labels: Label[];
+    states: ObjectState[];
     activeLabelID: number;
-    jobInstance: any;
+    jobInstance: Job;
     isActivated: boolean;
     frame: number;
     interactors: MLModel[];
@@ -210,9 +210,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         id: string | null;
         isAborted: boolean;
         latestResponse: {
-            rle: number[],
-            points: number[][],
-            bounds?: [number, number, number, number],
+            rle: number[];
+            points: number[][];
+            bounds?: [number, number, number, number];
         };
         lastestApproximatedPoints: number[][];
         latestRequest: null | {
@@ -1145,7 +1145,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderDetectorBlock(): JSX.Element {
         const {
-            jobInstance, detectors, curZOrder, frame, createAnnotations,
+            jobInstance, detectors, curZOrder, frame, labels, createAnnotations,
         } = this.props;
 
         if (!detectors.length) {
@@ -1159,77 +1159,92 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 </Row>
             );
         }
-        const attrsMap: Record<string, Record<string, number>> = {};
-        jobInstance.labels.forEach((label: any) => {
-            attrsMap[label.name] = {};
-            label.attributes.forEach((attr: any) => {
-                attrsMap[label.name][attr.name] = attr.id;
-            });
-        });
-
-        function checkAttributesCompatibility(
-            functionAttribute: ModelAttribute | undefined,
-            dbAttribute: Attribute | undefined,
-            value: string,
-        ): boolean {
-            if (!dbAttribute || !functionAttribute) {
-                return false;
-            }
-
-            const { inputType } = (dbAttribute as any as { inputType: string });
-            if (functionAttribute.input_type === inputType) {
-                if (functionAttribute.input_type === 'number') {
-                    const [min, max, step] = dbAttribute.values;
-                    return !Number.isNaN(+value) && +value >= +min && +value <= +max && !(+value % +step);
-                }
-
-                if (functionAttribute.input_type === 'checkbox') {
-                    return ['true', 'false'].includes(value.toLowerCase());
-                }
-
-                if (['select', 'radio'].includes(functionAttribute.input_type)) {
-                    return dbAttribute.values.includes(value);
-                }
-
-                return true;
-            }
-
-            switch (functionAttribute.input_type) {
-                case 'number':
-                    return dbAttribute.values.includes(value) || inputType === 'text';
-                case 'text':
-                    return ['select', 'radio'].includes(dbAttribute.inputType) && dbAttribute.values.includes(value);
-                case 'select':
-                    return (inputType === 'radio' && dbAttribute.values.includes(value)) || inputType === 'text';
-                case 'radio':
-                    return (inputType === 'select' && dbAttribute.values.includes(value)) || inputType === 'text';
-                case 'checkbox':
-                    return dbAttribute.values.includes(value) || inputType === 'text';
-                default:
-                    return false;
-            }
-        }
 
         return (
             <DetectorRunner
                 withCleanup={false}
                 models={detectors}
-                labels={jobInstance.labels}
+                labels={labels}
                 dimension={jobInstance.dimension}
                 runInference={async (model: MLModel, body: DetectorRequestBody) => {
+                    function loadAttributes(
+                        attributes: { name: string; value: string }[],
+                        label: Label,
+                    ): Record<number, string> {
+                        return attributes.reduce((acc, { name, value }) => {
+                            const attributeSpec = label.attributes.find((_attr) => _attr.name === name);
+
+                            if (!attributeSpec) {
+                                return acc;
+                            }
+
+                            switch (attributeSpec.inputType) {
+                                case 'number': {
+                                    const [min, max, step] = attributeSpec.values;
+                                    if (
+                                        Number.isFinite(+value) &&
+                                        +value >= +min &&
+                                        +value <= +max &&
+                                        !(+value % +step)
+                                    ) {
+                                        return {
+                                            ...acc,
+                                            [attributeSpec.id as number]: `${value}`,
+                                        };
+                                    }
+
+                                    return acc;
+                                }
+                                case 'text': {
+                                    return {
+                                        ...acc,
+                                        [attributeSpec.id as number]: `${value}`,
+                                    };
+                                }
+                                case 'select':
+                                case 'radio': {
+                                    if (attributeSpec.values.includes(value)) {
+                                        return {
+                                            ...acc,
+                                            [attributeSpec.id as number]: value,
+                                        };
+                                    }
+                                    return acc;
+                                }
+                                case 'checkbox':
+                                    return {
+                                        ...acc,
+                                        [attributeSpec.id as number]: `${value}`.toLowerCase() === 'true' ? 'true' : 'false',
+                                    };
+                                default:
+                                    return acc;
+                            }
+                        }, {} as Record<number, string>);
+                    }
+
                     try {
                         this.setState({ mode: 'detection', fetching: true });
                         const result = await core.lambda.call(jobInstance.taskId, model, {
                             ...body, frame, job: jobInstance.id,
                         });
-                        const states = result.map(
-                            (data: any): any => {
-                                const jobLabel = (jobInstance.labels as Label[])
-                                    .find((jLabel: Label): boolean => jLabel.name === data.label);
-                                const [modelLabel] = Object.entries(body.mapping)
-                                    .find(([, { name }]) => name === data.label) || [];
 
-                                if (!jobLabel || !modelLabel) return null;
+                        type SerializedShape = {
+                            type: ShapeType;
+                            rotation?: number;
+                            attributes: { name: string; value: string }[];
+                            label: string;
+                            outside?: boolean;
+                            points?: number[];
+                            mask?: number[];
+                            elements: SerializedShape[];
+                        };
+
+                        const states = result.map(
+                            (data: SerializedShape): ObjectState | null => {
+                                const jobLabel = jobInstance.labels
+                                    .find((jLabel: Label): boolean => jLabel.name === data.label);
+
+                                if (!jobLabel) return null;
 
                                 const objectData = {
                                     label: jobLabel,
@@ -1240,27 +1255,51 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         ShapeType.RECTANGLE, ShapeType.ELLIPSE,
                                     ].includes(data.type) ? (data.rotation || 0) : 0,
                                     source: core.enums.Source.AUTO,
-                                    attributes: (data.attributes as { name: string, value: string }[])
-                                        .reduce((acc, attr) => {
-                                            const [modelAttr] = Object.entries(body.mapping[modelLabel].attributes)
-                                                .find((value: string[]) => value[1] === attr.name) || [];
-                                            const areCompatible = checkAttributesCompatibility(
-                                                model.attributes[modelLabel]
-                                                    .find((mAttr) => mAttr.name === modelAttr),
-                                                jobLabel.attributes.find((jobAttr: Attribute) => (
-                                                    jobAttr.name === attr.name
-                                                )),
-                                                attr.value,
-                                            );
-
-                                            if (areCompatible) {
-                                                acc[attrsMap[data.label][attr.name]] = attr.value;
-                                            }
-
-                                            return acc;
-                                        }, {} as Record<number, string>),
+                                    attributes: loadAttributes(data.attributes, jobLabel),
                                     zOrder: curZOrder,
                                 };
+
+                                if (data.type === ShapeType.SKELETON && jobLabel.type === ShapeType.SKELETON) {
+                                    // find a center of the skeleton
+                                    // to set this center as outside points position
+                                    const center = data.elements.reduce<[number, number]>((acc, { points }) => {
+                                        if (points) {
+                                            return [acc[0] + points[0], acc[1] + points[1]];
+                                        }
+                                        return acc;
+                                    }, [0, 0]).map((el) => el / (data.elements.length || 1));
+
+                                    const elements = (jobLabel.structure?.sublabels || []).map((sublabel) => {
+                                        const element = data.elements.find((el) => el.label === sublabel.name);
+                                        return {
+                                            label: sublabel,
+                                            objectType: ObjectType.SHAPE,
+                                            shapeType: sublabel.type,
+                                            attributes: {},
+                                            frame,
+                                            source: core.enums.Source.AUTO,
+                                            points: [...center],
+                                            occluded: false,
+                                            outside: true,
+                                            ...(element ? {
+                                                attributes: loadAttributes(element.attributes, sublabel),
+                                                points: element.points,
+                                                outside: !!element.outside || false,
+                                            } : {}),
+                                        };
+                                    }).map((elementData) => new core.classes.ObjectState({ ...elementData }));
+
+                                    if (elements.every((element) => element.outside)) {
+                                        return null;
+                                    }
+
+                                    return new core.classes.ObjectState({
+                                        ...objectData,
+                                        shapeType: ShapeType.SKELETON,
+                                        points: [],
+                                        elements,
+                                    });
+                                }
 
                                 if (data.type === 'mask' && data.points && body.convMaskToPoly) {
                                     return new core.classes.ObjectState({
@@ -1271,7 +1310,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }
 
                                 if (data.type === 'mask') {
-                                    const [left, top, right, bottom] = data.mask.splice(-4);
+                                    const [left, top, right, bottom] = (data.mask as number[]).splice(-4);
                                     const rle = core.utils.mask2Rle(data.mask);
                                     rle.push(left, top, right, bottom);
                                     return new core.classes.ObjectState({
@@ -1289,7 +1328,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             },
                         ).filter((state: any) => state);
 
-                        createAnnotations(jobInstance, frame, states);
+                        createAnnotations(jobInstance, frame, states.filter((state: ObjectState | null) => !!state));
                         const { onSwitchToolsBlockerState } = this.props;
                         onSwitchToolsBlockerState({ buttonVisible: false });
                     } catch (error: any) {

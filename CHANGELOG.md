@@ -16,6 +16,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.8.2'></a>
+## \[2.8.2\] - 2023-11-06
+
+### Fixed
+
+- OpenCV runtime initialization
+  (<https://github.com/opencv/cvat/pull/7101>)
+
+<a id='changelog-2.8.1'></a>
+## \[2.8.1\] - 2023-11-03
+
+### Added
+
+- Support for default bucket prefix
+  (<https://github.com/opencv/cvat/pull/6943>)
+- Search for cloud storage and share files
+  (<https://github.com/opencv/cvat/pull/6943>)
+
+- Ability to limit one user to one task at a time
+  (<https://github.com/opencv/cvat/pull/6975>)
+
+- Support for using an external database in a Docker Compose-based deployment
+  (<https://github.com/opencv/cvat/pull/7055>)
+
+### Changed
+
+- Migrated to rq 1.15.1
+  (<https://github.com/opencv/cvat/pull/6975>)
+
+- Compressed sequental `change:frame` events into one
+  (<https://github.com/opencv/cvat/pull/7048>)
+
+- Create a local session for AWS S3 client instead of using the default global one
+  (<https://github.com/opencv/cvat/pull/7067>)
+
+- Improved performance of chunk preparation when creating tasks
+  (<https://github.com/opencv/cvat/pull/7081>)
+
+### Fixed
+
+- Race condition in a task data upload request, which may lead to problems with task creation in some specific cases,
+  such as multiple identical data requests at the same time
+  (<https://github.com/opencv/cvat/pull/7025>)
+
+- Bug with viewing dependent RQ jobs for downloading resources from
+cloud storage when file path contains sub-directories.
+This is relevant for admins that can view detailed information about RQ queues.
+  (<https://github.com/opencv/cvat/pull/6975>)
+
+- OpenCV.js memory leak with TrackerMIL
+  (<https://github.com/opencv/cvat/pull/7032>)
+
+- Can't deploy detectron serverless function
+  (<https://github.com/opencv/cvat/pull/7047>)
+
+- A mask becomes visible even if hidden after changing opacity level
+  (<https://github.com/opencv/cvat/pull/7060>)
+
+- There is no switcher to personal workspace if an organization request failed
+  (<https://github.com/opencv/cvat/pull/7063>)
+
 <a id='changelog-2.8.0'></a>
 
 ## \[2.8.0\] - 2023-10-23

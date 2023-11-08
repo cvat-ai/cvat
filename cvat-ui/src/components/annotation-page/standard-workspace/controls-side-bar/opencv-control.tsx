@@ -811,6 +811,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         } else if (libraryInitialized !== openCVWrapper.isInitialized) {
                             this.setState({
                                 libraryInitialized: openCVWrapper.isInitialized,
+                                trackers: Object.values(openCVWrapper.tracking),
+                                activeTracker: Object.values(openCVWrapper.tracking)[0] || null,
                             });
                         }
                     }}

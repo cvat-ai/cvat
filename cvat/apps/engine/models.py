@@ -420,7 +420,9 @@ class Task(models.Model):
 
     def get_labels(self):
         project = self.project
-        return project.get_labels() if project else self.label_set.filter(parent__isnull=True)
+        if project:
+            return project.get_labels()
+        return self.label_set.filter(parent__isnull=True)
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
