@@ -138,7 +138,11 @@ export class SliceHandlerImpl implements SliceHandler {
 
     private initialize(sliceData: EnhancedSliceData): void {
         this.onMessage({
-            lines: [{ text: 'Set initial point on the shape contour' }],
+            lines: [
+                { text: 'Set initial point on the shape contour' },
+                { text: ' • Slicing line must not intersect itself', type: 'warning' },
+                { text: ' • Slicing line must not intersect contour more than twice', type: 'warning' },
+            ],
             type: 'info',
         });
         const { clientID } = sliceData.state;
@@ -208,8 +212,11 @@ export class SliceHandlerImpl implements SliceHandler {
                 this.onMessage({
                     lines: [
                         { text: 'Set more points within the shape contour, if necessary. Intersect contour at another point to slice' },
-                        { text: ' • Line must not intersect itself', type: 'warning' },
-                        { text: ' • Line must not intersect contour more than twice', type: 'warning' },
+                        {
+                            text: '• Hold <Shift> to enable slip mode' +
+                                ' • Do <Right Click> to cancel the latest point',
+                            type: 'secondary',
+                        },
                     ],
                     type: 'info',
                 });
