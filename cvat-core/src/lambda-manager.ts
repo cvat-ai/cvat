@@ -29,7 +29,7 @@ class LambdaManager {
 
     async list(): Promise<{ models: MLModel[], count: number }> {
         const lambdaFunctions = await serverProxy.lambda.list();
-      
+
         const models = [];
         for (const model of lambdaFunctions) {
             models.push(
@@ -38,7 +38,6 @@ class LambdaManager {
                 }),
             );
         }
-
 
         this.cachedList = models;
         return { models, count: lambdaFunctions.length };
