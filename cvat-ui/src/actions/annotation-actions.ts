@@ -1226,14 +1226,13 @@ export function joinAnnotationsAsync(
 
 export function sliceAnnotationsAsync(
     sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>,
-    clientID: number,
-    contour1: number[],
-    contour2: number[],
+    state: CombinedState['annotation']['annotations']['states'][0],
+    results: number[][],
 ): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, showAllInterpolationTracks, frame } = receiveAnnotationsParameters();
-            await sessionInstance.annotations.slice(clientID, contour1, contour2);
+            await sessionInstance.annotations.slice(state, results);
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();
 

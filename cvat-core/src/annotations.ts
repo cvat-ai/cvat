@@ -194,12 +194,12 @@ export function groupAnnotations(session, objectStates, reset) {
     );
 }
 
-export function joinAnnotations(session, objectStates, results) {
+export function joinAnnotations(session, objectStates, points) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
     if (cache.has(session)) {
-        return cache.get(session).collection.join(objectStates, results);
+        return cache.get(session).collection.join(objectStates, points);
     }
 
     throw new DataError(
@@ -207,12 +207,12 @@ export function joinAnnotations(session, objectStates, results) {
     );
 }
 
-export function sliceAnnotations(session, clientID, contour1, contour2) {
+export function sliceAnnotations(session, state, results) {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
     if (cache.has(session)) {
-        return cache.get(session).collection.slice(clientID, contour1, contour2);
+        return cache.get(session).collection.slice(state, results);
     }
 
     throw new DataError(

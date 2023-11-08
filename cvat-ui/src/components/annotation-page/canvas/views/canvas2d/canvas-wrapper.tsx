@@ -127,12 +127,7 @@ interface DispatchToProps {
     onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
     onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
     onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void;
-    onSliceAnnotations(
-        sessionInstance: Job,
-        clientID: number,
-        contour1: number[],
-        contour2: number[],
-    ): void;
+    onSliceAnnotations(sessionInstance: Job, state: ObjectState, results: number[][]): void;
     onConvertAnnotations(
         sessionInstance: Job,
         objectStates: ObjectState[],
@@ -292,13 +287,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void {
             dispatch(joinAnnotationsAsync(sessionInstance, states, points));
         },
-        onSliceAnnotations(
-            sessionInstance: Job,
-            clientID: number,
-            contour1: number[],
-            contour2: number[],
-        ): void {
-            dispatch(sliceAnnotationsAsync(sessionInstance, clientID, contour1, contour2));
+        onSliceAnnotations(sessionInstance: Job, state: ObjectState, results: number[][]): void {
+            dispatch(sliceAnnotationsAsync(sessionInstance, state, results));
         },
         onSplitAnnotations(sessionInstance: any, frame: number, state: ObjectState): void {
             dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
@@ -853,15 +843,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasSliceDone = (event: any): void => {
         const { jobInstance, updateActiveControl, onSliceAnnotations } = this.props;
-        const { clientID, results, duration } = event.detail;
-
+        const { state, results, duration } = event.detail;
         updateActiveControl(ActiveControl.CURSOR);
         jobInstance.logger.log(LogType.sliceObject, {
             count: 1,
             duration,
-            clientID,
+            clientID: state.clientID,
         });
-        onSliceAnnotations(jobInstance, clientID, results[0], results[1]);
+        onSliceAnnotations(jobInstance, state, results);
     };
     private onCanvasDragStart = (): void => {
         const { updateActiveControl } = this.props;

@@ -18,10 +18,12 @@ export interface SliceHandler {
     cancel(): void;
 }
 
-type EnhancedSliceData = Omit<Required<SliceData> & {
+type EnhancedSliceData = {
+    enabled: boolean;
     contour: number[];
+    state: any;
     shapeType: 'mask' | 'polygon';
-}, 'getContour'>;
+};
 
 function drawOverOffscreenCanvas(context: OffscreenCanvasRenderingContext2D, image: CanvasImageSource): void {
     context.fillStyle = 'black';
@@ -93,7 +95,7 @@ export class SliceHandlerImpl implements SliceHandler {
     private slicingPoints: SVG.Circle[];
     private hideObject: (clientID: number) => void;
     private showObject: (clientID: number) => void;
-    private onSliceDone: (clientID?: number, fragments?: number[][], duration?: number) => void;
+    private onSliceDone: (state?: any, results?: number[][], duration?: number) => void;
     private onMessage: ({ lines, type }: {
         lines?: { text: string, type?: string, style?: CSSStyleDeclaration }[],
         type?: 'info' | 'loading'
@@ -139,8 +141,9 @@ export class SliceHandlerImpl implements SliceHandler {
             lines: [{ text: 'Set initial point on the shape contour' }],
             type: 'info',
         });
+        const { clientID } = sliceData.state;
         this.hiddenClientIDs = (this.canvas.select('.cvat_canvas_shape') as any).members
-            .map((shape) => +shape.attr('clientID')).filter((clientID: number) => clientID !== sliceData.clientID);
+            .map((shape) => +shape.attr('clientID')).filter((_clientID: number) => _clientID !== clientID);
         this.hiddenClientIDs.forEach((clientIDs) => {
             this.hideObject(clientIDs);
         });
@@ -316,7 +319,7 @@ export class SliceHandlerImpl implements SliceHandler {
 
             if (sliceData.shapeType === 'mask') {
                 const shape = this.canvas
-                    .select(`#cvat_canvas_shape_${sliceData.clientID}`).get(0).node;
+                    .select(`#cvat_canvas_shape_${clientID}`).get(0).node;
                 const width = +shape.getAttribute('width');
                 const height = +shape.getAttribute('height');
                 const left = +shape.getAttribute('x');
@@ -341,20 +344,17 @@ export class SliceHandlerImpl implements SliceHandler {
                 drawOverOffscreenCanvas(context, shape as any as SVGImageElement);
                 applyOffscreenCanvasMask(context, polygon2);
                 const secondShape = zipChannels(context.getImageData(0, 0, width, height).data);
-
+                this.onSliceDone(sliceData.state, [firstShape, secondShape], Date.now() - this.start);
+            } else if (sliceData.shapeType === 'polygon') {
                 this.onSliceDone(
-                    sliceData.clientID,
-                    [firstShape, secondShape],
-                    Date.now() - this.start,
-                );
-            } else {
-                this.onSliceDone(
-                    sliceData.clientID,
+                    sliceData.state,
                     [
                         translateFromCanvas(this.geometry.offset, contour1),
                         translateFromCanvas(this.geometry.offset, contour2),
                     ], Date.now() - this.start,
                 );
+            } else {
+                this.slice({ enabled: false });
             }
         };
 
@@ -476,13 +476,13 @@ export class SliceHandlerImpl implements SliceHandler {
             const { start } = this;
             this.onMessage({ lines: [{ text: 'Getting shape contour' }], type: 'loading' });
             sliceData.getContour(state).then((contour) => {
-                const { clientID, shapeType } = state;
+                const { shapeType } = state;
                 if (this.start === start && this.enabled) {
-                    // check if user does not left mode / reinit it
+                    // checking if a user does not left mode / reinit it
                     this.initialize({
                         enabled: true,
                         contour,
-                        clientID,
+                        state,
                         shapeType,
                     });
                 }
@@ -501,7 +501,6 @@ export class SliceHandlerImpl implements SliceHandler {
                     return;
                 }
             }
-
             this.onMessage({
                 lines: [{ text: 'Click a mask/polygon shape you would like to slice' }],
                 type: 'info',

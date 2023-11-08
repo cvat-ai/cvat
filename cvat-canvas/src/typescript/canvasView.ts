@@ -505,13 +505,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onSliceDone = (clientID?: number, results?: number[][], duration?: number): void => {
-        if (typeof clientID !== 'undefined' && results && typeof duration !== 'undefined') {
+    private onSliceDone = (state?: any, results?: number[][], duration?: number): void => {
+        if (state && results && typeof duration !== 'undefined') {
             this.canvas.dispatchEvent(new CustomEvent('canvas.sliced', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
-                    clientID,
+                    state,
                     results,
                     duration,
                 },

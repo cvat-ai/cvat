@@ -61,6 +61,7 @@ Standard JS events are used.
     - canvas.splitted => {state: ObjectState, frame: number, duration: number}
     - canvas.groupped => {states: ObjectState[], duration: number}
     - canvas.joined => {states: ObjectState[], points: number[], duration: number}
+    - canvas.sliced => {state: ObjectState, results: number[][], duration: number}
     - canvas.merged => {states: ObjectState[], duration: number}
     - canvas.canceled
     - canvas.dragstart

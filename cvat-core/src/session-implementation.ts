@@ -298,13 +298,13 @@ export function implementJob(Job) {
         return result;
     };
 
-    Job.prototype.annotations.join.implementation = async function (objectStates, results) {
-        const result = await joinAnnotations(this, objectStates, results);
+    Job.prototype.annotations.join.implementation = async function (objectStates, points) {
+        const result = await joinAnnotations(this, objectStates, points);
         return result;
     };
 
-    Job.prototype.annotations.slice.implementation = async function (clientID, contour1, contour2) {
-        const result = await sliceAnnotations(this, clientID, contour1, contour2);
+    Job.prototype.annotations.slice.implementation = async function (objectSTate, results) {
+        const result = await sliceAnnotations(this, objectSTate, results);
         return result;
     };
 
@@ -781,13 +781,13 @@ export function implementTask(Task) {
         return result;
     };
 
-    Task.prototype.annotations.join.implementation = async function (objectStates, results) {
-        const result = await joinAnnotations(this, objectStates, results);
+    Task.prototype.annotations.join.implementation = async function (objectStates, points) {
+        const result = await joinAnnotations(this, objectStates, points);
         return result;
     };
 
-    Task.prototype.annotations.slice.implementation = async function (clientID, contour1, contour2) {
-        const result = await sliceAnnotations(this, clientID, contour1, contour2);
+    Task.prototype.annotations.slice.implementation = async function (objectSTate, results) {
+        const result = await sliceAnnotations(this, objectSTate, results);
         return result;
     };
 

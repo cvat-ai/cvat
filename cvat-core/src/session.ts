@@ -142,23 +142,22 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async join(objectStates, results) {
+                async join(objectStates, points) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.join,
                         objectStates,
-                        results,
+                        points,
                     );
                     return result;
                 },
 
-                async slice(clientID, contour1, contour2) {
+                async slice(objectState, results) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.slice,
-                        clientID,
-                        contour1,
-                        contour2,
+                        objectState,
+                        results,
                     );
                     return result;
                 },
