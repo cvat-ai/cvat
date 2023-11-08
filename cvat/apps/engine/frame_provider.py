@@ -13,10 +13,12 @@ import numpy as np
 from PIL import Image, ImageOps
 
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.engine.media_extractors import VideoReader, ZipReader
+from cvat.apps.engine.media_extractors import VideoReader, ZipReader, AudioReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import DataChoice, StorageMethodChoice, DimensionType
 from rest_framework.exceptions import ValidationError
+from cvat.apps.engine.log import ServerLogManager
+slogger = ServerLogManager(__name__)
 
 class RandomAccessIterator:
     def __init__(self, iterable):
@@ -93,6 +95,7 @@ class FrameProvider:
         reader_class = {
             DataChoice.IMAGESET: ZipReader,
             DataChoice.VIDEO: VideoReader,
+            DataChoice.AUDIO: AudioReader,
         }
 
         if db_data.storage_method == StorageMethodChoice.CACHE:

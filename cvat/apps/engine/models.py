@@ -114,6 +114,7 @@ class StateChoice(str, Enum):
 
 class DataChoice(str, Enum):
     VIDEO = 'video'
+    AUDIO = 'audio'
     IMAGESET = 'imageset'
     LIST = 'list'
 
@@ -260,6 +261,8 @@ class Data(models.Model):
     def _get_chunk_name(chunk_number, chunk_type):
         if chunk_type == DataChoice.VIDEO:
             ext = 'mp4'
+        elif chunk_type == DataChoice.AUDIO:
+            ext = 'wav'
         elif chunk_type == DataChoice.IMAGESET:
             ext = 'zip'
         else:

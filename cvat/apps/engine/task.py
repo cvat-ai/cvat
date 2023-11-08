@@ -27,7 +27,7 @@ from pathlib import Path
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
+from cvat.apps.engine.media_extractors import (MEDIA_TYPES, ImageListReader, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter, AudioChunkWriter, AudioCompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
 from cvat.apps.engine.utils import av_scan_paths,get_rq_job_meta, define_dependent_job, get_rq_lock_by_user, preload_images
 from cvat.utils.http import make_requests_session, PROXIES_FOR_UNTRUSTED_URLS
@@ -712,6 +712,12 @@ def _create_thread(
     # Extract input data
     extractor = None
     manifest_index = _get_manifest_frame_indexer()
+    MEDIA_TYPE = None
+    for media_key in media:
+        if len(media[media_key]) > 0:
+            MEDIA_TYPE = media_key
+            break
+
     for media_type, media_files in media.items():
         if not media_files:
             continue
@@ -737,7 +743,7 @@ def _create_thread(
             details['extract_dir'] = db_data.get_upload_dirname()
             upload_dir = db_data.get_upload_dirname()
             db_data.storage = models.StorageChoice.LOCAL
-        if media_type != 'video':
+        if media_type not in {'video', 'audio'}:
             details['sorting_method'] = data['sorting_method']
         extractor = MEDIA_TYPES[media_type]['extractor'](**details)
 
@@ -866,8 +872,8 @@ def _create_thread(
         )
 
     db_task.mode = task_mode
-    db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
-    db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
+    db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and MEDIA_TYPE == models.DataChoice.VIDEO and not data['use_zip_chunks'] else models.DataChoice.AUDIO if task_mode == 'interpolation' and MEDIA_TYPE == models.DataChoice.AUDIO and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
+    db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and MEDIA_TYPE == models.DataChoice.VIDEO else models.DataChoice.AUDIO if task_mode == 'interpolation' and MEDIA_TYPE == models.DataChoice.AUDIO else models.DataChoice.IMAGESET
 
     def update_progress(progress):
         progress_animation = '|/-\\'
@@ -882,9 +888,14 @@ def _create_thread(
         job.save_meta()
         update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
 
-    compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == models.DataChoice.VIDEO else ZipCompressedChunkWriter
+    compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == models.DataChoice.VIDEO else AudioChunkWriter if db_data.compressed_chunk_type == models.DataChoice.AUDIO else ZipCompressedChunkWriter
     if db_data.original_chunk_type == models.DataChoice.VIDEO:
         original_chunk_writer_class = Mpeg4ChunkWriter
+        # Let's use QP=17 (that is 67 for 0-100 range) for the original chunks, which should be visually lossless or nearly so.
+        # A lower value will significantly increase the chunk size with a slight increase of quality.
+        original_quality = 67
+    elif db_data.original_chunk_type == models.DataChoice.AUDIO:
+        original_chunk_writer_class = AudioChunkWriter
         # Let's use QP=17 (that is 67 for 0-100 range) for the original chunks, which should be visually lossless or nearly so.
         # A lower value will significantly increase the chunk size with a slight increase of quality.
         original_quality = 67
@@ -1078,8 +1089,9 @@ def _create_thread(
                 video_size = img_meta[0][2]
                 video_path = img_meta[0][0]
 
-            progress = extractor.get_progress(img_meta[-1][1])
-            update_progress(progress)
+            if MEDIA_TYPE is not "audio":
+                progress = extractor.get_progress(img_meta[-1][1])
+                update_progress(progress)
 
         futures = queue.Queue(maxsize=settings.CVAT_CONCURRENT_CHUNK_PROCESSING)
         with concurrent.futures.ThreadPoolExecutor(max_workers=2*settings.CVAT_CONCURRENT_CHUNK_PROCESSING) as executor:
