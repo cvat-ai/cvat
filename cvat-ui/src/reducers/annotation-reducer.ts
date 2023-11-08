@@ -510,6 +510,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     activeControl,
+                    contextMenu: {
+                        ...defaultState.canvas.contextMenu,
+                    },
                 },
             };
         }

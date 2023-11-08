@@ -132,6 +132,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         visible={menuVisible}
                         onVisibleChange={changeMenuVisible}
                         placement='bottomLeft'
+                        trigger={menuVisible ? ['click'] : ['click', 'hover']}
                         overlay={ItemMenu({
                             jobInstance,
                             readonly,

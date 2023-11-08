@@ -418,16 +418,15 @@
 }
 
 .cvat-object-item-menu {
-    > li {
+    li {
         padding: 0;
+    }
 
-        > button {
-            padding: 5px 32px;
-            color: $text-color;
-            width: 100%;
-            height: 100%;
-            text-align: left;
-        }
+    button {
+        color: $text-color;
+        width: 100%;
+        height: 100%;
+        text-align: left;
     }
 }
 
