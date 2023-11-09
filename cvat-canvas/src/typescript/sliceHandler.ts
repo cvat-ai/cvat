@@ -391,7 +391,7 @@ export class SliceHandlerImpl implements SliceHandler {
             }
         };
 
-        const handleShapeMousedown = (event: MouseEvent): void => {
+        const handleShapeMousedown = (event: MouseEvent, slipping = false): void => {
             if (points.length && event.button === 0 && !event.altKey) {
                 const [x, y] = translateToSVG(this.canvas.node as any as SVGSVGElement, [event.clientX, event.clientY]);
                 points[points.length - 1] = [x, y];
@@ -417,12 +417,20 @@ export class SliceHandlerImpl implements SliceHandler {
                 );
 
                 const numberOfIntersections = Object.keys(contourIntersection).length;
-                if (numberOfIntersections) {
-                    // from canvas mousemove handler with hold shift key
-                    // not allowed, but we will consider it as a finish click
-                    if (numberOfIntersections === 1) {
-                        click(event);
-                    }
+                if (!slipping && numberOfIntersections !== 0) {
+                    // shape was clicked with intersections (via out of contour trajectory)
+                    // not allowed
+                    return;
+                }
+
+                if (numberOfIntersections === 0 && event.target === this.shapeContour.node) {
+                    // mousemove over the shape, left new point
+                    click(event);
+                } else if (numberOfIntersections === 1 && points.length > 2) {
+                    // maybe out of contour, maybe within
+                    // require at least one more intermediate points in this case
+                    click(event);
+                } else {
                     return;
                 }
 
@@ -441,7 +449,7 @@ export class SliceHandlerImpl implements SliceHandler {
                     const d = Math.sqrt((prevX - x) ** 2 + (prevY - y) ** 2);
                     const threshold = 10 / this.geometry.scale;
                     if (d > threshold) {
-                        handleShapeMousedown(event);
+                        handleShapeMousedown(event, true);
                     }
                 } else {
                     this.slicingLine.plot(stringifyPoints(points.flat()));

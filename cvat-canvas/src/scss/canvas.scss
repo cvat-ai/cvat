@@ -447,11 +447,11 @@ g.cvat_canvas_shape_occluded {
     stroke: #838383;
 }
 
-.cvat_canvas_slicing_line,
 .cvat_canvas_sliced_contour  {
     fill-opacity: 0.01;
 }
 
 .cvat_canvas_slicing_line {
     pointer-events: none;
+    fill-opacity: 0;
 }
