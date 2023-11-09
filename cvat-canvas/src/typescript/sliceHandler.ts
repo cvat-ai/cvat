@@ -138,7 +138,7 @@ export class SliceHandlerImpl implements SliceHandler {
         this.hiddenClientIDs = [];
     }
 
-    private initialize(sliceData: EnhancedSliceData): void {
+    private showInitialMessage(): void {
         this.onMessage([{
             type: 'text',
             icon: 'info',
@@ -151,7 +151,10 @@ export class SliceHandlerImpl implements SliceHandler {
             ],
             className: 'cvat-canvas-notification-list-warning',
         }], 'slice');
+    }
 
+    private initialize(sliceData: EnhancedSliceData): void {
+        this.showInitialMessage();
         const { clientID } = sliceData.state;
         this.hiddenClientIDs = (this.canvas.select('.cvat_canvas_shape') as any).members
             .map((shape) => +shape.attr('clientID')).filter((_clientID: number) => _clientID !== clientID);
@@ -202,7 +205,7 @@ export class SliceHandlerImpl implements SliceHandler {
                 }
             });
 
-            const THRESHOLD = 10 / this.geometry.scale;
+            const THRESHOLD = 20 / this.geometry.scale;
             if (shortestDistance <= THRESHOLD) {
                 points.push([...closestPoint], [...closestPoint]);
                 firstIntersectedSegmentIdx = segmentIdx;
@@ -391,6 +394,7 @@ export class SliceHandlerImpl implements SliceHandler {
                     this.slicingPoints.forEach((circle) => {
                         circle.remove();
                     });
+                    this.showInitialMessage();
                     this.slicingLine.remove();
                     points = [];
                     firstIntersectedSegmentIdx = null;

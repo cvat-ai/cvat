@@ -51,6 +51,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private background: HTMLCanvasElement;
     private masksContent: HTMLCanvasElement;
     private bitmap: HTMLCanvasElement;
+    private bitmapUpdateReqId: number;
     private grid: SVGSVGElement;
     private content: SVGSVGElement;
     private attachmentBoard: HTMLDivElement;
@@ -1183,6 +1184,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.adoptedText = SVG.adopt((this.text as any) as HTMLElement) as SVG.Container;
         this.background = window.document.createElement('canvas');
         this.masksContent = window.document.createElement('canvas');
+        this.bitmapUpdateReqId = 0;
         this.bitmap = window.document.createElement('canvas');
         // window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 
@@ -1826,7 +1828,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.interactionHandler.destroy();
         }
 
-        if (model.imageBitmap && [UpdateReasons.IMAGE_CHANGED, UpdateReasons.OBJECTS_UPDATED].includes(reason)) {
+        if (model.imageBitmap && [UpdateReasons.OBJECTS_UPDATED].includes(reason)) {
             this.redrawBitmap();
         }
     }
@@ -1847,6 +1849,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private redrawBitmap(): void {
+        this.bitmapUpdateReqId++;
+        const { bitmapUpdateReqId } = this;
         const width = +this.background.style.width.slice(0, -2);
         const height = +this.background.style.height.slice(0, -2);
         this.bitmap.setAttribute('width', `${width}px`);
@@ -1914,13 +1918,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const imageBitmap = expandChannels(255, 255, 255, points);
                     imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
                         (dataURL: string) => new Promise((resolve) => {
-                            const img = document.createElement('img');
-                            img.addEventListener('load', () => {
-                                ctx.drawImage(img, left, top);
-                                URL.revokeObjectURL(dataURL);
-                                resolve();
-                            });
-                            img.src = dataURL;
+                            if (bitmapUpdateReqId === this.bitmapUpdateReqId) {
+                                const img = document.createElement('img');
+                                img.addEventListener('load', () => {
+                                    ctx.drawImage(img, left, top);
+                                    URL.revokeObjectURL(dataURL);
+                                    resolve();
+                                });
+                                img.src = dataURL;
+                            }
                         }));
                 }
 
