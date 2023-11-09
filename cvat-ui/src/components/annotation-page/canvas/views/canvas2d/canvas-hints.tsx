@@ -77,7 +77,7 @@ export default class CanvasTipsComponent extends React.PureComponent<{}, State> 
             });
 
             return (
-                <div className='cvat-canvas-hints-container'>
+                <div style={{ filter: 'none' }} className='cvat-canvas-hints-container'>
                     { blocks }
                     { topic !== FORCE_MESSAGE_FLAG && (
                         <Button
@@ -96,6 +96,8 @@ export default class CanvasTipsComponent extends React.PureComponent<{}, State> 
             );
         }
 
-        return null;
+        return (
+            <div className='cvat-canvas-hints-container cvat-canvas-hints-container-disabled' />
+        );
     }
 }

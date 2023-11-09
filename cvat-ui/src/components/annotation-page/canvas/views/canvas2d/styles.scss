@@ -9,19 +9,24 @@
 }
 
 .cvat-canvas-hints-container {
+    filter: none;
     position: absolute;
     top: $grid-unit-size;
     right: $grid-unit-size;
     width: $grid-unit-size * 32;
-    background: black;
+    background: rgba(0, 0, 0, 60%);
     color: white;
     padding: $grid-unit-size;
     border-radius: $grid-unit-size;
-    height: auto;
-    transition: all 0.5s;
-    opacity: 0.85;
+    transition: filter 0.15s linear;
+    overflow: hidden;
     z-index: 100;
     pointer-events: none;
+
+    &.cvat-canvas-hints-container-disabled {
+        filter: blur(10px);
+        visibility: hidden;
+    }
 
     .cvat-canvas-hints-block {
         font-weight: normal;
