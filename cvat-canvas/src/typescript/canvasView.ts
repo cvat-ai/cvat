@@ -112,12 +112,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
     }
 
-    private onError = (exception: unknown): void => {
+    private onError = (exception: unknown, domain?: string): void => {
         this.canvas.dispatchEvent(
             new CustomEvent('canvas.error', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
+                    domain,
                     exception: exception instanceof Error ?
                         exception : new Error(`Unknown exception: "${exception}"`),
                 },
@@ -1805,7 +1806,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.mode = Mode.IDLE;
             this.canvas.style.cursor = '';
         } else if (reason === UpdateReasons.DATA_FAILED) {
-            this.onError(model.exception);
+            this.onError(model.exception, 'data fetching');
         } else if (reason === UpdateReasons.DESTROY) {
             this.canvas.dispatchEvent(
                 new CustomEvent('canvas.destroy', {

@@ -44,6 +44,7 @@ import {
     switchZLayer,
     fetchAnnotationsAsync,
     getDataFailed,
+    canvasErrorOccurred,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -140,7 +141,8 @@ interface DispatchToProps {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
-    onGetDataFailed(error: any): void;
+    onGetDataFailed(error: Error): void;
+    onCanvasErrorOccurred(error: Error): void;
     onStartIssue(position: number[]): void;
 }
 
@@ -326,8 +328,11 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onFetchAnnotation(): void {
             dispatch(fetchAnnotationsAsync());
         },
-        onGetDataFailed(error: any): void {
+        onGetDataFailed(error: Error): void {
             dispatch(getDataFailed(error));
+        },
+        onCanvasErrorOccurred(error: Error): void {
+            dispatch(canvasErrorOccurred(error));
         },
         onStartIssue(position: number[]): void {
             dispatch(reviewActions.startIssue(position));
@@ -593,10 +598,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     }
 
     private onCanvasErrorOccurrence = (event: any): void => {
-        const { exception } = event.detail;
-        // todo
-        const { onGetDataFailed } = this.props;
-        onGetDataFailed(exception);
+        const { exception, domain } = event.detail;
+        if (domain === 'data fetching') {
+            const { onGetDataFailed } = this.props;
+            onGetDataFailed(exception);
+        } else {
+            const { onCanvasErrorOccurred } = this.props;
+            onCanvasErrorOccurred(exception);
+        }
     };
 
     private onCanvasMessage = (event: any): void => {

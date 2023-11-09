@@ -188,6 +188,7 @@ export enum AnnotationActionTypes {
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
     INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
     GET_DATA_FAILED = 'GET_DATA_FAILED',
+    CANVAS_ERROR_OCCURRED = 'CANVAS_ERROR_OCCURRED',
     SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
     SWITCH_NAVIGATION_BLOCKED = 'SWITCH_NAVIGATION_BLOCKED',
     DELETE_FRAME = 'DELETE_FRAME',
@@ -228,9 +229,18 @@ export function changeWorkspace(workspace: Workspace): AnyAction {
     };
 }
 
-export function getDataFailed(error: any): AnyAction {
+export function getDataFailed(error: Error): AnyAction {
     return {
         type: AnnotationActionTypes.GET_DATA_FAILED,
+        payload: {
+            error,
+        },
+    };
+}
+
+export function canvasErrorOccurred(error: Error): AnyAction {
+    return {
+        type: AnnotationActionTypes.CANVAS_ERROR_OCCURRED,
         payload: {
             error,
         },

@@ -110,6 +110,7 @@ const defaultState: NotificationsState = {
             deleteFrame: null,
             restoreFrame: null,
             savingLogs: null,
+            canvas: null,
         },
         boundaries: {
             resetError: null,
@@ -1340,6 +1341,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-fetch-frame-data-from-the-server-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CANVAS_ERROR_OCCURRED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        canvas: {
+                            message: 'Canvas error occurred',
+                            reason: action.payload.error,
+                            shouldLog: true,
+                            className: 'cvat-notification-notice-canvas-error-occurreed',
                         },
                     },
                 },

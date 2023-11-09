@@ -592,10 +592,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.data.objects = objectStates;
                 this.notify(UpdateReasons.OBJECTS_UPDATED);
             })
-            .catch((exception: any): void => {
-                this.data.exception = exception;
-                // don't notify when the frame is no longer needed
+            .catch((exception: unknown): void => {
                 if (typeof exception !== 'number') {
+                    // don't notify when the frame is no longer needed
+                    if (exception instanceof Error) {
+                        this.data.exception = exception;
+                    } else {
+                        this.data.exception = new Error('Unknown error occured when fetching image data');
+                    }
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
             });

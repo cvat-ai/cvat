@@ -496,6 +496,7 @@ export interface NotificationsState {
             deleteFrame: null | ErrorState;
             restoreFrame: null | ErrorState;
             savingLogs: null | ErrorState;
+            canvas: null | ErrorState;
         };
         boundaries: {
             resetError: null | ErrorState;
