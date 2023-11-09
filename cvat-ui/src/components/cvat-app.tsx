@@ -75,7 +75,6 @@ import EventRecorder from 'utils/controls-logger';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
-import CreateModelPage from './create-model-page/create-model-page';
 import CreateJobPage from './create-job-page/create-job-page';
 import AnalyticsPage from './analytics-page/analytics-page';
 
@@ -503,7 +502,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             >
                                                 <Switch>
                                                     <Route exact path='/models' component={ModelsPageComponent} />
-                                                    <Route exact path='/models/create' component={CreateModelPage} />
                                                 </Switch>
                                             </Route>
                                         )}

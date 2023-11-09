@@ -805,39 +805,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ModelsActionTypes.CREATE_MODEL_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    models: {
-                        ...state.errors.models,
-                        creating: {
-                            message: 'Could not create model',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                        },
-                    },
-                },
-            };
-        }
-        case ModelsActionTypes.DELETE_MODEL_FAILED: {
-            const { modelName } = action.payload;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    models: {
-                        ...state.errors.models,
-                        deleting: {
-                            message: `Could not delete model ${modelName}`,
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                        },
-                    },
-                },
-            };
-        }
         case AnnotationActionTypes.GET_JOB_FAILED: {
             return {
                 ...state,

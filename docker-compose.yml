@@ -27,7 +27,7 @@ services:
 
   cvat_redis:
     container_name: cvat_redis
-    image: eqalpha/keydb:x86_64_v6.3.2
+    image: eqalpha/keydb:x86_64_v6.3.4
     restart: always
     command: [
       "keydb-server",
