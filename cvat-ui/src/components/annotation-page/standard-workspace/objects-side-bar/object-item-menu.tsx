@@ -7,11 +7,11 @@ import React from 'react';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Icon, {
-    LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined, ScissorOutlined,
+    LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
 } from '@ant-design/icons';
 
 import {
-    BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon,
+    BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ObjectType, ShapeType, ColorBy } from 'reducers';
@@ -31,6 +31,7 @@ interface Props {
     changeColorShortcut: string;
     copyShortcut: string;
     pasteShortcut: string;
+    sliceShortcut: string;
     propagateShortcut: string;
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
@@ -112,13 +113,13 @@ function EditMaskItem(props: ItemProps): JSX.Element {
 
 function SliceItem(props: ItemProps): JSX.Element {
     const { toolProps, ...rest } = props;
-    const { slice } = toolProps;
+    const { slice, sliceShortcut } = toolProps;
     return (
         <Menu.Item {...rest}>
-            <CVATTooltip title='Cut the shape into two parts'>
+            <CVATTooltip title={`Cut the shape into two parts ${sliceShortcut}`}>
                 <Button
                     type='link'
-                    icon={<ScissorOutlined />}
+                    icon={<Icon component={SliceIcon} />}
                     onClick={slice}
                     className='cvat-object-item-menu-slice-object'
                 >
