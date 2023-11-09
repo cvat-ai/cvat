@@ -96,17 +96,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.controller.mode;
     }
 
-    private onMessage = ({ lines, type }: {
-        lines?: { text: string, type?: string, style?: CSSStyleDeclaration }[],
-        type?: 'info' | 'loading'
-    }) => {
+    private onMessage = (messages: {
+        type: 'text' | 'list';
+        content: string | string[];
+        className?: string;
+        icon?: 'info' | 'loading';
+    }[] | null, topic: string) => {
         this.canvas.dispatchEvent(
             new CustomEvent('canvas.message', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
-                    lines,
-                    type,
+                    topic,
+                    messages,
                 },
             }),
         );
@@ -501,7 +503,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.controller.group({ enabled: false });
         } else if (this.mode === Mode.JOIN) {
             this.controller.join({ enabled: false });
-            this.onMessage({});
+            this.onMessage(null, 'join');
         }
 
         this.mode = Mode.IDLE;
@@ -1734,10 +1736,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else {
                 data = this.controller.joinData;
                 this.mode = Mode.JOIN;
-                this.onMessage({
-                    lines: [{ text: 'Click masks you would like to join together. To cancel click selected mask one more time' }],
-                    type: 'info',
-                });
+
+                this.onMessage([{
+                    type: 'text',
+                    icon: 'info',
+                    content: 'Click masks you would like to join together. To unselect click selected mask one more time',
+                }], 'join');
+
                 this.groupHandler.group(data, {
                     shapeType: ['mask'],
                     objectType: ['shape'],

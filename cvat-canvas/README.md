@@ -76,6 +76,7 @@ Standard JS events are used.
     - canvas.roiselected => {points: number[]}
     - canvas.resizeshape => {id: number}
     - canvas.contextmenu => { mouseEvent: MouseEvent, objectState: ObjectState,  pointID: number }
+    - canvas.message => { messages: { type: 'text' | 'list'; content: string | string[]; className?: string; icon?: 'info' | 'loading' }[] | null, topic: string }
     - canvas.error => { exception: Error, domain?: string }
     - canvas.destroy
 ```

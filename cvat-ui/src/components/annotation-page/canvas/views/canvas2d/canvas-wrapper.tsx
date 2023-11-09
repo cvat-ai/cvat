@@ -3,6 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
+
 import React from 'react';
 import { connect } from 'react-redux';
 import Slider from 'antd/lib/slider';
@@ -10,8 +12,6 @@ import Spin from 'antd/lib/spin';
 import Dropdown from 'antd/lib/dropdown';
 import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
-import message from 'antd/lib/message';
-import Text from 'antd/lib/typography/Text';
 import debounce from 'lodash/debounce';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -61,6 +61,7 @@ import { filterAnnotations } from 'utils/filter-annotations';
 import { ImageFilter } from 'utils/image-processing';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
+import CanvasTipsComponent from './canvas-hints';
 
 const cvat = getCore();
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
@@ -344,6 +345,7 @@ type Props = StateToProps & DispatchToProps;
 
 class CanvasWrapperComponent extends React.PureComponent<Props> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
+    private canvasTipsRef = React.createRef<CanvasTipsComponent>();
 
     public componentDidMount(): void {
         const {
@@ -609,23 +611,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasMessage = (event: any): void => {
-        const { lines, type } = event.detail;
-        if (lines) {
-            const content = lines.map(({ text, type: lineType, style }: any, idx: number) => (
-                <React.Fragment key={idx}>
-                    <Text key={idx} type={lineType} style={style || {}}>{text}</Text>
-                    <br />
-                </React.Fragment>
-            ));
-
-            if (type === 'info') {
-                message.info({ content, key: 'canvas.message', duration: 0 });
-            } else if (type === 'loading') {
-                message.loading({ content, key: 'canvas.message', duration: 0 });
-            }
-        } else {
-            message.destroy('canvas.message');
-        }
+        const { messages, topic } = event.detail;
+        this.canvasTipsRef.current?.update(messages, topic);
     }
 
     private onCanvasShapeDrawn = (event: any): void => {
@@ -1109,11 +1096,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         return (
             <>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
-                {/*
-                    This element doesn't have any props
-                    So, React isn't going to rerender it
-                    And it's a reason why cvat-canvas appended in mount function works
-                */}
+                <CanvasTipsComponent ref={this.canvasTipsRef} />
                 {
                     !canvasIsReady && (
                         <div className='cvat-spinner-container'>
@@ -1121,6 +1104,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                         </div>
                     )
                 }
+
+                {/*
+                    This element doesn't have any props
+                    So, React isn't going to rerender it
+                    And it's a reason why cvat-canvas appended in mount function works
+                */}
                 <div
                     className='cvat-canvas-container'
                     style={{

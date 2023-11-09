@@ -455,3 +455,11 @@ g.cvat_canvas_shape_occluded {
     pointer-events: none;
     fill-opacity: 0;
 }
+
+.cvat-canvas-notification-list-warning {
+    color: orange;
+}
+
+.cvat-canvas-notification-list-shortcuts {
+    color: green;
+}

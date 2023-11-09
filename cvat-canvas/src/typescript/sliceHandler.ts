@@ -96,10 +96,12 @@ export class SliceHandlerImpl implements SliceHandler {
     private hideObject: (clientID: number) => void;
     private showObject: (clientID: number) => void;
     private onSliceDone: (state?: any, results?: number[][], duration?: number) => void;
-    private onMessage: ({ lines, type }: {
-        lines?: { text: string, type?: string, style?: CSSStyleDeclaration }[],
-        type?: 'info' | 'loading'
-    }) => void;
+    private onMessage: (messages: {
+        type: 'text' | 'list';
+        content: string | string[];
+        className?: string;
+        icon?: 'info' | 'loading';
+    }[] | null, topic: string) => void;
     private onError: (exception: unknown) => void;
     private getObjects: () => any[];
     private geometry: Geometry;
@@ -137,14 +139,19 @@ export class SliceHandlerImpl implements SliceHandler {
     }
 
     private initialize(sliceData: EnhancedSliceData): void {
-        this.onMessage({
-            lines: [
-                { text: 'Set initial point on the shape contour' },
-                { text: ' • Slicing line must not intersect itself', type: 'warning' },
-                { text: ' • Slicing line must not intersect contour more than twice', type: 'warning' },
+        this.onMessage([{
+            type: 'text',
+            icon: 'info',
+            content: 'Set initial point on the shape contour',
+        }, {
+            type: 'list',
+            content: [
+                'Slicing line must not intersect itself',
+                'Slicing line must not intersect contour more than twice',
             ],
-            type: 'info',
-        });
+            className: 'cvat-canvas-notification-list-warning',
+        }], 'slice');
+
         const { clientID } = sliceData.state;
         this.hiddenClientIDs = (this.canvas.select('.cvat_canvas_shape') as any).members
             .map((shape) => +shape.attr('clientID')).filter((_clientID: number) => _clientID !== clientID);
@@ -209,17 +216,19 @@ export class SliceHandlerImpl implements SliceHandler {
                 circle.attr('fill', 'white');
                 circle.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
                 this.slicingPoints.push(circle);
-                this.onMessage({
-                    lines: [
-                        { text: 'Set more points within the shape contour, if necessary. Intersect contour at another point to slice' },
-                        {
-                            text: '• Hold <Shift> to enable slip mode' +
-                                ' • Do <Right Click> to cancel the latest point',
-                            type: 'secondary',
-                        },
+
+                this.onMessage([{
+                    type: 'text',
+                    icon: 'info',
+                    content: 'Set more points within the shape contour, if necessary. Intersect contour at another point to slice',
+                }, {
+                    type: 'list',
+                    content: [
+                        'Hold <Shift> to enable slip mode',
+                        'Do <Right Click> to cancel the latest point',
                     ],
-                    type: 'info',
-                });
+                    className: 'cvat-canvas-notification-list-shortcuts',
+                }], 'slice');
             }
         };
 
@@ -488,14 +497,20 @@ export class SliceHandlerImpl implements SliceHandler {
         this.canvas.off('mousemove.slice');
         this.enabled = false;
         this.onSliceDone();
-        this.onMessage({});
+        this.onMessage(null, 'slice');
     }
 
     public slice(sliceData: SliceData): void {
         const initializeWithContour = (state: any): void => {
             this.start = Date.now();
             const { start } = this;
-            this.onMessage({ lines: [{ text: 'Getting shape contour' }], type: 'loading' });
+
+            this.onMessage([{
+                type: 'text',
+                content: 'Getting shape contour',
+                icon: 'loading',
+            }], 'force');
+
             sliceData.getContour(state).then((contour) => {
                 const { shapeType } = state;
                 if (this.start === start && this.enabled) {
@@ -523,10 +538,13 @@ export class SliceHandlerImpl implements SliceHandler {
                     return;
                 }
             }
-            this.onMessage({
-                lines: [{ text: 'Click a mask/polygon shape you would like to slice' }],
-                type: 'info',
-            });
+
+            this.onMessage([{
+                type: 'text',
+                content: 'Click a mask or polygon shape you would like to slice',
+                icon: 'info',
+            }], 'slice');
+
             this.objectSelector.enable(([state]) => {
                 this.objectSelector.disable();
                 initializeWithContour(state);
