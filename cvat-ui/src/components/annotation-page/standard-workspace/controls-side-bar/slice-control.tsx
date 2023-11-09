@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { ScissorOutlined } from '@ant-design/icons';
+import Icon from '@ant-design/icons';
 
 import { getCVATStore } from 'cvat-store';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -11,6 +11,7 @@ import { ActiveControl } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import opencvWrapper from 'utils/opencv-wrapper/opencv-wrapper';
+import { SliceIcon } from 'icons';
 
 export interface Props {
     updateActiveControl(activeControl: ActiveControl): void;
@@ -53,7 +54,7 @@ function SliceControl(props: Props): JSX.Element {
             };
 
     return disabled ? (
-        <ScissorOutlined className='cvat-slice-control cvat-disabled-canvas-control' />
+        <Icon className='cvat-slice-control cvat-disabled-canvas-control' component={SliceIcon} />
     ) : (
         <>
             <GlobalHotKeys
@@ -66,7 +67,7 @@ function SliceControl(props: Props): JSX.Element {
                 }}
             />
             <CVATTooltip title={`Slice a mask/polygon shape ${shortcuts.SWITCH_SLICE_MODE.displayValue}`} placement='right'>
-                <ScissorOutlined {...dynamicIconProps} />
+                <Icon {...dynamicIconProps} component={SliceIcon} />
             </CVATTooltip>
         </>
     );
