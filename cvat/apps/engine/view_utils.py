@@ -4,6 +4,7 @@
 
 # NOTE: importing in the utils.py header leads to circular importing
 
+from distutils.util import strtobool
 from typing import Optional, Type
 
 from django.db.models.query import QuerySet
@@ -111,3 +112,14 @@ def tus_chunk_action(*, detail: bool, suffix_base: str):
         return f
 
     return decorator
+
+def parse_mask_to_poly_request_param(request) -> Optional[bool]:
+    """
+    Retrieves and parses the 'conv_mask_to_poly' parameter from the request.
+    """
+    from cvat.apps.dataset_manager.formats.transformations import MaskToPolygonTransformation
+    param_value = request.query_params.get(MaskToPolygonTransformation.PARAMETER_NAME, None)
+    if param_value is not None:
+        param_value = strtobool(param_value)
+
+    return param_value

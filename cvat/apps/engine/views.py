@@ -68,7 +68,9 @@ from cvat.apps.engine.serializers import (
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
     CloudStorageReadSerializer, DatasetFileSerializer,
     ProjectFileSerializer, TaskFileSerializer, RqIdSerializer, CloudStorageContentSerializer)
-from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
+from cvat.apps.engine.view_utils import (
+    get_cloud_storage_for_import_or_export, parse_mask_to_poly_request_param, tus_chunk_action
+)
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
@@ -87,7 +89,6 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     TaskPermission, UserPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.engine.view_utils import tus_chunk_action
 
 slogger = ServerLogManager(__name__)
 
@@ -421,7 +422,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'dataset':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
-            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+            conv_mask_to_poly = parse_mask_to_poly_request_param(request)
             tmp_dir = self._object.get_tmp_dirname()
             uploaded_file = None
             if os.path.isfile(os.path.join(tmp_dir, filename)):
@@ -1002,7 +1003,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         def _handle_upload_annotations(request):
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
-            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+            conv_mask_to_poly = parse_mask_to_poly_request_param(request)
             tmp_dir = self._object.get_tmp_dirname()
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
@@ -1357,7 +1358,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if format_name:
                 # NOTE: continue process of import annotations
                 use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
-                conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+                conv_mask_to_poly = parse_mask_to_poly_request_param(request)
                 obj = self._object if use_settings else request.query_params
                 location_conf = get_location_configuration(
                     obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
@@ -1642,7 +1643,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
-            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+            conv_mask_to_poly = parse_mask_to_poly_request_param(request)
             tmp_dir = self.get_upload_dir()
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
@@ -1795,7 +1796,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             format_name = request.query_params.get('format', '')
             if format_name:
                 use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
-                conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+                conv_mask_to_poly = parse_mask_to_poly_request_param(request)
                 obj = self._object.segment.task if use_settings else request.query_params
                 location_conf = get_location_configuration(
                     obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE

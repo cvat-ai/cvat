@@ -26,6 +26,7 @@ from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.utils import get_import_rq_id
 
+
 slogger = ServerLogManager(__name__)
 
 class TusFile:
@@ -419,13 +420,17 @@ class AnnotationMixin:
         return Response(data)
 
     def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_template):
+        from cvat.apps.engine.view_utils import (
+            parse_mask_to_poly_request_param
+        ) # import separately to prevent circular import
+
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:
             return self.init_tus_upload(request)
 
         use_default_location = request.query_params.get('use_default_location', True)
-        conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+        conv_mask_to_poly = parse_mask_to_poly_request_param(request)
         use_settings = strtobool(str(use_default_location))
         obj = db_obj if use_settings else request.query_params
         location_conf = get_location_configuration(

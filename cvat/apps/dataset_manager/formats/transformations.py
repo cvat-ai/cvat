@@ -79,12 +79,10 @@ class MaskToPolygonTransformation:
     This usecase is supposed for backward compatibility for the transition period.
     """
 
-    @classmethod
-    def declare_arg_names(cls):
-        return ['conv_mask_to_poly']
+    PARAMETER_NAME = 'conv_mask_to_poly'
 
     @classmethod
     def convert_dataset(cls, dataset, **kwargs):
-        if kwargs.get('conv_mask_to_poly', True):
+        if kwargs.get(cls.PARAMETER_NAME, True):
             dataset.transform('masks_to_polygons')
         return dataset
