@@ -83,6 +83,10 @@ class MaskToPolygonTransformation:
 
     @classmethod
     def convert_dataset(cls, dataset, **kwargs):
-        if kwargs.get(cls.PARAMETER_NAME, True):
+        value = kwargs.get(cls.PARAMETER_NAME, None)
+        if value is None:
+            value = True
+
+        if value:
             dataset.transform('masks_to_polygons')
         return dataset
