@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.8.3'></a>
+## \[2.8.2\] - 2023-11-10
+
+### Add
+
+- Add Mediapipe body points 33 keypoints support
+  (<https://github.com/opencv/cvat/pull/7108>)
+
+
+
 <a id='changelog-2.8.2'></a>
 ## \[2.8.2\] - 2023-11-06
 
