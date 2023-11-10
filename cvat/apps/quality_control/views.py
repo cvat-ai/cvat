@@ -305,7 +305,7 @@ class QualityReportViewSet(
             elif rq_job.is_queued or rq_job.is_started:
                 return Response(status=status.HTTP_202_ACCEPTED)
             elif rq_job.is_finished:
-                return_value = rq_job.return_value
+                return_value = rq_job.return_value()
                 rq_job.delete()
                 if not return_value:
                     raise ValidationError("No report has been computed")

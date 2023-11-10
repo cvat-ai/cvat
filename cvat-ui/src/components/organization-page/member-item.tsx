@@ -41,7 +41,7 @@ function MemberItem(props: Props): JSX.Element {
     const { username, firstName, lastName } = user;
     const { username: selfUserName } = useSelector((state: CombinedState) => state.auth.user);
 
-    const invitationActionsMenu = (
+    const invitationActionsMenu = invitation && (
         <Dropdown overlay={(
             <Menu onClick={(action: MenuInfo) => {
                 if (action.key === MenuKeys.RESEND_INVITATION) {

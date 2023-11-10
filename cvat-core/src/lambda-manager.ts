@@ -6,7 +6,7 @@
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { ModelProviders, RQStatus } from './enums';
+import { RQStatus } from './enums';
 
 export interface ModelProvider {
     name: string;
@@ -14,36 +14,24 @@ export interface ModelProvider {
     attributes: Record<string, string>;
 }
 
-interface ModelProxy {
-    run: (body: any) => Promise<any>;
-    call: (modelID: string | number, body: any) => Promise<any>;
-    status: (requestID: string) => Promise<any>;
-    cancel: (requestID: string) => Promise<any>;
-}
-
 class LambdaManager {
+    private cachedList: MLModel[];
     private listening: Record<number, {
         onUpdate: ((status: RQStatus, progress: number, message?: string) => void)[];
         functionID: string;
         timeout: number | null;
     }>;
-    private cachedList: any;
 
     constructor() {
         this.listening = {};
-        this.cachedList = null;
+        this.cachedList = [];
     }
 
     async list(): Promise<{ models: MLModel[], count: number }> {
         const lambdaFunctions = await serverProxy.lambda.list();
 
-        const functionsResult = await serverProxy.functions.list();
-        const { results: functions, count: functionsCount } = functionsResult;
-
-        const result = [...lambdaFunctions, ...functions];
         const models = [];
-
-        for (const model of result) {
+        for (const model of lambdaFunctions) {
             models.push(
                 new MLModel({
                     ...model,
@@ -52,7 +40,7 @@ class LambdaManager {
         }
 
         this.cachedList = models;
-        return { models, count: lambdaFunctions.length + functionsCount };
+        return { models, count: lambdaFunctions.length };
     }
 
     async run(taskID: number, model: MLModel, args: any) {
@@ -76,7 +64,7 @@ class LambdaManager {
             function: model.id,
         };
 
-        const result = await LambdaManager.getModelProxy(model).run(body);
+        const result = await serverProxy.lambda.run(body);
         return result.id;
     }
 
@@ -89,16 +77,14 @@ class LambdaManager {
             ...args,
             task: taskID,
         };
-
-        const result = await LambdaManager.getModelProxy(model).call(model.id, body);
+        const result = await serverProxy.lambda.call(model.id, body);
         return result;
     }
 
     async requests() {
         const lambdaRequests = await serverProxy.lambda.requests();
-        const functionsRequests = await serverProxy.functions.requests();
-        const result = [...lambdaRequests, ...functionsRequests];
-        return result.filter((request) => ['queued', 'started'].includes(request.status));
+        return lambdaRequests
+            .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
     }
 
     async cancel(requestID, functionID): Promise<void> {
@@ -115,7 +101,7 @@ class LambdaManager {
             delete this.listening[requestID];
         }
 
-        await LambdaManager.getModelProxy(model).cancel(requestID);
+        await serverProxy.lambda.cancel(requestID);
     }
 
     async listen(
@@ -133,9 +119,8 @@ class LambdaManager {
             // already listening, avoid sending extra requests
             return;
         }
-
         const timeoutCallback = (): void => {
-            LambdaManager.getModelProxy(model).status(requestID).then((response) => {
+            serverProxy.lambda.status(requestID).then((response) => {
                 const { status } = response;
                 if (requestID in this.listening) {
                     // check it was not cancelled
@@ -178,24 +163,6 @@ class LambdaManager {
             functionID,
             timeout: window.setTimeout(timeoutCallback),
         };
-    }
-
-    async providers(): Promise<ModelProvider[]> {
-        const providersData: Record<string, Record<string, string>> = await serverProxy.functions.providers();
-        const providers = Object.entries(providersData).map(([provider, attributes]) => {
-            const { icon } = attributes;
-            delete attributes.icon;
-            return {
-                name: provider,
-                icon,
-                attributes,
-            };
-        });
-        return providers;
-    }
-
-    private static getModelProxy(model: MLModel): ModelProxy {
-        return model.provider === ModelProviders.CVAT ? serverProxy.lambda : serverProxy.functions;
     }
 }
 

@@ -620,7 +620,7 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         task_id = validated_data.pop('task_id')
-        task = models.Task.objects.get(pk=task_id)
+        task = models.Task.objects.select_for_update().get(pk=task_id)
 
         if validated_data["type"] == models.JobType.GROUND_TRUTH:
             if not task.data:

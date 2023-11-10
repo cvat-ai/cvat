@@ -703,7 +703,7 @@ BUCKET_CONTENT_MAX_PAGE_SIZE =  500
 
 IMPORT_CACHE_FAILED_TTL = timedelta(days=90)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
-IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=2)
+IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=12)
 
 ASSET_MAX_SIZE_MB = 10
 ASSET_SUPPORTED_TYPES = ('image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', )
@@ -718,3 +718,8 @@ EXTRA_RULES_PATHS = []
 # But it won't work without additional configuration, so we set it to None
 # to check configuration and throw ImproperlyConfigured if thats a case
 EMAIL_BACKEND = None
+
+ONE_RUNNING_JOB_IN_QUEUE_PER_USER = strtobool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_PER_USER', 'false'))
+
+# How many chunks can be prepared simultaneously during task creation in case the cache is not used
+CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSING', 1))
