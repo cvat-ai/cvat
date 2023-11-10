@@ -2684,3 +2684,49 @@ class TestImportWithComplexFilenames:
                 for tes in te.shapes
             ]
         )
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestGetTaskAnnotations:
+    @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
+    def test_datumaro_export_without_annotations_includes_image_info(self, admin_user, tasks, mode):
+        task = next(t for t in tasks if t["size"] and t["mode"] == mode)
+
+        with make_api_client(admin_user) as api_client:
+            response = export_dataset(
+                api_client.tasks_api.retrieve_annotations_endpoint,
+                id=task["id"],
+                format="Datumaro 1.0",
+            )
+            assert response.status == HTTPStatus.OK
+
+        with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+            annotations = json.loads(zip_file.read("annotations/default.json"))
+
+        assert annotations["items"]
+        for item in annotations["items"]:
+            assert item["media"]["path"]
+            assert item["image"]["path"]
+            assert item["image"]["size"]
+
+    def test_can_import_datumaro_json(self, admin_user, tasks):
+        task = next(t for t in tasks if t["size"])
+
+        with make_api_client(admin_user) as api_client:
+            response = export_dataset(
+                api_client.tasks_api.retrieve_annotations_endpoint,
+                id=task["id"],
+                format="Datumaro 1.0",
+            )
+            assert response.status == HTTPStatus.OK
+
+        with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+            annotations = zip_file.read("annotations/default.json")
+
+        with Client(BASE_URL) as client, TemporaryDirectory() as tempdir:
+            client.config.status_check_period = 0.01
+            client.login((admin_user, USER_PASS))
+
+            annotations_path = Path(tempdir) / "annotations.json"
+            annotations_path.write_bytes(annotations)
+            client.tasks.retrieve(task["id"]).import_annotations("Datumaro 1.0", annotations_path)
