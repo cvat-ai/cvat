@@ -1620,6 +1620,55 @@ class TestPostTaskData:
         response = get_method(self._USERNAME, "tasks")
         assert response.status_code == HTTPStatus.OK
 
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    @pytest.mark.parametrize("use_manifest", [True, False])
+    @pytest.mark.parametrize("server_files", [["test/"]])
+    @pytest.mark.parametrize(
+        "default_prefix, expected_task_size",
+        [
+            (
+                "test/sub_1/img_0",
+                1,
+            ),
+            (
+                "test/sub_1/",
+                3,
+            ),
+        ],
+    )
+    @pytest.mark.parametrize("org", [""])
+    def test_create_task_with_cloud_storage_directories_and_default_bucket_prefix(
+        self,
+        cloud_storage_id: int,
+        use_manifest: bool,
+        server_files: List[str],
+        default_prefix: str,
+        expected_task_size: int,
+        org: str,
+        cloud_storages,
+        request,
+    ):
+        cloud_storage = cloud_storages[cloud_storage_id]
+
+        with make_api_client(self._USERNAME) as api_client:
+            (_, response) = api_client.cloudstorages_api.partial_update(
+                cloud_storage_id,
+                patched_cloud_storage_write_request={
+                    "specific_attributes": f'{cloud_storage["specific_attributes"]}&prefix={default_prefix}'
+                },
+            )
+            assert response.status == HTTPStatus.OK
+
+        task_id, _ = self._create_task_with_cloud_data(
+            request, cloud_storage, use_manifest, server_files, org=org
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            (task, response) = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
+            assert task.size == expected_task_size
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchTaskLabel:

@@ -3,23 +3,26 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
+
 import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
 import { MoreOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
-import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 import Title from 'antd/lib/typography/Title';
 import Meta from 'antd/lib/card/Meta';
-import Preview from 'components/common/preview';
 import moment from 'moment';
 import Divider from 'antd/lib/divider';
 import Card from 'antd/lib/card';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
-import ModelActionsMenuComponent from './models-action-menu';
-import ModelProviderIcon from './model-provider-icon';
+import Menu from 'antd/lib/menu';
+
+import Preview from 'components/common/preview';
+import { usePlugins } from 'utils/hooks';
+import { CombinedState } from 'reducers';
+import { MLModel, ModelProviders } from 'cvat-core-wrapper';
 
 interface Props {
     model: MLModel;
@@ -27,26 +30,56 @@ interface Props {
 
 export default function DeployedModelItem(props: Props): JSX.Element {
     const { model } = props;
-    const { provider } = model;
-    const [isRemoved, setIsRemoved] = useState(false);
     const [isModalShown, setIsModalShown] = useState(false);
 
-    const onOpenModel = () => {
+    const onOpenModel = (): void => {
         setIsModalShown(true);
     };
-    const onCloseModel = () => {
+    const onCloseModel = (): void => {
         setIsModalShown(false);
     };
 
-    const onDelete = useCallback(() => {
-        setIsRemoved(true);
-    }, []);
-
     const created = moment(model.createdDate).fromNow();
-    const icon = <ModelProviderIcon providerName={provider} />;
     const modelDescription = model.provider !== ModelProviders.CVAT ?
         <Text type='secondary'>{`Added ${created}`}</Text> :
         <Text type='secondary'>System model</Text>;
+
+    const menuItems: [JSX.Element, number][] = [];
+    const topBarItems: [JSX.Element, number][] = [];
+
+    const menuPlugins = usePlugins(
+        (state: CombinedState) => state.plugins.components.modelsPage.modelItem.menu.items, props,
+    );
+    menuItems.push(
+        ...menuPlugins.map(({ component: Component, weight }, index) => (
+            [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
+        )),
+    );
+    const modelMenu = (
+        <Menu selectable={false} className='cvat-project-actions-menu'>
+            {menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
+                .map((menuItem) => menuItem[0])}
+        </Menu>
+    );
+
+    const topBarProps = {
+        provider: model.provider,
+    };
+    const topBarPlugins = usePlugins(
+        (state: CombinedState) => state.plugins.components.modelsPage.modelItem.topBar.menu.items, topBarProps,
+    );
+    topBarItems.push(
+        ...topBarPlugins.map(({ component: Component, weight }, index) => (
+            [<Component key={index} targetProps={topBarProps} />, weight] as [JSX.Element, number]
+        )),
+    );
+    const modelTopBar = (
+        <div className='cvat-model-item-top-bar'>
+            {topBarItems.sort((item1, item2) => item1[1] - item2[1])
+                .map((item) => item[0])}
+        </div>
+    );
+
     return (
         <>
             <Modal
@@ -63,7 +96,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                     previewWrapperClassName='cvat-models-item-card-preview-wrapper'
                     previewClassName='cvat-models-item-card-preview'
                 />
-                {icon ? <div className='cvat-model-item-provider-inner'>{icon}</div> : null}
+                { modelTopBar }
                 <div className='cvat-model-info-container'>
                     <Title level={3}>{model.name}</Title>
                     {modelDescription}
@@ -76,7 +109,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                                 <Text className='cvat-model-info-modal-labels-title'>Labels:</Text>
                             </div>
                             <div className='cvat-model-info-container cvat-model-info-modal-labels-list'>
-                                {model.labels.map((label) => <Tag key={label}>{label}</Tag>)}
+                                {model.labels.map((label) => <Tag key={label.name}>{label.name}</Tag>)}
                             </div>
                             <Divider />
                         </>
@@ -129,7 +162,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                     />
                 )}
                 size='small'
-                className={`cvat-models-item-card ${isRemoved ? 'cvat-models-item-card-removed' : ''} `}
+                className='cvat-models-item-card'
             >
                 <Meta
                     title={(
@@ -144,8 +177,8 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                                 {modelDescription}
                             </Row>
                             {
-                                model.provider !== ModelProviders.CVAT && (
-                                    <Dropdown overlay={<ModelActionsMenuComponent model={model} onDelete={onDelete} />}>
+                                menuItems.length !== 0 && (
+                                    <Dropdown overlay={modelMenu}>
                                         <Button className='cvat-deployed-model-details-button' type='link' size='large' icon={<MoreOutlined />} />
                                     </Dropdown>
                                 )
@@ -153,9 +186,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                         </div>
                     )}
                 />
-                {
-                    icon ? <div className='cvat-model-item-provider'>{icon}</div> : null
-                }
+                { modelTopBar }
             </Card>
         </>
     );

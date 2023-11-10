@@ -9,7 +9,6 @@ import os.path as osp
 from PIL import Image
 from types import SimpleNamespace
 from typing import Optional, Any, Dict, List, cast
-import pytz
 import traceback
 import textwrap
 from copy import copy
@@ -74,9 +73,9 @@ from cvat.apps.engine.view_utils import (
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import (
-    av_scan_paths, process_failed_job, configure_dependent_job,
+    av_scan_paths, process_failed_job, configure_dependent_job_to_download_from_cs,
     parse_exception_message, get_rq_job_meta, get_import_rq_id,
-    import_resource_with_clean_up_after, sendfile
+    import_resource_with_clean_up_after, sendfile, define_dependent_job, get_rq_lock_by_user
 )
 from cvat.apps.engine import backup
 from cvat.apps.engine.mixins import PartialUpdateModelMixin, UploadMixin, AnnotationMixin, SerializeMixin
@@ -598,7 +597,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
-        elif job.is_queued:
+        elif job.is_queued or job.is_deferred:
             response = { "state": "Queued" }
         elif job.is_failed:
             response = { "state": "Failed", "message": job.exc_info }
@@ -1412,8 +1411,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         )
         serializer = RqStatusSerializer(data=response)
 
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
 
     @staticmethod
     def _get_rq_response(queue, job_id):
@@ -1422,7 +1421,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         response = {}
         if job is None or job.is_finished:
             response = { "state": "Finished" }
-        elif job.is_queued:
+        elif job.is_queued or job.is_deferred:
             response = { "state": "Queued" }
         elif job.is_failed:
             # FIXME: It seems that in some cases exc_info can be None.
@@ -2510,7 +2509,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
             full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
             if not os.path.exists(full_manifest_path) or \
-                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
+                    datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
                 storage.download_file(manifest_path, full_manifest_path)
             manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
             # need to update index
@@ -2574,7 +2573,7 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
                 full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
                 if not os.path.exists(full_manifest_path) or \
-                        datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
+                        datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
                     storage.download_file(manifest_path, full_manifest_path)
                 manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
                 # need to update index
@@ -2869,8 +2868,7 @@ def rq_exception_handler(rq_job, exc_type, exc_value, tb):
 def _download_file_from_bucket(db_storage, filename, key):
     storage = db_storage_to_storage_instance(db_storage)
 
-    data = storage.download_fileobj(key)
-    with open(filename, 'wb+') as f:
+    with storage.download_fileobj(key) as data, open(filename, 'wb+') as f:
         f.write(data.getbuffer())
 
 def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
@@ -2942,7 +2940,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                     delete=False) as tf:
                     filename = tf.name
 
-                dependent_job = configure_dependent_job(
+                dependent_job = configure_dependent_job_to_download_from_cs(
                     queue=queue,
                     rq_id=rq_id,
                     rq_func=_download_file_from_bucket,
@@ -2955,24 +2953,29 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 )
 
         av_scan_paths(filename)
-        meta = {
-            'tmp_file': filename,
-        }
-        rq_job = queue.enqueue_call(
-            func=import_resource_with_clean_up_after,
-            args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
-            job_id=rq_id,
-            depends_on=dependent_job,
-            meta={**meta, **get_rq_job_meta(request=request, db_obj=db_obj)},
-            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-        )
+        user_id = request.user.id
+
+        with get_rq_lock_by_user(queue, user_id, additional_condition=not dependent_job):
+            rq_job = queue.enqueue_call(
+                func=import_resource_with_clean_up_after,
+                args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
+                job_id=rq_id,
+                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                meta={
+                    'tmp_file': filename,
+                    **get_rq_job_meta(request=request, db_obj=db_obj),
+                },
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+            )
         serializer = RqIdSerializer(data={'rq_id': rq_id})
         serializer.is_valid(raise_exception=True)
 
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     else:
         if rq_job.is_finished:
+            if rq_job.dependency:
+                rq_job.dependency.delete()
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed or \
@@ -3018,7 +3021,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
             rq_job.delete()
         else:
             if rq_job.is_finished:
-                file_path = rq_job.return_value
+                file_path = rq_job.return_value()
                 if action == "download" and osp.exists(file_path):
                     rq_job.delete()
 
@@ -3081,12 +3084,18 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         'job': dm.views.JOB_CACHE_TTL,
     }
     ttl = TTL_CONSTS[db_instance.__class__.__name__.lower()].total_seconds()
-    queue.enqueue_call(
-        func=callback,
-        args=(db_instance.id, format_name, server_address),
-        job_id=rq_id,
-        meta=get_rq_job_meta(request=request, db_obj=db_instance),
-        result_ttl=ttl, failure_ttl=ttl)
+    user_id = request.user.id
+
+    with get_rq_lock_by_user(queue, user_id):
+        queue.enqueue_call(
+            func=callback,
+            args=(db_instance.id, format_name, server_address),
+            job_id=rq_id,
+            meta=get_rq_job_meta(request=request, db_obj=db_instance),
+            depends_on=define_dependent_job(queue, user_id),
+            result_ttl=ttl,
+            failure_ttl=ttl,
+        )
     return Response(status=status.HTTP_202_ACCEPTED)
 
 def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
@@ -3142,7 +3151,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 delete=False) as tf:
                 filename = tf.name
 
-            dependent_job = configure_dependent_job(
+            dependent_job = configure_dependent_job_to_download_from_cs(
                 queue=queue,
                 rq_id=rq_id,
                 rq_func=_download_file_from_bucket,
@@ -3154,18 +3163,21 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
 
-        rq_job = queue.enqueue_call(
-            func=import_resource_with_clean_up_after,
-            args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
-            job_id=rq_id,
-            meta={
-                'tmp_file': filename,
-                **get_rq_job_meta(request=request, db_obj=db_obj),
-            },
-            depends_on=dependent_job,
-            result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
-            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
-        )
+        user_id = request.user.id
+
+        with get_rq_lock_by_user(queue, user_id, additional_condition=not dependent_job):
+            rq_job = queue.enqueue_call(
+                func=import_resource_with_clean_up_after,
+                args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
+                job_id=rq_id,
+                meta={
+                    'tmp_file': filename,
+                    **get_rq_job_meta(request=request, db_obj=db_obj),
+                },
+                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
+                failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
+            )
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 

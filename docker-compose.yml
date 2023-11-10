@@ -27,7 +27,7 @@ services:
 
   cvat_redis:
     container_name: cvat_redis
-    image: eqalpha/keydb:x86_64_v6.3.2
+    image: eqalpha/keydb:x86_64_v6.3.4
     restart: always
     command: [
       "keydb-server",
@@ -58,6 +58,7 @@ services:
       NUMPROCS: 2
       CVAT_ANALYTICS: 1
       CVAT_BASE_URL:
+      ONE_RUNNING_JOB_IN_QUEUE_PER_USER:
     command: init run server
     labels:
       - traefik.enable=true
