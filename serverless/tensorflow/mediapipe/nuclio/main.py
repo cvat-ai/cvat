@@ -1,8 +1,6 @@
-import cv2
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-import matplotlib.pyplot as plt
 import json
 import base64
 import io
