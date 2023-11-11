@@ -61,10 +61,11 @@ def handler(context, event):
                 "elements": [{
                     "label": element["name"],
                     "type": "points",
-                    # @NOTICE supose outside attribute  correspondents to presence  in mediapipe
+                    # @NOTICE supose outside atpylint serverless/tensorflow/mediapipe/nuclio/main.pytribute  correspondents to presence  in mediapipe
                     "outside": 0 if threshold < pose_landmarks_instance[element["id"]].presence else 1,
                     # @NOTICE supose occluded attriute correspondents visibility in mediapipe
                     "occluded": 0 if threshold < pose_landmarks_instance[element["id"]].visibility else 1,
+                    #"outside": 0 if threshold < pose_landmarks_instance[element["id"]].visibility else 1,
                     "points": [
                         float(pose_landmarks_instance[element["id"]].x * image.width),
                         float(pose_landmarks_instance[element["id"]].y * image.height)
@@ -73,7 +74,7 @@ def handler(context, event):
                 } for element in label["sublabels"]],
             }
             if not all([element['outside'] for element in skeleton["elements"]]):
-                            results.append(skeleton)
+                results.append(skeleton)
 
 
     return context.Response(body=json.dumps(results), headers={}, content_type="application/json", status_code=200)
