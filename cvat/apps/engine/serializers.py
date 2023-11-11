@@ -655,7 +655,8 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     # Reproduce the old (a little bit incorrect) behavior that existed before
                     # https://github.com/opencv/cvat/pull/7126
                     # to make the old seed-based sequences reproducible
-                    valid_frame_ids = set(valid_frame_ids) - {task.data.stop_frame}
+                    valid_frame_ids = [v for v in valid_frame_ids if v != task.data.stop_frame]
+
                 frames = rng.choice(
                     list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
                 ).tolist()
