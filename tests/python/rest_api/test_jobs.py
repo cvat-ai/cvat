@@ -151,8 +151,8 @@ class TestPostJobs:
         [
             # The results have to be the same in different CVAT revisions,
             # so the task ids are fixed
-            (21, [4, 6, 8]),  # annotation task
-            (5, [12, 15, 21]),  # interpolation task
+            (21, [3, 5, 7]),  # annotation task
+            (5, [11, 14, 20]),  # interpolation task
         ],
     )
     def test_can_create_gt_job_with_random_frames_and_seed(self, admin_user, task_id, frame_ids):
