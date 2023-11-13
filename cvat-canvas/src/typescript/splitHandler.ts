@@ -20,7 +20,7 @@ export class SplitHandlerImpl implements SplitHandler {
     private highlightedShape: SVG.Shape | null;
     private initialized: boolean;
     private splitDone: boolean;
-    private start: number;
+    private startTimestamp: number;
 
     private resetShape(): void {
         if (this.highlightedShape) {
@@ -42,7 +42,7 @@ export class SplitHandlerImpl implements SplitHandler {
         this.canvas.node.addEventListener('mousemove', this.findObject);
         this.initialized = true;
         this.splitDone = false;
-        this.start = Date.now();
+        this.startTimestamp = Date.now();
     }
 
     private closeSplitting(): void {
@@ -70,7 +70,7 @@ export class SplitHandlerImpl implements SplitHandler {
         this.highlightedShape = null;
         this.initialized = false;
         this.splitDone = false;
-        this.start = Date.now();
+        this.startTimestamp = Date.now();
     }
 
     public split(splitData: SplitData): void {
@@ -93,7 +93,7 @@ export class SplitHandlerImpl implements SplitHandler {
                     'click.split',
                     (): void => {
                         this.splitDone = true;
-                        this.onSplitDone(state, Date.now() - this.start);
+                        this.onSplitDone(state, Date.now() - this.startTimestamp);
                     }, { once: true },
                 );
             }

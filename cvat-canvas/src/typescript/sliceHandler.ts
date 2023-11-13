@@ -86,7 +86,7 @@ function getAllIntersections(segment: Segment, segments: Segment[]): Record<numb
 
 export class SliceHandlerImpl implements SliceHandler {
     private canvas: SVG.Container;
-    private start: number;
+    private startTimestamp: number;
     private controlPointSize: number;
     private outlinedBorders: string;
     private enabled: boolean;
@@ -128,7 +128,7 @@ export class SliceHandlerImpl implements SliceHandler {
         this.geometry = geometry;
         this.canvas = canvas;
         this.enabled = false;
-        this.start = Date.now();
+        this.startTimestamp = Date.now();
         this.controlPointSize = consts.BASE_POINT_SIZE;
         this.outlinedBorders = 'black';
         this.shapeContour = null;
@@ -363,14 +363,14 @@ export class SliceHandlerImpl implements SliceHandler {
                 drawOverOffscreenCanvas(context, shape as any as SVGImageElement);
                 applyOffscreenCanvasMask(context, polygon2);
                 const secondShape = zipChannels(context.getImageData(0, 0, width, height).data);
-                this.onSliceDone(sliceData.state, [firstShape, secondShape], Date.now() - this.start);
+                this.onSliceDone(sliceData.state, [firstShape, secondShape], Date.now() - this.startTimestamp);
             } else if (sliceData.shapeType === 'polygon') {
                 this.onSliceDone(
                     sliceData.state,
                     [
                         translateFromCanvas(this.geometry.offset, contour1),
                         translateFromCanvas(this.geometry.offset, contour2),
-                    ], Date.now() - this.start,
+                    ], Date.now() - this.startTimestamp,
                 );
             } else {
                 this.slice({ enabled: false });
@@ -506,8 +506,8 @@ export class SliceHandlerImpl implements SliceHandler {
 
     public slice(sliceData: SliceData): void {
         const initializeWithContour = (state: any): void => {
-            this.start = Date.now();
-            const { start } = this;
+            this.startTimestamp = Date.now();
+            const { startTimestamp } = this;
 
             this.onMessage([{
                 type: 'text',
@@ -517,7 +517,7 @@ export class SliceHandlerImpl implements SliceHandler {
 
             sliceData.getContour(state).then((contour) => {
                 const { shapeType } = state;
-                if (this.start === start && this.enabled) {
+                if (this.startTimestamp === startTimestamp && this.enabled) {
                     // checking if a user does not left mode / reinit it
                     this.initialize({
                         enabled: true,

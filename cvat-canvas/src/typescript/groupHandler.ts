@@ -17,7 +17,7 @@ export class GroupHandlerImpl implements GroupHandler {
     private selector: ObjectSelector;
     private initialized: boolean;
     private statesToBeGroupped: any[];
-    private start: number;
+    private startTimestamp: number;
 
     private release(): void {
         this.selector.disable();
@@ -30,7 +30,7 @@ export class GroupHandlerImpl implements GroupHandler {
             this.statesToBeGroupped = selected;
         }, selectionFilter);
         this.initialized = true;
-        this.start = Date.now();
+        this.startTimestamp = Date.now();
     }
 
     private closeGrouping(): void {
@@ -38,7 +38,7 @@ export class GroupHandlerImpl implements GroupHandler {
             const { statesToBeGroupped } = this;
             this.release();
             if (statesToBeGroupped.length) {
-                this.onSelectDone(statesToBeGroupped, Date.now() - this.start);
+                this.onSelectDone(statesToBeGroupped, Date.now() - this.startTimestamp);
             } else {
                 this.onSelectDone();
             }
@@ -53,7 +53,7 @@ export class GroupHandlerImpl implements GroupHandler {
         this.selector = selector;
         this.statesToBeGroupped = [];
         this.initialized = false;
-        this.start = Date.now();
+        this.startTimestamp = Date.now();
     }
 
     public group(groupData: GroupData, selectionFilter: SelectionFilter): void {
