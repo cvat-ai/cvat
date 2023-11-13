@@ -273,15 +273,6 @@ analytics:
   clickhousePassword: user
   clickhouseHost: "{{ .Release.Name }}-clickhouse"
 
-  ingress:
-    path: /analytics
-    pathType: "Prefix"
-    annotations:
-      kubernetes.io/ingress.class: traefik
-    service:
-      name: grafana
-      port: 80
-
 vector:
   envFrom:
     - secretRef:
@@ -364,56 +355,30 @@ grafana:
       enabled: false
 
 ingress:
+  ## @param ingress.enabled Enable ingress record generation for CVAT
+  ##
   enabled: false
-
-# In case you need an ingress, write them manually in your my.values.eml, see example below:
-#  enabled: true
-#  annotations:
-#    traefik.ingress.kubernetes.io/router.entrypoints: web
-#    kubernetes.io/ingress.class: traefik
-#  hosts:
-#    - host: cvat.local
-#      paths:
-#        - path: /api
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path: /admin
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path: /static
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path: /django-rq
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path: /profiler
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path : /
-#          pathType: "Prefix"
-#          service:
-#            name: frontend-service
-#            port: 80
-#  tls:
-#    - hosts:
-#      - <your_domain>
-#    secretName: ingress-tls-cvat
+  ## @param ingress.pathType Ingress path type
+  ##
+  pathType: Prefix
+  ## @param ingress.hostname Default host for the ingress record
+  ##
+  hostname: cvat.local
+  ## @param ingress.annotations Additional annotations for the Ingress resource.
+  ##
+  ## e.g:
+  ## annotations:
+  ##   kubernetes.io/ingress.class: nginx
+  ##
+  annotations: {}
+  ## @param ingress.ingressClassName IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster .
+  ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
+  ##
+  ingressClassName: ""
 
 traefik:
   enabled: false
-  service:
-    externalIPs:
-      # - "192.168.49.2"
 
 smokescreen:
   opts: ''
