@@ -10,7 +10,7 @@ import {
     InteractionResult as _InteractionResult,
     CanvasModel, CanvasModelImpl, RectDrawingMethod,
     CuboidDrawingMethod, Configuration, Geometry, Mode,
-    HighlightSeverity as _HighlightSeverity, CanvasHint,
+    HighlightSeverity as _HighlightSeverity, CanvasHint as _CanvasHint,
 } from './canvasModel';
 import { Master } from './master';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
@@ -191,9 +191,10 @@ class CanvasImpl implements Canvas {
 }
 
 export type InteractionData = _InteractionData;
+export type CanvasHint = _CanvasHint;
 export type InteractionResult = _InteractionResult;
 export type HighlightSeverity = _HighlightSeverity;
 
 export {
-    CanvasImpl as Canvas, CanvasHint, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,
+    CanvasImpl as Canvas, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,
 };
