@@ -59,7 +59,7 @@ spec:
 
   build:
     image: cvat.tf.mediapipe.33kps
-    baseImage: ubuntu:22.04
+    baseImage: python:3.10
 
     directives:
       preCopy:
@@ -69,10 +69,9 @@ spec:
           value: pip3 install mediapipe opencv-python numpy matplotlib pyyaml
         - kind: WORKDIR
           value: /opt/nuclio
-        - kind: RUN
-          value: curl -O https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task
-        - kind: RUN
-          value: ln -s /usr/bin/pip3 /usr/local/bin/pip
+        - kind: ADD
+          value: https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task ./
+
 #    copy:
 #     - skeleton.svg:/opt/nuclio/skeleton.svg
   triggers:
