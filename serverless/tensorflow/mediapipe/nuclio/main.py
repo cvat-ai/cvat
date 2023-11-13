@@ -1,6 +1,6 @@
 import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
+from mediapipe.tasks import python # type: ignore
+from mediapipe.tasks.python import vision # type: ignore
 import json
 import base64
 import io
@@ -15,7 +15,7 @@ def init_context(context):
     )
     options = vision.PoseLandmarkerOptions(
         base_options=base_options,
-        num_poses = 2,
+        num_poses = 1,
         min_pose_detection_confidence = 0.5,
         min_pose_presence_confidence = 0.5,
         min_tracking_confidence = 0.5,
@@ -61,11 +61,7 @@ def handler(context, event):
                 "elements": [{
                     "label": element["name"],
                     "type": "points",
-                    # @NOTICE supose outside atpylint serverless/tensorflow/mediapipe/nuclio/main.pytribute  correspondents to presence  in mediapipe
-                    "outside": 0 if threshold < pose_landmarks_instance[element["id"]].presence else 1,
-                    # @NOTICE supose occluded attriute correspondents visibility in mediapipe
-                    "occluded": 0 if threshold < pose_landmarks_instance[element["id"]].visibility else 1,
-                    #"outside": 0 if threshold < pose_landmarks_instance[element["id"]].visibility else 1,
+                    "outside": 0 if threshold < pose_landmarks_instance[element["id"]].visibility else 1,
                     "points": [
                         float(pose_landmarks_instance[element["id"]].x * image.width),
                         float(pose_landmarks_instance[element["id"]].y * image.height)
