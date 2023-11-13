@@ -56,7 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/6918>)
 
 ### Fixed
-- Can not input Chinese correctly in text attribute (<https://github.com/opencv/cvat/pull/6916>)
 
 - Issues causing potential double-sized file writes during task
   data uploading have been addressed.
@@ -125,7 +124,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Optimized huge memory consumption when working with masks in the interface
   (<https://github.com/opencv/cvat/pull/6996>)
->>>>>>> 2ae9bd8c76ae433996eb318be736e26cda0e7e41
 
 ### Security
 
