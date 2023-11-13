@@ -30,7 +30,7 @@ mypy-extensions==1.0.0
     # via black
 pathspec==0.11.2
     # via black
-platformdirs==3.10.0
+platformdirs==3.11.0
     # via
     #   black
     #   pylint
