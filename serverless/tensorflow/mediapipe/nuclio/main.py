@@ -8,21 +8,6 @@ from PIL import Image
 import yaml
 import numpy as np
 def init_context(context):
-    context.logger.info("Init detector...")
-
-    base_options = python.BaseOptions(
-    model_asset_path='pose_landmarker_heavy.task'
-    )
-    options = vision.PoseLandmarkerOptions(
-        base_options=base_options,
-        num_poses = 1,
-        min_pose_detection_confidence = 0.5,
-        min_pose_presence_confidence = 0.5,
-        min_tracking_confidence = 0.5,
-        output_segmentation_masks = False
-    )
-
-    detector = vision.PoseLandmarker.create_from_options(options)
 
     context.logger.info("Init labels...")
 
@@ -32,7 +17,7 @@ def init_context(context):
         labels = json.loads(labels_spec)
 
     context.user_data.labels =  labels
-    context.user_data.model_handler = detector.detect
+
     context.logger.info("Function initialized")
 
 
@@ -48,7 +33,20 @@ def handler(context, event):
     image_format=mp.ImageFormat.SRGB, data=np.asarray(pil_img)
     )
 
-    detection_result = context.user_data.model_handler(image)
+    base_options = python.BaseOptions(
+    model_asset_path='pose_landmarker_heavy.task'
+    )
+    options = vision.PoseLandmarkerOptions(
+        base_options=base_options,
+        num_poses = 1,
+        min_pose_detection_confidence = threshold,
+        min_pose_presence_confidence = threshold,
+        min_tracking_confidence = threshold,
+        output_segmentation_masks = False
+    )
+
+    detector = vision.PoseLandmarker.create_from_options(options)
+    detection_result = detector.detect(image)
     pose_landmarks_instances = detection_result.pose_landmarks
 
     results = []
