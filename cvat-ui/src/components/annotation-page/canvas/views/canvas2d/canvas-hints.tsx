@@ -2,22 +2,16 @@
 //
 // SPDX-License-Identifier: MIT
 
+import React from 'react';
 import { InfoCircleTwoTone, LoadingOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
-import React from 'react';
+import { CanvasHint } from 'cvat-canvas-wrapper';
 
 const FORCE_MESSAGE_FLAG = 'force';
 
-interface Hint {
-    type: 'text' | 'list';
-    content: string | string[];
-    className?: string;
-    icon?: 'info' | 'loading';
-}
-
 interface State {
-    hints: Hint[] | null;
+    hints: CanvasHint[] | null;
     topic: string;
     hiddenHints: Record<string, boolean>;
 }
@@ -39,7 +33,7 @@ export default class CanvasTipsComponent extends React.PureComponent<{}, State> 
         };
     }
 
-    public update(hints: Hint[] | null, topic: string): void {
+    public update(hints: CanvasHint[] | null, topic: string): void {
         this.setState({ hints, topic });
     }
 

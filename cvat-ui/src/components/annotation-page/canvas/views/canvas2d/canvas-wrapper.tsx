@@ -19,7 +19,7 @@ import {
     ColorBy, GridColor, ObjectType, Workspace, ShapeType, ActiveControl, CombinedState,
 } from 'reducers';
 import { LogType } from 'cvat-logger';
-import { Canvas, HighlightSeverity } from 'cvat-canvas-wrapper';
+import { Canvas, HighlightSeverity, CanvasHint } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     AnnotationConflict, FramesMetaData, Job, ObjectState, QualityConflict, getCore,
@@ -596,7 +596,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
-        canvasInstance.html().removeEventListener('canvas.message', this.onCanvasMessage);
+        canvasInstance.html().removeEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
 
     private onCanvasErrorOccurrence = (event: any): void => {
@@ -610,7 +610,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     };
 
-    private onCanvasMessage = (event: any): void => {
+    private onCanvasMessage = (event: CustomEvent<{ messages: CanvasHint[] | null, topic: string }>): void => {
         const { messages, topic } = event.detail;
         this.canvasTipsRef.current?.update(messages, topic);
     }
@@ -1056,7 +1056,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
-        canvasInstance.html().addEventListener('canvas.message', this.onCanvasMessage);
+        canvasInstance.html().addEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
 
     public render(): JSX.Element {

@@ -37,7 +37,6 @@ function SliceControl(props: Props): JSX.Element {
                 className: 'cvat-slice-control cvat-active-canvas-control',
                 onClick: (): void => {
                     canvasInstance.slice({ enabled: false });
-                    updateActiveControl(ActiveControl.CURSOR);
                 },
             } :
             {

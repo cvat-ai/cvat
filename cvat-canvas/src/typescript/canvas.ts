@@ -10,7 +10,7 @@ import {
     InteractionResult as _InteractionResult,
     CanvasModel, CanvasModelImpl, RectDrawingMethod,
     CuboidDrawingMethod, Configuration, Geometry, Mode,
-    HighlightSeverity as _HighlightSeverity,
+    HighlightSeverity as _HighlightSeverity, CanvasHint,
 } from './canvasModel';
 import { Master } from './master';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
@@ -195,5 +195,5 @@ export type InteractionResult = _InteractionResult;
 export type HighlightSeverity = _HighlightSeverity;
 
 export {
-    CanvasImpl as Canvas, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,
+    CanvasImpl as Canvas, CanvasHint, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,
 };

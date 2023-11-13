@@ -7,7 +7,9 @@ import {
     stringifyPoints, translateToCanvas, translateFromCanvas, translateToSVG,
     findIntersection, zipChannels, Segment, findClosestPointOnSegment, segmentsFromPoints,
 } from './shared';
-import { Geometry, SliceData, Configuration } from './canvasModel';
+import {
+    Geometry, SliceData, Configuration, CanvasHint,
+} from './canvasModel';
 import consts from './consts';
 import { ObjectSelector } from './objectSelector';
 
@@ -96,12 +98,7 @@ export class SliceHandlerImpl implements SliceHandler {
     private hideObject: (clientID: number) => void;
     private showObject: (clientID: number) => void;
     private onSliceDone: (state?: any, results?: number[][], duration?: number) => void;
-    private onMessage: (messages: {
-        type: 'text' | 'list';
-        content: string | string[];
-        className?: string;
-        icon?: 'info' | 'loading';
-    }[] | null, topic: string) => void;
+    private onMessage: (messages: CanvasHint[] | null, topic: string) => void;
     private onError: (exception: unknown) => void;
     private getObjects: () => any[];
     private geometry: Geometry;

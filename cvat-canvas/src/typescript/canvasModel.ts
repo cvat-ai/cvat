@@ -22,6 +22,13 @@ export interface Position {
     y: number;
 }
 
+export interface CanvasHint {
+    type: 'text' | 'list';
+    content: string | string[];
+    className?: string;
+    icon?: 'info' | 'loading';
+}
+
 export interface Geometry {
     image: Size;
     canvas: Size;

@@ -37,7 +37,7 @@ import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
     DrawData, MergeData, SplitData, Mode, Size, Configuration,
     InteractionResult, InteractionData, ColorBy, HighlightedElements,
-    HighlightSeverity, GroupData, JoinData,
+    HighlightSeverity, GroupData, JoinData, CanvasHint,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -97,12 +97,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.controller.mode;
     }
 
-    private onMessage = (messages: {
-        type: 'text' | 'list';
-        content: string | string[];
-        className?: string;
-        icon?: 'info' | 'loading';
-    }[] | null, topic: string) => {
+    private onMessage = (messages: CanvasHint[] | null, topic: string) => {
         this.canvas.dispatchEvent(
             new CustomEvent('canvas.message', {
                 bubbles: false,

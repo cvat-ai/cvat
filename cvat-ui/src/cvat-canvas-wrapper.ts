@@ -4,6 +4,7 @@
 
 import {
     Canvas,
+    CanvasHint,
     CanvasMode,
     CanvasVersion,
     RectDrawingMethod,
@@ -34,5 +35,5 @@ export type InteractionResult = _InteractionResult;
 export type HighlightSeverity = _HighlightSeverity;
 
 export {
-    Canvas, CanvasMode, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod,
+    Canvas, CanvasMode, CanvasHint, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod,
 };
