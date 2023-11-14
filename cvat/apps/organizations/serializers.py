@@ -146,24 +146,5 @@ class MembershipWriteSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
         read_only_fields = ['user', 'organization', 'is_active', 'joined_date']
 
-class AcceptInvitationWriteSerializer(RegisterSerializerEx):
-    def get_fields(self):
-        fields = super().get_fields()
-        fields.pop('email', default=None)
-        return fields
-
-    def save(self, request, invitation):
-        self.cleaned_data = self.get_cleaned_data()
-        user = invitation.membership.user
-        user.is_active = True
-        email = EmailAddress.objects.get(email=user.email)
-        get_adapter(request).confirm_email(request, email)
-        user.first_name = self.cleaned_data['first_name']
-        user.last_name = self.cleaned_data['last_name']
-        user.username = self.cleaned_data['username']
-        user.set_password(self.cleaned_data['password1'])
-        user.save()
-        return user
-
 class AcceptInvitationReadSerializer(serializers.Serializer):
     organization_slug = serializers.CharField()

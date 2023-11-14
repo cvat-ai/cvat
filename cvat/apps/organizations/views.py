@@ -9,7 +9,6 @@ from django.core.exceptions import ImproperlyConfigured
 
 from rest_framework import mixins, viewsets, status
 from rest_framework.permissions import SAFE_METHODS
-from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -27,7 +26,7 @@ from .serializers import (
     InvitationReadSerializer, InvitationWriteSerializer,
     MembershipReadSerializer, MembershipWriteSerializer,
     OrganizationReadSerializer, OrganizationWriteSerializer,
-    AcceptInvitationReadSerializer, AcceptInvitationWriteSerializer)
+    AcceptInvitationReadSerializer)
 
 @extend_schema(tags=['organizations'])
 @extend_schema_view(
@@ -251,7 +250,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
             super().perform_update(serializer)
 
     @transaction.atomic
-    @action(detail=True, methods=['POST'], url_path='accept', permission_classes=[AllowAny], authentication_classes=[])
+    @action(detail=True, methods=['POST'], url_path='accept')
     def accept(self, request, pk):
         try:
             invitation = Invitation.objects.get(key=pk)
@@ -259,13 +258,11 @@ class InvitationViewSet(viewsets.GenericViewSet,
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is expired. Please contact organization owner to renew it.")
             if invitation.membership.is_active:
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is already accepted.")
-            serializer = AcceptInvitationWriteSerializer(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save(request, invitation)
-                invitation.accept()
-                response_serializer = AcceptInvitationReadSerializer(data={'organization_slug': invitation.membership.organization.slug})
-                if response_serializer.is_valid(raise_exception=True):
-                    return Response(status=status.HTTP_200_OK, data=response_serializer.data)
+            ## TODO: add check if user is the same as in invitation
+            invitation.accept()
+            response_serializer = AcceptInvitationReadSerializer(data={'organization_slug': invitation.membership.organization.slug})
+            if response_serializer.is_valid(raise_exception=True):
+                return Response(status=status.HTTP_200_OK, data=response_serializer.data)
         except Invitation.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist. Please contact organization owner.")
 
