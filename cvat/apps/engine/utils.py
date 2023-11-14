@@ -155,7 +155,12 @@ def process_failed_job(rq_job: Job):
     return msg
 
 
-def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER) -> Optional[Dependency]:
+def define_dependent_job(
+    queue: DjangoRQ,
+    user_id: int,
+    should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
+    rq_id: Optional[str] = None,
+) -> Optional[Dependency]:
     if not should_be_dependent:
         return None
 
@@ -173,7 +178,22 @@ def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: boo
         )
         if job and job.meta.get("user", {}).get("id") == user_id
     ]
-    user_jobs = list(filter(lambda job: not job.meta.get(KEY_TO_EXCLUDE_FROM_DEPENDENCY), started_user_jobs + deferred_user_jobs))
+    all_user_jobs = started_user_jobs + deferred_user_jobs
+
+    all_job_dependency_ids = []
+
+    # prevent possible cyclic dependencies
+    if rq_id:
+        for job in all_user_jobs:
+            if job.dependency_ids:
+                all_job_dependency_ids.extend([i.decode() for i in job.dependency_ids])
+
+    user_jobs = list(
+        filter(
+            lambda job: not job.meta.get(KEY_TO_EXCLUDE_FROM_DEPENDENCY),
+            all_user_jobs
+        )
+    ) if not rq_id or rq_id and Job.redis_job_namespace_prefix + rq_id not in set(all_job_dependency_ids) else []
 
     return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
 
@@ -218,7 +238,7 @@ def configure_dependent_job_to_download_from_cs(
                 },
                 result_ttl=result_ttl,
                 failure_ttl=failure_ttl,
-                depends_on=define_dependent_job(queue, user_id, should_be_dependent)
+                depends_on=define_dependent_job(queue, user_id, should_be_dependent, rq_job_id_download_file)
             )
     return rq_job_download_file
 
