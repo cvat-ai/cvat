@@ -10,12 +10,13 @@ from rest_framework import serializers
 from allauth.account import app_settings
 from allauth.account.utils import filter_users_by_email
 from allauth.account.adapter import get_adapter
-from allauth.utils import email_address_exists, get_username_max_length
+from allauth.utils import email_address_exists
 from allauth.account.utils import setup_user_email
 
 from django.conf import settings
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
+from cvat.apps.iam.utils import is_dummy_user
 
 class RegisterSerializerEx(RegisterSerializer):
     first_name = serializers.CharField(required=False)
@@ -34,15 +35,11 @@ class RegisterSerializerEx(RegisterSerializer):
         email = get_adapter().clean_email(email)
         if app_settings.UNIQUE_EMAIL:
             if email and email_address_exists(email):
-                # Allow to pass email for dummy users
-                users = filter_users_by_email(email)
-                if not users or len(users) > 1:
+                user = is_dummy_user(email)
+                if not user:
                     raise serializers.ValidationError(
                         ('A user is already registered with this e-mail address.'),
                     )
-                ## TODO: check that user has inactive params
-                user = users[0]
-                print(user.username)
 
         return email
 
@@ -50,18 +47,12 @@ class RegisterSerializerEx(RegisterSerializer):
         adapter = get_adapter()
         user = adapter.new_user(request)
         self.cleaned_data = self.get_cleaned_data()
-        override_save = False
-        ## TODO: make this into function
-        if self.cleaned_data["email"] and email_address_exists(self.cleaned_data["email"]):
-            # Allow to pass email for dummy users
-            users = filter_users_by_email(self.cleaned_data["email"])
-            if not users or len(users) > 1:
-                raise serializers.ValidationError(
-                        ('A user is already registered with this e-mail address.'),
-                    )
-            ## TODO: check that user has inactive params
-            user = users[0]
-            override_save = True
+
+        # Allow to overwrite data for dummy users
+        dummy_user = is_dummy_user(self.cleaned_data["email"])
+        if dummy_user:
+            user = dummy_user
+
         user = adapter.save_user(request, user, self, commit=False)
         if "password1" in self.cleaned_data:
             try:
@@ -73,8 +64,8 @@ class RegisterSerializerEx(RegisterSerializer):
         user.is_active = True
         user.save()
         self.custom_signup(request, user)
-        ## TODO check if we need that for non-default users
-        if not override_save:
+
+        if not dummy_user:
             setup_user_email(request, user, [])
         return user
 
