@@ -911,9 +911,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         await this.initializeOpenCV();
 
         const src = openCVWrapper.mat.fromData(mask[0].length, mask.length, MatType.CV_8UC1, mask.flat());
-        const contours = openCVWrapper.matVector.empty();
         try {
-            const polygons = openCVWrapper.contours.findContours(src, contours);
+            const polygons = openCVWrapper.contours.findContours(src, true);
             return polygons[0].map((val: number, idx: number) => {
                 if (idx % 2) {
                     return val + top;
@@ -923,7 +922,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             });
         } finally {
             src.delete();
-            contours.delete();
         }
     }
 
