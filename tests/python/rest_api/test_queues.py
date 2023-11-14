@@ -27,7 +27,7 @@ class TestRQQueueWorking:
     @pytest.mark.with_external_services
     @pytest.mark.timeout(60)
     @pytest.mark.skipif(
-        os.getenv("ONE_RUNNING_JOB_IN_QUEUE_PER_USER", "false").lower() != "true",
+        os.getenv("ONE_RUNNING_JOB_IN_QUEUE_PER_USER", "false").lower() not in {"true", "yes", "1"},
         reason="The server is not configured to enable limit 1 user 1 task at a time",
     )
     @pytest.mark.parametrize("cloud_storage_id", [2])
