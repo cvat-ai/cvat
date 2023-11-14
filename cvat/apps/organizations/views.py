@@ -278,3 +278,14 @@ class InvitationViewSet(viewsets.GenericViewSet,
             return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist.")
         except ImproperlyConfigured:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data="Email backend is not configured.")
+
+    @action(detail=True, methods=['POST'], url_path='reject')
+    def reject(self, request, pk):
+        try:
+            ## TODO: see if we need to check anything, expiration? request sender?
+            invitation = Invitation.objects.get(key=pk)
+            membership = invitation.membership
+            membership.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Invitation.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist.")
