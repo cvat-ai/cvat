@@ -4,13 +4,11 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ActiveInference, ModelsQuery } from 'reducers';
 import {
-    getCore, MLModel, ModelProvider, RQStatus,
-} from 'cvat-core-wrapper';
+    ActiveInference, ModelsQuery,
+} from 'reducers';
+import { getCore, MLModel, RQStatus } from 'cvat-core-wrapper';
 import { filterNull } from 'utils/filter-null';
-
-const cvat = getCore();
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
@@ -46,16 +44,6 @@ export const modelsActions = {
     getModelsFailed: (error: any) => createAction(ModelsActionTypes.GET_MODELS_FAILED, {
         error,
     }),
-    createModel: () => createAction(ModelsActionTypes.CREATE_MODEL),
-    createModelSuccess: (model: MLModel) => createAction(ModelsActionTypes.CREATE_MODEL_SUCCESS, {
-        model,
-    }),
-    createModelFailed: (error: any) => createAction(ModelsActionTypes.CREATE_MODEL_FAILED, { error }),
-    deleteModel: (model: MLModel) => createAction(ModelsActionTypes.DELETE_MODEL, { model }),
-    deleteModelSuccess: (modelID: string | number) => createAction(ModelsActionTypes.DELETE_MODEL_SUCCESS, { modelID }),
-    deleteModelFailed: (modelName: string, error: any) => (
-        createAction(ModelsActionTypes.DELETE_MODEL_FAILED, { modelName, error })
-    ),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
     getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) => (
         createAction(ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS, {
@@ -93,12 +81,6 @@ export const modelsActions = {
             taskInstance,
         })
     ),
-    getModelProviders: () => createAction(ModelsActionTypes.GET_MODEL_PROVIDERS),
-    getModelProvidersSuccess: (providers: ModelProvider[]) => (
-        createAction(ModelsActionTypes.GET_MODEL_PROVIDERS_SUCCESS, {
-            providers,
-        })),
-    getModelProvidersFailed: (error: any) => createAction(ModelsActionTypes.GET_MODEL_PROVIDERS_FAILED, { error }),
     getModelPreview: (modelID: string | number) => (
         createAction(ModelsActionTypes.GET_MODEL_PREVIEW, { modelID })
     ),
@@ -125,33 +107,6 @@ export function getModelsAsync(query?: ModelsQuery): ThunkAction {
             dispatch(modelsActions.getModelsSuccess(models, count));
         } catch (error) {
             dispatch(modelsActions.getModelsFailed(error));
-        }
-    };
-}
-
-export function createModelAsync(modelData: Record<string, string>): ThunkAction {
-    return async function (dispatch) {
-        const model = new cvat.classes.MLModel(modelData);
-
-        dispatch(modelsActions.createModel());
-        try {
-            const createdModel = await model.save();
-            dispatch(modelsActions.createModelSuccess(createdModel));
-        } catch (error) {
-            dispatch(modelsActions.createModelFailed(error));
-            throw error;
-        }
-    };
-}
-
-export function deleteModelAsync(model: MLModel): ThunkAction {
-    return async function (dispatch) {
-        dispatch(modelsActions.deleteModel(model));
-        try {
-            await model.delete();
-            dispatch(modelsActions.deleteModelSuccess(model.id));
-        } catch (error) {
-            dispatch(modelsActions.deleteModelFailed(model.name, error));
         }
     };
 }
@@ -260,18 +215,6 @@ export function cancelInferenceAsync(taskID: number): ThunkAction {
             dispatch(modelsActions.cancelInferenceSuccess(taskID));
         } catch (error) {
             dispatch(modelsActions.cancelInferenceFailed(taskID, error));
-        }
-    };
-}
-
-export function getModelProvidersAsync(): ThunkAction {
-    return async function (dispatch) {
-        dispatch(modelsActions.getModelProviders());
-        try {
-            const providers = await cvat.lambda.providers();
-            dispatch(modelsActions.getModelProvidersSuccess(providers));
-        } catch (error) {
-            dispatch(modelsActions.getModelProvidersFailed(error));
         }
     };
 }
