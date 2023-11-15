@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -2183,10 +2183,10 @@ export class SkeletonShape extends Shape {
 }
 
 export class MaskShape extends Shape {
-    private left: number;
-    private top: number;
-    private right: number;
-    private bottom: number;
+    public left: number;
+    public top: number;
+    public right: number;
+    public bottom: number;
     private getMasksOnFrame: AnnotationInjection['getMasksOnFrame'];
 
     constructor(data, clientID, color, injection) {

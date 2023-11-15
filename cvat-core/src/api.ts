@@ -111,8 +111,8 @@ function build() {
                 );
                 return result;
             },
-            async request(url, data) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data);
+            async request(url, data, requestConfig) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data, requestConfig);
                 return result;
             },
             async setAuthData(response) {
@@ -201,10 +201,6 @@ function build() {
             },
             async requests() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.requests);
-                return result;
-            },
-            async providers() {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.providers);
                 return result;
             },
         },

@@ -7,11 +7,10 @@ import React from 'react';
 import Layout from 'antd/lib/layout';
 
 import {
-    ActiveControl, ObjectType, Rotation, ShapeType,
+    ActiveControl, ObjectType, Rotation, ShapeType, CombinedState,
 } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { LabelOptColor } from 'components/labels-editor/common';
 
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
@@ -32,19 +31,21 @@ import DrawSkeletonControl, { Props as DrawSkeletonControlProps } from './draw-s
 import SetupTagControl, { Props as SetupTagControlProps } from './setup-tag-control';
 import MergeControl, { Props as MergeControlProps } from './merge-control';
 import GroupControl, { Props as GroupControlProps } from './group-control';
+import JoinControl, { Props as JoinControlProps } from './join-control';
 import SplitControl, { Props as SplitControlProps } from './split-control';
+import SliceControl, { Props as SliceControlProps } from './slice-control';
+
+type Label = CombinedState['annotation']['job']['labels'][0];
 
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    labels: any[];
+    labels: Label[];
     frameData: any;
 
-    mergeObjects(enabled: boolean): void;
-    groupObjects(enabled: boolean): void;
-    splitTrack(enabled: boolean): void;
+    updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(rotation: Rotation): void;
     repeatDrawShape(): void;
     pasteShape(): void;
@@ -72,7 +73,9 @@ const ObservedDrawSkeletonControl = ControlVisibilityObserver<DrawSkeletonContro
 const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
 const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
 const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
+const ObservedJoinControl = ControlVisibilityObserver<JoinControlProps>(JoinControl);
 const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl);
+const ObservedSliceControl = ControlVisibilityObserver<SliceControlProps>(SliceControl);
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
@@ -81,9 +84,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         normalizedKeyMap,
         keyMap,
         labels,
-        mergeObjects,
-        groupObjects,
-        splitTrack,
+        updateActiveControl,
         rotateFrame,
         repeatDrawShape,
         pasteShape,
@@ -102,8 +103,8 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     let cuboidControlVisible = withUnspecifiedType;
     let maskControlVisible = withUnspecifiedType;
     let tagControlVisible = withUnspecifiedType;
-    const skeletonControlVisible = labels.some((label: LabelOptColor) => label.type === 'skeleton');
-    labels.forEach((label: LabelOptColor) => {
+    const skeletonControlVisible = labels.some((label: Label) => label.type === 'skeleton');
+    labels.forEach((label: Label) => {
         rectangleControlVisible = rectangleControlVisible || label.type === ShapeType.RECTANGLE;
         polygonControlVisible = polygonControlVisible || label.type === ShapeType.POLYGON;
         polylineControlVisible = polylineControlVisible || label.type === ShapeType.POLYLINE;
@@ -121,18 +122,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     };
 
     let subKeyMap: any = {
-        CANCEL: keyMap.CANCEL,
         CLOCKWISE_ROTATION: keyMap.CLOCKWISE_ROTATION,
         ANTICLOCKWISE_ROTATION: keyMap.ANTICLOCKWISE_ROTATION,
     };
 
     let handlers: any = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
-            preventDefault(event);
-            if (activeControl !== ActiveControl.CURSOR) {
-                canvasInstance.cancel();
-            }
-        },
         CLOCKWISE_ROTATION: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
             rotateFrame(Rotation.CLOCKWISE90);
@@ -209,6 +203,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
+                shortcuts={{
+                    CANCEL: {
+                        details: keyMap.CANCEL,
+                        displayValue: normalizedKeyMap.CANCEL,
+                    },
+                }}
             />
             <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedRotateControl
@@ -308,7 +308,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <ObservedMergeControl
-                mergeObjects={mergeObjects}
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
@@ -320,7 +320,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }}
             />
             <ObservedGroupControl
-                groupObjects={groupObjects}
+                updateActiveControl={updateActiveControl}
                 resetGroup={resetGroup}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
@@ -337,7 +337,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }}
             />
             <ObservedSplitControl
-                splitTrack={splitTrack}
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
@@ -345,6 +345,30 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     SWITCH_SPLIT_MODE: {
                         details: keyMap.SWITCH_SPLIT_MODE,
                         displayValue: normalizedKeyMap.SWITCH_SPLIT_MODE,
+                    },
+                }}
+            />
+            <ObservedJoinControl
+                updateActiveControl={updateActiveControl}
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                disabled={controlsDisabled}
+                shortcuts={{
+                    SWITCH_JOIN_MODE: {
+                        details: keyMap.SWITCH_JOIN_MODE,
+                        displayValue: normalizedKeyMap.SWITCH_JOIN_MODE,
+                    },
+                }}
+            />
+            <ObservedSliceControl
+                updateActiveControl={updateActiveControl}
+                canvasInstance={canvasInstance}
+                activeControl={activeControl}
+                disabled={controlsDisabled}
+                shortcuts={{
+                    SWITCH_SLICE_MODE: {
+                        details: keyMap.SWITCH_SLICE_MODE,
+                        displayValue: normalizedKeyMap.SWITCH_SLICE_MODE,
                     },
                 }}
             />

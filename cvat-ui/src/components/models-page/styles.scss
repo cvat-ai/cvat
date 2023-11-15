@@ -92,16 +92,11 @@
 
     > div {
         display: flex;
-        margin-right: $grid-unit-size * 4;
 
         > button {
             margin-right: $grid-unit-size;
         }
     }
-}
-
-.cvat-models-add-wrapper {
-    display: inline-block;
 }
 
 .cvat-model-delete {
@@ -159,21 +154,14 @@
     }
 }
 
-.cvat-model-item-provider {
+.cvat-model-item-top-bar {
+    width: 100%;
     position: absolute;
-    top: $grid-unit-size;
-    right: $grid-unit-size;
-}
-
-.cvat-model-item-provider-inner {
-    @extend .cvat-model-item-provider;
-
-    right: $grid-unit-size * 2;
-
-    svg {
-        width: $grid-unit-size * 4;
-        height: $grid-unit-size * 4;
-    }
+    display: flex;
+    justify-content: flex-end;
+    top: 0;
+    left: 0;
+    padding: $grid-unit-size;
 }
 
 .cvat-models-item-description {
