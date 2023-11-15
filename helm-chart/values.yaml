@@ -358,7 +358,7 @@ ingress:
   ## @param ingress.enabled Enable ingress resource generation for CVAT
   ##
   enabled: false
-  ## @param ingress.hostname Default host for the ingress record
+  ## @param ingress.hostname Host for the ingress resource
   ##
   hostname: cvat.local
   ## @param ingress.annotations Additional annotations for the Ingress resource.
