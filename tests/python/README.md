@@ -45,7 +45,7 @@ which are used by containers for the testing system.
 
 - Run tests to check the functionality of limiting active jobs in a queue per user:
 
-  ```
+  ```shell
   ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
   ```
 ## How to upgrade testing assets?
