@@ -13,7 +13,7 @@ metadata:
   {{- end }}
 spec:
 {{- if .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className | quote }}
+  ingressClassName: {{ .Values.ingress.className | toYaml }}
 {{- end }}
   rules:
   - host: {{ .Values.ingress.hostname }}
