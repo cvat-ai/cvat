@@ -1,4 +1,3 @@
-{{- $version := .Capabilities.KubeVersion.GitVersion -}}
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "cvat.fullname" . -}}
 apiVersion: networking.k8s.io/v1
@@ -13,29 +12,16 @@ metadata:
       {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
-{{- if .Values.ingress.ingressClassName }}
-  ingressClassName: {{ .Values.ingress.ingressClassName | quote }}
-{{- end }}
-{{- if .Values.ingress.tls }}
-  tls:
-  {{- range .Values.ingress.tls }}
-    - hosts:
-      {{- range .hosts }}
-        - {{ . | quote }}
-      {{- end }}
-      secretName: {{ .secretName }}
-  {{- end }}
+{{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className | quote }}
 {{- end }}
   rules:
-  {{- if .Values.ingress.hostname }}
   - host: {{ .Values.ingress.hostname }}
     http:
       paths:
       {{- range tuple "api" "admin" "static" "django-rq" "profiler" }}
-      - path: {{ print "/" . }}
-        {{- if $.Values.ingress.pathType }}
-        pathType: {{ $.Values.ingress.pathType }}
-        {{- end }}
+      - path: "/{{ . }}"
+        pathType: Prefix
         backend:
           service:
             name: {{ $.Release.Name }}-backend-service
@@ -43,13 +29,10 @@ spec:
               number: 8080
       {{- end }}
       - path: /
-        {{- if .Values.ingress.pathType }}
-        pathType: {{ .Values.ingress.pathType }}
-        {{- end }}
+        pathType: Prefix
         backend:
           service:
             name: {{ .Release.Name }}-frontend-service
             port:
               number: 80
-  {{- end }}
 {{- end }}
