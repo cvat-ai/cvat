@@ -35,7 +35,7 @@ which are used by containers for the testing system.
 
 - Run all REST API tests:
 
-  ```
+  ```shell
   pytest ./tests/python
   ```
 
