@@ -369,10 +369,17 @@ ingress:
   ##
   annotations: {}
   ## @param ingress.className IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
-  ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster .
+  ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster
   ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
   ##
   className: ""
+  ## @param ingress.tls Enable TLS configuration for the host defined at `ingress.hostname` parameter
+  ## TLS certificates will be retrieved from a TLS secret defined in tlsSecretName parameter
+  ##
+  tls: false
+  ## @param ingress.tlsSecretName Ыpecifies the name of the secret containing TLS certificates. Ignored if ingress.tls is false
+  ##
+  tlsSecretName: ingress-tls-cvat
 
 traefik:
   enabled: false

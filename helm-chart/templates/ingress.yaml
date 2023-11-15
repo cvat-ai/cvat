@@ -15,6 +15,12 @@ spec:
 {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className | toYaml }}
 {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+  - hosts:
+    - {{ .Values.ingress.hostname }}
+    secretName: {{ .Values.ingress.tlsSecretName }}
+  {{- end }}
   rules:
   - host: {{ .Values.ingress.hostname }}
     http:
