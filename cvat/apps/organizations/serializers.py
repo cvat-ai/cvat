@@ -15,7 +15,6 @@ from django.db import transaction
 from rest_framework import serializers
 from distutils.util import strtobool
 from cvat.apps.engine.serializers import BasicUserSerializer
-from cvat.apps.iam.serializers import RegisterSerializerEx
 from .models import Invitation, Membership, Organization
 
 class OrganizationReadSerializer(serializers.ModelSerializer):
@@ -62,7 +61,7 @@ class InvitationReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invitation
-        fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization']
+        fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization', 'expired']
         read_only_fields = fields
 
 class InvitationWriteSerializer(serializers.ModelSerializer):

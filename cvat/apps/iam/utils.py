@@ -2,8 +2,6 @@ from pathlib import Path
 import tarfile
 
 from django.conf import settings
-from allauth.account.utils import filter_users_by_email
-from rest_framework import serializers
 
 def create_opa_bundle():
     bundle_path = Path(settings.IAM_OPA_BUNDLE_PATH)
@@ -31,12 +29,3 @@ def build_iam_context(request, organization, membership):
             if organization else None,
         'org_role': getattr(membership, 'role', None),
     }
-
-def is_dummy_user(email):
-    users = filter_users_by_email(email)
-    if not users or len(users) > 1:
-        return None
-    user = users[0]
-    if not user.is_active and not user.has_usable_password():
-        return user
-    return None

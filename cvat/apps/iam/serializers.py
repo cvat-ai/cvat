@@ -16,7 +16,15 @@ from allauth.account.utils import setup_user_email
 from django.conf import settings
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
-from cvat.apps.iam.utils import is_dummy_user
+
+def is_dummy_user(email):
+    users = filter_users_by_email(email)
+    if not users or len(users) > 1:
+        return None
+    user = users[0]
+    if not user.is_active and not user.has_usable_password():
+        return user
+    return None
 
 class RegisterSerializerEx(RegisterSerializer):
     first_name = serializers.CharField(required=False)

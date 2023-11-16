@@ -181,7 +181,6 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     accept=extend_schema(
         operation_id='invitations_accept',
         summary='Method registers user and accepts invitation to organization',
-        request=AcceptInvitationWriteSerializer,
         responses={
             '200': OpenApiResponse(response=AcceptInvitationReadSerializer, description='The invitation is accepted'),
             '400': OpenApiResponse(description='The invitation is expired or already accepted'),
