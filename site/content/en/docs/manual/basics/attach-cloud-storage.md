@@ -172,8 +172,8 @@ python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfold
 aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
 ```
 
-- For read-only permissions, use the download through the browser, click upload,
-  drag the manifest file to the page and click upload.
+- For read-only permissions, use the download through the browser,
+  click upload, drag the manifest file to the page and click upload.
 
 ![](/images/aws-s3_tutorial_5.jpg)
 
