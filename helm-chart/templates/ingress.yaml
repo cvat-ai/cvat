@@ -14,8 +14,8 @@ metadata:
 spec:
 {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className | toYaml }}
-{{- else if .Values.traefik.enabled }}
-  ingressClassName: traefik
+{{- else if and .Values.traefik.enabled .Values.traefik.ingressClass.enabled }}
+  ingressClassName: {{ .Values.traefik.ingressClass.name | default (include "traefik.fullname" .Subcharts.traefik) }}
 {{- end }}
   {{- if .Values.ingress.tls }}
   tls:
