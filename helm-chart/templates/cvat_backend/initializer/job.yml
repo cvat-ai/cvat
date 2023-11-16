@@ -14,10 +14,10 @@ metadata:
     tier: backend
     component: initializer
     {{- include "cvat.labels" . | nindent 4 }}
-    {{- with $localValues.labels }}
+    {{- with merge $localValues.labels .Values.cvat.backend.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with $localValues.annotations }}
+  {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
   annotations:
   {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -29,10 +29,10 @@ spec:
         tier: backend
         component: initializer
         {{- include "cvat.labels" . | nindent 8 }}
-        {{- with $localValues.labels }}
+        {{- with merge $localValues.labels .Values.cvat.backend.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with $localValues.annotations }}
+      {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
       annotations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -41,30 +41,30 @@ spec:
         - name: cvat-backend
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
           imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
-          {{- with $localValues.resources }}
+          {{- with merge $localValues.resources .Values.cvat.backend.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           args: ["init"]
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
-          {{- with $localValues.additionalEnv }}
+          {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- with $localValues.additionalVolumeMounts }}
+          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}
           {{- end }}
       restartPolicy: OnFailure
-      {{- with $localValues.affinity }}
+      {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with $localValues.tolerations }}
+      {{- with concat .Values.cvat.backend.tolerations $localValues.tolerations }}
       tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with $localValues.additionalVolumes }}
+      {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
       volumes:
       {{- toYaml . | nindent 8 }}
       {{- end }}

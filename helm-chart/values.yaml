@@ -9,6 +9,15 @@ fullnameOverride: ""
 
 cvat:
   backend:
+    labels: {}
+    annotations: {}
+    resources: {}
+    affinity: {}
+    tolerations: []
+    additionalEnv: []
+    additionalVolumes: []
+    additionalVolumeMounts: []
+
     initializer:
       labels: {}
       annotations: {}
