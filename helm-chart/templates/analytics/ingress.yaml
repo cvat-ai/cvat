@@ -18,6 +18,8 @@ metadata:
 spec:
 {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className | toYaml }}
+{{- else if .Values.traefik.enabled }}
+  ingressClassName: traefik
 {{- end }}
   {{- if .Values.ingress.tls }}
   tls:
@@ -26,14 +28,14 @@ spec:
     secretName: {{ .Values.ingress.tlsSecretName }}
   {{- end }}
   rules:
-    - host: {{ .Values.ingress.hostname }}
-      http:
-        paths:
-          - path: /analytics
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ $.Release.Name }}-grafana
-                port:
-                  number: 80
+  - host: {{ .Values.ingress.hostname }}
+    http:
+      paths:
+      - path: /analytics
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $.Release.Name }}-grafana
+            port:
+              number: 80
 {{- end }}
