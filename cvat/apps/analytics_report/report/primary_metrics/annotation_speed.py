@@ -57,9 +57,6 @@ class JobAnnotationSpeed(PrimaryMetricBase):
 
             return count
 
-        def get_default():
-            return {"data_series": self.get_empty()}
-
         # Calculate object count
 
         annotations = dm.task.get_job_data(self._db_obj.id)
@@ -72,14 +69,13 @@ class JobAnnotationSpeed(PrimaryMetricBase):
         timestamp_str = timestamp.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         report = self._db_obj.analytics_report
-        if report is None:
-            statistics = get_default()
-        else:
+        data_series = self.get_empty()
+        if report is not None:
             statistics = next(
-                filter(lambda s: s["name"] == "annotation_speed", report.statistics), get_default()
+                filter(lambda s: s["name"] == "annotation_speed", report.statistics), None
             )
-
-        data_series = deepcopy(statistics["data_series"])
+            if statistics is not None:
+                data_series = deepcopy(statistics["data_series"])
 
         previous_count = 0
         start_datetime = self._db_obj.created_date
