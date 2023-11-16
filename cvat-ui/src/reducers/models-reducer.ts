@@ -29,10 +29,6 @@ const defaultState: ModelsState = {
         filter: null,
         sort: null,
     },
-    providers: {
-        fetching: false,
-        list: [],
-    },
     previews: {},
 };
 
@@ -76,36 +72,6 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 ...state,
                 initialized: true,
                 fetching: false,
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL: {
-            return {
-                ...state,
-                fetching: true,
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL_FAILED: {
-            return {
-                ...state,
-                fetching: false,
-            };
-        }
-        case ModelsActionTypes.CREATE_MODEL_SUCCESS: {
-            const mutual = {
-                ...state,
-                fetching: false,
-            };
-
-            if (action.payload.model.kind === ModelKind.REID) {
-                return {
-                    ...mutual,
-                    reid: [...state.reid, action.payload.model],
-                };
-            }
-
-            return {
-                ...mutual,
-                [`${action.payload.model.kind}s`]: [...state[`${action.payload.model.kind}s`], action.payload.model],
             };
         }
         case ModelsActionTypes.SHOW_RUN_MODEL_DIALOG: {
@@ -163,33 +129,6 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
             return {
                 ...state,
                 inferences: { ...inferences },
-            };
-        }
-        case ModelsActionTypes.GET_MODEL_PROVIDERS: {
-            return {
-                ...state,
-                providers: {
-                    ...state.providers,
-                    fetching: true,
-                },
-            };
-        }
-        case ModelsActionTypes.GET_MODEL_PROVIDERS_SUCCESS: {
-            return {
-                ...state,
-                providers: {
-                    fetching: false,
-                    list: action.payload.providers,
-                },
-            };
-        }
-        case ModelsActionTypes.GET_MODEL_PROVIDERS_FAILED: {
-            return {
-                ...state,
-                providers: {
-                    ...state.providers,
-                    fetching: false,
-                },
             };
         }
         case ModelsActionTypes.GET_MODEL_PREVIEW: {

@@ -445,38 +445,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.DRAG_CANVAS: {
-            const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.DRAG_CANVAS : ActiveControl.CURSOR;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: null,
-                },
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
-                },
-            };
-        }
-        case AnnotationActionTypes.ZOOM_CANVAS: {
-            const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.ZOOM_CANVAS : ActiveControl.CURSOR;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: null,
-                },
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
-                },
-            };
-        }
         case AnnotationActionTypes.REMEMBER_OBJECT: {
             const { payload } = action;
 
@@ -530,9 +498,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SELECT_ISSUE_POSITION: {
-            const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.OPEN_ISSUE : ActiveControl.CURSOR;
+        case AnnotationActionTypes.UPDATE_ACTIVE_CONTROL: {
+            const { activeControl } = action.payload;
 
             return {
                 ...state,
@@ -543,63 +510,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     activeControl,
-                },
-            };
-        }
-        case AnnotationActionTypes.MERGE_OBJECTS: {
-            const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.MERGE : ActiveControl.CURSOR;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: null,
-                },
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
-                },
-            };
-        }
-        case AnnotationActionTypes.GROUP_OBJECTS: {
-            const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.GROUP : ActiveControl.CURSOR;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: null,
-                },
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
-                },
-            };
-        }
-        case AnnotationActionTypes.SPLIT_TRACK: {
-            const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.SPLIT : ActiveControl.CURSOR;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: null,
-                },
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
-                },
-            };
-        }
-        case AnnotationActionTypes.SHAPE_DRAWN: {
-            return {
-                ...state,
-                canvas: {
-                    ...state.canvas,
-                    activeControl: ActiveControl.CURSOR,
+                    contextMenu: {
+                        ...defaultState.canvas.contextMenu,
+                    },
                 },
             };
         }
@@ -645,30 +558,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS: {
-            const { states, history } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    states,
-                    history,
-                },
-            };
-        }
-        case AnnotationActionTypes.MERGE_ANNOTATIONS_SUCCESS: {
-            const { states, history } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    states,
-                    history,
-                },
-            };
-        }
         case AnnotationActionTypes.RESET_ANNOTATIONS_GROUP: {
             return {
                 ...state,
@@ -687,19 +576,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SPLIT_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.MERGE_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.SLICE_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.JOIN_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.GROUP_ANNOTATIONS_SUCCESS: {
-            const { states, history } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    states,
-                    history,
-                },
-            };
-        }
-        case AnnotationActionTypes.SPLIT_ANNOTATIONS_SUCCESS: {
             const { states, history } = action.payload;
 
             return {
@@ -810,18 +692,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 drawing: {
                     ...state.drawing,
                     activeInitialState: objectState,
-                },
-            };
-        }
-        case AnnotationActionTypes.EDIT_SHAPE: {
-            const { enabled } = action.payload;
-            const activeControl = enabled ? ActiveControl.EDIT : ActiveControl.CURSOR;
-
-            return {
-                ...state,
-                canvas: {
-                    ...state.canvas,
-                    activeControl,
                 },
             };
         }

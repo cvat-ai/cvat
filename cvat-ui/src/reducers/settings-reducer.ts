@@ -441,8 +441,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const { states } = action.payload;
-            if (states.some((_state: ObjectState): boolean => _state.shapeType === ShapeType.MASK)) {
+            {
                 const MIN_OPACITY = 30;
                 const { shapes: { opacity } } = state;
                 if (opacity < MIN_OPACITY) {
@@ -461,11 +460,18 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
-            const { job } = action.payload;
+            const { job, states } = action.payload;
             const filters = [...state.imageFilters];
             filters.forEach((imageFilter) => {
                 imageFilter.modifier.currentProcessedImage = null;
             });
+
+            const withMasks = states
+                .some((_state: ObjectState): boolean => _state.shapeType === ShapeType.MASK);
+            const opacity = withMasks || job.dimension === DimensionType.DIMENSION_3D ?
+                Math.max(state.shapes.opacity, 30) : state.shapes.opacity;
+            const selectedOpacity = withMasks || job.dimension === DimensionType.DIMENSION_3D ?
+                Math.max(state.shapes.selectedOpacity, 60) : state.shapes.selectedOpacity;
 
             return {
                 ...state,
@@ -474,12 +480,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
                 shapes: {
                     ...defaultState.shapes,
-                    ...(job.dimension === DimensionType.DIMENSION_3D ?
-                        {
-                            opacity: 40,
-                            selectedOpacity: 60,
-                        } :
-                        {}),
+                    opacity,
+                    selectedOpacity,
                 },
                 imageFilters: filters,
             };

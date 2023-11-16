@@ -44,7 +44,6 @@ export default function implementAPI(cvat) {
     cvat.lambda.cancel.implementation = lambdaManager.cancel.bind(lambdaManager);
     cvat.lambda.listen.implementation = lambdaManager.listen.bind(lambdaManager);
     cvat.lambda.requests.implementation = lambdaManager.requests.bind(lambdaManager);
-    cvat.lambda.providers.implementation = lambdaManager.providers.bind(lambdaManager);
 
     cvat.server.about.implementation = async () => {
         const result = await serverProxy.server.about();
@@ -121,8 +120,8 @@ export default function implementAPI(cvat) {
         return result;
     };
 
-    cvat.server.request.implementation = async (url, data) => {
-        const result = await serverProxy.server.request(url, data);
+    cvat.server.request.implementation = async (url, data, requestConfig) => {
+        const result = await serverProxy.server.request(url, data, requestConfig);
         return result;
     };
 
