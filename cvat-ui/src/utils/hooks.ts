@@ -9,7 +9,8 @@ import {
 } from 'react';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
-import { CombinedState, PluginComponent } from 'reducers';
+import { CombinedState, Indexable, PluginComponent } from 'reducers';
+import { filterNull } from 'utils/filter-null';
 
 // eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
@@ -121,4 +122,24 @@ export function useCardHeightHOC(params: ICardHeightHOC): () => string {
 
         return height;
     };
+}
+
+export function useAuthQuery(): Record<string, string> | null {
+    const history = useHistory();
+
+    const queryParams = new URLSearchParams(history.location.search);
+    const updatedQuery: Record<string, string | null> = {
+        email: null,
+        invitation: null,
+    };
+    for (const key of Object.keys(updatedQuery)) {
+        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
+    }
+
+    if (Object.values(updatedQuery).some((val) => !!val)) {
+        const searchObject = filterNull(updatedQuery) as Record<string, string>;
+        return searchObject;
+    }
+
+    return null;
 }
