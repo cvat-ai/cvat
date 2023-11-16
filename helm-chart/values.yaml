@@ -377,7 +377,7 @@ ingress:
   ## TLS certificates will be retrieved from a TLS secret defined in tlsSecretName parameter
   ##
   tls: false
-  ## @param ingress.tlsSecretName Ыpecifies the name of the secret containing TLS certificates. Ignored if ingress.tls is false
+  ## @param ingress.tlsSecretName Specifies the name of the secret containing TLS certificates. Ignored if ingress.tls is false
   ##
   tlsSecretName: ingress-tls-cvat
 
