@@ -176,32 +176,6 @@ paths:
       responses:
         '204':
           description: The asset has been deleted
-  /api/assets/{uuid}/public:
-    get:
-      operationId: assets_retrieve_public
-      parameters:
-      - in: path
-        name: uuid
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this asset.
-        required: true
-      tags:
-      - assets
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/AssetRead'
-          description: ''
   /api/auth/login:
     post:
       operationId: auth_create_login
