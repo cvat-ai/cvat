@@ -24,7 +24,7 @@ import { AnnotationFormats } from './annotation-formats';
 import { Task, Job } from './session';
 import Project from './project';
 import CloudStorage from './cloud-storage';
-import Organization from './organization';
+import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import { SerializedAsset } from './server-response-types';
@@ -346,25 +346,32 @@ export default function implementAPI(cvat) {
     };
 
     cvat.organizations.acceptInvitation.implementation = async (
-        username,
-        firstName,
-        lastName,
-        email,
-        password,
-        userConfirmations,
         key,
     ) => {
         const orgSlug = await serverProxy.organizations.acceptInvitation(
-            username,
-            firstName,
-            lastName,
-            email,
-            password,
-            userConfirmations,
             key,
         );
 
         return orgSlug;
+    };
+
+    cvat.organizations.rejectInvitation.implementation = async (
+        key,
+    ) => {
+        await serverProxy.organizations.rejectInvitation(
+            key,
+        );
+    };
+
+    cvat.organizations.invitation.implementation = async (key) => {
+        const invitation = await serverProxy.organizations.invitation(key);
+
+        // When we request invitation by key we need to load organization
+        const organizations = await serverProxy.organizations.get({
+            filter: { and: [{ '==': [{ var: 'id' }, invitation.organization] }] },
+        });
+
+        return new Invitation({ ...invitation, organization: organizations[0] });
     };
 
     cvat.webhooks.get.implementation = async (filter) => {

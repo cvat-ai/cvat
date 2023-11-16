@@ -5,7 +5,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
-import { getCore, User } from 'cvat-core-wrapper';
+import { getCore } from 'cvat-core-wrapper';
 import isReachable from 'utils/url-checker';
 
 const cvat = getCore();
@@ -39,6 +39,9 @@ export enum AuthActionTypes {
     ACCEPT_INVITATION = 'ACCEPT_INVITATION',
     ACCEPT_INVITATION_SUCCESS = 'ACCEPT_INVITATION_SUCCESS',
     ACCEPT_INVITATION_FAILED = 'ACCEPT_INVITATION_FAILED',
+    REJECT_INVITATION = 'REJECT_INVITATION',
+    REJECT_INVITATION_SUCCESS = 'REJECT_INVITATION_SUCCESS',
+    REJECT_INVITATION_FAILED = 'REJECT_INVITATION_FAILED',
 }
 
 export const authActions = {
@@ -77,8 +80,11 @@ export const authActions = {
     ),
     loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
     acceptInvitation: () => createAction(AuthActionTypes.ACCEPT_INVITATION),
-    acceptInvitationSuccess: (user: User) => createAction(AuthActionTypes.ACCEPT_INVITATION_SUCCESS, { user }),
+    acceptInvitationSuccess: (orgSlug: string) => createAction(AuthActionTypes.ACCEPT_INVITATION_SUCCESS, { orgSlug }),
     acceptInvitationFailed: (error: any) => createAction(AuthActionTypes.ACCEPT_INVITATION_FAILED, { error }),
+    rejectInvitation: () => createAction(AuthActionTypes.REJECT_INVITATION),
+    rejectInvitationSuccess: () => createAction(AuthActionTypes.REJECT_INVITATION_SUCCESS),
+    rejectInvitationFailed: (error: any) => createAction(AuthActionTypes.REJECT_INVITATION_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -212,29 +218,13 @@ export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
 };
 
 export const acceptInvitationAsync = (
-    registerData: RegisterData,
     key: string,
     onSuccess?: (orgSlug: string) => void,
 ): ThunkAction => async (dispatch) => {
     dispatch(authActions.acceptInvitation());
 
-    const {
-        username,
-        firstName,
-        lastName,
-        email,
-        password,
-        confirmations,
-    } = registerData;
-
     try {
         const orgSlug = await cvat.organizations.acceptInvitation(
-            username,
-            firstName,
-            lastName,
-            email,
-            password,
-            confirmations,
             key,
         );
 
@@ -242,5 +232,21 @@ export const acceptInvitationAsync = (
         dispatch(authActions.acceptInvitationSuccess(orgSlug));
     } catch (error) {
         dispatch(authActions.acceptInvitationFailed(error));
+    }
+};
+
+export const rejectInvitationAsync = (
+    key: string,
+): ThunkAction => async (dispatch) => {
+    dispatch(authActions.rejectInvitation());
+
+    try {
+        await cvat.organizations.rejectInvitation(
+            key,
+        );
+
+        dispatch(authActions.rejectInvitationSuccess());
+    } catch (error) {
+        dispatch(authActions.rejectInvitationFailed(error));
     }
 };

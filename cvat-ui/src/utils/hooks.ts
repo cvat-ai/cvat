@@ -124,10 +124,7 @@ export function useCardHeightHOC(params: ICardHeightHOC): () => string {
     };
 }
 
-export function useAuthQuery(): Record<string, string> | null {
-    const history = useHistory();
-
-    const queryParams = new URLSearchParams(history.location.search);
+export function authQuery(queryParams: URLSearchParams): Record<string, string> | null {
     const updatedQuery: Record<string, string | null> = {
         email: null,
         invitation: null,
@@ -142,4 +139,11 @@ export function useAuthQuery(): Record<string, string> | null {
     }
 
     return null;
+}
+
+export function useAuthQuery(): Record<string, string> | null {
+    const history = useHistory();
+
+    const queryParams = new URLSearchParams(history.location.search);
+    return authQuery(queryParams);
 }

@@ -13,7 +13,7 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData, SerializedAcceptInvitation,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -24,6 +24,7 @@ import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { SerializedQualityConflictData } from './quality-conflict';
+import { SerializedInvitationData } from 'organization';
 
 type Params = {
     org: number | string,
@@ -460,31 +461,28 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
 }
 
 async function acceptOrganizationInvitation(
-    username: string,
-    firstName: string,
-    lastName: string,
-    email: string,
-    password: string,
-    confirmations: Record<string, string>,
     key: string,
 ): Promise<SerializedAcceptInvitation> {
     let response = null;
     let orgSlug = null;
     try {
-        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`, {
-            username,
-            first_name: firstName,
-            last_name: lastName,
-            password1: password,
-            password2: password,
-            confirmations,
-        });
+        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`);
         orgSlug = response.data.organization_slug;
     } catch (errorData) {
         throw generateError(errorData);
     }
 
     return orgSlug;
+}
+
+async function rejectOrganizationInvitation(
+    key: string,
+): Promise<void> {
+    try {
+        await Axios.post(`${config.backendAPI}/invitations/${key}/reject`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 async function getSelf(): Promise<SerializedUser> {
@@ -2053,7 +2051,7 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
     }
 }
 
-async function getMembershipInvitation(id) {
+async function getMembershipInvitation(id): Promise<SerializedInvitationData> {
     const { backendAPI } = config;
 
     let response = null;
@@ -2444,6 +2442,7 @@ export default Object.freeze({
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
         acceptInvitation: acceptOrganizationInvitation,
+        rejectInvitation: rejectOrganizationInvitation,
     }),
 
     webhooks: Object.freeze({

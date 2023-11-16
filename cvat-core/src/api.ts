@@ -267,17 +267,22 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
                 return result;
             },
-            async acceptInvitation(username, firstName, lastName, email, password, userConfirmations, key) {
+            async acceptInvitation(key) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.organizations.acceptInvitation,
-                    username,
-                    firstName,
-                    lastName,
-                    email,
-                    password,
-                    userConfirmations,
                     key,
                 );
+                return result;
+            },
+            async rejectInvitation(key) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.organizations.rejectInvitation,
+                    key,
+                );
+                return result;
+            },
+            async invitation(key) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.invitation, key);
                 return result;
             },
         },

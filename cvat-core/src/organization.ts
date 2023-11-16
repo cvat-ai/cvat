@@ -12,10 +12,12 @@ import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import User from './user';
 
-interface SerializedInvitationData {
+export interface SerializedInvitationData {
     created_date: string;
     key: string;
     owner: SerializedUser;
+    expired: boolean;
+    organization: number | Organization;
 }
 
 interface SerializedMembershipData {
@@ -31,11 +33,15 @@ export class Invitation {
     #createdDate: string;
     #owner: User | null;
     #key: string;
+    #expired: boolean;
+    #organization: number | Organization;
 
     constructor(initialData: SerializedInvitationData) {
         this.#createdDate = initialData.created_date;
         this.#owner = initialData.owner ? new User(initialData.owner) : null;
         this.#key = initialData.key;
+        this.#expired = initialData.expired;
+        this.#organization = initialData.organization;
     }
 
     get owner(): User | null {
@@ -48,6 +54,14 @@ export class Invitation {
 
     get key(): string {
         return this.#key;
+    }
+
+    get expired(): boolean {
+        return this.#expired;
+    }
+
+    get organization(): number | Organization {
+        return this.#organization;
     }
 }
 
