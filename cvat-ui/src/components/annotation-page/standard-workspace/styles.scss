@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import 'base.scss';
+@import 'base';
 
 .cvat-standard-workspace.ant-layout {
     height: 100%;
@@ -78,6 +78,8 @@
 .cvat-setup-tag-control,
 .cvat-merge-control,
 .cvat-group-control,
+.cvat-join-control,
+.cvat-slice-control,
 .cvat-split-track-control,
 .cvat-issue-control,
 .cvat-tools-control,
@@ -98,6 +100,8 @@
 
     > svg {
         transform: scale(0.8);
+        width: 40px;
+        height: 40px;
     }
 }
 

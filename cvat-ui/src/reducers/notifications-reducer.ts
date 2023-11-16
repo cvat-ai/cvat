@@ -93,6 +93,8 @@ const defaultState: NotificationsState = {
             creating: null,
             merging: null,
             grouping: null,
+            joining: null,
+            slicing: null,
             splitting: null,
             removing: null,
             propagating: null,
@@ -108,6 +110,7 @@ const defaultState: NotificationsState = {
             deleteFrame: null,
             restoreFrame: null,
             savingLogs: null,
+            canvas: null,
         },
         boundaries: {
             resetError: null,
@@ -917,6 +920,37 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AnnotationActionTypes.JOIN_ANNOTATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        joining: {
+                            message: 'Could not join annotations',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SLICE_ANNOTATIONS_FAILED:
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        slicing: {
+                            message: 'Could not slice the object',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                        },
+                    },
+                },
+            };
         case AnnotationActionTypes.SPLIT_ANNOTATIONS_FAILED: {
             return {
                 ...state,
@@ -1274,6 +1308,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-fetch-frame-data-from-the-server-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.CANVAS_ERROR_OCCURRED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        canvas: {
+                            message: 'Canvas error occurred',
+                            reason: action.payload.error,
+                            shouldLog: true,
+                            className: 'cvat-notification-notice-canvas-error-occurreed',
                         },
                     },
                 },
