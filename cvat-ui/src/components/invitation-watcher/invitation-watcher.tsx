@@ -9,6 +9,7 @@ import { useHistory } from 'react-router';
 import { Invitation, Organization, getCore } from 'cvat-core-wrapper';
 import { acceptInvitationAsync, rejectInvitationAsync } from 'actions/auth-actions';
 import Modal from 'antd/lib/modal';
+import { notification } from 'antd';
 
 const core = getCore();
 
@@ -19,13 +20,13 @@ function InvitationWatcher(): JSX.Element {
 
     useEffect(() => {
         const queryParams = new URLSearchParams(history.location.search);
-        const invitation = queryParams.get('invitation');
+        const invitationKey = queryParams.get('invitation');
 
-        if (invitation) {
+        if (invitationKey) {
             const storedInvitations = localStorage.getItem('invitations') || '[]';
             const invitations = JSON.parse(storedInvitations);
-            if (!invitations.includes(invitation)) {
-                invitations.push(invitation);
+            if (!invitations.includes(invitationKey)) {
+                invitations.push(invitationKey);
                 localStorage.setItem('invitations', JSON.stringify(invitations));
             }
         }
@@ -35,15 +36,32 @@ function InvitationWatcher(): JSX.Element {
             const invitations = JSON.parse(storedInvitations);
 
             const checkRequests = invitations.map(
-                (invitationKey: string) => core.organizations.invitation(invitationKey),
+                (key: string) => core.organizations.invitation(key),
             );
             Promise.allSettled(checkRequests).then((promises) => {
-                // TODO check that error is shown if promise rejected
                 const validInvitations = promises
                     .map((promise) => (promise.status === 'fulfilled' ? promise.value : null))
                     .filter((invitation) => !!invitation);
-                // TODO show error for each expired;
+
+                promises.forEach((promise) => {
+                    if (promise.status === 'rejected') {
+                        notification.error({
+                            message: 'Invitation error',
+                            className: 'cvat-invitation-error',
+                            description: promise.reason.toString(),
+                        });
+                    }
+                });
+
                 const expiredInvitations = validInvitations.filter((invitation) => invitation.expired);
+                expiredInvitations.forEach((invitation) => {
+                    notification.error({
+                        message: 'Invitation error',
+                        className: 'cvat-invitation-error',
+                        description: `The invitation to ${invitation.organization.slug} is expired. ` +
+                            'Please, contact organization owner.',
+                    });
+                });
 
                 const invitationsToBeShown = validInvitations.filter((invitation) => !invitation.expired);
                 if (invitationsToBeShown.length === 0) {
