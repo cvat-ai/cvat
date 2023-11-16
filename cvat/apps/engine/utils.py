@@ -176,7 +176,7 @@ def define_dependent_job(
         for job in queue.job_class.fetch_many(
             queue.deferred_job_registry.get_job_ids(), queue.connection
         )
-        if job and job.meta.get("user", {}).get("id") == user_id
+        if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
     ]
     all_user_jobs = started_user_jobs + deferred_user_jobs
 
