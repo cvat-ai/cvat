@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from copy import deepcopy
+
 from dateutil import parser
 
 import cvat.apps.dataset_manager as dm
@@ -57,7 +58,7 @@ class JobAnnotationSpeed(PrimaryMetricBase):
             return count
 
         def get_default():
-            return { "data_series": self.get_empty() }
+            return {"data_series": self.get_empty()}
 
         # Calculate object count
 
