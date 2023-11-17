@@ -113,8 +113,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
     def save(self, request, **kwargs):
         invitation = super().save(**kwargs)
-        if not strtobool(settings.ORG_INVITATION_CONFIRM) and invitation.membership.user.is_active:
-            # For existing users we auto-accept all invitations
+        if strtobool(settings.ORG_INVITATION_CONFIRM) or settings.EMAIL_BACKEND is None:
             invitation.accept()
         else:
             invitation.send(request)
