@@ -67,10 +67,12 @@ class Invitation(models.Model):
 
     @property
     def expired(self) -> bool:
-        expiration_date = self.sent_date + timedelta(
-            days=settings.ORG_INVITATION_EXPIRY_DAYS,
-        )
-        return expiration_date <= timezone.now()
+        if self.sent_date:
+            expiration_date = self.sent_date + timedelta(
+                days=settings.ORG_INVITATION_EXPIRY_DAYS,
+            )
+            return expiration_date <= timezone.now()
+        return True
 
     @property
     def organization_slug(self):
