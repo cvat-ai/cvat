@@ -73,11 +73,11 @@ COPY utils/dataset_manifest/requirements.txt /tmp/utils/dataset_manifest/require
 # Exclude av from the requirements file
 RUN sed -i '/^av==/d' /tmp/utils/dataset_manifest/requirements.txt
 
-ARG DJANGO_CONFIGURATION="production"
+ARG CVAT_CONFIGURATION="production"
 
 RUN --mount=type=cache,target=/root/.cache/pip/http \
     DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps \
-    -r /tmp/cvat/requirements/${DJANGO_CONFIGURATION}.txt \
+    -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
 FROM golang:1.20.5 AS build-smokescreen
@@ -103,8 +103,8 @@ ENV TERM=xterm \
     TZ=${TZ}
 
 ARG USER="django"
-ARG DJANGO_CONFIGURATION="production"
-ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
+ARG CVAT_CONFIGURATION="production"
+ENV DJANGO_SETTINGS_MODULE="cvat.settings.${CVAT_CONFIGURATION}"
 
 # Install necessary apt packages
 RUN apt-get update && \
@@ -113,7 +113,6 @@ RUN apt-get update && \
         ca-certificates \
         curl \
         git \
-        git-lfs \
         libgeos-c1v5 \
         libgl1 \
         libgomp1 \
@@ -126,7 +125,6 @@ RUN apt-get update && \
         python3 \
         python3-distutils \
         python3-venv \
-        ssh \
         supervisor \
         tzdata \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
@@ -140,12 +138,7 @@ COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
 # Add a non-root user
 ENV USER=${USER}
 ENV HOME /home/${USER}
-RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
-    if [ -z ${socks_proxy} ]; then \
-        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30\"" >> ${HOME}/.bashrc; \
-    else \
-        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
-    fi
+RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER}
 
 ARG CLAM_AV="no"
 RUN if [ "$CLAM_AV" = "yes" ]; then \
@@ -184,7 +177,6 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
-COPY --chown=${USER} ssh ${HOME}/.ssh
 COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat

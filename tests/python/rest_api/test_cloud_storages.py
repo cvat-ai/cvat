@@ -6,6 +6,7 @@
 import io
 import json
 from enum import Enum
+from functools import partial
 from http import HTTPStatus
 from typing import Any, Optional
 
@@ -17,6 +18,7 @@ from deepdiff import DeepDiff
 from PIL import Image
 
 from shared.utils.config import get_method, make_api_client
+from shared.utils.s3 import make_client as make_s3_client
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -443,6 +445,7 @@ class TestGetCloudStoragePreview:
             self._test_cannot_see(username, storage_id)
 
 
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestGetCloudStorageContent:
     USER = "admin1"
 
@@ -475,11 +478,12 @@ class TestGetCloudStorageContent:
 
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize(
-        "version, manifest, prefix, page_size, expected_content",
+        "version, manifest, prefix, default_bucket_prefix, page_size, expected_content",
         [
             (
                 SUPPORTED_VERSIONS.V1,  # [v1] list all bucket content
                 "sub/manifest.jsonl",
+                None,
                 None,
                 None,
                 ["sub/image_case_65_1.png", "sub/image_case_65_2.png"],
@@ -489,12 +493,14 @@ class TestGetCloudStorageContent:
                 "sub/manifest.jsonl",
                 None,
                 None,
+                None,
                 [FileInfo(mime_type="DIR", name="sub", type="DIR")],
             ),
             (
                 SUPPORTED_VERSIONS.V2,  # [v2] search by some prefix in bucket content based on manifest
                 "sub/manifest.jsonl",
                 "sub/image_case_65_1",
+                None,
                 None,
                 [
                     FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
@@ -504,6 +510,7 @@ class TestGetCloudStorageContent:
                 SUPPORTED_VERSIONS.V2,  # [v2] list the second layer (directory "sub") of bucket content based on manifest
                 "sub/manifest.jsonl",
                 "sub/",
+                None,
                 None,
                 [
                     FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
@@ -515,12 +522,14 @@ class TestGetCloudStorageContent:
                 None,
                 None,
                 None,
+                None,
                 [FileInfo(mime_type="DIR", name="sub", type="DIR")],
             ),
             (
                 SUPPORTED_VERSIONS.V2,  # [v2] list the second layer (directory "sub") of real bucket content
                 None,
                 "sub/",
+                None,
                 2,
                 [
                     FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
@@ -532,6 +541,7 @@ class TestGetCloudStorageContent:
                 None,
                 "/sub/",  # cover case: API is identical to share point API
                 None,
+                None,
                 [
                     FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
                     FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
@@ -539,6 +549,132 @@ class TestGetCloudStorageContent:
                     FileInfo(mime_type="unknown", name="manifest.jsonl", type="REG"),
                     FileInfo(mime_type="unknown", name="manifest_1.jsonl", type="REG"),
                     FileInfo(mime_type="unknown", name="manifest_2.jsonl", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when default bucket prefix is set to directory
+                "sub/manifest.jsonl",
+                None,
+                "sub/",
+                None,
+                [
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_2.png", type="REG"),
+                ],
+            ),
+            (
+                # [v2] list bucket content based on manifest when default bucket prefix
+                # is set to template from which the files should start
+                SUPPORTED_VERSIONS.V2,
+                "sub/manifest.jsonl",
+                None,
+                "sub/image_case_65_1",
+                None,
+                [
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when specified prefix is stricter than default bucket prefix
+                "sub/manifest.jsonl",
+                "sub/image_case_65_1",
+                "sub/image_case",
+                None,
+                [
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when default bucket prefix is stricter than specified prefix
+                "sub/manifest.jsonl",
+                "sub/image_case",
+                "sub/image_case_65_1",
+                None,
+                [
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when default bucket prefix and specified prefix have no intersection
+                "sub/manifest.jsonl",
+                "sub/image_case_65_1",
+                "sub/image_case_65_2",
+                None,
+                [],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when default bucket prefix contains dirs and prefix starts with it
+                "sub/manifest.jsonl",
+                "s",
+                "sub/",
+                None,
+                [
+                    FileInfo(mime_type="DIR", name="sub", type="DIR"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when default bucket prefix is set to directory
+                None,
+                None,
+                "sub/",
+                None,
+                [
+                    FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                    FileInfo(mime_type="image", name="image_case_65_2.png", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest.jsonl", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest_1.jsonl", type="REG"),
+                    FileInfo(mime_type="unknown", name="manifest_2.jsonl", type="REG"),
+                ],
+            ),
+            (
+                # [v2] list real bucket content when default bucket prefix
+                # is set to template from which the files should start
+                SUPPORTED_VERSIONS.V2,
+                None,
+                None,
+                "sub/demo",
+                None,
+                [
+                    FileInfo(mime_type="unknown", name="demo_manifest.jsonl", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when specified prefix is stricter than default bucket prefix
+                None,
+                "sub/image_case_65_1",
+                "sub/image_case",
+                None,
+                [
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when default bucket prefix is stricter than specified prefix
+                None,
+                "sub/image_case",
+                "sub/image_case_65_1",
+                None,
+                [
+                    FileInfo(mime_type="image", name="image_case_65_1.png", type="REG"),
+                ],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when default bucket prefix and specified prefix have no intersection
+                None,
+                "sub/image_case_65_1",
+                "sub/image_case_65_2",
+                None,
+                [],
+            ),
+            (
+                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when default bucket prefix contains dirs and prefix starts with it
+                None,
+                "s",
+                "sub/",
+                None,
+                [
+                    FileInfo(mime_type="DIR", name="sub", type="DIR"),
                 ],
             ),
         ],
@@ -549,9 +685,23 @@ class TestGetCloudStorageContent:
         version: SUPPORTED_VERSIONS,
         manifest: Optional[str],
         prefix: Optional[str],
+        default_bucket_prefix: Optional[str],
         page_size: Optional[int],
         expected_content: Optional[Any],
+        cloud_storages,
     ):
+        if default_bucket_prefix:
+            cloud_storage = cloud_storages[cloud_storage_id]
+
+            with make_api_client(self.USER) as api_client:
+                (_, response) = api_client.cloudstorages_api.partial_update(
+                    cloud_storage_id,
+                    patched_cloud_storage_write_request={
+                        "specific_attributes": f'{cloud_storage["specific_attributes"]}&prefix={default_bucket_prefix}'
+                    },
+                )
+                assert response.status == HTTPStatus.OK
+
         result = self._test_get_cloud_storage_content(
             cloud_storage_id, version, manifest, prefix=prefix, page_size=page_size
         )
@@ -590,6 +740,45 @@ class TestGetCloudStorageContent:
                 break
 
         assert expected_content == current_content
+
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    def test_can_get_storage_content_with_manually_created_dirs(
+        self,
+        cloud_storage_id: int,
+        request,
+        cloud_storages,
+    ):
+        initial_content = self._test_get_cloud_storage_content(cloud_storage_id)["content"]
+        s3_client = make_s3_client()
+        cs_name = cloud_storages[cloud_storage_id]["resource"]
+        new_directory = "manually_created_directory/"
+
+        # directory is 0 size object that has a name ending with a forward slash
+        s3_client.create_file(
+            bucket=cs_name,
+            filename=new_directory,
+        )
+        request.addfinalizer(
+            partial(
+                s3_client.remove_file,
+                bucket=cs_name,
+                filename=new_directory,
+            )
+        )
+
+        content = self._test_get_cloud_storage_content(
+            cloud_storage_id,
+        )["content"]
+        assert len(initial_content) + 1 == len(content)
+        assert any(
+            new_directory.strip("/") == x["name"] and "DIR" == str(x["type"]) for x in content
+        )
+
+        content = self._test_get_cloud_storage_content(
+            cloud_storage_id,
+            prefix=new_directory,
+        )["content"]
+        assert not len(content)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

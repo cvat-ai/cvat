@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -28,62 +28,48 @@ import Menu from 'antd/lib/menu';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
-import Select from 'antd/lib/select';
+import notification from 'antd/lib/notification';
 
-import { getCore } from 'cvat-core-wrapper';
 import config from 'config';
 
+import { Organization, getCore } from 'cvat-core-wrapper';
 import { CVATLogo } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
+import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
-import { CombinedState } from 'reducers';
-import { usePlugins } from 'utils/hooks';
+import { shortcutsActions } from 'actions/shortcuts-actions';
+import { AboutState, CombinedState } from 'reducers';
+import { useIsMounted, usePlugins } from 'utils/hooks';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import SettingsModal from './settings-modal/settings-modal';
-
-const core = getCore();
-
-interface Tool {
-    name: string;
-    description: string;
-    server: {
-        host: string;
-        version: string;
-    };
-    core: {
-        version: string;
-    };
-    canvas: {
-        version: string;
-    };
-    ui: {
-        version: string;
-    };
-}
+import OrganizationsSearch from './organizations-search';
 
 interface StateToProps {
     user: any;
-    tool: Tool;
+    about: AboutState;
+    keyMap: KeyMap;
     switchSettingsShortcut: string;
-    settingsDialogShown: boolean;
+    settingsModalVisible: boolean;
+    shortcutsModalVisible: boolean;
     changePasswordDialogShown: boolean;
     changePasswordFetching: boolean;
     logoutFetching: boolean;
     renderChangePasswordItem: boolean;
     isAnalyticsPluginActive: boolean;
     isModelsPluginActive: boolean;
-    isGitPluginActive: boolean;
-    organizationsFetching: boolean;
-    organizationsList: any[];
+    organizationFetching: boolean;
     currentOrganization: any | null;
 }
 
 interface DispatchToProps {
     onLogout: () => void;
-    switchSettingsDialog: (show: boolean) => void;
-    switchChangePasswordDialog: (show: boolean) => void;
+    switchSettingsModalVisible: (visible: boolean) => void;
+    switchShortcutsModalVisible: (visible: boolean) => void;
+    switchChangePasswordModalVisible: (visible: boolean) => void;
 }
+
+const core = getCore();
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -95,124 +81,179 @@ function mapStateToProps(state: CombinedState): StateToProps {
             allowChangePassword: renderChangePasswordItem,
         },
         plugins: { list },
-        about: { server, packageVersion },
-        shortcuts: { normalizedKeyMap },
-        settings: { showDialog: settingsDialogShown },
-        organizations: { fetching: organizationsFetching, current: currentOrganization, list: organizationsList },
+        about,
+        shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
+        settings: { showDialog: settingsModalVisible },
+        organizations: { fetching: organizationFetching, current: currentOrganization },
     } = state;
 
     return {
         user,
-        tool: {
-            name: server.name as string,
-            description: server.description as string,
-            server: {
-                host: core.config.backendAPI.slice(0, -7),
-                version: server.version as string,
-            },
-            canvas: {
-                version: packageVersion.canvas,
-            },
-            core: {
-                version: packageVersion.core,
-            },
-            ui: {
-                version: packageVersion.ui,
-            },
-        },
+        about,
         switchSettingsShortcut: normalizedKeyMap.SWITCH_SETTINGS,
-        settingsDialogShown,
+        keyMap,
+        settingsModalVisible,
+        shortcutsModalVisible,
         changePasswordDialogShown,
         changePasswordFetching,
         logoutFetching,
         renderChangePasswordItem,
         isAnalyticsPluginActive: list.ANALYTICS,
         isModelsPluginActive: list.MODELS,
-        isGitPluginActive: list.GIT_INTEGRATION,
-        organizationsFetching,
+        organizationFetching,
         currentOrganization,
-        organizationsList,
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onLogout: (): void => dispatch(logoutAsync()),
-        switchSettingsDialog: (show: boolean): void => dispatch(switchSettingsDialogAction(show)),
-        switchChangePasswordDialog: (show: boolean): void => dispatch(authActions.switchChangePasswordDialog(show)),
+        switchShortcutsModalVisible: (visible: boolean): void => dispatch(
+            shortcutsActions.switchShortcutsModalVisible(visible),
+        ),
+        switchSettingsModalVisible: (visible: boolean): void => dispatch(
+            switchSettingsModalVisibleAction(visible),
+        ),
+        switchChangePasswordModalVisible: (visible: boolean): void => dispatch(
+            authActions.switchChangePasswordModalVisible(visible),
+        ),
     };
 }
 
 type Props = StateToProps & DispatchToProps;
 
-function HeaderContainer(props: Props): JSX.Element {
+function HeaderComponent(props: Props): JSX.Element {
     const {
         user,
-        tool,
+        about,
+        keyMap,
         logoutFetching,
         changePasswordFetching,
-        settingsDialogShown,
+        settingsModalVisible,
+        shortcutsModalVisible,
         switchSettingsShortcut,
-        switchSettingsDialog,
-        switchChangePasswordDialog,
         renderChangePasswordItem,
         isAnalyticsPluginActive,
         isModelsPluginActive,
-        organizationsFetching,
+        organizationFetching,
         currentOrganization,
-        organizationsList,
+        switchSettingsModalVisible,
+        switchShortcutsModalVisible,
+        switchChangePasswordModalVisible,
     } = props;
 
     const {
-        CHANGELOG_URL, LICENSE_URL, GITTER_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
+        CHANGELOG_URL, LICENSE_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
     } = config;
+
+    const isMounted = useIsMounted();
+    const [listFetching, setListFetching] = useState(false);
+    const [organizationsList, setOrganizationList] = useState<Organization[] | null>(null);
+
+    const searchCallback = useCallback((search?: string): Promise<Organization[]> => new Promise((resolve, reject) => {
+        const promise = core.organizations.get(search ? { search } : {});
+
+        setListFetching(true);
+        promise.then((organizations: Organization[]) => {
+            resolve(organizations);
+        }).catch((error: unknown) => {
+            reject(error);
+        }).finally(() => {
+            if (isMounted()) {
+                setListFetching(false);
+            }
+        });
+    }), []);
+
+    useEffect(() => {
+        searchCallback().then((organizations: Organization[]) => {
+            if (isMounted()) {
+                setOrganizationList(organizations);
+            }
+        }).catch((error: unknown) => {
+            setOrganizationList([]);
+            notification.error({
+                message: 'Could not receive a list of organizations',
+                description: error instanceof Error ? error.message : '',
+            });
+        });
+    }, []);
 
     const history = useHistory();
     const location = useLocation();
 
+    const subKeyMap = {
+        SWITCH_SHORTCUTS: keyMap.SWITCH_SHORTCUTS,
+        SWITCH_SETTINGS: keyMap.SWITCH_SETTINGS,
+    };
+
+    const handlers = {
+        SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            if (!settingsModalVisible) {
+                switchShortcutsModalVisible(!shortcutsModalVisible);
+            }
+        },
+        SWITCH_SETTINGS: (event: KeyboardEvent) => {
+            if (event) event.preventDefault();
+            if (!shortcutsModalVisible) {
+                switchSettingsModalVisible(!settingsModalVisible);
+            }
+        },
+    };
+
+    const aboutPlugins = usePlugins((state: CombinedState) => state.plugins.components.about.links.items, props);
+    const aboutLinks: [JSX.Element, number][] = [];
+    aboutLinks.push([(
+        <Col>
+            <a href={CHANGELOG_URL} target='_blank' rel='noopener noreferrer'>
+                What&apos;s new?
+            </a>
+        </Col>
+    ), 0]);
+    aboutLinks.push([(
+        <Col>
+            <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>
+                MIT License
+            </a>
+        </Col>
+    ), 10]);
+    aboutLinks.push([(
+        <Col>
+            <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
+                Find us on Discord
+            </a>
+        </Col>
+    ), 20]);
+    aboutLinks.push(...aboutPlugins.map(({ component: Component, weight }, index: number) => (
+        [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
+    )));
+
     const showAboutModal = useCallback((): void => {
         Modal.info({
-            title: `${tool.name}`,
+            title: `${about.server.name}`,
             content: (
                 <div>
-                    <p>{`${tool.description}`}</p>
+                    <p>{`${about.server.description}`}</p>
                     <p>
                         <Text strong>Server version:</Text>
-                        <Text type='secondary'>{` ${tool.server.version}`}</Text>
+                        <Text type='secondary'>{` ${about.server.version}`}</Text>
                     </p>
                     <p>
                         <Text strong>Core version:</Text>
-                        <Text type='secondary'>{` ${tool.core.version}`}</Text>
+                        <Text type='secondary'>{` ${about.packageVersion.core}`}</Text>
                     </p>
                     <p>
                         <Text strong>Canvas version:</Text>
-                        <Text type='secondary'>{` ${tool.canvas.version}`}</Text>
+                        <Text type='secondary'>{` ${about.packageVersion.canvas}`}</Text>
                     </p>
                     <p>
                         <Text strong>UI version:</Text>
-                        <Text type='secondary'>{` ${tool.ui.version}`}</Text>
+                        <Text type='secondary'>{` ${about.packageVersion.ui}`}</Text>
                     </p>
                     <Row justify='space-around'>
-                        <Col>
-                            <a href={CHANGELOG_URL} target='_blank' rel='noopener noreferrer'>
-                                What&apos;s new?
-                            </a>
-                        </Col>
-                        <Col>
-                            <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>
-                                MIT License
-                            </a>
-                        </Col>
-                        <Col>
-                            <a href={GITTER_URL} target='_blank' rel='noopener noreferrer'>
-                                Need help?
-                            </a>
-                        </Col>
-                        <Col>
-                            <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
-                                Find us on Discord
-                            </a>
-                        </Col>
+                        { aboutLinks.sort((item1, item2) => item1[1] - item2[1])
+                            .map((item) => item[0]) }
                     </Row>
                 </div>
             ),
@@ -223,10 +264,10 @@ function HeaderContainer(props: Props): JSX.Element {
                 },
             },
         });
-    }, [tool]);
+    }, [about]);
 
     const closeSettings = useCallback(() => {
-        switchSettingsDialog(false);
+        switchSettingsModalVisible(false);
     }, []);
 
     const resetOrganization = (): void => {
@@ -259,7 +300,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 icon={<ControlOutlined />}
                 key='admin_page'
                 onClick={(): void => {
-                    window.open(`${tool.server.host}/admin`, '_blank');
+                    window.open('/admin', '_blank');
                 }}
             >
                 Admin page
@@ -267,12 +308,13 @@ function HeaderContainer(props: Props): JSX.Element {
         ), 0]);
     }
 
+    const viewType: 'menu' | 'list' = (organizationsList?.length || 0) > 5 ? 'list' : 'menu';
     menuItems.push([(
         <Menu.SubMenu
-            disabled={organizationsFetching}
+            disabled={organizationFetching || listFetching}
             key='organization'
             title='Organization'
-            icon={organizationsFetching ? <LoadingOutlined /> : <TeamOutlined />}
+            icon={organizationFetching || listFetching ? <LoadingOutlined /> : <TeamOutlined />}
         >
             {currentOrganization ? (
                 <Menu.Item icon={<SettingOutlined />} key='open_organization' onClick={() => history.push('/organization')} className='cvat-header-menu-open-organization'>
@@ -280,46 +322,31 @@ function HeaderContainer(props: Props): JSX.Element {
                 </Menu.Item>
             ) : null}
             <Menu.Item icon={<PlusOutlined />} key='create_organization' onClick={() => history.push('/organizations/create')} className='cvat-header-menu-create-organization'>Create</Menu.Item>
-            { organizationsList.length > 5 ? (
+            { !!organizationsList && viewType === 'list' && (
                 <Menu.Item
                     key='switch_organization'
                     onClick={() => {
                         Modal.confirm({
+                            icon: undefined,
                             title: 'Select an organization',
                             okButtonProps: {
                                 style: { display: 'none' },
                             },
                             content: (
-                                <Select
-                                    showSearch
-                                    className='cvat-modal-organization-selector'
-                                    value={currentOrganization?.slug}
-                                    onChange={(value: string) => {
-                                        if (value === '$personal') {
-                                            resetOrganization();
-                                            return;
-                                        }
-
-                                        const [organization] = organizationsList
-                                            .filter((_organization): boolean => _organization.slug === value);
-                                        if (organization) {
-                                            setNewOrganization(organization);
-                                        }
-                                    }}
-                                >
-                                    <Select.Option value='$personal'>Personal workspace</Select.Option>
-                                    {organizationsList.map((organization: any): JSX.Element => {
-                                        const { slug } = organization;
-                                        return <Select.Option key={slug} value={slug}>{slug}</Select.Option>;
-                                    })}
-                                </Select>
+                                <OrganizationsSearch
+                                    defaultOrganizationList={organizationsList}
+                                    resetOrganization={resetOrganization}
+                                    searchOrganizations={searchCallback}
+                                    setNewOrganization={setNewOrganization}
+                                />
                             ),
                         });
                     }}
                 >
                     Switch organization
                 </Menu.Item>
-            ) : (
+            )}
+            { !!organizationsList && viewType === 'menu' && (
                 <>
                     <Menu.Divider />
                     <Menu.ItemGroup>
@@ -352,7 +379,7 @@ function HeaderContainer(props: Props): JSX.Element {
             icon={<SettingOutlined />}
             key='settings'
             title={`Press ${switchSettingsShortcut} to switch`}
-            onClick={() => switchSettingsDialog(true)}
+            onClick={() => switchSettingsModalVisible(true)}
         >
             Settings
         </Menu.Item>
@@ -370,7 +397,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 key='change_password'
                 icon={changePasswordFetching ? <LoadingOutlined /> : <EditOutlined />}
                 className='cvat-header-menu-change-password'
-                onClick={(): void => switchChangePasswordDialog(true)}
+                onClick={(): void => switchChangePasswordModalVisible(true)}
                 disabled={changePasswordFetching}
             >
                 Change password
@@ -414,6 +441,7 @@ function HeaderContainer(props: Props): JSX.Element {
 
     return (
         <Layout.Header className='cvat-header'>
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={CVATLogo} />
                 <Button
@@ -482,10 +510,10 @@ function HeaderContainer(props: Props): JSX.Element {
                     <Button
                         className={getButtonClassName('analytics')}
                         type='link'
-                        href={`${tool.server.host}/analytics`}
+                        href='/analytics'
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
-                            window.open(`${tool.server.host}/analytics`, '_blank');
+                            window.open('/analytics', '_blank');
                         }}
                     >
                         Analytics
@@ -540,23 +568,12 @@ function HeaderContainer(props: Props): JSX.Element {
                     </span>
                 </Dropdown>
             </div>
-            <SettingsModal visible={settingsDialogShown} onClose={closeSettings} />
-            {renderChangePasswordItem && <ChangePasswordDialog onClose={() => switchChangePasswordDialog(false)} />}
+            <SettingsModal visible={settingsModalVisible} onClose={closeSettings} />
+            {renderChangePasswordItem && (
+                <ChangePasswordDialog onClose={() => switchChangePasswordModalVisible(false)} />
+            )}
         </Layout.Header>
     );
 }
 
-function propsAreTheSame(prevProps: Props, nextProps: Props): boolean {
-    let equal = true;
-    for (const prop in nextProps) {
-        if (prop in prevProps && (prevProps as any)[prop] !== (nextProps as any)[prop]) {
-            if (prop !== 'tool') {
-                equal = false;
-            }
-        }
-    }
-
-    return equal;
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(React.memo(HeaderContainer, propsAreTheSame));
+export default connect(mapStateToProps, mapDispatchToProps)(React.memo(HeaderComponent));

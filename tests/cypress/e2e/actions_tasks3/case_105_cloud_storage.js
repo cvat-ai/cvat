@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,27 +40,36 @@ context('Cloud storage.', () => {
                     cy.get($el).should('exist');
                 });
             });
+        });
+
+        it('Check "Cloud Storage" manifest field.', () => {
             // Check add/remove manifest file
             cy.get('.cvat-add-manifest-button').should('be.visible').click();
-            cy.get('[placeholder="manifest.jsonl"]')
-                .should('exist')
-                .should('have.attr', 'value', '')
-                .type(dummyData.manifest)
-                .should('have.attr', 'value', dummyData.manifest);
+            cy.get('.cvat-cloud-storage-manifest-field').should('exist').should('have.attr', 'value', '');
+            cy.get('.cvat-cloud-storage-manifest-field').type(dummyData.manifest);
+            cy.get('.cvat-cloud-storage-manifest-field').should('have.attr', 'value', dummyData.manifest);
             cy.get('[data-icon="delete"]').should('be.visible').click();
-            cy.get('[placeholder="manifest.jsonl"]').should('not.exist');
+            cy.get('.cvat-cloud-storage-manifest-field').should('not.exist');
+
+            // Check we can't add non-jsonl file
+            cy.get('.cvat-add-manifest-button').should('be.visible').click();
+            cy.get('.cvat-cloud-storage-manifest-field').type('manifest.json');
+            cy.get('.cvat-cloud-storage-manifest-field').should('have.attr', 'value', 'manifest.json');
+            cy.get('.cvat-cloud-storage-form').within(() => {
+                cy.contains('Manifest file must have .jsonl extension').should('exist');
+            });
+            cy.get('[data-icon="delete"]').should('be.visible').click();
+            cy.get('.cvat-cloud-storage-manifest-field').should('not.exist');
         });
 
         it('Check "AWS S3" provider fields.', () => {
-            cy.get('#display_name')
-                .type(dummyData.display_name)
-                .should('have.attr', 'value', dummyData.display_name);
+            cy.get('#display_name').type(dummyData.display_name);
+            cy.get('#display_name').should('have.attr', 'value', dummyData.display_name);
             cy.get('#provider_type').click();
             cy.contains('.cvat-cloud-storage-select-provider', 'AWS').click();
-            cy.get('#resource')
-                .should('exist')
-                .type(dummyData.resource)
-                .should('have.attr', 'value', dummyData.resource);
+            cy.get('#resource').should('exist');
+            cy.get('#resource').type(dummyData.resource);
+            cy.get('#resource').should('have.attr', 'value', dummyData.resource);
             // Check fields with "Key id and secret access key pair"
             cy.get('#credentials_type').should('exist').click();
             cy.get('.ant-select-dropdown')
@@ -133,8 +143,12 @@ context('Cloud storage.', () => {
                 .should('be.visible')
                 .click();
             cy.get('.cvat-cloud-storage-form-item-key-file').should('not.exist');
-            cy.get('#prefix').should('exist').type(dummyData.prefix).should('have.value', dummyData.prefix);
-            cy.get('#project_id').should('exist').type(dummyData.projectID).should('have.value', dummyData.projectID);
+            cy.get('#prefix').should('exist');
+            cy.get('#prefix').type(dummyData.prefix);
+            cy.get('#prefix').should('have.value', dummyData.prefix);
+            cy.get('#project_id').should('exist');
+            cy.get('#project_id').type(dummyData.projectID);
+            cy.get('#project_id').should('have.value', dummyData.projectID);
             cy.get('#location').should('exist').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')

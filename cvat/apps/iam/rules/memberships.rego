@@ -27,7 +27,8 @@ import data.organizations
 #     } or null
 # }
 
-default allow = false
+default allow := false
+
 allow {
     utils.is_admin
 }
@@ -42,17 +43,21 @@ allow {
     organizations.is_member
 }
 
-filter = [] { # Django Q object to filter list of entries
+filter := [] { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else = qobject {
+} else := qobject {
     utils.is_sandbox
     qobject := [ {"user": input.auth.user.id}, {"is_active": true}, "&" ]
-} else = qobject {
+} else := qobject {
     utils.is_admin
     org_id := input.auth.organization.id
     qobject := [ {"organization": org_id} ]
-} else = qobject {
+} else := qobject {
+    organizations.is_staff
+    org_id := input.auth.organization.id
+    qobject := [ {"organization": org_id} ]
+} else := qobject {
     org_id := input.auth.organization.id
     qobject := [ {"organization": org_id}, {"is_active": true}, "&" ]
 }
@@ -66,14 +71,21 @@ allow {
 
 allow {
     input.scope == utils.VIEW
+    organizations.is_staff
+    input.resource.organization.id == input.auth.organization.id
+}
+
+allow {
+    input.scope == utils.VIEW
     input.resource.is_active
     organizations.is_member
     input.resource.organization.id == input.auth.organization.id
 }
 
+# maintainer of the organization can change the role of any member and remove any member except
+# himself/another maintainer/owner
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
-    input.resource.is_active
     input.resource.organization.id == input.auth.organization.id
     utils.has_perm(utils.USER)
     organizations.is_maintainer
@@ -81,22 +93,27 @@ allow {
         organizations.OWNER,
         organizations.MAINTAINER
     }[input.resource.role]
+    input.resource.user.id != input.auth.user.id
 }
 
+
+# owner of the organization can change the role of any member and remove any member except himself
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
-    input.resource.is_active
     input.resource.organization.id == input.auth.organization.id
     utils.has_perm(utils.USER)
     organizations.is_owner
+    input.resource.user.id != input.auth.user.id
     input.resource.role != organizations.OWNER
 }
 
+# member can leave the organization except case when member is the owner
 allow {
     input.scope == utils.DELETE
     input.resource.is_active
-    utils.is_sandbox
-    input.resource.role != organizations.OWNER
+    organizations.is_member
+    input.resource.organization.id == input.auth.organization.id
     input.resource.user.id == input.auth.user.id
+    input.resource.role != organizations.OWNER
     utils.has_perm(utils.WORKER)
 }

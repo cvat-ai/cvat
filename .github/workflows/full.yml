@@ -228,7 +228,7 @@ jobs:
             -c 'python manage.py test cvat/apps -v 2'
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-            -c 'yarn --frozen-lockfile --ignore-scripts && yarn workspace cvat-core run test'
+            -c 'DISABLE_HUSKY=1 yarn --frozen-lockfile && yarn workspace cvat-core run test'
 
       - name: Creating a log file from cvat containers
         if: failure()

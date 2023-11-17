@@ -68,8 +68,10 @@ context('Canvas 3D functionality. Grouping.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Grouping two cuboids.', () => {
             cy.get('.cvat-group-control').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280).click(400, 280);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280).click(500, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280);
+            cy.get('.cvat-canvas3d-perspective').click(400, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280);
+            cy.get('.cvat-canvas3d-perspective').click(500, 280);
             cy.get('.cvat-group-control').click();
             cy.changeAppearance('Group');
             cy.get('#cvat-objects-sidebar-state-item-1').invoke('attr', 'style').then((bgColorItem1) => {
@@ -109,8 +111,10 @@ context('Canvas 3D functionality. Grouping.', () => {
         it('Reset group.', () => {
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_before_reset_group');
             cy.get('.cvat-group-control').click();
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280).click(400, 280);
-            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280).click(500, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 400, 280);
+            cy.get('.cvat-canvas3d-perspective').click(400, 280);
+            cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 500, 280);
+            cy.get('.cvat-canvas3d-perspective').click(500, 280);
             cy.get('body').type('{Shift}g');
             cy.get('#cvat-objects-sidebar-state-item-2').invoke('attr', 'style').then((bgColorItem2) => {
                 expect(bgColorItem).to.be.equal(bgColorItem2);

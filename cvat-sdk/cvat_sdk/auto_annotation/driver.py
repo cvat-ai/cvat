@@ -268,7 +268,7 @@ def annotate_task(
     if pbar is None:
         pbar = NullProgressReporter()
 
-    dataset = TaskDataset(client, task_id)
+    dataset = TaskDataset(client, task_id, load_annotations=False)
 
     assert isinstance(function.spec, DetectionFunctionSpec)
 

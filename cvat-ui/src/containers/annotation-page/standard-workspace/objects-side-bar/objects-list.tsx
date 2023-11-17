@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -294,16 +294,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 
     private hideAllStates(hidden: boolean): void {
-        const { updateAnnotations, readonly } = this.props;
+        const { updateAnnotations } = this.props;
         const { filteredStates } = this.state;
 
-        if (!readonly) {
-            for (const objectState of filteredStates) {
-                objectState.hidden = hidden;
-            }
-
-            updateAnnotations(filteredStates);
+        for (const objectState of filteredStates) {
+            objectState.hidden = hidden;
         }
+
+        updateAnnotations(filteredStates);
     }
 
     private collapseAllStates(collapsed: boolean): void {
@@ -356,16 +354,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
             PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
             CHANGE_OBJECT_COLOR: keyMap.CHANGE_OBJECT_COLOR,
-            TILT_UP: keyMap.TILT_UP,
-            TILT_DOWN: keyMap.TILT_DOWN,
-            ROTATE_LEFT: keyMap.ROTATE_LEFT,
-            ROTATE_RIGHT: keyMap.ROTATE_RIGHT,
-            MOVE_UP: keyMap.MOVE_UP,
-            MOVE_DOWN: keyMap.MOVE_DOWN,
-            MOVE_LEFT: keyMap.MOVE_LEFT,
-            MOVE_RIGHT: keyMap.MOVE_RIGHT,
-            ZOOM_IN: keyMap.ZOOM_IN,
-            ZOOM_OUT: keyMap.ZOOM_OUT,
         };
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -392,16 +380,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         };
 
         const handlers = {
-            TILT_UP: () => {}, // Handled by CVAT 3D Independently
-            TILT_DOWN: () => {},
-            ROTATE_LEFT: () => {},
-            ROTATE_RIGHT: () => {},
-            MOVE_UP: () => {},
-            MOVE_DOWN: () => {},
-            MOVE_LEFT: () => {},
-            MOVE_RIGHT: () => {},
-            ZOOM_IN: () => {},
-            ZOOM_OUT: () => {},
             SWITCH_ALL_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);
@@ -416,14 +394,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_ALL_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
-                if (!readonly) {
-                    this.hideAllStates(!statesHidden);
-                }
+                this.hideAllStates(!statesHidden);
             },
             SWITCH_HIDDEN: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly) {
+                if (state) {
                     state.hidden = !state.hidden;
                     updateAnnotations([state]);
                 }
@@ -492,8 +468,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            COPY_SHAPE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
+            COPY_SHAPE: () => {
                 const state = activatedState();
                 if (state && !readonly) {
                     copyShape(state);

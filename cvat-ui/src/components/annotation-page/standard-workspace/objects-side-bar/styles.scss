@@ -1,9 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import 'base.scss';
+@import 'base';
 
 .cvat-objects-appearance-collapse.ant-collapse {
     width: 100%;
@@ -123,6 +123,12 @@
         padding: $grid-unit-size $grid-unit-size $grid-unit-size $grid-unit-size * 8;
     }
 
+    > .ant-row {
+        .ant-typography {
+            margin-bottom: 0;
+        }
+    }
+
     p {
         margin-bottom: 0;
     }
@@ -217,7 +223,7 @@
 
 .cvat-objects-sidebar-state-item {
     width: 100%;
-    padding: 5px 3px 3px 3px;
+    padding: 5px 3px 3px;
     opacity: 1;
 
     > div:nth-child(1) {
@@ -297,7 +303,7 @@
 
 .cvat-object-item-radio-attribute {
     border: 1px double $border-color-hover;
-    border-radius: 7px 7px 7px 7px;
+    border-radius: 7px;
 
     > legend {
         text-align: center;
@@ -316,7 +322,7 @@
 
     > .ant-radio-group {
         display: grid;
-        padding: 1px 5px 1px 5px;
+        padding: 1px 5px;
     }
 }
 
@@ -337,7 +343,7 @@
 .cvat-objects-sidebar-label-item {
     height: 2.5em;
     border-bottom: 1px solid $border-color-1;
-    padding: 5px 3px 3px 3px;
+    padding: 5px 3px 3px;
 
     span {
         @extend .cvat-object-sidebar-icon;
@@ -412,16 +418,15 @@
 }
 
 .cvat-object-item-menu {
-    > li {
+    li {
         padding: 0;
+    }
 
-        > button {
-            padding: 5px 32px;
-            color: $text-color;
-            width: 100%;
-            height: 100%;
-            text-align: left;
-        }
+    button {
+        color: $text-color;
+        width: 100%;
+        height: 100%;
+        text-align: left;
     }
 }
 
@@ -469,10 +474,6 @@
     padding: $grid-unit-size * 0.5;
     border: 1px solid $object-item-border-color;
     border-bottom: 0;
-    padding-top: 1px;
-    padding-left: 1px;
-    padding-right: 1px;
-    padding-bottom: 2px;
 
     &:last-child {
         border-bottom: 1px solid $object-item-border-color;

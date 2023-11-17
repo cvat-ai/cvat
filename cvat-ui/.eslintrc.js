@@ -1,8 +1,10 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 const globalConfig = require('../.eslintrc.js');
+const { join } = require('path');
 
 module.exports = {
     parserOptions: {
@@ -12,7 +14,7 @@ module.exports = {
     ignorePatterns: [
         '.eslintrc.js',
         'webpack.config.js',
-        'src/assets/opencv_4.5.4_dev.js',
+        'src/assets/opencv*.js',
         'node_modules/**',
         'dist/**',
     ],
@@ -29,5 +31,11 @@ module.exports = {
         'react/jsx-indent-props': ['warn', 4],
         'react/jsx-props-no-spreading': 0,
         'jsx-quotes': ['error', 'prefer-single'],
+        'import/no-extraneous-dependencies': [
+            'error',
+            {
+                packageDir: [__dirname, join(__dirname, '../')]
+            },
+        ],
     },
 };

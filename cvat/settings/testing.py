@@ -62,8 +62,6 @@ for logger in LOGGING["loggers"].values():
 
 LOGGING["handlers"]["server_file"] = LOGGING["handlers"]["console"]
 
-CACHES["media"]["LOCATION"] = CACHE_ROOT
-
 PASSWORD_HASHERS = (
     'django.contrib.auth.hashers.MD5PasswordHasher',
 )

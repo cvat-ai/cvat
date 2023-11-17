@@ -13,6 +13,7 @@ onmessage = (e) => {
         .then((response) => {
             postMessage({
                 responseData: response.data,
+                headers: response.headers,
                 id: e.data.id,
                 isSuccess: true,
             });
@@ -20,8 +21,8 @@ onmessage = (e) => {
         .catch((error) => {
             postMessage({
                 id: e.data.id,
-                status: error.response.status,
-                responseData: error.response.data,
+                message: error.message,
+                code: error.code,
                 isSuccess: false,
             });
         });

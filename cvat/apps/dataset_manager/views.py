@@ -16,11 +16,13 @@ from django.conf import settings
 
 import cvat.apps.dataset_manager.task as task
 import cvat.apps.dataset_manager.project as project
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Project, Task, Job
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import current_function_name
+
+slogger = ServerLogManager(__name__)
 
 _MODULE_NAME = __package__ + '.' + osp.splitext(osp.basename(__file__))[0]
 def log_exception(logger=None, exc_info=True):

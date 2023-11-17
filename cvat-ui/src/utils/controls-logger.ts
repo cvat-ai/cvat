@@ -14,9 +14,9 @@ const classFilter = ['ant-btn'];
 const parentClassFilter = ['ant-btn'];
 
 class EventRecorder {
-    #savingInterval: number | null;
+    #savingTimeout: number | null;
     public constructor() {
-        this.#savingInterval = null;
+        this.#savingTimeout = null;
         core.logger.log(LogType.loadTool, {
             location: window.location.pathname + window.location.search,
             platform: platformInfo(),
@@ -50,10 +50,13 @@ class EventRecorder {
     }
 
     public initSave(): void {
-        if (this.#savingInterval) return;
-        this.#savingInterval = setInterval(() => {
-            core.logger.save();
-        }, CONTROLS_LOGS_INTERVAL) as unknown as number;
+        if (this.#savingTimeout) return;
+        this.#savingTimeout = window.setTimeout(() => {
+            core.logger.save().finally(() => {
+                this.#savingTimeout = null;
+                this.initSave();
+            });
+        }, CONTROLS_LOGS_INTERVAL);
     }
 
     private filterClassName(cls: string): string {

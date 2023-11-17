@@ -25,11 +25,6 @@ export class Exception extends Error {
         const line = info.lineNumber;
         const column = info.columnNumber;
 
-        // TODO: NOT IMPLEMENTED?
-        // const {
-        //     jobID, taskID, clientID, projID,
-        // } = config;
-
         Object.defineProperties(
             this,
             Object.freeze({
@@ -63,18 +58,6 @@ export class Exception extends Error {
                      */
                     get: () => time,
                 },
-                // jobID: {
-                //     get: () => jobID,
-                // },
-                // taskID: {
-                //     get: () => taskID,
-                // },
-                // projID: {
-                //     get: () => projID,
-                // },
-                // clientID: {
-                //     get: () => clientID,
-                // },
                 filename: {
                     /**
                      * @name filename
@@ -140,8 +123,6 @@ export class ArgumentError extends Exception {}
 export class DataError extends Exception {}
 
 export class ScriptingError extends Exception {}
-
-export class PluginError extends Exception {}
 
 export class ServerError extends Exception {
     constructor(message, code) {

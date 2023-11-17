@@ -19,6 +19,7 @@ import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings from 'cvat-core/src/quality-settings';
 import { FramesMetaData } from 'cvat-core/src/frames';
+import { ServerError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
     JobStage, JobState, RQStatus,
@@ -27,10 +28,11 @@ import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
-import Organization from 'cvat-core/src/organization';
+import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
 import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
+import { EventLogger } from 'cvat-core/src/log';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 
 const cvat: any = _cvat;
@@ -63,6 +65,8 @@ export {
     User,
     CloudStorage,
     Organization,
+    Membership,
+    Invitation,
     Comment,
     MLModel,
     ModelKind,
@@ -83,6 +87,8 @@ export {
     AnalyticsReport,
     AnalyticsEntry,
     AnalyticsEntryViewType,
+    ServerError,
+    EventLogger,
 };
 
 export type {

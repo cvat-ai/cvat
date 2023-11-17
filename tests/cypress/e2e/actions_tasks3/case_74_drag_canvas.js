@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,7 +25,8 @@ context('Drag canvas.', () => {
                     leftBefore = +$style.split(';').find((el) => el.includes('left')).split(':')[1].replace('px', '').trim();
                 });
             cy.get('.cvat-move-control').click(); // Without this action, the function is not covered
-            cy.get('.cvat-canvas-container').trigger('mousedown', { button: 0 }).trigger('mousemove', 500, 500);
+            cy.get('.cvat-canvas-container').trigger('mousedown', { button: 0 });
+            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 500);
         });
 
         it('Top and left style perameters is changed.', () => {

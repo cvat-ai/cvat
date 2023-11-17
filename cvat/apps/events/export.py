@@ -17,8 +17,10 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 
 from cvat.apps.dataset_manager.views import clear_export_cache, log_exception
-from cvat.apps.engine.log import slogger
+from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.utils import sendfile
+
+slogger = ServerLogManager(__name__)
 
 DEFAULT_CACHE_TTL = timedelta(hours=1)
 
@@ -73,6 +75,7 @@ def _create_csv(query_params, output_filename, cache_ttl):
             func=clear_export_cache,
             file_path=output_filename,
             file_ctime=archive_ctime,
+            logger=slogger.glob,
         )
         slogger.glob.info(
             f"The {output_filename} is created "
@@ -136,7 +139,7 @@ def export(request, filter_query, queue_name):
 
     if rq_job:
         if rq_job.is_finished:
-            file_path = rq_job.return_value
+            file_path = rq_job.return_value()
             if action == "download" and os.path.exists(file_path):
                 rq_job.delete()
                 timestamp = datetime.strftime(datetime.now(), "%Y_%m_%d_%H_%M_%S")

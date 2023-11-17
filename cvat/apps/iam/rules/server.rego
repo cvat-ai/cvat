@@ -20,12 +20,13 @@ import data.utils
 #     }
 # }
 
-default allow = false
+default allow := false
+
 allow {
     input.scope == utils.VIEW
 }
 
 allow {
     input.scope == utils.LIST_CONTENT
-    utils.has_perm(utils.WORKER)
+    utils.has_perm(utils.USER)
 }

@@ -13,17 +13,14 @@ import { authorizedAsync, loadAuthActionsAsync } from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
 import { getModelsAsync } from 'actions/models-actions';
 import { getPluginsAsync } from 'actions/plugins-actions';
-import { switchSettingsDialog } from 'actions/settings-actions';
-import { shortcutsActions } from 'actions/shortcuts-actions';
 import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
 import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
-import { KeyMap } from 'utils/mousetrap-react';
 import createRootReducer from 'reducers/root-reducer';
-import { getOrganizationsAsync } from 'actions/organization-actions';
+import { activateOrganizationAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
 
@@ -38,8 +35,8 @@ interface StateToProps {
     modelsFetching: boolean;
     userInitialized: boolean;
     userFetching: boolean;
-    organizationsFetching: boolean;
-    organizationsInitialized: boolean;
+    organizationFetching: boolean;
+    organizationInitialized: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
     formatsInitialized: boolean;
@@ -52,7 +49,6 @@ interface StateToProps {
     allowResetPassword: boolean;
     notifications: NotificationsState;
     user: any;
-    keyMap: KeyMap;
     isModelPluginActive: boolean;
     pluginComponents: PluginsState['components'];
 }
@@ -65,11 +61,9 @@ interface DispatchToProps {
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
-    switchShortcutsDialog: () => void;
     loadUserAgreements: () => void;
-    switchSettingsDialog: () => void;
     loadAuthActions: () => void;
-    loadOrganizations: () => void;
+    loadOrganization: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -77,7 +71,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { auth } = state;
     const { formats } = state;
     const { about } = state;
-    const { shortcuts } = state;
     const { userAgreements } = state;
     const { models } = state;
     const { organizations } = state;
@@ -85,8 +78,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         userInitialized: auth.initialized,
         userFetching: auth.fetching,
-        organizationsFetching: organizations.fetching,
-        organizationsInitialized: organizations.initialized,
+        organizationFetching: organizations.fetching,
+        organizationInitialized: organizations.initialized,
         pluginsInitialized: plugins.initialized,
         pluginsFetching: plugins.fetching,
         modelsInitialized: models.initialized,
@@ -103,7 +96,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         allowResetPassword: auth.allowResetPassword,
         notifications: state.notifications,
         user: auth.user,
-        keyMap: shortcuts.keyMap,
         pluginComponents: plugins.components,
         isModelPluginActive: plugins.list.MODELS,
     };
@@ -119,10 +111,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAbout: (): void => dispatch(getAboutAsync()),
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
-        switchShortcutsDialog: (): void => dispatch(shortcutsActions.switchShortcutsDialog()),
-        switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
-        loadOrganizations: (): void => dispatch(getOrganizationsAsync()),
+        loadOrganization: (): void => dispatch(activateOrganizationAsync()),
     };
 }
 

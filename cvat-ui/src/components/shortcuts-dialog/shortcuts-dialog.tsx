@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +17,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    switchShortcutsDialog(): void;
+    switchShortcutsModalVisible(visible: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -27,22 +28,19 @@ function mapStateToProps(state: CombinedState): StateToProps {
         },
     } = state;
 
-    return {
-        visible,
-        jobInstance,
-    };
+    return { visible, jobInstance };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        switchShortcutsDialog(): void {
-            dispatch(shortcutsActions.switchShortcutsDialog());
+        switchShortcutsModalVisible(visible: boolean): void {
+            dispatch(shortcutsActions.switchShortcutsModalVisible(visible));
         },
     };
 }
 
 function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | null {
-    const { visible, switchShortcutsDialog, jobInstance } = props;
+    const { visible, switchShortcutsModalVisible } = props;
     const keyMap = getApplicationKeyMap();
 
     const splitToRows = (data: string[]): JSX.Element[] => data.map(
@@ -80,9 +78,7 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
         },
     ];
 
-    const dimensionType = jobInstance?.dimension;
     const dataSource = Object.keys(keyMap)
-        .filter((key: string) => !dimensionType || keyMap[key].applicable.includes(dimensionType))
         .map((key: string, id: number) => ({
             key: id,
             name: keyMap[key].name || key,
@@ -97,7 +93,7 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
             visible={visible}
             closable={false}
             width={800}
-            onOk={switchShortcutsDialog}
+            onOk={() => switchShortcutsModalVisible(false)}
             cancelButtonProps={{ style: { display: 'none' } }}
             zIndex={1001} /* default antd is 1000 */
             className='cvat-shortcuts-modal-window'

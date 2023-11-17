@@ -4,14 +4,12 @@
 // SPDX-License-Identifier: MIT
 
 import { PluginsActionTypes, PluginActions } from 'actions/plugins-actions';
-import { registerGitPlugin } from 'utils/git-utils';
 import { PluginComponent, PluginsState } from '.';
 
 const defaultState: PluginsState = {
     fetching: false,
     initialized: false,
     list: {
-        GIT_INTEGRATION: false,
         ANALYTICS: false,
         MODELS: false,
     },
@@ -24,6 +22,21 @@ const defaultState: PluginsState = {
         },
         loginPage: {
             loginForm: [],
+        },
+        modelsPage: {
+            topBar: {
+                items: [],
+            },
+            modelItem: {
+                menu: {
+                    items: [],
+                },
+                topBar: {
+                    menu: {
+                        items: [],
+                    },
+                },
+            },
         },
         projectActions: {
             items: [],
@@ -46,6 +59,11 @@ const defaultState: PluginsState = {
         loggedInModals: [],
         settings: {
             player: [],
+        },
+        about: {
+            links: {
+                items: [],
+            },
         },
     },
 };
@@ -83,10 +101,6 @@ export default function (state: PluginsState = defaultState, action: PluginActio
         }
         case PluginsActionTypes.GET_PLUGINS_SUCCESS: {
             const { list } = action.payload;
-
-            if (!state.list.GIT_INTEGRATION && list.GIT_INTEGRATION) {
-                registerGitPlugin();
-            }
 
             return {
                 ...state,

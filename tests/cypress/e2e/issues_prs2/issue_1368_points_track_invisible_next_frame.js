@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,7 +27,8 @@ context('Points track it is still invisible on next frames', () => {
             cy.get('#cvat-objects-sidebar-state-item-1').should('contain', '1').and('contain', 'POINTS TRACK');
         });
         it('Switch outside property', () => {
-            cy.get('#cvat_canvas_shape_1').trigger('mousemove').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').trigger('mouseover');
             cy.get('body').type('o');
             cy.get('#cvat_canvas_shape_1').should('be.hidden');
         });

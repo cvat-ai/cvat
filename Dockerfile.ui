@@ -20,7 +20,7 @@ COPY cvat-data/package.json /tmp/cvat-data/
 
 # Install common dependencies
 WORKDIR /tmp/
-RUN yarn install --ignore-scripts --frozen-lockfile
+RUN DISABLE_HUSKY=1 yarn --frozen-lockfile
 
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/

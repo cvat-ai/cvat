@@ -70,6 +70,11 @@ class Version:
         self.major += 1
         self._set_default_minor()
 
+    def set(self, v: str) -> None:
+        self.major, self.minor, self.patch = map(int, v.split('.'))
+        self.prerelease = 'final'
+        self.prerelease_number = 0
+
     def _set_default_prerelease_number(self) -> None:
         self.prerelease_number = 0
 
@@ -177,6 +182,9 @@ def main() -> None:
     action_group.add_argument('--verify-current',
         action='store_true', help='Check that all version numbers are consistent')
 
+    action_group.add_argument('--set', metavar='X.Y.Z',
+        help='Set the version to the specified version')
+
     args = parser.parse_args()
 
     version = get_current_version()
@@ -206,6 +214,9 @@ def main() -> None:
 
     elif args.major:
         version.increment_major()
+
+    elif args.set is not None:
+        version.set(args.set)
 
     else:
         assert False, "Unreachable code"

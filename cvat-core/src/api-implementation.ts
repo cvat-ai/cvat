@@ -44,15 +44,14 @@ export default function implementAPI(cvat) {
     cvat.lambda.cancel.implementation = lambdaManager.cancel.bind(lambdaManager);
     cvat.lambda.listen.implementation = lambdaManager.listen.bind(lambdaManager);
     cvat.lambda.requests.implementation = lambdaManager.requests.bind(lambdaManager);
-    cvat.lambda.providers.implementation = lambdaManager.providers.bind(lambdaManager);
 
     cvat.server.about.implementation = async () => {
         const result = await serverProxy.server.about();
         return result;
     };
 
-    cvat.server.share.implementation = async (directory) => {
-        const result = await serverProxy.server.share(directory);
+    cvat.server.share.implementation = async (directory: string, searchPrefix?: string) => {
+        const result = await serverProxy.server.share(directory, searchPrefix);
         return result.map((item) => ({ ...omit(item, 'mime_type'), mimeType: item.mime_type }));
     };
 
@@ -121,8 +120,8 @@ export default function implementAPI(cvat) {
         return result;
     };
 
-    cvat.server.request.implementation = async (url, data) => {
-        const result = await serverProxy.server.request(url, data);
+    cvat.server.request.implementation = async (url, data, requestConfig) => {
+        const result = await serverProxy.server.request(url, data, requestConfig);
         return result;
     };
 
@@ -320,8 +319,13 @@ export default function implementAPI(cvat) {
         return cloudStorages;
     };
 
-    cvat.organizations.get.implementation = async () => {
-        const organizationsData = await serverProxy.organizations.get();
+    cvat.organizations.get.implementation = async (filter) => {
+        checkFilter(filter, {
+            search: isString,
+            filter: isString,
+        });
+
+        const organizationsData = await serverProxy.organizations.get(filter);
         const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
         return organizations;
     };
@@ -339,6 +343,28 @@ export default function implementAPI(cvat) {
             organizationID: null,
             organizationSlug: null,
         };
+    };
+
+    cvat.organizations.acceptInvitation.implementation = async (
+        username,
+        firstName,
+        lastName,
+        email,
+        password,
+        userConfirmations,
+        key,
+    ) => {
+        const orgSlug = await serverProxy.organizations.acceptInvitation(
+            username,
+            firstName,
+            lastName,
+            email,
+            password,
+            userConfirmations,
+            key,
+        );
+
+        return orgSlug;
     };
 
     cvat.webhooks.get.implementation = async (filter) => {

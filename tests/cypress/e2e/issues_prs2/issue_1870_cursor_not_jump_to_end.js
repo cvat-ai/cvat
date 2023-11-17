@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,9 +35,8 @@ context(
                     .contains(attrName)
                     .parents('.cvat-object-item-attribute-wrapper')
                     .within(() => {
-                        cy.get('.cvat-object-item-text-attribute')
-                            .type('{leftarrow}{leftarrow}ee')
-                            .should('have.value', textDefaultValue.replace('Text', 'Teeext'));
+                        cy.get('.cvat-object-item-text-attribute').type('{leftarrow}{leftarrow}ee');
+                        cy.get('.cvat-object-item-text-attribute').should('have.value', textDefaultValue.replace('Text', 'Teeext'));
                     });
             });
         });

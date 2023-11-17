@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +12,6 @@ export interface KeyMapItem {
     sequences: string[];
     displayedSequences?: string[];
     action: 'keydown' | 'keyup' | 'keypress';
-    applicable: any[];
 }
 
 export interface KeyMap {
@@ -51,6 +51,21 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
 
     return children || <></>;
 }
+
+Mousetrap.prototype.stopCallback = function (e: KeyboardEvent, element: Element, combo: string): boolean {
+    // stop when modals are opened
+    const someModalsOpened = Array.from(
+        window.document.getElementsByClassName('ant-modal'),
+    ).some((el) => (el as HTMLElement).style.display !== 'none');
+    if (someModalsOpened && !['f1', 'f2'].includes(combo)) {
+        return true;
+    }
+
+    // stop for input, select, and textarea
+    return element.tagName === 'INPUT' ||
+        element.tagName === 'SELECT' ||
+        element.tagName === 'TEXTAREA';
+};
 
 export function getApplicationKeyMap(): KeyMap {
     return {

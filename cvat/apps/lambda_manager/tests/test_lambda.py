@@ -254,6 +254,10 @@ class _LambdaTestCaseBase(APITestCase):
             for key in expected_keys_in_response_all_functions:
                 self.assertIn(key, data)
 
+    def _delete_lambda_request(self, request_id: str, user: Optional[User] = None) -> None:
+        response = self._delete_request(f'{LAMBDA_REQUESTS_PATH}/{request_id}', user or self.admin)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
 
 class LambdaTestCases(_LambdaTestCaseBase):
     def setUp(self):
@@ -420,7 +424,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": { "name": "car" },
             },
         }
-        response = self._post_request(f'{LAMBDA_REQUESTS_PATH}', self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
         id_request = response.data["id"]
 
         response = self._delete_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', None)
@@ -431,7 +435,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
         response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.admin)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        response = self._post_request(f'{LAMBDA_REQUESTS_PATH}', self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
         id_request = response.data["id"]
         response = self._delete_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -476,10 +480,14 @@ class LambdaTestCases(_LambdaTestCaseBase):
             for key in expected_keys_in_response_requests:
                 self.assertIn(key, response.data)
 
+            self._delete_lambda_request(response.data["id"])
+
             response = self._post_request(LAMBDA_REQUESTS_PATH, self.user, data_assigneed_to_user_task)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             for key in expected_keys_in_response_requests:
                 self.assertIn(key, response.data)
+
+            self._delete_lambda_request(response.data["id"], self.user)
 
             response = self._post_request(LAMBDA_REQUESTS_PATH, self.user, data_main_task)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -544,10 +552,11 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": { "name": "car" },
             },
         }
-        self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        request_id = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data).data['id']
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
+        self._delete_lambda_request(request_id)
 
     def test_api_v2_lambda_requests_create_empty_mapping(self):
         data = {
@@ -561,6 +570,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
         for key in expected_keys_in_response_requests:
             self.assertIn(key, response.data)
 
+        self._delete_lambda_request(response.data["id"])
 
     def test_api_v2_lambda_requests_create_without_cleanup(self):
         data = {
@@ -575,6 +585,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
         for key in expected_keys_in_response_requests:
             self.assertIn(key, response.data)
 
+        self._delete_lambda_request(response.data["id"])
 
     def test_api_v2_lambda_requests_create_without_mapping(self):
         data = {
@@ -587,6 +598,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
         for key in expected_keys_in_response_requests:
             self.assertIn(key, response.data)
 
+        self._delete_lambda_request(response.data["id"])
 
     def test_api_v2_lambda_requests_create_without_task(self):
         data = {
@@ -908,6 +920,8 @@ class LambdaTestCases(_LambdaTestCaseBase):
             request_status = response.json().get("status")
         self.assertEqual(request_status, "finished")
 
+        self._delete_lambda_request(id_request)
+
         response = self._get_request(f'/api/tasks/{self.main_task["id"]}/annotations', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -1142,6 +1156,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         request_status = self._wait_request(request_id)
         self.assertEqual(request_status, "finished")
+        self._delete_lambda_request(request_id, user)
 
     def _wait_request(self, request_id: str) -> str:
         request_status = "started"
@@ -1560,7 +1575,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
 
         task = self._create_task(task_spec={
                 'name': 'test_task',
-                'labels': [{'name': 'cat'}],
+                'labels': [{'name': 'car'}],
                 'segment_size': 2
             },
             data=self._generate_task_images(6),

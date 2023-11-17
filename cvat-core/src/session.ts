@@ -142,6 +142,26 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
+                async join(objectStates, points) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.join,
+                        objectStates,
+                        points,
+                    );
+                    return result;
+                },
+
+                async slice(objectState, results) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.slice,
+                        objectState,
+                        results,
+                    );
+                    return result;
+                },
+
                 async import(data) {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.import, data);
                     return result;
@@ -345,6 +365,8 @@ export class Job extends Session {
         merge: CallableFunction;
         split: CallableFunction;
         group: CallableFunction;
+        join: CallableFunction;
+        slice: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
         searchEmpty: CallableFunction;
@@ -381,7 +403,7 @@ export class Job extends Session {
         log: CallableFunction;
     };
 
-    constructor(initialData: SerializedJob) {
+    constructor(initialData: Readonly<SerializedJob>) {
         super();
         const data = {
             id: undefined,
@@ -536,6 +558,9 @@ export class Job extends Session {
                 _updateTrigger: {
                     get: () => updateTrigger,
                 },
+                _initialData: {
+                    get: () => initialData,
+                },
             }),
         );
 
@@ -549,6 +574,8 @@ export class Job extends Session {
             merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
             split: Object.getPrototypeOf(this).annotations.split.bind(this),
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
+            join: Object.getPrototypeOf(this).annotations.join.bind(this),
+            slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
@@ -660,6 +687,8 @@ export class Task extends Session {
         merge: CallableFunction;
         split: CallableFunction;
         group: CallableFunction;
+        join: CallableFunction;
+        slice: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
         searchEmpty: CallableFunction;
@@ -1082,6 +1111,8 @@ export class Task extends Session {
             merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
             split: Object.getPrototypeOf(this).annotations.split.bind(this),
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
+            join: Object.getPrototypeOf(this).annotations.join.bind(this),
+            slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),

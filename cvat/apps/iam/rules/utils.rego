@@ -42,7 +42,6 @@ VIEW_ANNOTATIONS := "view:annotations"
 UPDATE_ANNOTATIONS := "update:annotations"
 DELETE_ANNOTATIONS := "delete:annotations"
 VIEW_DATA := "view:data"
-VIEW_COMMITS := "view:commits"
 UPLOAD_DATA := "upload:data"
 VIEW_METADATA := "view:metadata"
 UPDATE_METADATA := "update:metadata"
@@ -57,15 +56,13 @@ EXPORT_BACKUP := "export:backup"
 UPDATE_ORG := "update:organization"
 
 
-get_priority(privilege) = priority {
-    priority := {
-        ADMIN: 0,
-        BUSINESS: 50,
-        USER: 75,
-        WORKER: 100,
-        null: 1000
-    }[privilege]
-}
+get_priority(privilege) := {
+    ADMIN: 0,
+    BUSINESS: 50,
+    USER: 75,
+    WORKER: 100,
+    null: 1000
+}[privilege]
 
 has_perm(group) {
     get_priority(input.auth.user.privilege) <= get_priority(group)

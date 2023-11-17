@@ -12,6 +12,7 @@ import struct
 from enum import IntEnum
 from abc import ABC, abstractmethod
 from contextlib import closing
+from typing import Iterable
 
 import av
 import numpy as np
@@ -80,21 +81,8 @@ def image_size_within_orientation(img: Image):
         return img.height, img.width
     return img.width, img.height
 
-def rotate_within_exif(img: Image):
-    orientation = img.getexif().get(ORIENTATION_EXIF_TAG,  ORIENTATION.NORMAL_HORIZONTAL)
-    if orientation in [ORIENTATION.NORMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
-        img = img.rotate(180, expand=True)
-    elif orientation in [ORIENTATION.NORMAL_270_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED]:
-        img = img.rotate(90, expand=True)
-    elif orientation in [ORIENTATION.NORMAL_90_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED]:
-        img = img.rotate(270, expand=True)
-    if orientation in [
-        ORIENTATION.MIRROR_HORIZONTAL, ORIENTATION.MIRROR_VERTICAL,
-        ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED ,ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED,
-    ]:
-        img = img.transpose(Image.FLIP_LEFT_RIGHT)
-
-    return img
+def has_exif_rotation(img: Image):
+    return img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL) != ORIENTATION.NORMAL_HORIZONTAL
 
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
@@ -124,7 +112,7 @@ class IMediaReader(ABC):
             preview = Image.open(obj)
         else:
             preview = obj
-        preview = rotate_within_exif(preview)
+        preview = ImageOps.exif_transpose(preview)
         # TODO - Check if the other formats work. I'm only interested in I;16 for now. Sorry @:-|
         # Summary:
         # Images in the Format I;16 definitely don't work. Most likely I;16B/L/N won't work as well.
@@ -224,8 +212,8 @@ class ImageListReader(IMediaReader):
             with open(self.get_path(i), 'rb') as f:
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
-        img = Image.open(self._source_path[i])
-        return image_size_within_orientation(img)
+        with Image.open(self._source_path[i]) as img:
+            return image_size_within_orientation(img)
 
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         # FIXME
@@ -366,8 +354,8 @@ class ZipReader(ImageListReader):
             with open(self.get_path(i), 'rb') as f:
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
-        img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
-        return image_size_within_orientation(img)
+        with Image.open(io.BytesIO(self._zip_source.read(self._source_path[i]))) as img:
+            return image_size_within_orientation(img)
 
     def get_image(self, i):
         if self._dimension == DimensionType.DIM_3D:
@@ -600,9 +588,18 @@ class IChunkWriter(ABC):
         self._dimension = dimension
 
     @staticmethod
-    def _compress_image(image_path, quality):
-        image = image_path.to_image() if isinstance(image_path, av.VideoFrame) else Image.open(image_path)
-        image = rotate_within_exif(image)
+    def _compress_image(source_image: av.VideoFrame | io.IOBase | Image.Image, quality: int) -> tuple[int, int, io.BytesIO]:
+        image = None
+        if isinstance(source_image, av.VideoFrame):
+            image = source_image.to_image()
+        elif isinstance(source_image, io.IOBase):
+            with Image.open(source_image) as _img:
+                image = ImageOps.exif_transpose(_img)
+        elif isinstance(source_image, Image.Image):
+            image = source_image
+
+        assert image is not None
+
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
             # Image mode is 32bit integer pixels.
@@ -628,13 +625,15 @@ class IChunkWriter(ABC):
             image = ImageOps.equalize(image)         # The Images need equalization. High resolution with 16-bit but only small range that actually contains information
 
         converted_image = image.convert('RGB')
-        image.close()
-        buf = io.BytesIO()
-        converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
-        buf.seek(0)
-        width, height = converted_image.size
-        converted_image.close()
-        return width, height, buf
+
+        try:
+            buf = io.BytesIO()
+            converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
+            buf.seek(0)
+            width, height = converted_image.size
+            return width, height, buf
+        finally:
+            converted_image.close()
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):
@@ -644,7 +643,7 @@ class ZipChunkWriter(IChunkWriter):
     IMAGE_EXT = 'jpeg'
     POINT_CLOUD_EXT = 'pcd'
 
-    def _write_pcd_file(self, image):
+    def _write_pcd_file(self, image: str|io.BytesIO) -> tuple[io.BytesIO, str, int, int]:
         image_buf = open(image, "rb") if isinstance(image, str) else image
         try:
             properties = ValidateDimension.get_pcd_properties(image_buf)
@@ -655,40 +654,62 @@ class ZipChunkWriter(IChunkWriter):
             if isinstance(image, str):
                 image_buf.close()
 
-    def save_as_chunk(self, images, chunk_path):
+    def save_as_chunk(self, images: Iterable[tuple[Image.Image|io.IOBase|str, str, str]], chunk_path: str):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, path, _) in enumerate(images):
                 ext = os.path.splitext(path)[1].replace('.', '')
                 output = io.BytesIO()
                 if self._dimension == DimensionType.DIM_2D:
-                    pil_image = rotate_within_exif(Image.open(image))
-                    pil_image.save(output, format=pil_image.format if pil_image.format else self.IMAGE_EXT, quality=100, subsampling=0)
+                    if has_exif_rotation(image):
+                        rot_image = ImageOps.exif_transpose(image)
+                        try:
+                            if rot_image.format == 'TIFF':
+                            # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
+                            # use loseless lzw compression for tiff images
+                                rot_image.save(output, format='TIFF', compression='tiff_lzw')
+                            else:
+                                rot_image.save(
+                                    output,
+                                    format=rot_image.format if rot_image.format else self.IMAGE_EXT,
+                                    quality=100,
+                                    subsampling=0
+                                )
+                        finally:
+                            rot_image.close()
+                    else:
+                        output = path
                 else:
-                    output, ext = self._write_pcd_file(image)[0:2]
+                    output, ext = self._write_pcd_file(path)[0:2]
                 arcname = '{:06d}.{}'.format(idx, ext)
-                zip_chunk.writestr(arcname, output.getvalue())
+
+                if isinstance(output, io.BytesIO):
+                    zip_chunk.writestr(arcname, output.getvalue())
+                else:
+                    zip_chunk.write(filename=output, arcname=arcname)
         # return empty list because ZipChunkWriter write files as is
         # and does not decode it to know img size.
         return []
 
 class ZipCompressedChunkWriter(ZipChunkWriter):
     def save_as_chunk(
-        self, images, chunk_path, *, compress_frames: bool = True, zip_compress_level: int = 0
+        self,
+        images: Iterable[tuple[Image.Image|io.IOBase|str, str, str]],
+        chunk_path: str, *, compress_frames: bool = True, zip_compress_level: int = 0
     ):
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x', compresslevel=zip_compress_level) as zip_chunk:
-            for idx, (image, _, _) in enumerate(images):
+            for idx, (image, path, _) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
                     if compress_frames:
                         w, h, image_buf = self._compress_image(image, self._image_quality)
                     else:
                         assert isinstance(image, io.IOBase)
                         image_buf = io.BytesIO(image.read())
-                        w, h = Image.open(image_buf).size
-
+                        with Image.open(image_buf) as img:
+                            w, h = img.size
                     extension = self.IMAGE_EXT
                 else:
-                    image_buf, extension, w, h = self._write_pcd_file(image)
+                    image_buf, extension, w, h = self._write_pcd_file(path)
                 image_sizes.append((w, h))
                 arcname = '{:06d}.{}'.format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())
@@ -921,10 +942,10 @@ class ValidateDimension:
         def write_header(fileObj, width, height):
             fileObj.writelines(f'{line}\n' for line in [
                 'VERSION 0.7',
-                'FIELDS x y z',
-                'SIZE 4 4 4',
-                'TYPE F F F',
-                'COUNT 1 1 1',
+                'FIELDS x y z intensity',
+                'SIZE 4 4 4 4',
+                'TYPE F F F F',
+                'COUNT 1 1 1 1',
                 f'WIDTH {width}',
                 f'HEIGHT {height}',
                 'VIEWPOINT 0 0 0 1 0 0 0',
@@ -938,8 +959,8 @@ class ValidateDimension:
             size_float = 4
             byte = f.read(size_float * 4)
             while byte:
-                x, y, z, _ = struct.unpack("ffff", byte)
-                list_pcd.append([x, y, z])
+                x, y, z, intensity = struct.unpack("ffff", byte)
+                list_pcd.append([x, y, z, intensity])
                 byte = f.read(size_float * 4)
         np_pcd = np.asarray(list_pcd)
         pcd_filename = path.replace(".bin", ".pcd")

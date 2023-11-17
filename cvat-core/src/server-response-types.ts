@@ -7,7 +7,6 @@ import {
     DimensionType, JobStage, JobState, JobType, ProjectStatus,
     ShareFileType, TaskMode, TaskStatus,
 } from 'enums';
-import { SerializedModel } from 'core-types';
 
 export interface SerializedAnnotationImporter {
     name: string;
@@ -23,12 +22,6 @@ export interface SerializedAnnotationFormats {
     importers: SerializedAnnotationImporter[];
     exporters: SerializedAnnotationExporter[];
 }
-
-export interface FunctionsResponseBody {
-    results: SerializedModel[];
-    count: number;
-}
-
 export interface ProjectsFilter {
     page?: number;
     id?: number;
@@ -50,6 +43,7 @@ export interface SerializedUser {
     is_active?: boolean;
     last_login?: string;
     date_joined?: string;
+    email_verification_required: boolean;
 }
 
 export interface SerializedProject {
@@ -179,6 +173,10 @@ export interface SerializedRegister {
     first_name: string;
     last_name: string;
     username: string;
+}
+
+export interface SerializedAcceptInvitation {
+    organization_slug: string;
 }
 
 export interface SerializedGuide {

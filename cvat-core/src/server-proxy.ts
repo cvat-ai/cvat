@@ -12,8 +12,8 @@ import { ChunkQuality } from 'cvat-data';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
-    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, FunctionsResponseBody,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -34,6 +34,8 @@ type Params = {
     filename?: string,
     action?: string,
 };
+
+tus.defaultOptions.storeFingerprintForResuming = false;
 
 function enableOrganization(): { org: string } {
     return { org: config.organization.organizationSlug || '' };
@@ -197,26 +199,20 @@ class WorkerWrappedAxios {
 
         worker.onmessage = (e) => {
             if (e.data.id in requests) {
-                if (e.data.isSuccess) {
-                    requests[e.data.id].resolve(e.data.responseData);
-                } else {
-                    requests[e.data.id].reject({
-                        response: {
-                            status: e.data.status,
-                            data: e.data.responseData,
-                        },
-                    });
+                try {
+                    if (e.data.isSuccess) {
+                        requests[e.data.id].resolve({ data: e.data.responseData, headers: e.data.headers });
+                    } else {
+                        requests[e.data.id].reject(new AxiosError(e.data.message, e.data.code));
+                    }
+                } finally {
+                    delete requests[e.data.id];
                 }
-
-                delete requests[e.data.id];
             }
         };
 
-        worker.onerror = (e) => {
-            if (e.data.id in requests) {
-                requests[e.data.id].reject(e);
-                delete requests[e.data.id];
-            }
+        worker.onerror = () => {
+            throw new Error('Unexpected download worker error');
         };
 
         function getRequestId(): number {
@@ -226,10 +222,7 @@ class WorkerWrappedAxios {
         async function get(url: string, requestConfig) {
             return new Promise((resolve, reject) => {
                 const newRequestId = getRequestId();
-                requests[newRequestId] = {
-                    resolve,
-                    reject,
-                };
+                requests[newRequestId] = { resolve, reject };
                 worker.postMessage({
                     url,
                     config: requestConfig,
@@ -283,9 +276,9 @@ Axios.interceptors.response.use((response) => {
     if (isResourceURL(response.config.url) &&
         'organization' in (response.data || {})
     ) {
-        const newOrg: number | null = response.data.organization;
-        if (config.organization.organizationID !== newOrg) {
-            config?.onOrganizationChange(newOrg);
+        const newOrgId: number | null = response.data.organization;
+        if (config.organization.organizationID !== newOrgId) {
+            config?.onOrganizationChange(newOrgId);
         }
     }
 
@@ -331,13 +324,16 @@ async function about(): Promise<SerializedAbout> {
     return response.data;
 }
 
-async function share(directoryArg: string): Promise<SerializedRemoteFile[]> {
+async function share(directoryArg: string, searchPrefix?: string): Promise<SerializedRemoteFile[]> {
     const { backendAPI } = config;
 
     let response = null;
     try {
         response = await Axios.get(`${backendAPI}/server/share`, {
-            params: { directory: directoryArg },
+            params: {
+                directory: directoryArg,
+                ...(searchPrefix ? { search: searchPrefix } : {}),
+            },
         });
     } catch (errorData) {
         throw generateError(errorData);
@@ -463,6 +459,34 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
     }
 }
 
+async function acceptOrganizationInvitation(
+    username: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    password: string,
+    confirmations: Record<string, string>,
+    key: string,
+): Promise<SerializedAcceptInvitation> {
+    let response = null;
+    let orgSlug = null;
+    try {
+        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`, {
+            username,
+            first_name: firstName,
+            last_name: lastName,
+            password1: password,
+            password2: password,
+            confirmations,
+        });
+        orgSlug = response.data.organization_slug;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    return orgSlug;
+}
+
 async function getSelf(): Promise<SerializedUser> {
     const { backendAPI } = config;
 
@@ -545,9 +569,26 @@ async function healthCheck(
         });
 }
 
-async function serverRequest(url: string, data: object): Promise<any> {
+export interface ServerRequestConfig {
+    fetchAll: boolean,
+}
+
+const defaultRequestConfig = {
+    fetchAll: false,
+};
+
+async function serverRequest(
+    url: string, data: object,
+    requestConfig: ServerRequestConfig = defaultRequestConfig,
+): Promise<any> {
     try {
-        const res = await Axios(url, data);
+        let res = null;
+        const { fetchAll: useFetchAll } = requestConfig;
+        if (useFetchAll) {
+            res = await fetchAll(url);
+        } else {
+            res = await Axios(url, data);
+        }
         return res;
     } catch (errorData) {
         throw generateError(errorData);
@@ -1504,11 +1545,11 @@ async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer>
     }
 }
 
-async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
+async function getData(jid: number, chunk: number, quality: ChunkQuality, retry = 0): Promise<ArrayBuffer> {
     const { backendAPI } = config;
 
     try {
-        const response = await workerAxios.get(`${backendAPI}/jobs/${jid}/data`, {
+        const response = await (workerAxios as any).get(`${backendAPI}/jobs/${jid}/data`, {
             params: {
                 ...enableOrganization(),
                 quality,
@@ -1518,15 +1559,31 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality): Promi
             responseType: 'arraybuffer',
         });
 
-        return response;
+        const contentLength = +(response.headers || {})['content-length'];
+        if (Number.isInteger(contentLength) && response.data.byteLength < +contentLength) {
+            if (retry < 10) {
+                // corrupted zip tmp workaround
+                // if content length more than received byteLength, request the chunk again
+                // and log this error
+                setTimeout(() => {
+                    throw new Error(
+                        `Truncated chunk, try: ${retry}. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
+                        `Body size: ${response.data.byteLength}`,
+                    );
+                });
+                return await getData(jid, chunk, quality, retry + 1);
+            }
+
+            // not to try anymore, throw explicit error
+            throw new Error(
+                `Truncated chunk. Job: ${jid}, chunk: ${chunk}, quality: ${quality}. ` +
+                `Body size: ${response.data.byteLength}`,
+            );
+        }
+
+        return response.data;
     } catch (errorData) {
-        throw generateError({
-            message: '',
-            response: {
-                ...errorData.response,
-                data: String.fromCharCode.apply(null, new Uint8Array(errorData.response.data)),
-            },
-        });
+        throw generateError(errorData);
     }
 }
 
@@ -1586,47 +1643,6 @@ async function getAnnotations(session, id) {
     return response.data;
 }
 
-async function getFunctions(): Promise<FunctionsResponseBody> {
-    const { backendAPI } = config;
-
-    try {
-        const response = await fetchAll(`${backendAPI}/functions`);
-        return response;
-    } catch (errorData) {
-        if (errorData.response.status === 404) {
-            return {
-                results: [],
-                count: 0,
-            };
-        }
-        throw generateError(errorData);
-    }
-}
-
-async function getFunctionProviders() {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/functions/info`);
-        return response.data;
-    } catch (errorData) {
-        if (errorData.response.status === 404) {
-            return [];
-        }
-        throw generateError(errorData);
-    }
-}
-
-async function deleteFunction(functionId: number) {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.delete(`${backendAPI}/functions/${functionId}`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 // Session is 'task' or 'job'
 async function updateAnnotations(session, id, data, action) {
     const { backendAPI } = config;
@@ -1648,18 +1664,6 @@ async function updateAnnotations(session, id, data, action) {
         throw generateError(errorData);
     }
     return response.data;
-}
-
-async function runFunctionRequest(body) {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.post(`${backendAPI}/functions/requests/`, body);
-
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
 }
 
 // Session is 'task' or 'job'
@@ -1749,72 +1753,12 @@ async function uploadAnnotations(
     }
 }
 
-async function getFunctionRequestStatus(requestID) {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/functions/requests/${requestID}`);
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function cancelFunctionRequest(requestId: string): Promise<void> {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.delete(`${backendAPI}/functions/requests/${requestId}`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function createFunction(functionData: any) {
-    const params = enableOrganization();
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.post(`${backendAPI}/functions`, functionData, {
-            params,
-        });
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 async function saveEvents(events) {
     const { backendAPI } = config;
 
     try {
         await Axios.post(`${backendAPI}/events`, events);
     } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function callFunction(funId, body) {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, body);
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getFunctionsRequests() {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/functions/requests/`);
-        return response.data;
-    } catch (errorData) {
-        if (errorData.response.status === 404) {
-            return [];
-        }
         throw generateError(errorData);
     }
 }
@@ -1986,17 +1930,21 @@ async function deleteCloudStorage(id) {
     }
 }
 
-async function getOrganizations() {
+async function getOrganizations(filter) {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await fetchAll(`${backendAPI}/organizations`);
+        response = await Axios.get(`${backendAPI}/organizations`, {
+            params: {
+                ...filter,
+            },
+        });
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.results;
+    return response.data.results;
 }
 
 async function createOrganization(data: SerializedOrganization): Promise<SerializedOrganization> {
@@ -2069,6 +2017,15 @@ async function inviteOrganizationMembers(orgId, data) {
                 organization: orgId,
             },
         );
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function resendOrganizationInvitation(key) {
+    const { backendAPI } = config;
+    try {
+        await Axios.post(`${backendAPI}/invitations/${key}/resend`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2454,19 +2411,6 @@ export default Object.freeze({
         cancel: cancelLambdaRequest,
     }),
 
-    functions: Object.freeze({
-        list: getFunctions,
-        status: getFunctionRequestStatus,
-        requests: getFunctionsRequests,
-        run: runFunctionRequest,
-        call: callFunction,
-        create: createFunction,
-        providers: getFunctionProviders,
-        delete: deleteFunction,
-        cancel: cancelFunctionRequest,
-        getPreview: getPreview('functions'),
-    }),
-
     issues: Object.freeze({
         create: createIssue,
         update: updateIssue,
@@ -2496,8 +2440,10 @@ export default Object.freeze({
         invitation: getMembershipInvitation,
         delete: deleteOrganization,
         invite: inviteOrganizationMembers,
+        resendInvitation: resendOrganizationInvitation,
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
+        acceptInvitation: acceptOrganizationInvitation,
     }),
 
     webhooks: Object.freeze({

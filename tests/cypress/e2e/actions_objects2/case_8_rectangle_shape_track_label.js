@@ -101,13 +101,13 @@ context('Actions on rectangle', () => {
 
         it('The second shape is activated if the first one was removed during the move (fix 4151).', () => {
             let xCoordinate;
-            cy.get('#cvat_canvas_shape_6')
-                .trigger('mousemove')
-                .trigger('mouseover')
-                .should('have.class', 'cvat_canvas_shape_activated')
-                .trigger('mousedown', { which: 1 }).then((shape) => {
-                    xCoordinate = shape.attr('x');
-                });
+            cy.get('#cvat_canvas_shape_6').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_6').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_6').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_6').trigger('mousedown', { which: 1 });
+            cy.get('#cvat_canvas_shape_6').then((shape) => {
+                xCoordinate = shape.attr('x');
+            });
             cy.get('.cvat_canvas_text').should('have.class', 'cvat_canvas_hidden');
             cy.get('.cvat-canvas-container').trigger('mousemove', 550, 550);
             cy.get('#cvat_canvas_shape_6').then((shape) => {
@@ -115,10 +115,9 @@ context('Actions on rectangle', () => {
             });
             cy.get('body').type('{del}');
             cy.get('#cvat_canvas_shape_6').should('not.exist');
-            cy.get('#cvat_canvas_shape_5')
-                .trigger('mousemove')
-                .trigger('mouseover')
-                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_5').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_5').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
         });
     });
 });

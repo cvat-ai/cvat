@@ -117,9 +117,8 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                     );
                 });
             });
-            cy.get('.cvat-appearance-selected-opacity-slider')
-                .click('left')
-                .find('[role="slider"]')
+            cy.get('.cvat-appearance-selected-opacity-slider').click('left');
+            cy.get('.cvat-appearance-selected-opacity-slider').find('[role="slider"]')
                 .then((sliderSelectedOpacityLeft) => {
                     const sliderSelectedOpacityValuenow = sliderSelectedOpacityLeft.attr('aria-valuenow');
                     cy.get('.cvat_canvas_interact_intermediate_shape').should(
@@ -128,8 +127,8 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                         sliderSelectedOpacityValuenow / 100,
                     );
                 });
+            cy.get('.cvat-appearance-selected-opacity-slider').click('right');
             cy.get('.cvat-appearance-selected-opacity-slider')
-                .click('right')
                 .find('[role="slider"]')
                 .then((sliderSelectedOpacityRight) => {
                     const sliderSelectedOpacityValuenow = sliderSelectedOpacityRight.attr('aria-valuenow');
@@ -166,17 +165,17 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         it('Check "Histogram Equalization" feature.', () => {
             cy.checkPopoverHidden('opencv-control');
             cy.interactOpenCVControlButton();
-            cy.get('.cvat-opencv-control-popover')
-                .contains('[role="tab"]', 'Image')
-                .click()
+            cy.get('.cvat-opencv-control-popover').contains('[role="tab"]', 'Image').click();
+            cy.get('.cvat-opencv-control-popover').contains('[role="tab"]', 'Image')
                 .parents('.ant-tabs-tab')
                 .should('have.class', 'ant-tabs-tab-active');
             cy.get('.cvat-opencv-image-tool').click();
             cy.get('.cvat-opencv-image-tool').should('have.class', 'cvat-opencv-image-tool-active');
-            cy.get('.cvat-notification-notice-opencv-processing-error').should('not.exist');
+            cy.get('.cvat-notification-notice-image-processing-error').should('not.exist');
             cy.get('.cvat-opencv-image-tool').click();
             cy.get('.cvat-opencv-image-tool').should('not.have.class', 'cvat-opencv-image-tool-active');
-            cy.get('.cvat-opencv-image-tool').trigger('mouseleave').trigger('mouseout');
+            cy.get('.cvat-opencv-image-tool').trigger('mouseleave');
+            cy.get('.cvat-opencv-image-tool').trigger('mouseout');
             cy.get('.cvat-opencv-control').click();
         });
 
@@ -184,16 +183,17 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         it.skip('Redraw the shape created with "Intelligent cissors".', () => {
             cy.get('.cvat-canvas-container').click();
             cy.get('.cvat-opencv-control-popover').should('be.hidden');
-            cy.get('#cvat_canvas_shape_1')
-                .trigger('mousemove')
-                .trigger('mouseover')
-                .should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }).trigger('keyup');
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true });
+            cy.get('body').trigger('keyup');
             cy.get('.cvat-opencv-control').should('have.attr', 'tabindex');
             createOpencvShape.pointsMap.forEach((el) => {
                 cy.get('.cvat-canvas-container').click(el.x + 150, el.y + 50);
             });
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' }).trigger('keyup');
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
+            cy.get('body').trigger('keyup');
         });
 
         it('Create a shape with "TrackerMIL". Track it for several frames.', () => {
