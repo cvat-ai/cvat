@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from .models import CloudStorage, Data, Job, Profile, Project, StatusChoice, Task, Asset, Storage, Location
+from .models import CloudStorage, Data, Job, Profile, Project, StatusChoice, Task, Asset
 
 
 # TODO: need to log any problems reported by shutil.rmtree when the new
@@ -80,11 +80,3 @@ def __delete_data_handler(instance, **kwargs):
     dispatch_uid=__name__ + ".delete_cloudstorage_handler")
 def __delete_cloudstorage_handler(instance, **kwargs):
     shutil.rmtree(instance.get_storage_dirname(), ignore_errors=True)
-
-    # Update all target/source storages that are related to this cloud storage
-    related_storages = Storage.objects.filter(cloud_storage_id=instance.id)
-    if related_storages.exists():
-        for s in related_storages:
-            s.location = Location.LOCAL
-            s.cloud_storage_id = None
-        Storage.objects.bulk_update(related_storages, fields=['location', 'cloud_storage_id'], batch_size=100)

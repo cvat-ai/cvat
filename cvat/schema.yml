@@ -9421,8 +9421,6 @@ components:
           $ref: '#/components/schemas/LocationEnum'
         cloud_storage_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           nullable: true
     StorageMethod:
       enum:
@@ -9439,8 +9437,6 @@ components:
           $ref: '#/components/schemas/LocationEnum'
         cloud_storage_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           nullable: true
     StorageType:
       enum:

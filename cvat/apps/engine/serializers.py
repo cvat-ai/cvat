@@ -1030,6 +1030,8 @@ class DataSerializer(serializers.ModelSerializer):
                 )
 
 class StorageSerializer(serializers.ModelSerializer):
+    cloud_storage_id = serializers.IntegerField(required=False, allow_null=True)
+
     class Meta:
         model = models.Storage
         fields = ('id', 'location', 'cloud_storage_id')
@@ -1980,62 +1982,54 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         read_only_fields = ('path',)
 
 
-def _update_related_storages(instance, validated_data):
-    for storage in ('source_storage', 'target_storage'):
-        new_conf = validated_data.pop(storage, None)
+def _update_related_storages(
+    instance: Union[models.Project, models.Task],
+    validated_data: Dict[str, Any],
+) -> None:
+    for storage_type in ('source_storage', 'target_storage'):
+        new_conf = validated_data.pop(storage_type, None)
 
         if not new_conf:
             continue
 
-        cloud_storage_id = new_conf.get('cloud_storage_id')
-        if cloud_storage_id:
-            _validate_existence_of_cloud_storage(cloud_storage_id)
-
-        # storage_instance maybe None
-        storage_instance = getattr(instance, storage)
-        if not storage_instance:
-            storage_instance = models.Storage(**new_conf)
-            storage_instance.save()
-            setattr(instance, storage, storage_instance)
-            continue
-
-        new_location = new_conf.get('location')
-        storage_instance.location = new_location or storage_instance.location
-        storage_instance.cloud_storage_id = new_conf.get('cloud_storage_id', \
-            storage_instance.cloud_storage_id if not new_location else None)
-
-        cloud_storage_id = storage_instance.cloud_storage_id
+        cloud_storage, cloud_storage_id = None, new_conf.get('cloud_storage_id')
         if cloud_storage_id:
             try:
-                _ = models.CloudStorage.objects.get(id=cloud_storage_id)
+                cloud_storage = models.CloudStorage.objects.get(id=cloud_storage_id)
             except models.CloudStorage.DoesNotExist:
                 raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
 
+        # storage_instance maybe None
+        storage_instance = getattr(instance, storage_type)
+        if not storage_instance:
+            storage_instance = models.Storage(**new_conf)
+            storage_instance.save()
+            setattr(instance, storage_type, storage_instance)
+            continue
+
+        new_location = new_conf.get('location', storage_instance.location)
+        location_has_changed = new_location != storage_instance.location
+        storage_instance.location = new_location
+        storage_instance.cloud_storage = cloud_storage if cloud_storage or location_has_changed else storage_instance.cloud_storage
         storage_instance.save()
 
-def _configure_related_storages(validated_data):
-
+def _configure_related_storages(validated_data: Dict[str, Any]) -> Dict[str, Optional[models.Storage]]:
     storages = {
         'source_storage': None,
         'target_storage': None,
     }
 
     for i in storages:
-        storage_conf = validated_data.get(i)
-        if storage_conf:
-            cloud_storage_id = storage_conf.get('cloud_storage_id')
-            if cloud_storage_id:
-                _validate_existence_of_cloud_storage(cloud_storage_id)
+        if storage_conf := validated_data.get(i):
+            if cloud_storage_id := storage_conf.get('cloud_storage_id'):
+                try:
+                    _ = models.CloudStorage.objects.get(id=cloud_storage_id)
+                except models.CloudStorage.DoesNotExist:
+                    raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
             storage_instance = models.Storage(**storage_conf)
             storage_instance.save()
             storages[i] = storage_instance
     return storages
-
-def _validate_existence_of_cloud_storage(cloud_storage_id):
-    try:
-        _ = models.CloudStorage.objects.get(id=cloud_storage_id)
-    except models.CloudStorage.DoesNotExist:
-        raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
 
 class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
     filename = serializers.CharField(required=True, max_length=1024)
