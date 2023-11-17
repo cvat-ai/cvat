@@ -31,7 +31,7 @@ function InvitationWatcher(): JSX.Element {
             }
         }
 
-        if (user) {
+        if (user && user.isVerified) {
             const storedInvitations = localStorage.getItem('invitations') || '[]';
             const invitations = JSON.parse(storedInvitations);
 
@@ -70,17 +70,17 @@ function InvitationWatcher(): JSX.Element {
                 invitationsToBeShown.forEach((invitation: Invitation, index) => {
                     const slug = invitation.organization instanceof Organization ? invitation.organization.slug : '';
                     Modal.confirm({
-                        title: `You\\'ve been invited to an organization ${slug} by ${invitation.owner?.username}`,
+                        title: `You've been invited to an organization ${slug} by ${invitation.owner?.username}`,
                         content: 'Do you want to join?',
                         className: 'cvat-invitaion-confirm-modal',
                         onOk: () => {
                             dispatch(acceptInvitationAsync(invitation.key, (orgSlug) => {
                                 localStorage.setItem('currentOrganization', orgSlug);
+                                if (index === invitationsToBeShown.length - 1) {
+                                    window.location.reload();
+                                    localStorage.removeItem('invitations');
+                                }
                             }));
-                            if (index === invitationsToBeShown.length - 1) {
-                                window.location.reload();
-                                localStorage.removeItem('invitations');
-                            }
                         },
                         onCancel: () => {
                             dispatch(rejectInvitationAsync(invitation.key));
