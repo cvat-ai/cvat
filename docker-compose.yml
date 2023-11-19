@@ -224,6 +224,13 @@ services:
     container_name: traefik
     restart: always
     command:
+      - '--providers.docker.exposedByDefault=false'
+      - '--providers.docker.network=cvat'
+      - '--entryPoints.web.address=:8080'
+      - '--providers.file.directory=/etc/traefik/rules'
+    # Uncomment to get Traefik dashboard
+    #   - "--entryPoints.dashboard.address=:8090"
+    #   - "--api.dashboard=true"
     # labels:
     #   - traefik.enable=true
     #   - traefik.http.routers.dashboard.entrypoints=dashboard
