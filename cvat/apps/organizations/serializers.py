@@ -91,7 +91,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
         except ObjectDoesNotExist:
             user_email = membership_data['user']['email']
             user = User.objects.create_user(username=user_email, password=get_random_string(length=32),
-                email=user_email, is_active=False)
+                email=user_email)
             user.set_unusable_password()
             email = EmailAddress.objects.create(user=user, email=user_email, primary=True, verified=False)
             user.save()
