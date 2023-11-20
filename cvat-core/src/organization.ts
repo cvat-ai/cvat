@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedOrganization, SerializedOrganizationContact, SerializedUser } from './server-response-types';
+import {
+    SerializedInvitationData, SerializedOrganization, SerializedOrganizationContact, SerializedUser,
+} from './server-response-types';
 import { checkObjectType, isEnum } from './common';
 import config from './config';
 import { MembershipRole } from './enums';
@@ -12,14 +14,6 @@ import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import User from './user';
 
-export interface SerializedInvitationData {
-    created_date: string;
-    key: string;
-    owner: SerializedUser;
-    expired: boolean;
-    organization: number | Organization;
-}
-
 interface SerializedMembershipData {
     id: number;
     user: SerializedUser;
@@ -27,81 +21,6 @@ interface SerializedMembershipData {
     joined_date: string;
     role: MembershipRole;
     invitation: SerializedInvitationData | null;
-}
-
-export class Invitation {
-    #createdDate: string;
-    #owner: User | null;
-    #key: string;
-    #expired: boolean;
-    #organization: number | Organization;
-
-    constructor(initialData: SerializedInvitationData) {
-        this.#createdDate = initialData.created_date;
-        this.#owner = initialData.owner ? new User(initialData.owner) : null;
-        this.#key = initialData.key;
-        this.#expired = initialData.expired;
-        this.#organization = initialData.organization;
-    }
-
-    get owner(): User | null {
-        return this.#owner;
-    }
-
-    get createdDate(): string {
-        return this.#createdDate;
-    }
-
-    get key(): string {
-        return this.#key;
-    }
-
-    get expired(): boolean {
-        return this.#expired;
-    }
-
-    get organization(): number | Organization {
-        return this.#organization;
-    }
-}
-
-export class Membership {
-    #id: number;
-    #user: User;
-    #isActive: boolean;
-    #joinedDate: string;
-    #role: MembershipRole;
-    #invitation: Invitation | null;
-
-    constructor(initialData: SerializedMembershipData) {
-        this.#id = initialData.id;
-        this.#user = new User(initialData.user);
-        this.#isActive = initialData.is_active;
-        this.#joinedDate = initialData.joined_date;
-        this.#role = initialData.role;
-        this.#invitation = initialData.invitation ? new Invitation(initialData.invitation) : null;
-    }
-
-    get id(): number {
-        return this.#id;
-    }
-
-    get user(): User {
-        return this.#user;
-    }
-
-    get isActive(): boolean {
-        return this.#isActive;
-    }
-    get joinedDate(): string {
-        return this.#joinedDate;
-    }
-    get role(): MembershipRole {
-        return this.#role;
-    }
-    get invitation(): Invitation {
-        return this.#invitation;
-    }
 }
 
 export default class Organization {
@@ -282,6 +201,81 @@ export default class Organization {
             key,
         );
         return result;
+    }
+}
+
+export class Invitation {
+    #createdDate: string;
+    #owner: User | null;
+    #key: string;
+    #expired: boolean;
+    #organization: number | Organization;
+
+    constructor(initialData: SerializedInvitationData) {
+        this.#createdDate = initialData.created_date;
+        this.#owner = initialData.owner ? new User(initialData.owner) : null;
+        this.#key = initialData.key;
+        this.#expired = initialData.expired;
+        this.#organization = typeof initialData.organization === 'number' ? initialData.organization : new Organization(initialData.organization);
+    }
+
+    get owner(): User | null {
+        return this.#owner;
+    }
+
+    get createdDate(): string {
+        return this.#createdDate;
+    }
+
+    get key(): string {
+        return this.#key;
+    }
+
+    get expired(): boolean {
+        return this.#expired;
+    }
+
+    get organization(): number | Organization {
+        return this.#organization;
+    }
+}
+
+export class Membership {
+    #id: number;
+    #user: User;
+    #isActive: boolean;
+    #joinedDate: string;
+    #role: MembershipRole;
+    #invitation: Invitation | null;
+
+    constructor(initialData: SerializedMembershipData) {
+        this.#id = initialData.id;
+        this.#user = new User(initialData.user);
+        this.#isActive = initialData.is_active;
+        this.#joinedDate = initialData.joined_date;
+        this.#role = initialData.role;
+        this.#invitation = initialData.invitation ? new Invitation(initialData.invitation) : null;
+    }
+
+    get id(): number {
+        return this.#id;
+    }
+
+    get user(): User {
+        return this.#user;
+    }
+
+    get isActive(): boolean {
+        return this.#isActive;
+    }
+    get joinedDate(): string {
+        return this.#joinedDate;
+    }
+    get role(): MembershipRole {
+        return this.#role;
+    }
+    get invitation(): Invitation {
+        return this.#invitation;
     }
 }
 

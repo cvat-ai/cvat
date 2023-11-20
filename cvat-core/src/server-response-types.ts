@@ -230,3 +230,11 @@ export interface SerializedQualitySettingsData {
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
 }
+
+export interface SerializedInvitationData {
+    created_date: string;
+    key: string;
+    owner: SerializedUser;
+    expired: boolean;
+    organization: number | SerializedOrganization;
+}

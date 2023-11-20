@@ -13,7 +13,8 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData, SerializedAcceptInvitation,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData,
+    SerializedAcceptInvitation, SerializedInvitationData,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -24,7 +25,6 @@ import config from './config';
 import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { SerializedQualityConflictData } from './quality-conflict';
-import { SerializedInvitationData } from 'organization';
 
 type Params = {
     org: number | string,
