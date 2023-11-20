@@ -220,17 +220,10 @@ services:
       - cvat
 
   traefik:
-    image: traefik:v2.9
+    image: traefik:v2.10
     container_name: traefik
     restart: always
     command:
-      - '--providers.docker.exposedByDefault=false'
-      - '--providers.docker.network=cvat'
-      - '--entryPoints.web.address=:8080'
-      - '--providers.file.directory=/etc/traefik/rules'
-    # Uncomment to get Traefik dashboard
-    #   - "--entryPoints.dashboard.address=:8090"
-    #   - "--api.dashboard=true"
     # labels:
     #   - traefik.enable=true
     #   - traefik.http.routers.dashboard.entrypoints=dashboard
@@ -243,11 +236,32 @@ services:
       CVAT_HOST: ${CVAT_HOST:-localhost}
       DJANGO_LOG_VIEWER_HOST: grafana
       DJANGO_LOG_VIEWER_PORT: 3000
+
+      TRAEFIK_ACCESSLOG_FORMAT: json
+      # We ought to restrict which fields get logged, so as to avoid redundant information,
+      # but it doesn't work when configuring with environment variables:
+      # <https://github.com/traefik/traefik/issues/9755>.
+      # And we want to use environment variables to allow individual settings to be
+      # overridden by other Compose files.
+      TRAEFIK_LOG_FORMAT: json
+      TRAEFIK_ENTRYPOINTS_web_ADDRESS: :8080
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: cvat
+      TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/rules
+
+      # Uncomment to get Traefik dashboard
+      # TRAEFIK_API_DASHBOARD: "true"
+      # TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS: :8090
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro
     networks:
       - cvat
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "10"
 
   cvat_opa:
     container_name: cvat_opa

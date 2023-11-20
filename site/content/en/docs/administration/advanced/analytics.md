@@ -139,7 +139,7 @@ Client events:
 - `change:label`
 
 - `change:frame`
-- `move:image`, `zoom:image`, `fit:image`, `rotate:image`
+- `zoom:image`, `fit:image`, `rotate:image`
 
 - `action:undo`, `action:redo`
 
