@@ -98,6 +98,7 @@ def get_iam_context(request, obj):
     # FIXME: The primary app should know nothing about is_crowdsourcing plugin.
     if organization and not request.user.is_superuser and membership is None and not iam_context.get('is_crowdsourcing', False):
         view = request.parser_context.get('view')
+        # Allow inactive users accept/reject invitations
         if not view.basename in ['invitation']:
             raise PermissionDenied({'message': 'You should be an active member in the organization'})
 
