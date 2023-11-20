@@ -180,10 +180,18 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
         }),
     accept=extend_schema(
         operation_id='invitations_accept',
+        request=None,
         summary='Method registers user and accepts invitation to organization',
         responses={
             '200': OpenApiResponse(response=AcceptInvitationReadSerializer, description='The invitation is accepted'),
             '400': OpenApiResponse(description='The invitation is expired or already accepted'),
+        }),
+    reject=extend_schema(
+        operation_id='invitations_reject',
+        request=None,
+        summary='Method rejects the invitation to organization',
+        responses={
+            '204': OpenApiResponse(description='The invitation has been rejected'),
         }),
     resend=extend_schema(
         operation_id='invitations_resend',
@@ -257,7 +265,6 @@ class InvitationViewSet(viewsets.GenericViewSet,
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is expired. Please contact organization owner to renew it.")
             if invitation.membership.is_active:
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is already accepted.")
-            ## TODO: add check if user is the same as in invitation
             invitation.accept()
             response_serializer = AcceptInvitationReadSerializer(data={'organization_slug': invitation.membership.organization.slug})
             if response_serializer.is_valid(raise_exception=True):
@@ -281,7 +288,6 @@ class InvitationViewSet(viewsets.GenericViewSet,
     @action(detail=True, methods=['POST'], url_path='reject')
     def reject(self, request, pk):
         try:
-            ## TODO: see if we need to check anything, expiration? request sender?
             invitation = Invitation.objects.get(key=pk)
             membership = invitation.membership
             membership.delete()
