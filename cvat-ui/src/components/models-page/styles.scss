@@ -12,13 +12,13 @@
     height: 100%;
     width: 100%;
 
-    .cvat-projects-page-top-bar {
-        padding-bottom: 8px;
+    .cvat-models-page-top-bar {
+        padding-bottom: $grid-unit-size;
     }
 
     >div:nth-child(2) {
         &:not(.cvat-empty-models-list) {
-            height: 80%;
+            height: 90%;
         }
     }
 }
