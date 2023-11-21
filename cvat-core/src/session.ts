@@ -459,7 +459,7 @@ export class Job extends Session {
                 assignee: {
                     get: () => data.assignee,
                     set: (assignee) => {
-                        if ((assignee?.username || null) !== (data.assignee?.username || null)) {
+                        if ((assignee?.id || null) === (data.assignee?.id || null)) {
                             return;
                         }
 
