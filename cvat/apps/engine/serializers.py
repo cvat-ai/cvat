@@ -1994,6 +1994,17 @@ def _update_related_storages(
 
         cloud_storage = None
         cloud_storage_id = new_conf.get('cloud_storage_id')
+        new_location = new_conf.get('location')
+
+        # storage_instance maybe None
+        storage_instance = getattr(instance, storage_type)
+
+        if not cloud_storage_id and new_location == models.Location.CLOUD_STORAGE:
+            raise serializers.ValidationError('Cloud storage was selected as location but its id was not specified')
+        elif cloud_storage_id and new_location and new_location != models.Location.CLOUD_STORAGE:
+            raise serializers.ValidationError(f"It is not allowed to specify '{new_location}' location together with cloud storage id")
+        elif cloud_storage_id and not new_location and getattr(storage_instance, 'location', None) != models.Location.CLOUD_STORAGE:
+            raise serializers.ValidationError(f"The configuration of {storage_type} is not full")
 
         if cloud_storage_id:
             try:
@@ -2001,18 +2012,14 @@ def _update_related_storages(
             except models.CloudStorage.DoesNotExist:
                 raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
 
-        # storage_instance maybe None
-        storage_instance = getattr(instance, storage_type)
         if not storage_instance:
             storage_instance = models.Storage(**new_conf)
             storage_instance.save()
             setattr(instance, storage_type, storage_instance)
             continue
 
-        new_location = new_conf.get('location', storage_instance.location)
-        location_has_changed = new_location != storage_instance.location
-        storage_instance.location = new_location
-        storage_instance.cloud_storage = cloud_storage if cloud_storage or location_has_changed else storage_instance.cloud_storage
+        storage_instance.location = new_location or storage_instance.location
+        storage_instance.cloud_storage = cloud_storage
         storage_instance.save()
 
 def _configure_related_storages(validated_data: Dict[str, Any]) -> Dict[str, Optional[models.Storage]]:
