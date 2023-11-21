@@ -28,6 +28,7 @@ function InvitationWatcher(): JSX.Element {
             if (!invitations.includes(invitationKey)) {
                 invitations.push(invitationKey);
                 localStorage.setItem('invitations', JSON.stringify(invitations));
+                localStorage.removeItem('currentOrganization');
             }
         }
 
