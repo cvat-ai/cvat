@@ -6,7 +6,7 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("engine", "0076_remove_storage_cloud_storage_id_and_more"),
+        ("engine", "0076_remove_storages_that_refer_to_deleted_cloud_storages"),
     ]
 
     operations = [
