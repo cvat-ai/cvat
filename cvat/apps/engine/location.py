@@ -27,7 +27,7 @@ def get_location_configuration(
         storage = getattr(obj, field_name) if not isinstance(obj, Job) else getattr(obj.segment.task, field_name)
         location_conf.update({
             'location': storage.location if storage is not None else Location.LOCAL,
-            **({'storage_id': storage.cloud_storage.id} if getattr(storage, 'cloud_storage', None) else {})
+            **({'storage_id': storage.cloud_storage_id} if getattr(storage, 'cloud_storage', None) else {})
         })
     else:
         # obj is query_params

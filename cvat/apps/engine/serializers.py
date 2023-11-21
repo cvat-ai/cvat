@@ -1992,7 +1992,9 @@ def _update_related_storages(
         if not new_conf:
             continue
 
-        cloud_storage, cloud_storage_id = None, new_conf.get('cloud_storage_id')
+        cloud_storage = None
+        cloud_storage_id = new_conf.get('cloud_storage_id')
+
         if cloud_storage_id:
             try:
                 cloud_storage = models.CloudStorage.objects.get(id=cloud_storage_id)
@@ -2021,11 +2023,11 @@ def _configure_related_storages(validated_data: Dict[str, Any]) -> Dict[str, Opt
 
     for i in storages:
         if storage_conf := validated_data.get(i):
-            if cloud_storage_id := storage_conf.get('cloud_storage_id'):
-                try:
-                    _ = models.CloudStorage.objects.get(id=cloud_storage_id)
-                except models.CloudStorage.DoesNotExist:
-                    raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
+            if (
+                cloud_storage_id := storage_conf.get('cloud_storage_id') and
+                not models.CloudStorage.objects.filter(id=cloud_storage_id).exists()
+            ):
+                raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
             storage_instance = models.Storage(**storage_conf)
             storage_instance.save()
             storages[i] = storage_instance
