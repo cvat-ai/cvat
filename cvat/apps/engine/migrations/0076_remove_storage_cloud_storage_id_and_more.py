@@ -4,20 +4,17 @@ from django.db import migrations, models
 import django.db.models.deletion
 from cvat.apps.engine.models import Location
 
+
 def manually_remove_outdated_relations(apps, schema_editor):
     Storage = apps.get_model("engine", "Storage")
     CloudStorage = apps.get_model("engine", "CloudStorage")
-    db_storages = Storage.objects.filter(cloud_storage_id__isnull=False)
-    db_storages_to_update = []
+    Storage.objects.filter(
+        ~models.Exists(
+            CloudStorage.objects.filter(pk=models.OuterRef("cloud_storage_id"))
+        ),
+        location=Location.CLOUD_STORAGE,
+    ).delete()
 
-    for db_storage in db_storages:
-        if not CloudStorage.objects.filter(pk=db_storage.cloud_storage_id).exists():
-            db_storage.cloud_storage_id = None
-            db_storage.location = Location.LOCAL
-            db_storages_to_update.append(db_storage)
-
-    if db_storages_to_update:
-        Storage.objects.bulk_update(db_storages_to_update, fields=['cloud_storage_id', 'location'], batch_size=500)
 
 class Migration(migrations.Migration):
     dependencies = [
