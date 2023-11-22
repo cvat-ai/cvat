@@ -357,6 +357,8 @@ export class Job extends Session {
     public readonly frameSelectionMethod: JobType;
     public readonly createdDate: string;
     public readonly updatedDate: string;
+    public readonly sourceStorage: Storage | null;
+    public readonly targetStorage: Storage | null;
 
     public annotations: {
         get: CallableFunction;
@@ -425,6 +427,8 @@ export class Job extends Session {
             mode: undefined,
             created_date: undefined,
             updated_date: undefined,
+            source_storage: undefined,
+            target_storage: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -554,6 +558,22 @@ export class Job extends Session {
                 },
                 updatedDate: {
                     get: () => data.updated_date,
+                },
+                sourceStorage: {
+                    get: () => (
+                        new Storage({
+                            location: data.source_storage?.location || StorageLocation.LOCAL,
+                            cloudStorageId: data.source_storage?.cloud_storage_id,
+                        })
+                    ),
+                },
+                targetStorage: {
+                    get: () => (
+                        new Storage({
+                            location: data.target_storage?.location || StorageLocation.LOCAL,
+                            cloudStorageId: data.target_storage?.cloud_storage_id,
+                        })
+                    ),
                 },
                 _updateTrigger: {
                     get: () => updateTrigger,
@@ -830,6 +850,8 @@ export class Task extends Session {
                     dimension: data.dimension,
                     data_compressed_chunk_type: data.data_compressed_chunk_type,
                     data_chunk_size: data.data_chunk_size,
+                    target_storage: data.target_storage,
+                    source_storage: data.source_storage,
                 });
                 data.jobs.push(jobInstance);
             }
