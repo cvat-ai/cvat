@@ -809,16 +809,20 @@ class TestPostTaskData:
         task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         # check that the frames have correct width and height
-        with make_api_client(self._USERNAME) as api_client:
-            _, response = api_client.tasks_api.retrieve_data(
-                task_id, number=0, type="chunk", quality="original"
-            )
-            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                for name in zip_file.namelist():
-                    with zip_file.open(name) as zipped_img:
-                        im = Image.open(zipped_img)
-                        # original is 480x640 with 90/-90 degrees rotation
-                        assert im.height == 640 and im.width == 480
+        for chunk_quality in ["original", "compressed"]:
+            with make_api_client(self._USERNAME) as api_client:
+                _, response = api_client.tasks_api.retrieve_data(
+                    task_id, number=0, type="chunk", quality=chunk_quality
+                )
+                data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+                with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                    for name, frame_meta in zip(zip_file.namelist(), data_meta.frames):
+                        with zip_file.open(name) as zipped_img:
+                            im = Image.open(zipped_img)
+                            # original is 480x640 with 90/-90 degrees rotation
+                            assert frame_meta.height == 640 and frame_meta.width == 480
+                            assert im.height == 640 and im.width == 480
 
     def test_can_create_task_with_big_images(self):
         # Checks for regressions about the issue
