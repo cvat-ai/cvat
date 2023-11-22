@@ -767,42 +767,6 @@ paths:
               schema:
                 type: string
           description: Cloud Storage actions (GET | PUT | DELETE)
-  /api/cloudstorages/{id}/content:
-    get:
-      operationId: cloudstorages_retrieve_content
-      description: 'This method is deprecated and will be removed in version 2.6.0.
-        Please use the new version of API: /cloudstorages/id/content-v2/'
-      summary: Method returns a manifest content
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this cloud storage.
-        required: true
-      - in: query
-        name: manifest_path
-        schema:
-          type: string
-        description: Path to the manifest file in a cloud storage
-      tags:
-      - cloudstorages
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: array
-                items:
-                  type: string
-          description: A manifest content
   /api/cloudstorages/{id}/content-v2:
     get:
       operationId: cloudstorages_retrieve_content_v2

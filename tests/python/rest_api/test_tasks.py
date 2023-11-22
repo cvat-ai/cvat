@@ -51,15 +51,10 @@ from .utils import (
 )
 
 
-def get_cloud_storage_content(
-    api_version: int, username: str, cloud_storage_id: int, manifest: Optional[str] = None
-):
+def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
     with make_api_client(username) as api_client:
         kwargs = {"manifest_path": manifest} if manifest else {}
 
-        if api_version == 1:
-            (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id, **kwargs)
-            return data
         (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
         return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
 
@@ -1144,17 +1139,17 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "use_cache, cloud_storage_id, manifest, use_bucket_content, content_api_version, org",
+        "use_cache, cloud_storage_id, manifest, use_bucket_content, org",
         [
-            (True, 1, "manifest.jsonl", False, None, ""),  # public bucket
-            (True, 2, "sub/manifest.jsonl", True, 1, "org2"),  # private bucket
-            (True, 2, "sub/manifest.jsonl", True, 2, "org2"),  # private bucket
-            (True, 1, None, False, None, ""),
-            (True, 2, None, True, 1, "org2"),
-            (True, 2, None, True, 2, "org2"),
-            (False, 1, None, False, None, ""),
-            (False, 2, None, True, 1, "org2"),
-            (False, 2, None, True, 2, "org2"),
+            (True, 1, "manifest.jsonl", False, ""),  # public bucket
+            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
+            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
+            (True, 1, None, False, ""),
+            (True, 2, None, True, "org2"),
+            (True, 2, None, True, "org2"),
+            (False, 1, None, False, ""),
+            (False, 2, None, True, "org2"),
+            (False, 2, None, True, "org2"),
         ],
     )
     def test_create_task_with_cloud_storage_files(
@@ -1163,12 +1158,11 @@ class TestPostTaskData:
         cloud_storage_id: int,
         manifest: str,
         use_bucket_content: bool,
-        content_api_version: Optional[int],
         org: str,
     ):
         if use_bucket_content:
             cloud_storage_content = get_cloud_storage_content(
-                content_api_version, self._USERNAME, cloud_storage_id, manifest
+                self._USERNAME, cloud_storage_id, manifest
             )
         else:
             cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
