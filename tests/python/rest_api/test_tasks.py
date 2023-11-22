@@ -814,11 +814,14 @@ class TestPostTaskData:
                 _, response = api_client.tasks_api.retrieve_data(
                     task_id, number=0, type="chunk", quality=chunk_quality
                 )
+                data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
                 with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                    for name in zip_file.namelist():
+                    for name, frame_meta in zip(zip_file.namelist(), data_meta.frames):
                         with zip_file.open(name) as zipped_img:
                             im = Image.open(zipped_img)
                             # original is 480x640 with 90/-90 degrees rotation
+                            assert frame_meta.height == 640 and frame_meta.width == 480
                             assert im.height == 640 and im.width == 480
 
     def test_can_create_task_with_big_images(self):
