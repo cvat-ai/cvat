@@ -2031,7 +2031,7 @@ def _configure_related_storages(validated_data: Dict[str, Any]) -> Dict[str, Opt
     for i in storages:
         if storage_conf := validated_data.get(i):
             if (
-                cloud_storage_id := storage_conf.get('cloud_storage_id') and
+                (cloud_storage_id := storage_conf.get('cloud_storage_id')) and
                 not models.CloudStorage.objects.filter(id=cloud_storage_id).exists()
             ):
                 raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
