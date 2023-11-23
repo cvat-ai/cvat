@@ -287,19 +287,22 @@ def delete_compose_files(container_name_files):
         filename.unlink(missing_ok=True)
 
 
-def wait_for_services(num_secs=300):
+def wait_for_services(num_secs: int = 300) -> None:
     for i in range(num_secs):
         logger.debug(f"waiting for the server to load ... ({i})")
         response = requests.get(get_server_url("api/server/health/", format="json"))
-        if response.status_code == HTTPStatus.OK:
-            logger.debug("the server has finished loading!")
-            return
-        else:
-            try:
-                statuses = response.json()
-                logger.debug(f"server status: \n{statuses}")
-            except Exception as e:
-                logger.debug(f"an error occurred during the server status checking: {e}")
+
+        try:
+            statuses = response.json()
+            logger.debug(f"server status: \n{statuses}")
+
+            if response.status_code == HTTPStatus.OK:
+                logger.debug("the server has finished loading!")
+                return
+
+        except Exception as e:
+            logger.debug(f"an error occurred during the server status checking: {e}")
+
         sleep(1)
 
     raise Exception(
@@ -432,11 +435,7 @@ def local_start(
         stop_services(dc_files, cvat_root_dir)
         pytest.exit("All testing containers are stopped", returncode=0)
 
-    if (
-        not any(set(running_containers()) & {f"{PREFIX}_cvat_server_1", f"{PREFIX}_cvat_db_1"})
-        or rebuild
-    ):
-        start_services(dc_files, rebuild, cvat_root_dir)
+    start_services(dc_files, rebuild, cvat_root_dir)
 
     docker_restore_data_volumes()
     docker_cp(cvat_db_dir / "restore.sql", f"{PREFIX}_cvat_db_1:/tmp/restore.sql")

@@ -10,10 +10,10 @@ metadata:
     tier: backend
     component: worker-import
     {{- include "cvat.labels" . | nindent 4 }}
-    {{- with $localValues.labels }}
+    {{- with merge $localValues.labels .Values.cvat.backend.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with $localValues.annotations }}
+  {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
   annotations:
   {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -24,7 +24,7 @@ spec:
   selector:
     matchLabels:
       {{- include "cvat.labels" . | nindent 6 }}
-      {{- with $localValues.labels }}
+      {{- with merge $localValues.labels .Values.cvat.backend.labels }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
       app: cvat-app
@@ -37,10 +37,10 @@ spec:
         tier: backend
         component: worker-import
         {{- include "cvat.labels" . | nindent 8 }}
-        {{- with $localValues.labels }}
+        {{- with merge $localValues.labels .Values.cvat.backend.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with $localValues.annotations }}
+      {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
       annotations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -49,14 +49,14 @@ spec:
         - name: cvat-backend
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
           imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
-          {{- with $localValues.resources }}
+          {{- with merge $localValues.resources .Values.cvat.backend.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           args: ["run", "worker.import"]
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
-          {{- with $localValues.additionalEnv }}
+          {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
           volumeMounts:
@@ -79,7 +79,7 @@ spec:
           - mountPath: /home/django/tmp_storage
             name: cvat-backend-data
             subPath: tmp_storage
-          {{- with $localValues.additionalVolumeMounts }}
+          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
       initContainers:
@@ -87,7 +87,7 @@ spec:
         - name: user-data-permission-fix
           image: busybox
           command: ["/bin/chmod", "-R", "777", "/home/django"]
-          {{- with $localValues.resources }}
+          {{- with merge $localValues.resources .Values.cvat.backend.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -110,15 +110,15 @@ spec:
             name: cvat-backend-data
             subPath: models
           {{- end }}
-          {{- with $localValues.additionalVolumeMounts }}
+          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         {{- end }}
-      {{- with $localValues.affinity }}
+      {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with $localValues.tolerations }}
+      {{- with concat .Values.cvat.backend.tolerations $localValues.tolerations }}
       tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -132,7 +132,7 @@ spec:
           emptyDir: {}
         {{- end }}
         {{- end }}
-        {{- with $localValues.additionalVolumes }}
+        {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- with .Values.imagePullSecrets }}
