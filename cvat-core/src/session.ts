@@ -142,6 +142,26 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
+                async join(objectStates, points) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.join,
+                        objectStates,
+                        points,
+                    );
+                    return result;
+                },
+
+                async slice(objectState, results) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.slice,
+                        objectState,
+                        results,
+                    );
+                    return result;
+                },
+
                 async import(data) {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.import, data);
                     return result;
@@ -345,6 +365,8 @@ export class Job extends Session {
         merge: CallableFunction;
         split: CallableFunction;
         group: CallableFunction;
+        join: CallableFunction;
+        slice: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
         searchEmpty: CallableFunction;
@@ -437,6 +459,10 @@ export class Job extends Session {
                 assignee: {
                     get: () => data.assignee,
                     set: (assignee) => {
+                        if ((assignee?.id || null) === (data.assignee?.id || null)) {
+                            return;
+                        }
+
                         if (assignee !== null && !(assignee instanceof User)) {
                             throw new ArgumentError('Value must be a user instance');
                         }
@@ -447,6 +473,10 @@ export class Job extends Session {
                 stage: {
                     get: () => data.stage,
                     set: (stage) => {
+                        if (stage === data.stage) {
+                            return;
+                        }
+
                         const type = JobStage;
                         let valueInEnum = false;
                         for (const value in type) {
@@ -469,6 +499,10 @@ export class Job extends Session {
                 state: {
                     get: () => data.state,
                     set: (state) => {
+                        if (state === data.state) {
+                            return;
+                        }
+
                         const type = JobState;
                         let valueInEnum = false;
                         for (const value in type) {
@@ -552,6 +586,8 @@ export class Job extends Session {
             merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
             split: Object.getPrototypeOf(this).annotations.split.bind(this),
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
+            join: Object.getPrototypeOf(this).annotations.join.bind(this),
+            slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
@@ -663,6 +699,8 @@ export class Task extends Session {
         merge: CallableFunction;
         split: CallableFunction;
         group: CallableFunction;
+        join: CallableFunction;
+        slice: CallableFunction;
         clear: CallableFunction;
         search: CallableFunction;
         searchEmpty: CallableFunction;
@@ -1085,6 +1123,8 @@ export class Task extends Session {
             merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
             split: Object.getPrototypeOf(this).annotations.split.bind(this),
             group: Object.getPrototypeOf(this).annotations.group.bind(this),
+            join: Object.getPrototypeOf(this).annotations.join.bind(this),
+            slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),

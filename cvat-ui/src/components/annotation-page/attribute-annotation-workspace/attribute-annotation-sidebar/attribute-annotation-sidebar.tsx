@@ -306,6 +306,11 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     currentLabel={activeObjectState.label.id}
                     labels={applicableLabels}
                     changeLabel={(value: Label): void => {
+                        jobInstance.logger.log(LogType.changeLabel, {
+                            object_id: activeObjectState.clientID,
+                            from: activeObjectState.label.id,
+                            to: value.id,
+                        });
                         activeObjectState.label = value;
                         updateAnnotations([activeObjectState]);
                     }}

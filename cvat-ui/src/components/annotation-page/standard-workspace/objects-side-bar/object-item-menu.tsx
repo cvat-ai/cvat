@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,17 +11,17 @@ import Icon, {
 } from '@ant-design/icons';
 
 import {
-    BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon,
+    BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ObjectType, ShapeType, ColorBy } from 'reducers';
-import { DimensionType } from 'cvat-core-wrapper';
+import { DimensionType, Job } from 'cvat-core-wrapper';
 
 import ColorPicker from './color-picker';
 
 interface Props {
     readonly: boolean;
-    serverID: number | undefined;
+    serverID: number | null;
     locked: boolean;
     shapeType: ShapeType;
     objectType: ObjectType;
@@ -31,6 +31,7 @@ interface Props {
     changeColorShortcut: string;
     copyShortcut: string;
     pasteShortcut: string;
+    sliceShortcut: string;
     propagateShortcut: string;
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
@@ -46,7 +47,8 @@ interface Props {
     resetCuboidPerspective(): void;
     changeColorPickerVisible(visible: boolean): void;
     edit(): void;
-    jobInstance: any;
+    slice(): void;
+    jobInstance: Job;
 }
 
 interface ItemProps {
@@ -103,6 +105,25 @@ function EditMaskItem(props: ItemProps): JSX.Element {
                     className='cvat-object-item-menu-edit-object'
                 >
                     Edit
+                </Button>
+            </CVATTooltip>
+        </Menu.Item>
+    );
+}
+
+function SliceItem(props: ItemProps): JSX.Element {
+    const { toolProps, ...rest } = props;
+    const { slice, sliceShortcut } = toolProps;
+    return (
+        <Menu.Item {...rest}>
+            <CVATTooltip title={`Cut the shape into two parts ${sliceShortcut}`}>
+                <Button
+                    type='link'
+                    icon={<Icon component={SliceIcon} />}
+                    onClick={slice}
+                    className='cvat-object-item-menu-slice-object'
+                >
+                    Slice
                 </Button>
             </CVATTooltip>
         </Menu.Item>
@@ -265,6 +286,7 @@ export default function ItemMenu(props: Props): JSX.Element {
         SWITCH_COLOR = 'switch_color',
         REMOVE_ITEM = 'remove_item',
         EDIT_MASK = 'edit_mask',
+        SLICE_ITEM = 'slice_item',
     }
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
@@ -275,7 +297,13 @@ export default function ItemMenu(props: Props): JSX.Element {
             {!readonly && objectType !== ObjectType.TAG && (
                 <MakeCopyItem key={MenuKeys.COPY} toolProps={props} />
             )}
-            {!readonly && <EditMaskItem key={MenuKeys.EDIT_MASK} toolProps={props} />}
+            {!readonly && shapeType === ShapeType.MASK && (
+                <EditMaskItem key={MenuKeys.EDIT_MASK} toolProps={props} />
+            )}
+            {!readonly && objectType === ObjectType.SHAPE &&
+                [ShapeType.MASK, ShapeType.POLYGON].includes(shapeType) && (
+                <SliceItem key={MenuKeys.SLICE_ITEM} toolProps={props} />
+            )}
             {!readonly && <PropagateItem key={MenuKeys.PROPAGATE} toolProps={props} />}
             {is2D && !readonly && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.CUBOID].includes(shapeType) && (
                 <SwitchOrientationItem key={MenuKeys.SWITCH_ORIENTATION} toolProps={props} />

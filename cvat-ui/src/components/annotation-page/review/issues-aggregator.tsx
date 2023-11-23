@@ -132,7 +132,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                 const c = conflict.annotationConflicts[0];
                 const state = objectStates.find((s: ObjectState) => s.jobID === c.jobID && s.serverID === c.serverID);
                 if (state) {
-                    const points = canvasInstance.setupConflictsRegions(state);
+                    const points = canvasInstance.setupConflictRegions(state);
                     if (points) {
                         return {
                             description: conflict.description,

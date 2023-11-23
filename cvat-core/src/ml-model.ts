@@ -3,12 +3,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import serverProxy from './server-proxy';
 import PluginRegistry from './plugins';
-import { decodePreview } from './frames';
-import { ModelProviders, ModelKind, ModelReturnType } from './enums';
 import {
-    SerializedModel, ModelAttribute, ModelParams, ModelTip,
+    ModelProviders, ModelKind, ModelReturnType,
+} from './enums';
+import {
+    SerializedModel, ModelParams, MLModelTip, MLModelLabel,
 } from './core-types';
 
 export default class MLModel {
@@ -27,16 +27,12 @@ export default class MLModel {
         return this.serialized.name;
     }
 
-    public get labels(): string[] {
-        return Array.isArray(this.serialized.labels) ? [...this.serialized.labels] : [];
+    public get labels(): MLModelLabel[] {
+        return Array.isArray(this.serialized.labels_v2) ? [...this.serialized.labels_v2] : [];
     }
 
     public get version(): number {
         return this.serialized.version;
-    }
-
-    public get attributes(): Record<string, ModelAttribute> {
-        return this.serialized.attributes || {};
     }
 
     public get framework(): string {
@@ -67,7 +63,7 @@ export default class MLModel {
         return result;
     }
 
-    public get tip(): ModelTip {
+    public get tip(): MLModelTip {
         return {
             message: this.serialized.help_message,
             gif: this.serialized.animated_gif,
@@ -107,60 +103,18 @@ export default class MLModel {
         this.changeToolsBlockerStateCallback = onChangeToolsBlockerState;
     }
 
-    public async save(): Promise<MLModel> {
-        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.save);
-        return result;
-    }
-
-    public async delete(): Promise<MLModel> {
-        const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.delete);
-        return result;
-    }
-
     public async preview(): Promise<string> {
         const result = await PluginRegistry.apiWrapper.call(this, MLModel.prototype.preview);
         return result;
     }
 }
 
-Object.defineProperties(MLModel.prototype.save, {
-    implementation: {
-        writable: false,
-        enumerable: false,
-        value: async function implementation(this: MLModel): Promise<MLModel> {
-            const modelData = {
-                provider: this.provider,
-                url: this.serialized.url,
-                api_key: this.serialized.api_key,
-            };
-
-            const model = await serverProxy.functions.create(modelData);
-            return new MLModel(model);
-        },
-    },
-});
-
-Object.defineProperties(MLModel.prototype.delete, {
-    implementation: {
-        writable: false,
-        enumerable: false,
-        value: async function implementation(this: MLModel): Promise<void> {
-            if (this.isDeletable) {
-                await serverProxy.functions.delete(this.id);
-            }
-        },
-    },
-});
-
 Object.defineProperties(MLModel.prototype.preview, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(this: MLModel): Promise<string> {
-            if (this.provider === ModelProviders.CVAT) return '';
-            const preview = await serverProxy.functions.getPreview(this.id);
-            if (!preview) return '';
-            return decodePreview(preview);
+        value: async function implementation(): Promise<string | null> {
+            return null;
         },
     },
 });
