@@ -1992,25 +1992,42 @@ def _update_related_storages(
         if not new_conf:
             continue
 
-        cloud_storage = None
-        cloud_storage_id = new_conf.get('cloud_storage_id')
+        new_cloud_storage_id = new_conf.get('cloud_storage_id')
         new_location = new_conf.get('location')
 
         # storage_instance maybe None
         storage_instance = getattr(instance, storage_type)
 
-        if not cloud_storage_id and new_location == models.Location.CLOUD_STORAGE:
-            raise serializers.ValidationError('Cloud storage was selected as location but its id was not specified')
-        elif cloud_storage_id and new_location and new_location != models.Location.CLOUD_STORAGE:
-            raise serializers.ValidationError(f"It is not allowed to specify '{new_location}' location together with cloud storage id")
-        elif cloud_storage_id and not new_location and getattr(storage_instance, 'location', None) != models.Location.CLOUD_STORAGE:
-            raise serializers.ValidationError(f"The configuration of {storage_type} is not full")
+        if new_cloud_storage_id:
+            if new_location and new_location != models.Location.CLOUD_STORAGE:
+                raise serializers.ValidationError(
+                    f"It is not allowed to specify '{new_location}' location together with cloud storage id"
+                )
+            elif (
+                not new_location
+                and getattr(storage_instance, "location", None) != models.Location.CLOUD_STORAGE
+            ):
+                raise serializers.ValidationError(
+                    f"The configuration of {storage_type} is not full"
+                )
 
-        if cloud_storage_id:
-            try:
-                cloud_storage = models.CloudStorage.objects.get(id=cloud_storage_id)
-            except models.CloudStorage.DoesNotExist:
-                raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
+            if not models.CloudStorage.objects.filter(id=new_cloud_storage_id).exists():
+                raise serializers.ValidationError(
+                    f"The specified cloud storage {new_cloud_storage_id} does not exist."
+                )
+        else:
+            if new_location == models.Location.CLOUD_STORAGE:
+                raise serializers.ValidationError(
+                    "Cloud storage was selected as location but its id was not specified"
+                )
+            elif (
+                not new_location
+                and getattr(storage_instance, "location", None) == models.Location.CLOUD_STORAGE
+                and "cloud_storage_id" in new_conf
+            ):
+                raise serializers.ValidationError(
+                    "It is not allowed to reset a cloud storage id without explicitly resetting a location"
+                )
 
         if not storage_instance:
             storage_instance = models.Storage(**new_conf)
@@ -2019,7 +2036,7 @@ def _update_related_storages(
             continue
 
         storage_instance.location = new_location or storage_instance.location
-        storage_instance.cloud_storage = cloud_storage
+        storage_instance.cloud_storage_id = new_cloud_storage_id
         storage_instance.save()
 
 def _configure_related_storages(validated_data: Dict[str, Any]) -> Dict[str, Optional[models.Storage]]:
