@@ -596,7 +596,7 @@ class IChunkWriter(ABC):
             with Image.open(source_image) as _img:
                 image = ImageOps.exif_transpose(_img)
         elif isinstance(source_image, Image.Image):
-            image = source_image
+            image = ImageOps.exif_transpose(source_image)
 
         assert image is not None
 

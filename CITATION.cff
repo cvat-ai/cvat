@@ -14,7 +14,7 @@ identifiers:
   - type: doi
     value: 10.5281/zenodo.4009388
 repository-code: 'https://github.com/opencv/cvat'
-url: 'http://cvat.ai/'
+url: 'https://cvat.ai/'
 abstract: >-
   Annotate better with CVAT, the industry-leading
   data engine for machine learning. Used and trusted
@@ -33,6 +33,6 @@ keywords:
   - deep-learning
   - annotation
 license: MIT
-version: 2.2.0
-date-released: '2022-09-12'
+version: 2.8.2
+date-released: '2023-11-06'
 
