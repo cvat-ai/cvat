@@ -16,6 +16,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.9.0'></a>
+## \[2.9.0\] - 2023-11-23
+
+### Added
+
+- CVAT now supports serverless Nuclio functions returning skeleton annotations.
+  Added keypoint detector supporting skeletons with following classes: body, head, foot, hands.
+  Deployment command: `./deploy_cpu.sh pytorch/mmpose/hrnet32/nuclio/`
+  (<https://github.com/opencv/cvat/pull/7033>)
+
+- Implemented a feature allowing to slice one polygon/mask shape into two parts
+  (<https://github.com/opencv/cvat/pull/7084>)
+- Implemented a feature allowing to join several masks into a single one
+  (<https://github.com/opencv/cvat/pull/7084>)
+
+- \[Helm\] Values that apply to all backend deployments/jobs
+  (<https://github.com/opencv/cvat/pull/7148>)
+
+### Changed
+
+- Ignore the "use cache" option on the server when creating a task with cloud storage data (except images)
+  (<https://github.com/opencv/cvat/pull/7087>)
+
+- The Docker Compose file and Helm chart now enable Traefik access logs by
+  default, and change the log format to JSON
+  (<https://github.com/opencv/cvat/pull/7109>)
+
+- \[Helm\] The PersistentVolumeClaim for the volume used to hold application
+  data is now retained after uninstall
+  (<https://github.com/opencv/cvat/pull/7123>)
+
+- \[Helm\] All backend-related deployments now use `cvat-app` as the value
+  for the `app` label
+  (<https://github.com/opencv/cvat/pull/7127>)
+
+- \[Helm\] Minimum compatible Kubernetes version is 1.19.0.
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Helm\] The CVAT hostname can be configured with `ingress.hostname` option.
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Helm\] `ingress.tls` configuration has been reworked.
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Helm\] Traefik subchart updated to 25.0.0 (appVersion v2.10.5)
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Docker Compose\] Update Traefik to v2.10.*
+  (<https://github.com/opencv/cvat/pull/7150>)
+
+### Removed
+
+- Support for V1 cloudstorages/id/content endpoint
+  (<https://github.com/opencv/cvat/pull/6946>)
+
+  \[Helm\] `ingress.hosts` has been removed, use `ingress.hostname` instead.
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+### Fixed
+
+- Data race condition during GT job creation
+  (<https://github.com/opencv/cvat/pull/7096>)
+
+- Job state can not be changed many time without reloading annotation view.
+  (<https://github.com/opencv/cvat/pull/7158>)
+
+- Compressed chunks do not use exif rotation tag
+  (<https://github.com/opencv/cvat/pull/7162>)
+
+- Minor styling issues on empty models page
+  (<https://github.com/opencv/cvat/pull/7164>)
+
+- Fixed minor issue when brush marker is appended to a final mask
+  (<https://github.com/opencv/cvat/pull/7168>)
+
 <a id='changelog-2.8.2'></a>
 ## \[2.8.2\] - 2023-11-06
 
