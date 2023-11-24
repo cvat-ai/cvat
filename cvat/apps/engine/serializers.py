@@ -586,8 +586,10 @@ class JobReadSerializer(serializers.ModelSerializer):
             perm = TaskPermission.create_scope_view(request, instance.segment.task)
             result = perm.check_access()
             if result.allow:
-                data['source_storage'] = StorageSerializer(instance.get_source_storage()).data
-                data['target_storage'] = StorageSerializer(instance.get_target_storage()).data
+                if task_source_storage := instance.get_source_storage():
+                    data['source_storage'] = StorageSerializer(task_source_storage).data
+                if task_target_storage := instance.get_target_storage():
+                    data['target_storage'] = StorageSerializer(task_target_storage).data
 
         return data
 
