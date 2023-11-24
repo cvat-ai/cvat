@@ -17,8 +17,8 @@ import { clampOpacity } from 'utils/opacity-checker';
 const defaultState: SettingsState = {
     shapes: {
         colorBy: ColorBy.LABEL,
-        opacity: 3,
-        selectedOpacity: 30,
+        opacity: 30,
+        selectedOpacity: 60,
         outlined: false,
         outlineColor: '#000000',
         showBitmap: false,
