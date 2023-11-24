@@ -47,6 +47,7 @@ export interface SerializedUser {
 }
 
 interface SerializedStorage {
+    id: number;
     location: StorageLocation;
     cloud_storage_id: number | null;
 }

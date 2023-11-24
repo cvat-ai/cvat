@@ -679,12 +679,10 @@ class Job(models.Model):
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
 
-    @property
-    def target_storage(self) -> Optional[Storage]:
+    def get_target_storage(self) -> Optional[Storage]:
         return self.segment.task.target_storage
 
-    @property
-    def source_storage(self) -> Optional[Storage]:
+    def get_source_storage(self) -> Optional[Storage]:
         return self.segment.task.source_storage
 
     def get_dirname(self):

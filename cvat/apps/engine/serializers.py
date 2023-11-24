@@ -580,12 +580,12 @@ class JobReadSerializer(serializers.ModelSerializer):
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
 
-        request = self.context['request']
-        perm = TaskPermission.create_scope_view(request, instance.segment.task)
-        result = perm.check_access()
-        if not result.allow:
-            for storage_type in ('source_storage', 'target_storage'):
-                data[storage_type] = None
+        if request := self.context.get('request'):
+            perm = TaskPermission.create_scope_view(request, instance.segment.task)
+            result = perm.check_access()
+            if result.allow:
+                data['source_storage'] = StorageSerializer(instance.get_source_storage()).data
+                data['target_storage'] = StorageSerializer(instance.get_target_storage()).data
 
         return data
 
