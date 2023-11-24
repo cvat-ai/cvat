@@ -559,6 +559,7 @@ export class MasksHandlerImpl implements MasksHandler {
             try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                    this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
                     const rle = zipChannels(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
@@ -629,6 +630,7 @@ export class MasksHandlerImpl implements MasksHandler {
             try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                    this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
                     const rle = zipChannels(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);

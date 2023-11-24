@@ -1114,7 +1114,12 @@ class CloudStorage(models.Model):
 
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
-    cloud_storage_id = models.IntegerField(null=True, blank=True, default=None)
+    cloud_storage = models.ForeignKey(
+        CloudStorage,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='+',
+    )
 
     class Meta:
         default_permissions = ()
