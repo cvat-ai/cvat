@@ -12,7 +12,7 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 import {
     SettingsState, GridColor, FrameSpeed, ColorBy,
 } from 'reducers';
-import { ObjectState, ShapeType, DimensionType } from 'cvat-core-wrapper';
+import { clampOpacity } from 'utils/opacity-checker';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -442,18 +442,17 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
             {
-                const MIN_OPACITY = 30;
-                const { shapes: { opacity } } = state;
-                if (opacity < MIN_OPACITY) {
-                    return {
-                        ...state,
-                        shapes: {
-                            ...state.shapes,
-                            opacity: MIN_OPACITY,
-                            selectedOpacity: MIN_OPACITY * 2,
-                        },
-                    };
-                }
+                const { states } = action.payload;
+                const { shapes } = state;
+                const [clampedOpacity, clampedSelectedOpacity] = clampOpacity(states, shapes);
+                return {
+                    ...state,
+                    shapes: {
+                        ...state.shapes,
+                        opacity: clampedOpacity,
+                        selectedOpacity: clampedSelectedOpacity,
+                    },
+                };
             }
 
             return state;
@@ -461,17 +460,13 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { job, states } = action.payload;
+            const { shapes } = state;
             const filters = [...state.imageFilters];
             filters.forEach((imageFilter) => {
                 imageFilter.modifier.currentProcessedImage = null;
             });
 
-            const withMasks = states
-                .some((_state: ObjectState): boolean => _state.shapeType === ShapeType.MASK);
-            const opacity = withMasks || job.dimension === DimensionType.DIMENSION_3D ?
-                Math.max(state.shapes.opacity, 30) : state.shapes.opacity;
-            const selectedOpacity = withMasks || job.dimension === DimensionType.DIMENSION_3D ?
-                Math.max(state.shapes.selectedOpacity, 60) : state.shapes.selectedOpacity;
+            const [clampedOpacity, clampedSelectedOpacity] = clampOpacity(states, shapes, job);
 
             return {
                 ...state,
@@ -480,8 +475,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
                 shapes: {
                     ...defaultState.shapes,
-                    opacity,
-                    selectedOpacity,
+                    opacity: clampedOpacity,
+                    selectedOpacity: clampedSelectedOpacity,
                 },
                 imageFilters: filters,
             };
