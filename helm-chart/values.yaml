@@ -392,6 +392,27 @@ ingress:
 
 traefik:
   enabled: false
+  logs:
+    general:
+      format: json
+    access:
+      enabled: true
+      format: json
+      fields:
+        general:
+          defaultmode: drop
+          names:
+            ClientHost: keep
+            DownstreamContentSize: keep
+            DownstreamStatus: keep
+            Duration: keep
+            RequestHost: keep
+            RequestMethod: keep
+            RequestPath: keep
+            RequestPort: keep
+            RequestProtocol: keep
+            RouterName: keep
+            StartUTC: keep
 
 smokescreen:
   opts: ''
