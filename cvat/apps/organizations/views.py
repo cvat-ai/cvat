@@ -260,7 +260,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
     @action(detail=True, methods=['POST'], url_path='accept')
     def accept(self, request, pk):
         try:
-            invitation = Invitation.objects.get(key=pk)
+            invitation = self.get_object() # force to call check_object_permissions
             if invitation.expired:
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is expired. Please contact organization owner to renew it.")
             if invitation.membership.is_active:
@@ -275,7 +275,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
     @action(detail=True, methods=['POST'], url_path='resend', throttle_classes=[ResendOrganizationInvitationThrottle])
     def resend(self, request, pk):
         try:
-            invitation = Invitation.objects.get(key=pk)
+            invitation = self.get_object() # force to call check_object_permissions
             if invitation.membership.is_active:
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="This invitation is already accepted.")
             invitation.send(request)
@@ -288,7 +288,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
     @action(detail=True, methods=['POST'], url_path='reject')
     def reject(self, request, pk):
         try:
-            invitation = Invitation.objects.get(key=pk)
+            invitation = self.get_object() # force to call check_object_permissions
             membership = invitation.membership
             membership.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
