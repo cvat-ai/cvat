@@ -66,13 +66,17 @@ class Invitation(models.Model):
         return self.membership.organization_id
 
     @property
-    def expired(self) -> bool:
+    def expired(self):
         if self.sent_date:
             expiration_date = self.sent_date + timedelta(
                 days=settings.ORG_INVITATION_EXPIRY_DAYS,
             )
             return expiration_date <= timezone.now()
-        return True
+        return None
+
+    @property
+    def accepted(self):
+        return self.membership.is_active
 
     @property
     def organization_slug(self):

@@ -195,7 +195,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
         }),
     resend=extend_schema(
         operation_id='invitations_resend',
-        summary='Method resends the invitation',
+        summary='Method resends the invitation to organization',
         request=None,
         responses={
             '204': OpenApiResponse(description='Invitation has been sent'),
@@ -214,11 +214,15 @@ class InvitationViewSet(viewsets.GenericViewSet,
     iam_organization_field = 'membership__organization'
 
     search_fields = ('owner',)
-    filter_fields = list(search_fields)
+    filter_fields = list(search_fields) + ['user_id', 'is_active']
     simple_filters = list(search_fields)
     ordering_fields = list(filter_fields) + ['created_date']
     ordering = '-created_date'
-    lookup_fields = {'owner': 'owner__username'}
+    lookup_fields = {
+        'owner': 'owner__username',
+        'user_id': 'membership__owner__id',
+        'is_active': 'membership__is_active',
+    }
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
