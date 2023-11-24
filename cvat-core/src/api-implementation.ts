@@ -183,6 +183,8 @@ export default function implementAPI(cvat) {
             sort: isString,
             search: isString,
             jobID: isInteger,
+            task_id: isInteger,
+            type: isString,
         });
 
         checkExclusiveFields(query, ['jobID', 'filter', 'search'], ['page', 'sort']);
@@ -200,7 +202,7 @@ export default function implementAPI(cvat) {
 
         const searchParams = {};
         for (const key of Object.keys(query)) {
-            if (['page', 'sort', 'search', 'filter', 'task_id'].includes(key)) {
+            if (['page', 'sort', 'search', 'filter', 'task_id', 'type'].includes(key)) {
                 searchParams[key] = query[key];
             }
         }
