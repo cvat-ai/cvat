@@ -927,9 +927,14 @@ export interface AnalyticsState {
     }
 }
 
+export interface InvitationsQuery {
+    page: number;
+}
+
 export interface InvitationsState {
     fetching: boolean;
     invitations: Invitation[];
+    query: InvitationsQuery;
 }
 
 export interface CombinedState {

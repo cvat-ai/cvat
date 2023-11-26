@@ -20,3 +20,29 @@
         transform: translate(-50%, -50%);
     }
 }
+
+.cvat-invitations-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.cvat-invitations-list-content {
+    padding-bottom: $grid-unit-size;
+}
+
+.cvat-invitation-item {
+    &:hover {
+        border: 1px solid $border-color-hover;
+    }
+
+    .cvat-invitation-description {
+        display: flex;
+        align-items: center;
+    }
+
+    .cvat-invitation-actions {
+        button {
+            margin-left: $grid-unit-size;
+        }
+    }
+}

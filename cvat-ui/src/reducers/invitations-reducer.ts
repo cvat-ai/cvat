@@ -10,6 +10,9 @@ import { InvitationsState } from '.';
 const defaultState: InvitationsState = {
     fetching: false,
     invitations: [],
+    query: {
+        page: 1,
+    },
 };
 
 export default (state: InvitationsState = defaultState, action: AnyAction): InvitationsState => {

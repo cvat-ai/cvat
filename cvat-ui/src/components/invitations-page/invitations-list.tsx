@@ -2,38 +2,38 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
+import { useHistory } from 'react-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import { getProjectsAsync } from 'actions/projects-actions';
-import { CombinedState, Project } from 'reducers';
+import { CombinedState, InvitationsQuery } from 'reducers';
+import { Invitation } from 'cvat-core/src/organization';
+import InvitationItem from './invitation-item';
 
-export default function InvitationsListComponent(): JSX.Element {
+import dimensions from '../projects-page/dimensions';
+
+interface Props {
+    query: InvitationsQuery;
+}
+
+export default function InvitationsListComponent(props: Props): JSX.Element {
+    const { query } = props;
+
     const dispatch = useDispatch();
-    const projectsCount = useSelector((state: CombinedState) => state.projects.count);
-    const projects = useSelector((state: CombinedState) => state.projects.current);
-    const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
-    const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
-    const { page } = gettingQuery;
-
-    const changePage = useCallback((p: number) => {
-        dispatch(
-            getProjectsAsync({
-                ...gettingQuery,
-                page: p,
-            }, tasksQuery),
-        );
-    }, [gettingQuery]);
+    const invitations = useSelector((state: CombinedState) => state.invitations.invitations);
 
     return (
         <>
-            {/* <Row justify='center' align='middle' className='cvat-project-list-content'>
-                <Col className='cvat-projects-list' {...dimensions}>
-                    {projects.map(
-                        (project: Project): JSX.Element => (
-                            <ProjectItem key={project.id} projectInstance={project} />
+            <Row justify='center' align='middle' className='cvat-invitations-list-content'>
+                <Col className='cvat-invitations-list' {...dimensions}>
+                    {invitations.map(
+                        (invitation: Invitation): JSX.Element => (
+                            <InvitationItem
+                                key={invitation.key}
+                                invitation={invitation}
+                            />
                         ),
                     )}
                 </Col>
@@ -41,16 +41,15 @@ export default function InvitationsListComponent(): JSX.Element {
             <Row justify='center' align='middle'>
                 <Col {...dimensions}>
                     <Pagination
-                        className='cvat-projects-pagination'
-                        onChange={changePage}
+                        className='cvat-invitations-pagination'
                         showSizeChanger={false}
-                        total={projectsCount}
+                        total={invitations.length}
                         pageSize={12}
-                        current={page}
+                        current={query.page}
                         showQuickJumper
                     />
                 </Col>
-            </Row> */}
+            </Row>
         </>
     );
 }
