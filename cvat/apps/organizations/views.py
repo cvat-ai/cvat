@@ -214,14 +214,14 @@ class InvitationViewSet(viewsets.GenericViewSet,
     iam_organization_field = 'membership__organization'
 
     search_fields = ('owner',)
-    filter_fields = list(search_fields) + ['user_id', 'is_active']
+    filter_fields = list(search_fields) + ['user_id', 'accepted']
     simple_filters = list(search_fields)
     ordering_fields = list(filter_fields) + ['created_date']
     ordering = '-created_date'
     lookup_fields = {
         'owner': 'owner__username',
-        'user_id': 'membership__owner__id',
-        'is_active': 'membership__is_active',
+        'user_id': 'membership__user__id',
+        'accepted': 'membership__is_active',
     }
 
     def get_serializer_class(self):
