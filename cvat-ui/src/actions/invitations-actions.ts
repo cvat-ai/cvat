@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ActionUnion, createAction } from 'utils/redux';
+import { ActionUnion, ThunkAction, createAction } from 'utils/redux';
 import { Invitation, getCore } from 'cvat-core-wrapper';
 
-const cvat = getCore();
+const core = getCore();
 
 export enum InvitationsActionTypes {
     GET_INVITATIONS = 'GET_INVITATIONS',
@@ -22,3 +22,22 @@ const invitationActions = {
 };
 
 export type InvitationActions = ActionUnion<typeof invitationActions>;
+
+export function getInvitationsAsync(userID: number): ThunkAction {
+    return async function (dispatch) {
+        dispatch(invitationActions.getInvitations());
+
+        try {
+            const invitations = await core.organizations.invitation({
+                filter: `{"and":[{"==":[{"var":"user_id"},"${userID}"]}, {"==":[{"var":"accepted"},false]}]}`,
+            });
+            dispatch(invitationActions.getInvitationsSuccess(invitations));
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                dispatch(invitationActions.getInvitationsFailed(error.toString()));
+            } else {
+                dispatch(invitationActions.getInvitationsFailed('Unknown error'));
+            }
+        }
+    };
+}

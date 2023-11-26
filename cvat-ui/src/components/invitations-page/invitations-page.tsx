@@ -3,44 +3,29 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
-import { CombinedState, Indexable } from 'reducers';
-import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
+import { CombinedState } from 'reducers';
+import { getInvitationsAsync } from 'actions/invitations-actions';
 import EmptyListComponent from './empty-list';
 import InvitationsListComponent from './invitations-list';
 
 export default function InvitationsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const history = useHistory();
-    const fetching = useSelector((state: CombinedState) => state.projects.fetching);
-    const count = useSelector((state: CombinedState) => state.projects.current.length);
-    const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
-    const [isMounted, setIsMounted] = useState(false);
+    // const history = useHistory();
+    const fetching = useSelector((state: CombinedState) => state.invitations.fetching);
+    const invitations = useSelector((state: CombinedState) => state.invitations.invitations);
+    const userID = useSelector((state: CombinedState) => state.auth.user.id);
+    const count = invitations.length;
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery = { ...query };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
-        }
-    }
+    // const queryParams = new URLSearchParams(history.location.search);
+    // const page = queryParams.get('page') || null;
 
     useEffect(() => {
-        // dispatch(getProjectsAsync({ ...updatedQuery }));
-        setIsMounted(true);
+        dispatch(getInvitationsAsync(userID));
     }, []);
-
-    useEffect(() => {
-        if (isMounted) {
-            history.replace({
-                search: updateHistoryFromQuery(query),
-            });
-        }
-    }, [query]);
 
     const content = count ? <InvitationsListComponent /> : <EmptyListComponent />;
 

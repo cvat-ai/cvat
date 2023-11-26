@@ -14,7 +14,7 @@ import {
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData,
-    SerializedAcceptInvitation, SerializedInvitationData,
+    SerializedAcceptInvitation, SerializedInvitationData, InvitationsFilter,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -262,6 +262,11 @@ Axios.interceptors.request.use((reqConfig) => {
     }
 
     if (reqConfig.url.endsWith('/limits')) {
+        return reqConfig;
+    }
+
+    // we want to get invitations from all organizations
+    if (reqConfig.url.endsWith('/invitations')) {
         return reqConfig;
     }
 
@@ -2051,12 +2056,28 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
     }
 }
 
-async function getMembershipInvitation(id): Promise<SerializedInvitationData> {
+async function getMembershipInvitation(
+    filter: InvitationsFilter = {},
+): Promise<{ results: SerializedInvitationData[], count: number }> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/invitations/${id}`);
+        const key = filter.key || null;
+
+        if (key) {
+            response = await Axios.get(`${backendAPI}/invitations/${key}`);
+            return ({
+                results: [response.data],
+                count: 1,
+            });
+        }
+
+        response = await Axios.get(`${backendAPI}/invitations`, {
+            params: {
+                ...filter,
+            },
+        });
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);

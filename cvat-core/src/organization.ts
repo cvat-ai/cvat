@@ -323,7 +323,8 @@ Object.defineProperties(Organization.prototype.members, {
                 let rawInvitation = null;
                 if (invitation) {
                     try {
-                        rawInvitation = await serverProxy.organizations.invitation(invitation);
+                        const invitationData = await serverProxy.organizations.invitation({ key: invitation });
+                        [rawInvitation] = invitationData.results;
                     // eslint-disable-next-line no-empty
                     } catch (e) {}
                 }
@@ -332,7 +333,6 @@ Object.defineProperties(Organization.prototype.members, {
                     invitation: rawInvitation,
                 });
             }));
-
             memberships.count = result.count;
             return memberships;
         },

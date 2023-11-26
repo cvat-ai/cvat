@@ -27,7 +27,7 @@ import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
-import { SerializedAsset } from './server-response-types';
+import { InvitationsFilter, SerializedAsset } from './server-response-types';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
@@ -363,15 +363,20 @@ export default function implementAPI(cvat) {
         );
     };
 
-    cvat.organizations.invitation.implementation = async (key) => {
-        const invitation = await serverProxy.organizations.invitation(key);
+    cvat.organizations.invitation.implementation = async (filter: InvitationsFilter = {}) => {
+        const invitationsData = await serverProxy.organizations.invitation(filter);
 
-        // When we request invitation by key we need to load organization
-        const organizations = await serverProxy.organizations.get({
-            filter: { and: [{ '==': [{ var: 'id' }, invitation.organization] }] },
-        });
+        if (filter.key) {
+            // When we request invitation by key we need to load organization
+            const invitation = invitationsData.results[0];
+            const organizations = await serverProxy.organizations.get({
+                filter: { and: [{ '==': [{ var: 'id' }, invitation.organization] }] },
+            });
+            return new Invitation({ ...invitation, organization: organizations[0] });
+        }
 
-        return new Invitation({ ...invitation, organization: organizations[0] });
+        const invitations = invitationsData.results.map((invitationData) => new Invitation(invitationData));
+        return invitations;
     };
 
     cvat.webhooks.get.implementation = async (filter) => {
