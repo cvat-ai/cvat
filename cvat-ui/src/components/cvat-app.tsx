@@ -58,6 +58,8 @@ import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-pag
 
 import GuidePage from 'components/md-guide/guide-page';
 
+import InvitationsPage from 'components/invitations-page/invitations-page';
+
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { Organization, getCore } from 'cvat-core-wrapper';
 import { ErrorState, NotificationsState, PluginsState } from 'reducers';
@@ -495,6 +497,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/organization/webhooks' component={WebhooksPage} />
                                         <Route exact path='/webhooks/create' component={CreateWebhookPage} />
                                         <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
+                                        <Route exact path='/invitations' component={InvitationsPage} />
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         { routesToRender }
                                         {isModelPluginActive && (
