@@ -439,23 +439,18 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            {
-                const { states } = action.payload;
-                const { shapes } = state;
-                const [clampedOpacity, clampedSelectedOpacity] = clampOpacity(states, shapes);
-                return {
-                    ...state,
-                    shapes: {
-                        ...state.shapes,
-                        opacity: clampedOpacity,
-                        selectedOpacity: clampedSelectedOpacity,
-                    },
-                };
-            }
-
-            return state;
+        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS: {
+            const { states } = action.payload;
+            const { shapes } = state;
+            const [clampedOpacity, clampedSelectedOpacity] = clampOpacity(states, shapes);
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    opacity: clampedOpacity,
+                    selectedOpacity: clampedSelectedOpacity,
+                },
+            };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
