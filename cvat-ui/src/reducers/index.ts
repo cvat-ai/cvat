@@ -7,7 +7,7 @@ import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
     Webhook, MLModel, Organization, Job, Label,
-    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger,
+    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger, Invitation,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -927,6 +927,11 @@ export interface AnalyticsState {
     }
 }
 
+export interface InvitationsState {
+    fetching: boolean;
+    invitations: Invitation[];
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -946,6 +951,7 @@ export interface CombinedState {
     import: ImportState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
+    invitations: InvitationsState;
     webhooks: WebhooksState;
     analytics: AnalyticsState;
 }
