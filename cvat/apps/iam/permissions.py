@@ -54,7 +54,7 @@ class PermissionResult:
 
 def get_organization(request, obj):
     # Try to get organization from an object otherwise, return the organization that is specified in query parameters
-    if obj is not None and isinstance(obj, Organization):
+    if isinstance(obj, Organization):
         return obj
 
     if obj:
@@ -1941,6 +1941,10 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                     # This component doesn't define its own rules in this case
                     permissions.append(TaskPermission.create_base_perm(
                         request, view, iam_context=iam_context, scope=task_scope, obj=obj.task
+                    ))
+                elif scope == cls.Scopes.LIST and isinstance(obj, Task):
+                    permissions.append(TaskPermission.create_scope_view(
+                        request, obj, iam_context=iam_context,
                     ))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))

@@ -735,21 +735,23 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListSettings(_PermissionTestBase):
     def _test_list_settings_200(
-        self, user: str, obj_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
+        self, user: str, task_id: int, *, expected_data: Optional[Dict[str, Any]] = None, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_settings(obj_id, **kwargs)
-            assert response.status == HTTPStatus.OK
+            actual = get_paginated_collection(
+                api_client.quality_api.list_settings_endpoint,
+                task_id=task_id,
+                **kwargs,
+                return_json=True,
+            )
 
         if expected_data is not None:
-            assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
+            assert DeepDiff(expected_data, actual, ignore_order=True) == {}
 
-        return response
-
-    def _test_list_settings_403(self, user: str, obj_id: int, **kwargs):
+    def _test_list_settings_403(self, user: str, task_id: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.quality_api.retrieve_settings(
-                obj_id, **kwargs, _parse_response=False, _check_status=False
+            (_, response) = api_client.quality_api.list_settings(
+                task_id=task_id, **kwargs, _parse_response=False, _check_status=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
 
@@ -770,13 +772,12 @@ class TestListSettings(_PermissionTestBase):
         else:
             user = next(u for u in users if not is_task_staff(u["id"], task["id"]))["username"]
 
-        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
-        settings_id = settings["id"]
+        settings = [s for s in quality_settings if s["task_id"] == task["id"]]
 
         if allow:
-            self._test_list_settings_200(user, settings_id, expected_data=settings)
+            self._test_list_settings_200(user, task_id=task["id"], expected_data=settings)
         else:
-            self._test_list_settings_403(user, settings_id)
+            self._test_list_settings_403(user, task_id=task["id"])
 
     @pytest.mark.parametrize(
         "org_role, is_staff, allow",
@@ -791,7 +792,7 @@ class TestListSettings(_PermissionTestBase):
             ("worker", False, False),
         ],
     )
-    def test_user_get_settings_in_org_task(
+    def test_user_list_settings_in_org_task(
         self,
         tasks,
         users,
@@ -821,13 +822,15 @@ class TestListSettings(_PermissionTestBase):
 
         assert task
 
-        settings = next(s for s in quality_settings if s["task_id"] == task["id"])
-        settings_id = settings["id"]
+        settings = [s for s in quality_settings if s["task_id"] == task["id"]]
+        org_id = task["organization"]
 
         if allow:
-            self._test_list_settings_200(user["username"], settings_id, expected_data=settings)
+            self._test_list_settings_200(
+                user["username"], task_id=task["id"], expected_data=settings, org_id=org_id
+            )
         else:
-            self._test_list_settings_403(user["username"], settings_id)
+            self._test_list_settings_403(user["username"], task_id=task["id"], org_id=org_id)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
