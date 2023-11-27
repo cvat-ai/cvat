@@ -22,6 +22,7 @@ function InvitationWatcher(): JSX.Element {
         if (user && user.isVerified) {
             const newInvitation = localStorage.getItem('newInvitation') || null;
             if (newInvitation) {
+                localStorage.removeItem('newInvitation');
                 history.push('/invitations');
             }
         }
