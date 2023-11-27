@@ -31,6 +31,8 @@
 }
 
 .cvat-invitation-item {
+    margin-bottom: $grid-unit-size;
+
     &:hover {
         border: 1px solid $border-color-hover;
     }
@@ -45,4 +47,5 @@
             margin-left: $grid-unit-size;
         }
     }
+
 }

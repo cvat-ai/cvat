@@ -26,14 +26,20 @@ function InvitationItem(props: Props): JSX.Element {
 
     const { slug } = invitation.organizationInfo;
     const owner = invitation.owner?.username;
-
+    const clampOwner = !!owner && owner?.length > 50 && { tooltip: owner };
     const text = (
-        <Text>
-            You&apos;ve been invited to an organization&nbsp;
-            <strong>{slug}</strong>
-            &nbsp;by&nbsp;
-            <strong>{owner}</strong>
-        </Text>
+        <>
+            <Text>You&apos;ve been invited to an organization&nbsp;</Text>
+            <Text strong>{slug}</Text>
+            <Text>&nbsp;by&nbsp;</Text>
+            <Text
+                strong
+                style={clampOwner ? { width: 250 } : {}}
+                ellipsis={clampOwner}
+            >
+                {owner}
+            </Text>
+        </>
     );
 
     return (
