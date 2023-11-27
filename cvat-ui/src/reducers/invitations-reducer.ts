@@ -9,6 +9,7 @@ import { InvitationsState } from '.';
 
 const defaultState: InvitationsState = {
     fetching: false,
+    initialized: false,
     invitations: [],
     query: {
         page: 1,
@@ -27,6 +28,7 @@ export default (state: InvitationsState = defaultState, action: AnyAction): Invi
             return {
                 ...state,
                 fetching: false,
+                initialized: true,
                 invitations: action.payload.invitations,
             };
         }
@@ -34,6 +36,7 @@ export default (state: InvitationsState = defaultState, action: AnyAction): Invi
             return {
                 ...state,
                 fetching: false,
+                initialized: true,
                 invitations: [],
             };
         }

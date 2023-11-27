@@ -2,14 +2,14 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect } from 'react';
-import { useHistory } from 'react-router';
+import React, { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
 import { CombinedState, InvitationsQuery } from 'reducers';
 import { Invitation } from 'cvat-core/src/organization';
+import { acceptInvitationAsync, rejectInvitationAsync } from 'actions/invitations-actions';
 import InvitationItem from './invitation-item';
 
 import dimensions from '../projects-page/dimensions';
@@ -24,6 +24,17 @@ export default function InvitationsListComponent(props: Props): JSX.Element {
     const dispatch = useDispatch();
     const invitations = useSelector((state: CombinedState) => state.invitations.invitations);
 
+    const onAccept = useCallback((invintationKey) => {
+        dispatch(acceptInvitationAsync(invintationKey, (orgSlug: string) => {
+            localStorage.setItem('currentOrganization', orgSlug);
+            window.location.reload();
+        }));
+    }, []);
+
+    const onReject = useCallback((invintationKey) => {
+        dispatch(rejectInvitationAsync(invintationKey));
+    }, []);
+
     return (
         <>
             <Row justify='center' align='middle' className='cvat-invitations-list-content'>
@@ -33,6 +44,8 @@ export default function InvitationsListComponent(props: Props): JSX.Element {
                             <InvitationItem
                                 key={invitation.key}
                                 invitation={invitation}
+                                onAccept={onAccept}
+                                onReject={onReject}
                             />
                         ),
                     )}

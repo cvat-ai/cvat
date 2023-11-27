@@ -9,36 +9,83 @@ import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
+import Modal from 'antd/lib/modal';
+import Badge from 'antd/lib/badge';
 
 import { Invitation } from 'cvat-core/src/organization';
 
 interface Props {
     invitation: Invitation;
-    onAccept: () => void;
-    onReject: () => void;
+    onAccept: (invitationKey: string) => void;
+    onReject: (invitationKey: string) => void;
 }
 
 function InvitationItem(props: Props): JSX.Element {
-    const { invitation } = props;
+    const { invitation, onAccept, onReject } = props;
+    const { key, expired } = invitation;
+
+    const slug = typeof invitation.organization === 'number' ? '' : invitation.organization.slug;
+    const owner = invitation.owner?.username;
+
+    const text = (
+        <Text>
+            You&apos;ve been invited to an organization&nbsp;
+            <strong>{slug}</strong>
+            &nbsp;by&nbsp;
+            <strong>{owner}</strong>
+        </Text>
+    );
 
     return (
         <Col span={24}>
-            <Card className='cvat-invitation-item'>
-                <Row justify='space-between'>
-                    <Col className='cvat-invitation-description'>
-                        <Text>
-                            You&apos;ve been invited to an organization&nbsp;
-                            <strong>{invitation.organization.slug}</strong>
-                                    &nbsp;by&nbsp;
-                            <strong>{invitation.owner?.username}</strong>
-                        </Text>
-                    </Col>
-                    <Col className='cvat-invitation-actions'>
-                        <Button type='primary'>Accept</Button>
-                        <Button type='ghost'>Reject</Button>
-                    </Col>
-                </Row>
-            </Card>
+            <Badge.Ribbon
+                style={{ visibility: expired ? 'visible' : 'hidden' }}
+                className='cvat-invitation-item-ribbon'
+                placement='start'
+                text='Expired'
+                color='gray'
+            >
+                <Card className='cvat-invitation-item'>
+                    <Row justify='space-between'>
+                        <Col className='cvat-invitation-description'>
+                            {text}
+                        </Col>
+                        <Col className='cvat-invitation-actions'>
+                            <Button
+                                type='primary'
+                                disabled={expired}
+                                onClick={() => {
+                                    Modal.confirm({
+                                        title: text,
+                                        content: 'Would you like to join?',
+                                        className: 'cvat-invitaion-accept-modal',
+                                        onOk: () => {
+                                            onAccept(key);
+                                        },
+                                    });
+                                }}
+                            >
+                                Accept
+                            </Button>
+                            <Button
+                                type='ghost'
+                                onClick={() => {
+                                    Modal.confirm({
+                                        title: text,
+                                        content: 'Would you like to reject the invitation?',
+                                        className: 'cvat-invitaion-reject-modal',
+                                        onOk: () => {
+                                            onReject(key);
+                                        },
+                                    });
+                                }}
+                            >
+                                Reject
+                            </Button>
+                        </Col>
+                    </Row>
+                </Card>
+            </Badge.Ribbon>
         </Col>
     );
 }

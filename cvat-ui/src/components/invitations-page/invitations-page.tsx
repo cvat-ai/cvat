@@ -19,7 +19,6 @@ export default function InvitationsPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.invitations.fetching);
     const invitations = useSelector((state: CombinedState) => state.invitations.invitations);
     const query = useSelector((state: CombinedState) => state.invitations.query);
-    const userID = useSelector((state: CombinedState) => state.auth.user.id);
     const count = invitations.length;
 
     const updatedQuery = { ...query };
@@ -37,7 +36,7 @@ export default function InvitationsPageComponent(): JSX.Element {
     }, [query]);
 
     useEffect(() => {
-        dispatch(getInvitationsAsync(userID));
+        dispatch(getInvitationsAsync());
     }, []);
 
     const content = count ? <InvitationsListComponent query={query} /> : <EmptyListComponent />;

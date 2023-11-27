@@ -435,7 +435,6 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             loadAuthActions: null | ErrorState;
-            acceptingInvitation: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;
@@ -549,7 +548,6 @@ export interface NotificationsState {
             inviting: null | ErrorState;
             updatingMembership: null | ErrorState;
             removingMembership: null | ErrorState;
-            resendingInvitation: null | ErrorState;
             deletingInvitation: null | ErrorState;
         };
         webhooks: {
@@ -562,6 +560,12 @@ export interface NotificationsState {
             fetching: null | ErrorState;
             fetchingSettings: null | ErrorState;
             updatingSettings: null | ErrorState;
+        };
+        invitations: {
+            fetching: null | ErrorState;
+            acceptingInvitation: null | ErrorState;
+            rejectingInvitation: null | ErrorState;
+            resendingInvitation: null | ErrorState;
         }
     };
     messages: {
@@ -578,7 +582,6 @@ export interface NotificationsState {
             registerDone: string;
             requestPasswordResetDone: string;
             resetPasswordDone: string;
-            acceptInvitationDone: string;
         };
         projects: {
             restoringDone: string;
@@ -593,7 +596,10 @@ export interface NotificationsState {
             annotation: string;
             backup: string;
         };
-        organizations: {
+        invitations: {
+            newInvitations: string;
+            acceptInvitationDone: string;
+            rejectInvitationDone: string;
             resendingInvitation: string;
         }
     };
@@ -933,6 +939,7 @@ export interface InvitationsQuery {
 
 export interface InvitationsState {
     fetching: boolean;
+    initialized: boolean;
     invitations: Invitation[];
     query: InvitationsQuery;
 }

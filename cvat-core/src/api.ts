@@ -281,8 +281,8 @@ function build() {
                 );
                 return result;
             },
-            async invitation(filter = {}) {
-                const result = await PluginRegistry.apiWrapper(cvat.organizations.invitation, filter);
+            async invitations(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.invitations, filter);
                 return result;
             },
         },

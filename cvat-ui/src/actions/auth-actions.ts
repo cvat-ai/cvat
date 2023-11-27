@@ -36,12 +36,6 @@ export enum AuthActionTypes {
     LOAD_AUTH_ACTIONS = 'LOAD_AUTH_ACTIONS',
     LOAD_AUTH_ACTIONS_SUCCESS = 'LOAD_AUTH_ACTIONS_SUCCESS',
     LOAD_AUTH_ACTIONS_FAILED = 'LOAD_AUTH_ACTIONS_FAILED',
-    ACCEPT_INVITATION = 'ACCEPT_INVITATION',
-    ACCEPT_INVITATION_SUCCESS = 'ACCEPT_INVITATION_SUCCESS',
-    ACCEPT_INVITATION_FAILED = 'ACCEPT_INVITATION_FAILED',
-    REJECT_INVITATION = 'REJECT_INVITATION',
-    REJECT_INVITATION_SUCCESS = 'REJECT_INVITATION_SUCCESS',
-    REJECT_INVITATION_FAILED = 'REJECT_INVITATION_FAILED',
 }
 
 export const authActions = {
@@ -79,12 +73,6 @@ export const authActions = {
         })
     ),
     loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
-    acceptInvitation: () => createAction(AuthActionTypes.ACCEPT_INVITATION),
-    acceptInvitationSuccess: (orgSlug: string) => createAction(AuthActionTypes.ACCEPT_INVITATION_SUCCESS, { orgSlug }),
-    acceptInvitationFailed: (error: any) => createAction(AuthActionTypes.ACCEPT_INVITATION_FAILED, { error }),
-    rejectInvitation: () => createAction(AuthActionTypes.REJECT_INVITATION),
-    rejectInvitationSuccess: () => createAction(AuthActionTypes.REJECT_INVITATION_SUCCESS),
-    rejectInvitationFailed: (error: any) => createAction(AuthActionTypes.REJECT_INVITATION_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -214,39 +202,5 @@ export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
         dispatch(authActions.loadServerAuthActionsSuccess(allowChangePassword, allowResetPassword));
     } catch (error) {
         dispatch(authActions.loadServerAuthActionsFailed(error));
-    }
-};
-
-export const acceptInvitationAsync = (
-    key: string,
-    onSuccess?: (orgSlug: string) => void,
-): ThunkAction => async (dispatch) => {
-    dispatch(authActions.acceptInvitation());
-
-    try {
-        const orgSlug = await cvat.organizations.acceptInvitation(
-            key,
-        );
-
-        if (onSuccess) onSuccess(orgSlug);
-        dispatch(authActions.acceptInvitationSuccess(orgSlug));
-    } catch (error) {
-        dispatch(authActions.acceptInvitationFailed(error));
-    }
-};
-
-export const rejectInvitationAsync = (
-    key: string,
-): ThunkAction => async (dispatch) => {
-    dispatch(authActions.rejectInvitation());
-
-    try {
-        await cvat.organizations.rejectInvitation(
-            key,
-        );
-
-        dispatch(authActions.rejectInvitationSuccess());
-    } catch (error) {
-        dispatch(authActions.rejectInvitationFailed(error));
     }
 };

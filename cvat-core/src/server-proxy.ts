@@ -2056,7 +2056,7 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
     }
 }
 
-async function getMembershipInvitation(
+async function getMembershipInvitations(
     filter: InvitationsFilter = {},
 ): Promise<{ results: SerializedInvitationData[], count: number }> {
     const { backendAPI } = config;
@@ -2456,7 +2456,7 @@ export default Object.freeze({
         create: createOrganization,
         update: updateOrganization,
         members: getOrganizationMembers,
-        invitation: getMembershipInvitation,
+        invitations: getMembershipInvitations,
         delete: deleteOrganization,
         invite: inviteOrganizationMembers,
         resendInvitation: resendOrganizationInvitation,

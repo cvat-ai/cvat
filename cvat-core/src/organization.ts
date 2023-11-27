@@ -323,7 +323,7 @@ Object.defineProperties(Organization.prototype.members, {
                 let rawInvitation = null;
                 if (invitation) {
                     try {
-                        const invitationData = await serverProxy.organizations.invitation({ key: invitation });
+                        const invitationData = await serverProxy.organizations.invitations({ key: invitation });
                         [rawInvitation] = invitationData.results;
                     // eslint-disable-next-line no-empty
                     } catch (e) {}
