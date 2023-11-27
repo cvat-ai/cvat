@@ -365,13 +365,7 @@ export default function implementAPI(cvat) {
 
     cvat.organizations.invitations.implementation = async (filter: InvitationsFilter = {}) => {
         const invitationsData = await serverProxy.organizations.invitations(filter);
-        const invitations = await Promise.all(invitationsData.results.map(async (invitationData) => {
-            const organizations = await serverProxy.organizations.get({
-                filter: { and: [{ '==': [{ var: 'id' }, invitationData.organization] }] },
-            });
-            return new Invitation({ ...invitationData, organization: organizations[0] });
-        }));
-
+        const invitations = invitationsData.results.map((invitationData) => new Invitation({ ...invitationData }));
         return invitations;
     };
 

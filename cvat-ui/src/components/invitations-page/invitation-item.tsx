@@ -24,7 +24,7 @@ function InvitationItem(props: Props): JSX.Element {
     const { invitation, onAccept, onReject } = props;
     const { key, expired } = invitation;
 
-    const slug = typeof invitation.organization === 'number' ? '' : invitation.organization.slug;
+    const { slug } = invitation.organizationInfo;
     const owner = invitation.owner?.username;
 
     const text = (

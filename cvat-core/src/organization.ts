@@ -209,14 +209,16 @@ export class Invitation {
     #owner: User | null;
     #key: string;
     #expired: boolean;
-    #organization: number | Organization;
+    #organization: number;
+    #organizationInfo: Organization;
 
     constructor(initialData: SerializedInvitationData) {
         this.#createdDate = initialData.created_date;
         this.#owner = initialData.owner ? new User(initialData.owner) : null;
         this.#key = initialData.key;
         this.#expired = initialData.expired;
-        this.#organization = typeof initialData.organization === 'number' ? initialData.organization : new Organization(initialData.organization);
+        this.#organization = initialData.organization;
+        this.#organizationInfo = new Organization(initialData.organization_info);
     }
 
     get owner(): User | null {
@@ -237,6 +239,10 @@ export class Invitation {
 
     get organization(): number | Organization {
         return this.#organization;
+    }
+
+    get organizationInfo(): Organization {
+        return this.#organizationInfo;
     }
 }
 

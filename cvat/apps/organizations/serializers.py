@@ -24,6 +24,12 @@ class OrganizationReadSerializer(serializers.ModelSerializer):
             'updated_date', 'contact', 'owner']
         read_only_fields = fields
 
+class BasicOrganizationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ['id', 'slug']
+        read_only_fields = fields
+
 class OrganizationWriteSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serializer = OrganizationReadSerializer(instance, context=self.context)
@@ -56,11 +62,12 @@ class InvitationReadSerializer(serializers.ModelSerializer):
     organization = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(),
         source='membership.organization')
+    organization_info = BasicOrganizationSerializer(source='membership.organization')
     owner = BasicUserSerializer(allow_null=True)
 
     class Meta:
         model = Invitation
-        fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization', 'expired', 'accepted']
+        fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization', 'expired', 'organization_info']
         read_only_fields = fields
 
 class InvitationWriteSerializer(serializers.ModelSerializer):

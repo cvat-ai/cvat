@@ -240,5 +240,6 @@ export interface SerializedInvitationData {
     key: string;
     owner: SerializedUser;
     expired: boolean;
-    organization: number | SerializedOrganization;
+    organization: number;
+    organization_info: SerializedOrganization;
 }
