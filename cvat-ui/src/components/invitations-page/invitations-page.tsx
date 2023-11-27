@@ -9,7 +9,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { CombinedState, Indexable } from 'reducers';
 import { getInvitationsAsync } from 'actions/invitations-actions';
-import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import EmptyListComponent from './empty-list';
 import InvitationsListComponent from './invitations-list';
 
@@ -29,17 +28,12 @@ export default function InvitationsPageComponent(): JSX.Element {
             updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
     }
-    useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(query),
-        });
-    }, [query]);
 
     useEffect(() => {
         dispatch(getInvitationsAsync());
     }, []);
 
-    const content = count ? <InvitationsListComponent query={query} /> : <EmptyListComponent />;
+    const content = count ? <InvitationsListComponent query={updatedQuery} /> : <EmptyListComponent />;
 
     return (
         <div className='cvat-invitations-page'>
