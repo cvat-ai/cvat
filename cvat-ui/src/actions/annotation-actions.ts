@@ -915,7 +915,7 @@ export function getJobAsync(
             let gtJob: Job | null = null;
             if (job.type === JobType.ANNOTATION) {
                 try {
-                    [gtJob] = await cvat.jobs.get({ task_id: tid, type: JobType.GROUND_TRUTH });
+                    [gtJob] = await cvat.jobs.get({ taskID: tid, type: JobType.GROUND_TRUTH });
                     // gtJob is not available for workers
                     // eslint-disable-next-line no-empty
                 } catch (e) { }

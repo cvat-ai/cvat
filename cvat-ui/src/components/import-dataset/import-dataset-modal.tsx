@@ -108,16 +108,14 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     useEffect(() => {
         if (instance) {
-            setDefaultStorageLocation(instance.sourceStorage?.location || StorageLocation.LOCAL);
-            setDefaultStorageCloudId(instance.sourceStorage?.cloudStorageId || null);
-            let type: 'project' | 'task' | 'job';
+            setDefaultStorageLocation(instance.sourceStorage.location);
+            setDefaultStorageCloudId(instance.sourceStorage.cloudStorageId);
+            let type: 'project' | 'task' | 'job' = 'job';
 
             if (isProject()) {
                 type = 'project';
             } else if (isTask()) {
                 type = 'task';
-            } else {
-                type = 'job';
             }
             setInstanceType(`${type} #${instance.id}`);
         }
