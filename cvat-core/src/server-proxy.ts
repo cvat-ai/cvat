@@ -484,9 +484,7 @@ async function acceptOrganizationInvitation(
     return orgSlug;
 }
 
-async function rejectOrganizationInvitation(
-    key: string,
-): Promise<void> {
+async function rejectOrganizationInvitation(key: string): Promise<void> {
     try {
         await Axios.post(`${config.backendAPI}/invitations/${key}/reject`);
     } catch (errorData) {
