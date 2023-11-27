@@ -12,15 +12,15 @@ export function clampOpacity(
     shapes: SettingsState['shapes'],
     job?: Job,
 ): [number, number] {
-    const DEFAULT_OPACITY = 30;
-    const DEFAULT_SELECTED_OPACITY = 60;
+    const ENHANCED_DEFAULT_OPACITY = 30;
+    const ENHANCED_DEFAULT_SELECTED_OPACITY = 60;
 
     const withMasks = states
         .some((_state: ObjectState): boolean => _state.shapeType === ShapeType.MASK);
     const opacity = withMasks || job?.dimension === DimensionType.DIMENSION_3D ?
-        Math.max(shapes.opacity, DEFAULT_OPACITY) : shapes.opacity;
+        Math.max(shapes.opacity, ENHANCED_DEFAULT_OPACITY) : shapes.opacity;
     const selectedOpacity = withMasks || job?.dimension === DimensionType.DIMENSION_3D ?
-        Math.max(shapes.selectedOpacity, DEFAULT_SELECTED_OPACITY) : shapes.selectedOpacity;
+        Math.max(shapes.selectedOpacity, ENHANCED_DEFAULT_SELECTED_OPACITY) : shapes.selectedOpacity;
 
     return [opacity, selectedOpacity];
 }
