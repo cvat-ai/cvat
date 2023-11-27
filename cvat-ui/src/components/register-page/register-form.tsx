@@ -209,6 +209,7 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         id='email'
                         autoComplete='email'
                         placeholder='Email'
+                        disabled={!!predefinedEmail}
                         value={predefinedEmail}
                         onReset={() => form.setFieldsValue({ email: '', username: '' })}
                         onChange={(event) => {
