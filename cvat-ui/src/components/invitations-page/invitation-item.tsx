@@ -68,6 +68,7 @@ function InvitationItem(props: Props): JSX.Element {
                                         onOk: () => {
                                             onAccept(key);
                                         },
+                                        okText: 'Accept',
                                     });
                                 }}
                             >
@@ -83,6 +84,7 @@ function InvitationItem(props: Props): JSX.Element {
                                         onOk: () => {
                                             onReject(key);
                                         },
+                                        okText: 'Reject',
                                     });
                                 }}
                             >
