@@ -9,20 +9,27 @@
     padding-top: $grid-unit-size * 2;
     padding-bottom: $grid-unit-size;
     overflow: auto;
-    position: fixed;
     height: 100%;
     width: 100%;
 
+    .cvat-models-page-top-bar {
+        padding-bottom: $grid-unit-size;
+    }
+
     >div:nth-child(2) {
-        height: 80%;
+        &:not(.cvat-empty-models-list) {
+            height: 90%;
+        }
     }
 }
 
 .cvat-empty-models-list {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    .ant-empty {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
 }
 
 .cvat-models-list {
@@ -68,8 +75,6 @@
 }
 
 .cvat-models-page-top-bar {
-    margin: $grid-unit-size * 3 0;
-
     .cvat-models-page-search-bar {
         width: $grid-unit-size * 32;
         padding-left: $grid-unit-size * 0.5;
@@ -92,16 +97,11 @@
 
     > div {
         display: flex;
-        margin-right: $grid-unit-size * 4;
 
         > button {
             margin-right: $grid-unit-size;
         }
     }
-}
-
-.cvat-models-add-wrapper {
-    display: inline-block;
 }
 
 .cvat-model-delete {
@@ -159,21 +159,14 @@
     }
 }
 
-.cvat-model-item-provider {
+.cvat-model-item-top-bar {
+    width: 100%;
     position: absolute;
-    top: $grid-unit-size;
-    right: $grid-unit-size;
-}
-
-.cvat-model-item-provider-inner {
-    @extend .cvat-model-item-provider;
-
-    right: $grid-unit-size * 2;
-
-    svg {
-        width: $grid-unit-size * 4;
-        height: $grid-unit-size * 4;
-    }
+    display: flex;
+    justify-content: flex-end;
+    top: 0;
+    left: 0;
+    padding: $grid-unit-size;
 }
 
 .cvat-models-item-description {

@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -292,7 +292,11 @@ export function cropMask(rle: number[], width: number, height: number): number[]
 
         // switch current rle value
         value = Math.abs(value - 1);
-        if (croppedCount === 0 && croppedRLE.length) {
+
+        // length - 5 === latest iteration
+        // after this iteration we do not need to pop value
+        // just push found 0 elements instead
+        if (croppedCount === 0 && croppedRLE.length && idx !== rle.length - 5) {
             croppedCount = croppedRLE.pop();
         } else {
             croppedRLE.push(croppedCount);
