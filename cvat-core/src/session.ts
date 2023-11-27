@@ -872,8 +872,8 @@ export class Task extends Session {
                     dimension: data.dimension,
                     data_compressed_chunk_type: data.data_compressed_chunk_type,
                     data_chunk_size: data.data_chunk_size,
-                    target_storage: data.target_storage,
-                    source_storage: data.source_storage,
+                    target_storage: initialData.target_storage,
+                    source_storage: initialData.source_storage,
                 });
                 data.jobs.push(jobInstance);
             }
