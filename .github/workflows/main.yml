@@ -398,15 +398,21 @@ jobs:
           path: /tmp/cvat_sdk/
 
       - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
-        with:
-          hugo-version: '0.83.1'
-          extended: true
+        run: |
+          wget https://github.com/gohugoio/hugo/releases/download/v0.110.0/hugo_extended_0.110.0_Linux-64bit.tar.gz
+          (mkdir hugo_extended_0.110.0_Linux-64bit && tar -xf hugo_extended_0.110.0_Linux-64bit.tar.gz -C hugo_extended_0.110.0_Linux-64bit)
+
+          wget https://github.com/gohugoio/hugo/releases/download/v0.83.0/hugo_extended_0.83.0_Linux-64bit.tar.gz
+          (mkdir hugo_extended_0.83.0_Linux-64bit && tar -xf hugo_extended_0.83.0_Linux-64bit.tar.gz -C hugo_extended_0.83.0_Linux-64bit)
+
+          mkdir hugo
+          cp hugo_extended_0.110.0_Linux-64bit/hugo hugo/hugo-0.110
+          cp hugo_extended_0.83.0_Linux-64bit/hugo hugo/hugo-0.83
 
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
+          node-version: '18.x'
 
       - name: Install npm packages
         working-directory: ./site
@@ -417,7 +423,7 @@ jobs:
         run: |
           pip install -r site/requirements.txt
           python site/process_sdk_docs.py --input-dir /tmp/cvat_sdk/docs/ --site-root site/
-          python site/build_docs.py
+          PATH="$PWD/hugo:$PATH" python site/build_docs.py
         env:
           HUGO_ENV: production
 
