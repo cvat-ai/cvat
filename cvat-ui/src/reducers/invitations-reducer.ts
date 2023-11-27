@@ -5,6 +5,7 @@
 import { AnyAction } from 'redux';
 
 import { InvitationsActionTypes } from 'actions/invitations-actions';
+import { AuthActionTypes } from 'actions/auth-actions';
 import { InvitationsState } from '.';
 
 const defaultState: InvitationsState = {
@@ -39,6 +40,9 @@ export default (state: InvitationsState = defaultState, action: AnyAction): Invi
                 initialized: true,
                 invitations: [],
             };
+        }
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return { ...defaultState };
         }
         default:
             return state;
