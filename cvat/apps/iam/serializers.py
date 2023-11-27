@@ -16,7 +16,7 @@ from allauth.account.utils import setup_user_email
 from django.conf import settings
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
-from cvat.apps.iam.utils import is_dummy_user
+from cvat.apps.iam.utils import get_dummy_user
 
 
 class RegisterSerializerEx(RegisterSerializer):
@@ -36,7 +36,7 @@ class RegisterSerializerEx(RegisterSerializer):
         email = get_adapter().clean_email(email)
         if app_settings.UNIQUE_EMAIL:
             if email and email_address_exists(email):
-                user = is_dummy_user(email)
+                user = get_dummy_user(email)
                 if not user:
                     raise serializers.ValidationError(
                         ('A user is already registered with this e-mail address.'),
@@ -50,7 +50,7 @@ class RegisterSerializerEx(RegisterSerializer):
         self.cleaned_data = self.get_cleaned_data()
 
         # Allow to overwrite data for dummy users
-        dummy_user = is_dummy_user(self.cleaned_data["email"])
+        dummy_user = get_dummy_user(self.cleaned_data["email"])
         if dummy_user:
             user = dummy_user
 

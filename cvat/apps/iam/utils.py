@@ -31,7 +31,7 @@ def build_iam_context(request, organization, membership):
     }
 
 
-def is_dummy_user(email):
+def get_dummy_user(email):
     from allauth.account.models import EmailAddress
     from allauth.account import app_settings
     from allauth.account.utils import filter_users_by_email
