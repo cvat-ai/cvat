@@ -12,7 +12,7 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 import {
     SettingsState, GridColor, FrameSpeed, ColorBy,
 } from 'reducers';
-import { clampOpacity } from 'utils/opacity-checker';
+import { clampOpacity } from 'utils/clamp-opacity';
 
 const defaultState: SettingsState = {
     shapes: {
