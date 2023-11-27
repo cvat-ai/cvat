@@ -99,7 +99,7 @@ def get_iam_context(request, obj):
     if organization and not request.user.is_superuser and membership is None and not iam_context.get('is_crowdsourcing', False):
         # Allow inactive members view, accept, reject their invitations
         view = request.parser_context.get('view')
-        if view.basename == 'invitation' and view.action in ['retrieve', 'accept', 'reject']:
+        if not (view.basename == 'invitation' and view.action in ['retrieve', 'accept', 'reject']):
             raise PermissionDenied({'message': 'You should be an active member in the organization'})
 
     return iam_context

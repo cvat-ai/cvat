@@ -266,7 +266,11 @@ Axios.interceptors.request.use((reqConfig) => {
     }
 
     // we want to get invitations from all organizations
-    if (reqConfig.url.endsWith('/invitations') && reqConfig.method === 'get') {
+    const { backendAPI } = config;
+    const getInvitations = reqConfig.url.endsWith('/invitations') && reqConfig.method === 'get';
+    const acceptRejectInvitation = reqConfig.url.startsWith(`${backendAPI}/invitations`) &&
+                                    (reqConfig.url.endsWith('/accept') || reqConfig.url.endsWith('/reject'));
+    if (getInvitations || acceptRejectInvitation) {
         return reqConfig;
     }
 
