@@ -216,7 +216,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
     search_fields = ('owner',)
     filter_fields = list(search_fields) + ['user_id', 'accepted']
     simple_filters = list(search_fields)
-    ordering_fields = list(filter_fields) + ['created_date']
+    ordering_fields = list(simple_filters) + ['created_date']
     ordering = '-created_date'
     lookup_fields = {
         'owner': 'owner__username',

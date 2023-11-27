@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.10.0
+  version: 2.10.0.dev20231127123303
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -1320,7 +1320,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner'].
+           Available filter_fields: ['owner', 'user_id', 'accepted'].
         schema:
           type: string
       - name: org
@@ -1548,7 +1548,7 @@ paths:
   /api/invitations/{key}/resend:
     post:
       operationId: invitations_resend
-      summary: Method resends the invitation
+      summary: Method resends the invitation to organization
       parameters:
       - in: path
         name: key
@@ -6413,6 +6413,16 @@ components:
       oneOf:
       - $ref: '#/components/schemas/ProjectFileRequest'
       nullable: true
+    BasicOrganization:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
     BasicUser:
       type: object
       properties:
@@ -7355,8 +7365,11 @@ components:
         expired:
           type: boolean
           readOnly: true
+        organization_info:
+          $ref: '#/components/schemas/BasicOrganization'
       required:
       - organization
+      - organization_info
       - owner
       - role
       - user
@@ -9242,6 +9255,7 @@ components:
         last_name:
           type: string
       required:
+      - email
       - username
     RegisterSerializerExRequest:
       type: object
@@ -9269,6 +9283,7 @@ components:
           type: string
           minLength: 1
       required:
+      - email
       - password1
       - password2
       - username
