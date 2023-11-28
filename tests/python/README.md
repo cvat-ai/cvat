@@ -33,17 +33,21 @@ which are used by containers for the testing system.
 
 **Running tests**
 
-Run all REST API tests:
+- Run all REST API tests:
 
-```
-pytest ./tests/python
-```
+  ```shell
+  pytest ./tests/python
+  ```
 
-This command will automatically start all necessary docker containers.
+  This command will automatically start all necessary docker containers.
+  See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
+  to get more information about tests running.
 
-   See the [contributing guide](../../site/content/en/docs/contributing/running-tests.md)
-   to get more information about tests running.
+- Run tests to check the functionality of limiting active jobs in a queue per user:
 
+  ```shell
+  ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py
+  ```
 ## How to upgrade testing assets?
 
 When you have a new use case which cannot be expressed using objects already

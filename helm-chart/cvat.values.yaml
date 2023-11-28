@@ -3,51 +3,6 @@ analytics:
 
 ingress:
   enabled: true
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
-    kubernetes.io/ingress.class: traefik
-  hosts:
-    - host: cvat.local
-      paths:
-        - path: /api
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /admin
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /static
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /django-rq
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /git
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /opencv
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path: /profiler
-          pathType: "Prefix"
-          service:
-            name: backend-service
-            port: 8080
-        - path : /
-          pathType: "Prefix"
-          service:
-            name: frontend-service
-            port: 80
+
 traefik:
   enabled: true

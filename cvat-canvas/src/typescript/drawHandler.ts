@@ -1,4 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1235,7 +1236,7 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     public constructor(
-        onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean, prevDrawData?: DrawData) => void,
+        onDrawDone: DrawHandlerImpl['onDrawDoneDefault'],
         canvas: SVG.Container,
         text: SVG.Container,
         autoborderHandler: AutoborderHandler,

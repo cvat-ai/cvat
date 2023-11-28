@@ -16,6 +16,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.9.1'></a>
+## \[2.9.1\] - 2023-11-23
+
+This release has changes only in the Enterprise version.
+
+<a id='changelog-2.9.0'></a>
+## \[2.9.0\] - 2023-11-23
+
+### Added
+
+- CVAT now supports serverless Nuclio functions that return skeleton annotations.
+  We've added a keypoint detector that supports skeletons for the following classes:
+  body, head, foot, and hands. Deployment command: `./deploy_cpu.sh pytorch/mmpose/hrnet32/nuclio/`
+  (<https://github.com/opencv/cvat/pull/7033>)
+
+- Implemented a feature that allows slicing one polygon/mask shape into two parts
+  (<https://github.com/opencv/cvat/pull/7084>)
+
+- Implemented a feature that allows joining several masks into a single one
+  (<https://github.com/opencv/cvat/pull/7084>)
+
+- \[Helm\] Introduced values that apply to all backend deployments/jobs
+  (<https://github.com/opencv/cvat/pull/7148>)
+
+### Changed
+
+- The "use cache" option on the server is now ignored when creating a
+  task with cloud storage data (<https://github.com/opencv/cvat/pull/7087>)
+
+- The Docker Compose file and Helm chart have been updated to enable Traefik
+  access logs by default and change the log format to JSON
+  (<https://github.com/opencv/cvat/pull/7109>)
+
+- \[Helm\] The PersistentVolumeClaim for the volume used to hold application
+  data is now retained after uninstall
+  (<https://github.com/opencv/cvat/pull/7123>)
+
+- \[Helm\] All backend-related deployments now
+  use `cvat-app` as the value for the `app` label
+  (<https://github.com/opencv/cvat/pull/7127>)
+
+- \[Helm\] The minimum compatible Kubernetes version
+  is now 1.19.0 (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Helm\] The CVAT hostname can now be configured with `ingress.hostname` option
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Helm\] The `ingress.tls` configuration has been reworked.
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Helm\] The Traefik subchart updated to 25.0.0 (appVersion v2.10.5)
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Docker Compose\] Traefik updated to v2.10.\*
+  (<https://github.com/opencv/cvat/pull/7150>)
+
+### Removed
+
+- Support for V1 cloudstorages/id/content endpoint
+  (<https://github.com/opencv/cvat/pull/6946>)
+
+- \[Helm\] `ingress.hosts` has been removed, use `ingress.hostname` instead.
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+### Fixed
+
+- Fixed a data race condition during GT job creation
+  (<https://github.com/opencv/cvat/pull/7096>)
+
+- Resolved an issue where the job state could not be changed
+  multiple times without reloading the annotation view
+  (<https://github.com/opencv/cvat/pull/7158>)
+
+- Corrected an issue where compressed chunks did not
+  utilize the Exif rotation tag
+  (<https://github.com/opencv/cvat/pull/7162>)
+
+- Minor styling issues on empty models page
+  (<https://github.com/opencv/cvat/pull/7164>)
+
+- Fixed minor issue when brush marker is appended to a final mask
+  (<https://github.com/opencv/cvat/pull/7168>)
+
 <a id='changelog-2.8.2'></a>
 ## \[2.8.2\] - 2023-11-06
 
@@ -61,8 +144,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (<https://github.com/opencv/cvat/pull/7025>)
 
 - Bug with viewing dependent RQ jobs for downloading resources from
-cloud storage when file path contains sub-directories.
-This is relevant for admins that can view detailed information about RQ queues.
+  cloud storage when file path contains sub-directories.
+  This is relevant for admins that can view detailed information about RQ queues.
   (<https://github.com/opencv/cvat/pull/6975>)
 
 - OpenCV.js memory leak with TrackerMIL
