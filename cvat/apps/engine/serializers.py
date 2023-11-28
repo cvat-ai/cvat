@@ -638,10 +638,10 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             frame_selection_method = validated_data.pop("frame_selection_method", None)
             if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
                 frame_count = validated_data.pop("frame_count")
-                if size <= frame_count:
+                if size < frame_count:
                     raise serializers.ValidationError(
-                        f"The number of frames requested ({frame_count}) must be lesser than "
-                        f"the number of the task frames ({size})"
+                        f"The number of frames requested ({frame_count}) "
+                        f"must be not be greater than the number of the task frames ({size})"
                     )
 
                 seed = validated_data.pop("seed", None)
@@ -650,6 +650,13 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 # so here we specify it explicitly
                 from numpy import random
                 rng = random.Generator(random.MT19937(seed=seed))
+
+                if seed is not None and frame_count < size:
+                    # Reproduce the old (a little bit incorrect) behavior that existed before
+                    # https://github.com/opencv/cvat/pull/7126
+                    # to make the old seed-based sequences reproducible
+                    valid_frame_ids = [v for v in valid_frame_ids if v != task.data.stop_frame]
+
                 frames = rng.choice(
                     list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
                 ).tolist()
@@ -1030,6 +1037,8 @@ class DataSerializer(serializers.ModelSerializer):
                 )
 
 class StorageSerializer(serializers.ModelSerializer):
+    cloud_storage_id = serializers.IntegerField(required=False, allow_null=True)
+
     class Meta:
         model = models.Storage
         fields = ('id', 'location', 'cloud_storage_id')
@@ -1980,62 +1989,80 @@ class RelatedFileSerializer(serializers.ModelSerializer):
         read_only_fields = ('path',)
 
 
-def _update_related_storages(instance, validated_data):
-    for storage in ('source_storage', 'target_storage'):
-        new_conf = validated_data.pop(storage, None)
+def _update_related_storages(
+    instance: Union[models.Project, models.Task],
+    validated_data: Dict[str, Any],
+) -> None:
+    for storage_type in ('source_storage', 'target_storage'):
+        new_conf = validated_data.pop(storage_type, None)
 
         if not new_conf:
             continue
 
-        cloud_storage_id = new_conf.get('cloud_storage_id')
-        if cloud_storage_id:
-            _validate_existence_of_cloud_storage(cloud_storage_id)
+        new_cloud_storage_id = new_conf.get('cloud_storage_id')
+        new_location = new_conf.get('location')
 
         # storage_instance maybe None
-        storage_instance = getattr(instance, storage)
+        storage_instance = getattr(instance, storage_type)
+
+        if new_cloud_storage_id:
+            if new_location and new_location != models.Location.CLOUD_STORAGE:
+                raise serializers.ValidationError(
+                    f"It is not allowed to specify '{new_location}' location together with cloud storage id"
+                )
+            elif (
+                not new_location
+                and getattr(storage_instance, "location", None) != models.Location.CLOUD_STORAGE
+            ):
+                raise serializers.ValidationError(
+                    f"The configuration of {storage_type} is not full"
+                )
+
+            if not models.CloudStorage.objects.filter(id=new_cloud_storage_id).exists():
+                raise serializers.ValidationError(
+                    f"The specified cloud storage {new_cloud_storage_id} does not exist."
+                )
+        else:
+            if new_location == models.Location.CLOUD_STORAGE:
+                raise serializers.ValidationError(
+                    "Cloud storage was selected as location but its id was not specified"
+                )
+            elif (
+                not new_location
+                and getattr(storage_instance, "location", None) == models.Location.CLOUD_STORAGE
+                and "cloud_storage_id" in new_conf
+            ):
+                raise serializers.ValidationError(
+                    "It is not allowed to reset a cloud storage id without explicitly resetting a location"
+                )
+
         if not storage_instance:
             storage_instance = models.Storage(**new_conf)
             storage_instance.save()
-            setattr(instance, storage, storage_instance)
+            setattr(instance, storage_type, storage_instance)
             continue
 
-        new_location = new_conf.get('location')
         storage_instance.location = new_location or storage_instance.location
-        storage_instance.cloud_storage_id = new_conf.get('cloud_storage_id', \
-            storage_instance.cloud_storage_id if not new_location else None)
-
-        cloud_storage_id = storage_instance.cloud_storage_id
-        if cloud_storage_id:
-            try:
-                _ = models.CloudStorage.objects.get(id=cloud_storage_id)
-            except models.CloudStorage.DoesNotExist:
-                raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
-
+        storage_instance.cloud_storage_id = new_cloud_storage_id
         storage_instance.save()
 
-def _configure_related_storages(validated_data):
-
+def _configure_related_storages(validated_data: Dict[str, Any]) -> Dict[str, Optional[models.Storage]]:
     storages = {
         'source_storage': None,
         'target_storage': None,
     }
 
     for i in storages:
-        storage_conf = validated_data.get(i)
-        if storage_conf:
-            cloud_storage_id = storage_conf.get('cloud_storage_id')
-            if cloud_storage_id:
-                _validate_existence_of_cloud_storage(cloud_storage_id)
+        if storage_conf := validated_data.get(i):
+            if (
+                (cloud_storage_id := storage_conf.get('cloud_storage_id')) and
+                not models.CloudStorage.objects.filter(id=cloud_storage_id).exists()
+            ):
+                raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
             storage_instance = models.Storage(**storage_conf)
             storage_instance.save()
             storages[i] = storage_instance
     return storages
-
-def _validate_existence_of_cloud_storage(cloud_storage_id):
-    try:
-        _ = models.CloudStorage.objects.get(id=cloud_storage_id)
-    except models.CloudStorage.DoesNotExist:
-        raise serializers.ValidationError(f'The specified cloud storage {cloud_storage_id} does not exist.')
 
 class AssetReadSerializer(WriteOnceMixin, serializers.ModelSerializer):
     filename = serializers.CharField(required=True, max_length=1024)

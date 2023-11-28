@@ -242,7 +242,7 @@ class Data(models.Model):
         return int(match.group(1)) if match else 1
 
     def get_valid_frame_indices(self):
-        return range(self.start_frame, self.stop_frame, self.get_frame_step())
+        return range(self.start_frame, self.stop_frame + 1, self.get_frame_step())
 
     def get_data_dirname(self):
         return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
@@ -599,7 +599,7 @@ class Segment(models.Model):
             )
 
         if self.stop_frame < self.start_frame:
-            raise ValidationError("stop_frame cannot be lesser than start_frame")
+            raise ValidationError("stop_frame cannot be less than start_frame")
 
         return super().clean()
 
@@ -1114,7 +1114,12 @@ class CloudStorage(models.Model):
 
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
-    cloud_storage_id = models.IntegerField(null=True, blank=True, default=None)
+    cloud_storage = models.ForeignKey(
+        CloudStorage,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='+',
+    )
 
     class Meta:
         default_permissions = ()
