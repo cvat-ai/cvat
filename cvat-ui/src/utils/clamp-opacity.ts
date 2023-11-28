@@ -15,12 +15,22 @@ export function clampOpacity(
     const ENHANCED_DEFAULT_OPACITY = 30;
     const ENHANCED_DEFAULT_SELECTED_OPACITY = 60;
 
+    if (shapes.opacity >= ENHANCED_DEFAULT_OPACITY && shapes.selectedOpacity >= ENHANCED_DEFAULT_SELECTED_OPACITY) {
+        return [shapes.opacity, shapes.selectedOpacity];
+    }
+
+    const opacity = Math.max(shapes.opacity, ENHANCED_DEFAULT_OPACITY);
+    const selectedOpacity = Math.max(shapes.selectedOpacity, ENHANCED_DEFAULT_SELECTED_OPACITY);
+
+    if (job?.dimension === DimensionType.DIMENSION_3D) {
+        return [opacity, selectedOpacity];
+    }
+
     const withMasks = states
         .some((_state: ObjectState): boolean => _state.shapeType === ShapeType.MASK);
-    const opacity = withMasks || job?.dimension === DimensionType.DIMENSION_3D ?
-        Math.max(shapes.opacity, ENHANCED_DEFAULT_OPACITY) : shapes.opacity;
-    const selectedOpacity = withMasks || job?.dimension === DimensionType.DIMENSION_3D ?
-        Math.max(shapes.selectedOpacity, ENHANCED_DEFAULT_SELECTED_OPACITY) : shapes.selectedOpacity;
+    if (withMasks) {
+        return [opacity, selectedOpacity];
+    }
 
-    return [opacity, selectedOpacity];
+    return [shapes.opacity, shapes.selectedOpacity];
 }
