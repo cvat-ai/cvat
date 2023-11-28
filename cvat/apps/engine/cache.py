@@ -65,7 +65,7 @@ class MediaCache:
 
     def get_selective_job_chunk_data_with_mime(self, chunk_number, quality, job):
         item = self._get_or_set_cache_item(
-            key=f'{job.id}_{chunk_number}_{quality}',
+            key=f'job_{job.id}_{chunk_number}_{quality}',
             create_function=lambda: self.prepare_selective_job_chunk(job, quality, chunk_number),
         )
 

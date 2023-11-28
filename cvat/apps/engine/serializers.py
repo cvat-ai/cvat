@@ -638,10 +638,10 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             frame_selection_method = validated_data.pop("frame_selection_method", None)
             if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
                 frame_count = validated_data.pop("frame_count")
-                if size <= frame_count:
+                if size < frame_count:
                     raise serializers.ValidationError(
-                        f"The number of frames requested ({frame_count}) must be lesser than "
-                        f"the number of the task frames ({size})"
+                        f"The number of frames requested ({frame_count}) "
+                        f"must be not be greater than the number of the task frames ({size})"
                     )
 
                 seed = validated_data.pop("seed", None)
@@ -650,6 +650,13 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 # so here we specify it explicitly
                 from numpy import random
                 rng = random.Generator(random.MT19937(seed=seed))
+
+                if seed is not None and frame_count < size:
+                    # Reproduce the old (a little bit incorrect) behavior that existed before
+                    # https://github.com/opencv/cvat/pull/7126
+                    # to make the old seed-based sequences reproducible
+                    valid_frame_ids = [v for v in valid_frame_ids if v != task.data.stop_frame]
+
                 frames = rng.choice(
                     list(valid_frame_ids), size=frame_count, shuffle=False, replace=False
                 ).tolist()
