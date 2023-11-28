@@ -13,7 +13,6 @@ See:
 - [Creating auto annotation Skeleton task](#creating-auto-annotation-skeleton-task)
 - [Automatic annotation with Skeletons](#automatic-annotation-with-skeletons)
   - [Editing skeletons on the canvas](#editing-skeletons-on-the-canvas)
-  - [Editing skeletons on the sidebar](#editing-skeletons-on-the-sidebar)
 
 ## Creating auto annotation Skeleton task
 
@@ -57,40 +56,6 @@ To automatically annotate with **Skeleton**, do the following
 
 ### Editing skeletons on the canvas
 
-A drawn skeleton is encompassed within a bounding box,
-it allows you to manipulate the skeleton as a regular bounding box,
-enabling actions such as dragging, resizing, or rotating:
+Individual skeleton points can be adjusted independently.
 
-![](/images/skeleton_editing_canvas.gif)
-
-Furthermore, individual skeleton points can be adjusted independently.
-Upon repositioning a point, the bounding box adjusts automatically,
-without affecting other points:
-
-![](/images/skeleton_editing_canvas-2.gif)
-
-Additionally, **Shortcuts** are applicable
-to both the skeleton as a whole and its individual elements:
-
-- To use a shortcut to the entire skeleton, hover over
-  the bounding box and push the shortcut keyboard key.
-  This action is applicable for shortcuts like lock, occluded,
-  pinned, keyframe, and outside for skeleton tracks.
-- To use a shortcut to a specific skeleton point, hover over the
-  point and push the shortcut keyboard key.
-  The same list of shortcuts is available, with the addition of outside,
-  which is also applicable to individual skeleton shape elements.
-
-### Editing skeletons on the sidebar
-
-Шn CVAT, the sidebar offers an alternative method for setting up skeleton properties and attributes.
-This approach is similar to that used for other object types supported by CVAT, but with a few specific alterations:
-
-- Users cannot change the label of a skeleton.
-- The `Outside` property is consistently accessible for all skeleton elements, regardless of whether they are tracks.
-- An additional collapsible section is provided for users to view a comprehensive list of skeleton parts.
-
-<div style="display: flex; align-items: flex-start;">
-    <img src="/images/image-skeleton-track-sidebar.jpg" width="300px" />
-    <img src="/images/image-skeleton-shape-sidebar.jpg" width="300px" />
-</div>
+For more information, see [Editing Skeleton points on canvas](/docs/manual/advanced/annotation-with-skeletons/manual-skeletons/#editing-skeletons-on-the-canvas).

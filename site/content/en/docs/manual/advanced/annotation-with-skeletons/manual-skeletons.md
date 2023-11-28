@@ -36,6 +36,8 @@ The skeleton **Configurator** has the following fields:
 
 ![](/images/image-skeleton-configurator-overview.jpg)
 
+<!--lint disable maximum-line-length-->
+
 | Number | Name                        | Description                                                                                                                           |
 | ------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | **1**  | **Upload background image** | (Optional) Use it to upload a background image, to draw a skeleton on the top of it.                                                  |
@@ -46,6 +48,8 @@ The skeleton **Configurator** has the following fields:
 | **6**  | **Download skeleton**       | Use it to download created skeleton in .SVG format.                                                                                   |
 | **7**  | **Upload skeleton**         | Use it to upload skeleton in .SVG format.                                                                                             |
 | **7**  | **Drawing area**            | Use it as a canvas to draw a skeleton.                                                                                                |
+
+<!--lint enable maximum-line-length-->
 
 ### Creating Skeleton task
 
@@ -64,7 +68,6 @@ To create **Skeleton** task, do the following:
    - **Submit & Open** to create and open the task.
    - **Submit & Continue** to submit the configuration and start creating a new task.
 
-
 ### Configuring Skeleton points
 
 You can add labels, attributes and change colour of any point of the skeleton.
@@ -77,7 +80,6 @@ In the opened menu, you can change the point setting. It is similar to
 [adding labels and attributes of the regular task](docs/manual/basics/create_an_annotation_task/#create-a-task):
 
 ![](/images/image-skeleton-point-setup.jpg)
-
 
 > **Note** that you cannot change skeleton configuration for an existing task/project.
 
@@ -97,7 +99,6 @@ To annotate with **Skeleton**, do the following
 4. Draw a skeleton on the image.
 
 ![](/images/image-draw-new-skeleton.gif)
-
 
 ### Editing skeletons on the canvas
 
