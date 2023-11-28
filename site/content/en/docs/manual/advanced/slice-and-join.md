@@ -32,7 +32,8 @@ To join masks, do the following:
    select **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg).
 2. Click on the labels, to select masks that you want to join.
 3. (Optional) To remove selection double click on the mask.
-4. Press the **J** key on the keyboard to execute the join operation.
+4. Click again on **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg)
+  (**J**) to execute the join operation.
 
 Upon completion, the selected masks will be merged into a single mask.
 
@@ -59,6 +60,6 @@ To slice mask or polygon, do the following:
 4. Draw a line across the label to define the slicing path.
    <br> **Note**: The line cannot cross itself.
    <br> **Note**: The line cannot cross the contour more than twice.
-5. Click on the contour (**Alt**+**J**) to finalize slicing.
+5. Click on the contour (**Alt**+**J**) (outside the contour) to finalize slicing.
 
 ![Slicing tool](/images/slicing-tool-02.gif)
