@@ -58,4 +58,4 @@ To automatically annotate with **Skeleton**, do the following
 
 Individual skeleton points can be adjusted independently.
 
-For more information, see [Editing Skeleton points on canvas](/docs/manual/advanced/annotation-with-skeletons/manual-skeletons/#editing-skeletons-on-the-canvas).
+For more information, see [**Editing Skeleton points on canvas**](/docs/manual/advanced/annotation-with-skeletons/manual-skeletons/#editing-skeletons-on-the-canvas).
