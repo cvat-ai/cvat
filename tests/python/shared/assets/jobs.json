@@ -30,7 +30,7 @@
       "stop_frame": 10,
       "task_id": 22,
       "type": "ground_truth",
-      "updated_date": "2023-05-26T16:16:50.630000Z",
+      "updated_date": "2023-11-24T15:18:55.216000Z",
       "url": "http://localhost:8080/api/jobs/28"
     },
     {
@@ -60,7 +60,7 @@
       "stop_frame": 10,
       "task_id": 22,
       "type": "annotation",
-      "updated_date": "2023-05-26T16:11:24.294000Z",
+      "updated_date": "2023-11-24T15:23:30.269000Z",
       "url": "http://localhost:8080/api/jobs/27"
     },
     {
