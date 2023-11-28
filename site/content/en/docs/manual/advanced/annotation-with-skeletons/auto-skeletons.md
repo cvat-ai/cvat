@@ -16,7 +16,7 @@ See:
 
 ## Creating auto annotation Skeleton task
 
-To auto annotation **Skeleton** task, do the following:
+To annotate the **Skeleton** task, do the following:
 
 1. Open **Basic configurator**.
 2. On the **Constructor** tab, click **From model**.
@@ -42,14 +42,14 @@ To auto annotation **Skeleton** task, do the following:
 
 To automatically annotate with **Skeleton**, do the following
 
-1. Open job and on the tools panel select **AI Tools** > **Detectors**
-2. From the drop-down list select model.
-   You will see list of points to match and
+1. Open the job and on the tools panel select **AI Tools** > **Detectors**
+2. From the drop-down list select the model.
+   You will see a list of points to match and
    the name of the label on the top of the list.
 
    ![](/images/auto-annot-sk-detectors.jpg)
 
-3. (Optional) Remove point that you
+3. (Optional) Remove the point that you
    do not need, by clicking on the
    bin icon.
 4. Click **Annotate**.

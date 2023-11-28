@@ -10,7 +10,7 @@ structures through the implementation of **Skeleton** annotations.
 
 Ideal for scenarios like human pose estimation and
 facial landmark detection, skeleton annotations offer a
-structured and precise approach to marking intricate
+the structured and precise approach to marking intricate
 details in images and videos.
 
 See:
@@ -24,7 +24,7 @@ See:
 
 ## Skeleton task
 
-To start annotating using skeletons, you need to setup a **Skeleton** task
+To start annotating using skeletons, you need to set up a **Skeleton** task
 in **Configurator**:
 
 To open **Configurator**, when [creating a task](/docs/manual/basics/create_an_annotation_task/),
@@ -40,7 +40,7 @@ The skeleton **Configurator** has the following fields:
 
 | Number | Name                        | Description                                                                                                                           |
 | ------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **1**  | **Upload background image** | (Optional) Use it to upload a background image, to draw a skeleton on the top of it.                                                  |
+| **1**  | **Upload background image** | (Optional) Use it to upload a background image, to draw a skeleton on top of it.                                                      |
 | **2**  | **Add point**               | Use it to add Skeleton points to the **Drawing area** (**8**).                                                                        |
 | **3**  | **Click and drag**          | Use it to move points across the **Drawing area** (**8**).                                                                            |
 | **4**  | **Add edge**                | Use it to add edge on the **Drawing area** (**8**) to connect the points (**2**).                                                     |
@@ -53,7 +53,7 @@ The skeleton **Configurator** has the following fields:
 
 ### Creating Skeleton task
 
-To create **Skeleton** task, do the following:
+To create the **Skeleton** task, do the following:
 
 1. Open **Configurator**.
 2. (Optional) Upload background image.
@@ -70,7 +70,7 @@ To create **Skeleton** task, do the following:
 
 ### Configuring Skeleton points
 
-You can add labels, attributes and change colour of any point of the skeleton.
+You can add labels, and attributes and change the color of any point of the skeleton.
 
 To do this, right-click on the skeleton point and select **Configure**:
 
@@ -81,9 +81,9 @@ In the opened menu, you can change the point setting. It is similar to
 
 ![](/images/image-skeleton-point-setup.jpg)
 
-> **Note** that you cannot change skeleton configuration for an existing task/project.
+> **Note** that you cannot change the skeleton configuration for an existing task/project.
 
-> You can copy/insert skeletons configuration from the **Raw** tab of the label configurator.
+> You can copy/insert skeleton configuration from the **Raw** tab of the label configurator.
 
 ## Annotation with Skeletons
 
@@ -115,11 +115,11 @@ without affecting other points:
 ![](/images/skeleton_editing_canvas-2.gif)
 
 Additionally, **Shortcuts** are applicable
-to both the skeleton as a whole and its individual elements:
+to both the skeleton as a whole and its elements:
 
 - To use a shortcut to the entire skeleton, hover over
   the bounding box and push the shortcut keyboard key.
-  This action is applicable for shortcuts like lock, occluded,
+  This action is applicable for shortcuts like the lock, occluded,
   pinned, keyframe, and outside for skeleton tracks.
 - To use a shortcut to a specific skeleton point, hover over the
   point and push the shortcut keyboard key.
