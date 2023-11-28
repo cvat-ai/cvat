@@ -1021,6 +1021,7 @@
   "pk": "5FjIXya6fTGvlRpauFvi2QN1wDOqo1V9REB5rJinDR8FZO9gr0qmtWpghsCte8Y1",
   "fields": {
     "created_date": "2022-01-19T13:54:42.005Z",
+    "sent_date": "2022-01-19T13:54:42.005Z",
     "owner": [
       "business1"
     ],
@@ -1032,6 +1033,7 @@
   "pk": "62HplmGPJuzpTXSyzPWiAlREkq8smCjK30GdtYze3q03J9X5ghQe3oMhlAyQ0WBH",
   "fields": {
     "created_date": "2021-12-14T19:54:46.172Z",
+    "sent_date": "2021-12-14T19:54:46.172Z",
     "owner": [
       "business1"
     ],
@@ -1043,6 +1045,7 @@
   "pk": "BrwoDmMNQQ1v9WXOukp9DwQVuqB3RDPjpUECCEq6QcAuG0Pi8k1IYtQ9uz9jg0Bv",
   "fields": {
     "created_date": "2022-01-19T13:54:42.015Z",
+    "sent_date": "2022-01-19T13:54:42.015Z",
     "owner": [
       "business1"
     ],
@@ -1054,6 +1057,7 @@
   "pk": "Fi3WRUhFxTWpMiVpdwNR2CGyhgcIXSCUYgPCugPq72QUOgHz9NSMOGiKS3PfJ7Ql",
   "fields": {
     "created_date": "2022-02-24T21:29:21.978Z",
+    "sent_date": "2022-02-24T21:29:21.978Z",
     "owner": [
       "admin1"
     ],
@@ -1065,6 +1069,7 @@
   "pk": "Lzyzgo161I7Fej1vC5RXPdyUgCBfbuxsEEhHYeYOJqvbeJe5clPDnqCm7pKOC9tr",
   "fields": {
     "created_date": "2021-12-14T18:47:39.935Z",
+    "sent_date": "2021-12-14T18:47:39.935Z",
     "owner": [
       "user1"
     ],
@@ -1076,6 +1081,7 @@
   "pk": "Y1I4FFU27WRqq2rWQLtKjDztMqpvqW7gJgg7q73F7oE4H5kukvXugWjiTLHclPDu",
   "fields": {
     "created_date": "2021-12-14T19:54:33.591Z",
+    "sent_date": "2021-12-14T19:54:33.591Z",
     "owner": [
       "business1"
     ],
@@ -1087,6 +1093,7 @@
   "pk": "aViZkw9TaieLoZaswEnkMy8tTet1yYDRof3eKZDtZaHf1BItgCNNM6y6fnjrkrej",
   "fields": {
     "created_date": "2021-12-14T18:47:49.322Z",
+    "sent_date": "2021-12-14T18:47:49.322Z",
     "owner": [
       "user1"
     ],
@@ -1098,6 +1105,7 @@
   "pk": "cbmm587Z05WQUYvesIZUCtbTl7CEL4thv1Au6Nr51psflITn9X6BsvNFXcNEkoYn",
   "fields": {
     "created_date": "2021-12-14T18:48:46.579Z",
+    "sent_date": "2021-12-14T18:48:46.579Z",
     "owner": [
       "user1"
     ],
@@ -1109,6 +1117,7 @@
   "pk": "d2Zaawf81uImG1nmWA0Va0Bv5EPERt1edJDTgTgMZiefZ2QmC1IdPld9LIPnkiWR",
   "fields": {
     "created_date": "2023-09-15T07:53:52.115Z",
+    "sent_date": "2023-09-15T07:53:52.115Z",
     "owner": [
       "user1"
     ],
@@ -1120,6 +1129,7 @@
   "pk": "h43G28di7vfs4Jv5VrKZ26xvGAfm6Yc2FFv14z9EKhiuIEDQ22pEnzmSCab8MnK1",
   "fields": {
     "created_date": "2021-12-14T19:55:13.745Z",
+    "sent_date": "2021-12-14T19:55:13.745Z",
     "owner": [
       "business1"
     ],
@@ -1131,6 +1141,7 @@
   "pk": "hIH9RB3QqZLFwdUDmufaSPc2H8uS5cNjcG6pk8gfAIQ4jg6nJZZWDIQHMN1gFMk9",
   "fields": {
     "created_date": "2022-09-28T13:11:37.839Z",
+    "sent_date": "2022-09-28T13:11:37.839Z",
     "owner": [
       "admin1"
     ],
@@ -1142,6 +1153,7 @@
   "pk": "mFpVV2Yh39uUdU8IpigSxvuPegqi8sjxFi6P9Jdy6fBE8Ky9Juzi1KjeGDQsizSS",
   "fields": {
     "created_date": "2021-12-14T19:54:56.431Z",
+    "sent_date": "2021-12-14T19:54:56.431Z",
     "owner": [
       "business1"
     ],
@@ -1153,6 +1165,7 @@
   "pk": "q8GWTPiR1Vz9DDO6MQo1B6pUBzW9GjDb6AUQPziAV62jD7OpCLZji0GS66C48wRX",
   "fields": {
     "created_date": "2023-09-15T07:53:52.116Z",
+    "sent_date": "2023-09-15T07:53:52.116Z",
     "owner": [
       "user1"
     ],
