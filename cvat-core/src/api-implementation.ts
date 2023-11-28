@@ -345,9 +345,7 @@ export default function implementAPI(cvat) {
         };
     };
 
-    cvat.organizations.acceptInvitation.implementation = async (
-        key,
-    ) => {
+    cvat.organizations.acceptInvitation.implementation = async (key) => {
         const orgSlug = await serverProxy.organizations.acceptInvitation(
             key,
         );
@@ -355,7 +353,9 @@ export default function implementAPI(cvat) {
         return orgSlug;
     };
 
-    cvat.organizations.rejectInvitation.implementation = serverProxy.organizations.rejectInvitation;
+    cvat.organizations.rejectInvitation.implementation = async (key) => serverProxy.organizations.rejectInvitation(
+        key,
+    );
 
     cvat.organizations.invitations.implementation = async (filter: InvitationsFilter = {}) => {
         const invitationsData = await serverProxy.organizations.invitations(filter);
