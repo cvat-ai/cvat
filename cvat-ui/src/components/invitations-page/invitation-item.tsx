@@ -4,7 +4,7 @@
 
 import './styles.scss';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
@@ -16,13 +16,15 @@ import { Invitation } from 'cvat-core/src/organization';
 
 interface Props {
     invitation: Invitation;
-    onAccept: (invitationKey: string) => void;
-    onReject: (invitationKey: string) => void;
+    onAccept: (invitationKey: string) => Promise<void>;
+    onReject: (invitationKey: string) => Promise<void>;
 }
 
 function InvitationItem(props: Props): JSX.Element {
     const { invitation, onAccept, onReject } = props;
     const { key, expired } = invitation;
+
+    const [rejected, setRejected] = useState(false);
 
     const { slug } = invitation.organizationInfo;
     const owner = invitation.owner?.username;
@@ -51,7 +53,7 @@ function InvitationItem(props: Props): JSX.Element {
                 text='Expired'
                 color='gray'
             >
-                <Card className='cvat-invitation-item'>
+                <Card className={`cvat-invitation-item ${rejected ? 'cvat-invitation-item-rejected' : ''}`}>
                     <Row justify='space-between'>
                         <Col className='cvat-invitation-description'>
                             {text}
@@ -82,7 +84,9 @@ function InvitationItem(props: Props): JSX.Element {
                                         content: 'Would you like to reject the invitation?',
                                         className: 'cvat-invitaion-reject-modal',
                                         onOk: () => {
-                                            onReject(key);
+                                            onReject(key).then(() => {
+                                                setRejected(true);
+                                            });
                                         },
                                         okText: 'Reject',
                                     });

@@ -36,16 +36,15 @@ export default function InvitationsListComponent(props: Props): JSX.Element {
     const [page, setPage] = useState(query.page);
     const renderedInvitations = setUpInvitationsList(invitations, page);
 
-    const onAccept = useCallback((invintationKey) => {
+    const onAccept = useCallback((invintationKey) => (
         dispatch(acceptInvitationAsync(invintationKey, (orgSlug: string) => {
             localStorage.setItem('currentOrganization', orgSlug);
             window.location.reload();
-        }));
-    }, []);
+        }))), []);
 
-    const onReject = useCallback((invintationKey) => {
-        dispatch(rejectInvitationAsync(invintationKey));
-    }, []);
+    const onReject = useCallback((invintationKey) => (
+        dispatch(rejectInvitationAsync(invintationKey))
+    ), []);
 
     const onPageChange = useCallback((newPage) => {
         history.replace({
