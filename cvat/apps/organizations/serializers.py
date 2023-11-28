@@ -119,9 +119,9 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
     def save(self, request, **kwargs):
         invitation = super().save(**kwargs)
-        if not strtobool(settings.ORG_INVITATION_CONFIRM) or settings.EMAIL_BACKEND is None:
+        if not strtobool(settings.ORG_INVITATION_CONFIRM):
             invitation.accept()
-        else:
+        elif settings.EMAIL_BACKEND is None:
             invitation.send(request)
 
         return invitation
