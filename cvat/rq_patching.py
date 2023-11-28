@@ -10,6 +10,7 @@ import rq.registry
 from rq.exceptions import AbandonedJobError, NoSuchJobError
 from rq.job import JobStatus
 from rq.utils import current_timestamp
+from rq.version import VERSION
 
 
 # NOTE: we should patch implementation of original method because
@@ -69,4 +70,6 @@ def custom_started_job_registry_cleanup(self, timestamp: Optional[float] = None)
     return job_ids
 
 def update_started_job_registry_cleanup() -> None:
+    # don't forget to check if the issue https://github.com/rq/rq/issues/2006 has been resolved in upstream
+    assert VERSION == '1.15.1'
     rq.registry.StartedJobRegistry.cleanup = custom_started_job_registry_cleanup
