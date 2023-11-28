@@ -9255,7 +9255,6 @@ components:
         last_name:
           type: string
       required:
-      - email
       - username
     RegisterSerializerExRequest:
       type: object
@@ -9283,7 +9282,6 @@ components:
           type: string
           minLength: 1
       required:
-      - email
       - password1
       - password2
       - username
