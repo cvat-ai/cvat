@@ -15,6 +15,7 @@ from rq.utils import current_timestamp
 # NOTE: we should patch implementation of original method because
 # there is no enqueuing dependent jobs in original function
 # https://github.com/rq/rq/issues/2006
+# Link to PR: https://github.com/rq/rq/pull/2008
 def custom_started_job_registry_cleanup(self, timestamp: Optional[float] = None):
     """Remove abandoned jobs from registry and add them to FailedJobRegistry.
 
