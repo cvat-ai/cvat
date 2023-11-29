@@ -394,7 +394,7 @@ class QualitySettingsViewSet(
                 try:
                     task = Task.objects.get(id=task_id)
                 except Task.DoesNotExist as ex:
-                    raise NotFound(f"Report {task_id} does not exist") from ex
+                    raise NotFound(f"Task {task_id} does not exist") from ex
 
                 self.check_object_permissions(self.request, task)
 
