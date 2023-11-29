@@ -47,7 +47,7 @@ The skeleton **Configurator** has the following fields:
 | **5**  | **Remove point**            | Use it to remove points. Click on **Remove point** and then on any point (**2**) on the **Drawing area** (**8**) to delete the point. |
 | **6**  | **Download skeleton**       | Use it to download created skeleton in .SVG format.                                                                                   |
 | **7**  | **Upload skeleton**         | Use it to upload skeleton in .SVG format.                                                                                             |
-| **7**  | **Drawing area**            | Use it as a canvas to draw a skeleton.                                                                                                |
+| **8**  | **Drawing area**            | Use it as a canvas to draw a skeleton.                                                                                                |
 
 <!--lint enable maximum-line-length-->
 
