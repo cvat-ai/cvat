@@ -357,6 +357,8 @@ export class Job extends Session {
     public readonly frameSelectionMethod: JobType;
     public readonly createdDate: string;
     public readonly updatedDate: string;
+    public readonly sourceStorage: Storage;
+    public readonly targetStorage: Storage;
 
     public annotations: {
         get: CallableFunction;
@@ -425,6 +427,8 @@ export class Job extends Session {
             mode: undefined,
             created_date: undefined,
             updated_date: undefined,
+            source_storage: undefined,
+            target_storage: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -449,6 +453,16 @@ export class Job extends Session {
                 return new Label(labelData);
             }).filter((label) => !label.hasParent);
         }
+
+        data.source_storage = new Storage({
+            location: initialData.source_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.source_storage?.cloud_storage_id,
+        });
+
+        data.target_storage = new Storage({
+            location: initialData.target_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.target_storage?.cloud_storage_id,
+        });
 
         Object.defineProperties(
             this,
@@ -566,6 +580,12 @@ export class Job extends Session {
                 },
                 updatedDate: {
                     get: () => data.updated_date,
+                },
+                sourceStorage: {
+                    get: () => data.source_storage,
+                },
+                targetStorage: {
+                    get: () => data.target_storage,
                 },
                 _updateTrigger: {
                     get: () => updateTrigger,
@@ -816,6 +836,16 @@ export class Task extends Session {
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
         }
 
+        data.source_storage = new Storage({
+            location: initialData.source_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.source_storage?.cloud_storage_id,
+        });
+
+        data.target_storage = new Storage({
+            location: initialData.target_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.target_storage?.cloud_storage_id,
+        });
+
         if (Array.isArray(initialData.jobs)) {
             for (const job of initialData.jobs) {
                 const jobInstance = new Job({
@@ -842,6 +872,8 @@ export class Task extends Session {
                     dimension: data.dimension,
                     data_compressed_chunk_type: data.data_compressed_chunk_type,
                     data_chunk_size: data.data_chunk_size,
+                    target_storage: initialData.target_storage,
+                    source_storage: initialData.source_storage,
                 });
                 data.jobs.push(jobInstance);
             }
@@ -1086,20 +1118,10 @@ export class Task extends Session {
                     get: () => data.organization,
                 },
                 sourceStorage: {
-                    get: () => (
-                        new Storage({
-                            location: data.source_storage?.location || StorageLocation.LOCAL,
-                            cloudStorageId: data.source_storage?.cloud_storage_id,
-                        })
-                    ),
+                    get: () => data.source_storage,
                 },
                 targetStorage: {
-                    get: () => (
-                        new Storage({
-                            location: data.target_storage?.location || StorageLocation.LOCAL,
-                            cloudStorageId: data.target_storage?.cloud_storage_id,
-                        })
-                    ),
+                    get: () => data.target_storage,
                 },
                 progress: {
                     get: () => data.progress,

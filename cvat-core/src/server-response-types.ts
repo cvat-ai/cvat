@@ -5,7 +5,7 @@
 import {
     ChunkType,
     DimensionType, JobStage, JobState, JobType, ProjectStatus,
-    ShareFileType, TaskMode, TaskStatus,
+    ShareFileType, TaskMode, TaskStatus, StorageLocation,
 } from 'enums';
 
 export interface SerializedAnnotationImporter {
@@ -46,6 +46,12 @@ export interface SerializedUser {
     email_verification_required: boolean;
 }
 
+interface SerializedStorage {
+    id: number;
+    location: StorageLocation;
+    cloud_storage_id: number | null;
+}
+
 export interface SerializedProject {
     assignee: SerializedUser | null;
     id: number;
@@ -57,8 +63,8 @@ export interface SerializedProject {
     organization: number | null;
     guide_id: number | null;
     owner: SerializedUser;
-    source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
-    target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
+    source_storage: SerializedStorage | null;
+    target_storage: SerializedStorage | null;
     url: string;
     tasks: { count: number; url: string; };
     task_subsets: string[];
@@ -68,6 +74,7 @@ export interface SerializedProject {
 export type TasksFilter = ProjectsFilter & { ordering?: string; }; // TODO: Need to clarify how "ordering" is used
 export type JobsFilter = ProjectsFilter & {
     task_id?: number;
+    type?: JobType;
 };
 
 export interface SerializedTask {
@@ -92,8 +99,8 @@ export interface SerializedTask {
     guide_id: number | null;
     segment_size: number;
     size: number;
-    source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
-    target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
+    source_storage: SerializedStorage | null;
+    target_storage: SerializedStorage | null;
     status: TaskStatus;
     subset: string;
     updated_date: string;
@@ -122,6 +129,8 @@ export interface SerializedJob {
     updated_date: string;
     created_date: string;
     url: string;
+    source_storage: SerializedStorage | null;
+    target_storage: SerializedStorage | null;
 }
 
 export type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';

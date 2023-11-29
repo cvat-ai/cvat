@@ -23,6 +23,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.utils import parse_specific_attributes, build_field_filter_params, get_list_view_name, reverse
+from cvat.apps.iam.permissions import TaskPermission
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
 
@@ -540,6 +541,12 @@ class LabelSerializer(SublabelSerializer):
         self.instance = models.Label.objects.get(pk=instance.pk)
         return self.instance
 
+class StorageSerializer(serializers.ModelSerializer):
+    cloud_storage_id = serializers.IntegerField(required=False, allow_null=True)
+
+    class Meta:
+        model = models.Storage
+        fields = ('id', 'location', 'cloud_storage_id')
 
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
@@ -558,19 +565,32 @@ class JobReadSerializer(serializers.ModelSerializer):
         allow_null=True, read_only=True)
     labels = LabelsSummarySerializer(source='*')
     issues = IssuesSummarySerializer(source='*')
+    target_storage = StorageSerializer(required=False, allow_null=True)
+    source_storage = StorageSerializer(required=False, allow_null=True)
 
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee', 'guide_id',
             'dimension', 'bug_tracker', 'status', 'stage', 'state', 'mode', 'frame_count',
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type',
-            'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization')
+            'created_date', 'updated_date', 'issues', 'labels', 'type', 'organization',
+            'target_storage', 'source_storage')
         read_only_fields = fields
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if instance.segment.type == models.SegmentType.SPECIFIC_FRAMES:
             data['data_compressed_chunk_type'] = models.DataChoice.IMAGESET
+
+        if request := self.context.get('request'):
+            perm = TaskPermission.create_scope_view(request, instance.segment.task)
+            result = perm.check_access()
+            if result.allow:
+                if task_source_storage := instance.get_source_storage():
+                    data['source_storage'] = StorageSerializer(task_source_storage).data
+                if task_target_storage := instance.get_target_storage():
+                    data['target_storage'] = StorageSerializer(task_target_storage).data
+
         return data
 
 
@@ -1035,13 +1055,6 @@ class DataSerializer(serializers.ModelSerializer):
                 files_model.objects.bulk_create(
                     files_model(data=instance, **f) for f in files[files_type]
                 )
-
-class StorageSerializer(serializers.ModelSerializer):
-    cloud_storage_id = serializers.IntegerField(required=False, allow_null=True)
-
-    class Meta:
-        model = models.Storage
-        fields = ('id', 'location', 'cloud_storage_id')
 
 class TaskReadSerializer(serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size', required=False)

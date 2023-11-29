@@ -183,6 +183,8 @@ export default function implementAPI(cvat) {
             sort: isString,
             search: isString,
             jobID: isInteger,
+            taskID: isInteger,
+            type: isString,
         });
 
         checkExclusiveFields(query, ['jobID', 'filter', 'search'], ['page', 'sort']);
@@ -198,11 +200,15 @@ export default function implementAPI(cvat) {
             return [];
         }
 
-        const searchParams = {};
+        const searchParams: Record<string, string> = {};
+
         for (const key of Object.keys(query)) {
-            if (['page', 'sort', 'search', 'filter', 'task_id'].includes(key)) {
+            if (['page', 'sort', 'search', 'filter', 'type'].includes(key)) {
                 searchParams[key] = query[key];
             }
+        }
+        if ('taskID' in query) {
+            searchParams.task_id = query.taskID;
         }
 
         const jobsData = await serverProxy.jobs.get(searchParams);
