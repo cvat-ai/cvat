@@ -128,7 +128,7 @@ to both the skeleton as a whole and its individual elements:
 
 ### Editing skeletons on the sidebar
 
-Шn CVAT, the sidebar offers an alternative method for setting up skeleton properties and attributes.
+In CVAT, the sidebar offers an alternative method for setting up skeleton properties and attributes.
 This approach is similar to that used for other object types supported by CVAT, but with a few specific alterations:
 
 - Users cannot change the label of a skeleton.
