@@ -42,10 +42,10 @@ To annotate the **Skeleton** task, do the following:
 
 To automatically annotate with **Skeleton**, do the following
 
-1. Open the job and on the tools panel select **AI Tools** > **Detectors**
-2. From the drop-down list select the model.
-   You will see a list of points to match and
-   the name of the label on the top of the list.
+1. Open job and on the tools panel select **AI Tools** > **Detectors**
+2. From the drop-down list select model.
+   You will see list of points to match and
+   the name of the skeleton on the top of the list.
 
    ![](/images/auto-annot-sk-detectors.jpg)
 

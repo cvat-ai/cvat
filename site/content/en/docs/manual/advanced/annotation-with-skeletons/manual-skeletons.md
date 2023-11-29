@@ -47,7 +47,7 @@ The skeleton **Configurator** has the following fields:
 | **5**  | **Remove point**            | Use it to remove points. Click on **Remove point** and then on any point (**2**) on the **Drawing area** (**8**) to delete the point. |
 | **6**  | **Download skeleton**       | Use it to download created skeleton in .SVG format.                                                                                   |
 | **7**  | **Upload skeleton**         | Use it to upload skeleton in .SVG format.                                                                                             |
-| **7**  | **Drawing area**            | Use it as a canvas to draw a skeleton.                                                                                                |
+| **8**  | **Drawing area**            | Use it as a canvas to draw a skeleton.                                                                                                |
 
 <!--lint enable maximum-line-length-->
 
@@ -70,7 +70,7 @@ To create the **Skeleton** task, do the following:
 
 ### Configuring Skeleton points
 
-You can add labels, and attributes and change the color of any point of the skeleton.
+You can name label, setup attributes, and change colour of each point of the skeleton.
 
 To do this, right-click on the skeleton point and select **Configure**:
 
@@ -128,7 +128,7 @@ to both the skeleton as a whole and its elements:
 
 ### Editing skeletons on the sidebar
 
-Шn CVAT, the sidebar offers an alternative method for setting up skeleton properties and attributes.
+In CVAT, the sidebar offers an alternative method for setting up skeleton properties and attributes.
 This approach is similar to that used for other object types supported by CVAT, but with a few specific alterations:
 
 - Users cannot change the label of a skeleton.
