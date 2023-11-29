@@ -5,7 +5,6 @@
 
 import zipfile
 from datumaro.components.dataset import Dataset
-from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     import_dm_annotations)
@@ -46,11 +45,14 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
     make_zip_archive(temp_dir, dst_file)
 
-@importer(name="Datumaro 3D", ext="ZIP", version="1.0", dimension=DimensionType.DIM_3D)
+@importer(name="Datumaro 3D", ext="JSON, ZIP", version="1.0", dimension=DimensionType.DIM_3D)
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
-    Archive(src_file.name).extractall(temp_dir)
-
-    dataset = Dataset.import_from(temp_dir, 'datumaro', env=dm_env)
+    if zipfile.is_zipfile(src_file):
+        zipfile.ZipFile(src_file).extractall(temp_dir)
+        dataset = Dataset.import_from(temp_dir, 'datumaro', env=dm_env)
+    else:
+        load_data_callback = None
+        dataset = Dataset.import_from(src_file.name, 'datumaro', env=dm_env)
 
     if load_data_callback is not None:
         load_data_callback(dataset, instance_data)
