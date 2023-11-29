@@ -70,7 +70,7 @@ To create **Skeleton** task, do the following:
 
 ### Configuring Skeleton points
 
-You can add labels, attributes and change colour of any point of the skeleton.
+You can name label, setup attributes, and change colour of each point of the skeleton.
 
 To do this, right-click on the skeleton point and select **Configure**:
 
