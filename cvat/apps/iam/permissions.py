@@ -314,6 +314,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
             'retrieve': Scopes.VIEW,
             'accept': Scopes.ACCEPT,
             'reject': Scopes.REJECT,
+            'resend': Scopes.RESEND,
         }.get(view.action)]
 
     def get_resource(self):
