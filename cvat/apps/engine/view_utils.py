@@ -4,7 +4,6 @@
 
 # NOTE: importing in the utils.py header leads to circular importing
 
-from distutils.util import strtobool
 from typing import Optional, Type
 
 from django.db.models.query import QuerySet
@@ -21,6 +20,7 @@ from drf_spectacular.utils import extend_schema
 from cvat.apps.engine.mixins import UploadMixin
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.parsers import TusUploadParser
+from cvat.apps.engine.utils import strtobool
 from cvat.apps.iam.permissions import CloudStoragePermission
 
 
