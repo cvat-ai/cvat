@@ -46,7 +46,7 @@ is compatible with both mask and polygon annotations.
 
 This tool is useful in scenarios where multiple objects in an image
 are annotated with one shape,
-and there is a need to slice this label into multiple labels.
+and there is a need to slice this shape into multiple parts.
 
 ![Slicing tool](/images/slicing-tool-01.jpg)
 
