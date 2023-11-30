@@ -37,7 +37,6 @@ import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-co
 import { Dumper } from 'cvat-core/src/annotation-formats';
 import { EventLogger } from 'cvat-core/src/log';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
-import BaseSingleFrameAction, { ActionParameterType } from 'cvat-core/src/annotations-actions';
 
 const cvat: CVATCore = _cvat;
 
@@ -82,7 +81,6 @@ export {
     JobStage,
     JobState,
     RQStatus,
-    BaseSingleFrameAction,
     QualityReport,
     QualityConflict,
     QualitySettings,
@@ -95,7 +93,6 @@ export {
     ServerError,
     EventLogger,
     FrameData,
-    ActionParameterType,
 };
 
 export type {
