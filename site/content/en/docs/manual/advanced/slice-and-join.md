@@ -1,5 +1,5 @@
 ---
-title: 'CVAT  joining and slicing labels'
+title: 'CVAT joining and slicing labels'
 linkTitle: 'Joining and Slicing Labels'
 weight: 18
 description: 'This section explains how to slice or join several labels'
