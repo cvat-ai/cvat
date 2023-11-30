@@ -58,8 +58,10 @@ export function getInvitationsAsync(showNotification = false): ThunkAction {
             const invitations = await cvat.organizations.invitations({
                 filter: `{"and":[{"==":[{"var":"user_id"},"${userID}"]}, {"==":[{"var":"accepted"},false]}]}`,
             });
+            const hasActiveInvitations = invitations.length !== 0 &&
+                                        invitations.some((invitation: Invitation) => !invitation.expired);
             dispatch(invitationActions.getInvitationsSuccess(
-                invitations, invitations.length !== 0 && showNotification,
+                invitations, hasActiveInvitations && showNotification,
             ));
         } catch (error: unknown) {
             if (error instanceof Error) {

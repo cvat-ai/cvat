@@ -412,31 +412,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
             }
             return state;
         }
-        case InvitationsActionTypes.ACCEPT_INVITATION_SUCCESS: {
-            return {
-                ...state,
-                messages: {
-                    ...state.messages,
-                    invitations: {
-                        ...state.messages.invitations,
-                        acceptInvitationDone: 'Invitation accepted successfully.',
-                    },
-                },
-            };
-        }
-        case InvitationsActionTypes.REJECT_INVITATION_SUCCESS: {
-            return {
-                ...state,
-                ...state,
-                messages: {
-                    ...state.messages,
-                    invitations: {
-                        ...state.messages.invitations,
-                        acceptInvitationDone: 'Invitation rejected successfully.',
-                    },
-                },
-            };
-        }
         case InvitationsActionTypes.GET_INVITATIONS_FAILED: {
             return {
                 ...state,
@@ -448,6 +423,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not get invitations',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-get-invitations-failed',
                         },
                     },
                 },
@@ -496,7 +472,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not resend invitation',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-resend-organization-invintation-failed',
+                            className: 'cvat-notification-notice-resend-organization-invitation-failed',
                         },
                     },
                 },
@@ -509,7 +485,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     invitations: {
                         ...state.messages.invitations,
-                        resendingInvitation: 'Invintation was sent sucessfully',
+                        resendingInvitation: 'Invitation was sent successfully',
                     },
                 },
             };
