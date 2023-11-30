@@ -35,7 +35,7 @@ To join masks, do the following:
 4. Click again on **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg)
   (**J**) to execute the join operation.
 
-Upon completion, the selected masks will be merged into a single mask.
+Upon completion, the selected masks will be joined into a single mask.
 
 ![Join masks gif](/images/joining-tool-02.gif)
 
