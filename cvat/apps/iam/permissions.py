@@ -1942,10 +1942,13 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                     permissions.append(TaskPermission.create_base_perm(
                         request, view, iam_context=iam_context, scope=task_scope, obj=obj.task
                     ))
-                elif scope == cls.Scopes.LIST and isinstance(obj, Task):
-                    permissions.append(TaskPermission.create_scope_view(
-                        request, obj, iam_context=iam_context,
-                    ))
+                elif scope == cls.Scopes.LIST:
+                    if task_id := request.query_params.get("task_id", None):
+                        permissions.append(TaskPermission.create_scope_view(
+                            request, int(task_id), iam_context=iam_context,
+                        ))
+
+                    permissions.append(cls.create_scope_list(request, iam_context))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
