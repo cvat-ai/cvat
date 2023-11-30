@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import { useHistory } from 'react-router';
 
-function InvitationWatcher(): JSX.Element {
+function InvitationWatcher(): JSX.Element | null {
     const user = useSelector((state: CombinedState) => state.auth.user);
     const history = useHistory();
 
@@ -28,7 +28,7 @@ function InvitationWatcher(): JSX.Element {
         }
     }, [user]);
 
-    return <></>;
+    return null;
 }
 
 export default React.memo(InvitationWatcher);

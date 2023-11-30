@@ -13,7 +13,7 @@ export default function EmptyListComponent(): JSX.Element {
             <Empty description={(
                 <Row justify='center' align='middle'>
                     <Col>
-                        <Text strong>No invitations received yet ...</Text>
+                        <Text strong>You do not have active invitations</Text>
                     </Col>
                 </Row>
             )}

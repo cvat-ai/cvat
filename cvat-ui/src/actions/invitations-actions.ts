@@ -4,7 +4,7 @@
 
 import { ActionUnion, ThunkAction, createAction } from 'utils/redux';
 import { CombinedState } from 'reducers';
-import { Invitation, getCore } from 'cvat-core-wrapper';
+import { Invitation, Organization, getCore } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -78,9 +78,7 @@ export const acceptInvitationAsync = (
     dispatch(invitationActions.acceptInvitation());
 
     try {
-        const orgSlug = await cvat.organizations.acceptInvitation(
-            key,
-        );
+        const orgSlug = await cvat.organizations.acceptInvitation(key);
 
         if (onSuccess) onSuccess(orgSlug);
         dispatch(invitationActions.acceptInvitationSuccess(orgSlug));
@@ -95,9 +93,7 @@ export const rejectInvitationAsync = (
     dispatch(invitationActions.rejectInvitation());
 
     try {
-        await cvat.organizations.rejectInvitation(
-            key,
-        );
+        await cvat.organizations.rejectInvitation(key);
 
         dispatch(invitationActions.rejectInvitationSuccess());
     } catch (error) {
@@ -106,7 +102,7 @@ export const rejectInvitationAsync = (
 };
 
 export function resendInvitationAsync(
-    organization: any,
+    organization: Organization,
     invitationKey: string,
     onFinish?: () => void,
 ): ThunkAction {
