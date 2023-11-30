@@ -1,6 +1,6 @@
 ---
-title: 'CVAT  joining and slicing labels'
-linkTitle: 'Joining and Slicing Labels'
+title: 'Join and slice tools'
+linkTitle: 'Join and slice tools'
 weight: 18
 description: 'This section explains how to slice or join several labels'
 ---
@@ -21,8 +21,8 @@ The **Join masks** tool (![Join masks tool icon](/images/join-masks-icon.jpg)),
 is specifically designed to work with mask annotations.
 
 This tool is useful in scenarios where a single object
-in an image is annotated with multiple labels,
-and there is a need to merge these labels into a single, unified label.
+in an image is annotated with multiple shapes,
+and there is a need to merge these shapes into a single, unified shape.
 
 ![Join masks](/images/joining-tool-01.jpg)
 
@@ -31,9 +31,9 @@ To join masks, do the following:
 1. From the [**Edit**](/docs/manual/basics/controls-sidebar/#edit) block,
    select **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg).
 2. Click on the labels, to select masks that you want to join.
-3. (Optional) To remove selection double click on the mask.
+3. (Optional) To remove selection click one more time on the mask.
 4. Click again on **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg)
-  (**J**) to execute the join operation.
+   (**J**) to execute the join operation.
 
 Upon completion, the selected masks will be merged into a single mask.
 
@@ -58,8 +58,10 @@ To slice mask or polygon, do the following:
    A black contour will appear around the selected label.
 3. Set an initial point for slicing by clicking on the contour.
 4. Draw a line across the label to define the slicing path.
+   <br>Hold Shift to add points automatically on cursor movement.
    <br> **Note**: The line cannot cross itself.
    <br> **Note**: The line cannot cross the contour more than twice.
-5. Click on the contour (**Alt**+**J**) (outside the contour) to finalize slicing.
+5. (Optional)>Right click to cancel the latest point.
+6. Click on the contour (**Alt**+**J**) (outside the contour) to finalize slicing.
 
 ![Slicing tool](/images/slicing-tool-02.gif)
