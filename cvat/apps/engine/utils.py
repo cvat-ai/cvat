@@ -177,6 +177,10 @@ def define_dependent_job(
         for job in queue.job_class.fetch_many(
             queue.deferred_job_registry.get_job_ids(), queue.connection
         )
+        # Since there is no cleanup implementation in DeferredJobRegistry,
+        # this registry can contain "outdated" jobs that weren't deleted from it
+        # but were added to another registry. Probably such situations can occur
+        # if there are active or deferred jobs when restarting the worker container.
         if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
     ]
     all_user_jobs = started_user_jobs + deferred_user_jobs
