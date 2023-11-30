@@ -25,13 +25,25 @@ context('Opacity reset', { scrollBehavior: false }, () => {
     let taskID = null;
     let jobID = null;
 
-    let opacityArrowsRight = '';
-    let selectedOpacityArrowsRight = '';
-    const arrowsLeft = '{leftarrow}'.repeat(10);
-
     function checkOpacitySliders(opacity, selectedOpacity) {
         cy.get('.cvat-appearance-opacity-slider').find('[role="slider"]').should('have.attr', 'aria-valuenow', opacity);
         cy.get('.cvat-appearance-selected-opacity-slider').find('[role="slider"]').should('have.attr', 'aria-valuenow', selectedOpacity);
+    }
+
+    function setSliderValue(slider, value) {
+        let arrowsString = '';
+        cy.get(slider)
+            .within(() => {
+                cy.get('[role="slider"]')
+                    .should('have.attr', 'aria-valuenow')
+                    .then(($ariaValueNow) => {
+                        const steps = value - $ariaValueNow;
+                        arrowsString = (steps > 0 ? '{rightarrow}' : '{leftarrow}').repeat(Math.abs(steps));
+                    })
+                    .then(() => {
+                        cy.get('.ant-slider-handle').type(arrowsString);
+                    });
+            });
     }
 
     before(() => {
@@ -56,6 +68,11 @@ context('Opacity reset', { scrollBehavior: false }, () => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
+
+        cy.goCheckFrameNumber(2);
+        cy.startMaskDrawing();
+        cy.drawMask(drawingActions);
+        cy.get('.cvat-brush-tools-finish').click();
     });
 
     after(() => {
@@ -73,64 +90,28 @@ context('Opacity reset', { scrollBehavior: false }, () => {
     });
 
     describe('Test', () => {
-        it('Set low opacity value. Draw shape', () => {
+        it('Set low opacity value, draw a rectangle.', () => {
             cy.goCheckFrameNumber(0);
-            cy.get('.cvat-appearance-opacity-slider')
-                .within(() => {
-                    cy.get('[role="slider"]')
-                        .should('have.attr', 'aria-valuenow')
-                        .then(($ariaValueNow) => {
-                            const steps = 20 - $ariaValueNow;
-                            opacityArrowsRight = '{rightarrow}'.repeat(steps);
-                        })
-                        .then(() => {
-                            cy.get('.ant-slider-handle').type(opacityArrowsRight);
-                        });
-                });
-            cy.get('.cvat-appearance-selected-opacity-slider')
-                .within(() => {
-                    cy.get('[role="slider"]')
-                        .should('have.attr', 'aria-valuenow')
-                        .then(($ariaValueNow) => {
-                            const steps = 40 - $ariaValueNow;
-                            selectedOpacityArrowsRight = '{rightarrow}'.repeat(steps);
-                        })
-                        .then(() => {
-                            cy.get('.ant-slider-handle').type(selectedOpacityArrowsRight);
-                        });
-                });
+            setSliderValue('.cvat-appearance-opacity-slider', 20);
+            setSliderValue('.cvat-appearance-selected-opacity-slider', 40);
             cy.createRectangle(createRectangleShape2Points);
             checkOpacitySliders(20, 40);
         });
 
-        it('Go to the next frame. Opacity does not reset', () => {
+        it('Go to the next frame, draw a rectangle. Opacity does not reset', () => {
             cy.goCheckFrameNumber(1);
-            checkOpacitySliders(20, 40);
             cy.createRectangle(createRectangleShape2Points);
+            checkOpacitySliders(20, 40);
         });
 
-        it('Go to the next frame. Draw mask. Opacity resets.', () => {
-            cy.goCheckFrameNumber(2);
-            cy.startMaskDrawing();
-            cy.drawMask(drawingActions);
-            cy.get('.cvat-brush-tools-finish').click();
-            checkOpacitySliders(30, 60);
-        });
-
-        it('Decrease opacity. Opacity does not reset on frames without masks. Opacity resets on frames with masks', () => {
-            cy.get('.cvat-appearance-opacity-slider .ant-slider-handle').type(arrowsLeft);
-            cy.get('.cvat-appearance-selected-opacity-slider .ant-slider-handle').type(arrowsLeft);
-            cy.goCheckFrameNumber(0);
-            checkOpacitySliders(20, 50);
-            cy.goCheckFrameNumber(1);
-            checkOpacitySliders(20, 50);
+        it('Go to the next frame with mask. Opacity resets.', () => {
             cy.goCheckFrameNumber(2);
             checkOpacitySliders(30, 60);
         });
 
         it('Decrease opacity. Opacity does not reset on frames without masks. Opacity resets on frames with masks', () => {
-            cy.get('.cvat-appearance-opacity-slider .ant-slider-handle').type(arrowsLeft);
-            cy.get('.cvat-appearance-selected-opacity-slider .ant-slider-handle').type(arrowsLeft);
+            setSliderValue('.cvat-appearance-opacity-slider', 20);
+            setSliderValue('.cvat-appearance-selected-opacity-slider', 50);
             cy.goCheckFrameNumber(0);
             checkOpacitySliders(20, 50);
             cy.goCheckFrameNumber(1);
@@ -140,8 +121,8 @@ context('Opacity reset', { scrollBehavior: false }, () => {
         });
 
         it('Increase opacity. Opacity does not reset on high values', () => {
-            cy.get('.cvat-appearance-opacity-slider .ant-slider-handle').type('{rightarrow}'.repeat(10));
-            cy.get('.cvat-appearance-selected-opacity-slider .ant-slider-handle').type('{rightarrow}'.repeat(10));
+            setSliderValue('.cvat-appearance-opacity-slider', 40);
+            setSliderValue('.cvat-appearance-selected-opacity-slider', 70);
             for (let i = 0; i < 3; i++) {
                 cy.goCheckFrameNumber(0);
                 checkOpacitySliders(40, 70);
