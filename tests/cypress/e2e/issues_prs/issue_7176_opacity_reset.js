@@ -4,10 +4,12 @@
 
 /// <reference types="cypress" />
 
-context('Opacity reset', { scrollBehavior: false }, () => {
-    const taskName = 'Test issue #7176';
+const issueId = '7176';
+
+context('Opacity and Selected opacity reset on each frame change', { scrollBehavior: false }, () => {
+    const taskName = `Test issue #${issueId}`;
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
-    const labelName = 'issue#7176';
+    const labelName = `issue#${issueId}`;
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -89,7 +91,7 @@ context('Opacity reset', { scrollBehavior: false }, () => {
         });
     });
 
-    describe('Test', () => {
+    describe(`Testing issue "${issueId}"`, () => {
         it('Set low opacity value, draw a rectangle.', () => {
             cy.goCheckFrameNumber(0);
             setSliderValue('.cvat-appearance-opacity-slider', 20);
