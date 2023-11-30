@@ -330,7 +330,6 @@ function build(): CVATCore {
             Organization,
             Webhook,
             AnnotationGuide,
-            BaseSingleFrameAction,
         },
         utils: {
             mask2Rle,

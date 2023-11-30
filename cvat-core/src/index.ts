@@ -142,7 +142,6 @@ export default interface CVATCore {
         Organization: typeof Organization;
         Webhook: typeof Webhook;
         AnnotationGuide: typeof AnnotationGuide;
-        BaseSingleFrameAction: typeof BaseSingleFrameAction;
     };
     utils: {
         mask2Rle: typeof mask2Rle;
