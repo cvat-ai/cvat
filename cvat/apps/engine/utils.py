@@ -189,7 +189,7 @@ def define_dependent_job(
             for dep_id in job.dependency_ids or ()
         }
 
-        if Job.redis_job_namespace_prefix + rq_id not in all_job_dependency_ids:
+        if Job.redis_job_namespace_prefix + rq_id in all_job_dependency_ids:
             return None
 
     user_jobs = [
