@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,19 +7,18 @@
 jest.mock('../../src/server-proxy', () => {
     return {
         __esModule: true,
-        default: require('../mocks/server-proxy.mock'),
+        default: require('../mocks/server-proxy.mock.cjs'),
     };
 });
 
-// Initialize api
-window.cvat = require('../../src/api').default;
+const cvat = require('../../src/api').default;
 
 describe('Feature: set attributes for an object state', () => {
     test('set a valid value', () => {
-        const state = new window.cvat.classes.ObjectState({
-            label: new window.cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.RECTANGLE,
+        const state = new cvat.classes.ObjectState({
+            label: new cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.RECTANGLE,
             frame: 5,
         });
 
@@ -33,36 +32,36 @@ describe('Feature: set attributes for an object state', () => {
     });
 
     test('trying to set a bad value', () => {
-        const state = new window.cvat.classes.ObjectState({
-            label: new window.cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.RECTANGLE,
+        const state = new cvat.classes.ObjectState({
+            label: new cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.RECTANGLE,
             frame: 5,
         });
 
         let attributes = 'bad attribute';
         expect(() => {
             state.attributes = attributes;
-        }).toThrow(window.cvat.exceptions.ArgumentError);
+        }).toThrow(cvat.exceptions.ArgumentError);
 
         attributes = 5;
         expect(() => {
             state.attributes = attributes;
-        }).toThrow(window.cvat.exceptions.ArgumentError);
+        }).toThrow(cvat.exceptions.ArgumentError);
 
         attributes = false;
         expect(() => {
             state.attributes = attributes;
-        }).toThrow(window.cvat.exceptions.ArgumentError);
+        }).toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: set points for an object state', () => {
     test('set a valid value', () => {
-        const state = new window.cvat.classes.ObjectState({
-            label: new window.cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.RECTANGLE,
+        const state = new cvat.classes.ObjectState({
+            label: new cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.RECTANGLE,
             frame: 5,
         });
 
@@ -72,48 +71,48 @@ describe('Feature: set points for an object state', () => {
     });
 
     test('trying to set a bad value', () => {
-        const state = new window.cvat.classes.ObjectState({
-            label: new window.cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.RECTANGLE,
+        const state = new cvat.classes.ObjectState({
+            label: new cvat.classes.Label({ name: 'test label', id: 1, color: '#000000', attributes: [] }),
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.RECTANGLE,
             frame: 5,
         });
 
         let points = 'bad points';
         expect(() => {
             state.points = points;
-        }).toThrow(window.cvat.exceptions.ArgumentError);
+        }).toThrow(cvat.exceptions.ArgumentError);
 
         points = 5;
         expect(() => {
             state.points = points;
-        }).toThrow(window.cvat.exceptions.ArgumentError);
+        }).toThrow(cvat.exceptions.ArgumentError);
 
         points = false;
         expect(() => {
             state.points = points;
-        }).toThrow(window.cvat.exceptions.ArgumentError);
+        }).toThrow(cvat.exceptions.ArgumentError);
 
         points = {};
         expect(() => {
             state.points = points;
-        }).toThrow(window.cvat.exceptions.ArgumentError);
+        }).toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: save object from its state', () => {
     test('save valid values for a shape', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
         let state = annotations[0];
-        expect(state.objectType).toBe(window.cvat.enums.ObjectType.SHAPE);
-        expect(state.shapeType).toBe(window.cvat.enums.ShapeType.RECTANGLE);
+        expect(state.objectType).toBe(cvat.enums.ObjectType.SHAPE);
+        expect(state.shapeType).toBe(cvat.enums.ShapeType.RECTANGLE);
         state.points = [0, 0, 100, 100];
         state.occluded = true;
         [, state.label] = task.labels;
         state.lock = true;
         state = await state.save();
-        expect(state).toBeInstanceOf(window.cvat.classes.ObjectState);
+        expect(state).toBeInstanceOf(cvat.classes.ObjectState);
         expect(state.label.id).toBe(task.labels[1].id);
         expect(state.lock).toBe(true);
         expect(state.occluded).toBe(true);
@@ -121,11 +120,11 @@ describe('Feature: save object from its state', () => {
     });
 
     test('save valid values for a track', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(10);
         let state = annotations[1];
-        expect(state.objectType).toBe(window.cvat.enums.ObjectType.TRACK);
-        expect(state.shapeType).toBe(window.cvat.enums.ShapeType.RECTANGLE);
+        expect(state.objectType).toBe(cvat.enums.ObjectType.TRACK);
+        expect(state.shapeType).toBe(cvat.enums.ShapeType.RECTANGLE);
 
         state.occluded = true;
         state.lock = true;
@@ -138,7 +137,7 @@ describe('Feature: save object from its state', () => {
         };
 
         state = await state.save();
-        expect(state).toBeInstanceOf(window.cvat.classes.ObjectState);
+        expect(state).toBeInstanceOf(cvat.classes.ObjectState);
         expect(state.lock).toBe(true);
         expect(state.occluded).toBe(true);
         expect(state.points).toEqual([100, 200, 200, 400]);
@@ -163,63 +162,63 @@ describe('Feature: save object from its state', () => {
     });
 
     test('save bad values for a shape', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
         const state = annotations[0];
 
         state.occluded = 'false';
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        await expect(state.save()).rejects.toThrow(cvat.exceptions.ArgumentError);
 
         state.occluded = false;
-        expect(() => state.points = ['100', '50', '100', {}]).toThrow(window.cvat.exceptions.ArgumentError);
+        expect(() => state.points = ['100', '50', '100', {}]).toThrow(cvat.exceptions.ArgumentError);
 
         state.lock = 'true';
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        await expect(state.save()).rejects.toThrow(cvat.exceptions.ArgumentError);
 
         const oldLabel = state.label;
         state.lock = false;
         state.label = 1;
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        await expect(state.save()).rejects.toThrow(cvat.exceptions.ArgumentError);
 
         state.label = oldLabel;
         state.attributes = { 1: {}, 2: false, 3: () => {} };
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        await expect(state.save()).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('save bad values for a track', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
         const state = annotations[0];
 
         state.occluded = 'false';
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        await expect(state.save()).rejects.toThrow(cvat.exceptions.ArgumentError);
 
         state.occluded = false;
-        expect(() => state.points = ['100', '50', '100', {}]).toThrow(window.cvat.exceptions.ArgumentError);
+        expect(() => state.points = ['100', '50', '100', {}]).toThrow(cvat.exceptions.ArgumentError);
 
         state.lock = 'true';
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        await expect(state.save()).rejects.toThrow(cvat.exceptions.ArgumentError);
 
         const oldLabel = state.label;
         state.lock = false;
         state.label = 1;
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        await expect(state.save()).rejects.toThrow(cvat.exceptions.ArgumentError);
 
         state.label = oldLabel;
         state.outside = 5;
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        await expect(state.save()).rejects.toThrow(cvat.exceptions.ArgumentError);
 
         state.outside = false;
         state.keyframe = '10';
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        await expect(state.save()).rejects.toThrow(cvat.exceptions.ArgumentError);
 
         state.keyframe = true;
         state.attributes = { 1: {}, 2: false, 3: () => {} };
-        await expect(state.save()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        await expect(state.save()).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('trying to change locked shape', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
         let state = annotations[0];
 
@@ -233,7 +232,7 @@ describe('Feature: save object from its state', () => {
     });
 
     test('trying to set too small area of a shape', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
         let state = annotations[0];
 
@@ -244,7 +243,7 @@ describe('Feature: save object from its state', () => {
     });
 
     test('trying to set too small area of a track', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
         let state = annotations[0];
 
@@ -255,7 +254,7 @@ describe('Feature: save object from its state', () => {
     });
 
     test('trying to set too small length of a shape', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
         let state = annotations[8];
 
@@ -268,7 +267,7 @@ describe('Feature: save object from its state', () => {
 
 describe('Feature: delete object', () => {
     test('delete a shape', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotationsBefore = await task.annotations.get(0);
         const { length } = annotationsBefore;
         await annotationsBefore[0].delete(0);
@@ -277,7 +276,7 @@ describe('Feature: delete object', () => {
     });
 
     test('delete a track', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotationsBefore = await task.annotations.get(0);
         const { length } = annotationsBefore;
         await annotationsBefore[0].delete(0);
@@ -288,7 +287,7 @@ describe('Feature: delete object', () => {
 
 describe('Feature: skeletons', () => {
     test('lock, hide, occluded, outside for skeletons', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 40 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 40 }))[0];
         let [skeleton] = await job.annotations.get(0, false, JSON.parse('[{"and":[{"==":[{"var":"shape"},"skeleton"]}]}]'));
         expect(skeleton.shapeType).toBe('skeleton');
         skeleton.lock = true;

@@ -3,12 +3,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const JSZip = require('jszip');
+import JSZip from 'jszip';
 
 onmessage = (e) => {
     let errored = false;
-    function handleError(error) {
+    function handleError(error): void {
         try {
             if (!errored) {
                 postMessage({ error });

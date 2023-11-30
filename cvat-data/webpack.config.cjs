@@ -1,10 +1,7 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
-
-/* global
-    __dirname:true
-*/
 
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
@@ -41,32 +38,18 @@ const cvatData = {
                     },
                 },
             },
-            {
-                test: /\.worker\.js$/,
-                exclude: /3rdparty/,
-                use: {
-                    loader: 'worker-loader',
-                    options: {
-                        publicPath: '/',
-                        filename: '[name].[contenthash].js',
-                        esModule: false,
-                    },
-                },
-            },
-            {
-                test: /3rdparty\/.*\.worker\.js$/,
-                use: {
-                    loader: 'worker-loader',
-                    options: {
-                        publicPath: '/3rdparty/',
-                        filename: '3rdparty/[name].[contenthash].js',
-                        esModule: false,
-                    },
-                },
-            },
         ],
     },
-    plugins: [new CopyPlugin({ patterns: ['./src/ts/3rdparty/avc.wasm'] })],
+    plugins: [
+        new CopyPlugin({
+            patterns: [
+                {
+                    from: '../cvat-data/src/ts/3rdparty/avc.wasm',
+                    to: 'assets/3rdparty/',
+                },
+            ],
+        }),
+    ],
 };
 
 module.exports = cvatData;

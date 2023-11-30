@@ -240,7 +240,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             filteredStates,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
         });
-    }
+    };
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
         const { filteredStates } = this.state;

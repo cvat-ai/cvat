@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,19 +7,17 @@
 jest.mock('../../src/server-proxy', () => {
     return {
         __esModule: true,
-        default: require('../mocks/server-proxy.mock'),
+        default: require('../mocks/server-proxy.mock.cjs'),
     };
 });
 
-// Initialize api
-window.cvat = require('../../src/api').default;
-
+const cvat = require('../../src/api').default;
 const { Task } = require('../../src/session');
 
 // Test cases
 describe('Feature: get a list of tasks', () => {
     test('get all tasks', async () => {
-        const result = await window.cvat.tasks.get();
+        const result = await cvat.tasks.get();
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(7);
         for (const el of result) {
@@ -28,7 +26,7 @@ describe('Feature: get a list of tasks', () => {
     });
 
     test('get a task by an id', async () => {
-        const result = await window.cvat.tasks.get({
+        const result = await cvat.tasks.get({
             id: 3,
         });
         expect(Array.isArray(result)).toBeTruthy();
@@ -38,7 +36,7 @@ describe('Feature: get a list of tasks', () => {
     });
 
     test('get a task with skeletons by an id', async () => {
-        const result = await window.cvat.tasks.get({
+        const result = await cvat.tasks.get({
             id: 40,
         });
 
@@ -49,7 +47,7 @@ describe('Feature: get a list of tasks', () => {
         expect(result[0].labels).toBeInstanceOf(Array);
 
         for (const label of result[0].labels) {
-            expect(label).toBeInstanceOf(window.cvat.classes.Label);
+            expect(label).toBeInstanceOf(cvat.classes.Label);
             if (label.type === 'skeleton') {
                 expect(label.hasParent).toBe(false);
                 expect(label.structure.sublabels).toBeInstanceOf(Array);
@@ -57,7 +55,7 @@ describe('Feature: get a list of tasks', () => {
                 expect(label.structure.svg.length).not.toBe(0);
 
                 for (const sublabel of label.structure.sublabels) {
-                    expect(sublabel).toBeInstanceOf(window.cvat.classes.Label);
+                    expect(sublabel).toBeInstanceOf(cvat.classes.Label);
                     expect(sublabel.hasParent).toBe(true);
                 }
             }
@@ -65,7 +63,7 @@ describe('Feature: get a list of tasks', () => {
     });
 
     test('get a task by an unknown id', async () => {
-        const result = await window.cvat.tasks.get({
+        const result = await cvat.tasks.get({
             id: 50,
         });
         expect(Array.isArray(result)).toBeTruthy();
@@ -74,14 +72,14 @@ describe('Feature: get a list of tasks', () => {
 
     test('get a task by an invalid id', async () => {
         expect(
-            window.cvat.tasks.get({
+            cvat.tasks.get({
                 id: '50',
             }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        ).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('get tasks by filters', async () => {
-        const result = await window.cvat.tasks.get({
+        const result = await cvat.tasks.get({
             filter: '{"and":[{"==":[{"var":"filter"},"interpolation"]}]}',
         });
         expect(result).toBeInstanceOf(Array);
@@ -89,16 +87,16 @@ describe('Feature: get a list of tasks', () => {
 
     test('get tasks by invalid query', async () => {
         expect(
-            window.cvat.tasks.get({
+            cvat.tasks.get({
                 unknown: '5',
             }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        ).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: save a task', () => {
     test('save some changed fields in a task', async () => {
-        let result = await window.cvat.tasks.get({
+        let result = await cvat.tasks.get({
             id: 2,
         });
 
@@ -106,7 +104,7 @@ describe('Feature: save a task', () => {
         result[0].name = 'New Task Name';
         result[0].save();
 
-        result = await window.cvat.tasks.get({
+        result = await cvat.tasks.get({
             id: 2,
         });
 
@@ -115,12 +113,12 @@ describe('Feature: save a task', () => {
     });
 
     test('save some new labels in a task', async () => {
-        let result = await window.cvat.tasks.get({
+        let result = await cvat.tasks.get({
             id: 2,
         });
 
         const labelsLength = result[0].labels.length;
-        const newLabel = new window.cvat.classes.Label({
+        const newLabel = new cvat.classes.Label({
             name: "Another label",
             attributes: [
                 {
@@ -136,7 +134,7 @@ describe('Feature: save a task', () => {
         result[0].labels = [...result[0].labels, newLabel];
         await result[0].save();
 
-        result = await window.cvat.tasks.get({
+        result = await cvat.tasks.get({
             id: 2,
         });
 
@@ -151,7 +149,7 @@ describe('Feature: save a task', () => {
     });
 
     test('save new task without an id', async () => {
-        const task = new window.cvat.classes.Task({
+        const task = new cvat.classes.Task({
             name: 'New Task',
             labels: [
                 {
@@ -176,7 +174,7 @@ describe('Feature: save a task', () => {
     });
 
     test('save new task in project', async () => {
-        const task = new window.cvat.classes.Task({
+        const task = new cvat.classes.Task({
             name: 'New Task',
             project_id: 2,
             bug_tracker: 'bug tracker value',
@@ -201,7 +199,7 @@ describe('Feature: save a task', () => {
             <circle r="1.5" stroke="black" fill="#b3b3b3" cx="27.49163818359375" cy="39.504600524902344" stroke-width="0.1" data-type="element node" data-element-id="5" data-node-id="5" data-label-name="5"></circle>
         `;
 
-        const task = new window.cvat.classes.Task({
+        const task = new cvat.classes.Task({
             name: 'task with skeletons',
             labels: [{
                 name: 'star skeleton',
@@ -240,12 +238,12 @@ describe('Feature: save a task', () => {
 
 describe('Feature: delete a task', () => {
     test('delete a task', async () => {
-        let result = await window.cvat.tasks.get({
+        let result = await cvat.tasks.get({
             id: 3,
         });
 
         await result[0].delete();
-        result = await window.cvat.tasks.get({
+        result = await cvat.tasks.get({
             id: 3,
         });
 
@@ -256,7 +254,7 @@ describe('Feature: delete a task', () => {
 
 describe('Feature: delete a label', () => {
     test('delete a label', async () => {
-        let result = await window.cvat.tasks.get({
+        let result = await cvat.tasks.get({
             id: 100,
         });
 
@@ -264,7 +262,7 @@ describe('Feature: delete a label', () => {
         const deletedLabels = result[0].labels.filter((el) => el.name !== 'person');
         result[0].labels = deletedLabels;
         result[0].save();
-        result = await window.cvat.tasks.get({
+        result = await cvat.tasks.get({
             id: 100,
         });
         expect(result[0].labels).toHaveLength(labelsLength - 1);

@@ -374,8 +374,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             try {
                 // run server request
                 this.setState({ fetching: true });
-                const response = await core.lambda.call(jobInstance.taskId, interactor,
-                    { ...data, job: jobInstance.id });
+                const response = await core.lambda.call(
+                    jobInstance.taskId,
+                    interactor,
+                    { ...data, job: jobInstance.id },
+                );
 
                 // if only mask presented, let's receive points
                 if (response.mask && !response.points) {
@@ -1405,14 +1408,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const showDetectionContent = fetching && mode === 'detection';
 
         const interactionContent: JSX.Element | null = showInteractionContent ? (
-            <>
-                <ApproximationAccuracy
-                    approxPolyAccuracy={approxPolyAccuracy}
-                    onChange={(value: number) => {
-                        this.setState({ approxPolyAccuracy: value });
-                    }}
-                />
-            </>
+            <ApproximationAccuracy
+                approxPolyAccuracy={approxPolyAccuracy}
+                onChange={(value: number) => {
+                    this.setState({ approxPolyAccuracy: value });
+                }}
+            />
         ) : null;
 
         const detectionContent: JSX.Element | null = showDetectionContent ? (

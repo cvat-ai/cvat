@@ -1,7 +1,7 @@
 ## 3rdparty components
 
 These files are from the [Broadway.js](https://github.com/mbebenita/Broadway) repository:
-- Decoder.js
+- Decoder.cjs
 - mp4.js
 - avc.wasm
 
@@ -16,7 +16,7 @@ For example there are issues with canvas using (webpack doesn't work with binary
 So, we have solved to write patch file for this library.
 It modifies source code a little to support our scenario of using.
 
-### How to build awc.wasm and Decoder.js
+### How to build awc.wasm and Decoder.cjs
 1. Clone Emscripten SDK, install and activate the latest fastcomp SDK:
    ```sh
    git clone https://github.com/emscripten-core/emsdk.git && cd emsdk
@@ -58,7 +58,7 @@ It modifies source code a little to support our scenario of using.
    cd ..
    ```
    ```sh
-   cp Player/avc.wasm  Player/Decoder.js Player/mp4.js <CVAT_FOLDER>/cvat-data/src/
+   cp Player/avc.wasm  Player/Decoder.cjs Player/mp4.js <CVAT_FOLDER>/cvat-data/src/
    ```
    ```sh
    js/3rdparty
