@@ -8,17 +8,20 @@ import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { CombinedState, Indexable } from 'reducers';
+import { useIsMounted } from 'utils/hooks';
 import { getInvitationsAsync } from 'actions/invitations-actions';
 import EmptyListComponent from './empty-list';
 import InvitationsListComponent from './invitations-list';
+import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 
 export default function InvitationsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
+    const isMounted = useIsMounted();
+
     const fetching = useSelector((state: CombinedState) => state.invitations.fetching);
-    const invitations = useSelector((state: CombinedState) => state.invitations.invitations);
     const query = useSelector((state: CombinedState) => state.invitations.query);
-    const count = invitations.length;
+    const count = useSelector((state: CombinedState) => state.invitations.count);
 
     const updatedQuery = { ...query };
     const queryParams = new URLSearchParams(history.location.search);
@@ -30,8 +33,16 @@ export default function InvitationsPageComponent(): JSX.Element {
     }
 
     useEffect(() => {
-        dispatch(getInvitationsAsync());
+        dispatch(getInvitationsAsync(updatedQuery));
     }, []);
+
+    useEffect(() => {
+        if (isMounted()) {
+            history.replace({
+                search: updateHistoryFromQuery(query),
+            });
+        }
+    }, [query]);
 
     const content = count ? <InvitationsListComponent query={updatedQuery} /> : <EmptyListComponent />;
 

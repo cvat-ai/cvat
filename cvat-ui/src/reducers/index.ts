@@ -940,7 +940,8 @@ export interface InvitationsQuery {
 export interface InvitationsState {
     fetching: boolean;
     initialized: boolean;
-    invitations: Invitation[];
+    current: Invitation[];
+    count: number;
     query: InvitationsQuery;
 }
 

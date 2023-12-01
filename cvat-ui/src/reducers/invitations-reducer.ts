@@ -11,7 +11,8 @@ import { InvitationsState } from '.';
 const defaultState: InvitationsState = {
     fetching: false,
     initialized: false,
-    invitations: [],
+    current: [],
+    count: 0,
     query: {
         page: 1,
     },
@@ -23,14 +24,19 @@ export default (state: InvitationsState = defaultState, action: AnyAction): Invi
             return {
                 ...state,
                 fetching: true,
-                invitations: [],
+                current: [],
+                query: {
+                    ...state.query,
+                    ...action.payload.query,
+                },
             };
         case InvitationsActionTypes.GET_INVITATIONS_SUCCESS: {
             return {
                 ...state,
                 fetching: false,
                 initialized: true,
-                invitations: action.payload.invitations,
+                current: action.payload.invitations,
+                count: action.payload.invitations.count,
             };
         }
         case InvitationsActionTypes.GET_INVITATIONS_FAILED: {
@@ -38,7 +44,7 @@ export default (state: InvitationsState = defaultState, action: AnyAction): Invi
                 ...state,
                 fetching: false,
                 initialized: true,
-                invitations: [],
+                current: [],
             };
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {

@@ -2059,7 +2059,7 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
 }
 
 async function getMembershipInvitations(
-    filter: InvitationsFilter = {},
+    filter: InvitationsFilter,
 ): Promise<{ results: SerializedInvitationData[], count: number }> {
     const { backendAPI } = config;
 
@@ -2078,6 +2078,7 @@ async function getMembershipInvitations(
         response = await Axios.get(`${backendAPI}/invitations`, {
             params: {
                 ...filter,
+                page_size: 11,
             },
         });
         return response.data;

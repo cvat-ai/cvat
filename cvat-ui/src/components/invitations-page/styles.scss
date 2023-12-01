@@ -28,7 +28,7 @@
 
 .cvat-invitations-list-content {
     padding-bottom: $grid-unit-size;
-    height: 90%;
+    height: 95%;
 }
 
 .cvat-invitation-item {
@@ -47,6 +47,10 @@
         button {
             margin-left: $grid-unit-size;
         }
+    }
+
+    .ant-card-body {
+        padding: $grid-unit-size * 2;
     }
 
 }

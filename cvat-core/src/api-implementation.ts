@@ -357,9 +357,10 @@ export default function implementAPI(cvat) {
         key,
     );
 
-    cvat.organizations.invitations.implementation = async (filter: InvitationsFilter = {}) => {
+    cvat.organizations.invitations.implementation = async (filter: InvitationsFilter) => {
         const invitationsData = await serverProxy.organizations.invitations(filter);
         const invitations = invitationsData.results.map((invitationData) => new Invitation({ ...invitationData }));
+        invitations.count = invitationsData.count;
         return invitations;
     };
 

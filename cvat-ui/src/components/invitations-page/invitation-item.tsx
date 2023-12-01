@@ -38,7 +38,7 @@ function InvitationItem(props: Props): JSX.Element {
             >
                 {owner}
             </Text>
-            <Text>&nbsp;invited you to join the&nbsp;</Text>
+            <Text>&nbsp;has invited you to join the&nbsp;</Text>
             <Text strong>{slug}</Text>
             <Text>&nbsp;organization&nbsp;</Text>
         </>

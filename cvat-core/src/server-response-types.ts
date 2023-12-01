@@ -233,6 +233,7 @@ export interface SerializedQualitySettingsData {
 
 export type InvitationsFilter = {
     key?: string;
+    page: number;
 };
 
 export interface SerializedInvitationData {

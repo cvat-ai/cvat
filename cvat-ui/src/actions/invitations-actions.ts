@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, ThunkAction, createAction } from 'utils/redux';
-import { CombinedState } from 'reducers';
+import { CombinedState, InvitationsQuery } from 'reducers';
 import { Invitation, Organization, getCore } from 'cvat-core-wrapper';
 
 const cvat = getCore();
@@ -24,7 +24,7 @@ export enum InvitationsActionTypes {
 }
 
 const invitationActions = {
-    getInvitations: () => createAction(InvitationsActionTypes.GET_INVITATIONS),
+    getInvitations: (query: InvitationsQuery) => createAction(InvitationsActionTypes.GET_INVITATIONS, { query }),
     getInvitationsSuccess: (invitations: Invitation[], showNotification: boolean) => (
         createAction(InvitationsActionTypes.GET_INVITATIONS_SUCCESS, { invitations, showNotification })
     ),
@@ -48,14 +48,16 @@ const invitationActions = {
 
 export type InvitationActions = ActionUnion<typeof invitationActions>;
 
-export function getInvitationsAsync(showNotification = false): ThunkAction {
+export function getInvitationsAsync(query: InvitationsQuery, showNotification = false): ThunkAction {
     return async function (dispatch, getState) {
         const state: CombinedState = getState();
         const userID = state.auth.user.id;
-        dispatch(invitationActions.getInvitations());
+
+        dispatch(invitationActions.getInvitations(query));
 
         try {
             const invitations = await cvat.organizations.invitations({
+                ...query,
                 filter: `{"and":[{"==":[{"var":"user_id"},"${userID}"]}, {"==":[{"var":"accepted"},false]}]}`,
             });
             const hasActiveInvitations = invitations.length !== 0 &&
