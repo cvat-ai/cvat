@@ -22,7 +22,7 @@ is specifically designed to work with mask annotations.
 
 This tool is useful in scenarios where a single object
 in an image is annotated with multiple shapes,
-and there is a need to merge these shapes into a single, unified shape.
+and there is a need to merge these shapes into a single one.
 
 ![Join masks](/images/joining-tool-01.jpg)
 
