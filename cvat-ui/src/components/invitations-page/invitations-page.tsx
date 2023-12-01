@@ -10,9 +10,9 @@ import Spin from 'antd/lib/spin';
 import { CombinedState, Indexable } from 'reducers';
 import { useIsMounted } from 'utils/hooks';
 import { getInvitationsAsync } from 'actions/invitations-actions';
+import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import EmptyListComponent from './empty-list';
 import InvitationsListComponent from './invitations-list';
-import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 
 export default function InvitationsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
