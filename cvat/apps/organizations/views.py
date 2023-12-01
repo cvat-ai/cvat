@@ -271,7 +271,7 @@ class InvitationViewSet(viewsets.GenericViewSet,
                 return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is already accepted.")
             invitation.accept()
             response_serializer = AcceptInvitationReadSerializer(data={'organization_slug': invitation.membership.organization.slug})
-            response_serializer.is_valid(raise_exception=True):
+            response_serializer.is_valid(raise_exception=True)
             return Response(status=status.HTTP_200_OK, data=response_serializer.data)
         except Invitation.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist. Please contact organization owner.")

@@ -8,7 +8,6 @@ from allauth.account.models import EmailAddress
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.utils.crypto import get_random_string
 from django.db import transaction
 
 from rest_framework import serializers
@@ -96,7 +95,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
             del membership_data['user']
         except ObjectDoesNotExist:
             user_email = membership_data['user']['email']
-            user = User.objects.create_user(username=user_emai, email=user_email)
+            user = User.objects.create_user(username=user_email, email=user_email)
             user.set_unusable_password()
             email = EmailAddress.objects.create(user=user, email=user_email, primary=True, verified=False)
             user.save()
