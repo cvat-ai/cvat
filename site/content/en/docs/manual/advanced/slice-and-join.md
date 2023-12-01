@@ -5,8 +5,8 @@ weight: 18
 description: 'This section explains how to slice or join several labels'
 ---
 
-In CVAT you can modify labels by either joining multiple labels into
-a single label or slicing a single label into several labels.
+In CVAT you can modify shapes by either joining multiple shapes into
+a single label or slicing a single label into several shapes.
 
 This document provides guidance on how to perform these operations effectively.
 
@@ -31,8 +31,8 @@ To join masks, do the following:
 1. From the [**Edit**](/docs/manual/basics/controls-sidebar/#edit) block,
    select **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg).
 2. Click on the labels, to select masks that you want to join.
-3. (Optional) To remove selection click one more time on the mask.
-4. Click again on **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg)
+3. (Optional) To remove the selection click one more time on the mask.
+4. Click again on **Join masks**![Join masks tool icon](/images/join-masks-icon.jpg)
    (**J**) to execute the join operation.
 
 Upon completion, the selected masks will be joined into a single mask.
@@ -61,7 +61,7 @@ To slice mask or polygon, do the following:
    <br>Hold Shift to add points automatically on cursor movement.
    <br> **Note**: The line cannot cross itself.
    <br> **Note**: The line cannot cross the contour more than twice.
-5. (Optional)>Right click to cancel the latest point.
-6. Click on the contour (**Alt**+**J**) (outside the contour) to finalize slicing.
+5. (Optional)> Right-click to cancel the latest point.
+6. Click on the contour (**Alt**+**J**) (outside the contour) to finalize the slicing.
 
 ![Slicing tool](/images/slicing-tool-02.gif)
