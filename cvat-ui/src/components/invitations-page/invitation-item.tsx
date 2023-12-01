@@ -87,15 +87,23 @@ function InvitationItem(props: Props): JSX.Element {
                                         danger
                                         onClick={() => {
                                             Modal.confirm({
-                                                title: text,
-                                                content: 'Would you like to reject the invitation?',
+                                                title: (
+                                                    <>
+                                                        <Text>
+                                                            Would you like to decline the invitation to the&nbsp;
+                                                        </Text>
+                                                        <Text strong>{slug}</Text>
+                                                        <Text>&nbsp;organization&nbsp;</Text>
+                                                    </>
+                                                ),
                                                 className: 'cvat-invitaion-reject-modal',
                                                 onOk: () => {
                                                     onReject(key).then(() => {
                                                         setRejected(true);
                                                     });
                                                 },
-                                                okText: 'Reject',
+                                                okText: 'Decline',
+                                                okButtonProps: { danger: true },
                                             });
                                         }}
                                     >
