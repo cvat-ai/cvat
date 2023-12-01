@@ -37,7 +37,7 @@ class ClientEventsSerializer(serializers.Serializer):
     def validate(self, data):
         for event in data["events"]:
             if event["scope"] in self._COLLAPSED_EVENT_SCOPES:
-                if type(event.get("duration")) != int:
+                if not isinstance(event.get("duration"), int):
                     raise serializers.ValidationError(f'event "{event["scope"]}" must have "duration" field')
         return data
 
