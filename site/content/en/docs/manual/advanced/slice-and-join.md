@@ -57,7 +57,7 @@ To slice mask or polygon, do the following:
 2. Click on the label you intend to slice.
    A black contour will appear around the selected label.
 3. Set an initial point for slicing by clicking on the contour.
-4. Draw a line across the label to define the slicing path.
+4. Draw a line across the shape to define the slicing path.
    <br>Hold Shift to add points automatically on cursor movement.
    <br> **Note**: The line cannot cross itself.
    <br> **Note**: The line cannot cross the contour more than twice.
