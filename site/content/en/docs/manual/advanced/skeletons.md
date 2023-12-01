@@ -90,7 +90,7 @@ To add points from the model, and annotate do the following:
 1. Open **Basic configurator**.
 2. On the **Constructor** tab, click **From model**.
 3. From the **Select a model to pick labels** select the
-   `Human pose estimation` model.
+   `Human pose estimation` model or others if available.
 4. Click on the model's labels, you want to use.
    <br>Selected labels will become gray.
 
