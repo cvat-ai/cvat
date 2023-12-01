@@ -25,27 +25,32 @@ and [**COCO Keypoints**](/docs/manual/advanced/formats/coco-keypoints/).
 
 See:
 
-- [Skeleton task](#skeleton-task)
-  - [Adding Skeleton manually](#adding-skeleton-manually)
-  - [Adding Skeleton labels from the model](#adding-skeleton-labels-from-the-model)
+- [Adding Skeleton manually](#adding-skeleton-manually)
+  - [Skeleton Configurator](#skeleton-configurator)
   - [Configuring Skeleton points](#configuring-skeleton-points)
+  - [Adding Skeleton labels manually](#adding-skeleton-labels-manually)
+- [Adding Skeleton labels from the model](#adding-skeleton-labels-from-the-model)
 - [Annotation with Skeletons](#annotation-with-skeletons)
 - [Automatic annotation with Skeletons](#automatic-annotation-with-skeletons)
 - [Editing skeletons on the canvas](#editing-skeletons-on-the-canvas)
 - [Editing skeletons on the sidebar](#editing-skeletons-on-the-sidebar)
 
-## Skeleton task
+## Adding Skeleton manually
 
 To start annotating using skeletons, you need to set up a **Skeleton** task
 in **Configurator**:
 
 To open **Configurator**, when [creating a task](/docs/manual/basics/create_an_annotation_task/),
 click on the **Setup skeleton** button if you want to set up the skeleton manually,
-or **From model** if you want to add skeleton labels from a model.
+or [**From model**](/docs/manual/advanced/skeletons/#adding-skeleton-labels-from-the-model)
+if you want to add skeleton labels from a model.
 
 ![](/images/image-setup-skeleton-1.jpg)
 
-The skeleton **Configurator** has the following fields:
+### Skeleton Configurator
+
+The skeleton **Configurator** is a tool to build
+skeletons for annotation. It has the following fields:
 
 ![](/images/image-skeleton-configurator-overview.jpg)
 
@@ -63,50 +68,6 @@ The skeleton **Configurator** has the following fields:
 | **8**  | **Drawing area**            | Use it as a canvas to draw a skeleton.                                                                                                |
 
 <!--lint enable maximum-line-length-->
-
-You can add **Skeleton** points manually or use the model.
-
-### Adding Skeleton manually
-
-To create the **Skeleton** task, do the following:
-
-1. Open **Configurator**.
-2. (Optional) Upload background image.
-3. In the Label name field, enter the name of the label.
-4. (Optional) [**Add attribute**](/docs/manual/basics/create_an_annotation_task/#add-an-attribute)
-   <br>**Note**: you can add attributes exclusively to each point,
-   for more information, see [**Configuring Skeleton points**](#configuring-skeleton-points)
-5. Use **Add point** to add points to the **Drawing area**.
-6. Use **Add edge** to add edges between points.
-7. Upload files.
-8. Click:
-   - **Submit & Open** to create and open the task.
-   - **Submit & Continue** to submit the configuration and start creating a new task.
-
-### Adding Skeleton labels from the model
-
-To add points from the model, and annotate do the following:
-
-1. Open **Basic configurator**.
-2. On the **Constructor** tab, click **From model**.
-3. From the **Select a model to pick labels** select the
-   `Human pose estimation` model or others if available.
-4. Click on the model's labels, you want to use.
-   <br>Selected labels will become gray.
-
-   ![](/images/auto-annot-sk.jpg)
-
-5. (Optional) If you want to adjust labels, within the
-   label, click the **Update** attributes icon.
-   <br>The [**Skeleton configurator**](/docs/manual/advanced/skeletons/#skeleton-task)
-   will open, where you can [**configure the skeleton**](/docs/manual/advanced/skeletons/#configuring-skeleton-points).
-   <br>**Note**: Labels cannot be adjusted after the task/project is created.
-6. Click **Done**. The labels, that you selected,
-   will appear in the labels window. 
-7. Upload data.
-8. Click:
-   - **Submit & Open** to create and open the task.
-   - **Submit & Continue** to submit the configuration and start creating a new task.
 
 ### Configuring Skeleton points
 
@@ -127,6 +88,48 @@ A **Skeleton** point can only exist within its parent **Skeleton**.
 > **Note** that you cannot change the skeleton configuration for an existing task/project.
 
 > You can copy/insert skeleton configuration from the **Raw** tab of the label configurator.
+
+### Adding Skeleton labels manually
+
+To create the **Skeleton** task, do the following:
+
+1. Open **Configurator**.
+2. (Optional) Upload background image.
+3. In the Label name field, enter the name of the label.
+4. (Optional) [**Add attribute**](/docs/manual/basics/create_an_annotation_task/#add-an-attribute)
+   <br>**Note**: you can add attributes exclusively to each point,
+   for more information, see [**Configuring Skeleton points**](#configuring-skeleton-points)
+5. Use **Add point** to add points to the **Drawing area**.
+6. Use **Add edge** to add edges between points.
+7. Upload files.
+8. Click:
+   - **Submit & Open** to create and open the task.
+   - **Submit & Continue** to submit the configuration and start creating a new task.
+
+## Adding Skeleton labels from the model
+
+To add points from the model, and annotate do the following:
+
+1. Open **Basic configurator**.
+2. On the **Constructor** tab, click **From model**.
+3. From the **Select a model to pick labels** select the
+   `Human pose estimation` model or others if available.
+4. Click on the model's labels, you want to use.
+   <br>Selected labels will become gray.
+
+   ![](/images/auto-annot-sk.jpg)
+
+5. (Optional) If you want to adjust labels, within the
+   label, click the **Update** attributes icon.
+   <br>The [**Skeleton configurator**](/docs/manual/advanced/skeletons/#skeleton-configurator)
+   will open, where you can [**configure the skeleton**](/docs/manual/advanced/skeletons/#configuring-skeleton-points).
+   <br>**Note**: Labels cannot be adjusted after the task/project is created.
+6. Click **Done**. The labels, that you selected,
+   will appear in the labels window.
+7. Upload data.
+8. Click:
+   - **Submit & Open** to create and open the task.
+   - **Submit & Continue** to submit the configuration and start creating a new task.
 
 ## Annotation with Skeletons
 
