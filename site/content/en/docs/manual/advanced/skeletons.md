@@ -41,7 +41,7 @@ in **Configurator**:
 
 To open **Configurator**, when [creating a task](/docs/manual/basics/create_an_annotation_task/),
 click on the **Setup skeleton** button if you want to set up the skeleton manually,
-or **From model** if you want to add skeleton labels from the model.
+or **From model** if you want to add skeleton labels from a model.
 
 ![](/images/image-setup-skeleton-1.jpg)
 
