@@ -30,7 +30,7 @@ To join masks, do the following:
 
 1. From the [**Edit**](/docs/manual/basics/controls-sidebar/#edit) block,
    select **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg).
-2. Click on the labels, to select masks that you want to join.
+2. Click on the canvas area, to select masks that you want to join.
 3. (Optional) To remove the selection click the mask one more time.
 4. Click again on **Join masks**![Join masks tool icon](/images/join-masks-icon.jpg)
    (**J**) to execute the join operation.
