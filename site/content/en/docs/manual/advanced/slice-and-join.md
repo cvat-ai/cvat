@@ -15,7 +15,7 @@ See:
 - [Joining CVAT labels](#joining-cvat-labels)
 - [Slicing CVAT labels](#slicing-cvat-labels)
 
-## Joining CVAT labels
+## Joining masks
 
 The **Join masks** tool (![Join masks tool icon](/images/join-masks-icon.jpg)),
 is specifically designed to work with mask annotations.
