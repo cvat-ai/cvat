@@ -54,8 +54,8 @@ To slice mask or polygon, do the following:
 
 1. From the [**Edit**](/docs/manual/basics/controls-sidebar/#edit) block,
    select **Slice mask/polygon** ![Slicing tool icon](/images/slicing-tool-icon.jpg).
-2. Click on the label you intend to slice.
-   A black contour will appear around the selected label.
+2. Click on the shape you intend to slice.
+   A black contour will appear around the selected shape.
 3. Set an initial point for slicing by clicking on the contour.
 4. Draw a line across the shape to define the slicing path.
    <br>Hold Shift to add points automatically on cursor movement.
