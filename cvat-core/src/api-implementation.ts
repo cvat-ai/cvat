@@ -27,7 +27,7 @@ import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
-import { InvitationsFilter, SerializedAsset } from './server-response-types';
+import { SerializedAsset } from './server-response-types';
 import QualityReport from './quality-report';
 import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
@@ -363,7 +363,7 @@ export default function implementAPI(cvat) {
         key,
     );
 
-    cvat.organizations.invitations.implementation = async (filter: InvitationsFilter) => {
+    cvat.organizations.invitations.implementation = async (filter) => {
         const invitationsData = await serverProxy.organizations.invitations(filter);
         const invitations = invitationsData.results.map((invitationData) => new Invitation({ ...invitationData }));
         invitations.count = invitationsData.count;
