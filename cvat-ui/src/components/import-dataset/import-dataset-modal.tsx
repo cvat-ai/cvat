@@ -103,35 +103,21 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         } as UploadParams);
     }, [resource, defaultStorageLocation, defaultStorageCloudId]);
 
+    const isProject = useCallback((): boolean => instance instanceof core.classes.Project, [instance]);
+    const isTask = useCallback((): boolean => instance instanceof core.classes.Task, [instance]);
+
     useEffect(() => {
         if (instance) {
-            if (instance instanceof core.classes.Project || instance instanceof core.classes.Task) {
-                setDefaultStorageLocation(instance.sourceStorage?.location || StorageLocation.LOCAL);
-                setDefaultStorageCloudId(instance.sourceStorage?.cloudStorageId || null);
-                if (instance instanceof core.classes.Project) {
-                    setInstanceType(`project #${instance.id}`);
-                } else {
-                    setInstanceType(`task #${instance.id}`);
-                }
-            } else if (instance instanceof core.classes.Job) {
-                core.tasks.get({ id: instance.taskId })
-                    .then((response: any) => {
-                        if (response.length) {
-                            const [taskInstance] = response;
-                            setDefaultStorageLocation(taskInstance.sourceStorage?.location || StorageLocation.LOCAL);
-                            setDefaultStorageCloudId(taskInstance.sourceStorage?.cloudStorageId || null);
-                        }
-                    })
-                    .catch((error: Error) => {
-                        if ((error as any).code !== 403) {
-                            Notification.error({
-                                message: `Could not get task instance ${instance.taskId}`,
-                                description: error.toString(),
-                            });
-                        }
-                    });
-                setInstanceType(`job #${instance.id}`);
+            setDefaultStorageLocation(instance.sourceStorage.location);
+            setDefaultStorageCloudId(instance.sourceStorage.cloudStorageId);
+            let type: 'project' | 'task' | 'job' = 'job';
+
+            if (isProject()) {
+                type = 'project';
+            } else if (isTask()) {
+                type = 'task';
             }
+            setInstanceType(`${type} #${instance.id}`);
         }
     }, [instance, resource]);
 

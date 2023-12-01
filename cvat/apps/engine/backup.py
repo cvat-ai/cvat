@@ -1020,7 +1020,7 @@ def export(db_instance, request, queue_name):
             args=(db_instance, Exporter, '{}_backup.zip'.format(obj_type), logger, cache_ttl),
             job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_instance),
-            depends_on=define_dependent_job(queue, user_id),
+            depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
             result_ttl=ttl,
             failure_ttl=ttl,
         )

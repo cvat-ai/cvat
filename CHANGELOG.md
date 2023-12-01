@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.9.1'></a>
+## \[2.9.1\] - 2023-11-23
+
+This release has changes only in the Enterprise version.
+
 <a id='changelog-2.9.0'></a>
 ## \[2.9.0\] - 2023-11-23
 

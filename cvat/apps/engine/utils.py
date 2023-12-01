@@ -155,7 +155,13 @@ def process_failed_job(rq_job: Job):
     return msg
 
 
-def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER) -> Optional[Dependency]:
+def define_dependent_job(
+    queue: DjangoRQ,
+    user_id: int,
+    should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
+    *,
+    rq_id: Optional[str] = None,
+) -> Optional[Dependency]:
     if not should_be_dependent:
         return None
 
@@ -171,9 +177,29 @@ def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: boo
         for job in queue.job_class.fetch_many(
             queue.deferred_job_registry.get_job_ids(), queue.connection
         )
-        if job and job.meta.get("user", {}).get("id") == user_id
+        # Since there is no cleanup implementation in DeferredJobRegistry,
+        # this registry can contain "outdated" jobs that weren't deleted from it
+        # but were added to another registry. Probably such situations can occur
+        # if there are active or deferred jobs when restarting the worker container.
+        if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
     ]
-    user_jobs = list(filter(lambda job: not job.meta.get(KEY_TO_EXCLUDE_FROM_DEPENDENCY), started_user_jobs + deferred_user_jobs))
+    all_user_jobs = started_user_jobs + deferred_user_jobs
+
+    # prevent possible cyclic dependencies
+    if rq_id:
+        all_job_dependency_ids = {
+            dep_id.decode()
+            for job in all_user_jobs
+            for dep_id in job.dependency_ids or ()
+        }
+
+        if Job.redis_job_namespace_prefix + rq_id in all_job_dependency_ids:
+            return None
+
+    user_jobs = [
+        job for job in all_user_jobs
+        if not job.meta.get(KEY_TO_EXCLUDE_FROM_DEPENDENCY)
+    ]
 
     return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
 
@@ -218,7 +244,7 @@ def configure_dependent_job_to_download_from_cs(
                 },
                 result_ttl=result_ttl,
                 failure_ttl=failure_ttl,
-                depends_on=define_dependent_job(queue, user_id, should_be_dependent)
+                depends_on=define_dependent_job(queue, user_id, should_be_dependent, rq_id=rq_job_id_download_file)
             )
     return rq_job_download_file
 
