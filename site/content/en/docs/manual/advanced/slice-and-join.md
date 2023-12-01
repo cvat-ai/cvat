@@ -35,7 +35,7 @@ To join masks, do the following:
 4. Click again on **Join masks** ![Join masks tool icon](/images/join-masks-icon.jpg)
    (**J**) to execute the join operation.
 
-Upon completion, the selected masks will be merged into a single mask.
+Upon completion, the selected masks will be joined into a single mask.
 
 ![Join masks gif](/images/joining-tool-02.gif)
 
@@ -44,9 +44,9 @@ Upon completion, the selected masks will be merged into a single mask.
 The **Slice mask/polygon** (![Slicing tool icon](/images/slicing-tool-icon.jpg))
 is compatible with both mask and polygon annotations.
 
-This tool is useful in scenarios where multiple object in an image
-are annotated with one label labels,
-and there is a need to slice this label into multiple labels.
+This tool is useful in scenarios where multiple objects in an image
+are annotated with one shape,
+and there is a need to slice this shape into multiple parts.
 
 ![Slicing tool](/images/slicing-tool-01.jpg)
 
