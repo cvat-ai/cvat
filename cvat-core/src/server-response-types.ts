@@ -240,11 +240,6 @@ export interface SerializedQualitySettingsData {
     compare_attributes?: boolean;
 }
 
-export type InvitationsFilter = {
-    key?: string;
-    page: number;
-};
-
 export interface SerializedInvitationData {
     created_date: string;
     key: string;

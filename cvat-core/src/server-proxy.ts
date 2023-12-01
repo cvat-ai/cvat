@@ -2059,7 +2059,7 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
 }
 
 async function getMembershipInvitations(
-    filter: InvitationsFilter,
+    filter,
 ): Promise<{ results: SerializedInvitationData[], count: number }> {
     const { backendAPI } = config;
 
