@@ -1,7 +1,7 @@
 ## 3rdparty components
 
 These files are from the [Broadway.js](https://github.com/mbebenita/Broadway) repository:
-- Decoder.cjs
+- Decoder.worker.js
 - mp4.js
 - avc.wasm
 
@@ -63,26 +63,3 @@ It modifies source code a little to support our scenario of using.
    ```sh
    js/3rdparty
    ```
-
-### How work with a patch file
-```bash
-    # from cvat-data/src/js
-    cp -r 3rdparty 3rdparty_edited
-    # change 3rdparty edited as we need
-    diff -u 3rdparty 3rdparty_edited/ > 3rdparty_patch.diff
-    patch -p0 < 3rdparty_patch.diff # apply patch from cvat-data/src/js
-```
-
-Also these files have been added to ignore for git in all future revisions:
-```bash
-    # from cvat-data dir
-    git update-index --skip-worktree src/js/3rdparty/*.js
-```
-
-This behaviour can be reset with:
-```bash
-    # from cvat-data dir
-    git update-index --no-skip-worktree src/js/3rdparty/*.js
-```
-
-[Stackoverflow issue](https://stackoverflow.com/questions/4348590/how-can-i-make-git-ignore-future-revisions-to-a-file)
