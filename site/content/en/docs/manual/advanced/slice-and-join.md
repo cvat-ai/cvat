@@ -39,7 +39,7 @@ Upon completion, the selected masks will be joined into a single mask.
 
 ![Join masks gif](/images/joining-tool-02.gif)
 
-## Slicing CVAT labels
+## Slicing polygons and masks
 
 The **Slice mask/polygon** (![Slicing tool icon](/images/slicing-tool-icon.jpg))
 is compatible with both mask and polygon annotations.
