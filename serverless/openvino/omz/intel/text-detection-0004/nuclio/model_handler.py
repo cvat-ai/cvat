@@ -93,7 +93,7 @@ class PixelLinkDecoder():
         root = point
         update_parent = False
         tmp = self.group_mask[root]
-        while tmp is not -1:
+        while tmp != -1:
             root = tmp
             tmp = self.group_mask[root]
             update_parent = True
