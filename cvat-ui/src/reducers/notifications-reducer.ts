@@ -405,7 +405,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages,
                         invitations: {
                             ...state.messages.invitations,
-                            newInvitations: 'You have new organization invitations. [Click here](/invitations) to view them.',
+                            newInvitations: 'You\'ve received an invitation to join an organization! [Click here](/invitations) to get details.',
                         },
                     },
                 };

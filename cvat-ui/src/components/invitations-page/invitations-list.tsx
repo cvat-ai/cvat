@@ -28,14 +28,14 @@ export default function InvitationsListComponent(props: Props): JSX.Element {
     const invitations = useSelector((state: CombinedState) => state.invitations.current);
     const totalCount = useSelector((state: CombinedState) => state.invitations.count);
 
-    const onAccept = useCallback((invintationKey) => (
-        dispatch(acceptInvitationAsync(invintationKey, (orgSlug: string) => {
+    const onAccept = useCallback((invitationKey) => (
+        dispatch(acceptInvitationAsync(invitationKey, (orgSlug: string) => {
             localStorage.setItem('currentOrganization', orgSlug);
             window.location.reload();
         }))), []);
 
-    const onReject = useCallback((invintationKey) => (
-        dispatch(rejectInvitationAsync(invintationKey))
+    const onReject = useCallback((invitationKey) => (
+        dispatch(rejectInvitationAsync(invitationKey))
     ), []);
 
     const onPageChange = useCallback((newPage) => {

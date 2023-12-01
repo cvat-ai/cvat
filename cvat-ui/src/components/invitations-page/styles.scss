@@ -52,10 +52,13 @@
     .ant-card-body {
         padding: $grid-unit-size * 2;
     }
-
 }
 
 .cvat-invitation-item-rejected {
     opacity: 0.5;
     pointer-events: none;
+}
+
+.cvat-invitation-item-ribbon {
+    top: 4px;
 }

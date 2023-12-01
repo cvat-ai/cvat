@@ -120,7 +120,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetMessages: (): void => dispatch(resetMessages()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
         loadOrganization: (): void => dispatch(activateOrganizationAsync()),
-        initInvitations: (): void => dispatch(getInvitationsAsync(true)),
+        initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
     };
 }
 

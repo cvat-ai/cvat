@@ -63,37 +63,46 @@ function InvitationItem(props: Props): JSX.Element {
                                 type='primary'
                                 disabled={expired}
                                 onClick={() => {
-                                    Modal.confirm({
-                                        title: text,
-                                        content: 'Would you like to join?',
-                                        className: 'cvat-invitaion-accept-modal',
-                                        onOk: () => {
-                                            onAccept(key);
-                                        },
-                                        okText: 'Accept',
-                                    });
+                                    onAccept(key);
                                 }}
                             >
                                 Accept
                             </Button>
-                            <Button
-                                type='ghost'
-                                onClick={() => {
-                                    Modal.confirm({
-                                        title: text,
-                                        content: 'Would you like to reject the invitation?',
-                                        className: 'cvat-invitaion-reject-modal',
-                                        onOk: () => {
+                            {
+                                expired ? (
+                                    <Button
+                                        type='primary'
+                                        danger
+                                        onClick={() => {
                                             onReject(key).then(() => {
                                                 setRejected(true);
                                             });
-                                        },
-                                        okText: 'Reject',
-                                    });
-                                }}
-                            >
-                                Reject
-                            </Button>
+                                        }}
+                                    >
+                                        Remove
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        type='primary'
+                                        danger
+                                        onClick={() => {
+                                            Modal.confirm({
+                                                title: text,
+                                                content: 'Would you like to reject the invitation?',
+                                                className: 'cvat-invitaion-reject-modal',
+                                                onOk: () => {
+                                                    onReject(key).then(() => {
+                                                        setRejected(true);
+                                                    });
+                                                },
+                                                okText: 'Reject',
+                                            });
+                                        }}
+                                    >
+                                        Decline
+                                    </Button>
+                                )
+                            }
                         </Col>
                     </Row>
                 </Card>
