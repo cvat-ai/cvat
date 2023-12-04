@@ -13,8 +13,8 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData,
-    SerializedAcceptInvitation, SerializedInvitationData,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
+    SerializedQualitySettingsData, SerializedInvitationData,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -470,7 +470,7 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
 
 async function acceptOrganizationInvitation(
     key: string,
-): Promise<SerializedAcceptInvitation> {
+): Promise<string> {
     let response = null;
     let orgSlug = null;
     try {

@@ -185,10 +185,6 @@ export interface SerializedRegister {
     username: string;
 }
 
-export interface SerializedAcceptInvitation {
-    organization_slug: string;
-}
-
 export interface SerializedGuide {
     id?: number;
     task_id: number | null;

@@ -28,7 +28,6 @@ import AnnotationGuide from './guide';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';
-import { SerializedAcceptInvitation } from './server-response-types';
 
 export default interface CVATCore {
     plugins: {
@@ -88,7 +87,7 @@ export default interface CVATCore {
         get: any;
         activate: any;
         deactivate: any;
-        acceptInvitation: (key: string) => Promise<SerializedAcceptInvitation>;
+        acceptInvitation: (key: string) => Promise<string>;
         rejectInvitation: (key: string) => Promise<void>;
         invitations: (filter: {
             page?: number,
