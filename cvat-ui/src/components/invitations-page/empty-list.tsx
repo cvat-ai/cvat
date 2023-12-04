@@ -7,7 +7,7 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Empty from 'antd/lib/empty';
 
-export default function EmptyListComponent(): JSX.Element {
+function EmptyListComponent(): JSX.Element {
     return (
         <div className='cvat-empty-invitations-list'>
             <Empty description={(
@@ -21,3 +21,5 @@ export default function EmptyListComponent(): JSX.Element {
         </div>
     );
 }
+
+export default React.memo(EmptyListComponent);
