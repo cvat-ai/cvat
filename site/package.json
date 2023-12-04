@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "Hugo dependencies that should be installed separately",
   "main": "none.js",
-  "dependencies": {},
+  "dependencies": {
+    "docsy": "file:themes/docsy"
+  },
   "devDependencies": {
     "autoprefixer": "^10.2.5",
     "postcss-cli": "^8.3.1",

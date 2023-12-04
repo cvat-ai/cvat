@@ -9,6 +9,15 @@ fullnameOverride: ""
 
 cvat:
   backend:
+    labels: {}
+    annotations: {}
+    resources: {}
+    affinity: {}
+    tolerations: []
+    additionalEnv: []
+    additionalVolumes: []
+    additionalVolumeMounts: []
+
     initializer:
       labels: {}
       annotations: {}
@@ -273,15 +282,6 @@ analytics:
   clickhousePassword: user
   clickhouseHost: "{{ .Release.Name }}-clickhouse"
 
-  ingress:
-    path: /analytics
-    pathType: "Prefix"
-    annotations:
-      kubernetes.io/ingress.class: traefik
-    service:
-      name: grafana
-      port: 80
-
 vector:
   envFrom:
     - secretRef:
@@ -364,56 +364,55 @@ grafana:
       enabled: false
 
 ingress:
+  ## @param ingress.enabled Enable ingress resource generation for CVAT
+  ##
   enabled: false
-
-# In case you need an ingress, write them manually in your my.values.eml, see example below:
-#  enabled: true
-#  annotations:
-#    traefik.ingress.kubernetes.io/router.entrypoints: web
-#    kubernetes.io/ingress.class: traefik
-#  hosts:
-#    - host: cvat.local
-#      paths:
-#        - path: /api
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path: /admin
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path: /static
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path: /django-rq
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path: /profiler
-#          pathType: "Prefix"
-#          service:
-#            name: backend-service
-#            port: 8080
-#        - path : /
-#          pathType: "Prefix"
-#          service:
-#            name: frontend-service
-#            port: 80
-#  tls:
-#    - hosts:
-#      - <your_domain>
-#    secretName: ingress-tls-cvat
+  ## @param ingress.hostname Host for the ingress resource
+  ##
+  hostname: cvat.local
+  ## @param ingress.annotations Additional annotations for the Ingress resource.
+  ##
+  ## e.g:
+  ## annotations:
+  ##   kubernetes.io/ingress.class: nginx
+  ##
+  annotations: {}
+  ## @param ingress.className IngressClass that will be be used to implement the Ingress (Kubernetes 1.18+)
+  ## This is supported in Kubernetes 1.18+ and required if you have more than one IngressClass marked as the default for your cluster
+  ## ref: https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/
+  ##
+  className: ""
+  ## @param ingress.tls Enable TLS configuration for the host defined at `ingress.hostname` parameter
+  ## TLS certificates will be retrieved from a TLS secret defined in tlsSecretName parameter
+  ##
+  tls: false
+  ## @param ingress.tlsSecretName Specifies the name of the secret containing TLS certificates. Ignored if ingress.tls is false
+  ##
+  tlsSecretName: ingress-tls-cvat
 
 traefik:
   enabled: false
-  service:
-    externalIPs:
-      # - "192.168.49.2"
+  logs:
+    general:
+      format: json
+    access:
+      enabled: true
+      format: json
+      fields:
+        general:
+          defaultmode: drop
+          names:
+            ClientHost: keep
+            DownstreamContentSize: keep
+            DownstreamStatus: keep
+            Duration: keep
+            RequestHost: keep
+            RequestMethod: keep
+            RequestPath: keep
+            RequestPort: keep
+            RequestProtocol: keep
+            RouterName: keep
+            StartUTC: keep
 
 smokescreen:
   opts: ''

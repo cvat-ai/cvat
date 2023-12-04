@@ -6,7 +6,7 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, Organization,
+    Webhook, MLModel, Organization, Job, Label,
     QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
@@ -80,8 +80,6 @@ export interface JobsQuery {
     search: string | null;
     filter: string | null;
 }
-
-export type Job = any;
 
 export interface JobsState {
     query: JobsQuery;
@@ -492,6 +490,8 @@ export interface NotificationsState {
             creating: null | ErrorState;
             merging: null | ErrorState;
             grouping: null | ErrorState;
+            joining: null | ErrorState;
+            slicing: null | ErrorState;
             splitting: null | ErrorState;
             removing: null | ErrorState;
             propagating: null | ErrorState;
@@ -507,6 +507,7 @@ export interface NotificationsState {
             deleteFrame: null | ErrorState;
             restoreFrame: null | ErrorState;
             savingLogs: null | ErrorState;
+            canvas: null | ErrorState;
         };
         boundaries: {
             resetError: null | ErrorState;
@@ -612,7 +613,9 @@ export enum ActiveControl {
     DRAW_SKELETON = 'draw_skeleton',
     MERGE = 'merge',
     GROUP = 'group',
+    JOIN = 'join',
     SPLIT = 'split',
+    SLICE = 'slice',
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
@@ -682,11 +685,11 @@ export interface AnnotationState {
     };
     job: {
         openTime: null | number;
-        labels: any[];
+        labels: Label[];
         requestedId: number | null;
         groundTruthJobId: number | null;
         groundTruthJobFramesMeta: FramesMetaData | null;
-        instance: any | null | undefined;
+        instance: Job | null | undefined;
         attributes: Record<number, any[]>;
         fetching: boolean;
         saving: boolean;

@@ -31,7 +31,6 @@ from drf_spectacular.utils import (
     OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
     extend_schema_view, extend_schema
 )
-from drf_spectacular.plumbing import build_array_type, build_basic_type
 
 from pathlib import Path
 from rest_framework import mixins, serializers, status, viewsets
@@ -2483,57 +2482,6 @@ class CloudStorageViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             response = HttpResponseBadRequest(str(ex))
         return response
 
-    @extend_schema(summary='Method returns a manifest content',
-        parameters=[
-            OpenApiParameter('manifest_path', description='Path to the manifest file in a cloud storage',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        ],
-        responses={
-            '200': OpenApiResponse(response=build_array_type(build_basic_type(OpenApiTypes.STR)), description='A manifest content'),
-        },
-        deprecated=True,
-        description="This method is deprecated and will be removed in version 2.6.0. "
-                    "Please use the new version of API: /cloudstorages/id/content-v2/",
-    )
-    @action(detail=True, methods=['GET'], url_path='content')
-    def content(self, request, pk):
-        storage = None
-        try:
-            db_storage = self.get_object()
-            storage = db_storage_to_storage_instance(db_storage)
-            if not db_storage.manifests.count():
-                raise ValidationError('There is no manifest file')
-            manifest_path = request.query_params.get('manifest_path', db_storage.manifests.first().filename)
-            manifest_prefix = os.path.dirname(manifest_path)
-
-            full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
-            if not os.path.exists(full_manifest_path) or \
-                    datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_path):
-                storage.download_file(manifest_path, full_manifest_path)
-            manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
-            # need to update index
-            manifest.set_index()
-            manifest_files = [os.path.join(manifest_prefix, f) for f in manifest.data]
-            return Response(
-                data=manifest_files,
-                content_type='text/plain',
-                headers={'Deprecation': 'true'}
-            )
-
-        except CloudStorageModel.DoesNotExist:
-            message = f"Storage {pk} does not exist"
-            slogger.glob.error(message)
-            return HttpResponseNotFound(message)
-        except (ValidationError, PermissionDenied, NotFound) as ex:
-            msg = str(ex) if not isinstance(ex, ValidationError) else \
-                '\n'.join([str(d) for d in ex.detail])
-            slogger.cloud_storage[pk].info(msg)
-            return Response(data=msg, status=ex.status_code)
-        except Exception as ex:
-            slogger.glob.error(str(ex))
-            return Response("An internal error has occurred",
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
     @extend_schema(summary='Method returns the content of the cloud storage',
         parameters=[
             OpenApiParameter('manifest_path', description='Path to the manifest file in a cloud storage',
@@ -2959,7 +2907,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 func=import_resource_with_clean_up_after,
                 args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
                 job_id=rq_id,
-                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                depends_on=dependent_job or define_dependent_job(queue, user_id, rq_id=rq_id),
                 meta={
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=db_obj),
@@ -3091,7 +3039,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
             args=(db_instance.id, format_name, server_address),
             job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_instance),
-            depends_on=define_dependent_job(queue, user_id),
+            depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
             result_ttl=ttl,
             failure_ttl=ttl,
         )
@@ -3173,7 +3121,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=db_obj),
                 },
-                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                depends_on=dependent_job or define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )

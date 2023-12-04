@@ -147,7 +147,7 @@ window.addEventListener('error', (errorEvent: ErrorEvent) => {
         const store = getCVATStore();
         const state: CombinedState = store.getState();
         const { pathname } = window.location;
-        const re = RegExp(/\/tasks\/[0-9]+\/jobs\/[0-9]+$/);
+        const re = /\/tasks\/[0-9]+\/jobs\/[0-9]+$/;
         const { instance: job } = state.annotation.job;
         if (re.test(pathname) && job) {
             job.logger.log(LogType.exception, logPayload);
