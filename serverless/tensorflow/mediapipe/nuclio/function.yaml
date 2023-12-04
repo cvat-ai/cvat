@@ -1,4 +1,3 @@
-# CONFIG
 metadata:
   name: mediapipe-pose
   namespace: cvat
@@ -48,7 +47,6 @@ metadata:
             { "id":  32, "name": "33", "type": "points" }
           ]
         }
-
       ]
 
 spec:
@@ -72,8 +70,6 @@ spec:
         - kind: ADD
           value: https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task ./
 
-#    copy:
-#     - skeleton.svg:/opt/nuclio/skeleton.svg
   triggers:
     myHttpTrigger:
       maxWorkers: 2

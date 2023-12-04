@@ -1,3 +1,7 @@
+# Copyright (C) 2023 CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import mediapipe as mp
 from mediapipe.tasks import python # type: ignore
 from mediapipe.tasks.python import vision # type: ignore
@@ -7,35 +11,25 @@ import io
 from PIL import Image
 import yaml
 import numpy as np
+
 def init_context(context):
-
     context.logger.info("Init labels...")
-
     with open("/opt/nuclio/function.yaml", "rb") as function_file:
         functionconfig = yaml.safe_load(function_file)
         labels_spec = functionconfig['metadata']['annotations']['spec']
         labels = json.loads(labels_spec)
-
     context.user_data.labels =  labels
-
     context.logger.info("Function initialized")
-
-
 
 def handler(context, event):
     context.logger.info("Run mediapipe 33kps model")
 
-    data = event.body
-    threshold = data.get("threshold", 0.55)
-    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
-    pil_img = Image.open(buf)
-    image = mp.Image(
-    image_format=mp.ImageFormat.SRGB, data=np.asarray(pil_img)
-    )
+    buf = io.BytesIO(base64.b64decode(event.body["image"]))
+    threshold = event.body.get('threshold', 0.55)
+    pil_image = Image.open(buf).convert("RGB")
+    image = mp.Image(image_format=mp.ImageFormat.SRGB, data=np.asarray(pil_image))
 
-    base_options = python.BaseOptions(
-    model_asset_path='pose_landmarker_heavy.task'
-    )
+    base_options = python.BaseOptions(model_asset_path='pose_landmarker_heavy.task')
     options = vision.PoseLandmarkerOptions(
         base_options=base_options,
         num_poses = 1,
@@ -67,8 +61,8 @@ def handler(context, event):
                     "confidence": str(pose_landmarks_instance[element["id"]].presence),
                 } for element in label["sublabels"]],
             }
+
             if not all([element['outside'] for element in skeleton["elements"]]):
                 results.append(skeleton)
-
 
     return context.Response(body=json.dumps(results), headers={}, content_type="application/json", status_code=200)
