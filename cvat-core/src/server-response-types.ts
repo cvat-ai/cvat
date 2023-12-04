@@ -7,7 +7,7 @@ import {
     DimensionType, JobStage, JobState, JobType, ProjectStatus,
     ShapeType, StorageLocation,
     ShareFileType, Source, TaskMode, TaskStatus,
-} from 'enums';
+} from './enums';
 
 export interface SerializedAnnotationImporter {
     name: string;
