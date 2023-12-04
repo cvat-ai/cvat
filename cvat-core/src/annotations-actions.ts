@@ -60,6 +60,28 @@ export default class BaseSingleFrameAction {
     }
 }
 
+class RemoveFilteredShapes extends BaseSingleFrameAction {
+    public async init(): Promise<void> {
+        // nothing to init
+    }
+
+    public async destroy(): Promise<void> {
+        // nothing to destroy
+    }
+
+    public async run(): Promise<SingleFrameActionOutput> {
+        return { collection: { shapes: [] } };
+    }
+
+    public get name(): string {
+        return 'Remove filtered shapes';
+    }
+
+    public get parameters(): ActionParameters | null {
+        return null;
+    }
+}
+
 const registeredActions: BaseSingleFrameAction[] = [];
 
 export async function listActions(): Promise<BaseSingleFrameAction[]> {
@@ -78,6 +100,8 @@ export async function registerAction(action: BaseSingleFrameAction): Promise<voi
 
     registeredActions.push(action);
 }
+
+registerAction(new RemoveFilteredShapes());
 
 async function runSingleFrameChain(
     instance: Job | Task,
