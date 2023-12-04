@@ -47,7 +47,7 @@ def handler(context, event):
     for pose_landmarks_instance in pose_landmarks_instances:
         for label in context.user_data.labels:
             skeleton = {
-                "confidence": "1", #str(pred_instance["bbox_score"]),
+                "confidence": "1",
                 "label": label["name"],
                 "type": "skeleton",
                 "elements": [{
