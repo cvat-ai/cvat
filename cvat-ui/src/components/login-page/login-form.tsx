@@ -40,7 +40,8 @@ function LoginFormComponent(props: Props): JSX.Element {
     const [credential, setCredential] = useState('');
     const pluginsToRender = usePlugins(
         (state: CombinedState) => state.plugins.components.loginPage.loginForm,
-        props, { credential },
+        props,
+        { credential },
     );
 
     const forgotPasswordLink = (

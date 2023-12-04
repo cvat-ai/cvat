@@ -33,7 +33,7 @@ export default class Project {
     public annotations: {
         exportDataset: CallableFunction;
         importDataset: CallableFunction;
-    }
+    };
 
     constructor(initialData: SerializedProject & { labels?: SerializedLabel[] }) {
         const data = {

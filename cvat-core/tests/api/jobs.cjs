@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,19 +7,17 @@
 jest.mock('../../src/server-proxy', () => {
     return {
         __esModule: true,
-        default: require('../mocks/server-proxy.mock'),
+        default: require('../mocks/server-proxy.mock.cjs'),
     };
 });
 
-// Initialize api
-window.cvat = require('../../src/api').default;
-
+const cvat = require('../../src/api').default;
 const { Job } = require('../../src/session');
 
 // Test cases
 describe('Feature: get a list of jobs', () => {
     test('get jobs by a task id', async () => {
-        const result = await window.cvat.jobs.get({
+        const result = await cvat.jobs.get({
             filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, 3] }] }),
         });
         expect(Array.isArray(result)).toBeTruthy();
@@ -33,7 +31,7 @@ describe('Feature: get a list of jobs', () => {
     });
 
     test('get jobs by an unknown task id', async () => {
-        const result = await window.cvat.jobs.get({
+        const result = await cvat.jobs.get({
             filter: JSON.stringify({ and: [{ '==': [{ var: 'task_id' }, 50] }] }),
         });
         expect(Array.isArray(result)).toBeTruthy();
@@ -41,7 +39,7 @@ describe('Feature: get a list of jobs', () => {
     });
 
     test('get jobs by a job id', async () => {
-        const result = await window.cvat.jobs.get({
+        const result = await cvat.jobs.get({
             jobID: 1,
         });
         expect(Array.isArray(result)).toBeTruthy();
@@ -50,7 +48,7 @@ describe('Feature: get a list of jobs', () => {
     });
 
     test('get jobs by an unknown job id', async () => {
-        const result = await window.cvat.jobs.get({
+        const result = await cvat.jobs.get({
             jobID: 50,
         });
         expect(Array.isArray(result)).toBeTruthy();
@@ -59,41 +57,41 @@ describe('Feature: get a list of jobs', () => {
 
     test('get jobs by invalid filter with both taskID and jobID', async () => {
         expect(
-            window.cvat.jobs.get({
+            cvat.jobs.get({
                 taskID: 1,
                 jobID: 1,
             }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        ).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('get jobs by invalid job id', async () => {
         expect(
-            window.cvat.jobs.get({
+            cvat.jobs.get({
                 jobID: '1',
             }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        ).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('get jobs by invalid task id', async () => {
         expect(
-            window.cvat.jobs.get({
+            cvat.jobs.get({
                 taskID: '1',
             }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        ).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('get jobs by unknown filter', async () => {
         expect(
-            window.cvat.jobs.get({
+            cvat.jobs.get({
                 unknown: 50,
             }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        ).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: save job', () => {
     test('save stage and state of a job', async () => {
-        const result = await window.cvat.jobs.get({ jobID: 1 });
+        const result = await cvat.jobs.get({ jobID: 1 });
 
         result[0].stage = 'validation';
         result[0].state = 'new';
@@ -104,15 +102,15 @@ describe('Feature: save job', () => {
     });
 
     test('save invalid status of a job', async () => {
-        const result = await window.cvat.jobs.get({
+        const result = await cvat.jobs.get({
             jobID: 1,
         });
 
         expect(() => {
             result[0].state = 'invalid';
-        }).toThrow(window.cvat.exceptions.ArgumentError);
+        }).toThrow(cvat.exceptions.ArgumentError);
         expect(() => {
             result[0].stage = 'invalid';
-        }).toThrow(window.cvat.exceptions.ArgumentError);
+        }).toThrow(cvat.exceptions.ArgumentError);
     });
 });

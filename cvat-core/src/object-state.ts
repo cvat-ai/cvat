@@ -60,7 +60,7 @@ export interface SerializedData {
         last: number | null;
     };
     elements?: SerializedData[];
-    __internal: {
+    __internal?: {
         save: (objectState: ObjectState) => ObjectState;
         delete: (frame: number, force: boolean) => boolean;
     };

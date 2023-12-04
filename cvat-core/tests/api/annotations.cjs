@@ -1,6 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corp
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,28 +7,27 @@
 jest.mock('../../src/server-proxy', () => {
     return {
         __esModule: true,
-        default: require('../mocks/server-proxy.mock'),
+        default: require('../mocks/server-proxy.mock.cjs'),
     };
 });
 
-// Initialize api
-window.cvat = require('../../src/api').default;
+const cvat = require('../../src/api').default;
 const serverProxy = require('../../src/server-proxy').default;
 
 // Test cases
 describe('Feature: get annotations', () => {
     test('get annotations from a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
         expect(Array.isArray(annotations)).toBeTruthy();
         expect(annotations).toHaveLength(12);
         for (const state of annotations) {
-            expect(state).toBeInstanceOf(window.cvat.classes.ObjectState);
+            expect(state).toBeInstanceOf(cvat.classes.ObjectState);
         }
     });
 
     test('get annotations from a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 101 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 101 }))[0];
         const annotations0 = await job.annotations.get(0);
         const annotations10 = await job.annotations.get(10);
         expect(Array.isArray(annotations0)).toBeTruthy();
@@ -37,32 +35,32 @@ describe('Feature: get annotations', () => {
         expect(annotations0).toHaveLength(2);
         expect(annotations10).toHaveLength(3);
         for (const state of annotations0.concat(annotations10)) {
-            expect(state).toBeInstanceOf(window.cvat.classes.ObjectState);
+            expect(state).toBeInstanceOf(cvat.classes.ObjectState);
         }
     });
 
     test('get annotations for frame out of task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
 
         // Out of task
-        expect(task.annotations.get(500)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.get(500)).rejects.toThrow(cvat.exceptions.ArgumentError);
 
         // Out of task
-        expect(task.annotations.get(-1)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.get(-1)).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('get annotations for frame out of job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 101 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 101 }))[0];
 
         // Out of segment
-        expect(job.annotations.get(500)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(job.annotations.get(500)).rejects.toThrow(cvat.exceptions.ArgumentError);
 
         // Out of segment
-        expect(job.annotations.get(-1)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(job.annotations.get(-1)).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('get only ellipses', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 101 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 101 }))[0];
         const annotations = await job.annotations.get(5, false, JSON.parse('[{"and":[{"==":[{"var":"shape"},"ellipse"]}]}]'));
         expect(Array.isArray(annotations)).toBeTruthy();
         expect(annotations).toHaveLength(1);
@@ -70,7 +68,7 @@ describe('Feature: get annotations', () => {
     });
 
     test('get skeletons with a filter', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 40 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 40 }))[0];
         const annotations = await job.annotations.get(0, false, JSON.parse('[{"and":[{"==":[{"var":"shape"},"skeleton"]}]}]'));
         expect(Array.isArray(annotations)).toBeTruthy();
         expect(annotations).toHaveLength(2);
@@ -94,7 +92,7 @@ describe('Feature: get annotations', () => {
 
 describe('Feature: get interpolated annotations', () => {
     test('get interpolated box', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         let annotations = await task.annotations.get(5);
         expect(Array.isArray(annotations)).toBeTruthy();
         expect(annotations).toHaveLength(2);
@@ -123,7 +121,7 @@ describe('Feature: get interpolated annotations', () => {
     });
 
     test('get interpolated ellipse', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(5);
         expect(Array.isArray(annotations)).toBeTruthy();
         expect(annotations).toHaveLength(2);
@@ -138,14 +136,14 @@ describe('Feature: get interpolated annotations', () => {
 
 describe('Feature: put annotations', () => {
     test('put a shape to a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         let annotations = await task.annotations.get(1);
         const { length } = annotations;
 
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 1,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
@@ -160,14 +158,14 @@ describe('Feature: put annotations', () => {
     });
 
     test('put a shape to a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         let annotations = await job.annotations.get(5);
         const { length } = annotations;
 
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 5,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.RECTANGLE,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.RECTANGLE,
             points: [0, 0, 100, 100],
             occluded: false,
             label: job.labels[0],
@@ -182,14 +180,14 @@ describe('Feature: put annotations', () => {
     });
 
     test('put an ellipse shape to a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         let annotations = await job.annotations.get(5);
         const { length } = annotations;
 
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 5,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.ELLIPSE,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.ELLIPSE,
             points: [500, 500, 800, 100],
             occluded: true,
             label: job.labels[0],
@@ -204,14 +202,14 @@ describe('Feature: put annotations', () => {
     });
 
     test('put a track to a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         let annotations = await task.annotations.get(1);
         const { length } = annotations;
 
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 1,
-            objectType: window.cvat.enums.ObjectType.TRACK,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.TRACK,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
@@ -226,14 +224,14 @@ describe('Feature: put annotations', () => {
     });
 
     test('put a track to a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         let annotations = await job.annotations.get(5);
         const { length } = annotations;
 
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 5,
-            objectType: window.cvat.enums.ObjectType.TRACK,
-            shapeType: window.cvat.enums.ShapeType.RECTANGLE,
+            objectType: cvat.enums.ObjectType.TRACK,
+            shapeType: cvat.enums.ShapeType.RECTANGLE,
             points: [0, 0, 100, 100],
             occluded: false,
             label: job.labels[0],
@@ -248,25 +246,25 @@ describe('Feature: put annotations', () => {
     });
 
     test('put object without objectType to a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         await task.annotations.clear(true);
-        expect(() => new window.cvat.classes.ObjectState({
+        expect(() => new cvat.classes.ObjectState({
             frame: 1,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
             zOrder: 0,
-        })).toThrow(window.cvat.exceptions.ArgumentError);
+        })).toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('put shape with bad attributes to a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         await task.annotations.clear(true);
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 1,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             attributes: { 'bad key': 55 },
             occluded: true,
@@ -274,16 +272,16 @@ describe('Feature: put annotations', () => {
             zOrder: 0,
         });
 
-        expect(task.annotations.put([state])).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.put([state])).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('put shape with bad zOrder to a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         await task.annotations.clear(true);
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 1,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             attributes: { 'bad key': 55 },
             occluded: true,
@@ -291,12 +289,12 @@ describe('Feature: put annotations', () => {
             zOrder: 'bad value',
         });
 
-        expect(task.annotations.put([state])).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.put([state])).rejects.toThrow(cvat.exceptions.ArgumentError);
 
-        const state1 = new window.cvat.classes.ObjectState({
+        const state1 = new cvat.classes.ObjectState({
             frame: 1,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             attributes: { 'bad key': 55 },
             occluded: true,
@@ -304,94 +302,94 @@ describe('Feature: put annotations', () => {
             zOrder: NaN,
         });
 
-        expect(task.annotations.put([state1])).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.put([state1])).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('put shape without points and with invalid points to a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         await task.annotations.clear(true);
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 1,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             occluded: true,
             label: task.labels[0],
             zOrder: 0,
         });
 
-        expect(() => state.points = ['150,50 250,30']).toThrow(window.cvat.exceptions.ArgumentError);
+        expect(() => state.points = ['150,50 250,30']).toThrow(cvat.exceptions.ArgumentError);
 
         delete state.points;
-        expect(task.annotations.put([state])).rejects.toThrow(window.cvat.exceptions.DataError);
+        expect(task.annotations.put([state])).rejects.toThrow(cvat.exceptions.DataError);
 
         state.points = [];
-        expect(task.annotations.put([state])).rejects.toThrow(window.cvat.exceptions.DataError);
+        expect(task.annotations.put([state])).rejects.toThrow(cvat.exceptions.DataError);
     });
 
     test('put shape without type to a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         await task.annotations.clear(true);
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 1,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
+            objectType: cvat.enums.ObjectType.SHAPE,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
             zOrder: 0,
         });
 
-        expect(task.annotations.put([state])).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.put([state])).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('put shape without label and with bad label to a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         await task.annotations.clear(true);
         const state = {
             frame: 1,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             zOrder: 0,
         };
 
-        expect(() => new window.cvat.classes.ObjectState(state))
-            .toThrow(window.cvat.exceptions.ArgumentError);
-        expect(() => new window.cvat.classes.ObjectState({ ...state, label: 'bad label' }))
-            .toThrow(window.cvat.exceptions.ArgumentError);
-        expect(() => new window.cvat.classes.ObjectState({ ...state, label: {} }))
-            .toThrow(window.cvat.exceptions.ArgumentError);
+        expect(() => new cvat.classes.ObjectState(state))
+            .toThrow(cvat.exceptions.ArgumentError);
+        expect(() => new cvat.classes.ObjectState({ ...state, label: 'bad label' }))
+            .toThrow(cvat.exceptions.ArgumentError);
+        expect(() => new cvat.classes.ObjectState({ ...state, label: {} }))
+            .toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('put shape with bad frame to a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         await task.annotations.clear(true);
-        expect(() => new window.cvat.classes.ObjectState({
+        expect(() => new cvat.classes.ObjectState({
             frame: '5',
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
             zOrder: 0,
-        })).toThrow(window.cvat.exceptions.ArgumentError);
+        })).toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('put a skeleton shape to a job', async() => {
-        const job = (await window.cvat.jobs.get({ jobID: 40 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 40 }))[0];
         const label = job.labels[0];
         await job.annotations.clear(true);
         await job.annotations.clear();
-        const skeleton = new window.cvat.classes.ObjectState({
+        const skeleton = new cvat.classes.ObjectState({
             frame: 0,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.SKELETON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.SKELETON,
             points: [],
             label,
             elements: label.structure.sublabels.map((sublabel, idx) => ({
                 frame: 0,
-                objectType: window.cvat.enums.ObjectType.SHAPE,
-                shapeType: window.cvat.enums.ShapeType.POINTS,
+                objectType: cvat.enums.ObjectType.SHAPE,
+                shapeType: cvat.enums.ShapeType.POINTS,
                 points: [idx * 10, idx * 10],
                 label: sublabel,
             }))
@@ -400,29 +398,29 @@ describe('Feature: put annotations', () => {
         await job.annotations.put([skeleton]);
         const annotations = await job.annotations.get(0);
         expect(annotations.length).toBe(1);
-        expect(annotations[0].objectType).toBe(window.cvat.enums.ObjectType.SHAPE);
-        expect(annotations[0].shapeType).toBe(window.cvat.enums.ShapeType.SKELETON);
+        expect(annotations[0].objectType).toBe(cvat.enums.ObjectType.SHAPE);
+        expect(annotations[0].shapeType).toBe(cvat.enums.ShapeType.SKELETON);
         for (const element of annotations[0].elements) {
-            expect(element.objectType).toBe(window.cvat.enums.ObjectType.SHAPE);
-            expect(element.shapeType).toBe(window.cvat.enums.ShapeType.POINTS);
+            expect(element.objectType).toBe(cvat.enums.ObjectType.SHAPE);
+            expect(element.shapeType).toBe(cvat.enums.ShapeType.POINTS);
         }
     });
 
     test('put a skeleton track to a task', async() => {
-        const task = (await window.cvat.tasks.get({ id: 40 }))[0];
+        const task = (await cvat.tasks.get({ id: 40 }))[0];
         const label = task.labels[0];
         await task.annotations.clear(true);
         await task.annotations.clear();
-        const skeleton = new window.cvat.classes.ObjectState({
+        const skeleton = new cvat.classes.ObjectState({
             frame: 0,
-            objectType: window.cvat.enums.ObjectType.TRACK,
-            shapeType: window.cvat.enums.ShapeType.SKELETON,
+            objectType: cvat.enums.ObjectType.TRACK,
+            shapeType: cvat.enums.ShapeType.SKELETON,
             points: [],
             label,
             elements: label.structure.sublabels.map((sublabel, idx) => ({
                 frame: 0,
-                objectType: window.cvat.enums.ObjectType.TRACK,
-                shapeType: window.cvat.enums.ShapeType.POINTS,
+                objectType: cvat.enums.ObjectType.TRACK,
+                shapeType: cvat.enums.ShapeType.POINTS,
                 points: [idx * 10, idx * 10],
                 label: sublabel,
             }))
@@ -431,18 +429,19 @@ describe('Feature: put annotations', () => {
         await task.annotations.put([skeleton]);
         const annotations = await task.annotations.get(2);
         expect(annotations.length).toBe(1);
-        expect(annotations[0].objectType).toBe(window.cvat.enums.ObjectType.TRACK);
-        expect(annotations[0].shapeType).toBe(window.cvat.enums.ShapeType.SKELETON);
+        expect(annotations[0].objectType).toBe(cvat.enums.ObjectType.TRACK);
+        expect(annotations[0].shapeType).toBe(cvat.enums.ShapeType.SKELETON);
         for (const element of annotations[0].elements) {
-            expect(element.objectType).toBe(window.cvat.enums.ObjectType.TRACK);
-            expect(element.shapeType).toBe(window.cvat.enums.ShapeType.POINTS);
+            expect(element.objectType).toBe(cvat.enums.ObjectType.TRACK);
+            expect(element.shapeType).toBe(cvat.enums.ShapeType.POINTS);
         }
     });
 });
 
 describe('Feature: check unsaved changes', () => {
     test('check unsaved changes in a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
+        await task.annotations.get(0);
         expect(await task.annotations.hasUnsavedChanges()).toBe(false);
         const annotations = await task.annotations.get(0);
 
@@ -453,7 +452,8 @@ describe('Feature: check unsaved changes', () => {
     });
 
     test('check unsaved changes in a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
+        await job.annotations.get(0);
         expect(await job.annotations.hasUnsavedChanges()).toBe(false);
         const annotations = await job.annotations.get(0);
 
@@ -466,12 +466,12 @@ describe('Feature: check unsaved changes', () => {
 
 describe('Feature: save annotations', () => {
     test('create, save, undo, save, redo save', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         await task.annotations.get(0);
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 0,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
@@ -487,13 +487,13 @@ describe('Feature: save annotations', () => {
     });
 
     test('create & save annotations for a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         let annotations = await task.annotations.get(0);
         const { length } = annotations;
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 0,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
@@ -510,7 +510,7 @@ describe('Feature: save annotations', () => {
     });
 
     test('update & save annotations for a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
 
         expect(task.annotations.hasUnsavedChanges()).toBe(false);
@@ -522,7 +522,7 @@ describe('Feature: save annotations', () => {
     });
 
     test('delete & save annotations for a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
 
         expect(task.annotations.hasUnsavedChanges()).toBe(false);
@@ -533,13 +533,13 @@ describe('Feature: save annotations', () => {
     });
 
     test('create & save annotations for a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         let annotations = await job.annotations.get(0);
         const { length } = annotations;
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 0,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: job.labels[0],
@@ -556,7 +556,7 @@ describe('Feature: save annotations', () => {
     });
 
     test('update & save annotations for a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         const annotations = await job.annotations.get(0);
 
         expect(job.annotations.hasUnsavedChanges()).toBe(false);
@@ -568,7 +568,7 @@ describe('Feature: save annotations', () => {
     });
 
     test('delete & save annotations for a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         const annotations = await job.annotations.get(0);
 
         expect(job.annotations.hasUnsavedChanges()).toBe(false);
@@ -579,7 +579,7 @@ describe('Feature: save annotations', () => {
     });
 
     test('delete & save annotations for a job when there are a track and a shape with the same id', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 112 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 112 }))[0];
         const annotations = await job.annotations.get(0);
         let okay = false;
 
@@ -604,16 +604,16 @@ describe('Feature: save annotations', () => {
 
 describe('Feature: merge annotations', () => {
     test('merge annotations in a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations0 = await task.annotations.get(0);
         const annotations1 = await task.annotations.get(1);
         const states = [annotations0[0], annotations1[0]];
         await task.annotations.merge(states);
         const merged0 = (await task.annotations.get(0)).filter(
-            (state) => state.objectType === window.cvat.enums.ObjectType.TRACK,
+            (state) => state.objectType === cvat.enums.ObjectType.TRACK,
         );
         const merged1 = (await task.annotations.get(1)).filter(
-            (state) => state.objectType === window.cvat.enums.ObjectType.TRACK,
+            (state) => state.objectType === cvat.enums.ObjectType.TRACK,
         );
         expect(merged0).toHaveLength(1);
         expect(merged1).toHaveLength(1);
@@ -623,16 +623,16 @@ describe('Feature: merge annotations', () => {
     });
 
     test('merge annotations in a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         const annotations0 = await job.annotations.get(0);
         const annotations1 = await job.annotations.get(1);
         const states = [annotations0[0], annotations1[0]];
         await job.annotations.merge(states);
         const merged0 = (await job.annotations.get(0)).filter(
-            (state) => state.objectType === window.cvat.enums.ObjectType.TRACK,
+            (state) => state.objectType === cvat.enums.ObjectType.TRACK,
         );
         const merged1 = (await job.annotations.get(1)).filter(
-            (state) => state.objectType === window.cvat.enums.ObjectType.TRACK,
+            (state) => state.objectType === cvat.enums.ObjectType.TRACK,
         );
         expect(merged0).toHaveLength(1);
         expect(merged1).toHaveLength(1);
@@ -642,74 +642,74 @@ describe('Feature: merge annotations', () => {
     });
 
     test('trying to merge not object state', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations0 = await task.annotations.get(0);
         const states = [annotations0[0], {}];
 
-        expect(task.annotations.merge(states)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.merge(states)).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('trying to merge object state which is not saved in a collection', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations0 = await task.annotations.get(0);
 
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 0,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
         });
         const states = [annotations0[0], state];
 
-        expect(task.annotations.merge(states)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.merge(states)).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('trying to merge with bad label', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations0 = await task.annotations.get(0);
         const annotations1 = await task.annotations.get(1);
         const states = [annotations0[0], annotations1[0]];
-        states[0].label = new window.cvat.classes.Label({
+        states[0].label = new cvat.classes.Label({
             id: 500,
             name: 'new_label',
             attributes: [],
         });
 
-        expect(task.annotations.merge(states)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.merge(states)).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('trying to merge with different shape types', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations0 = await task.annotations.get(0);
         const annotations1 = (await task.annotations.get(1)).filter(
-            (state) => state.shapeType === window.cvat.enums.ShapeType.POLYGON,
+            (state) => state.shapeType === cvat.enums.ShapeType.POLYGON,
         );
         const states = [annotations0[0], annotations1[0]];
 
-        expect(task.annotations.merge(states)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.merge(states)).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('trying to merge with different labels', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations0 = await task.annotations.get(0);
         const annotations1 = await task.annotations.get(1);
         const states = [annotations0[0], annotations1[0]];
-        states[1].label = new window.cvat.classes.Label({
+        states[1].label = new cvat.classes.Label({
             id: 500,
             name: 'new_label',
             attributes: [],
         });
         await states[1].save();
 
-        expect(task.annotations.merge(states)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.merge(states)).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: split annotations', () => {
     test('split annotations in a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotations4 = await task.annotations.get(4);
         const annotations5 = await task.annotations.get(5);
 
@@ -721,7 +721,7 @@ describe('Feature: split annotations', () => {
     });
 
     test('split annotations in a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 101 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 101 }))[0];
         const annotations4 = await job.annotations.get(4);
         const annotations5 = await job.annotations.get(5);
 
@@ -733,20 +733,20 @@ describe('Feature: split annotations', () => {
     });
 
     test('split on a bad frame', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await cvat.tasks.get({ id: 101 }))[0];
         const annotations4 = await task.annotations.get(4);
         const annotations5 = await task.annotations.get(5);
 
         expect(annotations4[0].clientID).toBe(annotations5[0].clientID);
         expect(task.annotations.split(annotations5[0], 'bad frame')).rejects.toThrow(
-            window.cvat.exceptions.ArgumentError,
+            cvat.exceptions.ArgumentError,
         );
     });
 });
 
 describe('Feature: group annotations', () => {
     test('group annotations in a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         let annotations = await task.annotations.get(0);
         const groupID = await task.annotations.group(annotations);
         expect(typeof groupID).toBe('number');
@@ -757,7 +757,7 @@ describe('Feature: group annotations', () => {
     });
 
     test('group annotations in a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         let annotations = await job.annotations.get(0);
         const groupID = await job.annotations.group(annotations);
         expect(typeof groupID).toBe('number');
@@ -768,32 +768,32 @@ describe('Feature: group annotations', () => {
     });
 
     test('trying to group object state which has not been saved in a collection', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         await task.annotations.clear(true);
 
-        const state = new window.cvat.classes.ObjectState({
+        const state = new cvat.classes.ObjectState({
             frame: 0,
-            objectType: window.cvat.enums.ObjectType.SHAPE,
-            shapeType: window.cvat.enums.ShapeType.POLYGON,
+            objectType: cvat.enums.ObjectType.SHAPE,
+            shapeType: cvat.enums.ShapeType.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
             zOrder: 0,
         });
 
-        expect(task.annotations.group([state])).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.group([state])).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('trying to group not object state', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
-        expect(task.annotations.group(annotations.concat({}))).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.group(annotations.concat({}))).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: clear annotations', () => {
     test('clear annotations in a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         let annotations = await task.annotations.get(0);
         expect(annotations).not.toHaveLength(0);
         await task.annotations.clear();
@@ -802,7 +802,7 @@ describe('Feature: clear annotations', () => {
     });
 
     test('clear annotations in a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         let annotations = await job.annotations.get(0);
         expect(annotations).not.toHaveLength(0);
         await job.annotations.clear();
@@ -811,7 +811,7 @@ describe('Feature: clear annotations', () => {
     });
 
     test('clear annotations with reload in a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         let annotations = await task.annotations.get(0);
         expect(annotations).not.toHaveLength(0);
         annotations[0].occluded = true;
@@ -824,7 +824,7 @@ describe('Feature: clear annotations', () => {
     });
 
     test('clear annotations with reload in a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         let annotations = await job.annotations.get(0);
         expect(annotations).not.toHaveLength(0);
         annotations[0].occluded = true;
@@ -837,34 +837,34 @@ describe('Feature: clear annotations', () => {
     });
 
     test('clear annotations with bad reload parameter', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         await task.annotations.clear(true);
-        expect(task.annotations.clear('reload')).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.clear('reload')).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: get statistics', () => {
     test('get statistics from a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         await task.annotations.clear(true);
         const statistics = await task.annotations.statistics();
-        expect(statistics).toBeInstanceOf(window.cvat.classes.Statistics);
+        expect(statistics).toBeInstanceOf(cvat.classes.Statistics);
         expect(statistics.total.total).toBe(30);
     });
 
     test('get statistics from a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 101 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 101 }))[0];
         await job.annotations.clear(true);
         const statistics = await job.annotations.statistics();
-        expect(statistics).toBeInstanceOf(window.cvat.classes.Statistics);
+        expect(statistics).toBeInstanceOf(cvat.classes.Statistics);
         expect(statistics.total.total).toBe(1012);
     });
 
     test('get statistics from a job with skeletons', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 40 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 40 }))[0];
         await job.annotations.clear(true);
         const statistics = await job.annotations.statistics();
-        expect(statistics).toBeInstanceOf(window.cvat.classes.Statistics);
+        expect(statistics).toBeInstanceOf(cvat.classes.Statistics);
         expect(statistics.total.total).toBe(30);
         const labelName = job.labels[0].name;
         expect(statistics.label[labelName].skeleton.shape).toBe(1);
@@ -875,7 +875,7 @@ describe('Feature: get statistics', () => {
     });
 
     test('get statistics from a job with skeletons', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 102 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 102 }))[0];
         await job.annotations.clear(true);
         let statistics = await job.annotations.statistics();
         expect(statistics.total.manually).toBe(5);
@@ -900,61 +900,61 @@ describe('Feature: get statistics', () => {
 
 describe('Feature: select object', () => {
     test('select object in a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
         let result = await task.annotations.select(annotations, 1430, 765);
-        expect(result.state.shapeType).toBe(window.cvat.enums.ShapeType.RECTANGLE);
+        expect(result.state.shapeType).toBe(cvat.enums.ShapeType.RECTANGLE);
         result = await task.annotations.select(annotations, 1415, 765);
-        expect(result.state.shapeType).toBe(window.cvat.enums.ShapeType.POLYGON);
+        expect(result.state.shapeType).toBe(cvat.enums.ShapeType.POLYGON);
         expect(result.state.points).toHaveLength(10);
         result = await task.annotations.select(annotations, 1083, 543);
-        expect(result.state.shapeType).toBe(window.cvat.enums.ShapeType.POINTS);
+        expect(result.state.shapeType).toBe(cvat.enums.ShapeType.POINTS);
         expect(result.state.points).toHaveLength(16);
         result = await task.annotations.select(annotations, 613, 811);
-        expect(result.state.shapeType).toBe(window.cvat.enums.ShapeType.POLYGON);
+        expect(result.state.shapeType).toBe(cvat.enums.ShapeType.POLYGON);
         expect(result.state.points).toHaveLength(94);
         result = await task.annotations.select(annotations, 600, 900);
-        expect(result.state.shapeType).toBe(window.cvat.enums.ShapeType.CUBOID);
+        expect(result.state.shapeType).toBe(cvat.enums.ShapeType.CUBOID);
         expect(result.state.points).toHaveLength(16);
     });
 
     test('select object in a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         const annotations = await job.annotations.get(0);
         let result = await job.annotations.select(annotations, 490, 540);
-        expect(result.state.shapeType).toBe(window.cvat.enums.ShapeType.RECTANGLE);
+        expect(result.state.shapeType).toBe(cvat.enums.ShapeType.RECTANGLE);
         result = await job.annotations.select(annotations, 430, 260);
-        expect(result.state.shapeType).toBe(window.cvat.enums.ShapeType.POLYLINE);
+        expect(result.state.shapeType).toBe(cvat.enums.ShapeType.POLYLINE);
         result = await job.annotations.select(annotations, 1473, 250);
-        expect(result.state.shapeType).toBe(window.cvat.enums.ShapeType.RECTANGLE);
+        expect(result.state.shapeType).toBe(cvat.enums.ShapeType.RECTANGLE);
         result = await job.annotations.select(annotations, 1490, 237);
-        expect(result.state.shapeType).toBe(window.cvat.enums.ShapeType.POLYGON);
+        expect(result.state.shapeType).toBe(cvat.enums.ShapeType.POLYGON);
         expect(result.state.points).toHaveLength(94);
         result = await job.annotations.select(annotations, 600, 900);
-        expect(result.state.shapeType).toBe(window.cvat.enums.ShapeType.CUBOID);
+        expect(result.state.shapeType).toBe(cvat.enums.ShapeType.CUBOID);
         expect(result.state.points).toHaveLength(16);
     });
 
     test('trying to select from not object states', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
         expect(task.annotations.select(annotations.concat({}), 500, 500)).rejects.toThrow(
-            window.cvat.exceptions.ArgumentError,
+            cvat.exceptions.ArgumentError,
         );
     });
 
     test('trying to select with invalid coordinates', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
-        expect(task.annotations.select(annotations, null, null)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
-        expect(task.annotations.select(annotations, null, null)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
-        expect(task.annotations.select(annotations, '5', '10')).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.select(annotations, null, null)).rejects.toThrow(cvat.exceptions.ArgumentError);
+        expect(task.annotations.select(annotations, null, null)).rejects.toThrow(cvat.exceptions.ArgumentError);
+        expect(task.annotations.select(annotations, '5', '10')).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: search frame', () => {
     test('applying different filters', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 102 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 102 }))[0];
         await job.annotations.clear(true);
         let frame = await job.annotations.search(JSON.parse('[{"and":[{"==":[{"var":"type"},"tag"]}]}]'), 495, 994);
         expect(frame).toBe(500);

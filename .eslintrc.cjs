@@ -1,4 +1,5 @@
 // Copyright (C) 2018-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,9 +15,10 @@ module.exports = {
         parser: '@typescript-eslint/parser',
     },
     ignorePatterns: [
-        '.eslintrc.js',
+        '.eslintrc.cjs',
         'lint-staged.config.js',
         'site/themes/**',
+        'webpack.config.cjs',
     ],
     plugins: ['@typescript-eslint', 'security', 'no-unsanitized', 'import'],
     extends: [
@@ -53,6 +55,10 @@ module.exports = {
         'import/order': ['error', {'groups': ['builtin', 'external', 'internal']}],
         'import/prefer-default-export': 0, // works incorrect with interfaces
 
+        'react/jsx-indent-props': 0, // new rule, breaks current styling
+        'react/jsx-indent': 0, // new rule, conflicts with eslint@typescript-eslint/indent eslint@indent, breaks current styling
+        'function-paren-newline': 0, // new rule, breaks current styling
+        '@typescript-eslint/default-param-last': 0, // does not really work with redux reducers
         '@typescript-eslint/ban-ts-comment': 0,
         '@typescript-eslint/no-explicit-any': 0,
         '@typescript-eslint/indent': ['error', 4],

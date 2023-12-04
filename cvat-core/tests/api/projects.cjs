@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,18 +7,16 @@
 jest.mock('../../src/server-proxy', () => {
     return {
         __esModule: true,
-        default: require('../mocks/server-proxy.mock'),
+        default: require('../mocks/server-proxy.mock.cjs'),
     };
 });
 
-// Initialize api
-window.cvat = require('../../src/api').default;
-
+const cvat = require('../../src/api').default;
 const Project = require('../../src/project').default;
 
 describe('Feature: get projects', () => {
     test('get all projects', async () => {
-        const result = await window.cvat.projects.get();
+        const result = await cvat.projects.get();
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(2);
         for (const el of result) {
@@ -27,7 +25,7 @@ describe('Feature: get projects', () => {
     });
 
     test('get project by id', async () => {
-        const result = await window.cvat.projects.get({
+        const result = await cvat.projects.get({
             id: 2,
         });
 
@@ -38,7 +36,7 @@ describe('Feature: get projects', () => {
     });
 
     test('get a project by an unknown id', async () => {
-        const result = await window.cvat.projects.get({
+        const result = await cvat.projects.get({
             id: 1,
         });
         expect(Array.isArray(result)).toBeTruthy();
@@ -47,14 +45,14 @@ describe('Feature: get projects', () => {
 
     test('get a project by an invalid id', async () => {
         expect(
-            window.cvat.projects.get({
+            cvat.projects.get({
                 id: '1',
             }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        ).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('get projects by filters', async () => {
-        const result = await window.cvat.projects.get({
+        const result = await cvat.projects.get({
             filter: '{"and":[{"==":[{"var":"status"},"completed"]}]}',
         });
         expect(result).toBeInstanceOf(Array);
@@ -62,16 +60,16 @@ describe('Feature: get projects', () => {
 
     test('get projects by invalid query', async () => {
         expect(
-            window.cvat.projects.get({
+            cvat.projects.get({
                 unknown: '5',
             }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        ).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: save a project', () => {
     test('save some changed fields in a project', async () => {
-        let result = await window.cvat.projects.get({
+        let result = await cvat.projects.get({
             id: 2,
         });
 
@@ -80,7 +78,7 @@ describe('Feature: save a project', () => {
 
         await result[0].save();
 
-        result = await window.cvat.projects.get({
+        result = await cvat.projects.get({
             id: 2,
         });
 
@@ -89,12 +87,12 @@ describe('Feature: save a project', () => {
     });
 
     test('save some new labels in a project', async () => {
-        let result = await window.cvat.projects.get({
+        let result = await cvat.projects.get({
             id: 6,
         });
 
         const labelsLength = result[0].labels.length;
-        const newLabel = new window.cvat.classes.Label({
+        const newLabel = new cvat.classes.Label({
             name: "My boss's car",
             attributes: [
                 {
@@ -110,7 +108,7 @@ describe('Feature: save a project', () => {
         result[0].labels = [...result[0].labels, newLabel];
         await result[0].save();
 
-        result = await window.cvat.projects.get({
+        result = await cvat.projects.get({
             id: 6,
         });
 
@@ -125,7 +123,7 @@ describe('Feature: save a project', () => {
     });
 
     test('save new project without an id', async () => {
-        const project = new window.cvat.classes.Project({
+        const project = new cvat.classes.Project({
             name: 'New Empty Project',
             labels: [
                 {
@@ -151,12 +149,12 @@ describe('Feature: save a project', () => {
 
 describe('Feature: delete a project', () => {
     test('delete a project', async () => {
-        let result = await window.cvat.projects.get({
+        let result = await cvat.projects.get({
             id: 6,
         });
 
         await result[0].delete();
-        result = await window.cvat.projects.get({
+        result = await cvat.projects.get({
             id: 6,
         });
 
@@ -167,7 +165,7 @@ describe('Feature: delete a project', () => {
 
 describe('Feature: delete a label', () => {
     test('delete a label', async () => {
-        let result = await window.cvat.projects.get({
+        let result = await cvat.projects.get({
             id: 2,
         });
 
@@ -175,7 +173,7 @@ describe('Feature: delete a label', () => {
         const deletedLabels = result[0].labels.filter((el) => el.name !== 'bicycle');
         result[0].labels = deletedLabels;
         result[0].save();
-        result = await window.cvat.projects.get({
+        result = await cvat.projects.get({
             id: 2,
         });
         expect(result[0].labels).toHaveLength(labelsLength - 1);
