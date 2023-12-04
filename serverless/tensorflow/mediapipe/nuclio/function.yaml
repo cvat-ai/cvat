@@ -1,8 +1,8 @@
 metadata:
-  name: mediapipe-pose
+  name: tensorflow-mediapipe-heavy
   namespace: cvat
   annotations:
-    name: Mediapipe human pose estimation
+    name: 'Mediapipe: Single human pose estimation'
     type: detector
     framework: tensorflow
     spec: |
