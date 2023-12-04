@@ -25,7 +25,7 @@ interface SettingsModalProps {
     onClose(): void;
 }
 
-const SettingsModal = (props: SettingsModalProps): JSX.Element => {
+function SettingsModal(props: SettingsModalProps): JSX.Element {
     const { visible, onClose } = props;
 
     const settings = useSelector((state: CombinedState) => state.settings);
@@ -120,6 +120,6 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
             </div>
         </Modal>
     );
-};
+}
 
 export default React.memo(SettingsModal);

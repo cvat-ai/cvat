@@ -5,7 +5,8 @@
 import {
     ChunkType,
     DimensionType, JobStage, JobState, JobType, ProjectStatus,
-    ShareFileType, TaskMode, TaskStatus, StorageLocation,
+    ShapeType, StorageLocation,
+    ShareFileType, Source, TaskMode, TaskStatus,
 } from 'enums';
 
 export interface SerializedAnnotationImporter {
@@ -247,4 +248,67 @@ export interface SerializedInvitationData {
     expired: boolean;
     organization: number;
     organization_info: SerializedOrganization;
+}
+
+export interface SerializedShape {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    group: number;
+    frame: number;
+    source: Source;
+    attributes: { spec_id: number; value: string }[];
+    elements: {
+        id?: number;
+        attributes: SerializedTrack['attributes'];
+        label_id: number;
+        occluded: boolean;
+        outside: boolean;
+        points: number[];
+        type: ShapeType;
+    }[];
+    occluded: boolean;
+    outside?: boolean; // only for skeleton elements
+    points?: number[];
+    rotation: number;
+    z_order: number;
+    type: ShapeType;
+}
+
+export interface SerializedTrack {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    group: number;
+    frame: number;
+    source: Source;
+    attributes: { spec_id: number; value: string }[];
+    shapes: {
+        attributes: SerializedTrack['attributes'];
+        id?: number;
+        points?: number[];
+        frame: number;
+        occluded: boolean;
+        outside: boolean;
+        rotation: number;
+        type: ShapeType;
+        z_order: number;
+    }[];
+    elements?: SerializedTrack[];
+}
+
+export interface SerializedTag {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    frame: number;
+    group: number;
+    source: Source;
+    attributes: { spec_id: number; value: string }[];
+}
+
+export interface SerializedCollection {
+    tags: SerializedTag[],
+    shapes: SerializedShape[],
+    tracks: SerializedTrack[],
 }

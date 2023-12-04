@@ -56,7 +56,7 @@ export default function ControlVisibilityObserver<P = {}>(
 ): React.FunctionComponent<P> {
     let visibilityHeightThreshold = 0; // minimum value of height when element can be pushed to main panel
 
-    return (props: P): JSX.Element | null => {
+    return function (props: P): JSX.Element | null {
         const ref = useRef<HTMLDivElement>(null);
         const [visible, setVisible] = useState(true);
 

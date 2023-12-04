@@ -7,7 +7,7 @@ const { join } = require('path');
 
 module.exports = {
     ignorePatterns: [
-        '.eslintrc.js',
+        '.eslintrc.cjs',
         'webpack.config.js',
         'node_modules/**',
         'dist/**',

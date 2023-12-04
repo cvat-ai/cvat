@@ -19,7 +19,7 @@ const {
     webhooksDummyData,
     webhooksEventsDummyData,
     jobsDummyData,
-} = require('./dummy-data.mock');
+} = require('./dummy-data.mock.cjs');
 
 function QueryStringToJSON(query, ignoreList = []) {
     const pairs = [...new URLSearchParams(query).entries()];

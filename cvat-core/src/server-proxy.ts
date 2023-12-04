@@ -22,7 +22,6 @@ import { Storage } from './storage';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
 import config from './config';
-import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { SerializedQualityConflictData } from './quality-conflict';
 
@@ -193,8 +192,8 @@ function prepareData(details) {
 }
 
 class WorkerWrappedAxios {
-    constructor(requestInterseptor) {
-        const worker = new DownloadWorker(requestInterseptor);
+    constructor() {
+        const worker = new Worker(new URL('./download.worker', import.meta.url));
         const requests = {};
         let requestId = 0;
 

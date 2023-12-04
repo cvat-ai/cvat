@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,16 +10,14 @@ jest.mock('../../src/server-proxy', () => {
     };
 });
 
-// Initialize api
-window.cvat = require('../../src/api').default;
-
+const cvat = require('../../src/api').default;
 const Webhook = require('../../src/webhook').default;
-const { webhooksDummyData, webhooksEventsDummyData } = require('../mocks/dummy-data.mock');
+const { webhooksDummyData, webhooksEventsDummyData } = require('../mocks/dummy-data.mock.cjs');
 const { WebhookSourceType } = require('../../src/enums');
 
 describe('Feature: get webhooks', () => {
     test('get all webhooks', async () => {
-        const result = await window.cvat.webhooks.get({});
+        const result = await cvat.webhooks.get({});
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(webhooksDummyData.count);
         for (const item of result) {
@@ -42,7 +40,7 @@ describe('Feature: get webhooks', () => {
     });
 
     test('get webhook by id', async () => {
-        const result = await window.cvat.webhooks.get({
+        const result = await cvat.webhooks.get({
             id: 1,
         });
         const [webhook] = result;
@@ -63,7 +61,7 @@ describe('Feature: get webhooks', () => {
 
 describe('Feature: create a webhook', () => {
     test('create new webhook', async () => {
-        const webhook = new window.cvat.classes.Webhook({
+        const webhook = new cvat.classes.Webhook({
             description: 'New webhook',
             target_url: 'https://localhost:3001/hook',
             content_type: 'application/json',
@@ -88,7 +86,7 @@ describe('Feature: update a webhook', () => {
             ['targetURL', 'https://localhost:3001/new/url'],
         ]);
 
-        let result = await window.cvat.webhooks.get({
+        let result = await cvat.webhooks.get({
             id: 1,
         });
         let [webhook] = result;
@@ -97,7 +95,7 @@ describe('Feature: update a webhook', () => {
         }
         webhook.save();
 
-        result = await window.cvat.webhooks.get({
+        result = await cvat.webhooks.get({
             id: 1,
         });
         [webhook] = result;
@@ -109,13 +107,13 @@ describe('Feature: update a webhook', () => {
 
 describe('Feature: delete a webhook', () => {
     test('delete a webhook', async () => {
-        let result = await window.cvat.webhooks.get({
+        let result = await cvat.webhooks.get({
             id: 2,
         });
         const [webhook] = result;
         await webhook.delete();
 
-        result = await window.cvat.webhooks.get({
+        result = await cvat.webhooks.get({
             id: 2,
         });
         expect(Array.isArray(result)).toBeTruthy();

@@ -161,29 +161,6 @@ module.exports = (env) => {
                     test: /\.(png|jpg|jpeg|gif)$/i,
                     type: 'asset/resource',
                 },
-                {
-                    test: /3rdparty\/.*\.worker\.js$/,
-                    use: {
-                        loader: 'worker-loader',
-                        options: {
-                            publicPath: '/',
-                            filename: 'assets/3rdparty/[name].[contenthash].js',
-                            esModule: false,
-                        },
-                    },
-                },
-                {
-                    test: /\.worker\.js$/,
-                    exclude: /3rdparty/,
-                    use: {
-                        loader: 'worker-loader',
-                        options: {
-                            publicPath: '/',
-                            filename: 'assets/[name].[contenthash].js',
-                            esModule: false,
-                        },
-                    },
-                },
             ],
             parser: {
                 javascript: {

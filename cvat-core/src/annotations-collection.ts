@@ -5,9 +5,10 @@
 
 import {
     shapeFactory, trackFactory, Track, Shape, Tag,
-    MaskShape, BasicInjection, RawShapeData,
-    RawTrackData, RawTagData, SkeletonShape, SkeletonTrack, PolygonShape,
+    MaskShape, BasicInjection,
+    SkeletonShape, SkeletonTrack, PolygonShape,
 } from './annotations-objects';
+import { SerializedCollection, SerializedTrack } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
@@ -20,12 +21,6 @@ import {
     HistoryActions, ShapeType, ObjectType, colors, Source,
 } from './enums';
 import AnnotationHistory from './annotations-history';
-
-interface RawCollection {
-    tags: RawTagData[],
-    shapes: RawShapeData[],
-    tracks: RawTrackData[],
-}
 
 interface ImportedCollection {
     tags: Tag[],
@@ -61,7 +56,7 @@ export default class Collection {
     public flush: boolean;
     private stopFrame: number;
     private frameMeta: any;
-    private labels: Record<number, Label>
+    private labels: Record<number, Label>;
     private annotationsFilter: AnnotationsFilter;
     private history: AnnotationHistory;
     private shapes: Record<number, Shape[]>;
@@ -109,7 +104,7 @@ export default class Collection {
         };
     }
 
-    import(data: RawCollection): ImportedCollection {
+    import(data: SerializedCollection): ImportedCollection {
         const result = {
             tags: [],
             shapes: [],
@@ -152,7 +147,7 @@ export default class Collection {
         return result;
     }
 
-    export(): RawCollection {
+    export(): SerializedCollection {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
             shapes: Object.values(this.shapes)
@@ -174,7 +169,7 @@ export default class Collection {
         return data;
     }
 
-    get(frame: number, allTracks: boolean, filters: string[]): ObjectState[] {
+    public get(frame: number, allTracks: boolean, filters: string[]): ObjectState[] {
         const { tracks } = this;
         const shapes = this.shapes[frame] || [];
         const tags = this.tags[frame] || [];
@@ -208,8 +203,8 @@ export default class Collection {
         return objectStates;
     }
 
-    _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): RawTrackData {
-        const keyframes: Record<number, RawTrackData['shapes'][0]> = {}; // frame: position
+    _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): SerializedTrack {
+        const keyframes: Record<number, SerializedTrack['shapes'][0]> = {}; // frame: position
         const elements = {}; // element_sublabel_id: [element], each sublabel will be merged recursively
 
         if (!Object.values(ShapeType).includes(shapeType)) {
@@ -448,7 +443,7 @@ export default class Collection {
         );
     }
 
-    _splitInternal(objectState: ObjectState, object: Track, frame: number): RawTrackData[] {
+    _splitInternal(objectState: ObjectState, object: Track, frame: number): SerializedTrack[] {
         const labelAttributes = labelAttributesAsDict(object.label);
         // first clear all server ids which may exist in the object being splitted
         const copy = trackFactory(object.toJSON(), -1, this.injection);

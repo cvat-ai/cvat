@@ -1,18 +1,19 @@
-// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2018-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 module.exports = {
     ignorePatterns: [
-        '.eslintrc.js',
-        'webpack.config.js',
-        'src/3rdparty/**',
+        '.eslintrc.cjs',
+        'webpack.config.cjs',
+        'jest.config.cjs',
         'node_modules/**',
         'dist/**',
+        'tests/**/*.cjs',
     ],
     parserOptions: {
         project: './tsconfig.json',
         tsconfigRootDir: __dirname,
     },
-    plugins: ['jest'],
 };

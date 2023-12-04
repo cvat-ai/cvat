@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,48 +7,46 @@
 jest.mock('../../src/server-proxy', () => {
     return {
         __esModule: true,
-        default: require('../mocks/server-proxy.mock'),
+        default: require('../mocks/server-proxy.mock.cjs'),
     };
 });
 
-// Initialize api
-window.cvat = require('../../src/api').default;
-
+const cvat = require('../../src/api').default;
 const { FrameData } = require('../../src/frames');
 
 describe('Feature: get frame meta', () => {
     test('get meta for a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const frame = await task.frames.get(0);
         expect(frame).toBeInstanceOf(FrameData);
     });
 
     test('get meta for a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         const frame = await job.frames.get(0);
         expect(frame).toBeInstanceOf(FrameData);
     });
 
     test('pass frame number out of a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
-        expect(task.frames.get(100)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
-        expect(task.frames.get(-1)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
+        expect(task.frames.get(100)).rejects.toThrow(cvat.exceptions.ArgumentError);
+        expect(task.frames.get(-1)).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('pass bad frame number', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
-        expect(task.frames.get('5')).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
+        expect(task.frames.get('5')).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('do not pass any frame number', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
-        expect(task.frames.get()).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
+        expect(task.frames.get()).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: delete/restore frame', () => {
     test('delete frame from job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         await job.annotations.clear(true);
         let frame = await job.frames.get(0);
         expect(frame.deleted).toBe(false);
@@ -58,7 +56,7 @@ describe('Feature: delete/restore frame', () => {
     });
 
     test('restore frame from job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         await job.annotations.clear(true);
         let frame = await job.frames.get(8);
         expect(frame.deleted).toBe(true);
@@ -68,7 +66,7 @@ describe('Feature: delete/restore frame', () => {
     });
 
     test('delete frame from task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         await task.annotations.clear(true);
         let frame = await task.frames.get(1);
         expect(frame.deleted).toBe(false);
@@ -78,7 +76,7 @@ describe('Feature: delete/restore frame', () => {
     });
 
     test('restore frame from task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         await task.annotations.clear(true);
         let frame = await task.frames.get(7);
         expect(frame.deleted).toBe(true);
@@ -90,13 +88,13 @@ describe('Feature: delete/restore frame', () => {
 
 describe('Feature: get frame preview', () => {
     test('get frame preview for a task', async () => {
-        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const task = (await cvat.tasks.get({ id: 100 }))[0];
         const frame = await task.frames.preview();
         expect(typeof frame).toBe('string');
     });
 
     test('get frame preview for a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await cvat.jobs.get({ jobID: 100 }))[0];
         const frame = await job.frames.preview();
         expect(typeof frame).toBe('string');
     });

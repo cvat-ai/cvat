@@ -108,7 +108,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 },
             }),
         );
-    }
+    };
 
     private onError = (exception: unknown, domain?: string): void => {
         this.canvas.dispatchEvent(
@@ -122,7 +122,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 },
             }),
         );
-    }
+    };
 
     private stateIsLocked(state: any): boolean {
         const { configuration } = this.controller;
@@ -267,7 +267,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 enabled: false,
             });
         }
-    }
+    };
 
     private onDrawDone = (
         data: any | null,
@@ -337,7 +337,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // when draw stops from inside canvas (for example if use predefined number of points)
             this.controller.draw({ enabled: false });
         }
-    }
+    };
 
     private onEditStart = (state?: any): void => {
         this.canvas.style.cursor = 'crosshair';
@@ -411,7 +411,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.controller.merge({ enabled: false });
         this.mode = Mode.IDLE;
-    }
+    };
 
     private onSplitDone = (object?: any, duration?: number): void => {
         if (object && typeof duration !== 'undefined') {
@@ -437,7 +437,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.controller.split({ enabled: false });
         this.mode = Mode.IDLE;
-    }
+    };
 
     private onSelectDone = (objects?: any[], duration?: number): void => {
         if (objects && typeof duration !== 'undefined') {
@@ -503,7 +503,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         this.mode = Mode.IDLE;
-    }
+    };
 
     private onSliceDone = (state?: any, results?: number[][], duration?: number): void => {
         if (state && results && typeof duration !== 'undefined') {
@@ -527,7 +527,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.controller.slice({ enabled: false });
         this.mode = Mode.IDLE;
-    }
+    };
 
     private onRegionSelected = (points?: number[]): void => {
         if (points) {
@@ -551,7 +551,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.controller.selectRegion(false);
         this.mode = Mode.IDLE;
-    }
+    };
 
     private onFindObject = (e: MouseEvent): void => {
         if (e.button === 0) {
@@ -570,7 +570,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
             e.preventDefault();
         }
-    }
+    };
 
     private onFocusRegion = (x: number, y: number, width: number, height: number): void => {
         // First of all, compute and apply scale
@@ -616,7 +616,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.controller.geometry = dragged;
         this.geometry = dragged;
         this.moveCanvas();
-    }
+    };
 
     private moveCanvas(): void {
         for (const obj of [this.background, this.grid, this.bitmap]) {

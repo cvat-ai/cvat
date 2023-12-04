@@ -34,9 +34,10 @@ import pjson from '../package.json';
 import config from './config';
 
 import implementAPI from './api-implementation';
+import CVATCore from '.';
 
-function build() {
-    const cvat = {
+function build(): CVATCore {
+    const cvat: CVATCore = {
         server: {
             async about() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.about);

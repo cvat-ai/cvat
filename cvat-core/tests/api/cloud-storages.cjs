@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,15 +11,13 @@ jest.mock('../../src/server-proxy', () => {
     };
 });
 
-// Initialize api
-window.cvat = require('../../src/api').default;
-
+const cvat = require('../../src/api').default;
 const CloudStorage= require('../../src/cloud-storage').default;
-const { cloudStoragesDummyData } = require('../mocks/dummy-data.mock');
+const { cloudStoragesDummyData } = require('../mocks/dummy-data.mock.cjs');
 
 describe('Feature: get cloud storages', () => {
     test('get all cloud storages', async () => {
-        const result = await window.cvat.cloudStorages.get();
+        const result = await cvat.cloudStorages.get();
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(cloudStoragesDummyData.count);
         for (const item of result) {
@@ -28,7 +26,7 @@ describe('Feature: get cloud storages', () => {
     });
 
     test('get cloud storage by id', async () => {
-        const result = await window.cvat.cloudStorages.get({
+        const result = await cvat.cloudStorages.get({
             id: 1,
         });
         const cloudStorage = result[0];
@@ -48,7 +46,7 @@ describe('Feature: get cloud storages', () => {
     });
 
     test('get a cloud storage by an unknown id', async () => {
-        const result = await window.cvat.cloudStorages.get({
+        const result = await cvat.cloudStorages.get({
             id: 10,
         });
         expect(Array.isArray(result)).toBeTruthy();
@@ -57,10 +55,10 @@ describe('Feature: get cloud storages', () => {
 
     test('get a cloud storage by an invalid id', async () => {
         expect(
-            window.cvat.cloudStorages.get({
+            cvat.cloudStorages.get({
                 id: '1',
             }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        ).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 
     test('get cloud storages by filters', async () => {
@@ -74,22 +72,22 @@ describe('Feature: get cloud storages', () => {
             ],
         };
 
-        const result = await window.cvat.cloudStorages.get({ filter: JSON.stringify(filter) });
+        const result = await cvat.cloudStorages.get({ filter: JSON.stringify(filter) });
         expect(result).toBeInstanceOf(Array);
     });
 
     test('get cloud storage by invalid filters', async () => {
         expect(
-            window.cvat.cloudStorages.get({
+            cvat.cloudStorages.get({
                 unknown: '5',
             }),
-        ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        ).rejects.toThrow(cvat.exceptions.ArgumentError);
     });
 });
 
 describe('Feature: create a cloud storage', () => {
     test('create new cloud storage without an id', async () => {
-        const cloudStorage = new window.cvat.classes.CloudStorage({
+        const cloudStorage = new cvat.classes.CloudStorage({
             display_name: 'new cloud storage',
             provider_type: 'AZURE_CONTAINER',
             resource: 'newcontainer',
@@ -113,7 +111,7 @@ describe('Feature: update a cloud storage', () => {
             ['specificAttributes', 'region=eu-west-1'],
         ]);
 
-        let result = await window.cvat.cloudStorages.get({
+        let result = await cvat.cloudStorages.get({
             id: 1,
         });
 
@@ -125,7 +123,7 @@ describe('Feature: update a cloud storage', () => {
 
         cloudStorage.save();
 
-        result = await window.cvat.cloudStorages.get({
+        result = await cvat.cloudStorages.get({
             id: 1,
         });
         [cloudStorage] = result;
@@ -141,7 +139,7 @@ describe('Feature: update a cloud storage', () => {
             'sub2/manifest.jsonl',
         ];
 
-        let result = await window.cvat.cloudStorages.get({
+        let result = await cvat.cloudStorages.get({
             id: 1,
         });
         let [cloudStorage] = result;
@@ -149,7 +147,7 @@ describe('Feature: update a cloud storage', () => {
         cloudStorage.manifests = newManifests;
         cloudStorage.save();
 
-        result = await window.cvat.cloudStorages.get({
+        result = await cvat.cloudStorages.get({
             id: 1,
         });
         [cloudStorage] = result;
@@ -160,12 +158,12 @@ describe('Feature: update a cloud storage', () => {
 
 describe('Feature: delete a cloud storage', () => {
     test('delete a cloud storage', async () => {
-        let result = await window.cvat.cloudStorages.get({
+        let result = await cvat.cloudStorages.get({
             id: 2,
         });
 
         await result[0].delete();
-        result = await window.cvat.cloudStorages.get({
+        result = await cvat.cloudStorages.get({
             id: 2,
         });
 
