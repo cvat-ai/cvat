@@ -90,7 +90,11 @@ export default interface CVATCore {
         deactivate: any;
         acceptInvitation: (key: string) => Promise<SerializedAcceptInvitation>;
         rejectInvitation: (key: string) => Promise<void>;
-        invitations: (filter: { key?: string }) => Promise<Invitation[]>;
+        invitations: (filter: {
+            key?: string,
+            page?: number,
+            filter?: string,
+        }) => Promise<Invitation[] & { count: number }>;
     };
     webhooks: {
         get: any;
