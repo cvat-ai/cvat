@@ -702,7 +702,7 @@ class TestGetTaskDataset:
         assert response.status_code == HTTPStatus.OK
 
         # check that we can export task
-        response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
+        response = self._test_export_task(admin_user, tid, dataset_format="COCO Keypoints 1.0")
         assert response.status == HTTPStatus.OK
 
         # check that server saved track annotations correctly
@@ -731,7 +731,7 @@ class TestGetTaskDataset:
 
         task_id, _ = create_task(admin_user, task_spec, task_data)
 
-        response = self._test_export_task(admin_user, task_id, format="CVAT for images 1.1")
+        response = self._test_export_task(admin_user, task_id)
         assert response.status == HTTPStatus.OK
         assert zipfile.is_zipfile(io.BytesIO(response.data))
 
