@@ -765,6 +765,37 @@ class TestImportExportDatasetProject:
 
         self._test_export_project("admin1", project["id"], "COCO 1.0")
 
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    def test_can_export_and_import_dataset_after_deleting_related_storage(
+        self, admin_user, projects, cloud_storage_id: int
+    ):
+        project = next(
+            p
+            for p in projects
+            if p["source_storage"]
+            and p["source_storage"]["cloud_storage_id"] == cloud_storage_id
+            and p["target_storage"]
+            and p["target_storage"]["cloud_storage_id"] == cloud_storage_id
+        )
+        project_id = project["id"]
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.cloudstorages_api.destroy(cloud_storage_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+        result, response = api_client.projects_api.retrieve(project_id)
+        assert all([not getattr(result, field) for field in ("source_storage", "target_storage")])
+
+        response = self._test_export_project(admin_user, project_id, "CVAT for images 1.1")
+
+        with io.BytesIO(response.data) as tmp_file:
+            tmp_file.name = "dataset.zip"
+            import_data = {
+                "dataset_file": tmp_file,
+            }
+
+            self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchProjectLabel:
