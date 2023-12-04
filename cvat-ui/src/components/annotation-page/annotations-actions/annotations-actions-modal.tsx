@@ -15,6 +15,7 @@ import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
 
+import config from 'config';
 import { useIsMounted } from 'utils/hooks';
 import { createAction, ActionUnion } from 'utils/redux';
 import { getCVATStore } from 'cvat-store';
@@ -292,8 +293,10 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                         message={(
                             <div>
                                 <Text>Actions allow executing certain algorithms on </Text>
-                                <Text strong> filtered </Text>
-                                <Text>annotations. </Text>
+                                <Text strong>
+                                    <a href={config.FILTERS_GUIDE_URL}>filtered</a>
+                                </Text>
+                                <Text> annotations. </Text>
                                 <Text strong>It affects only the local browser state. </Text>
                                 <Text>Once an action has finished, </Text>
                                 <Text strong>it cannot be reverted. </Text>
