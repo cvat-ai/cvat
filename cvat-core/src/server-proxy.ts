@@ -14,7 +14,7 @@ import {
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData,
-    SerializedAcceptInvitation, SerializedInvitationData, InvitationsFilter,
+    SerializedAcceptInvitation, SerializedInvitationData,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
