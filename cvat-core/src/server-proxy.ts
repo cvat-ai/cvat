@@ -6,6 +6,7 @@
 import FormData from 'form-data';
 import store from 'store';
 import Axios, { AxiosError, AxiosResponse } from 'axios';
+import axiosRetry from 'axios-retry';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
 
@@ -282,6 +283,19 @@ Axios.interceptors.response.use((response) => {
     }
 
     return response;
+});
+
+axiosRetry(Axios, {
+    retryCondition: (error) => error.response && error.response.status === Axios.HttpStatusCode.TooManyRequests,
+    retryDelay: (retryCount, error) => {
+        const retryAfterValue = error.response.headers['retry-after'];
+
+        // Retry-After is allowed to be a number as well as a date.
+        // We're probably not going to use the latter option, though, so don't bother parsing it.
+        if (!retryAfterValue || !/^\d+$/.test(retryAfterValue)) return axiosRetry.exponentialDelay(retryCount, error);
+
+        return parseInt(retryAfterValue, 10) * 1000;
+    },
 });
 
 let token = store.get('token');
