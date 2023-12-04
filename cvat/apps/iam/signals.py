@@ -26,7 +26,7 @@ if settings.IAM_TYPE == 'BASIC':
                 EmailAddress.objects.get_or_create(user=instance,
                     email=instance.email, primary=True, verified=True)
         else: # don't need to add default groups for superuser
-            if created and not instance.groups.exists():
+            if created and not getattr(instance, 'skip_group_assigning', None):
                 db_group = Group.objects.get(name=settings.IAM_DEFAULT_ROLE)
                 instance.groups.add(db_group)
 
