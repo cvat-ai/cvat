@@ -10,7 +10,7 @@ import Empty from 'antd/lib/empty';
 
 import config from 'config';
 
-export default function EmptyListComponent(): JSX.Element {
+function EmptyListComponent(): JSX.Element {
     return (
         <div className='cvat-empty-models-list'>
             <Empty
@@ -38,3 +38,5 @@ export default function EmptyListComponent(): JSX.Element {
         </div>
     );
 }
+
+export default React.memo(EmptyListComponent);

@@ -67,7 +67,7 @@ export function getInvitationsAsync(query: InvitationsQuery, showNotification = 
             ));
         } catch (error: unknown) {
             if (error instanceof Error) {
-                dispatch(invitationActions.getInvitationsFailed(error.toString()));
+                dispatch(invitationActions.getInvitationsFailed(error.message));
             } else {
                 dispatch(invitationActions.getInvitationsFailed('Unknown error'));
             }
@@ -98,7 +98,6 @@ export const rejectInvitationAsync = (
 
     try {
         await cvat.organizations.rejectInvitation(key);
-
         dispatch(invitationActions.rejectInvitationSuccess());
     } catch (error) {
         dispatch(invitationActions.rejectInvitationFailed(error));

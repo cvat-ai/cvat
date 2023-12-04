@@ -45,16 +45,6 @@ export default function InvitationsListComponent(props: Props): JSX.Element {
         }));
     }, []);
 
-    const pageOutOfBounds = totalCount && query.page > Math.ceil(totalCount / PAGE_SIZE);
-    useEffect(() => {
-        if (pageOutOfBounds) {
-            notification.error({
-                message: 'Could not fetch invitations',
-                description: 'Invalid page',
-            });
-        }
-    }, [invitations, query]);
-
     return (
         <>
             <Row justify='center' align='top' className='cvat-invitations-list-content'>

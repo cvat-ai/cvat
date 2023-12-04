@@ -4,8 +4,8 @@
 
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { CombinedState } from 'reducers';
 import { useHistory } from 'react-router';
+import { CombinedState } from 'reducers';
 
 function InvitationWatcher(): JSX.Element | null {
     const user = useSelector((state: CombinedState) => state.auth.user);
