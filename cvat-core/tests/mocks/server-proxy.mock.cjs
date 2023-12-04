@@ -589,6 +589,14 @@ class ServerProxy {
             }
         }
 
+        async function acceptInvitation() {
+            return '';
+        }
+
+        async function rejectInvitation() {
+            return;
+        }
+
         Object.defineProperties(
             this,
             Object.freeze({
@@ -685,6 +693,14 @@ class ServerProxy {
                         update: updateWebhook,
                         delete: deleteWebhook,
                         events: receiveWebhookEvents,
+                    }),
+                    writable: false,
+                },
+
+                organizations: {
+                    value: Object.freeze({
+                        acceptInvitation: acceptInvitation,
+                        rejectInvitation: rejectInvitation,
                     }),
                     writable: false,
                 },
