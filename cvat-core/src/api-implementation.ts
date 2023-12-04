@@ -349,10 +349,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.organizations.invitations, (async (filter) => {
         checkFilter(filter, {
             page: isInteger,
-            key: isString,
             filter: isString,
         });
-        checkExclusiveFields(filter, ['key', 'filter'], ['page']);
+        checkExclusiveFields(filter, ['filter'], ['page']);
 
         const invitationsData = await serverProxy.organizations.invitations(filter);
         const invitations = invitationsData.results.map((invitationData) => new Invitation({ ...invitationData }));

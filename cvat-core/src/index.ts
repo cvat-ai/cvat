@@ -91,7 +91,6 @@ export default interface CVATCore {
         acceptInvitation: (key: string) => Promise<SerializedAcceptInvitation>;
         rejectInvitation: (key: string) => Promise<void>;
         invitations: (filter: {
-            key?: string,
             page?: number,
             filter?: string,
         }) => Promise<Invitation[] & { count: number }>;
