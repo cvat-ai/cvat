@@ -242,7 +242,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                     uploadParams.sourceStorage,
                     uploadParams.file || uploadParams.fileName as string,
                     uploadParams.convMaskToPoly,
-                ) as any);
+                ));
             const resToPrint = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             Notification.info({
                 message: `${resToPrint} import started`,
