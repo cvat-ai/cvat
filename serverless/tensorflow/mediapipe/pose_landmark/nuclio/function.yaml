@@ -1,5 +1,5 @@
 metadata:
-  name: tensorflow-mediapipe-heavy
+  name: tensorflow-mediapipe-pose-estimation
   namespace: cvat
   annotations:
     name: 'Mediapipe: Single human pose estimation'
