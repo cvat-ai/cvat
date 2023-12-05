@@ -30,7 +30,7 @@ module.exports = (env) => {
             },
         }), {});
 
-    console.log('Source maps ', sourceMapsDisabled ? 'disabled' : 'enabled');
+    console.log('Source maps: ', sourceMapsDisabled ? 'disabled' : 'enabled');
     console.log('List of plugins: ', Object.values(transformedPlugins).map((plugin) => plugin.import));
 
     return {
@@ -195,7 +195,7 @@ module.exports = (env) => {
                     }
                 ],
             }),
-            ...(sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
+            ...(!sourceMapsDisabled && sourceMapsToken ? [new webpack.SourceMapDevToolPlugin({
                 append: '\n',
                 filename: `${sourceMapsToken}/[file].map`,
             })] : []),
