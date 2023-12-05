@@ -199,7 +199,8 @@ function build(): CVATCore {
                 onProgress: (
                     message: string,
                     progress: number,
-                ) => boolean,
+                ) => void,
+                cancelled: () => boolean,
             ) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.actions.run,
@@ -210,6 +211,7 @@ function build(): CVATCore {
                     frameTo,
                     filters,
                     onProgress,
+                    cancelled,
                 );
                 return result;
             },

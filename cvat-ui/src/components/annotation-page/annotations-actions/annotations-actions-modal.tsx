@@ -294,7 +294,13 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                             <div>
                                 <Text>Actions allow executing certain algorithms on </Text>
                                 <Text strong>
-                                    <a href={config.FILTERS_GUIDE_URL}>filtered</a>
+                                    <a
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                        href={config.FILTERS_GUIDE_URL}
+                                    >
+                                        filtered
+                                    </a>
                                 </Text>
                                 <Text> annotations. </Text>
                                 <Text strong>It affects only the local browser state. </Text>
@@ -553,9 +559,8 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                         if (isMounted()) {
                                             dispatch(reducerActions.updateProgress(_progress, _message));
                                         }
-
-                                        return cancellationRef.current;
                                     },
+                                    () => cancellationRef.current,
                                 ).then(() => {
                                     canvasInstance.setup(frameData, []);
                                     storage.dispatch(fetchAnnotationsAsync());

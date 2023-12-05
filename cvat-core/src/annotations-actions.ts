@@ -95,7 +95,7 @@ export async function registerAction(action: BaseSingleFrameAction): Promise<voi
 
     const { name } = action;
     if (registeredActions.map((_action) => _action.name).includes(name)) {
-        throw new ArgumentError(`Annotations function name must be unique. Name "${name}" is already exists`);
+        throw new ArgumentError(`Action name must be unique. Name "${name}" is already exists`);
     }
 
     registeredActions.push(action);
@@ -110,24 +110,22 @@ async function runSingleFrameChain(
     frameFrom: number,
     frameTo: number,
     filters: string[],
-    onProgress: (
-        message: string,
-        progress: number,
-    ) => boolean,
+    onProgress: (message: string, progress: number) => void,
+    cancelled: () => boolean,
 ): Promise<void> {
     type IDsToHandle = { shapes: number[] };
 
     // if called too fast, it will freeze UI, so, add throttling here
     const wrappedOnProgress = throttle(onProgress, 100, { leading: true, trailing: true });
-    const showMessageWithPause = async (message: string, progress: number, duration: number): Promise<boolean> => {
+    const showMessageWithPause = async (message: string, progress: number, duration: number): Promise<void> => {
         // wrapper that gives a chance to abort action
         wrappedOnProgress(message, progress);
         await new Promise((resolve) => setTimeout(resolve, duration));
-        return !!wrappedOnProgress(message, progress);
     };
 
     try {
-        if (await showMessageWithPause('Actions initialization', 0, 500)) {
+        showMessageWithPause('Actions initialization', 0, 500);
+        if (cancelled()) {
             return;
         }
 
@@ -190,7 +188,8 @@ async function runSingleFrameChain(
                 }
 
                 const progress = Math.ceil(+(((frame - frameFrom) / totalFrames) * 100));
-                if (wrappedOnProgress('Actions are running', progress)) {
+                wrappedOnProgress('Actions are running', progress);
+                if (cancelled()) {
                     return;
                 }
 
@@ -199,7 +198,8 @@ async function runSingleFrameChain(
             }
         }
 
-        if (await showMessageWithPause('Commiting handled objects', 100, 1500)) {
+        await showMessageWithPause('Commiting handled objects', 100, 1500);
+        if (cancelled()) {
             return;
         }
 
@@ -228,10 +228,8 @@ export async function runActions(
     frameFrom: number,
     frameTo: number,
     filters: string[],
-    onProgress: (
-        message: string,
-        progress: number,
-    ) => boolean,
+    onProgress: (message: string, progress: number) => void,
+    cancelled: () => boolean,
 ): Promise<void> {
     // there will be another function for MultiFrameChains (actions handling tracks)
     return runSingleFrameChain(
@@ -242,5 +240,6 @@ export async function runActions(
         frameTo,
         filters,
         onProgress,
+        cancelled,
     );
 }
