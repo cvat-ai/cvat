@@ -737,33 +737,31 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         </Tabs.TabPane>
                     </Tabs>
                 ) : (
-                    <>
-                        <Row justify='start' align='middle'>
+                    <Row justify='start' align='middle'>
+                        <Col>
+                            {
+                                initializationProgress >= 0 ?
+                                    <Text>OpenCV is loading</Text> : (
+                                        <Button
+                                            className='cvat-opencv-initialization-button'
+                                            onClick={() => { this.initializeOpenCV(); }}
+                                        >
+                                            Reload OpenCV
+                                        </Button>
+                                    )
+                            }
+                        </Col>
+                        {initializationProgress >= 0 && (
                             <Col>
-                                {
-                                    initializationProgress >= 0 ?
-                                        <Text>OpenCV is loading</Text> : (
-                                            <Button
-                                                className='cvat-opencv-initialization-button'
-                                                onClick={() => { this.initializeOpenCV(); }}
-                                            >
-                                                Reload OpenCV
-                                            </Button>
-                                        )
-                                }
+                                <Progress
+                                    width={8 * 5}
+                                    percent={initializationProgress}
+                                    type='circle'
+                                    status={initializationError ? 'exception' : undefined}
+                                />
                             </Col>
-                            {initializationProgress >= 0 && (
-                                <Col>
-                                    <Progress
-                                        width={8 * 5}
-                                        percent={initializationProgress}
-                                        type='circle'
-                                        status={initializationError ? 'exception' : undefined}
-                                    />
-                                </Col>
-                            )}
-                        </Row>
-                    </>
+                        )}
+                    </Row>
                 )}
             </div>
         );

@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -103,35 +103,21 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         } as UploadParams);
     }, [resource, defaultStorageLocation, defaultStorageCloudId]);
 
+    const isProject = useCallback((): boolean => instance instanceof core.classes.Project, [instance]);
+    const isTask = useCallback((): boolean => instance instanceof core.classes.Task, [instance]);
+
     useEffect(() => {
         if (instance) {
-            if (instance instanceof core.classes.Project || instance instanceof core.classes.Task) {
-                setDefaultStorageLocation(instance.sourceStorage?.location || StorageLocation.LOCAL);
-                setDefaultStorageCloudId(instance.sourceStorage?.cloudStorageId || null);
-                if (instance instanceof core.classes.Project) {
-                    setInstanceType(`project #${instance.id}`);
-                } else {
-                    setInstanceType(`task #${instance.id}`);
-                }
-            } else if (instance instanceof core.classes.Job) {
-                core.tasks.get({ id: instance.taskId })
-                    .then((response: any) => {
-                        if (response.length) {
-                            const [taskInstance] = response;
-                            setDefaultStorageLocation(taskInstance.sourceStorage?.location || StorageLocation.LOCAL);
-                            setDefaultStorageCloudId(taskInstance.sourceStorage?.cloudStorageId || null);
-                        }
-                    })
-                    .catch((error: Error) => {
-                        if ((error as any).code !== 403) {
-                            Notification.error({
-                                message: `Could not get task instance ${instance.taskId}`,
-                                description: error.toString(),
-                            });
-                        }
-                    });
-                setInstanceType(`job #${instance.id}`);
+            setDefaultStorageLocation(instance.sourceStorage.location);
+            setDefaultStorageCloudId(instance.sourceStorage.cloudStorageId);
+            let type: 'project' | 'task' | 'job' = 'job';
+
+            if (isProject()) {
+                type = 'project';
+            } else if (isTask()) {
+                type = 'task';
             }
+            setInstanceType(`${type} #${instance.id}`);
         }
     }, [instance, resource]);
 
@@ -248,12 +234,15 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     const onUpload = (): void => {
         if (uploadParams && uploadParams.resource) {
-            dispatch(importDatasetAsync(
-                instance, uploadParams.selectedFormat as string,
-                uploadParams.useDefaultSettings, uploadParams.sourceStorage,
-                uploadParams.file || uploadParams.fileName as string,
-                uploadParams.convMaskToPoly,
-            ) as any);
+            dispatch(
+                importDatasetAsync(
+                    instance,
+                    uploadParams.selectedFormat as string,
+                    uploadParams.useDefaultSettings,
+                    uploadParams.sourceStorage,
+                    uploadParams.file || uploadParams.fileName as string,
+                    uploadParams.convMaskToPoly,
+                ));
             const resToPrint = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             Notification.info({
                 message: `${resToPrint} import started`,

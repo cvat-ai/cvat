@@ -104,8 +104,13 @@ class TestListQualityReports(_PermissionTestBase):
     def test_can_list_quality_reports(self, admin_user, quality_reports):
         parent_report = next(r for r in quality_reports if r["task_id"])
         task_id = parent_report["task_id"]
-        reports = [parent_report] + [
-            r for r in quality_reports if r["parent_id"] == parent_report["id"]
+
+        reports = [
+            r
+            for r in quality_reports
+            if r["task_id"] == task_id
+            or r["parent_id"]
+            and quality_reports[r["parent_id"]]["task_id"] == task_id
         ]
 
         self._test_list_reports_200(admin_user, task_id, expected_data=reports)
@@ -680,16 +685,17 @@ class TestSimpleQualityConflictsFilters(CollectionSimpleFilterTestBase):
             return job_id, job_conflicts
         elif field == "task_id":
             # This field is not included in the response
-            task_report = next(r for r in self.report_samples if r["task_id"])
-            task_reports = {task_report["id"]} | {
-                r["id"] for r in self.report_samples if r["parent_id"] == task_report["id"]
+            task_reports = [r for r in self.report_samples if r["task_id"]]
+            task_report_ids = {r["id"] for r in task_reports}
+            task_report_ids |= {
+                r["id"] for r in self.report_samples if r["parent_id"] in task_report_ids
             }
             task_conflicts = [
                 c
                 for c in self.samples
-                if self._get_field(c, self._map_field("report_id")) in task_reports
+                if self._get_field(c, self._map_field("report_id")) in task_report_ids
             ]
-            return task_report["task_id"], task_conflicts
+            return task_reports[0]["task_id"], task_conflicts
         elif field == "org_id":
             org_id = self.task_samples[
                 next(
@@ -1091,7 +1097,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
         assert summary["frame_share"] == summary["frame_count"] / task["size"]
 
     def test_unmodified_task_produces_the_same_metrics(self, admin_user, quality_reports):
-        old_report = next(r for r in quality_reports if r["task_id"])
+        old_report = max((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])
         task_id = old_report["task_id"]
 
         new_report = self.create_quality_report(admin_user, task_id)
@@ -1124,7 +1130,9 @@ class TestQualityReportMetrics(_PermissionTestBase):
     ):
         gt_job = next(j for j in jobs if j["type"] == "ground_truth")
         task_id = gt_job["task_id"]
-        old_report = next(r for r in quality_reports if r["task_id"] == task_id)
+        old_report = max(
+            (r for r in quality_reports if r["task_id"] == task_id), key=lambda r: r["id"]
+        )
         job_labels = [
             l
             for l in labels
@@ -1174,7 +1182,7 @@ class TestQualityReportMetrics(_PermissionTestBase):
     def test_settings_affect_metrics(
         self, admin_user, quality_reports, quality_settings, task_id, parameter
     ):
-        old_report = next(r for r in quality_reports if r["task_id"])
+        old_report = max((r for r in quality_reports if r["task_id"]), key=lambda r: r["id"])
         task_id = old_report["task_id"]
 
         settings = deepcopy(next(s for s in quality_settings if s["task_id"] == task_id))

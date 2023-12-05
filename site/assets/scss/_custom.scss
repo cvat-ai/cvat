@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+/* doesn't work in hugo */
+/* stylelint-disable media-feature-range-notation */
+
 /* Code blocks */
 
 div.code-toolbar .toolbar {
@@ -42,7 +45,7 @@ details > .code-toolbar {
 }
 
 /* Increased left padding on the sidebar of documentation */
-
+/* stylelint-disable-next-line selector-class-pattern */
 .td-sidebar-nav__section .ul-1 ul {
     padding-left: 0.6rem !important;
     padding-right: 0.1rem !important;
@@ -168,15 +171,22 @@ details > .code-toolbar {
 }
 
 /* Display version menu on mobile version of the site */
-
+/* stylelint-disable-next-line selector-id-pattern */
 #dropdown_ver {
     right: 5px !important;
     left: auto;
 }
 
 @media (min-width: 991.98px) {
+    /* stylelint-disable-next-line selector-id-pattern */
     #dropdown_ver {
         right: 245px !important;
         left: auto;
     }
 }
+
+/* Hide breadcrumbs, when on the root level
+   https://github.com/google/docsy/issues/944
+*/
+/* stylelint-disable-next-line selector-class-pattern */
+.td-breadcrumbs__single { display: none !important; }

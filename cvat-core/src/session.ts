@@ -11,7 +11,7 @@ import {
 import { Storage } from './storage';
 
 import PluginRegistry from './plugins';
-import { ArgumentError } from './exceptions';
+import { ArgumentError, ScriptingError } from './exceptions';
 import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
@@ -308,56 +308,10 @@ function buildDuplicatedAPI(prototype) {
             },
             writable: true,
         }),
-        events: Object.freeze({
-            value: {
-                async subscribe(evType, callback) {
-                    const result = await PluginRegistry.apiWrapper.call(
-                        this,
-                        prototype.events.subscribe,
-                        evType,
-                        callback,
-                    );
-                    return result;
-                },
-                async unsubscribe(evType, callback = null) {
-                    const result = await PluginRegistry.apiWrapper.call(
-                        this,
-                        prototype.events.unsubscribe,
-                        evType,
-                        callback,
-                    );
-                    return result;
-                },
-            },
-            writable: true,
-        }),
     });
 }
 
-export class Session {}
-
-export class Job extends Session {
-    public assignee: User | null;
-    public stage: JobStage;
-    public state: JobState;
-    public readonly id: number;
-    public readonly startFrame: number;
-    public readonly stopFrame: number;
-    public readonly frameCount: number;
-    public readonly projectId: number | null;
-    public readonly guideId: number | null;
-    public readonly taskId: number;
-    public readonly dimension: DimensionType;
-    public readonly dataChunkType: ChunkType;
-    public readonly dataChunkSize: number;
-    public readonly bugTracker: string | null;
-    public readonly mode: TaskMode;
-    public readonly labels: Label[];
-    public readonly type: JobType;
-    public readonly frameSelectionMethod: JobType;
-    public readonly createdDate: string;
-    public readonly updatedDate: string;
-
+export class Session {
     public annotations: {
         get: CallableFunction;
         put: CallableFunction;
@@ -403,6 +357,85 @@ export class Job extends Session {
         log: CallableFunction;
     };
 
+    public constructor() {
+        if (this.constructor === Session) {
+            throw new ScriptingError('Can not initiate an instance of abstract class');
+        }
+
+        // When we call a function, for example: task.annotations.get()
+        // In the method get we lose the task context
+        // So, we need return it
+        this.annotations = {
+            get: Object.getPrototypeOf(this).annotations.get.bind(this),
+            put: Object.getPrototypeOf(this).annotations.put.bind(this),
+            save: Object.getPrototypeOf(this).annotations.save.bind(this),
+            merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
+            split: Object.getPrototypeOf(this).annotations.split.bind(this),
+            group: Object.getPrototypeOf(this).annotations.group.bind(this),
+            join: Object.getPrototypeOf(this).annotations.join.bind(this),
+            slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
+            clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+            search: Object.getPrototypeOf(this).annotations.search.bind(this),
+            searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
+            upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
+            select: Object.getPrototypeOf(this).annotations.select.bind(this),
+            import: Object.getPrototypeOf(this).annotations.import.bind(this),
+            export: Object.getPrototypeOf(this).annotations.export.bind(this),
+            statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
+            hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
+            exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
+        };
+
+        this.actions = {
+            undo: Object.getPrototypeOf(this).actions.undo.bind(this),
+            redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+            freeze: Object.getPrototypeOf(this).actions.freeze.bind(this),
+            clear: Object.getPrototypeOf(this).actions.clear.bind(this),
+            get: Object.getPrototypeOf(this).actions.get.bind(this),
+        };
+
+        this.frames = {
+            get: Object.getPrototypeOf(this).frames.get.bind(this),
+            delete: Object.getPrototypeOf(this).frames.delete.bind(this),
+            restore: Object.getPrototypeOf(this).frames.restore.bind(this),
+            save: Object.getPrototypeOf(this).frames.save.bind(this),
+            cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
+            preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+            search: Object.getPrototypeOf(this).frames.search.bind(this),
+            contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
+            chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
+        };
+
+        this.logger = {
+            log: Object.getPrototypeOf(this).logger.log.bind(this),
+        };
+    }
+}
+
+export class Job extends Session {
+    public assignee: User | null;
+    public stage: JobStage;
+    public state: JobState;
+    public readonly id: number;
+    public readonly startFrame: number;
+    public readonly stopFrame: number;
+    public readonly frameCount: number;
+    public readonly projectId: number | null;
+    public readonly guideId: number | null;
+    public readonly taskId: number;
+    public readonly dimension: DimensionType;
+    public readonly dataChunkType: ChunkType;
+    public readonly dataChunkSize: number;
+    public readonly bugTracker: string | null;
+    public readonly mode: TaskMode;
+    public readonly labels: Label[];
+    public readonly type: JobType;
+    public readonly frameSelectionMethod: JobType;
+    public readonly createdDate: string;
+    public readonly updatedDate: string;
+    public readonly sourceStorage: Storage;
+    public readonly targetStorage: Storage;
+
     constructor(initialData: Readonly<SerializedJob>) {
         super();
         const data = {
@@ -425,6 +458,8 @@ export class Job extends Session {
             mode: undefined,
             created_date: undefined,
             updated_date: undefined,
+            source_storage: undefined,
+            target_storage: undefined,
         };
 
         const updateTrigger = new FieldUpdateTrigger();
@@ -449,6 +484,16 @@ export class Job extends Session {
                 return new Label(labelData);
             }).filter((label) => !label.hasParent);
         }
+
+        data.source_storage = new Storage({
+            location: initialData.source_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.source_storage?.cloud_storage_id,
+        });
+
+        data.target_storage = new Storage({
+            location: initialData.target_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.target_storage?.cloud_storage_id,
+        });
 
         Object.defineProperties(
             this,
@@ -567,6 +612,12 @@ export class Job extends Session {
                 updatedDate: {
                     get: () => data.updated_date,
                 },
+                sourceStorage: {
+                    get: () => data.source_storage,
+                },
+                targetStorage: {
+                    get: () => data.target_storage,
+                },
                 _updateTrigger: {
                     get: () => updateTrigger,
                 },
@@ -575,54 +626,6 @@ export class Job extends Session {
                 },
             }),
         );
-
-        // When we call a function, for example: task.annotations.get()
-        // In the method get we lose the task context
-        // So, we need return it
-        this.annotations = {
-            get: Object.getPrototypeOf(this).annotations.get.bind(this),
-            put: Object.getPrototypeOf(this).annotations.put.bind(this),
-            save: Object.getPrototypeOf(this).annotations.save.bind(this),
-            merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
-            split: Object.getPrototypeOf(this).annotations.split.bind(this),
-            group: Object.getPrototypeOf(this).annotations.group.bind(this),
-            join: Object.getPrototypeOf(this).annotations.join.bind(this),
-            slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
-            clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
-            search: Object.getPrototypeOf(this).annotations.search.bind(this),
-            searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
-            upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
-            select: Object.getPrototypeOf(this).annotations.select.bind(this),
-            import: Object.getPrototypeOf(this).annotations.import.bind(this),
-            export: Object.getPrototypeOf(this).annotations.export.bind(this),
-            statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
-            hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
-            exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
-        };
-
-        this.actions = {
-            undo: Object.getPrototypeOf(this).actions.undo.bind(this),
-            redo: Object.getPrototypeOf(this).actions.redo.bind(this),
-            freeze: Object.getPrototypeOf(this).actions.freeze.bind(this),
-            clear: Object.getPrototypeOf(this).actions.clear.bind(this),
-            get: Object.getPrototypeOf(this).actions.get.bind(this),
-        };
-
-        this.frames = {
-            get: Object.getPrototypeOf(this).frames.get.bind(this),
-            delete: Object.getPrototypeOf(this).frames.delete.bind(this),
-            restore: Object.getPrototypeOf(this).frames.restore.bind(this),
-            save: Object.getPrototypeOf(this).frames.save.bind(this),
-            cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
-            preview: Object.getPrototypeOf(this).frames.preview.bind(this),
-            search: Object.getPrototypeOf(this).frames.search.bind(this),
-            contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
-            chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
-        };
-
-        this.logger = {
-            log: Object.getPrototypeOf(this).logger.log.bind(this),
-        };
     }
 
     async save(additionalData = {}) {
@@ -691,51 +694,6 @@ export class Task extends Session {
     public readonly copyData: boolean;
     public readonly cloudStorageID: number;
     public readonly sortingMethod: string;
-
-    public annotations: {
-        get: CallableFunction;
-        put: CallableFunction;
-        save: CallableFunction;
-        merge: CallableFunction;
-        split: CallableFunction;
-        group: CallableFunction;
-        join: CallableFunction;
-        slice: CallableFunction;
-        clear: CallableFunction;
-        search: CallableFunction;
-        searchEmpty: CallableFunction;
-        upload: CallableFunction;
-        select: CallableFunction;
-        import: CallableFunction;
-        export: CallableFunction;
-        statistics: CallableFunction;
-        hasUnsavedChanges: CallableFunction;
-        exportDataset: CallableFunction;
-    };
-
-    public actions: {
-        undo: CallableFunction;
-        redo: CallableFunction;
-        freeze: CallableFunction;
-        clear: CallableFunction;
-        get: CallableFunction;
-    };
-
-    public frames: {
-        get: CallableFunction;
-        delete: CallableFunction;
-        restore: CallableFunction;
-        save: CallableFunction;
-        cachedChunks: CallableFunction;
-        preview: CallableFunction;
-        contextImage: CallableFunction;
-        search: CallableFunction;
-        chunk: CallableFunction;
-    };
-
-    public logger: {
-        log: CallableFunction;
-    };
 
     constructor(initialData: SerializedTask) {
         super();
@@ -816,6 +774,16 @@ export class Task extends Session {
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
         }
 
+        data.source_storage = new Storage({
+            location: initialData.source_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.source_storage?.cloud_storage_id,
+        });
+
+        data.target_storage = new Storage({
+            location: initialData.target_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.target_storage?.cloud_storage_id,
+        });
+
         if (Array.isArray(initialData.jobs)) {
             for (const job of initialData.jobs) {
                 const jobInstance = new Job({
@@ -842,6 +810,8 @@ export class Task extends Session {
                     dimension: data.dimension,
                     data_compressed_chunk_type: data.data_compressed_chunk_type,
                     data_chunk_size: data.data_chunk_size,
+                    target_storage: initialData.target_storage,
+                    source_storage: initialData.source_storage,
                 });
                 data.jobs.push(jobInstance);
             }
@@ -1086,20 +1056,10 @@ export class Task extends Session {
                     get: () => data.organization,
                 },
                 sourceStorage: {
-                    get: () => (
-                        new Storage({
-                            location: data.source_storage?.location || StorageLocation.LOCAL,
-                            cloudStorageId: data.source_storage?.cloud_storage_id,
-                        })
-                    ),
+                    get: () => data.source_storage,
                 },
                 targetStorage: {
-                    get: () => (
-                        new Storage({
-                            location: data.target_storage?.location || StorageLocation.LOCAL,
-                            cloudStorageId: data.target_storage?.cloud_storage_id,
-                        })
-                    ),
+                    get: () => data.target_storage,
                 },
                 progress: {
                     get: () => data.progress,
@@ -1112,54 +1072,6 @@ export class Task extends Session {
                 },
             }),
         );
-
-        // When we call a function, for example: task.annotations.get()
-        // In the method get we lose the task context
-        // So, we need return it
-        this.annotations = {
-            get: Object.getPrototypeOf(this).annotations.get.bind(this),
-            put: Object.getPrototypeOf(this).annotations.put.bind(this),
-            save: Object.getPrototypeOf(this).annotations.save.bind(this),
-            merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
-            split: Object.getPrototypeOf(this).annotations.split.bind(this),
-            group: Object.getPrototypeOf(this).annotations.group.bind(this),
-            join: Object.getPrototypeOf(this).annotations.join.bind(this),
-            slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
-            clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
-            search: Object.getPrototypeOf(this).annotations.search.bind(this),
-            searchEmpty: Object.getPrototypeOf(this).annotations.searchEmpty.bind(this),
-            upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
-            select: Object.getPrototypeOf(this).annotations.select.bind(this),
-            import: Object.getPrototypeOf(this).annotations.import.bind(this),
-            export: Object.getPrototypeOf(this).annotations.export.bind(this),
-            statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
-            hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
-            exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
-        };
-
-        this.actions = {
-            undo: Object.getPrototypeOf(this).actions.undo.bind(this),
-            redo: Object.getPrototypeOf(this).actions.redo.bind(this),
-            freeze: Object.getPrototypeOf(this).actions.freeze.bind(this),
-            clear: Object.getPrototypeOf(this).actions.clear.bind(this),
-            get: Object.getPrototypeOf(this).actions.get.bind(this),
-        };
-
-        this.frames = {
-            get: Object.getPrototypeOf(this).frames.get.bind(this),
-            delete: Object.getPrototypeOf(this).frames.delete.bind(this),
-            restore: Object.getPrototypeOf(this).frames.restore.bind(this),
-            save: Object.getPrototypeOf(this).frames.save.bind(this),
-            cachedChunks: Object.getPrototypeOf(this).frames.cachedChunks.bind(this),
-            preview: Object.getPrototypeOf(this).frames.preview.bind(this),
-            contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
-            search: Object.getPrototypeOf(this).frames.search.bind(this),
-            chunk: Object.getPrototypeOf(this).frames.chunk.bind(this),
-        };
-
-        this.logger = {
-            log: Object.getPrototypeOf(this).logger.log.bind(this),
-        };
     }
 
     async close(): Promise<Task> {

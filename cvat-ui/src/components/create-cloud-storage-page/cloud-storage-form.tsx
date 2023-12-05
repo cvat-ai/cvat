@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -321,7 +322,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         className: 'cvat-cloud-storage-form-item',
     };
 
-    const credentialsBlok = (): JSX.Element => {
+    const credentialsBlok = (): JSX.Element | null => {
         const internalCommonProps = {
             ...commonProps,
             labelCol: { span: 8, offset: 2 },
@@ -404,40 +405,36 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
         if (providerType === ProviderType.AZURE_CONTAINER && credentialsType === CredentialsType.ANONYMOUS_ACCESS) {
             return (
-                <>
-                    <Form.Item
-                        label='Account name'
-                        name='account_name'
-                        rules={[{ required: true, message: 'Please, specify your account name' }]}
-                        {...internalCommonProps}
-                    >
-                        <Input.Password
-                            minLength={3}
-                            maxLength={24}
-                            visibilityToggle={accountNameVisibility}
-                            onChange={() => setAccountNameVisibility(true)}
-                        />
-                    </Form.Item>
-                </>
+                <Form.Item
+                    label='Account name'
+                    name='account_name'
+                    rules={[{ required: true, message: 'Please, specify your account name' }]}
+                    {...internalCommonProps}
+                >
+                    <Input.Password
+                        minLength={3}
+                        maxLength={24}
+                        visibilityToggle={accountNameVisibility}
+                        onChange={() => setAccountNameVisibility(true)}
+                    />
+                </Form.Item>
             );
         }
 
         if (providerType === ProviderType.AZURE_CONTAINER && credentialsType === CredentialsType.CONNECTION_STRING) {
             return (
-                <>
-                    <Form.Item
-                        label='Connection string'
-                        name='connection_string'
-                        rules={[{ required: true, message: 'Please, specify your connection string' }]}
-                        {...internalCommonProps}
-                    >
-                        <Input.Password
-                            maxLength={440}
-                            visibilityToggle={connectionStringVisibility}
-                            onChange={() => setConnectionStringVisibility(true)}
-                        />
-                    </Form.Item>
-                </>
+                <Form.Item
+                    label='Connection string'
+                    name='connection_string'
+                    rules={[{ required: true, message: 'Please, specify your connection string' }]}
+                    {...internalCommonProps}
+                >
+                    <Input.Password
+                        maxLength={440}
+                        visibilityToggle={connectionStringVisibility}
+                        onChange={() => setConnectionStringVisibility(true)}
+                    />
+                </Form.Item>
             );
         }
 
@@ -489,10 +486,10 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             );
         }
 
-        return <></>;
+        return null;
     };
 
-    const AWSS3Configuration = (): JSX.Element => {
+    const awsS3Configuration = (): JSX.Element => {
         const internalCommonProps = {
             ...commonProps,
             labelCol: { offset: 1 },
@@ -540,7 +537,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         );
     };
 
-    const AzureBlobStorageConfiguration = (): JSX.Element => {
+    const azureBlobStorageConfiguration = (): JSX.Element => {
         const internalCommonProps = {
             ...commonProps,
             labelCol: { offset: 1 },
@@ -577,7 +574,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         );
     };
 
-    const GoogleCloudStorageConfiguration = (): JSX.Element => {
+    const googleCloudStorageConfiguration = (): JSX.Element => {
         const internalCommonProps = {
             ...commonProps,
             labelCol: { span: 6, offset: 1 },
@@ -677,9 +674,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     </Select.Option>
                 </Select>
             </Form.Item>
-            {providerType === ProviderType.AWS_S3_BUCKET && AWSS3Configuration()}
-            {providerType === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
-            {providerType === ProviderType.GOOGLE_CLOUD_STORAGE && GoogleCloudStorageConfiguration()}
+            {providerType === ProviderType.AWS_S3_BUCKET && awsS3Configuration()}
+            {providerType === ProviderType.AZURE_CONTAINER && azureBlobStorageConfiguration()}
+            {providerType === ProviderType.GOOGLE_CLOUD_STORAGE && googleCloudStorageConfiguration()}
             <Form.Item
                 label={(
                     <CVATTooltip title='Prefix is used to filter bucket content'>
