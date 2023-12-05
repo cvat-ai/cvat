@@ -124,7 +124,7 @@ async function runSingleFrameChain(
     };
 
     try {
-        showMessageWithPause('Actions initialization', 0, 500);
+        await showMessageWithPause('Actions initialization', 0, 500);
         if (cancelled()) {
             return;
         }
