@@ -1802,7 +1802,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         ALLOWED_RESOURCE_NAME_SYMBOLS = (
             COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS
             if provider_type != models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE
-            else COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS + "_"
+            else COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS + "_" + "."
         )
 
         # We need to check only basic naming rule
