@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
@@ -10,7 +10,6 @@ import Pagination from 'antd/lib/pagination';
 import { CombinedState, InvitationsQuery } from 'reducers';
 import { Invitation } from 'cvat-core/src/organization';
 import { acceptInvitationAsync, getInvitationsAsync, rejectInvitationAsync } from 'actions/invitations-actions';
-import notification from 'antd/lib/notification';
 import InvitationItem from './invitation-item';
 
 import dimensions from '../projects-page/dimensions';
