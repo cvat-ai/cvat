@@ -44,14 +44,12 @@ function Issues(props: Props): JSX.Element {
     }, []);
 
     const bottomElement = (
-        <>
-            <Text type='secondary'>
-                Resolved:
-                {' '}
-                {clampValue(resolvedIssues)}
-                {resolvedIssues ? ` (${percent(resolvedIssues, issuesCount)})` : ''}
-            </Text>
-        </>
+        <Text type='secondary'>
+            Resolved:
+            {' '}
+            {clampValue(resolvedIssues)}
+            {resolvedIssues ? ` (${percent(resolvedIssues, issuesCount)})` : ''}
+        </Text>
     );
 
     return (

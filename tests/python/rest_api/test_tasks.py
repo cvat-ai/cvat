@@ -51,15 +51,10 @@ from .utils import (
 )
 
 
-def get_cloud_storage_content(
-    api_version: int, username: str, cloud_storage_id: int, manifest: Optional[str] = None
-):
+def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
     with make_api_client(username) as api_client:
         kwargs = {"manifest_path": manifest} if manifest else {}
 
-        if api_version == 1:
-            (data, _) = api_client.cloudstorages_api.retrieve_content(cloud_storage_id, **kwargs)
-            return data
         (data, _) = api_client.cloudstorages_api.retrieve_content_v2(cloud_storage_id, **kwargs)
         return [f"{f['name']}{'/' if str(f['type']) == 'DIR' else ''}" for f in data["content"]]
 
@@ -595,13 +590,13 @@ class TestPatchTaskAnnotations:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskDataset:
-    def _test_export_task(self, username, tid, **kwargs):
+    def _test_export_task(self, username: str, tid: int, **kwargs):
         with make_api_client(username) as api_client:
             return export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=tid, **kwargs)
 
     def test_can_export_task_dataset(self, admin_user, tasks_with_shapes):
         task = tasks_with_shapes[0]
-        response = self._test_export_task(admin_user, task["id"], format="CVAT for images 1.1")
+        response = self._test_export_task(admin_user, task["id"])
         assert response.data
 
     @pytest.mark.parametrize("tid", [21])
@@ -727,9 +722,28 @@ class TestGetTaskDataset:
 
         task_id, _ = create_task(admin_user, task_spec, task_data)
 
-        response = self._test_export_task(admin_user, task_id, format="CVAT for images 1.1")
+        response = self._test_export_task(admin_user, task_id)
         assert response.status == HTTPStatus.OK
         assert zipfile.is_zipfile(io.BytesIO(response.data))
+
+    def test_export_dataset_after_deleting_related_cloud_storage(self, admin_user, tasks):
+        related_field = "target_storage"
+
+        task = next(
+            t for t in tasks if t[related_field] and t[related_field]["location"] == "cloud_storage"
+        )
+        task_id = task["id"]
+        cloud_storage_id = task[related_field]["cloud_storage_id"]
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.cloudstorages_api.destroy(cloud_storage_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+            result, response = api_client.tasks_api.retrieve(task_id)
+            assert not result[related_field]
+
+            response = export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=task["id"])
+            assert response.data
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -809,16 +823,20 @@ class TestPostTaskData:
         task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
         # check that the frames have correct width and height
-        with make_api_client(self._USERNAME) as api_client:
-            _, response = api_client.tasks_api.retrieve_data(
-                task_id, number=0, type="chunk", quality="original"
-            )
-            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                for name in zip_file.namelist():
-                    with zip_file.open(name) as zipped_img:
-                        im = Image.open(zipped_img)
-                        # original is 480x640 with 90/-90 degrees rotation
-                        assert im.height == 640 and im.width == 480
+        for chunk_quality in ["original", "compressed"]:
+            with make_api_client(self._USERNAME) as api_client:
+                _, response = api_client.tasks_api.retrieve_data(
+                    task_id, number=0, type="chunk", quality=chunk_quality
+                )
+                data_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+
+                with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                    for name, frame_meta in zip(zip_file.namelist(), data_meta.frames):
+                        with zip_file.open(name) as zipped_img:
+                            im = Image.open(zipped_img)
+                            # original is 480x640 with 90/-90 degrees rotation
+                            assert frame_meta.height == 640 and frame_meta.width == 480
+                            assert im.height == 640 and im.width == 480
 
     def test_can_create_task_with_big_images(self):
         # Checks for regressions about the issue
@@ -1140,17 +1158,17 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
-        "use_cache, cloud_storage_id, manifest, use_bucket_content, content_api_version, org",
+        "use_cache, cloud_storage_id, manifest, use_bucket_content, org",
         [
-            (True, 1, "manifest.jsonl", False, None, ""),  # public bucket
-            (True, 2, "sub/manifest.jsonl", True, 1, "org2"),  # private bucket
-            (True, 2, "sub/manifest.jsonl", True, 2, "org2"),  # private bucket
-            (True, 1, None, False, None, ""),
-            (True, 2, None, True, 1, "org2"),
-            (True, 2, None, True, 2, "org2"),
-            (False, 1, None, False, None, ""),
-            (False, 2, None, True, 1, "org2"),
-            (False, 2, None, True, 2, "org2"),
+            (True, 1, "manifest.jsonl", False, ""),  # public bucket
+            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
+            (True, 2, "sub/manifest.jsonl", True, "org2"),  # private bucket
+            (True, 1, None, False, ""),
+            (True, 2, None, True, "org2"),
+            (True, 2, None, True, "org2"),
+            (False, 1, None, False, ""),
+            (False, 2, None, True, "org2"),
+            (False, 2, None, True, "org2"),
         ],
     )
     def test_create_task_with_cloud_storage_files(
@@ -1159,12 +1177,11 @@ class TestPostTaskData:
         cloud_storage_id: int,
         manifest: str,
         use_bucket_content: bool,
-        content_api_version: Optional[int],
         org: str,
     ):
         if use_bucket_content:
             cloud_storage_content = get_cloud_storage_content(
-                content_api_version, self._USERNAME, cloud_storage_id, manifest
+                self._USERNAME, cloud_storage_id, manifest
             )
         else:
             cloud_storage_content = ["image_case_65_1.png", "image_case_65_2.png"]
@@ -2435,7 +2452,8 @@ class TestImportTaskAnnotations:
         self.tmp_dir = tmp_path
         self.client = self._make_client()
         self.user = admin_user
-        self.format = "COCO 1.0"
+        self.export_format = "CVAT for images 1.1"
+        self.import_format = "CVAT 1.1"
 
         with self.client:
             self.client.login((self.user, USER_PASS))
@@ -2465,11 +2483,11 @@ class TestImportTaskAnnotations:
             filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
 
         task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.format, filename, include_images=False)
+        task.export_dataset(self.export_format, filename, include_images=False)
 
         self._delete_annotations(task_id)
 
-        params = {"format": self.format, "filename": filename.name}
+        params = {"format": self.import_format, "filename": filename.name}
         url = self.client.api_map.make_endpoint_url(
             self.client.api_client.tasks_api.create_annotations_endpoint.path
         ).format(id=task_id)
@@ -2478,7 +2496,7 @@ class TestImportTaskAnnotations:
         if successful_upload:
             # define time required to upload file with annotations
             start_time = time()
-            task.import_annotations(self.format, filename)
+            task.import_annotations(self.import_format, filename)
             required_time = ceil(time() - start_time) * 2
             self._delete_annotations(task_id)
 
@@ -2502,7 +2520,7 @@ class TestImportTaskAnnotations:
         if successful_upload:
             self._check_annotations(task_id)
             self._delete_annotations(task_id)
-        task.import_annotations(self.format, filename)
+        task.import_annotations(self.import_format, filename)
         self._check_annotations(task_id)
 
     @pytest.mark.skip("Fails sometimes, needs to be fixed")
@@ -2512,9 +2530,9 @@ class TestImportTaskAnnotations:
         with NamedTemporaryFile() as f:
             filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
         task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.format, filename, include_images=False)
+        task.export_dataset(self.export_format, filename, include_images=False)
 
-        params = {"format": self.format, "filename": filename.name}
+        params = {"format": self.import_format, "filename": filename.name}
         url = self.client.api_map.make_endpoint_url(
             self.client.api_client.tasks_api.create_annotations_endpoint.path
         ).format(id=task_id)
@@ -2541,6 +2559,38 @@ class TestImportTaskAnnotations:
             if not number_of_files:
                 break
         assert not number_of_files
+
+    def test_import_annotations_after_deleting_related_cloud_storage(
+        self, admin_user: str, tasks_with_shapes
+    ):
+        related_field = "source_storage"
+
+        task = next(
+            t
+            for t in tasks_with_shapes
+            if t[related_field] and t[related_field]["location"] == "cloud_storage"
+        )
+        task_id = task["id"]
+        cloud_storage_id = task["source_storage"]["cloud_storage_id"]
+
+        # generate temporary destination
+        with NamedTemporaryFile(dir=self.tmp_dir, suffix=f"task_{task_id}.zip") as f:
+            file_path = Path(f.name)
+
+        task = self.client.tasks.retrieve(task_id)
+        self._check_annotations(task_id)
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.cloudstorages_api.destroy(cloud_storage_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+        task = self.client.tasks.retrieve(task_id)
+        assert not getattr(task, related_field)
+
+        task.export_dataset(self.export_format, file_path, include_images=False)
+        self._delete_annotations(task_id)
+        task.import_annotations(self.import_format, file_path)
+        self._check_annotations(task_id)
 
 
 class TestImportWithComplexFilenames:

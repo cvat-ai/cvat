@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "1.58.1",
+  "version": "1.60.0",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "browserslist": [
     "Chrome >= 63",
-    "Firefox > 58",
+    "Firefox > 102",
     "not IE 11",
     "> 2%"
   ],

@@ -1,16 +1,17 @@
 {
   "name": "cvat-canvas3d",
-  "version": "0.0.9",
+  "version": "0.0.10",
+  "type": "module",
   "description": "Part of Computer Vision Annotation Tool which presents its canvas3D library",
   "main": "src/canvas3d.ts",
   "scripts": {
-    "build": "tsc && webpack --config ./webpack.config.js"
+    "build": "tsc && webpack --config ./webpack.config.cjs"
   },
   "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
     "Chrome >= 63",
-    "Firefox > 58",
+    "Firefox > 102",
     "not IE 11",
     "> 2%"
   ],

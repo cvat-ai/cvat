@@ -5,12 +5,14 @@
 
 import {
     shapeFactory, trackFactory, Track, Shape, Tag,
-    MaskShape, BasicInjection, RawShapeData, RawTrackData, RawTagData, SkeletonShape, SkeletonTrack,
+    MaskShape, BasicInjection,
+    SkeletonShape, SkeletonTrack, PolygonShape,
 } from './annotations-objects';
+import { SerializedCollection, SerializedTrack } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
-import { Label } from './labels';
+import { Attribute, Label } from './labels';
 import { ArgumentError, ScriptingError } from './exceptions';
 import ObjectState from './object-state';
 import { cropMask } from './object-utils';
@@ -20,23 +22,41 @@ import {
 } from './enums';
 import AnnotationHistory from './annotations-history';
 
-interface RawCollection {
-    tags: RawTagData[],
-    shapes: RawShapeData[],
-    tracks: RawTrackData[],
-}
-
 interface ImportedCollection {
     tags: Tag[],
     shapes: Shape[],
     tracks: Track[],
 }
 
+const validateAttributesList = (
+    attributes: { spec_id: number, value: string }[],
+): { spec_id: number, value: string }[] => {
+    for (const { spec_id: specID, value } of attributes) {
+        checkObjectType('attribute id', specID, 'integer', null);
+        checkObjectType('attribute value', value, 'string', null);
+    }
+    return attributes;
+};
+
+const objectAttributesAsList = (state: ObjectState): { spec_id: number, value: string }[] => (
+    Object.entries(state.attributes).map(([key, value]) => ({
+        spec_id: +key,
+        value,
+    }))
+);
+
+const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
+    label.attributes.reduce((accumulator, attribute) => {
+        accumulator[attribute.id] = attribute;
+        return accumulator;
+    }, {})
+);
+
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
     private frameMeta: any;
-    private labels: Record<number, Label>
+    private labels: Record<number, Label>;
     private annotationsFilter: AnnotationsFilter;
     private history: AnnotationHistory;
     private shapes: Record<number, Shape[]>;
@@ -84,7 +104,7 @@ export default class Collection {
         };
     }
 
-    import(data: RawCollection): ImportedCollection {
+    import(data: SerializedCollection): ImportedCollection {
         const result = {
             tags: [],
             shapes: [],
@@ -127,7 +147,7 @@ export default class Collection {
         return result;
     }
 
-    export(): RawCollection {
+    export(): SerializedCollection {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
             shapes: Object.values(this.shapes)
@@ -149,7 +169,7 @@ export default class Collection {
         return data;
     }
 
-    get(frame: number, allTracks: boolean, filters: string[]): ObjectState[] {
+    public get(frame: number, allTracks: boolean, filters: string[]): ObjectState[] {
         const { tracks } = this;
         const shapes = this.shapes[frame] || [];
         const tags = this.tags[frame] || [];
@@ -183,19 +203,15 @@ export default class Collection {
         return objectStates;
     }
 
-    _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): RawTrackData {
-        const keyframes: Record<number, RawTrackData['shapes'][0]> = {}; // frame: position
+    _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): SerializedTrack {
+        const keyframes: Record<number, SerializedTrack['shapes'][0]> = {}; // frame: position
         const elements = {}; // element_sublabel_id: [element], each sublabel will be merged recursively
 
         if (!Object.values(ShapeType).includes(shapeType)) {
             throw new ArgumentError(`Got unknown shapeType "${shapeType}"`);
         }
 
-        const labelAttributes = label.attributes.reduce((accumulator, attribute) => {
-            accumulator[attribute.id] = attribute;
-            return accumulator;
-        }, {});
-
+        const labelAttributes = labelAttributesAsDict(label);
         for (let i = 0; i < objectsForMerge.length; i++) {
             // For each state get corresponding object
             const object = objectsForMerge[i];
@@ -371,7 +387,7 @@ export default class Collection {
     }
 
     merge(objectStates: ObjectState[]): void {
-        checkObjectType('shapes for merge', objectStates, null, Array);
+        checkObjectType('shapes to merge', objectStates, null, Array);
         if (!objectStates.length) return;
         const objectsForMerge = objectStates.map((state) => {
             checkObjectType('object state', state, null, ObjectState);
@@ -427,12 +443,8 @@ export default class Collection {
         );
     }
 
-    _splitInternal(objectState: ObjectState, object: Track, frame: number): RawTrackData[] {
-        const labelAttributes = object.label.attributes.reduce((accumulator, attribute) => {
-            accumulator[attribute.id] = attribute;
-            return accumulator;
-        }, {});
-
+    _splitInternal(objectState: ObjectState, object: Track, frame: number): SerializedTrack[] {
+        const labelAttributes = labelAttributesAsDict(object.label);
         // first clear all server ids which may exist in the object being splitted
         const copy = trackFactory(object.toJSON(), -1, this.injection);
         copy.clearServerID();
@@ -541,7 +553,7 @@ export default class Collection {
     }
 
     group(objectStates: ObjectState[], reset: boolean): number {
-        checkObjectType('shapes for group', objectStates, null, Array);
+        checkObjectType('shapes to group', objectStates, null, Array);
 
         const objectsForGroup = objectStates.map((state) => {
             checkObjectType('object state', state, null, ObjectState);
@@ -579,6 +591,175 @@ export default class Collection {
         );
 
         return groupIdx;
+    }
+
+    join(objectStates: ObjectState[], points: number[]): void {
+        checkObjectType('shapes to join', objectStates, null, Array);
+        checkObjectType('joined rle mask', points, null, Array);
+
+        if (objectStates.some((state, idx) => idx && state.frame !== objectStates[idx - 1].frame)) {
+            throw new ArgumentError('All joined objects must be placed on the same frame');
+        }
+        if (objectStates.some((state, idx) => idx && state.label.id !== objectStates[idx - 1].label.id)) {
+            throw new ArgumentError('All the objects must have the same label');
+        }
+
+        const objectsToJoin = objectStates.map((state) => {
+            checkObjectType('object state', state, null, ObjectState);
+
+            const object = this.objects[state.clientID];
+            if (typeof object === 'undefined') {
+                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            }
+
+            if (!(object instanceof MaskShape)) {
+                throw new ArgumentError(
+                    `Only shape masks can be joined. Found instance of: "${object.constructor.name}"`,
+                );
+            }
+
+            return object;
+        });
+
+        if (objectsToJoin.length > 1) {
+            const rle = points;
+            const labelAttributes = labelAttributesAsDict(objectsToJoin[0].label);
+            const attrValues = validateAttributesList(objectAttributesAsList(objectStates[0]));
+            for (const attr of attrValues) {
+                if (objectStates.some((state) => state.attributes[attr.spec_id] !== attr.value)) {
+                    attr.value = labelAttributes[attr.spec_id].defaultValue;
+                }
+            }
+
+            // Append newly created object to the collection
+            const imported = this.import({
+                shapes: [{
+                    attributes: attrValues,
+                    frame: objectsToJoin[0].frame,
+                    group: 0,
+                    label_id: objectsToJoin[0].label.id,
+                    outside: false,
+                    occluded: objectsToJoin.some((object: MaskShape) => object.occluded),
+                    points: rle,
+                    rotation: 0,
+                    type: ShapeType.MASK,
+                    z_order: Math.max(...objectsToJoin.map((object: MaskShape) => object.zOrder)),
+                    source: Source.MANUAL,
+                    elements: [],
+                }],
+                tracks: [],
+                tags: [],
+            });
+
+            // and remove joined shapes
+            for (const object of objectsToJoin) {
+                object.removed = true;
+            }
+
+            // handle history actions
+            const [importedShape] = imported.shapes;
+            this.history.do(
+                HistoryActions.JOINED_OBJECTS,
+                () => {
+                    importedShape.removed = true;
+                    for (const object of objectsToJoin) {
+                        object.removed = false;
+                    }
+                },
+                () => {
+                    importedShape.removed = false;
+                    for (const object of objectsToJoin) {
+                        object.removed = true;
+                    }
+                },
+                [...objectsToJoin.map((object) => object.clientID), importedShape.clientID],
+                objectsToJoin[0].frame,
+            );
+        }
+    }
+
+    slice(state: ObjectState, results: number[][]): void {
+        if (results.length !== 2) {
+            throw new Error('Not supported slicing count');
+        }
+
+        const [points1, points2] = results;
+        checkObjectType('sliced object id', state, null, ObjectState);
+        checkObjectType('first slicing contour', points1, null, Array);
+        checkObjectType('second slicing contour', points2, null, Array);
+
+        points1.forEach(
+            (el: number) => checkObjectType('first slicing contour element', el, 'number'),
+        );
+        points2.forEach(
+            (el: number) => checkObjectType('second slicing contour element', el, 'number'),
+        );
+
+        const slicedObject = this.objects[state.clientID];
+        if (!(slicedObject instanceof PolygonShape || slicedObject instanceof MaskShape)) {
+            throw new ArgumentError(
+                `Only polygon shape or mask shape can be sliced. Got "${slicedObject.constructor.name}"`,
+            );
+        }
+
+        const { width, height } = this.frameMeta[slicedObject.frame];
+        if (slicedObject instanceof MaskShape) {
+            points1.push(slicedObject.left, slicedObject.top, slicedObject.right, slicedObject.bottom);
+            points2.push(slicedObject.left, slicedObject.top, slicedObject.right, slicedObject.bottom);
+        }
+
+        const imported = this.import({
+            shapes: [{
+                attributes: validateAttributesList(objectAttributesAsList(state)),
+                frame: slicedObject.frame,
+                group: slicedObject.group,
+                label_id: slicedObject.label.id,
+                outside: false,
+                occluded: slicedObject.occluded,
+                points: slicedObject.shapeType === ShapeType.POLYGON ?
+                    points1 : cropMask(points1, width, height),
+                rotation: 0,
+                type: slicedObject.shapeType,
+                z_order: slicedObject.zOrder,
+                source: Source.MANUAL,
+                elements: [],
+            }, {
+                attributes: validateAttributesList(objectAttributesAsList(state)),
+                frame: slicedObject.frame,
+                group: slicedObject.group,
+                label_id: slicedObject.label.id,
+                outside: false,
+                occluded: slicedObject.occluded,
+                points: slicedObject.shapeType === ShapeType.POLYGON ?
+                    points2 : cropMask(points2, width, height),
+                rotation: 0,
+                type: slicedObject.shapeType,
+                z_order: slicedObject.zOrder,
+                source: Source.MANUAL,
+                elements: [],
+            }],
+            tracks: [],
+            tags: [],
+        });
+        slicedObject.removed = true;
+
+        this.history.do(
+            HistoryActions.SLICED_OBJECT,
+            () => {
+                slicedObject.removed = false;
+                imported.shapes.forEach((shape) => {
+                    shape.removed = true;
+                });
+            },
+            () => {
+                slicedObject.removed = true;
+                imported.shapes.forEach((shape) => {
+                    shape.removed = false;
+                });
+            },
+            [...imported.shapes.map((object) => object.clientID), slicedObject.clientID],
+            slicedObject.frame,
+        );
     }
 
     clear(startframe: number, endframe: number, delTrackKeyframesOnly: boolean): void {
@@ -778,21 +959,6 @@ export default class Collection {
             tags: [],
         };
 
-        function convertAttributes(accumulator, attrID) {
-            const specID = +attrID;
-            const value = this.attributes[attrID];
-
-            checkObjectType('attribute id', specID, 'integer', null);
-            checkObjectType('attribute value', value, 'string', null);
-
-            accumulator.push({
-                spec_id: specID,
-                value,
-            });
-
-            return accumulator;
-        }
-
         for (const state of objectStates) {
             checkObjectType('object state', state, null, ObjectState);
             checkObjectType('state client ID', state.clientID, null, null);
@@ -801,7 +967,7 @@ export default class Collection {
             checkObjectType('state attributes', state.attributes, null, Object);
             checkObjectType('state label', state.label, null, Label);
 
-            const attributes = Object.keys(state.attributes).reduce(convertAttributes.bind(state), []);
+            const attributes = validateAttributesList(objectAttributesAsList(state));
             const labelAttributes = state.label.attributes.reduce((accumulator, attribute) => {
                 accumulator[attribute.id] = attribute;
                 return accumulator;
@@ -884,8 +1050,7 @@ export default class Collection {
                             },
                         ],
                         elements: state.shapeType === 'skeleton' ? state.elements.map((element) => {
-                            const elementAttrValues = Object.keys(state.attributes)
-                                .reduce(convertAttributes.bind(state), []);
+                            const elementAttrValues = validateAttributesList(objectAttributesAsList(state));
                             const elementAttributes = element.label.attributes.reduce((accumulator, attribute) => {
                                 accumulator[attribute.id] = attribute;
                                 return accumulator;

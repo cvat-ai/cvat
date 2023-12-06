@@ -68,7 +68,7 @@ context('Group features', () => {
         cy.get('.cvat-group-control').click();
         for (const shapeToGroup of objectsArray) {
             cy.get(shapeToGroup).click();
-            cy.get(shapeToGroup).should('have.class', 'cvat_canvas_shape_grouping');
+            cy.get(shapeToGroup).should('have.class', 'cvat_canvas_shape_selection');
         }
         if (cancelGrouping) {
             cy.get('body').type('{Esc}');
@@ -81,7 +81,7 @@ context('Group features', () => {
         cy.get('.cvat-group-control').click();
         for (const shapeToGroup of shapeArray) {
             cy.get(shapeToGroup).click();
-            cy.get(shapeToGroup).should('have.class', 'cvat_canvas_shape_grouping');
+            cy.get(shapeToGroup).should('have.class', 'cvat_canvas_shape_selection');
         }
         cy.get('body').type('{Shift}g');
     }
@@ -172,9 +172,9 @@ context('Group features', () => {
             // Start grouping. Cancel grouping via click to the same shape.
             cy.get('.cvat-group-control').click();
             cy.get(shapeArray[0]).click();
-            cy.get(shapeArray[0]).should('have.class', 'cvat_canvas_shape_grouping');
+            cy.get(shapeArray[0]).should('have.class', 'cvat_canvas_shape_selection');
             cy.get(shapeArray[0]).click();
-            cy.get(shapeArray[0]).should('not.have.class', 'cvat_canvas_shape_grouping');
+            cy.get(shapeArray[0]).should('not.have.class', 'cvat_canvas_shape_selection');
             cy.get('body').type('{Esc}'); // Cancel grouping
         });
 

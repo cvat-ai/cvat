@@ -34,9 +34,10 @@ import pjson from '../package.json';
 import config from './config';
 
 import implementAPI from './api-implementation';
+import CVATCore from '.';
 
-function build() {
-    const cvat = {
+function build(): CVATCore {
+    const cvat: CVATCore = {
         server: {
             async about() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.about);
@@ -111,8 +112,8 @@ function build() {
                 );
                 return result;
             },
-            async request(url, data) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data);
+            async request(url, data, requestConfig) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data, requestConfig);
                 return result;
             },
             async setAuthData(response) {
@@ -201,10 +202,6 @@ function build() {
             },
             async requests() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.requests);
-                return result;
-            },
-            async providers() {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.providers);
                 return result;
             },
         },
