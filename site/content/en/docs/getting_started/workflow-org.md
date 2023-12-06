@@ -1,7 +1,7 @@
 ---
 title: 'CVAT Complete Workflow Guide for Organizations'
 linkTitle: 'CVAT Complete Workflow Guide for Organizations'
-weight: 1
+weight: 2
 ---
 
 Welcome to CVAT.ai, this page is the place to start your team’s
