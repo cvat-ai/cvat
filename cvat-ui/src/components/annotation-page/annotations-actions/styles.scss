@@ -4,12 +4,15 @@
 
 @import 'base';
 
-.cvat-action-runner-list,
 .cvat-action-runner-frames,
-.cvat-action-runner-frames-predefined,
 .cvat-action-runner-buttons,
 .cvat-action-runner-action-parameters {
-    margin-top: $grid-unit-size * 5;
+    margin-top: $grid-unit-size * 6;
+}
+
+.cvat-action-runner-list,
+.cvat-action-runner-frames-predefined {
+    margin-top: $grid-unit-size * 2;
 }
 
 .cvat-action-runner-info:not(:first-child) {
