@@ -28,7 +28,6 @@ CVAT offers two versions:
   [**Roboflow and HuggingFace**](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models),
   and **advanced analytics**. We also offer **professional training** and **24-hour SLA support**.
 
-> **Note:** Stay updated with CVAT's ongoing improvements! Sign up for updates to learn about new features and advancements.
 
 See:
 
