@@ -3,21 +3,22 @@ const plugins = require('./cypress/plugins/index');
 
 module.exports = defineConfig({
     video: false,
+    experimentalMemoryManagement: true,
     viewportWidth: 1300,
     viewportHeight: 960,
     defaultCommandTimeout: 25000,
     downloadsFolder: 'cypress/fixtures',
     env: {
         user: 'admin',
-        email: 'admin@localhost.company',
-        password: '12qwaszx',
+        email: '',
+        password: 'nimda760',
     },
     e2e: {
         setupNodeEvents(on, config) {
             return plugins(on, config);
         },
         testIsolation: false,
-        baseUrl: 'http://localhost:8080',
+        baseUrl: 'http://localhost:3000',
         specPattern: [
             'cypress/e2e/auth_page.js',
             'cypress/e2e/features/*.js',

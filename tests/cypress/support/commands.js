@@ -337,21 +337,31 @@ Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob')
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
-Cypress.Commands.add('getJobNum', (jobID) => {
+Cypress.Commands.add('getJobIDFromIdx', (jobID) => {
     const jobsKey = [];
     cy.document().then((doc) => {
         const jobs = Array.from(doc.querySelectorAll('.cvat-job-item'));
         for (let i = 0; i < jobs.length; i++) {
-            jobsKey.push(jobs[i].getAttribute('data-row-id'));
+            jobsKey.push(+jobs[i].getAttribute('data-row-id'));
         }
         const minKey = Math.min(...jobsKey);
         return minKey + jobID;
     });
 });
 
+Cypress.Commands.add('openJobFromJobsPage', (jobID) => {
+    cy.get('.cvat-header-jobs-button').click();
+    cy.get('.cvat-jobs-page').should('exist').and('be.visible');
+    cy.get('.cvat-job-page-list-item-id').contains(`ID: ${jobID}`)
+        .prev()
+        .should('not.have.class', 'cvat-job-item-loading-preview')
+        .click();
+    cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+});
+
 Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFail = false) => {
     cy.get('.cvat-task-job-list').should('exist');
-    cy.getJobNum(jobID).then(($job) => {
+    cy.getJobIDFromIdx(jobID).then(($job) => {
         cy.get('.cvat-job-item').contains('a', `Job #${$job}`).click();
     });
     cy.url().should('include', '/jobs');
@@ -1113,19 +1123,17 @@ Cypress.Commands.add('setJobState', (choice) => {
 });
 
 Cypress.Commands.add('setJobStage', (jobID, stage) => {
-    cy.getJobNum(jobID).then(($job) => {
-        cy.get('.cvat-task-job-list')
-            .contains('a', `Job #${$job}`)
-            .parents('.cvat-job-item')
-            .find('.cvat-job-item-stage').click();
-        cy.get('.ant-select-dropdown')
-            .should('be.visible')
-            .not('.ant-select-dropdown-hidden')
-            .within(() => {
-                cy.get(`[title="${stage}"]`).click();
-            });
-        cy.get('.cvat-spinner').should('not.exist');
-    });
+    cy.get('.cvat-task-job-list')
+        .contains('a', `Job #${jobID}`)
+        .parents('.cvat-job-item')
+        .find('.cvat-job-item-stage').click();
+    cy.get('.ant-select-dropdown')
+        .should('be.visible')
+        .not('.ant-select-dropdown-hidden')
+        .within(() => {
+            cy.get(`[title="${stage}"]`).click();
+        });
+    cy.get('.cvat-spinner').should('not.exist');
 });
 
 Cypress.Commands.add('closeNotification', (className) => {
