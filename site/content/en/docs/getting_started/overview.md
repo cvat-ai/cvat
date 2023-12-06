@@ -35,7 +35,7 @@ See:
   - [Supported formats](#supported-formats)
   - [Annotation tools](#annotation-tools)
 - [Automated labeling](#automated-labeling)
-- [Useful Links](#useful-links)
+- [Useful links](#useful-links)
 - [Integrations](#integrations)
 - [License Information](#license-information)
 - [Get in touch](#get-in-touch)
@@ -127,7 +127,7 @@ Below is a detailed table of the supported algorithms and the platforms they ope
 
 <!--lint enable maximum-line-length-->
 
-## Useful Links
+## Useful links
 
 Start here if you're unsure where to begin with CVAT.
 
