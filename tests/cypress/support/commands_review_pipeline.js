@@ -183,7 +183,7 @@ Cypress.Commands.add('reopenIssue', (issueLabel) => {
         cy.wait('@reopenIssue').its('response.statusCode').should('equal', 200);
     });
     cy.get('.cvat-issue-dialog-header').within(() => {
-        cy.get('.anticon-close').click();
+        cy.get('.anticon-close').click({ force: true });
     });
 });
 
