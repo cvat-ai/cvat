@@ -590,18 +590,9 @@ class TestPatchTaskAnnotations:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskDataset:
-    DATASET_FORMAT = "CVAT for images 1.1"
-
-    def _test_export_task(
-        self, username: str, tid: int, dataset_format: Optional[str] = None, **kwargs
-    ):
+    def _test_export_task(self, username: str, tid: int, **kwargs):
         with make_api_client(username) as api_client:
-            return export_dataset(
-                api_client.tasks_api.retrieve_dataset_endpoint,
-                id=tid,
-                format=dataset_format or self.DATASET_FORMAT,
-                **kwargs,
-            )
+            return export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=tid, **kwargs)
 
     def test_can_export_task_dataset(self, admin_user, tasks_with_shapes):
         task = tasks_with_shapes[0]
@@ -613,7 +604,7 @@ class TestGetTaskDataset:
         "format_name", ["CVAT for images 1.1", "CVAT for video 1.1", "COCO Keypoints 1.0"]
     )
     def test_can_export_task_with_several_jobs(self, admin_user, tid, format_name):
-        response = self._test_export_task(admin_user, tid, dataset_format=format_name)
+        response = self._test_export_task(admin_user, tid, format=format_name)
         assert response.data
 
     @pytest.mark.parametrize("tid", [8])
@@ -702,7 +693,7 @@ class TestGetTaskDataset:
         assert response.status_code == HTTPStatus.OK
 
         # check that we can export task
-        response = self._test_export_task(admin_user, tid, dataset_format="COCO Keypoints 1.0")
+        response = self._test_export_task(admin_user, tid, format="COCO Keypoints 1.0")
         assert response.status == HTTPStatus.OK
 
         # check that server saved track annotations correctly
@@ -751,11 +742,7 @@ class TestGetTaskDataset:
             result, response = api_client.tasks_api.retrieve(task_id)
             assert not result[related_field]
 
-            response = export_dataset(
-                api_client.tasks_api.retrieve_dataset_endpoint,
-                id=task["id"],
-                format=self.DATASET_FORMAT,
-            )
+            response = export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=task["id"])
             assert response.data
 
 
