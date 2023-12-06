@@ -199,4 +199,4 @@ see [**Terms of Use**](https://www.cvat.ai/terms-of-use).
 
 - [**YouTube channel**](https://www.youtube.com/@cvat-ai): For tutorials and screencasts about CVAT tools.
 
-- [**GitHub issues**](https://github.com/cvat-ai/cvat/issues): To report bug..
+- [**GitHub issues**](https://github.com/cvat-ai/cvat/issues): To report bugs.
