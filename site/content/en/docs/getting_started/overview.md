@@ -68,7 +68,7 @@ each catering to different aspects of image and video labeling:
 - **3D Object Annotation**: For annotating objects in three dimensions,
   providing a comprehensive perspective.
 - **Attribute Annotation Mode**: Allows adding specific
-  attributes to annotations for more detailed categorization.
+  attributes to annotations.
 - **Annotation with Rectangles**: Ideal for straightforward
   object detection tasks.
 - **Annotation with Polygons**: Perfect for detailed
