@@ -170,7 +170,7 @@ Cypress.Commands.add('resolveIssue', (issueLabel, resolveText) => {
         }
 
         cy.intercept('PATCH', '/api/issues/*').as('resolveIssue');
-        cy.contains('button', 'Resolve').click({ force: true });
+        cy.contains('button', 'Resolve').click();
         cy.wait('@resolveIssue').its('response.statusCode').should('equal', 200);
     });
 });
@@ -179,11 +179,11 @@ Cypress.Commands.add('reopenIssue', (issueLabel) => {
     cy.get(issueLabel).click();
     cy.get('.cvat-issue-dialog-footer').within(() => {
         cy.intercept('PATCH', '/api/issues/*').as('reopenIssue');
-        cy.contains('button', 'Reopen').click({ force: true });
+        cy.contains('button', 'Reopen').click();
         cy.wait('@reopenIssue').its('response.statusCode').should('equal', 200);
     });
     cy.get('.cvat-issue-dialog-header').within(() => {
-        cy.get('.anticon-close').click({ force: true });
+        cy.get('.anticon-close').click();
     });
 });
 
@@ -191,7 +191,7 @@ Cypress.Commands.add('removeIssue', (issueLabel) => {
     cy.get(issueLabel).click();
     cy.intercept('DELETE', '/api/issues/**').as('removeIssue');
     cy.get('.cvat-issue-dialog-footer').within(() => {
-        cy.contains('button', 'Remove').click({ force: true });
+        cy.contains('button', 'Remove').click();
     });
     cy.get('.cvat-modal-confirm-remove-issue').within(() => {
         cy.contains('button', 'Delete').click();

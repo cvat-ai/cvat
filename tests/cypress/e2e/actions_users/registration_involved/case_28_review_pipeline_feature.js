@@ -78,8 +78,9 @@ context('Review pipeline feature', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteUsers(authKey, [
+        cy.getAuthKey().then((response) => {
+            const authKey = response.body.key;
+            cy.deleteUsers(response, [
                 additionalUsers.annotator.username,
                 additionalUsers.reviewer.username,
             ]);
@@ -133,6 +134,7 @@ context('Review pipeline feature', () => {
             cy.saveJob();
 
             // Annotator updates job state, both times update is successfull, logout
+            // check: https://github.com/opencv/cvat/pull/7158
             cy.intercept('PATCH', `/api/jobs/${jobIDs[0]}`).as('updateJobState');
             cy.setJobState('completed');
             cy.wait('@updateJobState').its('response.statusCode').should('equal', 200);
@@ -195,16 +197,16 @@ context('Review pipeline feature', () => {
             const rectangleIssue = {
                 type: 'rectangle',
                 description: 'rectangle issue',
-                firstX: 550,
+                firstX: 250,
                 firstY: 100,
-                secondX: 650,
+                secondX: 350,
                 secondY: 200,
             };
 
             const pointIssue = {
                 type: 'point',
                 description: 'point issue',
-                firstX: 700,
+                firstX: 380,
                 firstY: 100,
             };
             cy.createIssueFromControlButton(rectangleIssue);
@@ -228,7 +230,6 @@ context('Review pipeline feature', () => {
 
             // Requester logins and assignes the job to the annotator, sets job stage to annotation
             cy.login();
-            cy.visit('/tasks');
             cy.get('.cvat-tasks-page').should('exist').and('be.visible');
             cy.openTask(taskSpec.name);
             cy.get('.cvat-job-item').first().within(() => {
@@ -337,11 +338,12 @@ context('Review pipeline feature', () => {
                     }
                 });
             }
+
+            // check: https://github.com/opencv/cvat/issues/7206
             cy.interactMenu('Finish the job');
             cy.get('.cvat-modal-content-finish-job').within(() => {
                 cy.contains('button', 'Continue').click();
             });
-
             cy.get('.cvat-job-item').first().within(() => {
                 cy.get('.cvat-job-item-state').should('have.text', 'Completed');
                 cy.get('.cvat-job-item-stage .ant-select-selection-item').should('have.text', 'acceptance');
