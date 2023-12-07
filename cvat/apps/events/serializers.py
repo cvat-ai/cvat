@@ -34,27 +34,21 @@ class ClientEventsSerializer(serializers.Serializer):
     _WORKING_TIME_RESOLUTION = datetime.timedelta(milliseconds=1)
     _COLLAPSED_EVENT_SCOPES = frozenset(("change:frame",))
 
-    def validate(self, data):
-        for event in data["events"]:
-            if event["scope"] in self._COLLAPSED_EVENT_SCOPES:
-                if not isinstance(event.get("duration"), int):
-                    raise serializers.ValidationError(f'event "{event["scope"]}" must have "duration" field')
-        return data
-
     def to_internal_value(self, data):
+        data = super().to_internal_value(data)
         request = self.context.get("request")
         org = request.iam_context["organization"]
         org_id = getattr(org, "id", None)
         org_slug = getattr(org, "slug", None)
 
-        send_time = datetime_parser.isoparse(data["timestamp"])
+        send_time = data["timestamp"]
         receive_time = datetime.datetime.now(datetime.timezone.utc)
         time_correction = receive_time - send_time
         last_timestamp = datetime.datetime(datetime.MINYEAR, 1, 1, tzinfo=datetime.timezone.utc)
         zero_t_delta = datetime.timedelta()
 
         for event in data["events"]:
-            timestamp = datetime_parser.isoparse(event["timestamp"])
+            timestamp = event["timestamp"]
             working_time = datetime.timedelta()
             event_duration = datetime.timedelta()
             t_diff = timestamp - last_timestamp
