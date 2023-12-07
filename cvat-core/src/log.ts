@@ -62,7 +62,9 @@ export class EventLogger {
             'organization',
         ]) {
             if (field in payload) {
-                body[field] = payload[field];
+                if (payload[field]) {
+                    body[field] = payload[field];
+                }
                 delete payload[field];
             }
         }
