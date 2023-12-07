@@ -93,11 +93,6 @@ volumes:
       o: bind
 ```
 
-## How to make unassigned tasks not visible to all users
-
-Set [reduce_task_visibility](https://github.com/cvat-ai/cvat/blob/develop/cvat/settings/base.py#L455)
-variable to `True`.
-
 ## Where are uploaded images/videos stored
 
 The uploaded data is stored in the `cvat_data` docker volume:

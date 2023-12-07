@@ -12,8 +12,8 @@ import { ChunkQuality } from 'cvat-data';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
-    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, FunctionsResponseBody,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAcceptInvitation,
+    SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -21,7 +21,6 @@ import { Storage } from './storage';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
 import config from './config';
-import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { SerializedQualityConflictData } from './quality-conflict';
 
@@ -192,8 +191,8 @@ function prepareData(details) {
 }
 
 class WorkerWrappedAxios {
-    constructor(requestInterseptor) {
-        const worker = new DownloadWorker(requestInterseptor);
+    constructor() {
+        const worker = new Worker(new URL('./download.worker', import.meta.url));
         const requests = {};
         let requestId = 0;
 
@@ -569,9 +568,26 @@ async function healthCheck(
         });
 }
 
-async function serverRequest(url: string, data: object): Promise<any> {
+export interface ServerRequestConfig {
+    fetchAll: boolean,
+}
+
+const defaultRequestConfig = {
+    fetchAll: false,
+};
+
+async function serverRequest(
+    url: string, data: object,
+    requestConfig: ServerRequestConfig = defaultRequestConfig,
+): Promise<any> {
     try {
-        const res = await Axios(url, data);
+        let res = null;
+        const { fetchAll: useFetchAll } = requestConfig;
+        if (useFetchAll) {
+            res = await fetchAll(url);
+        } else {
+            res = await Axios(url, data);
+        }
         return res;
     } catch (errorData) {
         throw generateError(errorData);
@@ -1626,47 +1642,6 @@ async function getAnnotations(session, id) {
     return response.data;
 }
 
-async function getFunctions(): Promise<FunctionsResponseBody> {
-    const { backendAPI } = config;
-
-    try {
-        const response = await fetchAll(`${backendAPI}/functions`);
-        return response;
-    } catch (errorData) {
-        if (errorData.response.status === 404) {
-            return {
-                results: [],
-                count: 0,
-            };
-        }
-        throw generateError(errorData);
-    }
-}
-
-async function getFunctionProviders() {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/functions/info`);
-        return response.data;
-    } catch (errorData) {
-        if (errorData.response.status === 404) {
-            return [];
-        }
-        throw generateError(errorData);
-    }
-}
-
-async function deleteFunction(functionId: number) {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.delete(`${backendAPI}/functions/${functionId}`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 // Session is 'task' or 'job'
 async function updateAnnotations(session, id, data, action) {
     const { backendAPI } = config;
@@ -1688,18 +1663,6 @@ async function updateAnnotations(session, id, data, action) {
         throw generateError(errorData);
     }
     return response.data;
-}
-
-async function runFunctionRequest(body) {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.post(`${backendAPI}/functions/requests/`, body);
-
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
 }
 
 // Session is 'task' or 'job'
@@ -1789,72 +1752,12 @@ async function uploadAnnotations(
     }
 }
 
-async function getFunctionRequestStatus(requestID) {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/functions/requests/${requestID}`);
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function cancelFunctionRequest(requestId: string): Promise<void> {
-    const { backendAPI } = config;
-
-    try {
-        await Axios.delete(`${backendAPI}/functions/requests/${requestId}`);
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function createFunction(functionData: any) {
-    const params = enableOrganization();
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.post(`${backendAPI}/functions`, functionData, {
-            params,
-        });
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
 async function saveEvents(events) {
     const { backendAPI } = config;
 
     try {
         await Axios.post(`${backendAPI}/events`, events);
     } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function callFunction(funId, body) {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.post(`${backendAPI}/functions/${funId}/run`, body);
-        return response.data;
-    } catch (errorData) {
-        throw generateError(errorData);
-    }
-}
-
-async function getFunctionsRequests() {
-    const { backendAPI } = config;
-
-    try {
-        const response = await Axios.get(`${backendAPI}/functions/requests/`);
-        return response.data;
-    } catch (errorData) {
-        if (errorData.response.status === 404) {
-            return [];
-        }
         throw generateError(errorData);
     }
 }
@@ -2505,19 +2408,6 @@ export default Object.freeze({
         run: runLambdaRequest,
         call: callLambdaFunction,
         cancel: cancelLambdaRequest,
-    }),
-
-    functions: Object.freeze({
-        list: getFunctions,
-        status: getFunctionRequestStatus,
-        requests: getFunctionsRequests,
-        run: runFunctionRequest,
-        call: callFunction,
-        create: createFunction,
-        providers: getFunctionProviders,
-        delete: deleteFunction,
-        cancel: cancelFunctionRequest,
-        getPreview: getPreview('functions'),
     }),
 
     issues: Object.freeze({
