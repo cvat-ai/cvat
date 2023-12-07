@@ -62,7 +62,8 @@ export class EventLogger {
             'organization',
         ]) {
             if (field in payload) {
-                if (payload[field]) {
+                if (typeof payload[field] !== 'string' || payload[field]) {
+                    // avoid empty strings to be sent
                     body[field] = payload[field];
                 }
                 delete payload[field];
