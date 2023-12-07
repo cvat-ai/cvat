@@ -49,6 +49,7 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
         };
     });
 
+    // eslint-disable-next-line react/jsx-no-useless-fragment
     return children || <></>;
 }
 

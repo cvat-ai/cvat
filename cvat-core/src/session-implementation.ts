@@ -26,38 +26,30 @@ import { Label } from './labels';
 import { SerializedLabel } from './server-response-types';
 import { checkObjectType } from './common';
 import {
-    getAnnotations, putAnnotations, saveAnnotations,
-    hasUnsavedChanges, searchAnnotations, searchEmptyFrame,
-    mergeAnnotations, splitAnnotations, groupAnnotations,
-    joinAnnotations, sliceAnnotations, clearAnnotations, selectObject,
-    annotationsStatistics, importCollection, exportCollection,
-    importDataset, exportDataset, undoActions, redoActions,
-    freezeHistory, clearActions, getActions,
-    clearCache, getHistory,
+    getCollection, getSaver, clearAnnotations, getAnnotations,
+    importDataset, exportDataset, clearCache, getHistory,
 } from './annotations';
 import AnnotationGuide from './guide';
 
 // must be called with task/job context
-async function deleteFrameWrapper(jobID, frame) {
-    const history = getHistory(this);
-    const redo = async () => {
+async function deleteFrameWrapper(jobID, frame): Promise<void> {
+    const redo = async (): Promise<void> => {
         deleteFrame(jobID, frame);
     };
 
     await redo();
-    history.do(HistoryActions.REMOVED_FRAME, async () => {
+    getHistory(this).do(HistoryActions.REMOVED_FRAME, async () => {
         restoreFrame(jobID, frame);
     }, redo, [], frame);
 }
 
-async function restoreFrameWrapper(jobID, frame) {
-    const history = getHistory(this);
-    const redo = async () => {
+async function restoreFrameWrapper(jobID, frame): Promise<void> {
+    const redo = async (): Promise<void> => {
         restoreFrame(jobID, frame);
     };
 
     await redo();
-    history.do(HistoryActions.RESTORED_FRAME, async () => {
+    getHistory(this).do(HistoryActions.RESTORED_FRAME, async () => {
         deleteFrame(jobID, frame);
     }, redo, [], frame);
 }
@@ -257,8 +249,7 @@ export function implementJob(Job) {
             throw new ArgumentError('The stop frame is out of the job');
         }
 
-        const result = searchAnnotations(this, filters, frameFrom, frameTo);
-        return result;
+        return getCollection(this).search(filters, frameFrom, frameTo);
     };
 
     Job.prototype.annotations.searchEmpty.implementation = function (frameFrom, frameTo) {
@@ -274,43 +265,35 @@ export function implementJob(Job) {
             throw new ArgumentError('The stop frame is out of the job');
         }
 
-        const result = searchEmptyFrame(this, frameFrom, frameTo);
-        return result;
+        return getCollection(this).searchEmpty(frameFrom, frameTo);
     };
 
     Job.prototype.annotations.save.implementation = async function (onUpdate) {
-        const result = await saveAnnotations(this, onUpdate);
-        return result;
+        return getSaver(this).save(onUpdate);
     };
 
     Job.prototype.annotations.merge.implementation = async function (objectStates) {
-        const result = await mergeAnnotations(this, objectStates);
-        return result;
+        return getCollection(this).merge(objectStates);
     };
 
     Job.prototype.annotations.split.implementation = async function (objectState, frame) {
-        const result = await splitAnnotations(this, objectState, frame);
-        return result;
+        return getCollection(this).split(objectState, frame);
     };
 
     Job.prototype.annotations.group.implementation = async function (objectStates, reset) {
-        const result = await groupAnnotations(this, objectStates, reset);
-        return result;
+        return getCollection(this).group(objectStates, reset);
     };
 
     Job.prototype.annotations.join.implementation = async function (objectStates, points) {
-        const result = await joinAnnotations(this, objectStates, points);
-        return result;
+        return getCollection(this).join(objectStates, points);
     };
 
-    Job.prototype.annotations.slice.implementation = async function (objectSTate, results) {
-        const result = await sliceAnnotations(this, objectSTate, results);
-        return result;
+    Job.prototype.annotations.slice.implementation = async function (objectState, results) {
+        return getCollection(this).slice(objectState, results);
     };
 
     Job.prototype.annotations.hasUnsavedChanges.implementation = function () {
-        const result = hasUnsavedChanges(this);
-        return result;
+        return getSaver(this).hasUnsavedChanges();
     };
 
     Job.prototype.annotations.clear.implementation = async function (
@@ -320,19 +303,16 @@ export function implementJob(Job) {
         return result;
     };
 
-    Job.prototype.annotations.select.implementation = function (frame, x, y) {
-        const result = selectObject(this, frame, x, y);
-        return result;
+    Job.prototype.annotations.select.implementation = function (objectStates, x, y) {
+        return getCollection(this).select(objectStates, x, y);
     };
 
     Job.prototype.annotations.statistics.implementation = function () {
-        const result = annotationsStatistics(this);
-        return result;
+        return getCollection(this).statistics({ jobID: this.id });
     };
 
     Job.prototype.annotations.put.implementation = function (objectStates) {
-        const result = putAnnotations(this, objectStates);
-        return result;
+        return getCollection(this).put(objectStates);
     };
 
     Job.prototype.annotations.upload.implementation = async function (
@@ -347,13 +327,11 @@ export function implementJob(Job) {
     };
 
     Job.prototype.annotations.import.implementation = function (data) {
-        const result = importCollection(this, data);
-        return result;
+        return getCollection(this).import(data);
     };
 
     Job.prototype.annotations.export.implementation = function () {
-        const result = exportCollection(this);
-        return result;
+        return getCollection(this).export();
     };
 
     Job.prototype.annotations.exportDataset.implementation = async function (
@@ -368,28 +346,23 @@ export function implementJob(Job) {
     };
 
     Job.prototype.actions.undo.implementation = async function (count) {
-        const result = await undoActions(this, count);
-        return result;
+        return getHistory(this).undo(count);
     };
 
     Job.prototype.actions.redo.implementation = async function (count) {
-        const result = await redoActions(this, count);
-        return result;
+        return getHistory(this).redo(count);
     };
 
     Job.prototype.actions.freeze.implementation = function (frozen) {
-        const result = freezeHistory(this, frozen);
-        return result;
+        return getHistory(this).freeze(frozen);
     };
 
     Job.prototype.actions.clear.implementation = function () {
-        const result = clearActions(this);
-        return result;
+        return getHistory(this).clear();
     };
 
     Job.prototype.actions.get.implementation = function () {
-        const result = getActions(this);
-        return result;
+        return getHistory(this).get();
     };
 
     Job.prototype.logger.log.implementation = async function (logType, payload, wait) {
@@ -714,7 +687,7 @@ export function implementTask(Task) {
             throw new ArgumentError(`Frame ${frame} does not exist in the task`);
         }
 
-        const result = await getAnnotations(this, frame, allTracks, filters);
+        const result = await getAnnotations(this, frame, allTracks, filters, null);
         const deletedFrames = await getDeletedFrames('task', this.id);
         if (frame in deletedFrames) {
             return [];
@@ -740,8 +713,7 @@ export function implementTask(Task) {
             throw new ArgumentError('The stop frame is out of the task');
         }
 
-        const result = searchAnnotations(this, filters, frameFrom, frameTo);
-        return result;
+        return getCollection(this).search(filters, frameFrom, frameTo);
     };
 
     Task.prototype.annotations.searchEmpty.implementation = function (frameFrom, frameTo) {
@@ -757,63 +729,54 @@ export function implementTask(Task) {
             throw new ArgumentError('The stop frame is out of the task');
         }
 
-        const result = searchEmptyFrame(this, frameFrom, frameTo);
-        return result;
+        return getCollection(this).searchEmpty(frameFrom, frameTo);
     };
 
     Task.prototype.annotations.save.implementation = async function (onUpdate) {
-        const result = await saveAnnotations(this, onUpdate);
-        return result;
+        return getSaver(this).save(onUpdate);
     };
 
     Task.prototype.annotations.merge.implementation = async function (objectStates) {
-        const result = await mergeAnnotations(this, objectStates);
-        return result;
+        return getCollection(this).merge(objectStates);
     };
 
     Task.prototype.annotations.split.implementation = async function (objectState, frame) {
-        const result = await splitAnnotations(this, objectState, frame);
-        return result;
+        return getCollection(this).split(objectState, frame);
     };
 
     Task.prototype.annotations.group.implementation = async function (objectStates, reset) {
-        const result = await groupAnnotations(this, objectStates, reset);
-        return result;
+        return getCollection(this).group(objectStates, reset);
     };
 
     Task.prototype.annotations.join.implementation = async function (objectStates, points) {
-        const result = await joinAnnotations(this, objectStates, points);
-        return result;
+        return getCollection(this).join(objectStates, points);
     };
 
-    Task.prototype.annotations.slice.implementation = async function (objectSTate, results) {
-        const result = await sliceAnnotations(this, objectSTate, results);
-        return result;
+    Task.prototype.annotations.slice.implementation = async function (objectState, results) {
+        return getCollection(this).slice(objectState, results);
     };
 
     Task.prototype.annotations.hasUnsavedChanges.implementation = function () {
-        const result = hasUnsavedChanges(this);
+        return getSaver(this).hasUnsavedChanges();
+    };
+
+    Task.prototype.annotations.clear.implementation = async function (
+        reload, startframe, endframe, delTrackKeyframesOnly,
+    ) {
+        const result = await clearAnnotations(this, reload, startframe, endframe, delTrackKeyframesOnly);
         return result;
     };
 
-    Task.prototype.annotations.clear.implementation = async function (reload) {
-        const result = await clearAnnotations(this, reload);
-        return result;
-    };
-
-    Task.prototype.annotations.select.implementation = function (frame, x, y) {
-        const result = selectObject(this, frame, x, y);
-        return result;
+    Task.prototype.annotations.select.implementation = function (objectStates, x, y) {
+        return getCollection(this).select(objectStates, x, y);
     };
 
     Task.prototype.annotations.statistics.implementation = function () {
-        const result = annotationsStatistics(this);
-        return result;
+        return getCollection(this).statistics({});
     };
 
     Task.prototype.annotations.put.implementation = function (objectStates) {
-        const result = putAnnotations(this, objectStates);
-        return result;
+        return getCollection(this).put(objectStates);
     };
 
     Task.prototype.annotations.upload.implementation = async function (
@@ -828,13 +791,11 @@ export function implementTask(Task) {
     };
 
     Task.prototype.annotations.import.implementation = function (data) {
-        const result = importCollection(this, data);
-        return result;
+        return getCollection(this).import(data);
     };
 
     Task.prototype.annotations.export.implementation = function () {
-        const result = exportCollection(this);
-        return result;
+        return getCollection(this).export();
     };
 
     Task.prototype.annotations.exportDataset.implementation = async function (
@@ -848,29 +809,24 @@ export function implementTask(Task) {
         return result;
     };
 
-    Task.prototype.actions.undo.implementation = function (count) {
-        const result = undoActions(this, count);
-        return result;
+    Task.prototype.actions.undo.implementation = async function (count) {
+        return getHistory(this).undo(count);
     };
 
-    Task.prototype.actions.redo.implementation = function (count) {
-        const result = redoActions(this, count);
-        return result;
+    Task.prototype.actions.redo.implementation = async function (count) {
+        return getHistory(this).redo(count);
     };
 
     Task.prototype.actions.freeze.implementation = function (frozen) {
-        const result = freezeHistory(this, frozen);
-        return result;
+        return getHistory(this).freeze(frozen);
     };
 
     Task.prototype.actions.clear.implementation = function () {
-        const result = clearActions(this);
-        return result;
+        return getHistory(this).clear();
     };
 
     Task.prototype.actions.get.implementation = function () {
-        const result = getActions(this);
-        return result;
+        return getHistory(this).get();
     };
 
     Task.prototype.logger.log.implementation = async function (logType, payload, wait) {

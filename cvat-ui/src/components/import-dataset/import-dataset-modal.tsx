@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -234,12 +234,15 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     const onUpload = (): void => {
         if (uploadParams && uploadParams.resource) {
-            dispatch(importDatasetAsync(
-                instance, uploadParams.selectedFormat as string,
-                uploadParams.useDefaultSettings, uploadParams.sourceStorage,
-                uploadParams.file || uploadParams.fileName as string,
-                uploadParams.convMaskToPoly,
-            ) as any);
+            dispatch(
+                importDatasetAsync(
+                    instance,
+                    uploadParams.selectedFormat as string,
+                    uploadParams.useDefaultSettings,
+                    uploadParams.sourceStorage,
+                    uploadParams.file || uploadParams.fileName as string,
+                    uploadParams.convMaskToPoly,
+                ));
             const resToPrint = uploadParams.resource.charAt(0).toUpperCase() + uploadParams.resource.slice(1);
             Notification.info({
                 message: `${resToPrint} import started`,

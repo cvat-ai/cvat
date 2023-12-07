@@ -519,7 +519,7 @@
             "program": "${workspaceFolder}/node_modules/.bin/jest",
             "args": [
                 "--config",
-                "${workspaceFolder}/cvat-core/jest.config.js"
+                "${workspaceFolder}/cvat-core/jest.config.cjs"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",

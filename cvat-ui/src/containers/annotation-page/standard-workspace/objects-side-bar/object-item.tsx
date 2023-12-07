@@ -194,7 +194,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             updateActiveControl(ActiveControl.EDIT);
             canvasInstance.edit({ enabled: true, state: objectState });
         }
-    }
+    };
 
     private slice = async (): Promise<void> => {
         const {
@@ -215,7 +215,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 clientID: objectState.clientID as number,
             });
         }
-    }
+    };
 
     private remove = (): void => {
         const {

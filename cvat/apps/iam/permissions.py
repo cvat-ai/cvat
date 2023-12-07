@@ -54,7 +54,7 @@ class PermissionResult:
 
 def get_organization(request, obj):
     # Try to get organization from an object otherwise, return the organization that is specified in query parameters
-    if obj is not None and isinstance(obj, Organization):
+    if isinstance(obj, Organization):
         return obj
 
     if obj:
@@ -1942,6 +1942,13 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                     permissions.append(TaskPermission.create_base_perm(
                         request, view, iam_context=iam_context, scope=task_scope, obj=obj.task
                     ))
+                elif scope == cls.Scopes.LIST:
+                    if task_id := request.query_params.get("task_id", None):
+                        permissions.append(TaskPermission.create_scope_view(
+                            request, int(task_id), iam_context=iam_context,
+                        ))
+
+                    permissions.append(cls.create_scope_list(request, iam_context))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 

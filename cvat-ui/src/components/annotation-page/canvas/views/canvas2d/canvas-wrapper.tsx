@@ -613,7 +613,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasMessage = (event: CustomEvent<{ messages: CanvasHint[] | null, topic: string }>): void => {
         const { messages, topic } = event.detail;
         this.canvasTipsRef.current?.update(messages, topic);
-    }
+    };
 
     private onCanvasShapeDrawn = (event: any): void => {
         const {
