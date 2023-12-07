@@ -57,7 +57,7 @@ class ClientEventsSerializer(serializers.Serializer):
 
             if t_diff >= zero_t_delta:
                 if event["scope"] in self._COLLAPSED_EVENT_SCOPES:
-                    event_duration += datetime.timedelta(milliseconds=event.get("duration", 0))
+                    event_duration += datetime.timedelta(milliseconds=event["duration"])
                     working_time += event_duration
 
                 if t_diff < self._TIME_THRESHOLD:
