@@ -15,6 +15,7 @@ from typing import Optional, Tuple
 
 import cv2
 import PIL.Image
+import zipfile
 from django.conf import settings
 from django.core.cache import caches
 from rest_framework.exceptions import NotFound, ValidationError
@@ -43,15 +44,30 @@ class MediaCache:
         self._cache = caches['media']
 
     def _get_or_set_cache_item(self, key, create_function):
+        def create_item():
+            slogger.glob.info(f'Starting to prepare chunk: key {key}')
+            item = create_function()
+            slogger.glob.info(f'Ending to prepare chunk: key {key}')
+
+            if item[0]:
+                self._cache.set(key, item)
+
+            return item
+
         slogger.glob.info(f'Starting to get chunk from cache: key {key}')
         item = self._cache.get(key)
         slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
         if not item:
-            slogger.glob.info(f'Starting to prepare chunk: key {key}')
-            item = create_function()
-            slogger.glob.info(f'Ending to prepare chunk: key {key}')
-            if item[0]:
-                self._cache.set(key, item)
+            item = create_item()
+        # Workaround for corrupted zip files
+        elif item[1] == 'application/zip':
+            try:
+                with zipfile.ZipFile(item[0]) as archive:
+                    if r := archive.testzip() is not None:
+                        raise zipfile.BadZipFile(f'File {r} is corrupted')
+            except zipfile.BadZipFile:
+                slogger.glob.info(f'Recreating cache item {key} due to corruption')
+                item = create_item()
 
         return item
 
