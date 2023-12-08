@@ -1,4 +1,4 @@
 ### Fixed
 
 - Added workaround for corrupted cached zip chunks
-  (<https://github.com/opencv/cvat/pull/XXXX>)
+  (<https://github.com/opencv/cvat/pull/7243>)
