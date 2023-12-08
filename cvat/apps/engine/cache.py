@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from io import BytesIO
 import shutil
 import tempfile
+import zlib
 
 from typing import Optional, Tuple
 
@@ -49,6 +50,7 @@ class MediaCache:
             slogger.glob.info(f'Ending to prepare chunk: key {key}')
 
             if item[0]:
+                item = (item[0], item[1], zlib.crc32(item[0].getbuffer()))
                 self._cache.set(key, item)
 
             return item
@@ -58,17 +60,14 @@ class MediaCache:
         slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
         if not item:
             item = create_item()
-        # Workaround for corrupted zip files
-        elif item[1] == 'application/zip':
-            try:
-                with zipfile.ZipFile(item[0]) as archive:
-                    if r := archive.testzip() is not None:
-                        raise zipfile.BadZipFile(f'File {r} is corrupted')
-            except zipfile.BadZipFile:
-                slogger.glob.info(f'Recreating cache item {key} due to corruption')
+        else:
+            # check control sum
+            item_data, _, item_crc32 = item
+            if item_crc32 != zlib.crc32(item[0].getbuffer()):
+                slogger.glob.info(f'Recreating cache item {key} due to control sum mismatch')
                 item = create_item()
 
-        return item
+        return item[0], item[1]
 
     def get_task_chunk_data_with_mime(self, chunk_number, quality, db_data):
         item = self._get_or_set_cache_item(
