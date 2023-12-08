@@ -1801,7 +1801,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         )
 
         if provider_type == models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
-            ALLOWED_RESOURCE_NAME_SYMBOLS += "_" + "."
+            ALLOWED_RESOURCE_NAME_SYMBOLS += "_."
         elif provider_type == models.CloudProviderChoice.AWS_S3:
             ALLOWED_RESOURCE_NAME_SYMBOLS += "."
 
