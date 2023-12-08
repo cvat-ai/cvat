@@ -337,6 +337,5 @@ class MediaCache:
                 if not success:
                     raise Exception('Failed to encode image to ".jpeg" format')
                 zip_file.writestr(f'{name}.jpg', result.tobytes())
-        buff = zip_buffer.getvalue()
         mime_type = 'application/zip'
-        return buff, mime_type
+        return zip_buffer, mime_type
