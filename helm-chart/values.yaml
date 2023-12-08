@@ -243,6 +243,20 @@ postgresql:
     postgres_password: cvat_postgresql_postgres
     replication_password: cvat_postgresql_replica
 
+# https://artifacthub.io/packages/helm/bitnami/redis
+redis:
+  enabled: true
+  external:
+    host: 127.0.0.1
+  architecture: standalone
+  auth:
+    existingSecret: "cvat-redis-secret"
+    existingSecretPasswordKey: password
+  secret:
+    create: true
+    name: cvat-redis-secret
+    password: cvat_redis
+  # TODO: persistence options
 
 # https://artifacthub.io/packages/helm/enapter/keydb
 keydb:

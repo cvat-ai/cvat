@@ -158,7 +158,7 @@ description: 'Installing a development environment for different operating syste
 
   ```bash
   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build \
-    cvat_opa cvat_db cvat_redis cvat_server
+    cvat_opa cvat_db cvat_redis_inmem cvat_redis_ondisk cvat_server
   ```
 
   Note: this runs an extra copy of the CVAT server in order to supply rules to OPA.
