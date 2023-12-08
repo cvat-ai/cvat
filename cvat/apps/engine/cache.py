@@ -62,8 +62,9 @@ class MediaCache:
             item = create_item()
         else:
             # compare checksum
+            item_data = item[0].getbuffer() if isinstance(item[0], io.BytesIO) else io.BytesIO(item[0])
             item_checksum = item[2] if len(item) == 3 else None
-            if item_checksum != zlib.crc32(item[0].getbuffer()):
+            if item_checksum != zlib.crc32(item_data):
                 slogger.glob.info(f'Recreating cache item {key} due to checksum mismatch')
                 item = create_item()
 
@@ -338,4 +339,5 @@ class MediaCache:
                     raise Exception('Failed to encode image to ".jpeg" format')
                 zip_file.writestr(f'{name}.jpg', result.tobytes())
         mime_type = 'application/zip'
+        zip_buffer.seek(0)
         return zip_buffer, mime_type
