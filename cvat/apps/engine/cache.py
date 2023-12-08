@@ -61,9 +61,10 @@ class MediaCache:
         if not item:
             item = create_item()
         else:
-            # check control sum
-            if item[2] != zlib.crc32(item[0].getbuffer()):
-                slogger.glob.info(f'Recreating cache item {key} due to control sum mismatch')
+            # compare checksum
+            item_checksum = item[2] if len(item) == 3 else None
+            if item_checksum != zlib.crc32(item[0].getbuffer()):
+                slogger.glob.info(f'Recreating cache item {key} due to checksum mismatch')
                 item = create_item()
 
         return item[0], item[1]
