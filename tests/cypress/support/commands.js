@@ -1428,15 +1428,12 @@ Cypress.Commands.add('slice', (object, coordinates) => {
     cy.get('.cvat-slice-control').click();
     cy.get('.cvat-slice-control').trigger('mouseleave');
 
-    cy.get('.cvat-canvas-hints-block').within(() => {
+    cy.get('.cvat-canvas-hints-container').within(() => {
         cy.contains('Click a mask or polygon shape you would like to slice').should('exist');
     });
 
-    const [initX, initY] = coordinates[0];
-    cy.get('.cvat-canvas-container').then(($canvas) => {
-        cy.wrap($canvas).click(initX, initY);
-    });
-    cy.get('.cvat-canvas-hints-block').within(() => {
+    cy.get(object).click(1, 1);
+    cy.get('.cvat-canvas-hints-container').within(() => {
         cy.contains('Set initial').should('exist');
     });
 

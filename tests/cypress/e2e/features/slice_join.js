@@ -11,7 +11,15 @@ context('Slice and join', { scrollBehavior: false }, () => {
         method: 'brush',
         coordinates: [[300, 300], [700, 300], [700, 700], [300, 700]],
     }];
-
+    const doubleMask = [{
+        method: 'brush',
+        coordinates: [[200, 200], [300, 200], [300, 300], [200, 300]],
+    },
+    {
+        method: 'brush',
+        coordinates: [[200, 350], [300, 350], [300, 450], [200, 450]],
+    },
+    ];
     let taskID = null;
     let jobID = null;
 
@@ -63,6 +71,12 @@ context('Slice and join', { scrollBehavior: false }, () => {
         cy.goCheckFrameNumber(0);
     });
 
+    function checkSliceSuccess() {
+        cy.get('#cvat_canvas_shape_1').should('not.exist');
+        cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
+        cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
+    }
+
     describe('Slice join actions', () => {
         it('Draw basic mask. Slice by ', () => {
             cy.startMaskDrawing();
@@ -71,6 +85,19 @@ context('Slice and join', { scrollBehavior: false }, () => {
 
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
             cy.slice('#cvat_canvas_shape_1', [[250, 200], [720, 720]]);
+
+            checkSliceSuccess();
+        });
+
+        it('Draw double mask. Slice by ', () => {
+            cy.startMaskDrawing();
+            cy.drawMask(doubleMask);
+            cy.finishMaskDrawing();
+
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+            cy.slice('#cvat_canvas_shape_1', [[150, 230], [300, 230]]);
+
+            checkSliceSuccess();
         });
     });
 
