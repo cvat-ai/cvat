@@ -15,7 +15,6 @@ from typing import Optional, Tuple
 
 import cv2
 import PIL.Image
-import zipfile
 from django.conf import settings
 from django.core.cache import caches
 from rest_framework.exceptions import NotFound, ValidationError
