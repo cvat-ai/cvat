@@ -562,8 +562,10 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                     },
                                     () => cancellationRef.current,
                                 ).then(() => {
-                                    canvasInstance.setup(frameData, []);
-                                    storage.dispatch(fetchAnnotationsAsync());
+                                    if (!cancellationRef.current) {
+                                        canvasInstance.setup(frameData, []);
+                                        storage.dispatch(fetchAnnotationsAsync());
+                                    }
                                 }).finally(() => {
                                     if (isMounted()) {
                                         dispatch(reducerActions.resetAfterRun());

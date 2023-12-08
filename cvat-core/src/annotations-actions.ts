@@ -210,6 +210,7 @@ async function runSingleFrameChain(
         });
 
         await instance.annotations.clear();
+        await instance.actions.clear();
         await instance.annotations.import({
             ...handledCollection,
             tracks: exportedCollection.tracks,
