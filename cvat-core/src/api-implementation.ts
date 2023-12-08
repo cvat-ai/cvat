@@ -33,6 +33,7 @@ import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import { FramesMetaData } from './frames';
 import AnalyticsReport from './analytics-report';
+import { listActions, registerAction, runActions } from './annotations-actions';
 import CVATCore from '.';
 
 function implementationMixin(func: Function, implementation: Function): void {
@@ -42,6 +43,9 @@ function implementationMixin(func: Function, implementation: Function): void {
 export default function implementAPI(cvat: CVATCore): CVATCore {
     implementationMixin(cvat.plugins.list, PluginRegistry.list);
     implementationMixin(cvat.plugins.register, PluginRegistry.register.bind(cvat));
+    implementationMixin(cvat.actions.list, listActions);
+    implementationMixin(cvat.actions.register, registerAction);
+    implementationMixin(cvat.actions.run, runActions);
 
     implementationMixin(cvat.lambda.list, lambdaManager.list.bind(lambdaManager));
     implementationMixin(cvat.lambda.run, lambdaManager.run.bind(lambdaManager));
