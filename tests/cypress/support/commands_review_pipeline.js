@@ -40,23 +40,10 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('reviewJobToUser', (jobID, user) => {
-    cy.getJobIDFromIdx(jobID).then(($job) => {
+Cypress.Commands.add('checkJobStatus', (jobIdx, status, assignee, reviewer) => {
+    cy.getJobIDFromIdx(jobIdx).then((jobID) => {
         cy.get('.cvat-task-jobs-table')
-            .contains('a', `Job #${$job}`).parents('.cvat-task-jobs-table-row')
-            .find('.cvat-job-reviewer-selector').find('[type="search"]')
-            .clear();
-        cy.get('.cvat-task-jobs-table')
-            .contains('a', `Job #${$job}`).parents('.cvat-task-jobs-table-row')
-            .find('.cvat-job-reviewer-selector').find('[type="search"]')
-            .type(`${user}{Enter}`);
-    });
-});
-
-Cypress.Commands.add('checkJobStatus', (jobID, status, assignee, reviewer) => {
-    cy.getJobIDFromIdx(jobID).then(($job) => {
-        cy.get('.cvat-task-jobs-table')
-            .contains('a', `Job #${$job}`)
+            .contains('a', `Job #${jobID}`)
             .parents('.cvat-task-jobs-table-row')
             .within(() => {
                 cy.get('.cvat-job-item-status').should('have.text', status);
@@ -93,7 +80,7 @@ Cypress.Commands.add('checkIssueLabel', (issueDescription, status = 'unsolved') 
     });
 });
 
-Cypress.Commands.add('collectIssueRegionId', () => {
+Cypress.Commands.add('collectIssueRegionIDs', () => {
     const issueRegionIdList = [];
     cy.document().then((doc) => {
         const issueRegionList = Array.from(doc.querySelectorAll('.cvat_canvas_issue_region'));
@@ -106,7 +93,7 @@ Cypress.Commands.add('collectIssueRegionId', () => {
 
 Cypress.Commands.add('checkIssueRegion', () => {
     const sccSelectorIssueRegionId = '#cvat_canvas_issue_region_';
-    cy.collectIssueRegionId().then((issueRegionIdList) => {
+    cy.collectIssueRegionIDs().then((issueRegionIdList) => {
         const maxId = Math.max(...issueRegionIdList);
         cy.get(`${sccSelectorIssueRegionId}${maxId}`).should('be.visible');
     });

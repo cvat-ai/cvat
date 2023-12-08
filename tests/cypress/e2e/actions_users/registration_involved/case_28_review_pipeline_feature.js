@@ -180,17 +180,15 @@ context('Review pipeline feature', () => {
             cy.goToNextFrame(2);
             cy.createIssueFromObject(3, 'Quick issue ...', customIssueDescription);
 
+            const countIssuesByFrame = [[0, 1, 'Wrong position'], [1, 1, customIssueDescription], [2, 1, customIssueDescription]];
             // The reviewer reloads the page, all the issues still exist
             cy.reload();
             cy.get('.cvat-canvas-container').should('exist');
-            cy.get('.cvat_canvas_issue_region').should('have.length', 1);
-            cy.checkIssueLabel('Wrong position');
-            cy.goToNextFrame(1);
-            cy.get('.cvat_canvas_issue_region').should('have.length', 1);
-            cy.checkIssueLabel(customIssueDescription);
-            cy.goToNextFrame(2);
-            cy.get('.cvat_canvas_issue_region').should('have.length', 1);
-            cy.checkIssueLabel(customIssueDescription);
+            for (const [frame, issues, text] of countIssuesByFrame) {
+                cy.goCheckFrameNumber(frame);
+                cy.get('.cvat_canvas_issue_region').should('have.length', issues);
+                cy.checkIssueLabel(text);
+            }
 
             // The reviewer creates issues using button on left panel
             // issue from a rectangle, and issue from a point
@@ -211,6 +209,7 @@ context('Review pipeline feature', () => {
             };
             cy.createIssueFromControlButton(rectangleIssue);
             cy.createIssueFromControlButton(pointIssue);
+            countIssuesByFrame[2][1] = 3;
 
             // The reviewer goes to "Standard mode", creates an object, saves the job successfully
             cy.changeWorkspace('Standard');
@@ -240,7 +239,6 @@ context('Review pipeline feature', () => {
             cy.assignJobToUser(jobIDs[0], additionalUsers.annotator.username);
             cy.logout();
 
-            const countIssuesByFrame = [[0, 1], [1, 1], [2, 3]];
             // Annotator logins, opens the job on standard workspace, sees the issues
             cy.login(additionalUsers.annotator.username, additionalUsers.annotator.password);
             cy.openJobFromJobsPage(jobIDs[0]);
@@ -260,7 +258,7 @@ context('Review pipeline feature', () => {
 
                 // Annotator selects an issue on sidebar
                 // Issue indication has changed the color for highlighted issue
-                cy.collectIssueRegionId().then((issueIDs) => {
+                cy.collectIssueRegionIDs().then((issueIDs) => {
                     for (const issueID of issueIDs) {
                         const objectsSidebarIssueItem = `#cvat-objects-sidebar-issue-item-${issueID}`;
                         const canvasIssueRegion = `#cvat_canvas_issue_region_${issueID}`;

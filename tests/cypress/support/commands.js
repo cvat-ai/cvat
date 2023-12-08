@@ -337,7 +337,7 @@ Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob')
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
-Cypress.Commands.add('getJobIDFromIdx', (jobID) => {
+Cypress.Commands.add('getJobIDFromIdx', (jobIdx) => {
     const jobsKey = [];
     cy.document().then((doc) => {
         const jobs = Array.from(doc.querySelectorAll('.cvat-job-item'));
@@ -345,7 +345,7 @@ Cypress.Commands.add('getJobIDFromIdx', (jobID) => {
             jobsKey.push(+jobs[i].getAttribute('data-row-id'));
         }
         const minKey = Math.min(...jobsKey);
-        return minKey + jobID;
+        return minKey + jobIdx;
     });
 });
 
@@ -359,10 +359,10 @@ Cypress.Commands.add('openJobFromJobsPage', (jobID) => {
     cy.get('.cvat-canvas-container').should('exist').and('be.visible');
 });
 
-Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFail = false) => {
+Cypress.Commands.add('openJob', (jobIdx = 0, removeAnnotations = true, expectedFail = false) => {
     cy.get('.cvat-task-job-list').should('exist');
-    cy.getJobIDFromIdx(jobID).then(($job) => {
-        cy.get('.cvat-job-item').contains('a', `Job #${$job}`).click();
+    cy.getJobIDFromIdx(jobIdx).then((jobID) => {
+        cy.get('.cvat-job-item').contains('a', `Job #${jobID}`).click();
     });
     cy.url().should('include', '/jobs');
     if (expectedFail) {
