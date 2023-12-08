@@ -1069,6 +1069,7 @@ Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
         cy.get('input[role="spinbutton"]').type(`${frameNum}{Enter}`, { force: true });
         cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
+    cy.get('.cvat-player-frame-selector input[role="spinbutton"]').blur();
 });
 
 Cypress.Commands.add('checkFrameNum', (frameNum) => {
@@ -1421,6 +1422,29 @@ Cypress.Commands.add('startMaskDrawing', () => {
 Cypress.Commands.add('finishMaskDrawing', () => {
     cy.get('.cvat-brush-tools-brush').click();
     cy.get('.cvat-brush-tools-finish').click();
+});
+
+Cypress.Commands.add('slice', (object, coordinates) => {
+    cy.get('.cvat-slice-control').click();
+    cy.get('.cvat-slice-control').trigger('mouseleave');
+
+    cy.get('.cvat-canvas-hints-block').within(() => {
+        cy.contains('Click a mask or polygon shape you would like to slice').should('exist');
+    });
+
+    const [initX, initY] = coordinates[0];
+    cy.get('.cvat-canvas-container').then(($canvas) => {
+        cy.wrap($canvas).click(initX, initY);
+    });
+    cy.get('.cvat-canvas-hints-block').within(() => {
+        cy.contains('Set initial').should('exist');
+    });
+
+    cy.get('.cvat-canvas-container').then(($canvas) => {
+        for (const [x, y] of coordinates) {
+            cy.wrap($canvas).click(x, y);
+        }
+    });
 });
 
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
