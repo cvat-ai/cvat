@@ -95,7 +95,7 @@ spec:
   handler: main:handler
   eventTimeout: 30s
   build:
-    image: cvat.onnx.wongkinyiu.yolov7
+    image: cvat.onnx.wongkinyiu.yolov7:latest-gpu
     baseImage: nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
     directives:
