@@ -130,8 +130,8 @@ context('Filtering, sorting jobs.', () => {
         );
 
         cy.openTask(taskName);
-        cy.getJobIDFromIdx(0).then(($jobID) => cy.assignJobToUser($jobID, secondUserName));
-        cy.getJobIDFromIdx(1).then(($jobID) => cy.assignJobToUser($jobID, secondUserName));
+        cy.getJobIDFromIdx(0).then((jobID) => cy.assignJobToUser(jobID, secondUserName));
+        cy.getJobIDFromIdx(1).then((jobID) => cy.assignJobToUser(jobID, secondUserName));
 
         // The first job - stage "validation"
         cy.getJobIDFromIdx(0).then((jobID) => cy.setJobStage(jobID, 'validation'));
