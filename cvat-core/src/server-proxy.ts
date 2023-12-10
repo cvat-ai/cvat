@@ -9,6 +9,7 @@ import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
 
+import './axios-config';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
@@ -243,9 +244,6 @@ class WorkerWrappedAxios {
     }
 }
 
-Axios.defaults.withCredentials = true;
-Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
-Axios.defaults.xsrfCookieName = 'csrftoken';
 const workerAxios = new WorkerWrappedAxios();
 Axios.interceptors.request.use((reqConfig) => {
     if ('params' in reqConfig && 'org' in reqConfig.params) {

@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from io import BytesIO
 import shutil
 import tempfile
+import zlib
 
 from typing import Optional, Tuple
 
@@ -43,17 +44,31 @@ class MediaCache:
         self._cache = caches['media']
 
     def _get_or_set_cache_item(self, key, create_function):
+        def create_item():
+            slogger.glob.info(f'Starting to prepare chunk: key {key}')
+            item = create_function()
+            slogger.glob.info(f'Ending to prepare chunk: key {key}')
+
+            if item[0]:
+                item = (item[0], item[1], zlib.crc32(item[0].getbuffer()))
+                self._cache.set(key, item)
+
+            return item
+
         slogger.glob.info(f'Starting to get chunk from cache: key {key}')
         item = self._cache.get(key)
         slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
         if not item:
-            slogger.glob.info(f'Starting to prepare chunk: key {key}')
-            item = create_function()
-            slogger.glob.info(f'Ending to prepare chunk: key {key}')
-            if item[0]:
-                self._cache.set(key, item)
+            item = create_item()
+        else:
+            # compare checksum
+            item_data = item[0].getbuffer() if isinstance(item[0], io.BytesIO) else item[0]
+            item_checksum = item[2] if len(item) == 3 else None
+            if item_checksum != zlib.crc32(item_data):
+                slogger.glob.info(f'Recreating cache item {key} due to checksum mismatch')
+                item = create_item()
 
-        return item
+        return item[0], item[1]
 
     def get_task_chunk_data_with_mime(self, chunk_number, quality, db_data):
         item = self._get_or_set_cache_item(
@@ -323,6 +338,6 @@ class MediaCache:
                 if not success:
                     raise Exception('Failed to encode image to ".jpeg" format')
                 zip_file.writestr(f'{name}.jpg', result.tobytes())
-        buff = zip_buffer.getvalue()
         mime_type = 'application/zip'
-        return buff, mime_type
+        zip_buffer.seek(0)
+        return zip_buffer, mime_type

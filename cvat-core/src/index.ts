@@ -25,6 +25,7 @@ import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
+import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';
@@ -110,6 +111,11 @@ export default interface CVATCore {
     frames: {
         getMeta: any;
     };
+    actions: {
+        list: typeof listActions;
+        register: typeof registerAction;
+        run: typeof runActions;
+    };
     logger: typeof loggerStorage;
     config: {
         backendAPI: typeof config.backendAPI;
@@ -147,6 +153,7 @@ export default interface CVATCore {
         Organization: typeof Organization;
         Webhook: typeof Webhook;
         AnnotationGuide: typeof AnnotationGuide;
+        BaseSingleFrameAction: typeof BaseSingleFrameAction;
     };
     utils: {
         mask2Rle: typeof mask2Rle;

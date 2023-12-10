@@ -66,7 +66,6 @@ export function implementJob(Job) {
             try {
                 const data = await serverProxy.jobs.save(this.id, jobData);
                 updatedJob = new Job(data);
-                this._updateTrigger.reset();
             } catch (error) {
                 updatedJob = new Job(this._initialData);
                 throw error;
@@ -74,6 +73,7 @@ export function implementJob(Job) {
                 this.stage = updatedJob.stage;
                 this.state = updatedJob.state;
                 this.assignee = updatedJob.assignee;
+                this._updateTrigger.reset();
             }
 
             return this;

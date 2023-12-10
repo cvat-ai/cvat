@@ -18,16 +18,14 @@ Cypress.Commands.add('assignTaskToUser', (user) => {
 });
 
 Cypress.Commands.add('assignJobToUser', (jobID, user) => {
-    cy.getJobNum(jobID).then(($job) => {
-        cy.get('.cvat-jobs-list')
-            .contains('a', `Job #${$job}`).parents('.cvat-job-item')
-            .find('.cvat-job-assignee-selector input').click();
-        cy.get('.cvat-jobs-list')
-            .contains('a', `Job #${$job}`).parents('.cvat-job-item')
-            .find('.cvat-job-assignee-selector input').clear();
-    });
+    cy.get('.cvat-jobs-list')
+        .contains('a', `Job #${jobID}`).parents('.cvat-job-item')
+        .find('.cvat-job-assignee-selector input').click();
+    cy.get('.cvat-jobs-list')
+        .contains('a', `Job #${jobID}`).parents('.cvat-job-item')
+        .find('.cvat-job-assignee-selector input').clear();
 
-    cy.intercept('PATCH', '/api/jobs/**').as('patchJobAssignee');
+    cy.intercept('PATCH', `/api/jobs/${jobID}`).as('patchJobAssignee');
     if (user) {
         cy.get('.ant-select-dropdown')
             .should('be.visible')
@@ -42,23 +40,10 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
     cy.get('.cvat-spinner').should('not.exist');
 });
 
-Cypress.Commands.add('reviewJobToUser', (jobID, user) => {
-    cy.getJobNum(jobID).then(($job) => {
+Cypress.Commands.add('checkJobStatus', (jobIdx, status, assignee, reviewer) => {
+    cy.getJobIDFromIdx(jobIdx).then((jobID) => {
         cy.get('.cvat-task-jobs-table')
-            .contains('a', `Job #${$job}`).parents('.cvat-task-jobs-table-row')
-            .find('.cvat-job-reviewer-selector').find('[type="search"]')
-            .clear();
-        cy.get('.cvat-task-jobs-table')
-            .contains('a', `Job #${$job}`).parents('.cvat-task-jobs-table-row')
-            .find('.cvat-job-reviewer-selector').find('[type="search"]')
-            .type(`${user}{Enter}`);
-    });
-});
-
-Cypress.Commands.add('checkJobStatus', (jobID, status, assignee, reviewer) => {
-    cy.getJobNum(jobID).then(($job) => {
-        cy.get('.cvat-task-jobs-table')
-            .contains('a', `Job #${$job}`)
+            .contains('a', `Job #${jobID}`)
             .parents('.cvat-task-jobs-table-row')
             .within(() => {
                 cy.get('.cvat-job-item-status').should('have.text', status);
@@ -95,7 +80,7 @@ Cypress.Commands.add('checkIssueLabel', (issueDescription, status = 'unsolved') 
     });
 });
 
-Cypress.Commands.add('collectIssueRegionId', () => {
+Cypress.Commands.add('collectIssueRegionIDs', () => {
     const issueRegionIdList = [];
     cy.document().then((doc) => {
         const issueRegionList = Array.from(doc.querySelectorAll('.cvat_canvas_issue_region'));
@@ -108,33 +93,29 @@ Cypress.Commands.add('collectIssueRegionId', () => {
 
 Cypress.Commands.add('checkIssueRegion', () => {
     const sccSelectorIssueRegionId = '#cvat_canvas_issue_region_';
-    cy.collectIssueRegionId().then((issueRegionIdList) => {
+    cy.collectIssueRegionIDs().then((issueRegionIdList) => {
         const maxId = Math.max(...issueRegionIdList);
-        cy.get(`${sccSelectorIssueRegionId}${maxId}`).trigger('mousemove');
         cy.get(`${sccSelectorIssueRegionId}${maxId}`).should('be.visible');
     });
 });
 
-Cypress.Commands.add('createIssueFromObject', (object, issueType, customeIssueDescription) => {
-    cy.get(object).then(($object) => {
-        const objectFillOpacity = $object.attr('fill-opacity');
-        cy.get($object).trigger('mousemove');
-        cy.get($object).trigger('mouseover');
-        cy.get($object).should('have.attr', 'fill-opacity', Number(objectFillOpacity) * 10);
-        cy.get($object).rightclick();
-    });
+Cypress.Commands.add('createIssueFromObject', (clientID, issueType, customIssueDescription) => {
+    cy.get(`#cvat_canvas_shape_${clientID}`).trigger('mouseover');
+    cy.get(`#cvat_canvas_shape_${clientID}`).trigger('mousemove');
+    cy.get(`#cvat_canvas_shape_${clientID}`).rightclick();
+
     cy.get('.cvat-canvas-context-menu').should('be.visible').within(() => {
-        cy.contains('.cvat-context-menu-item', new RegExp(`^${issueType}$`)).click();
+        cy.contains('.cvat-context-menu-item', issueType).click();
     });
     if (issueType === 'Open an issue ...') {
         cy.get('.cvat-create-issue-dialog').should('be.visible').within(() => {
-            cy.get('#issue_description').type(customeIssueDescription);
+            cy.get('#issue_description').type(customIssueDescription);
             cy.get('[type="submit"]').click();
         });
     } else if (issueType === 'Quick issue ...') {
         cy.get('.cvat-quick-issue-from-latest-item')
             .should('be.visible')
-            .contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`))
+            .contains('.cvat-context-menu-item', customIssueDescription)
             .click();
     }
     cy.get('.cvat-canvas-context-menu').should('not.exist');
@@ -165,37 +146,43 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
     cy.checkIssueRegion();
 });
 
-Cypress.Commands.add('resolveReopenIssue', (issueLabel, resolveText, reopen) => {
+Cypress.Commands.add('resolveIssue', (issueLabel, resolveText) => {
     cy.get(issueLabel).click();
-    cy.intercept('POST', '/api/comments').as('postComment');
-    cy.intercept('PATCH', '/api/issues/**').as('resolveReopenIssue');
     cy.get('.cvat-issue-dialog-input').type(resolveText);
     cy.get('.cvat-issue-dialog-footer').within(() => {
-        cy.contains('button', 'Comment').click();
-        if (reopen) {
-            cy.contains('button', 'Reopen').click();
-        } else {
-            cy.contains('button', 'Resolve').click();
+        if (resolveText) {
+            cy.intercept('POST', '/api/comments**').as('postComment');
+            cy.contains('button', 'Comment').click();
+            cy.wait('@postComment').its('response.statusCode').should('equal', 201);
         }
+
+        cy.intercept('PATCH', '/api/issues/*').as('resolveIssue');
+        cy.contains('button', 'Resolve').click();
+        cy.wait('@resolveIssue').its('response.statusCode').should('equal', 200);
     });
-    if (reopen) cy.get('.cvat-issue-dialog-header').find('[aria-label="close"]').click();
-    cy.wait('@postComment').its('response.statusCode').should('equal', 201);
-    cy.wait('@resolveReopenIssue').its('response.statusCode').should('equal', 200);
 });
 
-Cypress.Commands.add('removeIssue', (issueLabel, submitRemove) => {
+Cypress.Commands.add('reopenIssue', (issueLabel) => {
+    cy.get(issueLabel).click();
+    cy.get('.cvat-issue-dialog-footer').within(() => {
+        cy.intercept('PATCH', '/api/issues/*').as('reopenIssue');
+        cy.contains('button', 'Reopen').click();
+        cy.wait('@reopenIssue').its('response.statusCode').should('equal', 200);
+    });
+    cy.get('.cvat-issue-dialog-header').within(() => {
+        cy.get('.anticon-close').click();
+    });
+});
+
+Cypress.Commands.add('removeIssue', (issueLabel) => {
     cy.get(issueLabel).click();
     cy.intercept('DELETE', '/api/issues/**').as('removeIssue');
     cy.get('.cvat-issue-dialog-footer').within(() => {
         cy.contains('button', 'Remove').click();
     });
     cy.get('.cvat-modal-confirm-remove-issue').within(() => {
-        if (submitRemove) {
-            cy.contains('button', 'Delete').click();
-            cy.wait('@removeIssue').its('response.statusCode').should('equal', 204);
-        } else {
-            cy.contains('button', 'Cancel').click();
-        }
+        cy.contains('button', 'Delete').click();
+        cy.wait('@removeIssue').its('response.statusCode').should('equal', 204);
     });
     cy.get('.cvat-modal-confirm-remove-issue').should('not.exist');
 });
