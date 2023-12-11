@@ -104,3 +104,7 @@ services:
   cvat_opa:
     ports:
       - '8181:8181'
+
+  cvat_redis:
+    ports:
+      - '6379:6379'
