@@ -1069,7 +1069,6 @@ Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
         cy.get('input[role="spinbutton"]').type(`${frameNum}{Enter}`, { force: true });
         cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
-    cy.get('.cvat-player-frame-selector input[role="spinbutton"]').blur();
 });
 
 Cypress.Commands.add('checkFrameNum', (frameNum) => {
