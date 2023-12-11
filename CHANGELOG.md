@@ -16,6 +16,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.9.2'></a>
+## \[2.9.2\] - 2023-12-11
+
+### Added
+
+- Introduced CVAT actions. Actions allow performing different
+ predefined scenarios on annotations automatically (e.g. shape converters)
+  (<https://github.com/opencv/cvat/pull/7172>)
+
+- The UI will now retry requests that were rejected due to rate limiting
+  (<https://github.com/opencv/cvat/pull/7216>)
+
+### Changed
+
+- Update nvidia/cuda image version from 11.7.0 to 11.7.1 in transt serverless function.
+  (<https://github.com/opencv/cvat/pull/7124>)
+
+- \[Helm\] Allow pre-release versions in kubernetes requirement to include AWS EKS versions (<https://github.com/opencv/cvat/pull/7183>)
+
+- GPU versions of serverless functions now use the `latest-gpu` Docker tag
+  rather than `latest`
+  (<https://github.com/opencv/cvat/pull/7215>)
+
+- \[Compose, Helm\] Downgraded KeyDB to 6.3.2
+  (<https://github.com/opencv/cvat/pull/7236>)
+
+### Fixed
+
+- The GPU version of the YOLOv7 serverless function not actually using the GPU
+  (<https://github.com/opencv/cvat/pull/6940>)
+
+- It is now possible to create Ground Truth jobs containing all frames in the task
+  (<https://github.com/opencv/cvat/pull/7126>)
+- Incorrect Ground Truth chunks saving
+  (<https://github.com/opencv/cvat/pull/7126>)
+
+- Reset source/target storage if related cloud storage has been deleted
+  (<https://github.com/opencv/cvat/pull/6801>)
+
+- Prevent possible cyclic dependencies when enqueuing a rq job when ONE_RUNNING_JOB_IN_QUEUE_PER_USER is used
+  (<https://github.com/opencv/cvat/pull/7139>)
+- Enqueue deferred jobs when their dependencies are moved to the failed job registry due to AbandonedJobError
+  (<https://github.com/opencv/cvat/pull/7139>)
+
+- Reduce the number of requests to the server for task details
+  (<https://github.com/opencv/cvat/pull/7167>)
+
+- Shape settings **opacity** and **selected opacity** reset on each frame change
+  (<https://github.com/opencv/cvat/pull/7186>)
+
+- Server error in list quality settings API, when called in an org
+  (<https://github.com/opencv/cvat/pull/7190>)
+
+- Incorrect handling of the hidden points in skeletons in quality comparisons
+  (<https://github.com/opencv/cvat/pull/7191>)
+
+- \[Helm\] Fixed installing Traefik Middleware even if Traefik is disabled in the values (<https://github.com/opencv/cvat/pull/7184>)
+
+- Error code 500 when send `change:frame` event without `duration`.
+  (<https://github.com/opencv/cvat/pull/7211>)
+
+- Added workaround for corrupted cached chunks
+  (<https://github.com/opencv/cvat/pull/7243>, <https://github.com/opencv/cvat/pull/7251>)
+
 <a id='changelog-2.9.1'></a>
 ## \[2.9.1\] - 2023-11-23
 

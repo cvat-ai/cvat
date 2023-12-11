@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import io
 import os
 import os.path as osp
 from PIL import Image
@@ -679,7 +678,7 @@ class DataChunkGetter:
                 buff, mime = cache.get_frame_context_images(db_data, self.number)
                 if not buff:
                     return HttpResponseNotFound()
-                return HttpResponse(io.BytesIO(buff), content_type=mime)
+                return HttpResponse(buff, content_type=mime)
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
@@ -2907,7 +2906,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 func=import_resource_with_clean_up_after,
                 args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
                 job_id=rq_id,
-                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                depends_on=dependent_job or define_dependent_job(queue, user_id, rq_id=rq_id),
                 meta={
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=db_obj),
@@ -3039,7 +3038,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
             args=(db_instance.id, format_name, server_address),
             job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_instance),
-            depends_on=define_dependent_job(queue, user_id),
+            depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
             result_ttl=ttl,
             failure_ttl=ttl,
         )
@@ -3121,7 +3120,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=db_obj),
                 },
-                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                depends_on=dependent_job or define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )

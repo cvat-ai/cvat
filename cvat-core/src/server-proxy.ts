@@ -9,6 +9,7 @@ import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
 
+import './axios-config';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
@@ -21,7 +22,6 @@ import { Storage } from './storage';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
 import config from './config';
-import DownloadWorker from './download.worker';
 import { ServerError } from './exceptions';
 import { SerializedQualityConflictData } from './quality-conflict';
 
@@ -192,8 +192,8 @@ function prepareData(details) {
 }
 
 class WorkerWrappedAxios {
-    constructor(requestInterseptor) {
-        const worker = new DownloadWorker(requestInterseptor);
+    constructor() {
+        const worker = new Worker(new URL('./download.worker', import.meta.url));
         const requests = {};
         let requestId = 0;
 
@@ -243,9 +243,6 @@ class WorkerWrappedAxios {
     }
 }
 
-Axios.defaults.withCredentials = true;
-Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
-Axios.defaults.xsrfCookieName = 'csrftoken';
 const workerAxios = new WorkerWrappedAxios();
 Axios.interceptors.request.use((reqConfig) => {
     if ('params' in reqConfig && 'org' in reqConfig.params) {

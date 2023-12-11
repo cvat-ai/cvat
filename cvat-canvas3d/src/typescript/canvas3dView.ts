@@ -745,7 +745,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         if (![Mode.DRAG_CANVAS, Mode.IDLE].includes(this.mode)) return;
         this.isPerspectiveBeingDragged = true;
         this.enablePerspectiveDragging();
-    }
+    };
 
     private startAction(view: any, event: MouseEvent): void {
         const { clientID } = this.model.data.activeElement;

@@ -21,6 +21,7 @@ import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
+import BaseSingleFrameAction from './annotations-actions';
 
 import * as enums from './enums';
 
@@ -34,9 +35,10 @@ import pjson from '../package.json';
 import config from './config';
 
 import implementAPI from './api-implementation';
+import CVATCore from '.';
 
-function build() {
-    const cvat = {
+function build(): CVATCore {
+    const cvat: CVATCore = {
         server: {
             async about() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.about);
@@ -175,6 +177,42 @@ function build() {
             },
             async register(plugin) {
                 const result = await PluginRegistry.apiWrapper(cvat.plugins.register, plugin);
+                return result;
+            },
+        },
+        actions: {
+            async list() {
+                const result = await PluginRegistry.apiWrapper(cvat.actions.list);
+                return result;
+            },
+            async register(action: BaseSingleFrameAction) {
+                const result = await PluginRegistry.apiWrapper(cvat.actions.register, action);
+                return result;
+            },
+            async run(
+                instance: Job | Task,
+                actionsChain: BaseSingleFrameAction[],
+                actionsParameters: Record<string, string>[],
+                frameFrom: number,
+                frameTo: number,
+                filters: string[],
+                onProgress: (
+                    message: string,
+                    progress: number,
+                ) => void,
+                cancelled: () => boolean,
+            ) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.actions.run,
+                    instance,
+                    actionsChain,
+                    actionsParameters,
+                    frameFrom,
+                    frameTo,
+                    filters,
+                    onProgress,
+                    cancelled,
+                );
                 return result;
             },
         },
@@ -329,6 +367,7 @@ function build() {
             Organization,
             Webhook,
             AnnotationGuide,
+            BaseSingleFrameAction,
         },
         utils: {
             mask2Rle,
