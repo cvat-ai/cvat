@@ -60,7 +60,7 @@ class MediaCache:
         try:
             item = self._cache.get(key)
         except pickle.UnpicklingError as e:
-            slogger.glob.info(f'Unable to get item from cache: key {key}. Exception {str(e)}')
+            slogger.glob.error(f'Unable to get item from cache: key {key}', exc_info=True)
             item = None
         slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
 
