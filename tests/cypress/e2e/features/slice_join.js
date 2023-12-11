@@ -4,9 +4,10 @@
 
 /// <reference types="cypress" />
 
-context('Slice and join', { scrollBehavior: false }, () => {
+context('Slice and join tools', { scrollBehavior: false }, () => {
     const taskName = 'Slice and join actions';
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
+
     const basicMask = [{
         method: 'brush',
         coordinates: [[300, 300], [700, 300], [700, 700], [300, 700]],
@@ -20,14 +21,34 @@ context('Slice and join', { scrollBehavior: false }, () => {
         coordinates: [[200, 350], [300, 350], [300, 450], [200, 450]],
     },
     ];
+    const filledMask = [{
+        method: 'brush-size',
+        value: 150,
+    }, {
+        method: 'brush',
+        coordinates: [[300, 300], [400, 300], [400, 400], [300, 400]],
+    }];
+
+    const polygon = {
+        reDraw: false,
+        type: 'Shape',
+        labelName: 'polygon label',
+        pointsMap: [
+            { x: 100, y: 100 },
+            { x: 300, y: 140 },
+            { x: 200, y: 440 },
+            { x: 130, y: 300 },
+        ],
+        complete: true,
+        numberOfPoints: null,
+    };
+
     let taskID = null;
     let jobID = null;
 
     before(() => {
-        // cy.visit('auth/login');
-        // cy.login();
-        cy.visit('/tasks');
-        cy.get('.cvat-tasks-page-top-bar').should('be.visible');
+        cy.visit('auth/login');
+        cy.login();
         cy.headlessCreateTask({
             labels: [
                 { name: 'mask label', attributes: [], type: 'mask' },
@@ -52,19 +73,19 @@ context('Slice and join', { scrollBehavior: false }, () => {
         });
     });
 
-    // after(() => {
-    //     cy.logout();
-    //     cy.getAuthKey().then((response) => {
-    //         const authKey = response.body.key;
-    //         cy.request({
-    //             method: 'DELETE',
-    //             url: `/api/tasks/${taskID}`,
-    //             headers: {
-    //                 Authorization: `Token ${authKey}`,
-    //             },
-    //         });
-    //     });
-    // });
+    after(() => {
+        cy.logout();
+        cy.getAuthKey().then((response) => {
+            const authKey = response.body.key;
+            cy.request({
+                method: 'DELETE',
+                url: `/api/tasks/${taskID}`,
+                headers: {
+                    Authorization: `Token ${authKey}`,
+                },
+            });
+        });
+    });
 
     beforeEach(() => {
         cy.removeAnnotations();
@@ -77,33 +98,127 @@ context('Slice and join', { scrollBehavior: false }, () => {
         cy.get('#cvat_canvas_shape_3').should('exist').and('be.visible');
     }
 
-    describe('Slice join actions', () => {
-        it('Draw basic mask. Slice by ', () => {
+    function checkJoinSuccess() {
+        cy.get('#cvat_canvas_shape_2').should('not.exist');
+        cy.get('#cvat_canvas_shape_3').should('not.exist');
+        cy.get('#cvat_canvas_shape_4').should('exist').and('be.visible');
+    }
+
+    describe('Testing slice/join tools', () => {
+        it('Draw basic mask. Slice into two shapes. Join back.', () => {
             cy.startMaskDrawing();
             cy.drawMask(basicMask);
             cy.finishMaskDrawing();
 
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.slice('#cvat_canvas_shape_1', [[250, 200], [720, 720]]);
-
+            cy.sliceTool('#cvat_canvas_shape_1', [1, 1], [[250, 500], [720, 500]]);
             checkSliceSuccess();
+
+            cy.joinTool(['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'], [[1, 1], [1, 1]]);
+            checkJoinSuccess();
         });
 
-        it('Draw double mask. Slice by ', () => {
+        it('Draw one mask with two shapes. Slice into two shapes. Join back.', () => {
             cy.startMaskDrawing();
             cy.drawMask(doubleMask);
             cy.finishMaskDrawing();
 
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.slice('#cvat_canvas_shape_1', [[150, 230], [300, 230]]);
+            cy.sliceTool('#cvat_canvas_shape_1', [1, 1], [[150, 230], [300, 230]]);
+            checkSliceSuccess();
 
+            cy.joinTool(['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'], [[1, 1], [1, 1]]);
+            checkJoinSuccess();
+        });
+
+        it('Draw filled mask. Slice with polyline. Join back.', () => {
+            cy.startMaskDrawing();
+            cy.drawMask(filledMask);
+            cy.finishMaskDrawing();
+
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+            cy.sliceTool(
+                '#cvat_canvas_shape_1',
+                [50, 55],
+                [
+                    [180, 230], [210, 260], [240, 200],
+                    [270, 230], [300, 230], [330, 260],
+                    [360, 200], [390, 230], [500, 230],
+                ],
+                { shortcut: '{alt}j' },
+            );
+            checkSliceSuccess();
+
+            cy.joinTool(
+                ['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'],
+                [[50, 5], [50, 50]],
+                { shortcut: 'j' },
+            );
+            checkJoinSuccess();
+        });
+
+        it('Draw polygon. Slice into two shapes.', () => {
+            cy.createPolygon(polygon);
+            cy.sliceTool(
+                '#cvat_canvas_shape_1',
+                [1, 1],
+                [
+                    [110, 160], [270, 240],
+                ],
+            );
+            checkSliceSuccess();
+        });
+
+        it('Draw polygon. Slice with polyline.', () => {
+            cy.createPolygon(polygon);
+            cy.sliceTool(
+                '#cvat_canvas_shape_1',
+                [1, 1],
+                [
+                    [110, 160], [140, 150], [170, 130],
+                    [190, 190], [230, 250], [400, 130],
+                ],
+            );
+            checkSliceSuccess();
+        });
+
+        it('Draw polygon. Check removing of slicing polyline points.', () => {
+            cy.createPolygon(polygon);
+            cy.sliceTool(
+                '#cvat_canvas_shape_1',
+                [1, 1],
+                [
+                    [110, 160], [140, 150], [170, 130],
+                    [190, 190], [230, 250],
+                ],
+            );
+            for (let i = 0; i < 5; i++) {
+                cy.get('body').rightclick();
+            }
+
+            cy.get('.cvat-canvas-hints-container').within(() => {
+                cy.contains('Set initial point on the shape contour').should('exist');
+            });
+            cy.get('body').type('{alt}j');
+        });
+
+        it('Draw mask. Slice with slip mode.', () => {
+            cy.startMaskDrawing();
+            cy.drawMask(filledMask);
+            cy.finishMaskDrawing();
+
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+            cy.sliceTool(
+                '#cvat_canvas_shape_1',
+                [50, 55],
+                [
+                    [180, 230], [200, 240], [210, 250],
+                    [220, 260], [230, 270], [240, 280],
+                    [250, 290], [260, 300], [500, 230],
+                ],
+                { slipMode: true },
+            );
             checkSliceSuccess();
         });
     });
-
-    // cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
-    //     cy.contains('MASK SHAPE').click();
-    // });
-    // cy.get('body').trigger('keydown', { code: 'KeyJ', keyCode:74, altKey:true });
-    // cy.get('body').trigger('keyup', { code: 'KeyJ',  keyCode:74, altKey:true });
 });

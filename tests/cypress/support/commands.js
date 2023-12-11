@@ -1424,24 +1424,80 @@ Cypress.Commands.add('finishMaskDrawing', () => {
     cy.get('.cvat-brush-tools-finish').click();
 });
 
-Cypress.Commands.add('slice', (object, coordinates) => {
-    cy.get('.cvat-slice-control').click();
-    cy.get('.cvat-slice-control').trigger('mouseleave');
+Cypress.Commands.add('sliceTool', (
+    object,
+    initialPosition,
+    coordinates,
+    options = {
+        shortcut: null,
+        slipMode: false,
+    },
+) => {
+    const { shortcut, slipMode } = options;
+    if (shortcut) {
+        cy.get('body').type(shortcut);
+    } else {
+        cy.get('.cvat-slice-control').click();
+        cy.get('.cvat-slice-control').trigger('mouseleave');
+    }
 
     cy.get('.cvat-canvas-hints-container').within(() => {
         cy.contains('Click a mask or polygon shape you would like to slice').should('exist');
     });
 
-    cy.get(object).click(1, 1);
+    const [initialX, initialY] = initialPosition;
+    cy.get(object).click(initialX, initialY);
     cy.get('.cvat-canvas-hints-container').within(() => {
         cy.contains('Set initial').should('exist');
     });
 
     cy.get('.cvat-canvas-container').then(($canvas) => {
-        for (const [x, y] of coordinates) {
-            cy.wrap($canvas).click(x, y);
+        if (slipMode) {
+            const [initX, initY] = coordinates.shift();
+            cy.wrap($canvas).click(initX, initY);
+            const [endX, endY] = coordinates.pop();
+
+            for (const [x, y] of coordinates) {
+                cy.wrap($canvas).trigger('mousemove', x, y, { button: 0, shiftKey: true, bubbles: true });
+            }
+            cy.wrap($canvas).click(endX, endY);
+        } else {
+            for (const [x, y] of coordinates) {
+                cy.wrap($canvas).click(x, y);
+            }
         }
     });
+});
+
+Cypress.Commands.add('joinTool', (
+    objects,
+    coordinates,
+    options = {
+        shortcut: null,
+    },
+) => {
+    const { shortcut } = options;
+    if (shortcut) {
+        cy.get('body').type(shortcut);
+    } else {
+        cy.get('.cvat-join-control').click();
+        cy.get('.cvat-join-control').trigger('mouseleave');
+    }
+
+    cy.get('.cvat-canvas-hints-container').within(() => {
+        cy.contains('Click masks you would like to join').should('exist');
+    });
+
+    for (const [index, object] of objects.entries()) {
+        cy.get(object).click(coordinates[index][0], coordinates[index][1], { force: true });
+    }
+
+    if (shortcut) {
+        cy.get('body').type(shortcut);
+    } else {
+        cy.get('.cvat-join-control').click();
+        cy.get('.cvat-join-control').trigger('mouseleave');
+    }
 });
 
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
