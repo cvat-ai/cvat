@@ -249,7 +249,6 @@ keydb:
   enabled: true
   external:
     host: 127.0.0.1
-  imageTag: x86_64_v6.3.4
   existingSecret: "cvat-keydb-secret"
   secret:
     create: true
