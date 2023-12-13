@@ -9,7 +9,6 @@ import operator
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from enum import Enum
-from importlib import import_module
 from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from attrs import define, field
@@ -97,21 +96,12 @@ def build_iam_context(request, organization: Optional[Organization], membership:
     }
 
 
-def get_iam_context(request, obj):
+def get_iam_context(request, obj) -> Dict[str, Any]:
     organization = get_organization(request, obj)
     membership = get_membership(request, organization)
 
-    iam_context = build_iam_context(request, organization, membership)
-    for builder_func_path in getattr(settings, "IAM_CONTEXT_BUILDERS", []):
-        package, attr = builder_func_path.rsplit('.', 1)
-        builder_func = getattr(import_module(package), attr)
-        iam_context.update(builder_func(request, organization, membership))
+    return build_iam_context(request, organization, membership)
 
-    # FIXME: The primary app should know nothing about is_crowdsourcing plugin.
-    if organization and not request.user.is_superuser and membership is None and not iam_context.get('is_crowdsourcing', False):
-        raise PermissionDenied({'message': 'You should be an active member in the organization'})
-
-    return iam_context
 
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
     url: str
@@ -2046,13 +2036,10 @@ class PolicyEnforcer(BasePermission):
 
 class IsAuthenticatedOrReadPublicResource(BasePermission):
     def has_object_permission(self, request, view, obj) -> bool:
-        if (
+        return bool(
             request.user and request.user.is_authenticated or
             request.method == 'GET' and getattr(obj, "is_public", False)
-        ):
-            return True
-
-        return False
+        )
 
 
 class AnalyticsReportPermission(OpenPolicyAgentPermission):
