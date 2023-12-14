@@ -1853,6 +1853,9 @@ def match_dm_item(
         frame_number = dm.util.cast(item.attributes.get('frame', item.id), int)
     if frame_number is None and is_video:
         frame_number = dm.util.cast(osp.basename(item.id)[len('frame_'):], int)
+    if frame_number is None:
+        # Last chance: fuzzy matching
+        frame_number = instance_data.match_frame_fuzzy(item.id, path_has_ext=False)
 
     if not frame_number in instance_data.frame_info:
         raise CvatImportError("Could not match item id: "
