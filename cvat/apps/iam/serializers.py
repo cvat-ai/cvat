@@ -46,13 +46,11 @@ class RegisterSerializerEx(RegisterSerializer):
 
     def save(self, request):
         adapter = get_adapter()
-        user = adapter.new_user(request)
         self.cleaned_data = self.get_cleaned_data()
 
         # Allow to overwrite data for dummy users
         dummy_user = get_dummy_user(self.cleaned_data["email"])
-        if dummy_user:
-            user = dummy_user
+        user = dummy_user if dummy_user else adapter.new_user(request)
 
         user = adapter.save_user(request, user, self, commit=False)
         if "password1" in self.cleaned_data:
