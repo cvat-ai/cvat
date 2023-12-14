@@ -17,14 +17,14 @@ import { Invitation } from 'cvat-core/src/organization';
 interface Props {
     invitation: Invitation;
     onAccept: (invitationKey: string) => Promise<void>;
-    onReject: (invitationKey: string) => Promise<void>;
+    onDecline: (invitationKey: string) => Promise<void>;
 }
 
 function InvitationItem(props: Props): JSX.Element {
-    const { invitation, onAccept, onReject } = props;
+    const { invitation, onAccept, onDecline } = props;
     const { key, expired } = invitation;
 
-    const [rejected, setRejected] = useState(false);
+    const [declined, setDeclined] = useState(false);
 
     const { slug } = invitation.organizationInfo;
     const owner = invitation.owner?.username;
@@ -53,7 +53,7 @@ function InvitationItem(props: Props): JSX.Element {
                 text='Expired'
                 color='gray'
             >
-                <Card className={`cvat-invitation-item ${rejected ? 'cvat-invitation-item-rejected' : ''}`}>
+                <Card className={`cvat-invitation-item ${declined ? 'cvat-invitation-item-declined' : ''}`}>
                     <Row justify='space-between'>
                         <Col className='cvat-invitation-description'>
                             {text}
@@ -74,8 +74,8 @@ function InvitationItem(props: Props): JSX.Element {
                                         type='primary'
                                         danger
                                         onClick={() => {
-                                            onReject(key).then(() => {
-                                                setRejected(true);
+                                            onDecline(key).then(() => {
+                                                setDeclined(true);
                                             });
                                         }}
                                     >
@@ -96,10 +96,10 @@ function InvitationItem(props: Props): JSX.Element {
                                                         <Text>&nbsp;organization&nbsp;</Text>
                                                     </>
                                                 ),
-                                                className: 'cvat-invitaion-reject-modal',
+                                                className: 'cvat-invitation-decline-modal',
                                                 onOk: () => {
-                                                    onReject(key).then(() => {
-                                                        setRejected(true);
+                                                    onDecline(key).then(() => {
+                                                        setDeclined(true);
                                                     });
                                                 },
                                                 okText: 'Decline',

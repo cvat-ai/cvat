@@ -168,7 +168,7 @@ const defaultState: NotificationsState = {
         invitations: {
             fetching: null,
             acceptingInvitation: null,
-            rejectingInvitation: null,
+            decliningInvitation: null,
             resendingInvitation: null,
         },
     },
@@ -203,7 +203,7 @@ const defaultState: NotificationsState = {
         invitations: {
             newInvitations: '',
             acceptInvitationDone: '',
-            rejectInvitationDone: '',
+            declineInvitationDone: '',
             resendingInvitation: '',
         },
     },
@@ -446,18 +446,18 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case InvitationsActionTypes.REJECT_INVITATION_FAILED: {
+        case InvitationsActionTypes.DECLINE_INVITATION_FAILED: {
             return {
                 ...state,
                 errors: {
                     ...state.errors,
                     invitations: {
                         ...state.errors.invitations,
-                        rejectingInvitation: {
-                            message: 'Could not reject invitation',
+                        decliningInvitation: {
+                            message: 'Could not decline invitation',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-reject-organization-invitation-failed',
+                            className: 'cvat-notification-notice-decline-organization-invitation-failed',
                         },
                     },
                 },

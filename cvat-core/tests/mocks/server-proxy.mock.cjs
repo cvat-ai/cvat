@@ -593,7 +593,7 @@ class ServerProxy {
             return '';
         }
 
-        async function rejectInvitation() {
+        async function declineInvitation() {
             return;
         }
 
@@ -700,7 +700,7 @@ class ServerProxy {
                 organizations: {
                     value: Object.freeze({
                         acceptInvitation: acceptInvitation,
-                        rejectInvitation: rejectInvitation,
+                        declineInvitation: declineInvitation,
                     }),
                     writable: false,
                 },

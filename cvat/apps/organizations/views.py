@@ -186,12 +186,12 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
             '200': OpenApiResponse(response=AcceptInvitationReadSerializer, description='The invitation is accepted'),
             '400': OpenApiResponse(description='The invitation is expired or already accepted'),
         }),
-    reject=extend_schema(
-        operation_id='invitations_reject',
+    decline=extend_schema(
+        operation_id='invitations_decline',
         request=None,
-        summary='Method rejects the invitation to organization',
+        summary='Method declines the invitation to organization',
         responses={
-            '204': OpenApiResponse(description='The invitation has been rejected'),
+            '204': OpenApiResponse(description='The invitation has been declined'),
         }),
     resend=extend_schema(
         operation_id='invitations_resend',
@@ -289,8 +289,8 @@ class InvitationViewSet(viewsets.GenericViewSet,
         except ImproperlyConfigured:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data="Email backend is not configured.")
 
-    @action(detail=True, methods=['POST'], url_path='reject')
-    def reject(self, request, pk):
+    @action(detail=True, methods=['POST'], url_path='decline')
+    def decline(self, request, pk):
         try:
             invitation = self.get_object() # force to call check_object_permissions
             membership = invitation.membership

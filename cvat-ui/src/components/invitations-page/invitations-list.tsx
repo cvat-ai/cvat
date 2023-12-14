@@ -9,7 +9,7 @@ import Pagination from 'antd/lib/pagination';
 
 import { CombinedState, InvitationsQuery } from 'reducers';
 import { Invitation } from 'cvat-core/src/organization';
-import { acceptInvitationAsync, getInvitationsAsync, rejectInvitationAsync } from 'actions/invitations-actions';
+import { acceptInvitationAsync, getInvitationsAsync, declineInvitationAsync } from 'actions/invitations-actions';
 import InvitationItem from './invitation-item';
 
 import dimensions from '../projects-page/dimensions';
@@ -33,8 +33,8 @@ export default function InvitationsListComponent(props: Props): JSX.Element {
             window.location.reload();
         }))), []);
 
-    const onReject = useCallback((invitationKey) => (
-        dispatch(rejectInvitationAsync(invitationKey))
+    const onDecline = useCallback((invitationKey) => (
+        dispatch(declineInvitationAsync(invitationKey))
     ), []);
 
     const onPageChange = useCallback((newPage) => {
@@ -54,7 +54,7 @@ export default function InvitationsListComponent(props: Props): JSX.Element {
                                 key={invitation.key}
                                 invitation={invitation}
                                 onAccept={onAccept}
-                                onReject={onReject}
+                                onDecline={onDecline}
                             />
                         ),
                     )}

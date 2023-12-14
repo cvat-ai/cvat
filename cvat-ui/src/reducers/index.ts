@@ -564,7 +564,7 @@ export interface NotificationsState {
         invitations: {
             fetching: null | ErrorState;
             acceptingInvitation: null | ErrorState;
-            rejectingInvitation: null | ErrorState;
+            decliningInvitation: null | ErrorState;
             resendingInvitation: null | ErrorState;
         }
     };
@@ -599,7 +599,7 @@ export interface NotificationsState {
         invitations: {
             newInvitations: string;
             acceptInvitationDone: string;
-            rejectInvitationDone: string;
+            declineInvitationDone: string;
             resendingInvitation: string;
         }
     };

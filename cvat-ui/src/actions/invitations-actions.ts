@@ -15,9 +15,9 @@ export enum InvitationsActionTypes {
     ACCEPT_INVITATION = 'ACCEPT_INVITATION',
     ACCEPT_INVITATION_SUCCESS = 'ACCEPT_INVITATION_SUCCESS',
     ACCEPT_INVITATION_FAILED = 'ACCEPT_INVITATION_FAILED',
-    REJECT_INVITATION = 'REJECT_INVITATION',
-    REJECT_INVITATION_SUCCESS = 'REJECT_INVITATION_SUCCESS',
-    REJECT_INVITATION_FAILED = 'REJECT_INVITATION_FAILED',
+    DECLINE_INVITATION = 'DECLINE_INVITATION',
+    DECLINE_INVITATION_SUCCESS = 'DECLINE_INVITATION_SUCCESS',
+    DECLINE_INVITATION_FAILED = 'DECLINE_INVITATION_FAILED',
     RESEND_INVITATION = 'RESEND_INVITATION',
     RESEND_INVITATION_SUCCESS = 'RESEND_INVITATION_SUCCESS',
     RESEND_INVITATION_FAILED = 'RESEND_INVITATION_FAILED',
@@ -34,9 +34,9 @@ const invitationActions = {
         InvitationsActionTypes.ACCEPT_INVITATION_SUCCESS, { orgSlug },
     ),
     acceptInvitationFailed: (error: any) => createAction(InvitationsActionTypes.ACCEPT_INVITATION_FAILED, { error }),
-    rejectInvitation: () => createAction(InvitationsActionTypes.REJECT_INVITATION),
-    rejectInvitationSuccess: () => createAction(InvitationsActionTypes.REJECT_INVITATION_SUCCESS),
-    rejectInvitationFailed: (error: any) => createAction(InvitationsActionTypes.REJECT_INVITATION_FAILED, { error }),
+    declineInvitation: () => createAction(InvitationsActionTypes.DECLINE_INVITATION),
+    declineInvitationSuccess: () => createAction(InvitationsActionTypes.DECLINE_INVITATION_SUCCESS),
+    declineInvitationFailed: (error: any) => createAction(InvitationsActionTypes.DECLINE_INVITATION_FAILED, { error }),
     resendInvitation: () => createAction(InvitationsActionTypes.RESEND_INVITATION),
     resendInvitationSuccess: () => createAction(
         InvitationsActionTypes.RESEND_INVITATION_SUCCESS,
@@ -91,16 +91,16 @@ export const acceptInvitationAsync = (
     }
 };
 
-export const rejectInvitationAsync = (
+export const declineInvitationAsync = (
     key: string,
 ): ThunkAction => async (dispatch) => {
-    dispatch(invitationActions.rejectInvitation());
+    dispatch(invitationActions.declineInvitation());
 
     try {
-        await cvat.organizations.rejectInvitation(key);
-        dispatch(invitationActions.rejectInvitationSuccess());
+        await cvat.organizations.declineInvitation(key);
+        dispatch(invitationActions.declineInvitationSuccess());
     } catch (error) {
-        dispatch(invitationActions.rejectInvitationFailed(error));
+        dispatch(invitationActions.declineInvitationFailed(error));
     }
 };
 

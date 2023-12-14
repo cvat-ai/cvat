@@ -89,7 +89,7 @@ export default interface CVATCore {
         activate: any;
         deactivate: any;
         acceptInvitation: (key: string) => Promise<string>;
-        rejectInvitation: (key: string) => Promise<void>;
+        declineInvitation: (key: string) => Promise<void>;
         invitations: (filter: {
             page?: number,
             filter?: string,

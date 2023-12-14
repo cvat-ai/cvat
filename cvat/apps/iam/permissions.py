@@ -276,7 +276,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
         CREATE = 'create'
         DELETE = 'delete'
         ACCEPT = 'accept'
-        REJECT = 'reject'
+        DECLINE = 'decline'
         RESEND = 'resend'
         VIEW = 'view'
 
@@ -307,7 +307,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 request.query_params else Scopes.RESEND,
             'retrieve': Scopes.VIEW,
             'accept': Scopes.ACCEPT,
-            'reject': Scopes.REJECT,
+            'decline': Scopes.DECLINE,
             'resend': Scopes.RESEND,
         }.get(view.action)]
 

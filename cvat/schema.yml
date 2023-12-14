@@ -1523,10 +1523,10 @@ paths:
           description: The invitation is accepted
         '400':
           description: The invitation is expired or already accepted
-  /api/invitations/{key}/reject:
+  /api/invitations/{key}/decline:
     post:
-      operationId: invitations_reject
-      summary: Method rejects the invitation to organization
+      operationId: invitations_decline
+      summary: Method declines the invitation to organization
       parameters:
       - in: path
         name: key
@@ -1544,7 +1544,7 @@ paths:
       - basicAuth: []
       responses:
         '204':
-          description: The invitation has been rejected
+          description: The invitation has been declined
   /api/invitations/{key}/resend:
     post:
       operationId: invitations_resend

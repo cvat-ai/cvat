@@ -312,9 +312,9 @@ function build(): CVATCore {
                 );
                 return result;
             },
-            async rejectInvitation(key) {
+            async declineInvitation(key) {
                 const result = await PluginRegistry.apiWrapper(
-                    cvat.organizations.rejectInvitation,
+                    cvat.organizations.declineInvitation,
                     key,
                 );
                 return result;

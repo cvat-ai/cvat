@@ -347,8 +347,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         serverProxy.organizations.acceptInvitation,
     );
     implementationMixin(
-        cvat.organizations.rejectInvitation,
-        serverProxy.organizations.rejectInvitation,
+        cvat.organizations.declineInvitation,
+        serverProxy.organizations.declineInvitation,
     );
     implementationMixin(cvat.organizations.invitations, (async (filter) => {
         checkFilter(filter, {

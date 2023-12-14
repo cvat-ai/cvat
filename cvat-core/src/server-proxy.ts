@@ -265,9 +265,9 @@ Axios.interceptors.request.use((reqConfig) => {
     // we want to get invitations from all organizations
     const { backendAPI } = config;
     const getInvitations = reqConfig.url.endsWith('/invitations') && reqConfig.method === 'get';
-    const acceptRejectInvitation = reqConfig.url.startsWith(`${backendAPI}/invitations`) &&
-                                    (reqConfig.url.endsWith('/accept') || reqConfig.url.endsWith('/reject'));
-    if (getInvitations || acceptRejectInvitation) {
+    const acceptDeclineInvitation = reqConfig.url.startsWith(`${backendAPI}/invitations`) &&
+                                    (reqConfig.url.endsWith('/accept') || reqConfig.url.endsWith('/decline'));
+    if (getInvitations || acceptDeclineInvitation) {
         return reqConfig;
     }
 
@@ -481,9 +481,9 @@ async function acceptOrganizationInvitation(
     return orgSlug;
 }
 
-async function rejectOrganizationInvitation(key: string): Promise<void> {
+async function declineOrganizationInvitation(key: string): Promise<void> {
     try {
-        await Axios.post(`${config.backendAPI}/invitations/${key}/reject`);
+        await Axios.post(`${config.backendAPI}/invitations/${key}/decline`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2463,7 +2463,7 @@ export default Object.freeze({
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
         acceptInvitation: acceptOrganizationInvitation,
-        rejectInvitation: rejectOrganizationInvitation,
+        declineInvitation: declineOrganizationInvitation,
     }),
 
     webhooks: Object.freeze({
