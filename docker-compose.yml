@@ -281,7 +281,7 @@ services:
 
   cvat_clickhouse:
     container_name: cvat_clickhouse
-    image: clickhouse/clickhouse-server:22.3-alpine
+    image: clickhouse/clickhouse-server:23.11-alpine
     restart: always
     environment:
       - CLICKHOUSE_DB=cvat
