@@ -68,6 +68,11 @@ class InvitationReadSerializer(serializers.ModelSerializer):
         model = Invitation
         fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization', 'expired', 'organization_info']
         read_only_fields = fields
+        extra_kwargs = {
+            'expired': {
+                'allow_null': True,
+            }
+        }
 
 class InvitationWriteSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(Membership.role.field.choices,

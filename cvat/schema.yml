@@ -7365,6 +7365,7 @@ components:
         expired:
           type: boolean
           readOnly: true
+          nullable: true
         organization_info:
           $ref: '#/components/schemas/BasicOrganization'
       required:
