@@ -1796,14 +1796,14 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         # AWS S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
         # Azure Container: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
         # GCS: https://cloud.google.com/storage/docs/buckets#naming
-        COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS = (
+        ALLOWED_RESOURCE_NAME_SYMBOLS = (
             string.ascii_lowercase + string.digits + "-"
         )
-        ALLOWED_RESOURCE_NAME_SYMBOLS = (
-            COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS
-            if provider_type != models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE
-            else COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS + "_"
-        )
+
+        if provider_type == models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
+            ALLOWED_RESOURCE_NAME_SYMBOLS += "_."
+        elif provider_type == models.CloudProviderChoice.AWS_S3:
+            ALLOWED_RESOURCE_NAME_SYMBOLS += "."
 
         # We need to check only basic naming rule
         if (resource := attrs.get("resource")) and (

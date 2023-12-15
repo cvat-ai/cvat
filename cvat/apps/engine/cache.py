@@ -16,6 +16,7 @@ from typing import Optional, Tuple
 
 import cv2
 import PIL.Image
+import pickle # nosec
 from django.conf import settings
 from django.core.cache import caches
 from rest_framework.exceptions import NotFound, ValidationError
@@ -56,8 +57,13 @@ class MediaCache:
             return item
 
         slogger.glob.info(f'Starting to get chunk from cache: key {key}')
-        item = self._cache.get(key)
+        try:
+            item = self._cache.get(key)
+        except pickle.UnpicklingError:
+            slogger.glob.error(f'Unable to get item from cache: key {key}', exc_info=True)
+            item = None
         slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
+
         if not item:
             item = create_item()
         else:
