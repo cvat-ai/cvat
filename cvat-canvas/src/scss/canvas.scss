@@ -93,6 +93,7 @@ image.cvat_canvas_shape_selection {
 }
 
 .cvat_canvas_issue_region {
+    pointer-events: none;
     stroke-width: 0;
 }
 

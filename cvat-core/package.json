@@ -30,6 +30,7 @@
   "dependencies": {
     "@types/lodash": "^4.14.191",
     "axios": "^1.6.0",
+    "axios-retry": "^4.0.0",
     "cvat-data": "link:./../cvat-data",
     "detect-browser": "^5.2.1",
     "error-stack-parser": "^2.0.2",

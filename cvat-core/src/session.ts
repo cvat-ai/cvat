@@ -504,10 +504,6 @@ export class Job extends Session {
                 assignee: {
                     get: () => data.assignee,
                     set: (assignee) => {
-                        if ((assignee?.id || null) === (data.assignee?.id || null)) {
-                            return;
-                        }
-
                         if (assignee !== null && !(assignee instanceof User)) {
                             throw new ArgumentError('Value must be a user instance');
                         }
@@ -518,10 +514,6 @@ export class Job extends Session {
                 stage: {
                     get: () => data.stage,
                     set: (stage) => {
-                        if (stage === data.stage) {
-                            return;
-                        }
-
                         const type = JobStage;
                         let valueInEnum = false;
                         for (const value in type) {
@@ -544,10 +536,6 @@ export class Job extends Session {
                 state: {
                     get: () => data.state,
                     set: (state) => {
-                        if (state === data.state) {
-                            return;
-                        }
-
                         const type = JobState;
                         let valueInEnum = false;
                         for (const value in type) {

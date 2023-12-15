@@ -76,7 +76,7 @@ context('Basic markdown pipeline', () => {
                 cy.visit(`/tasks/${taskID}`);
                 cy.get('.cvat-task-details').should('exist').and('be.visible');
                 cy.assignTaskToUser(additionalUsers.taskAssignee.username);
-                cy.assignJobToUser(0, additionalUsers.jobAssignee.username);
+                cy.assignJobToUser(jobID, additionalUsers.jobAssignee.username);
             });
         });
     });

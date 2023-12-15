@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import io
 import os
 import os.path as osp
 from PIL import Image
@@ -679,7 +678,7 @@ class DataChunkGetter:
                 buff, mime = cache.get_frame_context_images(db_data, self.number)
                 if not buff:
                     return HttpResponseNotFound()
-                return HttpResponse(io.BytesIO(buff), content_type=mime)
+                return HttpResponse(buff, content_type=mime)
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
