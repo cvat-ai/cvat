@@ -46,9 +46,12 @@ ORG_ROLES = ["owner", "maintainer", "supervisor", "worker", None]
 
 
 def RESOURCES(scope):
-    return [
-        {"id": random.randrange(300, 400), "membership": {"role": role}} for role in ORG_ROLES
-    ]
+    if scope == "list":
+        return [None]
+    else:
+        return [
+            {"id": random.randrange(300, 400), "membership": {"role": role}} for role in ORG_ROLES
+        ]
 
 def eval_rule(scope, context, ownership, privilege, membership, data):
     if privilege == "admin":
@@ -123,6 +126,8 @@ def get_name(scope, context, ownership, privilege, membership, resource):
 def is_valid(scope, context, ownership, privilege, membership, resource):
     if context == "sandbox" and membership:
         return False
+    if scope == "list":
+        return not ownership == "self"
     if context == "sandbox" and resource["membership"]["role"] is not None:
         return False
     if context == "organization" and membership is None:
