@@ -276,6 +276,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
         CREATE = 'create'
         DELETE = 'delete'
         ACCEPT = 'accept'
+        DECLINE = 'decline'
         RESEND = 'resend'
         VIEW = 'view'
 
@@ -305,6 +306,9 @@ class InvitationPermission(OpenPolicyAgentPermission):
             'partial_update': Scopes.ACCEPT if 'accepted' in
                 request.query_params else Scopes.RESEND,
             'retrieve': Scopes.VIEW,
+            'accept': Scopes.ACCEPT,
+            'decline': Scopes.DECLINE,
+            'resend': Scopes.RESEND,
         }.get(view.action)]
 
     def get_resource(self):

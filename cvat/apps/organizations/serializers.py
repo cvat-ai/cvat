@@ -5,17 +5,15 @@
 
 from django.contrib.auth import get_user_model
 from allauth.account.models import EmailAddress
-from allauth.account.adapter import get_adapter
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.utils.crypto import get_random_string
 from django.db import transaction
 
 from rest_framework import serializers
 from distutils.util import strtobool
 from cvat.apps.engine.serializers import BasicUserSerializer
-from cvat.apps.iam.serializers import RegisterSerializerEx
+from cvat.apps.iam.utils import get_dummy_user
 from .models import Invitation, Membership, Organization
 
 class OrganizationReadSerializer(serializers.ModelSerializer):
@@ -24,6 +22,12 @@ class OrganizationReadSerializer(serializers.ModelSerializer):
         model = Organization
         fields = ['id', 'slug', 'name', 'description', 'created_date',
             'updated_date', 'contact', 'owner']
+        read_only_fields = fields
+
+class BasicOrganizationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ['id', 'slug']
         read_only_fields = fields
 
 class OrganizationWriteSerializer(serializers.ModelSerializer):
@@ -58,12 +62,18 @@ class InvitationReadSerializer(serializers.ModelSerializer):
     organization = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(),
         source='membership.organization')
+    organization_info = BasicOrganizationSerializer(source='membership.organization')
     owner = BasicUserSerializer(allow_null=True)
 
     class Meta:
         model = Invitation
-        fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization']
+        fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization', 'expired', 'organization_info']
         read_only_fields = fields
+        extra_kwargs = {
+            'expired': {
+                'allow_null': True,
+            }
+        }
 
 class InvitationWriteSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(Membership.role.field.choices,
@@ -91,8 +101,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
             del membership_data['user']
         except ObjectDoesNotExist:
             user_email = membership_data['user']['email']
-            user = User.objects.create_user(username=user_email, password=get_random_string(length=32),
-                email=user_email, is_active=False)
+            user = User.objects.create_user(username=user_email, email=user_email)
             user.set_unusable_password()
             email = EmailAddress.objects.create(user=user, email=user_email, primary=True, verified=False)
             user.save()
@@ -114,8 +123,8 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
     def save(self, request, **kwargs):
         invitation = super().save(**kwargs)
-        if not strtobool(settings.ORG_INVITATION_CONFIRM) and invitation.membership.user.is_active:
-            # For existing users we auto-accept all invitations
+        dummy_user = get_dummy_user(invitation.membership.user.email)
+        if not strtobool(settings.ORG_INVITATION_CONFIRM) and not dummy_user:
             invitation.accept()
         else:
             invitation.send(request)
@@ -145,25 +154,6 @@ class MembershipWriteSerializer(serializers.ModelSerializer):
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
         read_only_fields = ['user', 'organization', 'is_active', 'joined_date']
-
-class AcceptInvitationWriteSerializer(RegisterSerializerEx):
-    def get_fields(self):
-        fields = super().get_fields()
-        fields.pop('email', default=None)
-        return fields
-
-    def save(self, request, invitation):
-        self.cleaned_data = self.get_cleaned_data()
-        user = invitation.membership.user
-        user.is_active = True
-        email = EmailAddress.objects.get(email=user.email)
-        get_adapter(request).confirm_email(request, email)
-        user.first_name = self.cleaned_data['first_name']
-        user.last_name = self.cleaned_data['last_name']
-        user.username = self.cleaned_data['username']
-        user.set_password(self.cleaned_data['password1'])
-        user.save()
-        return user
 
 class AcceptInvitationReadSerializer(serializers.Serializer):
     organization_slug = serializers.CharField()

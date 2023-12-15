@@ -24,7 +24,7 @@ import { AnnotationFormats } from './annotation-formats';
 import { Task, Job } from './session';
 import Project from './project';
 import CloudStorage from './cloud-storage';
-import Organization from './organization';
+import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import { SerializedAsset } from './server-response-types';
@@ -342,27 +342,25 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             organizationSlug: null,
         };
     });
-    implementationMixin(cvat.organizations.acceptInvitation, async (
-        username,
-        firstName,
-        lastName,
-        email,
-        password,
-        userConfirmations,
-        key,
-    ) => {
-        const orgSlug = await serverProxy.organizations.acceptInvitation(
-            username,
-            firstName,
-            lastName,
-            email,
-            password,
-            userConfirmations,
-            key,
-        );
+    implementationMixin(
+        cvat.organizations.acceptInvitation,
+        serverProxy.organizations.acceptInvitation,
+    );
+    implementationMixin(
+        cvat.organizations.declineInvitation,
+        serverProxy.organizations.declineInvitation,
+    );
+    implementationMixin(cvat.organizations.invitations, (async (filter) => {
+        checkFilter(filter, {
+            page: isInteger,
+            filter: isString,
+        });
+        checkExclusiveFields(filter, ['filter'], ['page']);
 
-        return orgSlug;
-    });
+        const invitationsData = await serverProxy.organizations.invitations(filter);
+        const invitations = invitationsData.results.map((invitationData) => new Invitation({ ...invitationData }));
+        return Object.assign(invitations, { count: invitationsData.count });
+    }) as typeof cvat.organizations.invitations);
 
     implementationMixin(cvat.webhooks.get, async (filter) => {
         checkFilter(filter, {

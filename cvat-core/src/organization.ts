@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedOrganization, SerializedOrganizationContact, SerializedUser } from './server-response-types';
+import {
+    SerializedInvitationData, SerializedOrganization, SerializedOrganizationContact, SerializedUser,
+} from './server-response-types';
 import { checkObjectType, isEnum } from './common';
 import config from './config';
 import { MembershipRole } from './enums';
@@ -12,12 +14,6 @@ import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import User from './user';
 
-interface SerializedInvitationData {
-    created_date: string;
-    key: string;
-    owner: SerializedUser;
-}
-
 interface SerializedMembershipData {
     id: number;
     user: SerializedUser;
@@ -25,69 +21,6 @@ interface SerializedMembershipData {
     joined_date: string;
     role: MembershipRole;
     invitation: SerializedInvitationData | null;
-}
-
-export class Invitation {
-    #createdDate: string;
-    #owner: User | null;
-    #key: string;
-
-    constructor(initialData: SerializedInvitationData) {
-        this.#createdDate = initialData.created_date;
-        this.#owner = initialData.owner ? new User(initialData.owner) : null;
-        this.#key = initialData.key;
-    }
-
-    get owner(): User | null {
-        return this.#owner;
-    }
-
-    get createdDate(): string {
-        return this.#createdDate;
-    }
-
-    get key(): string {
-        return this.#key;
-    }
-}
-
-export class Membership {
-    #id: number;
-    #user: User;
-    #isActive: boolean;
-    #joinedDate: string;
-    #role: MembershipRole;
-    #invitation: Invitation | null;
-
-    constructor(initialData: SerializedMembershipData) {
-        this.#id = initialData.id;
-        this.#user = new User(initialData.user);
-        this.#isActive = initialData.is_active;
-        this.#joinedDate = initialData.joined_date;
-        this.#role = initialData.role;
-        this.#invitation = initialData.invitation ? new Invitation(initialData.invitation) : null;
-    }
-
-    get id(): number {
-        return this.#id;
-    }
-
-    get user(): User {
-        return this.#user;
-    }
-
-    get isActive(): boolean {
-        return this.#isActive;
-    }
-    get joinedDate(): string {
-        return this.#joinedDate;
-    }
-    get role(): MembershipRole {
-        return this.#role;
-    }
-    get invitation(): Invitation {
-        return this.#invitation;
-    }
 }
 
 export default class Organization {
@@ -271,6 +204,87 @@ export default class Organization {
     }
 }
 
+export class Invitation {
+    #createdDate: string;
+    #owner: User | null;
+    #key: string;
+    #expired: boolean;
+    #organization: number;
+    #organizationInfo: Organization;
+
+    constructor(initialData: SerializedInvitationData) {
+        this.#createdDate = initialData.created_date;
+        this.#owner = initialData.owner ? new User(initialData.owner) : null;
+        this.#key = initialData.key;
+        this.#expired = initialData.expired;
+        this.#organization = initialData.organization;
+        this.#organizationInfo = new Organization(initialData.organization_info);
+    }
+
+    get owner(): User | null {
+        return this.#owner;
+    }
+
+    get createdDate(): string {
+        return this.#createdDate;
+    }
+
+    get key(): string {
+        return this.#key;
+    }
+
+    get expired(): boolean {
+        return this.#expired;
+    }
+
+    get organization(): number | Organization {
+        return this.#organization;
+    }
+
+    get organizationInfo(): Organization {
+        return this.#organizationInfo;
+    }
+}
+
+export class Membership {
+    #id: number;
+    #user: User;
+    #isActive: boolean;
+    #joinedDate: string;
+    #role: MembershipRole;
+    #invitation: Invitation | null;
+
+    constructor(initialData: SerializedMembershipData) {
+        this.#id = initialData.id;
+        this.#user = new User(initialData.user);
+        this.#isActive = initialData.is_active;
+        this.#joinedDate = initialData.joined_date;
+        this.#role = initialData.role;
+        this.#invitation = initialData.invitation ? new Invitation(initialData.invitation) : null;
+    }
+
+    get id(): number {
+        return this.#id;
+    }
+
+    get user(): User {
+        return this.#user;
+    }
+
+    get isActive(): boolean {
+        return this.#isActive;
+    }
+    get joinedDate(): string {
+        return this.#joinedDate;
+    }
+    get role(): MembershipRole {
+        return this.#role;
+    }
+    get invitation(): Invitation {
+        return this.#invitation;
+    }
+}
+
 Object.defineProperties(Organization.prototype.save, {
     implementation: {
         writable: false,
@@ -315,7 +329,8 @@ Object.defineProperties(Organization.prototype.members, {
                 let rawInvitation = null;
                 if (invitation) {
                     try {
-                        rawInvitation = await serverProxy.organizations.invitation(invitation);
+                        const invitationData = await serverProxy.organizations.invitations({ key: invitation });
+                        [rawInvitation] = invitationData.results;
                     // eslint-disable-next-line no-empty
                     } catch (e) {}
                 }
@@ -324,7 +339,6 @@ Object.defineProperties(Organization.prototype.members, {
                     invitation: rawInvitation,
                 });
             }));
-
             memberships.count = result.count;
             return memberships;
         },
