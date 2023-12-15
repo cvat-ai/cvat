@@ -13,6 +13,7 @@ from django.db import transaction
 from rest_framework import serializers
 from distutils.util import strtobool
 from cvat.apps.engine.serializers import BasicUserSerializer
+from cvat.apps.iam.utils import get_dummy_user
 from .models import Invitation, Membership, Organization
 
 class OrganizationReadSerializer(serializers.ModelSerializer):
@@ -122,9 +123,10 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
     def save(self, request, **kwargs):
         invitation = super().save(**kwargs)
-        if not strtobool(settings.ORG_INVITATION_CONFIRM):
+        dummy_user = get_dummy_user(invitation.membership.user.email)
+        if not strtobool(settings.ORG_INVITATION_CONFIRM) and not dummy_user:
             invitation.accept()
-        elif settings.EMAIL_BACKEND is not None:
+        else:
             invitation.send(request)
 
         return invitation
