@@ -28,7 +28,6 @@ CVAT offers two versions:
   [**Roboflow and HuggingFace**](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models),
   and **advanced analytics**. We also offer **professional training** and **24-hour SLA support**.
 
-
 See:
 
 - [Tools and formats](#tools-and-formats)
@@ -36,6 +35,8 @@ See:
   - [Annotation tools](#annotation-tools)
 - [Automated labeling](#automated-labeling)
 - [Useful links](#useful-links)
+  - [Cloud](#cloud)
+  - [Self-Hosted](#self-hosted)
 - [Integrations](#integrations)
 - [License Information](#license-information)
 - [Get in touch](#get-in-touch)
@@ -53,7 +54,8 @@ adaptability, and compatibility with a range of formats and tools.
 CVAT's supports the following formats:
 
 - **For 3D**: `.pcd`, `.bin`
-- **For image**: everything supported by the Python Pillow library,
+- **For image**: everything supported by the Python
+  [**Pillow library**](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html),
   including formats like `JPEG`, `PNG`, `BMP`, `GIG`, `PPM`and `TIFF`.
 - **For video**: all formats, supported by ffmpeg, including `MP4`, `AVI`, and `MOV`.
 
@@ -65,26 +67,22 @@ For annotation export and import formats, see
 CVAT offers a wide array of annotation tools,
 each catering to different aspects of image and video labeling:
 
-- **3D Object Annotation**: For annotating objects in three dimensions,
-  providing a comprehensive perspective.
-- **Attribute Annotation Mode**: Allows adding specific
-  attributes to annotations.
-- **Annotation with Rectangles**: Ideal for straightforward
-  object detection tasks.
-- **Annotation with Polygons**: Perfect for detailed
-  segmentation of irregular shapes.
-- **Annotation with Polylines**: Useful for tracing
-  elongated shapes or paths.
-- **Annotation with Ellipses**: Suitable for objects
-  with elliptical shapes.
-- **Annotation with Cuboids**: For 3D representation
-  of objects in two dimensions.
-- **Annotation with Skeletons**: Useful in pose estimation and
-  tracking of articulated objects.
-- **Annotation with Brush Tool**: Allows freehand drawing for
-  detailed and complex annotations.
-- **Annotation with Tags**: Tagging images or video frames for
-  classification or categorization.
+<!--lint disable maximum-line-length-->
+
+| Annotation Tool                                                                            | Use Cases                                                                                                      |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| [**3D Object Annotation**](/docs/manual/advanced/3d-object-annotation-advanced/)           | Ideal for projects that require depth perception and volume estimation, like autonomous vehicle training.      |
+| [**Attribute Annotation Mode**](/docs/manual/advanced/attribute-annotation-mode-advanced/) | Useful for adding detailed information to objects, like color, size, or other specific characteristics.        |
+| [**Annotation with Rectangles**](/docs/manual/advanced/annotation-with-rectangles/)        | Best for simple object detection where objects have a box-like shape, such as detecting windows in a building. |
+| [**Annotation with Polygons**](/docs/manual/advanced/annotation-with-polygons/)            | Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.  |
+| [**Annotation with Polylines**](docs/manual/advanced/annotation-with-polylines/)           | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
+| [**Annotation with Ellipses**](/docs/manual/advanced/annotation-with-ellipses/)            | Ideal for objects like plates, balls, or eyes, where a circular or oval annotation is needed.                  |
+| [**Annotation with Cuboids**](/docs/manual/advanced/annotation-with-cuboids/)              | Useful for 3D objects in 2D images, like boxes or furniture in room layouts.                                   |
+| [**Annotation with Skeletons**](/docs/manual/advanced/skeletons/)                          | Ideal for human pose estimation, animation, and movement analysis in sports or medical fields.                 |
+| [**Annotation with Brush Tool**](/docs/manual/advanced/annotation-with-brush-tool/)        | Perfect for intricate and detailed annotations where precision is key, such as in medical imaging.             |
+| [**Annotation with Tags**](/docs/manual/advanced/annotation-with-tags/)                    | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
+
+<!--lint enable maximum-line-length-->
 
 These tools make CVAT a versatile platform for a range of annotation
 needs, from basic labeling to complex, multidimensional
@@ -133,19 +131,28 @@ Start here if you're unsure where to begin with CVAT.
 
 <!--lint disable maximum-line-length-->
 
-| Name                                                                                           | Type                  | Description                                                                                                                                                                                                                                                         |
-| ---------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [**User Manual**](/docs/manual/)                                                               | Cloud and Self-hosted | This comprehensive guide covers all CVAT tools available for work. It includes descriptions of all available tools, quality control methods, and procedures for importing and exporting data. This manual is relevant for both CVAT Cloud and Self-Hosted versions. |
-| [**CVAT Complete Workflow Guide for Organizations**](/docs/getting_started/workflow-org/)      | Cloud                 | This guide provides a comprehensive overview of using CVAT for collaboration in organizations.                                                                                                                                                                      |
-| [**Subscription Management**](/docs/enterprise/subscription-managment/)                        | Cloud                 | Learn how to [**choose a plan**](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs), subscribe, and manage your subscription effectively.                                                                                       |
-| [**Contributing**](https://opencv.github.io/cvat/docs/contributing/)                           | -                     | This section details how you can contribute to CVAT, helping to enhance and improve the platform.                                                                                                                                                                   |
-| [**Dataset Management Framework**](https://github.com/cvat-ai/datumaro/blob/develop/README.md) | Self-Hosted           | Specifically for the Self-Hosted version, this framework and CLI tool are essential for building, transforming, and analyzing datasets.                                                                                                                             |
-| [**Server API**](/docs/api_sdk/api/)                                                           | Self-Hosted           | The CVAT server offers a HTTP REST API for interactions. This section explains how client applications, whether they are command line tools, browsers, or scripts, interact with CVAT through HTTP requests and responses.                                          |
-| [**Python SDK**](/docs/api_sdk/sdk/)                                                           | Self-hosted           | The CVAT SDK is a Python library providing access to server interactions and additional functionalities like data validation and serialization.                                                                                                                     |
-| [**Command Line Tool**](/docs/api_sdk/cli/)                                                    | Self-hosted           | This tool offers a straightforward command line interface for managing CVAT tasks. Currently featuring basic functionalities, it has the potential to develop into a more advanced administration tool for CVAT.                                                    |
-| [**XML Annotation Format**](/docs/manual/advanced/xml_format/)                                 | Cloud and Self-hosted | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                                                                 |
-| [**AWS Deployment Guide**](/docs/administration/basics/aws-deployment-guide/)                  | Self-hosted           | A step-by-step guide for deploying CVAT on Amazon Web Services, covering all necessary procedures and tips.                                                                                                                                                         |
-| [**Frequently Asked Questions**](/cvat/docs/faq/)                                              | Cloud and Self-hosted | This section addresses common queries and provides helpful answers and insights about using CVAT.                                                                                                                                                                   |
+### Cloud
+
+| Name                                                                                      | Description                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [**User Manual**](/docs/manual/)                                                          | This comprehensive guide covers all CVAT tools available for work. It includes descriptions of all available tools, quality control methods, and procedures for importing and exporting data. This manual is relevant for both CVAT Cloud and Self-Hosted versions. |
+| [**CVAT Complete Workflow Guide for Organizations**](/docs/getting_started/workflow-org/) | This guide provides a comprehensive overview of using CVAT for collaboration in organizations.                                                                                                                                                                      |
+| [**Subscription Management**](/docs/enterprise/subscription-managment/)                   | Learn how to [**choose a plan**](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs), subscribe, and manage your subscription effectively.                                                                                       |
+| [**XML Annotation Format**](/docs/manual/advanced/xml_format/)                            | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                                                                 |
+| [**Frequently Asked Questions**](/cvat/docs/faq/)                                         | This section addresses common queries and provides helpful answers and insights about using CVAT.                                                                                                                                                                   |
+
+### Self-Hosted
+
+| Name                                                                                           | Description                                                                                                                                                                                                                |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [**Self-hosted Installation Guide**](/docs/administration/basics/installation/)                | Start here to install self-hosted solution on your premises.                                                                                                                                                               |
+| [**Dataset Management Framework**](https://github.com/cvat-ai/datumaro/blob/develop/README.md) | Specifically for the Self-Hosted version, this framework and CLI tool are essential for building, transforming, and analyzing datasets.                                                                                    |
+| [**Server API**](/docs/api_sdk/api/)                                                           | The CVAT server offers a HTTP REST API for interactions. This section explains how client applications, whether they are command line tools, browsers, or scripts, interact with CVAT through HTTP requests and responses. |
+| [**Python SDK**](/docs/api_sdk/sdk/)                                                           | The CVAT SDK is a Python library providing access to server interactions and additional functionalities like data validation and serialization.                                                                            |
+| [**Command Line Tool**](/docs/api_sdk/cli/)                                                    | This tool offers a straightforward command line interface for managing CVAT tasks. Currently featuring basic functionalities, it has the potential to develop into a more advanced administration tool for CVAT.           |
+| [**XML Annotation Format**](/docs/manual/advanced/xml_format/)                                 | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                        |
+| [**AWS Deployment Guide**](/docs/administration/basics/aws-deployment-guide/)                  | A step-by-step guide for deploying CVAT on Amazon Web Services, covering all necessary procedures and tips.                                                                                                                |
+| [**Frequently Asked Questions**](/cvat/docs/faq/)                                              | This section addresses common queries and provides helpful answers and insights about using CVAT.                                                                                                                          |
 
 <!--lint enable maximum-line-length-->
 
@@ -158,45 +165,45 @@ product support or are an integral part of our ecosystem.
 > **Note:** If you're using CVAT, we'd love to
 > hear from you at [contact@cvat.ai](mailto:contact+github@cvat.ai).
 
-- [**Human Protocol**](https://hmt.ai): This platform incorporates CVAT
-  for augmenting its annotation services within the Human Protocol framework.
-- [**FiftyOne**](https://fiftyone.ai): As an open-source tool for dataset
-  management and model analysis in computer vision,
-  FiftyOne is [closely integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html)
-  with CVAT, enhancing annotation capabilities and label refinement.
-- [**Toloka**](https://toloka.ai): Toloka leverages CVAT for its crowdsourced data labeling
-  and annotation services, enriching its
-  diverse task handling capabilities. For mre information, see [**Integration with Toloka**](/docs/integration/toloka/)
+<!--lint disable maximum-line-length-->
+
+| Integrated Service                                                                                     | Available In          | Description                                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [**Human Protocol**](https://hmt.ai)                                                                   | Cloud and Self-hosted | Incorporates CVAT to augment annotation services within the Human Protocol framework, enhancing its capabilities in data labeling.                                                                                                              |
+| [**FiftyOne**](https://fiftyone.ai)                                                                    | Cloud and Self-hosted | An open-source tool for dataset management and model analysis in computer vision, FiftyOne is [closely integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT to enhance annotation capabilities and label refinement. |
+| [**Toloka**](https://toloka.ai)                                                                        | Cloud                 | Utilizes CVAT for crowdsourced data labeling and annotation services, enriching Toloka's diverse task handling capabilities. For more information, see [**Integration with Toloka**](/docs/integration/toloka/).                                |
+| [**Hugging Face and Roboflow**](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models) | Cloud                 | In CVAT Cloud, models from [**Hugging Face**](https://huggingface.co/) and [**Roboflow**](https://roboflow.com/) can be added to enhance computer vision tasks.                                                                                 |
+
+<!--lint enable maximum-line-length-->
 
 ## License Information
 
-This code is distributed under the [**MIT License**](https://opensource.org/licenses/MIT),
-a permissive free software license.
+CVAT includes the following licenses:
 
-Additionally, this software incorporates LGPL-licensed components from
-the [**FFmpeg**](https://www.ffmpeg.org) project.
-For more details, visit [**FFMPEG Legal**](https://www.ffmpeg.org/legal.html).
-Users must independently verify whether their use of FFmpeg necessitates
-additional licenses.
-CVAT.ai Corporation does not provide these licenses
-and is not liable for any related licensing fees incurred through the use of FFmpeg.
+<!--lint disable maximum-line-length-->
 
-For terms of use and confidential information handling,
-see [**Terms of Use**](https://www.cvat.ai/terms-of-use).
+| License Type                                           | Applicable To          | Description                                                                                                                                                                                                                                   |
+| ------------------------------------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [**MIT License**](https://opensource.org/licenses/MIT) | Self-hosted            | This code is distributed under the MIT License, a permissive free software license that allows for broad use, modification, and distribution.                                                                                                 |
+| [**LGPL License (FFmpeg)**](https://www.ffmpeg.org)    | Cloud and Self-hosted  | Incorporates LGPL-licensed components from the FFmpeg project. Users should verify if their use of FFmpeg requires additional licenses. CVAT.ai Corporation does not provide these licenses and is not liable for any related licensing fees. |
+| [**Commercial License**](#)                            | Self-hosted Enterprise | For commercial use of the Enterprise solution of CVAT, a separate commercial license is applicable. This is tailored for businesses and commercial entities.                                                                                  |
+| [**Terms of Use**](https://www.cvat.ai/terms-of-use)   | Cloud and Self-hosted  | Outlines the terms of use and confidential information handling for CVAT. Important for understanding the legal framework of using the platform.                                                                                              |
+
+<!--lint enable maximum-line-length-->
 
 ## Get in touch
 
-> **Note:** For **commercial support
-> inquiries**, please email us directly at [**contact@cvat.ai**](mailto:contact+github@cvat.ai).
+To get in touch, use one of the following channels:
 
-- [**Gitter community**](https://gitter.im/opencv-cvat/public): For questions about using CVAT.
-  This platform is actively monitored by our core team and the broader community,
-  ensuring quick responses to questions. You can also find answers to frequently asked questions here.
+<!--lint disable maximum-line-length-->
 
-- [**Discord channel**](https://discord.gg/S6sRHhuQ7K). For broader
-  discussions and questions, head over to our. This is a space for all things related to CVAT.
-- [**LinkedIn**](https://www.linkedin.com/company/cvat-ai/): For company updates and employment opportunities.
+| Support Channel                                                                                    | Applicable To         | Description                                                                                          |
+| -------------------------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------- |
+| [**Discord Channel**](https://discord.gg/S6sRHhuQ7K)                                               | Cloud and Self-hosted | A space for broader discussions, questions, and all things related to CVAT.                          |
+| [**LinkedIn**](https://www.linkedin.com/company/cvat-ai/)                                          | Cloud and Self-hosted | Follow for company updates, news, and employment opportunities.                                      |
+| [**YouTube Channel**](https://www.youtube.com/@cvat-ai)                                            | Cloud and Self-hosted | Find tutorials and screencasts about CVAT tools.                                                     |
+| [**GitHub Issues**](https://github.com/cvat-ai/cvat/issues)                                        | Cloud and Self-hosted | Report bugs or contribute to the ongoing development of CVAT.                                        |
+| [**Customer Support Channel**](https://youtrack.cvat.ai/form/447d9c98-ab4b-466e-bf9d-004f01b22f73) | Cloud (Paid Users)    | Exclusive support for CVAT.ai cloud paid users.                                                      |
+| **Commercial Support Inquiries**                                                                   | Cloud and Self-hosted | For direct commercial support inquiries, email [**contact@cvat.ai**](mailto:contact+github@cvat.ai). |
 
-- [**YouTube channel**](https://www.youtube.com/@cvat-ai): For tutorials and screencasts about CVAT tools.
-
-- [**GitHub issues**](https://github.com/cvat-ai/cvat/issues): To report bugs.
+<!--lint enable maximum-line-length-->
