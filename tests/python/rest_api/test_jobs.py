@@ -1258,7 +1258,7 @@ class TestJobDataset:
 
     def test_can_export_dataset(self, admin_user: str, jobs_with_shapes: List):
         job = jobs_with_shapes[0]
-        response = self._export_dataset(admin_user, job["id"], format="CVAT for images 1.1")
+        response = self._export_dataset(admin_user, job["id"])
         assert response.data
 
     def test_non_admin_can_export_dataset(self, users, tasks, jobs_with_shapes):
@@ -1271,7 +1271,7 @@ class TestJobDataset:
                 and tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_dataset(username, job_id, format="CVAT for images 1.1")
+        response = self._export_dataset(username, job_id)
         assert response.data
 
     def test_non_admin_can_export_annotations(self, users, tasks, jobs_with_shapes):
@@ -1284,7 +1284,7 @@ class TestJobDataset:
                 and tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_annotations(username, job_id, format="CVAT for images 1.1")
+        response = self._export_annotations(username, job_id)
         assert response.data
 
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])

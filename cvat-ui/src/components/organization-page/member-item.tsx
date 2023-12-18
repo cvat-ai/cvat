@@ -57,7 +57,7 @@ function MemberItem(props: Props): JSX.Element {
             </Menu>
         )}
         >
-            <MoreOutlined className='cvat-organization-invintation-actions-button cvat-menu-icon' />
+            <MoreOutlined className='cvat-organization-invitation-actions-button cvat-menu-icon' />
         </Dropdown>
     );
 

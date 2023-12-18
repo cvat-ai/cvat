@@ -5,9 +5,7 @@
 
 import Axios from 'axios';
 
-Axios.defaults.withCredentials = true;
-Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
-Axios.defaults.xsrfCookieName = 'csrftoken';
+import './axios-config';
 
 onmessage = (e) => {
     Axios.get(e.data.url, e.data.config)

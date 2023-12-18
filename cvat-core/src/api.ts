@@ -21,6 +21,7 @@ import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
+import BaseSingleFrameAction from './annotations-actions';
 
 import * as enums from './enums';
 
@@ -179,6 +180,42 @@ function build(): CVATCore {
                 return result;
             },
         },
+        actions: {
+            async list() {
+                const result = await PluginRegistry.apiWrapper(cvat.actions.list);
+                return result;
+            },
+            async register(action: BaseSingleFrameAction) {
+                const result = await PluginRegistry.apiWrapper(cvat.actions.register, action);
+                return result;
+            },
+            async run(
+                instance: Job | Task,
+                actionsChain: BaseSingleFrameAction[],
+                actionsParameters: Record<string, string>[],
+                frameFrom: number,
+                frameTo: number,
+                filters: string[],
+                onProgress: (
+                    message: string,
+                    progress: number,
+                ) => void,
+                cancelled: () => boolean,
+            ) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.actions.run,
+                    instance,
+                    actionsChain,
+                    actionsParameters,
+                    frameFrom,
+                    frameTo,
+                    filters,
+                    onProgress,
+                    cancelled,
+                );
+                return result;
+            },
+        },
         lambda: {
             async list() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.list);
@@ -268,17 +305,22 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
                 return result;
             },
-            async acceptInvitation(username, firstName, lastName, email, password, userConfirmations, key) {
+            async acceptInvitation(key) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.organizations.acceptInvitation,
-                    username,
-                    firstName,
-                    lastName,
-                    email,
-                    password,
-                    userConfirmations,
                     key,
                 );
+                return result;
+            },
+            async declineInvitation(key) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.organizations.declineInvitation,
+                    key,
+                );
+                return result;
+            },
+            async invitations(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.invitations, filter);
                 return result;
             },
         },
@@ -330,6 +372,7 @@ function build(): CVATCore {
             Organization,
             Webhook,
             AnnotationGuide,
+            BaseSingleFrameAction,
         },
         utils: {
             mask2Rle,

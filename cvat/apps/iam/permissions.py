@@ -54,7 +54,7 @@ class PermissionResult:
 
 def get_organization(request, obj):
     # Try to get organization from an object otherwise, return the organization that is specified in query parameters
-    if obj is not None and isinstance(obj, Organization):
+    if isinstance(obj, Organization):
         return obj
 
     if obj:
@@ -95,10 +95,6 @@ def get_iam_context(request, obj):
         package, attr = builder_func_path.rsplit('.', 1)
         builder_func = getattr(import_module(package), attr)
         iam_context.update(builder_func(request, organization, membership))
-
-    # FIXME: The primary app should know nothing about is_crowdsourcing plugin.
-    if organization and not request.user.is_superuser and membership is None and not iam_context.get('is_crowdsourcing', False):
-        raise PermissionDenied({'message': 'You should be an active member in the organization'})
 
     return iam_context
 
@@ -280,6 +276,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
         CREATE = 'create'
         DELETE = 'delete'
         ACCEPT = 'accept'
+        DECLINE = 'decline'
         RESEND = 'resend'
         VIEW = 'view'
 
@@ -309,6 +306,9 @@ class InvitationPermission(OpenPolicyAgentPermission):
             'partial_update': Scopes.ACCEPT if 'accepted' in
                 request.query_params else Scopes.RESEND,
             'retrieve': Scopes.VIEW,
+            'accept': Scopes.ACCEPT,
+            'decline': Scopes.DECLINE,
+            'resend': Scopes.RESEND,
         }.get(view.action)]
 
     def get_resource(self):
@@ -1942,6 +1942,13 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                     permissions.append(TaskPermission.create_base_perm(
                         request, view, iam_context=iam_context, scope=task_scope, obj=obj.task
                     ))
+                elif scope == cls.Scopes.LIST:
+                    if task_id := request.query_params.get("task_id", None):
+                        permissions.append(TaskPermission.create_scope_view(
+                            request, int(task_id), iam_context=iam_context,
+                        ))
+
+                    permissions.append(cls.create_scope_list(request, iam_context))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 

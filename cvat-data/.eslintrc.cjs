@@ -5,7 +5,7 @@
 
 module.exports = {
     ignorePatterns: [
-        'src/3rdparty/**',
+        'src/ts/3rdparty/**',
         'node_modules/**',
         'dist/**',
     ],

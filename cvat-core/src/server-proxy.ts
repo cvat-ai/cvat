@@ -9,11 +9,13 @@ import Axios, { AxiosError, AxiosResponse } from 'axios';
 import * as tus from 'tus-js-client';
 import { ChunkQuality } from 'cvat-data';
 
+import './axios-config';
 import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
+    SerializedQualitySettingsData, SerializedInvitationData,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -242,9 +244,6 @@ class WorkerWrappedAxios {
     }
 }
 
-Axios.defaults.withCredentials = true;
-Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
-Axios.defaults.xsrfCookieName = 'csrftoken';
 const workerAxios = new WorkerWrappedAxios();
 Axios.interceptors.request.use((reqConfig) => {
     if ('params' in reqConfig && 'org' in reqConfig.params) {
@@ -260,6 +259,15 @@ Axios.interceptors.request.use((reqConfig) => {
     }
 
     if (reqConfig.url.endsWith('/limits')) {
+        return reqConfig;
+    }
+
+    // we want to get invitations from all organizations
+    const { backendAPI } = config;
+    const getInvitations = reqConfig.url.endsWith('/invitations') && reqConfig.method === 'get';
+    const acceptDeclineInvitation = reqConfig.url.startsWith(`${backendAPI}/invitations`) &&
+                                    (reqConfig.url.endsWith('/accept') || reqConfig.url.endsWith('/decline'));
+    if (getInvitations || acceptDeclineInvitation) {
         return reqConfig;
     }
 
@@ -459,31 +467,26 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
 }
 
 async function acceptOrganizationInvitation(
-    username: string,
-    firstName: string,
-    lastName: string,
-    email: string,
-    password: string,
-    confirmations: Record<string, string>,
     key: string,
-): Promise<SerializedAcceptInvitation> {
+): Promise<string> {
     let response = null;
     let orgSlug = null;
     try {
-        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`, {
-            username,
-            first_name: firstName,
-            last_name: lastName,
-            password1: password,
-            password2: password,
-            confirmations,
-        });
+        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`);
         orgSlug = response.data.organization_slug;
     } catch (errorData) {
         throw generateError(errorData);
     }
 
     return orgSlug;
+}
+
+async function declineOrganizationInvitation(key: string): Promise<void> {
+    try {
+        await Axios.post(`${config.backendAPI}/invitations/${key}/decline`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 async function getSelf(): Promise<SerializedUser> {
@@ -2052,12 +2055,29 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
     }
 }
 
-async function getMembershipInvitation(id) {
+async function getMembershipInvitations(
+    filter: { page?: number, filter?: string, key?: string },
+): Promise<{ results: SerializedInvitationData[], count: number }> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/invitations/${id}`);
+        const key = filter.key || null;
+
+        if (key) {
+            response = await Axios.get(`${backendAPI}/invitations/${key}`);
+            return ({
+                results: [response.data],
+                count: 1,
+            });
+        }
+
+        response = await Axios.get(`${backendAPI}/invitations`, {
+            params: {
+                ...filter,
+                page_size: 11,
+            },
+        });
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
@@ -2436,13 +2456,14 @@ export default Object.freeze({
         create: createOrganization,
         update: updateOrganization,
         members: getOrganizationMembers,
-        invitation: getMembershipInvitation,
+        invitations: getMembershipInvitations,
         delete: deleteOrganization,
         invite: inviteOrganizationMembers,
         resendInvitation: resendOrganizationInvitation,
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
         acceptInvitation: acceptOrganizationInvitation,
+        declineInvitation: declineOrganizationInvitation,
     }),
 
     webhooks: Object.freeze({
