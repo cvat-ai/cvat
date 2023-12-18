@@ -111,10 +111,10 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
 
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.sliceTool('#cvat_canvas_shape_1', [1, 1], [[250, 500], [720, 500]]);
+            cy.sliceShape('#cvat_canvas_shape_1', [1, 1], [[250, 500], [720, 500]]);
             checkSliceSuccess();
 
-            cy.joinTool(['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'], [[1, 1], [1, 1]]);
+            cy.joinShapes(['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'], [[1, 1], [1, 1]]);
             checkJoinSuccess();
         });
 
@@ -124,10 +124,10 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
 
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.sliceTool('#cvat_canvas_shape_1', [1, 1], [[150, 230], [300, 230]]);
+            cy.sliceShape('#cvat_canvas_shape_1', [1, 1], [[150, 230], [300, 230]]);
             checkSliceSuccess();
 
-            cy.joinTool(['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'], [[1, 1], [1, 1]]);
+            cy.joinShapes(['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'], [[1, 1], [1, 1]]);
             checkJoinSuccess();
         });
 
@@ -137,7 +137,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
 
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.sliceTool(
+            cy.sliceShape(
                 '#cvat_canvas_shape_1',
                 [50, 55],
                 [
@@ -149,7 +149,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             );
             checkSliceSuccess();
 
-            cy.joinTool(
+            cy.joinShapes(
                 ['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'],
                 [[50, 5], [50, 50]],
                 { shortcut: 'j' },
@@ -159,7 +159,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
 
         it('Draw polygon. Slice into two shapes.', () => {
             cy.createPolygon(polygon);
-            cy.sliceTool(
+            cy.sliceShape(
                 '#cvat_canvas_shape_1',
                 [1, 1],
                 [
@@ -171,7 +171,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
 
         it('Draw polygon. Slice with polyline.', () => {
             cy.createPolygon(polygon);
-            cy.sliceTool(
+            cy.sliceShape(
                 '#cvat_canvas_shape_1',
                 [1, 1],
                 [
@@ -184,7 +184,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
 
         it('Draw polygon. Check removing of slicing polyline points.', () => {
             cy.createPolygon(polygon);
-            cy.sliceTool(
+            cy.sliceShape(
                 '#cvat_canvas_shape_1',
                 [1, 1],
                 [
@@ -208,7 +208,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
 
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.sliceTool(
+            cy.sliceShape(
                 '#cvat_canvas_shape_1',
                 [50, 55],
                 [

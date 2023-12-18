@@ -1431,7 +1431,7 @@ Cypress.Commands.add('finishMaskDrawing', () => {
     cy.get('.cvat-brush-tools-finish').click();
 });
 
-Cypress.Commands.add('sliceTool', (
+Cypress.Commands.add('sliceShape', (
     object,
     initialPosition,
     coordinates,
@@ -1455,7 +1455,7 @@ Cypress.Commands.add('sliceTool', (
     const [initialX, initialY] = initialPosition;
     cy.get(object).click(initialX, initialY);
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains('Set initial').should('exist');
+        cy.contains('Set initial point on the shape contour').should('exist');
     });
 
     cy.get('.cvat-canvas-container').then(($canvas) => {
@@ -1476,7 +1476,7 @@ Cypress.Commands.add('sliceTool', (
     });
 });
 
-Cypress.Commands.add('joinTool', (
+Cypress.Commands.add('joinShapes', (
     objects,
     coordinates,
     options = {
@@ -1484,12 +1484,16 @@ Cypress.Commands.add('joinTool', (
     },
 ) => {
     const { shortcut } = options;
-    if (shortcut) {
-        cy.get('body').type(shortcut);
-    } else {
-        cy.get('.cvat-join-control').click();
-        cy.get('.cvat-join-control').trigger('mouseleave');
-    }
+
+    const interactWithTool = () => {
+        if (shortcut) {
+            cy.get('body').type(shortcut);
+        } else {
+            cy.get('.cvat-join-control').click();
+            cy.get('.cvat-join-control').trigger('mouseleave');
+        }
+    };
+    interactWithTool();
 
     cy.get('.cvat-canvas-hints-container').within(() => {
         cy.contains('Click masks you would like to join').should('exist');
@@ -1498,13 +1502,7 @@ Cypress.Commands.add('joinTool', (
     for (const [index, object] of objects.entries()) {
         cy.get(object).click(coordinates[index][0], coordinates[index][1], { force: true });
     }
-
-    if (shortcut) {
-        cy.get('body').type(shortcut);
-    } else {
-        cy.get('.cvat-join-control').click();
-        cy.get('.cvat-join-control').trigger('mouseleave');
-    }
+    interactWithTool();
 });
 
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
