@@ -7,7 +7,7 @@ import {
     DimensionType, JobStage, JobState, JobType, ProjectStatus,
     ShapeType, StorageLocation,
     ShareFileType, Source, TaskMode, TaskStatus,
-} from 'enums';
+} from './enums';
 
 export interface SerializedAnnotationImporter {
     name: string;
@@ -185,10 +185,6 @@ export interface SerializedRegister {
     username: string;
 }
 
-export interface SerializedAcceptInvitation {
-    organization_slug: string;
-}
-
 export interface SerializedGuide {
     id?: number;
     task_id: number | null;
@@ -239,6 +235,15 @@ export interface SerializedQualitySettingsData {
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
+}
+
+export interface SerializedInvitationData {
+    created_date: string;
+    key: string;
+    owner: SerializedUser;
+    expired: boolean;
+    organization: number;
+    organization_info: SerializedOrganization;
 }
 
 export interface SerializedShape {

@@ -1,6 +1,6 @@
 {
   "name": "cvat-core",
-  "version": "12.2.0",
+  "version": "13.0.0",
   "type": "module",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "src/api.ts",
@@ -30,6 +30,7 @@
   "dependencies": {
     "@types/lodash": "^4.14.191",
     "axios": "^1.6.0",
+    "axios-retry": "^4.0.0",
     "cvat-data": "link:./../cvat-data",
     "detect-browser": "^5.2.1",
     "error-stack-parser": "^2.0.2",

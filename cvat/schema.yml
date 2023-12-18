@@ -1320,7 +1320,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner'].
+           Available filter_fields: ['owner', 'user_id', 'accepted'].
         schema:
           type: string
       - name: org
@@ -1508,14 +1508,12 @@ paths:
         required: true
       tags:
       - invitations
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AcceptInvitationWriteRequest'
-        required: true
       security:
-      - {}
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
       responses:
         '200':
           content:
@@ -1525,10 +1523,32 @@ paths:
           description: The invitation is accepted
         '400':
           description: The invitation is expired or already accepted
+  /api/invitations/{key}/decline:
+    post:
+      operationId: invitations_decline
+      summary: Method declines the invitation to organization
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The invitation has been declined
   /api/invitations/{key}/resend:
     post:
       operationId: invitations_resend
-      summary: Method resends the invitation
+      summary: Method resends the invitation to organization
       parameters:
       - in: path
         name: key
@@ -6131,31 +6151,6 @@ components:
           type: string
       required:
       - organization_slug
-    AcceptInvitationWriteRequest:
-      type: object
-      properties:
-        username:
-          type: string
-          minLength: 5
-          maxLength: 150
-        password1:
-          type: string
-          writeOnly: true
-          minLength: 1
-        password2:
-          type: string
-          writeOnly: true
-          minLength: 1
-        first_name:
-          type: string
-          minLength: 1
-        last_name:
-          type: string
-          minLength: 1
-      required:
-      - password1
-      - password2
-      - username
     AnalyticsReport:
       type: object
       properties:
@@ -6418,6 +6413,16 @@ components:
       oneOf:
       - $ref: '#/components/schemas/ProjectFileRequest'
       nullable: true
+    BasicOrganization:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
     BasicUser:
       type: object
       properties:
@@ -7357,8 +7362,15 @@ components:
           $ref: '#/components/schemas/BasicUser'
         organization:
           type: integer
+        expired:
+          type: boolean
+          readOnly: true
+          nullable: true
+        organization_info:
+          $ref: '#/components/schemas/BasicOrganization'
       required:
       - organization
+      - organization_info
       - owner
       - role
       - user

@@ -5,7 +5,7 @@
 
 import {
     AttrInputType, LabelType, SerializedAttribute, SerializedLabel,
-} from 'server-response-types';
+} from './server-response-types';
 import { ShapeType, AttributeType } from './enums';
 import { ArgumentError } from './exceptions';
 

@@ -27,7 +27,7 @@ services:
 
   cvat_redis:
     container_name: cvat_redis
-    image: eqalpha/keydb:x86_64_v6.3.4
+    image: eqalpha/keydb:x86_64_v6.3.2
     restart: always
     command: [
       "keydb-server",
@@ -223,12 +223,6 @@ services:
     image: traefik:v2.10
     container_name: traefik
     restart: always
-    command:
-    # labels:
-    #   - traefik.enable=true
-    #   - traefik.http.routers.dashboard.entrypoints=dashboard
-    #   - traefik.http.routers.dashboard.service=api@internal
-    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
     ports:
       - 8080:8080
       - 8090:8090
@@ -248,10 +242,14 @@ services:
       TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
       TRAEFIK_PROVIDERS_DOCKER_NETWORK: cvat
       TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/rules
-
-      # Uncomment to get Traefik dashboard
-      # TRAEFIK_API_DASHBOARD: "true"
-      # TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS: :8090
+    # Uncomment to get Traefik dashboard
+    #   TRAEFIK_API_DASHBOARD: "true"
+    #   TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS: :8090
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.dashboard.entrypoints=dashboard
+    #   - traefik.http.routers.dashboard.service=api@internal
+    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro
@@ -283,7 +281,7 @@ services:
 
   cvat_clickhouse:
     container_name: cvat_clickhouse
-    image: clickhouse/clickhouse-server:22.3-alpine
+    image: clickhouse/clickhouse-server:23.11-alpine
     restart: always
     environment:
       - CLICKHOUSE_DB=cvat

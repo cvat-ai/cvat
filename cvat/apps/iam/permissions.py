@@ -96,10 +96,6 @@ def get_iam_context(request, obj):
         builder_func = getattr(import_module(package), attr)
         iam_context.update(builder_func(request, organization, membership))
 
-    # FIXME: The primary app should know nothing about is_crowdsourcing plugin.
-    if organization and not request.user.is_superuser and membership is None and not iam_context.get('is_crowdsourcing', False):
-        raise PermissionDenied({'message': 'You should be an active member in the organization'})
-
     return iam_context
 
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
@@ -280,6 +276,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
         CREATE = 'create'
         DELETE = 'delete'
         ACCEPT = 'accept'
+        DECLINE = 'decline'
         RESEND = 'resend'
         VIEW = 'view'
 
@@ -309,6 +306,9 @@ class InvitationPermission(OpenPolicyAgentPermission):
             'partial_update': Scopes.ACCEPT if 'accepted' in
                 request.query_params else Scopes.RESEND,
             'retrieve': Scopes.VIEW,
+            'accept': Scopes.ACCEPT,
+            'decline': Scopes.DECLINE,
+            'resend': Scopes.RESEND,
         }.get(view.action)]
 
     def get_resource(self):
