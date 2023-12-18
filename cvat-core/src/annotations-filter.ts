@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import jsonLogic from 'json-logic-js';
-import { SerializedData } from 'object-state';
+import { SerializedData } from './object-state';
 import { AttributeType, ObjectType, ShapeType } from './enums';
 
 function adjustName(name): string {

@@ -23,6 +23,7 @@ import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { OrganizationActionsTypes } from 'actions/organization-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
 import { WebhooksActionsTypes } from 'actions/webhooks-actions';
+import { InvitationsActionTypes } from 'actions/invitations-actions';
 
 import { AnalyticsActionsTypes } from 'actions/analytics-actions';
 import { NotificationsState } from '.';
@@ -38,7 +39,6 @@ const defaultState: NotificationsState = {
             requestPasswordReset: null,
             resetPassword: null,
             loadAuthActions: null,
-            acceptingInvitation: null,
         },
         projects: {
             fetching: null,
@@ -152,7 +152,6 @@ const defaultState: NotificationsState = {
             inviting: null,
             updatingMembership: null,
             removingMembership: null,
-            resendingInvitation: null,
             deletingInvitation: null,
         },
         webhooks: {
@@ -165,6 +164,12 @@ const defaultState: NotificationsState = {
             fetching: null,
             fetchingSettings: null,
             updatingSettings: null,
+        },
+        invitations: {
+            fetching: null,
+            acceptingInvitation: null,
+            decliningInvitation: null,
+            resendingInvitation: null,
         },
     },
     messages: {
@@ -181,7 +186,6 @@ const defaultState: NotificationsState = {
             registerDone: '',
             requestPasswordResetDone: '',
             resetPasswordDone: '',
-            acceptInvitationDone: '',
         },
         projects: {
             restoringDone: '',
@@ -196,7 +200,10 @@ const defaultState: NotificationsState = {
             annotation: '',
             backup: '',
         },
-        organizations: {
+        invitations: {
+            newInvitations: '',
+            acceptInvitationDone: '',
+            declineInvitationDone: '',
             resendingInvitation: '',
         },
     },
@@ -390,31 +397,97 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AuthActionTypes.ACCEPT_INVITATION_SUCCESS: {
-            return {
-                ...state,
-                ...state,
-                messages: {
-                    ...state.messages,
-                    auth: {
-                        ...state.messages.auth,
-                        acceptInvitationDone: 'Invitation accepted successfully. You can Sign in now.',
+        case InvitationsActionTypes.GET_INVITATIONS_SUCCESS: {
+            if (action.payload.showNotification) {
+                return {
+                    ...state,
+                    messages: {
+                        ...state.messages,
+                        invitations: {
+                            ...state.messages.invitations,
+                            newInvitations: 'You\'ve received an invitation to join an organization! [Click here](/invitations) to get details.',
+                        },
                     },
-                },
-            };
+                };
+            }
+            return state;
         }
-        case AuthActionTypes.ACCEPT_INVITATION_FAILED: {
+        case InvitationsActionTypes.GET_INVITATIONS_FAILED: {
             return {
                 ...state,
                 errors: {
                     ...state.errors,
-                    auth: {
-                        ...state.errors.auth,
+                    invitations: {
+                        ...state.errors.invitations,
+                        fetching: {
+                            message: 'Could not get invitations',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-get-invitations-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case InvitationsActionTypes.ACCEPT_INVITATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    invitations: {
+                        ...state.errors.invitations,
                         acceptingInvitation: {
                             message: 'Could not accept invitation',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-accept-organization-invitation-failed',
                         },
+                    },
+                },
+            };
+        }
+        case InvitationsActionTypes.DECLINE_INVITATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    invitations: {
+                        ...state.errors.invitations,
+                        decliningInvitation: {
+                            message: 'Could not decline invitation',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-decline-organization-invitation-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case InvitationsActionTypes.RESEND_INVITATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    invitations: {
+                        ...state.errors.invitations,
+                        resendingInvitation: {
+                            message: 'Could not resend invitation',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-resend-organization-invitation-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case InvitationsActionTypes.RESEND_INVITATION_SUCCESS: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    invitations: {
+                        ...state.messages.invitations,
+                        resendingInvitation: 'Invitation was sent successfully',
                     },
                 },
             };
@@ -1637,35 +1710,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-update-organization-membership-failed',
                         },
-                    },
-                },
-            };
-        }
-        case OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    organizations: {
-                        ...state.errors.organizations,
-                        resendingInvitation: {
-                            message: 'Could not resend invitation',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-resend-organization-invintation-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case OrganizationActionsTypes.RESEND_ORGANIZATION_INVITATION_SUCCESS: {
-            return {
-                ...state,
-                messages: {
-                    ...state.messages,
-                    organizations: {
-                        ...state.messages.organizations,
-                        resendingInvitation: 'Invintation was sent sucessfully',
                     },
                 },
             };

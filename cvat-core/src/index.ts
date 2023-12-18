@@ -22,7 +22,7 @@ import Issue from './issue';
 import Comment from './comment';
 import { FrameData } from './frames';
 import CloudStorage from './cloud-storage';
-import Organization from './organization';
+import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
 import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
@@ -88,7 +88,12 @@ export default interface CVATCore {
         get: any;
         activate: any;
         deactivate: any;
-        acceptInvitation: any;
+        acceptInvitation: (key: string) => Promise<string>;
+        declineInvitation: (key: string) => Promise<void>;
+        invitations: (filter: {
+            page?: number,
+            filter?: string,
+        }) => Promise<Invitation[] & { count: number }>;
     };
     webhooks: {
         get: any;

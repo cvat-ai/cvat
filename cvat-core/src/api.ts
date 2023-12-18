@@ -305,17 +305,22 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
                 return result;
             },
-            async acceptInvitation(username, firstName, lastName, email, password, userConfirmations, key) {
+            async acceptInvitation(key) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.organizations.acceptInvitation,
-                    username,
-                    firstName,
-                    lastName,
-                    email,
-                    password,
-                    userConfirmations,
                     key,
                 );
+                return result;
+            },
+            async declineInvitation(key) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.organizations.declineInvitation,
+                    key,
+                );
+                return result;
+            },
+            async invitations(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.invitations, filter);
                 return result;
             },
         },
