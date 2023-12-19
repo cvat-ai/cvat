@@ -438,8 +438,7 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 imageFilters: [],
             };
         }
-        case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
+        case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
             const { states } = action.payload;
             const { shapes } = state;
             const [clampedOpacity, clampedSelectedOpacity] = clampOpacity(states, shapes);

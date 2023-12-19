@@ -212,7 +212,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             return [new Job({ ...jobsData[0], labels: labels.results })];
         }
 
-        const jobs = jobsData.map((jobData) => new Job(jobData));
+        const jobs = jobsData.map((jobData) => new Job(omit(jobData, 'labels')));
         Object.assign(jobs, { count: jobsData.count });
         return jobs;
     });
@@ -252,12 +252,15 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                 const labels = await serverProxy.labels.get({ task_id: taskItem.id });
                 const jobs = await serverProxy.jobs.get({ task_id: taskItem.id }, true);
                 return new Task({
-                    ...taskItem, progress: taskItem.jobs, jobs, labels: labels.results,
+                    ...omit(taskItem, ['jobs', 'labels']),
+                    progress: taskItem.jobs,
+                    jobs,
+                    labels: labels.results,
                 });
             }
 
             return new Task({
-                ...taskItem,
+                ...omit(taskItem, ['jobs', 'labels']),
                 progress: taskItem.jobs,
             });
         }));
@@ -291,9 +294,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                 return new Project({ ...projectItem, labels: labels.results });
             }
 
-            return new Project({
-                ...projectItem,
-            });
+            return new Project({ ...projectItem });
         }));
 
         Object.assign(projects, { count: projectsData.count });

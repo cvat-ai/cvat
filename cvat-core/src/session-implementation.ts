@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import { ArgumentError } from './exceptions';
 import { HistoryActions, JobType, RQStatus } from './enums';
 import { Storage } from './storage';
@@ -23,7 +24,7 @@ import {
 } from './frames';
 import Issue from './issue';
 import { Label } from './labels';
-import { SerializedLabel } from './server-response-types';
+import { SerializedLabel, SerializedTask } from './server-response-types';
 import { checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -441,17 +442,17 @@ export function implementTask(Task) {
 
             this._updateTrigger.reset();
 
-            let serializedTask = null;
+            let serializedTask: SerializedTask = null;
             if (Object.keys(taskData).length) {
                 serializedTask = await serverProxy.tasks.save(this.id, taskData);
             } else {
                 [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
             }
+
             const labels = await serverProxy.labels.get({ task_id: this.id });
             const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
-
             return new Task({
-                ...serializedTask,
+                ...omit(serializedTask, ['jobs', 'labels']),
                 progress: serializedTask.jobs,
                 jobs,
                 labels: labels.results,
@@ -510,9 +511,9 @@ export function implementTask(Task) {
         }, true);
 
         return new Task({
-            ...task,
-            progress: task.jobs,
+            ...omit(task, ['jobs', 'labels']),
             jobs,
+            progress: task.jobs,
             labels: labels.results,
         });
     };
@@ -522,7 +523,7 @@ export function implementTask(Task) {
     ): Promise<TaskClass> {
         if (Number.isInteger(this.id) && this.size === 0) {
             const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);
-            return new Task(serializedTask);
+            return new Task(omit(serializedTask, ['labels', 'jobs']));
         }
 
         return this;
