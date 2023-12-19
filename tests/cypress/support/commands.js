@@ -1431,6 +1431,79 @@ Cypress.Commands.add('finishMaskDrawing', () => {
     cy.get('.cvat-brush-tools-finish').click();
 });
 
+Cypress.Commands.add('sliceShape', (
+    object,
+    coordinates,
+    options = {
+        shortcut: null,
+        slipMode: false,
+    },
+) => {
+    const { shortcut, slipMode } = options;
+    if (shortcut) {
+        cy.get('body').type(shortcut);
+    } else {
+        cy.get('.cvat-slice-control').click();
+        cy.get('.cvat-slice-control').trigger('mouseleave');
+    }
+
+    cy.get('.cvat-canvas-hints-container').within(() => {
+        cy.contains('Click a mask or polygon shape you would like to slice').should('exist');
+    });
+
+    const [initialX, initialY] = coordinates.shift();
+    cy.get(object).click(initialX, initialY);
+    cy.get('.cvat-canvas-hints-container').within(() => {
+        cy.contains('Set initial point on the shape contour').should('exist');
+    });
+
+    cy.get('.cvat-canvas-container').then(($canvas) => {
+        if (slipMode) {
+            const [initX, initY] = coordinates.shift();
+            cy.wrap($canvas).click(initX, initY);
+            const [endX, endY] = coordinates.pop();
+
+            for (const [x, y] of coordinates) {
+                cy.wrap($canvas).trigger('mousemove', x, y, { button: 0, shiftKey: true, bubbles: true });
+            }
+            cy.wrap($canvas).click(endX, endY);
+        } else {
+            for (const [x, y] of coordinates) {
+                cy.wrap($canvas).click(x, y);
+            }
+        }
+    });
+});
+
+Cypress.Commands.add('joinShapes', (
+    objects,
+    coordinates,
+    options = {
+        shortcut: null,
+    },
+) => {
+    const { shortcut } = options;
+
+    const interactWithTool = () => {
+        if (shortcut) {
+            cy.get('body').type(shortcut);
+        } else {
+            cy.get('.cvat-join-control').click();
+            cy.get('.cvat-join-control').trigger('mouseleave');
+        }
+    };
+    interactWithTool();
+
+    cy.get('.cvat-canvas-hints-container').within(() => {
+        cy.contains('Click masks you would like to join').should('exist');
+    });
+
+    for (const [index, object] of objects.entries()) {
+        cy.get(object).click(coordinates[index][0], coordinates[index][1]);
+    }
+    interactWithTool();
+});
+
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
     orig(url, options);
     cy.closeModalUnsupportedPlatform();
