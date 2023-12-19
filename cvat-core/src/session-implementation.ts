@@ -453,7 +453,7 @@ export function implementTask(Task) {
             return new Task({
                 ...serializedTask,
                 progress: serializedTask.jobs,
-                jobs: jobs.results,
+                jobs,
                 labels: labels.results,
             });
         }
@@ -512,7 +512,7 @@ export function implementTask(Task) {
         return new Task({
             ...task,
             progress: task.jobs,
-            jobs: jobs.results,
+            jobs,
             labels: labels.results,
         });
     };

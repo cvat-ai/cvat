@@ -184,7 +184,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         checkExclusiveFields(query, ['jobID', 'filter', 'search'], ['page', 'sort']);
         if ('jobID' in query) {
-            const { results } = await serverProxy.jobs.get({ id: query.jobID });
+            const results = await serverProxy.jobs.get({ id: query.jobID });
             const [job] = results;
             if (job) {
                 // When request job by ID we also need to add labels to work with them
@@ -207,12 +207,12 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         }
 
         const jobsData = await serverProxy.jobs.get(searchParams);
-        if (query.type === JobType.GROUND_TRUTH && jobsData.count) {
-            const labels = await serverProxy.labels.get({ job_id: jobsData.results[0].id });
-            return [new Job({ ...jobsData.results[0], labels: labels.results })];
+        if (query.type === JobType.GROUND_TRUTH && jobsData.count === 1) {
+            const labels = await serverProxy.labels.get({ job_id: jobsData[0].id });
+            return [new Job({ ...jobsData[0], labels: labels.results })];
         }
 
-        const jobs = jobsData.results.map((jobData) => new Job(jobData));
+        const jobs = jobsData.map((jobData) => new Job(jobData));
         Object.assign(jobs, { count: jobsData.count });
         return jobs;
     });
@@ -252,7 +252,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                 const labels = await serverProxy.labels.get({ task_id: taskItem.id });
                 const jobs = await serverProxy.jobs.get({ task_id: taskItem.id }, true);
                 return new Task({
-                    ...taskItem, progress: taskItem.jobs, jobs: jobs.results, labels: labels.results,
+                    ...taskItem, progress: taskItem.jobs, jobs, labels: labels.results,
                 });
             }
 
@@ -262,7 +262,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             });
         }));
 
-        tasks.count = tasksData.count;
+        Object.assign(tasks, { count: tasksData.count });
         return tasks;
     });
 
@@ -296,7 +296,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             });
         }));
 
-        projects.count = projectsData.count;
+        Object.assign(projects, { count: projectsData.count });
         return projects;
     });
 
@@ -321,7 +321,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         }
         const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams);
         const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
-        cloudStorages.count = cloudStoragesData.count;
+        Object.assign(cloudStorages, { count: cloudStoragesData.count });
         return cloudStorages;
     });
 
@@ -384,7 +384,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         const webhooksData = await serverProxy.webhooks.get(searchParams);
         const webhooks = webhooksData.map((webhookData) => new Webhook(webhookData));
-        webhooks.count = webhooksData.count;
+        Object.assign(webhooks, { count: webhooksData.count });
         return webhooks;
     });
 

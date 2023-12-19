@@ -1091,11 +1091,11 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
                 },
             });
         } catch (error) {
-            dispatch(fetchAnnotationsAsync());
             dispatch({
                 type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
                 payload: { error },
             });
+            dispatch(fetchAnnotationsAsync());
         }
     };
 }

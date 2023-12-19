@@ -15,7 +15,7 @@ import {
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
-    SerializedQualitySettingsData, SerializedInvitationData,
+    SerializedQualitySettingsData, SerializedInvitationData, SerializedCloudStorage,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -1316,7 +1316,7 @@ async function createTask(
 async function getJobs(
     filter: JobsFilter = {},
     aggregate = false,
-): Promise<{ results: SerializedJob[], count: number }> {
+): Promise<SerializedJob[] & { count: number }> {
     const { backendAPI } = config;
     const id = filter.id || null;
 
@@ -1324,30 +1324,30 @@ async function getJobs(
     try {
         if (id !== null) {
             response = await Axios.get(`${backendAPI}/jobs/${id}`);
-            return ({
-                results: [response.data],
-                count: 1,
-            });
+            return Object.assign([response.data], { count: 1 });
         }
 
         if (aggregate) {
-            return await fetchAll(`${backendAPI}/jobs`, {
-                ...filter,
-                ...enableOrganization(),
+            response = {
+                data: await fetchAll(`${backendAPI}/jobs`, {
+                    ...filter,
+                    ...enableOrganization(),
+                }),
+            };
+        } else {
+            response = await Axios.get(`${backendAPI}/jobs`, {
+                params: {
+                    ...filter,
+                    page_size: 12,
+                },
             });
         }
-
-        response = await Axios.get(`${backendAPI}/jobs`, {
-            params: {
-                ...filter,
-                page_size: 12,
-            },
-        });
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.data;
+    response.data.results.count = response.data.count;
+    return response.data.results;
 }
 
 async function getIssues(filter) {
@@ -1868,7 +1868,7 @@ async function updateCloudStorage(id, storageDetail) {
     }
 }
 
-async function getCloudStorages(filter = {}) {
+async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] & { count: number }> {
     const { backendAPI } = config;
 
     let response = null;

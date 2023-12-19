@@ -7,6 +7,7 @@ import {
     DimensionType, JobStage, JobState, JobType, ProjectStatus,
     ShapeType, StorageLocation,
     ShareFileType, Source, TaskMode, TaskStatus,
+    CloudStorageCredentialsType, CloudStorageProviderType,
 } from './enums';
 
 export interface SerializedAnnotationImporter {
@@ -89,7 +90,12 @@ export interface SerializedTask {
     dimension: DimensionType;
     id: number;
     image_quality: number;
-    jobs: { count: 1; completed: 0; url: string; validation: 0 };
+    jobs: {
+        count: number;
+        completed: number;
+        url: string;
+        validation: number;
+    };
     labels: { count: number; url: string; };
     mode: TaskMode | '';
     name: string;
@@ -307,4 +313,25 @@ export interface SerializedCollection {
     tags: SerializedTag[],
     shapes: SerializedShape[],
     tracks: SerializedTrack[],
+}
+
+export interface SerializedCloudStorage {
+    id?: number;
+    display_name?: string;
+    description?: string;
+    credentials_type?: CloudStorageCredentialsType;
+    provider_type?: CloudStorageProviderType;
+    resource?: string;
+    account_name?: string;
+    key?: string;
+    secret_key?: string;
+    session_token?: string;
+    key_file?: File;
+    connection_string?: string;
+    specific_attributes?: string;
+    owner?: any;
+    created_date?: string;
+    updated_date?: string;
+    manifest_path?: string;
+    manifests?: string[];
 }
