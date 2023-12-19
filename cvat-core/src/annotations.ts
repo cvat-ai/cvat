@@ -13,6 +13,7 @@ import Project from './project';
 import { Task, Job } from './session';
 import { ScriptingError, ArgumentError } from './exceptions';
 import { getDeletedFrames } from './frames';
+import { JobType } from './enums';
 
 type WeakMapItem = { collection: AnnotationsCollection, saver: AnnotationsSaver, history: AnnotationsHistory };
 const jobCache = new WeakMap<Task | Job, WeakMapItem>();
@@ -57,7 +58,7 @@ export function getHistory(session): AnnotationsHistory {
     return getSession(session).history;
 }
 
-async function getAnnotationsFromServer(session): Promise<void> {
+async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
     const sessionType = session instanceof Task ? 'task' : 'job';
     const cache = getCache(sessionType);
 
@@ -65,9 +66,9 @@ async function getAnnotationsFromServer(session): Promise<void> {
         const serializedAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
 
         // Get meta information about frames
-        const startFrame = sessionType === 'job' ? session.startFrame : 0;
-        const stopFrame = sessionType === 'job' ? session.stopFrame : session.size - 1;
-        const frameMeta = {};
+        const startFrame = session instanceof Job ? session.startFrame : 0;
+        const stopFrame = session instanceof Job ? session.stopFrame : session.size - 1;
+        const frameMeta: any = {};
         for (let i = startFrame; i <= stopFrame; i++) {
             frameMeta[i] = await session.frames.get(i);
         }
@@ -75,10 +76,11 @@ async function getAnnotationsFromServer(session): Promise<void> {
 
         const history = new AnnotationsHistory();
         const collection = new AnnotationsCollection({
-            labels: session.labels || session.task.labels,
+            labels: session.labels,
             history,
             stopFrame,
             frameMeta,
+            jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
             dimension: session.dimension,
         });
 

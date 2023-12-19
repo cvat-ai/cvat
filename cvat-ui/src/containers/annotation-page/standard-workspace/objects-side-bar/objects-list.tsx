@@ -51,7 +51,6 @@ interface StateToProps {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
-    statesSources: number[];
     groundTruthJobFramesMeta: FramesMetaData | null;
     workspace: Workspace;
 }
@@ -78,7 +77,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
-                statesSources,
             },
             job: { instance: jobInstance, groundTruthJobFramesMeta },
             player: {
@@ -130,7 +128,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         showGroundTruth,
-        statesSources,
         groundTruthJobFramesMeta,
         workspace,
     };
@@ -212,25 +209,20 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.updateObjects();
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        const {
-            statesSources, objectStates,
-        } = this.props;
-        const { objectStates: stateObjects } = this.state;
-        if (objectStates !== stateObjects ||
-            statesSources !== prevProps.statesSources
-        ) {
+    public componentDidUpdate(): void {
+        const { objectStates } = this.props;
+        const { objectStates: prevObjectStates } = this.state;
+        if (objectStates !== prevObjectStates) {
             this.updateObjects();
         }
     }
 
     private updateObjects = (): void => {
         const {
-            statesSources, objectStates, frameNumber, groundTruthJobFramesMeta, workspace,
+            objectStates, frameNumber, groundTruthJobFramesMeta, workspace,
         } = this.props;
         const { statesOrdering } = this.state;
         const filteredStates = filterAnnotations(objectStates, {
-            statesSources,
             frame: frameNumber,
             groundTruthJobFramesMeta,
             workspace,
@@ -276,7 +268,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     private changeShowGroundTruth = (): void => {
         const { showGroundTruth, changeShowGroundTruth } = this.props;
-
         changeShowGroundTruth(!showGroundTruth);
     };
 

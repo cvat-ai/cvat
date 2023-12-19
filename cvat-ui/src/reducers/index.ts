@@ -733,7 +733,6 @@ export interface AnnotationState {
         highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
-        statesSources: number[];
         states: any[];
         filters: any[];
         resetGroupFlag: boolean;
