@@ -5,11 +5,22 @@
 x-backend-env: &backend-env
   CLICKHOUSE_HOST: clickhouse
   CVAT_POSTGRES_HOST: cvat_db
-  CVAT_REDIS_HOST: cvat_redis
+  CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+  CVAT_REDIS_INMEM_PORT: 6379
+  CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+  CVAT_REDIS_ONDISK_PORT: 6379
   DJANGO_LOG_SERVER_HOST: vector
   DJANGO_LOG_SERVER_PORT: 80
   no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
   SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
+
+x-backend-deps: &backend-deps
+  cvat_redis_inmem:
+    condition: service_started
+  cvat_redis_ondisk:
+    condition: service_started
+  cvat_db:
+    condition: service_started
 
 services:
   cvat_db:
@@ -25,8 +36,22 @@ services:
     networks:
       - cvat
 
-  cvat_redis:
-    container_name: cvat_redis
+  cvat_redis_inmem:
+    container_name: cvat_redis_inmem
+    image: redis:7.2.3-alpine
+    restart: always
+    command: [
+      "redis-server",
+      "--save", "60", "100",
+      "--appendonly", "yes",
+    ]
+    volumes:
+      - cvat_inmem_db:/data
+    networks:
+      - cvat
+
+  cvat_redis_ondisk:
+    container_name: cvat_redis_ondisk
     image: eqalpha/keydb:x86_64_v6.3.2
     restart: always
     command: [
@@ -46,9 +71,10 @@ services:
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
-      - cvat_redis
-      - cvat_db
-      - cvat_opa
+      <<: *backend-deps
+      cvat_opa:
+        condition:
+          service_started
     environment:
       <<: *backend-env
       DJANGO_MODWSGI_EXTRA_ARGS: ''
@@ -79,13 +105,10 @@ services:
     container_name: cvat_utils
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
-      - cvat_opa
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
-      CVAT_REDIS_PASSWORD: ''
+      CVAT_REDIS_INMEM_PASSWORD: ''
       NUMPROCS: 1
     command: run utils
     volumes:
@@ -99,9 +122,7 @@ services:
     container_name: cvat_worker_import
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 2
@@ -117,9 +138,7 @@ services:
     container_name: cvat_worker_export
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 2
@@ -135,10 +154,7 @@ services:
     container_name: cvat_worker_annotation
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
-      - cvat_opa
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
@@ -154,10 +170,7 @@ services:
     container_name: cvat_worker_webhooks
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
-      - cvat_opa
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
@@ -173,9 +186,7 @@ services:
     container_name: cvat_worker_quality_reports
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
@@ -191,9 +202,7 @@ services:
     container_name: cvat_worker_analytics_reports
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 2
@@ -371,6 +380,7 @@ volumes:
   cvat_data:
   cvat_keys:
   cvat_logs:
+  cvat_inmem_db:
   cvat_events_db:
   cvat_cache_db:
 
