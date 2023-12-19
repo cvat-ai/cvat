@@ -1500,7 +1500,7 @@ Cypress.Commands.add('joinShapes', (
     });
 
     for (const [index, object] of objects.entries()) {
-        cy.get(object).click(coordinates[index][0], coordinates[index][1], { force: true });
+        cy.get(object).click(coordinates[index][0], coordinates[index][1]);
     }
     interactWithTool();
 });

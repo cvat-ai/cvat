@@ -151,7 +151,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
 
             cy.joinShapes(
                 ['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'],
-                [[50, 5], [50, 50]],
+                [[50, 5], [70, 70]],
                 { shortcut: 'j' },
             );
             checkJoinSuccess();
