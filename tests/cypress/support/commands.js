@@ -1433,7 +1433,6 @@ Cypress.Commands.add('finishMaskDrawing', () => {
 
 Cypress.Commands.add('sliceShape', (
     object,
-    initialPosition,
     coordinates,
     options = {
         shortcut: null,
@@ -1452,7 +1451,7 @@ Cypress.Commands.add('sliceShape', (
         cy.contains('Click a mask or polygon shape you would like to slice').should('exist');
     });
 
-    const [initialX, initialY] = initialPosition;
+    const [initialX, initialY] = coordinates.shift();
     cy.get(object).click(initialX, initialY);
     cy.get('.cvat-canvas-hints-container').within(() => {
         cy.contains('Set initial point on the shape contour').should('exist');

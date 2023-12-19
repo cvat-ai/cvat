@@ -111,7 +111,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
 
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.sliceShape('#cvat_canvas_shape_1', [1, 1], [[250, 500], [720, 500]]);
+            cy.sliceShape('#cvat_canvas_shape_1', [[1, 1], [250, 500], [720, 500]]);
             checkSliceSuccess();
 
             cy.joinShapes(['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'], [[1, 1], [1, 1]]);
@@ -124,7 +124,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
 
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
-            cy.sliceShape('#cvat_canvas_shape_1', [1, 1], [[150, 230], [300, 230]]);
+            cy.sliceShape('#cvat_canvas_shape_1', [[1, 1], [150, 230], [300, 230]]);
             checkSliceSuccess();
 
             cy.joinShapes(['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'], [[1, 1], [1, 1]]);
@@ -139,11 +139,11 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
             cy.sliceShape(
                 '#cvat_canvas_shape_1',
-                [50, 55],
                 [
-                    [180, 230], [210, 260], [240, 200],
-                    [270, 230], [300, 230], [330, 260],
-                    [360, 200], [390, 230], [500, 230],
+                    [50, 55], [180, 230], [210, 260],
+                    [240, 200], [270, 230], [300, 230],
+                    [330, 260], [360, 200], [390, 230],
+                    [500, 230],
                 ],
                 { shortcut: '{alt}j' },
             );
@@ -161,9 +161,8 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.createPolygon(polygon);
             cy.sliceShape(
                 '#cvat_canvas_shape_1',
-                [1, 1],
                 [
-                    [110, 160], [270, 240],
+                    [1, 1], [110, 160], [270, 240],
                 ],
             );
             checkSliceSuccess();
@@ -173,10 +172,10 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.createPolygon(polygon);
             cy.sliceShape(
                 '#cvat_canvas_shape_1',
-                [1, 1],
                 [
-                    [110, 160], [140, 150], [170, 130],
-                    [190, 190], [230, 250], [400, 130],
+                    [1, 1], [110, 160], [140, 150],
+                    [170, 130], [190, 190], [230, 250],
+                    [400, 130],
                 ],
             );
             checkSliceSuccess();
@@ -186,10 +185,9 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.createPolygon(polygon);
             cy.sliceShape(
                 '#cvat_canvas_shape_1',
-                [1, 1],
                 [
-                    [110, 160], [140, 150], [170, 130],
-                    [190, 190], [230, 250],
+                    [1, 1], [110, 160], [140, 150],
+                    [170, 130], [190, 190], [230, 250],
                 ],
             );
             for (let i = 0; i < 5; i++) {
@@ -210,11 +208,11 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
             cy.sliceShape(
                 '#cvat_canvas_shape_1',
-                [50, 55],
                 [
-                    [180, 230], [200, 240], [210, 250],
-                    [220, 260], [230, 270], [240, 280],
-                    [250, 290], [260, 300], [500, 230],
+                    [50, 55], [180, 230], [200, 240],
+                    [210, 250], [220, 260], [230, 270],
+                    [240, 280], [250, 290], [260, 300],
+                    [500, 230],
                 ],
                 { slipMode: true },
             );
