@@ -34,6 +34,7 @@ import QualitySettings from './quality-settings';
 import { FramesMetaData } from './frames';
 import AnalyticsReport from './analytics-report';
 import { listActions, registerAction, runActions } from './annotations-actions';
+import { JobType } from './enums';
 import CVATCore from '.';
 
 function implementationMixin(func: Function, implementation: Function): void {
@@ -206,8 +207,13 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         }
 
         const jobsData = await serverProxy.jobs.get(searchParams);
+        if (query.type === JobType.GROUND_TRUTH && jobsData.count) {
+            const labels = await serverProxy.labels.get({ job_id: jobsData.results[0].id });
+            return [new Job({ ...jobsData.results[0], labels: labels.results })];
+        }
+
         const jobs = jobsData.results.map((jobData) => new Job(jobData));
-        jobs.count = jobsData.count;
+        Object.assign(jobs, { count: jobsData.count });
         return jobs;
     });
 

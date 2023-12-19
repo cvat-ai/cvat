@@ -6,7 +6,7 @@
 import {
     shapeFactory, trackFactory, Track, Shape, Tag,
     MaskShape, BasicInjection,
-    SkeletonShape, SkeletonTrack, PolygonShape,
+    SkeletonShape, SkeletonTrack, PolygonShape, CuboidShape, RectangleShape, PolylineShape, PointsShape, EllipseShape,
 } from './annotations-objects';
 import { SerializedCollection, SerializedTrack } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
@@ -1139,11 +1139,37 @@ export default class Collection {
                 continue;
             }
 
-            const object = this.objects[state.clientID];
-            if (typeof object === 'undefined') {
-                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            let distanceMetric: typeof RectangleShape['distance'] | null = null;
+            switch (state.shapeType) {
+                case ShapeType.CUBOID:
+                    distanceMetric = CuboidShape.distance;
+                    break;
+                case ShapeType.ELLIPSE:
+                    distanceMetric = EllipseShape.distance;
+                    break;
+                case ShapeType.MASK:
+                    distanceMetric = MaskShape.distance;
+                    break;
+                case ShapeType.POINTS:
+                    distanceMetric = PointsShape.distance;
+                    break;
+                case ShapeType.POLYGON:
+                    distanceMetric = PolygonShape.distance;
+                    break;
+                case ShapeType.POLYLINE:
+                    distanceMetric = PolylineShape.distance;
+                    break;
+                case ShapeType.RECTANGLE:
+                    distanceMetric = RectangleShape.distance;
+                    break;
+                case ShapeType.SKELETON:
+                    distanceMetric = SkeletonShape.distance;
+                    break;
+                default:
+                    throw new ArgumentError(`Unknown shape type "${state.shapeType}"`);
             }
-            const distance = object.constructor.distance(state.points, x, y, state.rotation);
+
+            const distance = distanceMetric(state.points, x, y, state.rotation);
             if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                 minimumDistance = distance;
                 minimumState = state;

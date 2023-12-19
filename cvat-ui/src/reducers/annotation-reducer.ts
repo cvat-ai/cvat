@@ -273,16 +273,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
+            const {
+                states, minZ, maxZ, curZ,
+            } = action.payload;
             const { activatedStateID } = state.annotations;
             const {
                 number,
                 data,
                 filename,
                 relatedFiles,
-                states,
-                minZ,
-                maxZ,
-                curZ,
                 delay,
                 changeTime,
                 changeFrameLog,
@@ -964,6 +963,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 workspace,
                 annotations: {
                     ...state.annotations,
+                    states: state.annotations.states.filter((_state) => !_state.isGroundTruth),
                     activatedStateID: null,
                     activatedAttributeID: null,
                 },

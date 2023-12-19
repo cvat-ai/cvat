@@ -18,6 +18,7 @@ import {
     copyShape as copyShapeAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
+    fetchAnnotationsAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -158,6 +159,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         changeShowGroundTruth(value: boolean): void {
             dispatch(changeShowGroundTruthAction(value));
+            dispatch(fetchAnnotationsAsync());
         },
     };
 }

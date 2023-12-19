@@ -271,7 +271,7 @@ export function highlightConflict(conflict: QualityConflict | null): AnyAction {
     };
 }
 
-async function fetchAnnotations(): Promise<{
+async function fetchAnnotations(frameNumber?: number): Promise<{
     states: CombinedState['annotation']['annotations']['states'];
     history: CombinedState['annotation']['annotations']['history'];
     minZ: number;
@@ -282,9 +282,10 @@ async function fetchAnnotations(): Promise<{
         jobInstance, showGroundTruth, groundTruthInstance,
     } = receiveAnnotationsParameters();
 
-    const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+    const fetchFrame = typeof frameNumber === 'undefined' ? frame : frameNumber;
+    const states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
     if (showGroundTruth && groundTruthInstance) {
-        const gtStates = groundTruthInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+        const gtStates = await groundTruthInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
         states.push(...gtStates);
     }
 
@@ -671,7 +672,6 @@ export function changeFrameAsync(
             }
 
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
-            const { states, minZ, maxZ } = await fetchAnnotations();
 
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME,
@@ -707,6 +707,7 @@ export function changeFrameAsync(
                 Math.round(1000 / frameSpeed) - currentTime + (state.annotation.player.frame.changeTime as number),
             );
 
+            const { states, maxZ, minZ } = await fetchAnnotations(toFrame);
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                 payload: {

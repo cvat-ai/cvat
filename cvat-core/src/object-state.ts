@@ -166,7 +166,7 @@ export default class ObjectState {
             color: '#000000',
             hidden: false,
             pinned: false,
-            source: Source.MANUAL,
+            source: serialized.source || Source.MANUAL,
             keyframes: serialized.keyframes || null,
             group: serialized.group || null,
             updated: serialized.updated || Date.now(),
