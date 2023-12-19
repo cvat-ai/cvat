@@ -355,15 +355,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS: {
-            const { states } = action.payload;
-            const { activatedStateID } = state.annotations;
-
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    states,
-                    activatedStateID: updateActivatedStateID(states, activatedStateID),
                     saving: {
                         ...state.annotations.saving,
                         uploading: false,
