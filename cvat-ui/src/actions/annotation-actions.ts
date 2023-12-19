@@ -916,26 +916,28 @@ export function getJobAsync(
             if (job.type === JobType.ANNOTATION) {
                 try {
                     [gtJob] = await cvat.jobs.get({ taskID: tid, type: JobType.GROUND_TRUTH });
+                } catch (e) {
                     // gtJob is not available for workers
-                    // eslint-disable-next-line no-empty
-                } catch (e) { }
+                    // do nothing
+                }
             }
 
-            const groundTruthJobId = gtJob ? gtJob.id : null;
-
             let groundTruthJobFramesMeta = null;
-            if (groundTruthJobId) {
-                groundTruthJobFramesMeta = await cvat.frames.getMeta('job', groundTruthJobId);
+            if (gtJob) {
+                gtJob.annotations.get(0); // fetch gt annotations from the server
+                groundTruthJobFramesMeta = await cvat.frames.getMeta('job', gtJob.id);
             }
 
             let conflicts: QualityConflict[] = [];
-            if (groundTruthJobId) {
+            if (gtJob) {
                 const [report] = await cvat.analytics.quality.reports({ jobId: job.id, target: 'job' });
-                if (report) conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
+                if (report) {
+                    conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
+                }
             }
 
             // frame query parameter does not work for GT job
-            const frameNumber = Number.isInteger(initialFrame) && groundTruthJobId !== job.id ?
+            const frameNumber = Number.isInteger(initialFrame) && gtJob?.id !== job.id ?
                 initialFrame : (await job.frames.search(
                     { notDeleted: !showDeletedFrames }, job.startFrame, job.stopFrame,
                 )) || job.startFrame;
@@ -949,10 +951,7 @@ export function getJobAsync(
                 // do nothing, user will be notified when data request is done
             }
 
-            const states = await job.annotations.get(
-                frameNumber, showAllInterpolationTracks, filters, groundTruthJobId,
-            );
-
+            const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
             const issues = await job.issues();
             const [minZ, maxZ] = computeZRange(states);
             const colors = [...cvat.enums.colors];
@@ -965,7 +964,7 @@ export function getJobAsync(
                 payload: {
                     openTime,
                     job,
-                    groundTruthJobId,
+                    groundTruthInstance: gtJob || null,
                     groundTruthJobFramesMeta,
                     issues,
                     states,

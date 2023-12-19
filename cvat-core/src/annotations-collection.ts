@@ -18,9 +18,10 @@ import ObjectState from './object-state';
 import { cropMask } from './object-utils';
 import config from './config';
 import {
-    HistoryActions, ShapeType, ObjectType, colors, Source,
+    HistoryActions, ShapeType, ObjectType, colors, Source, DimensionType, JobType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
+import { Job } from './session';
 
 interface ImportedCollection {
     tags: Tag[],
@@ -55,7 +56,9 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
-    private frameMeta: any;
+    private frameMeta: Record<number, Awaited<ReturnType<Job['frames']['get']>>> & {
+        deleted_frames: Record<number, boolean>
+    };
     private labels: Record<number, Label>;
     private annotationsFilter: AnnotationsFilter;
     private history: AnnotationHistory;
@@ -67,7 +70,14 @@ export default class Collection {
     private groups: { max: number };
     private injection: BasicInjection;
 
-    constructor(data) {
+    constructor(data: {
+        labels: Label[];
+        history: AnnotationHistory;
+        stopFrame: number;
+        dimension: DimensionType;
+        frameMeta: Collection['frameMeta'];
+        jobType: JobType;
+    }) {
         this.stopFrame = data.stopFrame;
         this.frameMeta = data.frameMeta;
 
@@ -97,6 +107,7 @@ export default class Collection {
             frameMeta: this.frameMeta,
             history: this.history,
             dimension: data.dimension,
+            jobType: data.jobType,
             nextClientID: () => ++this.count,
             groupColors: {},
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
@@ -807,7 +818,7 @@ export default class Collection {
         }
     }
 
-    statistics(filter): Statistics {
+    statistics(): Statistics {
         const labels = {};
         const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
         const body = {
@@ -895,10 +906,6 @@ export default class Collection {
 
         for (const object of Object.values(this.objects)) {
             if (object.removed) {
-                continue;
-            }
-
-            if ((object.jobID && filter?.jobID) && object.jobID !== filter.jobID) {
                 continue;
             }
 

@@ -17,6 +17,8 @@ import User from './user';
 import { FieldUpdateTrigger } from './common';
 import { SerializedJob, SerializedTask } from './server-response-types';
 import AnnotationGuide from './guide';
+import { FrameData } from './frames';
+import Statistics from './statistics';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -69,14 +71,13 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async get(frame, allTracks = false, filters = [], groundTruthJobId = null) {
+                async get(frame, allTracks = false, filters = []) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.get,
                         frame,
                         allTracks,
                         filters,
-                        groundTruthJobId,
                     );
                     return result;
                 },
@@ -328,7 +329,7 @@ export class Session {
         select: CallableFunction;
         import: CallableFunction;
         export: CallableFunction;
-        statistics: CallableFunction;
+        statistics: () => Promise<Statistics>;
         hasUnsavedChanges: CallableFunction;
         exportDataset: CallableFunction;
     };
@@ -342,7 +343,7 @@ export class Session {
     };
 
     public frames: {
-        get: CallableFunction;
+        get: (frame: number, isPlaying?: boolean, step?: number) => Promise<FrameData>;
         delete: CallableFunction;
         restore: CallableFunction;
         save: CallableFunction;

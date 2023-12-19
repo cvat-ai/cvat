@@ -87,6 +87,7 @@ export enum Source {
     SEMI_AUTO = 'semi-auto',
     AUTO = 'auto',
     FILE = 'file',
+    GT = 'Ground truth',
 }
 
 export enum LogType {
