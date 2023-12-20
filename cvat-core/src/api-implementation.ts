@@ -212,7 +212,12 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const jobsData = await serverProxy.jobs.get(searchParams);
         if (query.type === JobType.GROUND_TRUTH && jobsData.count === 1) {
             const labels = await serverProxy.labels.get({ job_id: jobsData[0].id });
-            return Object.assign([new Job({ ...jobsData[0], labels: labels.results })], { count: 1 });
+            return Object.assign([
+                new Job({
+                    ...omit(jobsData[0], 'labels'),
+                    labels: labels.results,
+                }),
+            ], { count: 1 });
         }
 
         const jobs = jobsData.map((jobData) => new Job(omit(jobData, 'labels')));
