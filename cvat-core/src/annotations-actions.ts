@@ -6,7 +6,7 @@ import { omit, throttle } from 'lodash';
 import { ArgumentError } from './exceptions';
 import { SerializedCollection } from './server-response-types';
 import { Job, Task } from './session';
-import { ObjectType } from './enums';
+import { LogType, ObjectType } from './enums';
 import ObjectState from './object-state';
 import { getAnnotations, getCollection } from './annotations';
 
@@ -114,6 +114,10 @@ async function runSingleFrameChain(
     cancelled: () => boolean,
 ): Promise<void> {
     type IDsToHandle = { shapes: number[] };
+    const event = await instance.logger.log(LogType.runAnnotationsAction, {
+        from: frameFrom,
+        to: frameTo,
+    }, true);
 
     // if called too fast, it will freeze UI, so, add throttling here
     const wrappedOnProgress = throttle(onProgress, 100, { leading: true, trailing: true });
@@ -216,6 +220,8 @@ async function runSingleFrameChain(
             tracks: exportedCollection.tracks,
             tags: exportedCollection.tags,
         });
+
+        event.close();
     } finally {
         wrappedOnProgress('Finalizing', 100);
         await Promise.all(actionsChain.map((action) => action.destroy()));
