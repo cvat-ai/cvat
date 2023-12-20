@@ -6,7 +6,8 @@
 import {
     shapeFactory, trackFactory, Track, Shape, Tag,
     MaskShape, BasicInjection,
-    SkeletonShape, SkeletonTrack, PolygonShape, CuboidShape, RectangleShape, PolylineShape, PointsShape, EllipseShape,
+    SkeletonShape, SkeletonTrack, PolygonShape, CuboidShape,
+    RectangleShape, PolylineShape, PointsShape, EllipseShape,
 } from './annotations-objects';
 import { SerializedCollection, SerializedTrack } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';

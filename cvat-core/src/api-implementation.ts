@@ -35,6 +35,7 @@ import { FramesMetaData } from './frames';
 import AnalyticsReport from './analytics-report';
 import { listActions, registerAction, runActions } from './annotations-actions';
 import { JobType } from './enums';
+import { PaginatedResource } from './core-types';
 import CVATCore from '.';
 
 function implementationMixin(func: Function, implementation: Function): void {
@@ -171,7 +172,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return users;
     });
 
-    implementationMixin(cvat.jobs.get, async (query) => {
+    implementationMixin(cvat.jobs.get, async (
+        query: Parameters<CVATCore['jobs']['get']>[0],
+    ): ReturnType<CVATCore['jobs']['get']> => {
         checkFilter(query, {
             page: isInteger,
             filter: isString,
@@ -189,10 +192,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             if (job) {
                 // When request job by ID we also need to add labels to work with them
                 const labels = await serverProxy.labels.get({ job_id: job.id });
-                return [new Job({ ...job, labels: labels.results })];
+                return Object.assign([new Job({ ...job, labels: labels.results })], { count: 1 });
             }
 
-            return [];
+            return Object.assign([], { count: 0 });
         }
 
         const searchParams: Record<string, string> = {};
@@ -203,21 +206,22 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             }
         }
         if ('taskID' in query) {
-            searchParams.task_id = query.taskID;
+            searchParams.task_id = `${query.taskID}`;
         }
 
         const jobsData = await serverProxy.jobs.get(searchParams);
         if (query.type === JobType.GROUND_TRUTH && jobsData.count === 1) {
             const labels = await serverProxy.labels.get({ job_id: jobsData[0].id });
-            return [new Job({ ...jobsData[0], labels: labels.results })];
+            return Object.assign([new Job({ ...jobsData[0], labels: labels.results })], { count: 1 });
         }
 
         const jobs = jobsData.map((jobData) => new Job(omit(jobData, 'labels')));
-        Object.assign(jobs, { count: jobsData.count });
-        return jobs;
+        return Object.assign(jobs, { count: jobsData.count });
     });
 
-    implementationMixin(cvat.tasks.get, async (filter) => {
+    implementationMixin(cvat.tasks.get, async (
+        filter: Parameters<CVATCore['tasks']['get']>[0],
+    ): ReturnType<CVATCore['tasks']['get']> => {
         checkFilter(filter, {
             page: isInteger,
             projectId: isInteger,
@@ -266,10 +270,12 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         }));
 
         Object.assign(tasks, { count: tasksData.count });
-        return tasks;
+        return tasks as PaginatedResource<Task>;
     });
 
-    implementationMixin(cvat.projects.get, async (filter) => {
+    implementationMixin(cvat.projects.get, async (
+        filter: Parameters<CVATCore['projects']['get']>[0],
+    ): ReturnType<CVATCore['projects']['get']> => {
         checkFilter(filter, {
             id: isInteger,
             page: isInteger,
@@ -297,8 +303,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             return new Project({ ...projectItem });
         }));
 
-        Object.assign(projects, { count: projectsData.count });
-        return projects;
+        return Object.assign(projects, { count: projectsData.count });
     });
 
     implementationMixin(cvat.projects.searchNames,
