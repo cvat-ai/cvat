@@ -127,7 +127,7 @@ export enum LogType {
     pressShortcut = 'press:shortcut',
     debugInfo = 'send:debug_info',
 
-    runAnnotationsAction = 'run:annotations_action',
+    annotationsAction = 'run:annotations_action',
     clickElement = 'click:element',
 }
 

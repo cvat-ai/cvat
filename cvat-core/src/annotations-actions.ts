@@ -114,9 +114,10 @@ async function runSingleFrameChain(
     cancelled: () => boolean,
 ): Promise<void> {
     type IDsToHandle = { shapes: number[] };
-    const event = await instance.logger.log(LogType.runAnnotationsAction, {
+    const event = await instance.logger.log(LogType.annotationsAction, {
         from: frameFrom,
         to: frameTo,
+        chain: actionsChain.map((action) => action.name).join(' => '),
     }, true);
 
     // if called too fast, it will freeze UI, so, add throttling here
