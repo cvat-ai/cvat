@@ -56,7 +56,7 @@ const defaultState: AnnotationState = {
         labels: [],
         groundTruthJobFramesMeta: null,
         requestedId: null,
-        groundTruthInstance: undefined,
+        groundTruthInstance: null,
         instance: null,
         attributes: {},
         fetching: false,

@@ -695,7 +695,7 @@ export interface AnnotationState {
         requestedId: number | null;
         groundTruthJobFramesMeta: FramesMetaData | null;
         instance: Job | null | undefined;
-        groundTruthInstance: Job | null | undefined;
+        groundTruthInstance: Job | null;
         attributes: Record<number, any[]>;
         fetching: boolean;
         saving: boolean;

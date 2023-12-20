@@ -75,7 +75,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
         filters,
         frame,
         jobInstance: jobInstance as Job,
-        groundTruthInstance: groundTruthInstance || null,
+        groundTruthInstance,
         showAllInterpolationTracks,
         showGroundTruth,
     };
@@ -284,13 +284,13 @@ async function fetchAnnotations(frameNumber?: number): Promise<{
 
     const fetchFrame = typeof frameNumber === 'undefined' ? frame : frameNumber;
     const states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
+    const [minZ, maxZ] = computeZRange(states);
     if (showGroundTruth && groundTruthInstance) {
         const gtStates = await groundTruthInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
         states.push(...gtStates);
     }
 
     const history = await jobInstance.actions.get();
-    const [minZ, maxZ] = computeZRange(states);
 
     return {
         states,

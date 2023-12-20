@@ -10,11 +10,11 @@ import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actio
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { getCore, Label } from 'cvat-core-wrapper';
+import { getCore, Label, ObjectState } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 interface DispatchToProps {
-    onAnnotationCreate(states: any[]): void;
+    onAnnotationCreate(states: ObjectState[]): void;
     onRememberObject(labelID: number): void;
 }
 
@@ -29,7 +29,7 @@ interface StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onAnnotationCreate(states: any[]): void {
+        onAnnotationCreate(states: ObjectState[]): void {
             dispatch(createAnnotationsAsync(states));
         },
         onRememberObject(labelID: number): void {
