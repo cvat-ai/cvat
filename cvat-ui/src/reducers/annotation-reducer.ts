@@ -818,28 +818,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.REDO_ACTION_SUCCESS:
-        case AnnotationActionTypes.UNDO_ACTION_SUCCESS: {
-            const { activatedStateID } = state.annotations;
-            const {
-                history, states, minZ, maxZ,
-            } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: updateActivatedStateID(states, activatedStateID),
-                    states,
-                    history,
-                    zLayer: {
-                        min: minZ,
-                        max: maxZ,
-                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
-                    },
-                },
-            };
-        }
         case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
             const { activatedStateID } = state.annotations;
             const {

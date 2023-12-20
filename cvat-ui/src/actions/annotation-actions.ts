@@ -170,9 +170,7 @@ export enum AnnotationActionTypes {
     REMOVE_JOB_ANNOTATIONS_SUCCESS = 'REMOVE_JOB_ANNOTATIONS_SUCCESS',
     REMOVE_JOB_ANNOTATIONS_FAILED = 'REMOVE_JOB_ANNOTATIONS_FAILED',
     UPDATE_CANVAS_CONTEXT_MENU = 'UPDATE_CANVAS_CONTEXT_MENU',
-    UNDO_ACTION_SUCCESS = 'UNDO_ACTION_SUCCESS',
     UNDO_ACTION_FAILED = 'UNDO_ACTION_FAILED',
-    REDO_ACTION_SUCCESS = 'REDO_ACTION_SUCCESS',
     REDO_ACTION_FAILED = 'REDO_ACTION_FAILED',
     CHANGE_ANNOTATIONS_FILTERS = 'CHANGE_ANNOTATIONS_FILTERS',
     FETCH_ANNOTATIONS_SUCCESS = 'FETCH_ANNOTATIONS_SUCCESS',
@@ -763,15 +761,8 @@ export function undoActionAsync(): ThunkAction {
             );
 
             await jobInstance.actions.undo();
-            const frameData = await jobInstance.frames.get(frame);
             await undoLog.close();
 
-            dispatch({
-                type: AnnotationActionTypes.UNDO_ACTION_SUCCESS,
-                payload: {
-                    frameData,
-                },
-            });
             dispatch(fetchAnnotationsAsync());
             if (frame !== undoOnFrame || ['Removed frame', 'Restored frame'].includes(undo[0])) {
                 dispatch(changeFrameAsync(undoOnFrame, undefined, undefined, true));
@@ -807,12 +798,8 @@ export function redoActionAsync(): ThunkAction {
             );
 
             await jobInstance.actions.redo();
-            const frameData = await jobInstance.frames.get(frame);
             await redoLog.close();
-            dispatch({
-                type: AnnotationActionTypes.REDO_ACTION_SUCCESS,
-                payload: { frameData },
-            });
+
             dispatch(fetchAnnotationsAsync());
             if (frame !== redoOnFrame || ['Removed frame', 'Restored frame'].includes(redo[0])) {
                 dispatch(changeFrameAsync(redoOnFrame, undefined, undefined, true));
