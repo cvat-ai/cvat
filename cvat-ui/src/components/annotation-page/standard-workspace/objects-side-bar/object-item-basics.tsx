@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +18,7 @@ interface Props {
     jobInstance: any;
     readonly: boolean;
     clientID: number;
-    serverID: number | undefined;
+    serverID: number | null;
     labelID: number;
     labels: any[];
     shapeType: ShapeType;
@@ -35,6 +35,7 @@ interface Props {
     toBackgroundShortcut: string;
     toForegroundShortcut: string;
     removeShortcut: string;
+    sliceShortcut: string;
     changeColor(color: string): void;
     changeLabel(label: any): void;
     copy(): void;
@@ -46,6 +47,7 @@ interface Props {
     toForeground(): void;
     resetCuboidPerspective(): void;
     edit(): void;
+    slice(): void;
 }
 
 function ItemTopComponent(props: Props): JSX.Element {
@@ -68,6 +70,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackgroundShortcut,
         toForegroundShortcut,
         removeShortcut,
+        sliceShortcut,
         isGroundTruth,
         changeColor,
         changeLabel,
@@ -80,6 +83,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toForeground,
         resetCuboidPerspective,
         edit,
+        slice,
         jobInstance,
     } = props;
 
@@ -130,6 +134,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         visible={menuVisible}
                         onVisibleChange={changeMenuVisible}
                         placement='bottomLeft'
+                        trigger={menuVisible ? ['click'] : ['click', 'hover']}
                         overlay={ItemMenu({
                             jobInstance,
                             readonly,
@@ -147,6 +152,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             toBackgroundShortcut,
                             toForegroundShortcut,
                             removeShortcut,
+                            sliceShortcut,
                             changeColor,
                             copy,
                             remove,
@@ -158,6 +164,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                             resetCuboidPerspective,
                             changeColorPickerVisible,
                             edit,
+                            slice,
                         })}
                     >
                         <MoreOutlined />

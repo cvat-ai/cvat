@@ -3,6 +3,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
+
 import React from 'react';
 import { connect } from 'react-redux';
 import Slider from 'antd/lib/slider';
@@ -14,31 +16,27 @@ import debounce from 'lodash/debounce';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
-    ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType, ActiveControl, CombinedState,
+    ColorBy, GridColor, ObjectType, Workspace, ShapeType, ActiveControl, CombinedState,
 } from 'reducers';
 import { LogType } from 'cvat-logger';
-import { Canvas, HighlightSeverity } from 'cvat-canvas-wrapper';
+import { Canvas, HighlightSeverity, CanvasHint } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, FramesMetaData, QualityConflict, getCore,
+    AnnotationConflict, FramesMetaData, Job, ObjectState, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
 import {
     confirmCanvasReadyAsync,
-    dragCanvas,
-    zoomCanvas,
     resetCanvas,
-    shapeDrawn,
-    mergeObjects,
-    groupObjects,
-    splitTrack,
-    editShape,
+    updateActiveControl as updateActiveControlAction,
     updateAnnotationsAsync,
     createAnnotationsAsync,
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
+    joinAnnotationsAsync,
+    sliceAnnotationsAsync,
     splitAnnotationsAsync,
     activateObject,
     updateCanvasContextMenu,
@@ -46,6 +44,7 @@ import {
     switchZLayer,
     fetchAnnotationsAsync,
     getDataFailed,
+    canvasErrorOccurred,
 } from 'actions/annotation-actions';
 import {
     switchGrid,
@@ -62,6 +61,7 @@ import { filterAnnotations } from 'utils/filter-annotations';
 import { ImageFilter } from 'utils/image-processing';
 import ImageSetupsContent from './image-setups-content';
 import BrushTools from './brush-tools';
+import CanvasTipsComponent from './canvas-hints';
 
 const cvat = getCore();
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
@@ -117,25 +117,21 @@ interface StateToProps {
     highlightedConflict: QualityConflict | null;
     groundTruthJobFramesMeta: FramesMetaData | null;
     imageFilters: ImageFilter[];
+    activeControl: ActiveControl;
 }
 
 interface DispatchToProps {
     onSetupCanvas(): void;
-    onDragCanvas: (enabled: boolean) => void;
-    onZoomCanvas: (enabled: boolean) => void;
     onResetCanvas: () => void;
-    onShapeDrawn: () => void;
-    onMergeObjects: (enabled: boolean) => void;
-    onGroupObjects: (enabled: boolean) => void;
-    onSplitTrack: (enabled: boolean) => void;
-    onEditShape: (enabled: boolean) => void;
-    onUpdateAnnotations(states: any[]): void;
-    onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
-    onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
+    updateActiveControl: (activeControl: ActiveControl) => void;
+    onUpdateAnnotations(states: ObjectState[]): void;
+    onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
+    onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
+    onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void;
+    onSliceAnnotations(sessionInstance: Job, state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
-    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
     onChangeBrightnessLevel(level: number): void;
@@ -146,7 +142,8 @@ interface DispatchToProps {
     onSwitchGrid(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onFetchAnnotation(): void;
-    onGetDataFailed(error: any): void;
+    onGetDataFailed(error: Error): void;
+    onCanvasErrorOccurred(error: Error): void;
     onStartIssue(position: number[]): void;
 }
 
@@ -248,6 +245,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         intelligentPolygonCrop,
         workspace,
         keyMap,
+        activeControl,
         switchableAutomaticBordering:
             activeControl === ActiveControl.DRAW_POLYGON ||
             activeControl === ActiveControl.DRAW_POLYLINE ||
@@ -267,43 +265,31 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSetupCanvas(): void {
             dispatch(confirmCanvasReadyAsync());
         },
-        onDragCanvas(enabled: boolean): void {
-            dispatch(dragCanvas(enabled));
-        },
-        onZoomCanvas(enabled: boolean): void {
-            dispatch(zoomCanvas(enabled));
-        },
         onResetCanvas(): void {
             dispatch(resetCanvas());
         },
-        onShapeDrawn(): void {
-            dispatch(shapeDrawn());
+        updateActiveControl(activeControl: ActiveControl): void {
+            dispatch(updateActiveControlAction(activeControl));
         },
-        onMergeObjects(enabled: boolean): void {
-            dispatch(mergeObjects(enabled));
-        },
-        onGroupObjects(enabled: boolean): void {
-            dispatch(groupObjects(enabled));
-        },
-        onSplitTrack(enabled: boolean): void {
-            dispatch(splitTrack(enabled));
-        },
-        onEditShape(enabled: boolean): void {
-            dispatch(editShape(enabled));
-        },
-        onUpdateAnnotations(states: any[]): void {
+        onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        onCreateAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+        onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(createAnnotationsAsync(sessionInstance, frame, states));
         },
-        onMergeAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+        onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(mergeAnnotationsAsync(sessionInstance, frame, states));
         },
-        onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void {
+        onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
         },
-        onSplitAnnotations(sessionInstance: any, frame: number, state: any): void {
+        onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void {
+            dispatch(joinAnnotationsAsync(sessionInstance, states, points));
+        },
+        onSliceAnnotations(sessionInstance: Job, state: ObjectState, results: number[][]): void {
+            dispatch(sliceAnnotationsAsync(sessionInstance, state, results));
+        },
+        onSplitAnnotations(sessionInstance: any, frame: number, state: ObjectState): void {
             dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
         },
         onActivateObject(activatedStateID: number | null, activatedElementID: number | null = null): void {
@@ -312,15 +298,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             }
 
             dispatch(activateObject(activatedStateID, activatedElementID, null));
-        },
-        onUpdateContextMenu(
-            visible: boolean,
-            left: number,
-            top: number,
-            type: ContextMenuType,
-            pointID?: number,
-        ): void {
-            dispatch(updateCanvasContextMenu(visible, left, top, pointID, type));
         },
         onAddZLayer(): void {
             dispatch(addZLayer());
@@ -352,8 +329,11 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onFetchAnnotation(): void {
             dispatch(fetchAnnotationsAsync());
         },
-        onGetDataFailed(error: any): void {
+        onGetDataFailed(error: Error): void {
             dispatch(getDataFailed(error));
+        },
+        onCanvasErrorOccurred(error: Error): void {
+            dispatch(canvasErrorOccurred(error));
         },
         onStartIssue(position: number[]): void {
             dispatch(reviewActions.startIssue(position));
@@ -365,6 +345,7 @@ type Props = StateToProps & DispatchToProps;
 
 class CanvasWrapperComponent extends React.PureComponent<Props> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
+    private canvasTipsRef = React.createRef<CanvasTipsComponent>();
 
     public componentDidMount(): void {
         const {
@@ -590,6 +571,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
         canvasInstance.html().removeEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().removeEventListener('canvas.edited', this.onCanvasEditDone);
+        canvasInstance.html().removeEventListener('canvas.sliced', this.onCanvasSliceDone);
         canvasInstance.html().removeEventListener('canvas.dragstart', this.onCanvasDragStart);
         canvasInstance.html().removeEventListener('canvas.dragstop', this.onCanvasDragDone);
         canvasInstance.html().removeEventListener('canvas.zoomstart', this.onCanvasZoomStart);
@@ -609,25 +591,37 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().removeEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().removeEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
+        canvasInstance.html().removeEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
 
     private onCanvasErrorOccurrence = (event: any): void => {
-        const { exception } = event.detail;
-        const { onGetDataFailed } = this.props;
-        onGetDataFailed(exception);
+        const { exception, domain } = event.detail;
+        if (domain === 'data fetching') {
+            const { onGetDataFailed } = this.props;
+            onGetDataFailed(exception);
+        } else {
+            const { onCanvasErrorOccurred } = this.props;
+            onCanvasErrorOccurred(exception);
+        }
+    };
+
+    private onCanvasMessage = (event: CustomEvent<{ messages: CanvasHint[] | null, topic: string }>): void => {
+        const { messages, topic } = event.detail;
+        this.canvasTipsRef.current?.update(messages, topic);
     };
 
     private onCanvasShapeDrawn = (event: any): void => {
         const {
-            jobInstance, activeLabelID, activeObjectType, frame, onShapeDrawn, onCreateAnnotations,
+            jobInstance, activeLabelID, activeObjectType, frame, updateActiveControl, onCreateAnnotations,
         } = this.props;
 
         if (!event.detail.continue) {
-            onShapeDrawn();
+            updateActiveControl(ActiveControl.CURSOR);
         }
 
         const { state, duration } = event.detail;
@@ -673,11 +667,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasObjectsMerged = (event: any): void => {
         const {
-            jobInstance, frame, onMergeAnnotations, onMergeObjects,
+            jobInstance, frame, onMergeAnnotations, updateActiveControl,
         } = this.props;
 
-        onMergeObjects(false);
-
+        updateActiveControl(ActiveControl.CURSOR);
         const { states, duration } = event.detail;
         jobInstance.logger.log(LogType.mergeObjects, {
             duration,
@@ -688,13 +681,44 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasObjectsGroupped = (event: any): void => {
         const {
-            jobInstance, frame, onGroupAnnotations, onGroupObjects,
+            jobInstance, frame, onGroupAnnotations, updateActiveControl,
         } = this.props;
 
-        onGroupObjects(false);
-
-        const { states } = event.detail;
+        updateActiveControl(ActiveControl.CURSOR);
+        const { states, duration } = event.detail;
+        jobInstance.logger.log(LogType.groupObjects, {
+            duration,
+            count: states.length,
+        });
         onGroupAnnotations(jobInstance, frame, states);
+    };
+
+    private onCanvasObjectsJoined = (event: any): void => {
+        const {
+            jobInstance, onJoinAnnotations, updateActiveControl,
+        } = this.props;
+
+        updateActiveControl(ActiveControl.CURSOR);
+        const { states, points, duration } = event.detail;
+        jobInstance.logger.log(LogType.joinObjects, {
+            duration,
+            count: states.length,
+        });
+        onJoinAnnotations(jobInstance, states, points);
+    };
+
+    private onCanvasTrackSplitted = (event: any): void => {
+        const {
+            jobInstance, frame, onSplitAnnotations, updateActiveControl,
+        } = this.props;
+
+        updateActiveControl(ActiveControl.CURSOR);
+        const { state, duration } = event.detail;
+        jobInstance.logger.log(LogType.splitObjects, {
+            duration,
+            count: 1,
+        });
+        onSplitAnnotations(jobInstance, frame, state);
     };
 
     private onCanvasPositionSelected = (event: any): void => {
@@ -702,17 +726,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { points } = event.detail;
         onStartIssue(points);
         onResetCanvas();
-    };
-
-    private onCanvasTrackSplitted = (event: any): void => {
-        const {
-            jobInstance, frame, onSplitAnnotations, onSplitTrack,
-        } = this.props;
-
-        onSplitTrack(false);
-
-        const { state } = event.detail;
-        onSplitAnnotations(jobInstance, frame, state);
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
@@ -806,40 +819,52 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasEditStart = (): void => {
-        const { onActivateObject, onEditShape } = this.props;
-        onActivateObject(null, null);
-        onEditShape(true);
+        const { updateActiveControl } = this.props;
+        updateActiveControl(ActiveControl.EDIT);
     };
 
     private onCanvasEditDone = (event: any): void => {
-        const { onEditShape, onUpdateAnnotations } = this.props;
-
-        onEditShape(false);
-
+        const { activeControl, onUpdateAnnotations, updateActiveControl } = this.props;
         const { state, points, rotation } = event.detail;
         state.points = points;
         state.rotation = rotation;
+
+        if (activeControl !== ActiveControl.CURSOR) {
+            // do not need to reset and deactivate if it was just resizing/dragging and other simple actions
+            updateActiveControl(ActiveControl.CURSOR);
+        }
         onUpdateAnnotations([state]);
     };
 
+    private onCanvasSliceDone = (event: any): void => {
+        const { jobInstance, updateActiveControl, onSliceAnnotations } = this.props;
+        const { state, results, duration } = event.detail;
+        updateActiveControl(ActiveControl.CURSOR);
+        jobInstance.logger.log(LogType.sliceObject, {
+            count: 1,
+            duration,
+            clientID: state.clientID,
+        });
+        onSliceAnnotations(jobInstance, state, results);
+    };
     private onCanvasDragStart = (): void => {
-        const { onDragCanvas } = this.props;
-        onDragCanvas(true);
+        const { updateActiveControl } = this.props;
+        updateActiveControl(ActiveControl.DRAG_CANVAS);
     };
 
     private onCanvasDragDone = (): void => {
-        const { onDragCanvas } = this.props;
-        onDragCanvas(false);
+        const { updateActiveControl } = this.props;
+        updateActiveControl(ActiveControl.CURSOR);
     };
 
     private onCanvasZoomStart = (): void => {
-        const { onZoomCanvas } = this.props;
-        onZoomCanvas(true);
+        const { updateActiveControl } = this.props;
+        updateActiveControl(ActiveControl.ZOOM_CANVAS);
     };
 
     private onCanvasZoomDone = (): void => {
-        const { onZoomCanvas } = this.props;
-        onZoomCanvas(false);
+        const { updateActiveControl } = this.props;
+        updateActiveControl(ActiveControl.CURSOR);
     };
 
     private onCanvasSetup = (): void => {
@@ -867,21 +892,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
 
             canvasInstance.select(result.state);
-        }
-    };
-
-    private onCanvasPointContextMenu = (e: any): void => {
-        const { activatedStateID, onUpdateContextMenu, annotations } = this.props;
-
-        const [state] = annotations.filter((el: any) => el.clientID === activatedStateID);
-        if (![ShapeType.CUBOID, ShapeType.RECTANGLE, ShapeType.ELLIPSE, ShapeType.SKELETON].includes(state.shapeType)) {
-            onUpdateContextMenu(
-                activatedStateID !== null,
-                e.detail.mouseEvent.clientX,
-                e.detail.mouseEvent.clientY,
-                ContextMenuType.CANVAS_SHAPE_POINT,
-                e.detail.pointID,
-            );
         }
     };
 
@@ -1021,6 +1031,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('click', this.onCanvasClicked);
         canvasInstance.html().addEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().addEventListener('canvas.edited', this.onCanvasEditDone);
+        canvasInstance.html().addEventListener('canvas.sliced', this.onCanvasSliceDone);
         canvasInstance.html().addEventListener('canvas.dragstart', this.onCanvasDragStart);
         canvasInstance.html().addEventListener('canvas.dragstop', this.onCanvasDragDone);
         canvasInstance.html().addEventListener('canvas.zoomstart', this.onCanvasZoomStart);
@@ -1040,10 +1051,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.drawn', this.onCanvasShapeDrawn);
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().addEventListener('canvas.groupped', this.onCanvasObjectsGroupped);
+        canvasInstance.html().addEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
         canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
+        canvasInstance.html().addEventListener('canvas.message', this.onCanvasMessage as EventListener);
     }
 
     public render(): JSX.Element {
@@ -1083,11 +1096,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         return (
             <>
                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
-                {/*
-                    This element doesn't have any props
-                    So, React isn't going to rerender it
-                    And it's a reason why cvat-canvas appended in mount function works
-                */}
+                <CanvasTipsComponent ref={this.canvasTipsRef} />
                 {
                     !canvasIsReady && (
                         <div className='cvat-spinner-container'>
@@ -1095,6 +1104,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                         </div>
                     )
                 }
+
+                {/*
+                    This element doesn't have any props
+                    So, React isn't going to rerender it
+                    And it's a reason why cvat-canvas appended in mount function works
+                */}
                 <div
                     className='cvat-canvas-container'
                     style={{

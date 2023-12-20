@@ -16,6 +16,214 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.9.2'></a>
+## \[2.9.2\] - 2023-12-11
+
+### Added
+
+- Introduced CVAT actions. Actions allow performing different
+ predefined scenarios on annotations automatically (e.g. shape converters)
+  (<https://github.com/opencv/cvat/pull/7172>)
+
+- The UI will now retry requests that were rejected due to rate limiting
+  (<https://github.com/opencv/cvat/pull/7216>)
+
+### Changed
+
+- Update nvidia/cuda image version from 11.7.0 to 11.7.1 in transt serverless function.
+  (<https://github.com/opencv/cvat/pull/7124>)
+
+- \[Helm\] Allow pre-release versions in kubernetes requirement to include AWS EKS versions (<https://github.com/opencv/cvat/pull/7183>)
+
+- GPU versions of serverless functions now use the `latest-gpu` Docker tag
+  rather than `latest`
+  (<https://github.com/opencv/cvat/pull/7215>)
+
+- \[Compose, Helm\] Downgraded KeyDB to 6.3.2
+  (<https://github.com/opencv/cvat/pull/7236>)
+
+### Fixed
+
+- The GPU version of the YOLOv7 serverless function not actually using the GPU
+  (<https://github.com/opencv/cvat/pull/6940>)
+
+- It is now possible to create Ground Truth jobs containing all frames in the task
+  (<https://github.com/opencv/cvat/pull/7126>)
+- Incorrect Ground Truth chunks saving
+  (<https://github.com/opencv/cvat/pull/7126>)
+
+- Reset source/target storage if related cloud storage has been deleted
+  (<https://github.com/opencv/cvat/pull/6801>)
+
+- Prevent possible cyclic dependencies when enqueuing a rq job when ONE_RUNNING_JOB_IN_QUEUE_PER_USER is used
+  (<https://github.com/opencv/cvat/pull/7139>)
+- Enqueue deferred jobs when their dependencies are moved to the failed job registry due to AbandonedJobError
+  (<https://github.com/opencv/cvat/pull/7139>)
+
+- Reduce the number of requests to the server for task details
+  (<https://github.com/opencv/cvat/pull/7167>)
+
+- Shape settings **opacity** and **selected opacity** reset on each frame change
+  (<https://github.com/opencv/cvat/pull/7186>)
+
+- Server error in list quality settings API, when called in an org
+  (<https://github.com/opencv/cvat/pull/7190>)
+
+- Incorrect handling of the hidden points in skeletons in quality comparisons
+  (<https://github.com/opencv/cvat/pull/7191>)
+
+- \[Helm\] Fixed installing Traefik Middleware even if Traefik is disabled in the values (<https://github.com/opencv/cvat/pull/7184>)
+
+- Error code 500 when send `change:frame` event without `duration`.
+  (<https://github.com/opencv/cvat/pull/7211>)
+
+- Added workaround for corrupted cached chunks
+  (<https://github.com/opencv/cvat/pull/7243>, <https://github.com/opencv/cvat/pull/7251>)
+
+<a id='changelog-2.9.1'></a>
+## \[2.9.1\] - 2023-11-23
+
+This release has changes only in the Enterprise version.
+
+<a id='changelog-2.9.0'></a>
+## \[2.9.0\] - 2023-11-23
+
+### Added
+
+- CVAT now supports serverless Nuclio functions that return skeleton annotations.
+  We've added a keypoint detector that supports skeletons for the following classes:
+  body, head, foot, and hands. Deployment command: `./deploy_cpu.sh pytorch/mmpose/hrnet32/nuclio/`
+  (<https://github.com/opencv/cvat/pull/7033>)
+
+- Implemented a feature that allows slicing one polygon/mask shape into two parts
+  (<https://github.com/opencv/cvat/pull/7084>)
+
+- Implemented a feature that allows joining several masks into a single one
+  (<https://github.com/opencv/cvat/pull/7084>)
+
+- \[Helm\] Introduced values that apply to all backend deployments/jobs
+  (<https://github.com/opencv/cvat/pull/7148>)
+
+### Changed
+
+- The "use cache" option on the server is now ignored when creating a
+  task with cloud storage data (<https://github.com/opencv/cvat/pull/7087>)
+
+- The Docker Compose file and Helm chart have been updated to enable Traefik
+  access logs by default and change the log format to JSON
+  (<https://github.com/opencv/cvat/pull/7109>)
+
+- \[Helm\] The PersistentVolumeClaim for the volume used to hold application
+  data is now retained after uninstall
+  (<https://github.com/opencv/cvat/pull/7123>)
+
+- \[Helm\] All backend-related deployments now
+  use `cvat-app` as the value for the `app` label
+  (<https://github.com/opencv/cvat/pull/7127>)
+
+- \[Helm\] The minimum compatible Kubernetes version
+  is now 1.19.0 (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Helm\] The CVAT hostname can now be configured with `ingress.hostname` option
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Helm\] The `ingress.tls` configuration has been reworked.
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Helm\] The Traefik subchart updated to 25.0.0 (appVersion v2.10.5)
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+- \[Docker Compose\] Traefik updated to v2.10.\*
+  (<https://github.com/opencv/cvat/pull/7150>)
+
+### Removed
+
+- Support for V1 cloudstorages/id/content endpoint
+  (<https://github.com/opencv/cvat/pull/6946>)
+
+- \[Helm\] `ingress.hosts` has been removed, use `ingress.hostname` instead.
+  (<https://github.com/opencv/cvat/pull/7132>)
+
+### Fixed
+
+- Fixed a data race condition during GT job creation
+  (<https://github.com/opencv/cvat/pull/7096>)
+
+- Resolved an issue where the job state could not be changed
+  multiple times without reloading the annotation view
+  (<https://github.com/opencv/cvat/pull/7158>)
+
+- Corrected an issue where compressed chunks did not
+  utilize the Exif rotation tag
+  (<https://github.com/opencv/cvat/pull/7162>)
+
+- Minor styling issues on empty models page
+  (<https://github.com/opencv/cvat/pull/7164>)
+
+- Fixed minor issue when brush marker is appended to a final mask
+  (<https://github.com/opencv/cvat/pull/7168>)
+
+<a id='changelog-2.8.2'></a>
+## \[2.8.2\] - 2023-11-06
+
+### Fixed
+
+- OpenCV runtime initialization
+  (<https://github.com/opencv/cvat/pull/7101>)
+
+<a id='changelog-2.8.1'></a>
+## \[2.8.1\] - 2023-11-03
+
+### Added
+
+- Support for default bucket prefix
+  (<https://github.com/opencv/cvat/pull/6943>)
+- Search for cloud storage and share files
+  (<https://github.com/opencv/cvat/pull/6943>)
+
+- Ability to limit one user to one task at a time
+  (<https://github.com/opencv/cvat/pull/6975>)
+
+- Support for using an external database in a Docker Compose-based deployment
+  (<https://github.com/opencv/cvat/pull/7055>)
+
+### Changed
+
+- Migrated to rq 1.15.1
+  (<https://github.com/opencv/cvat/pull/6975>)
+
+- Compressed sequental `change:frame` events into one
+  (<https://github.com/opencv/cvat/pull/7048>)
+
+- Create a local session for AWS S3 client instead of using the default global one
+  (<https://github.com/opencv/cvat/pull/7067>)
+
+- Improved performance of chunk preparation when creating tasks
+  (<https://github.com/opencv/cvat/pull/7081>)
+
+### Fixed
+
+- Race condition in a task data upload request, which may lead to problems with task creation in some specific cases,
+  such as multiple identical data requests at the same time
+  (<https://github.com/opencv/cvat/pull/7025>)
+
+- Bug with viewing dependent RQ jobs for downloading resources from
+  cloud storage when file path contains sub-directories.
+  This is relevant for admins that can view detailed information about RQ queues.
+  (<https://github.com/opencv/cvat/pull/6975>)
+
+- OpenCV.js memory leak with TrackerMIL
+  (<https://github.com/opencv/cvat/pull/7032>)
+
+- Can't deploy detectron serverless function
+  (<https://github.com/opencv/cvat/pull/7047>)
+
+- A mask becomes visible even if hidden after changing opacity level
+  (<https://github.com/opencv/cvat/pull/7060>)
+
+- There is no switcher to personal workspace if an organization request failed
+  (<https://github.com/opencv/cvat/pull/7063>)
+
 <a id='changelog-2.8.0'></a>
 
 ## \[2.8.0\] - 2023-10-23

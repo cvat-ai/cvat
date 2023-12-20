@@ -41,7 +41,7 @@ function MemberItem(props: Props): JSX.Element {
     const { username, firstName, lastName } = user;
     const { username: selfUserName } = useSelector((state: CombinedState) => state.auth.user);
 
-    const invitationActionsMenu = (
+    const invitationActionsMenu = invitation && (
         <Dropdown overlay={(
             <Menu onClick={(action: MenuInfo) => {
                 if (action.key === MenuKeys.RESEND_INVITATION) {
@@ -57,7 +57,7 @@ function MemberItem(props: Props): JSX.Element {
             </Menu>
         )}
         >
-            <MoreOutlined className='cvat-organization-invintation-actions-button cvat-menu-icon' />
+            <MoreOutlined className='cvat-organization-invitation-actions-button cvat-menu-icon' />
         </Dropdown>
     );
 

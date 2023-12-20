@@ -29,3 +29,22 @@ def build_iam_context(request, organization, membership):
             if organization else None,
         'org_role': getattr(membership, 'role', None),
     }
+
+
+def get_dummy_user(email):
+    from allauth.account.models import EmailAddress
+    from allauth.account import app_settings
+    from allauth.account.utils import filter_users_by_email
+
+    users = filter_users_by_email(email)
+    if not users or len(users) > 1:
+        return None
+    user = users[0]
+    if user.has_usable_password():
+        return None
+    if app_settings.EMAIL_VERIFICATION == \
+            app_settings.EmailVerificationMethod.MANDATORY:
+        email = EmailAddress.objects.get_for_user(user, email)
+        if email.verified:
+            return None
+    return user

@@ -242,7 +242,7 @@ class Data(models.Model):
         return int(match.group(1)) if match else 1
 
     def get_valid_frame_indices(self):
-        return range(self.start_frame, self.stop_frame, self.get_frame_step())
+        return range(self.start_frame, self.stop_frame + 1, self.get_frame_step())
 
     def get_data_dirname(self):
         return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
@@ -420,7 +420,9 @@ class Task(models.Model):
 
     def get_labels(self):
         project = self.project
-        return project.get_labels() if project else self.label_set.filter(parent__isnull=True)
+        if project:
+            return project.get_labels()
+        return self.label_set.filter(parent__isnull=True)
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -597,7 +599,7 @@ class Segment(models.Model):
             )
 
         if self.stop_frame < self.start_frame:
-            raise ValidationError("stop_frame cannot be lesser than start_frame")
+            raise ValidationError("stop_frame cannot be less than start_frame")
 
         return super().clean()
 
@@ -676,6 +678,12 @@ class Job(models.Model):
 
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
+
+    def get_target_storage(self) -> Optional[Storage]:
+        return self.segment.task.target_storage
+
+    def get_source_storage(self) -> Optional[Storage]:
+        return self.segment.task.source_storage
 
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
@@ -1112,7 +1120,12 @@ class CloudStorage(models.Model):
 
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
-    cloud_storage_id = models.IntegerField(null=True, blank=True, default=None)
+    cloud_storage = models.ForeignKey(
+        CloudStorage,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='+',
+    )
 
     class Meta:
         default_permissions = ()

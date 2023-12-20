@@ -6,16 +6,17 @@
 import io
 import os
 import zipfile
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 import shutil
 import tempfile
+import zlib
 
 from typing import Optional, Tuple
 
 import cv2
 import PIL.Image
-import pytz
+import pickle # nosec
 from django.conf import settings
 from django.core.cache import caches
 from rest_framework.exceptions import NotFound, ValidationError
@@ -33,7 +34,7 @@ from cvat.apps.engine.media_extractors import (ImageDatasetManifestReader,
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (DataChoice, DimensionType, Job, Image,
                                      StorageChoice, CloudStorage)
-from cvat.apps.engine.utils import md5_hash
+from cvat.apps.engine.utils import md5_hash, preload_images
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -44,17 +45,36 @@ class MediaCache:
         self._cache = caches['media']
 
     def _get_or_set_cache_item(self, key, create_function):
-        slogger.glob.info(f'Starting to get chunk from cache: key {key}')
-        item = self._cache.get(key)
-        slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
-        if not item:
+        def create_item():
             slogger.glob.info(f'Starting to prepare chunk: key {key}')
             item = create_function()
             slogger.glob.info(f'Ending to prepare chunk: key {key}')
+
             if item[0]:
+                item = (item[0], item[1], zlib.crc32(item[0].getbuffer()))
                 self._cache.set(key, item)
 
-        return item
+            return item
+
+        slogger.glob.info(f'Starting to get chunk from cache: key {key}')
+        try:
+            item = self._cache.get(key)
+        except pickle.UnpicklingError:
+            slogger.glob.error(f'Unable to get item from cache: key {key}', exc_info=True)
+            item = None
+        slogger.glob.info(f'Ending to get chunk from cache: key {key}, is_cached {bool(item)}')
+
+        if not item:
+            item = create_item()
+        else:
+            # compare checksum
+            item_data = item[0].getbuffer() if isinstance(item[0], io.BytesIO) else item[0]
+            item_checksum = item[2] if len(item) == 3 else None
+            if item_checksum != zlib.crc32(item_data):
+                slogger.glob.info(f'Recreating cache item {key} due to checksum mismatch')
+                item = create_item()
+
+        return item[0], item[1]
 
     def get_task_chunk_data_with_mime(self, chunk_number, quality, db_data):
         item = self._get_or_set_cache_item(
@@ -66,7 +86,7 @@ class MediaCache:
 
     def get_selective_job_chunk_data_with_mime(self, chunk_number, quality, job):
         item = self._get_or_set_cache_item(
-            key=f'{job.id}_{chunk_number}_{quality}',
+            key=f'job_{job.id}_{chunk_number}_{quality}',
             create_function=lambda: self.prepare_selective_job_chunk(job, quality, chunk_number),
         )
 
@@ -117,7 +137,7 @@ class MediaCache:
 
     @staticmethod
     @contextmanager
-    def _get_images(db_data, chunk_number):
+    def _get_images(db_data, chunk_number, dimension):
         images = []
         tmp_dir = None
         upload_dir = {
@@ -168,6 +188,7 @@ class MediaCache:
                         images.append((fs_filename, fs_filename, None))
 
                     cloud_storage_instance.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
+                    images = preload_images(images)
 
                     for checksum, (_, fs_filename, _) in zip(checksums, images):
                         if checksum and not md5_hash(fs_filename) == checksum:
@@ -176,6 +197,8 @@ class MediaCache:
                     for item in reader:
                         source_path = os.path.join(upload_dir, f"{item['name']}{item['extension']}")
                         images.append((source_path, source_path, None))
+                    if dimension == DimensionType.DIM_2D:
+                        images = preload_images(images)
 
             yield images
         finally:
@@ -199,7 +222,7 @@ class MediaCache:
         writer = writer_classes[quality](image_quality, **kwargs)
 
         buff = BytesIO()
-        with self._get_images(db_data, chunk_number) as images:
+        with self._get_images(db_data, chunk_number, self._dimension) as images:
             writer.save_as_chunk(images, buff)
         buff.seek(0)
 
@@ -279,7 +302,7 @@ class MediaCache:
             manifest_prefix = os.path.dirname(manifest_model.filename)
             full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_model.filename)
             if not os.path.exists(full_manifest_path) or \
-                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
+                    datetime.fromtimestamp(os.path.getmtime(full_manifest_path), tz=timezone.utc) < storage.get_file_last_modified(manifest_model.filename):
                 storage.download_file(manifest_model.filename, full_manifest_path)
             manifest = ImageManifestManager(
                 os.path.join(db_storage.get_storage_dirname(), manifest_model.filename),
@@ -321,6 +344,6 @@ class MediaCache:
                 if not success:
                     raise Exception('Failed to encode image to ".jpeg" format')
                 zip_file.writestr(f'{name}.jpg', result.tobytes())
-        buff = zip_buffer.getvalue()
         mime_type = 'application/zip'
-        return buff, mime_type
+        zip_buffer.seek(0)
+        return zip_buffer, mime_type

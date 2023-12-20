@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.9.0
+  version: 2.10.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -767,42 +767,6 @@ paths:
               schema:
                 type: string
           description: Cloud Storage actions (GET | PUT | DELETE)
-  /api/cloudstorages/{id}/content:
-    get:
-      operationId: cloudstorages_retrieve_content
-      description: 'This method is deprecated and will be removed in version 2.6.0.
-        Please use the new version of API: /cloudstorages/id/content-v2/'
-      summary: Method returns a manifest content
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this cloud storage.
-        required: true
-      - in: query
-        name: manifest_path
-        schema:
-          type: string
-        description: Path to the manifest file in a cloud storage
-      tags:
-      - cloudstorages
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: array
-                items:
-                  type: string
-          description: A manifest content
   /api/cloudstorages/{id}/content-v2:
     get:
       operationId: cloudstorages_retrieve_content_v2
@@ -1356,7 +1320,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner'].
+           Available filter_fields: ['owner', 'user_id', 'accepted'].
         schema:
           type: string
       - name: org
@@ -1544,14 +1508,12 @@ paths:
         required: true
       tags:
       - invitations
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AcceptInvitationWriteRequest'
-        required: true
       security:
-      - {}
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
       responses:
         '200':
           content:
@@ -1561,10 +1523,32 @@ paths:
           description: The invitation is accepted
         '400':
           description: The invitation is expired or already accepted
+  /api/invitations/{key}/decline:
+    post:
+      operationId: invitations_decline
+      summary: Method declines the invitation to organization
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The invitation has been declined
   /api/invitations/{key}/resend:
     post:
       operationId: invitations_resend
-      summary: Method resends the invitation
+      summary: Method resends the invitation to organization
       parameters:
       - in: path
         name: key
@@ -6167,31 +6151,6 @@ components:
           type: string
       required:
       - organization_slug
-    AcceptInvitationWriteRequest:
-      type: object
-      properties:
-        username:
-          type: string
-          minLength: 5
-          maxLength: 150
-        password1:
-          type: string
-          writeOnly: true
-          minLength: 1
-        password2:
-          type: string
-          writeOnly: true
-          minLength: 1
-        first_name:
-          type: string
-          minLength: 1
-        last_name:
-          type: string
-          minLength: 1
-      required:
-      - password1
-      - password2
-      - username
     AnalyticsReport:
       type: object
       properties:
@@ -6454,6 +6413,16 @@ components:
       oneOf:
       - $ref: '#/components/schemas/ProjectFileRequest'
       nullable: true
+    BasicOrganization:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
     BasicUser:
       type: object
       properties:
@@ -7316,10 +7285,10 @@ components:
           description: The name of the function to execute
         task:
           type: integer
-          description: The id of the task to annotate
+          description: The id of the task to be annotated
         job:
           type: integer
-          description: The id of the job to annotate
+          description: The id of the job to be annotated
         quality:
           allOf:
           - $ref: '#/components/schemas/QualityEnum'
@@ -7329,22 +7298,23 @@ components:
 
             * `compressed` - compressed
             * `original` - original
-        cleanup:
-          type: boolean
-          default: false
-        convMaskToPoly:
-          type: boolean
-          default: false
+        max_distance:
+          type: integer
         threshold:
           type: number
           format: double
+        cleanup:
+          type: boolean
+          default: false
+          description: Whether existing annotations should be removed
+        convMaskToPoly:
+          type: boolean
+          default: false
         mapping:
           type: object
           additionalProperties:
-            type: object
+            $ref: '#/components/schemas/LabelMappingEntryRequest'
           description: Label mapping from the model to the task labels
-        max_distance:
-          type: integer
       required:
       - function
       - task
@@ -7392,8 +7362,15 @@ components:
           $ref: '#/components/schemas/BasicUser'
         organization:
           type: integer
+        expired:
+          type: boolean
+          readOnly: true
+          nullable: true
+        organization_info:
+          $ref: '#/components/schemas/BasicOrganization'
       required:
       - organization
+      - organization_info
       - owner
       - role
       - user
@@ -7586,6 +7563,14 @@ components:
           type: integer
           readOnly: true
           nullable: true
+        target_storage:
+          allOf:
+          - $ref: '#/components/schemas/Storage'
+          nullable: true
+        source_storage:
+          allOf:
+          - $ref: '#/components/schemas/Storage'
+          nullable: true
       required:
       - issues
       - labels
@@ -7719,6 +7704,25 @@ components:
         has_parent:
           type: boolean
           readOnly: true
+      required:
+      - name
+    LabelMappingEntryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
+        sublabels:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/SublabelMappingEntryRequest'
+          description: Label mapping for from the model to the task sublabels within
+            a parent label
       required:
       - name
     LabeledData:
@@ -9401,8 +9405,6 @@ components:
           $ref: '#/components/schemas/LocationEnum'
         cloud_storage_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           nullable: true
     StorageMethod:
       enum:
@@ -9419,8 +9421,6 @@ components:
           $ref: '#/components/schemas/LocationEnum'
         cloud_storage_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           nullable: true
     StorageType:
       enum:
@@ -9622,6 +9622,19 @@ components:
           description: Associated annotation type for this label
         has_parent:
           type: boolean
+      required:
+      - name
+    SublabelMappingEntryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
       required:
       - name
     SublabelRequest:

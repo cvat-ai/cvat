@@ -1575,7 +1575,7 @@ class Issue4996_Cases(_LambdaTestCaseBase):
 
         task = self._create_task(task_spec={
                 'name': 'test_task',
-                'labels': [{'name': 'cat'}],
+                'labels': [{'name': 'car'}],
                 'segment_size': 2
             },
             data=self._generate_task_images(6),

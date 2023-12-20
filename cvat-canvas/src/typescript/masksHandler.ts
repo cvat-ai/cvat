@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -295,15 +295,10 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     public constructor(
-        onDrawDone: (
-            data: object | null,
-            duration?: number,
-            continueDraw?: boolean,
-            prevDrawData?: DrawData,
-        ) => void,
-        onDrawRepeat: (data: DrawData) => void,
-        onEditStart: (state: any) => void,
-        onEditDone: (state: any, points: number[]) => void,
+        onDrawDone: MasksHandlerImpl['onDrawDone'],
+        onDrawRepeat: MasksHandlerImpl['onDrawRepeat'],
+        onEditStart: MasksHandlerImpl['onEditStart'],
+        onEditDone: MasksHandlerImpl['onEditDone'],
         vectorDrawHandler: DrawHandler,
         canvas: HTMLCanvasElement,
     ) {
@@ -564,6 +559,7 @@ export class MasksHandlerImpl implements MasksHandler {
             try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                    this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
                     const rle = zipChannels(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
@@ -634,6 +630,7 @@ export class MasksHandlerImpl implements MasksHandler {
             try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                    this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
                     const rle = zipChannels(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);

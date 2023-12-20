@@ -21,6 +21,7 @@ import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
+import BaseSingleFrameAction from './annotations-actions';
 
 import * as enums from './enums';
 
@@ -34,9 +35,10 @@ import pjson from '../package.json';
 import config from './config';
 
 import implementAPI from './api-implementation';
+import CVATCore from '.';
 
-function build() {
-    const cvat = {
+function build(): CVATCore {
+    const cvat: CVATCore = {
         server: {
             async about() {
                 const result = await PluginRegistry.apiWrapper(cvat.server.about);
@@ -111,8 +113,8 @@ function build() {
                 );
                 return result;
             },
-            async request(url, data) {
-                const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data);
+            async request(url, data, requestConfig) {
+                const result = await PluginRegistry.apiWrapper(cvat.server.request, url, data, requestConfig);
                 return result;
             },
             async setAuthData(response) {
@@ -178,6 +180,42 @@ function build() {
                 return result;
             },
         },
+        actions: {
+            async list() {
+                const result = await PluginRegistry.apiWrapper(cvat.actions.list);
+                return result;
+            },
+            async register(action: BaseSingleFrameAction) {
+                const result = await PluginRegistry.apiWrapper(cvat.actions.register, action);
+                return result;
+            },
+            async run(
+                instance: Job | Task,
+                actionsChain: BaseSingleFrameAction[],
+                actionsParameters: Record<string, string>[],
+                frameFrom: number,
+                frameTo: number,
+                filters: string[],
+                onProgress: (
+                    message: string,
+                    progress: number,
+                ) => void,
+                cancelled: () => boolean,
+            ) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.actions.run,
+                    instance,
+                    actionsChain,
+                    actionsParameters,
+                    frameFrom,
+                    frameTo,
+                    filters,
+                    onProgress,
+                    cancelled,
+                );
+                return result;
+            },
+        },
         lambda: {
             async list() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.list);
@@ -201,10 +239,6 @@ function build() {
             },
             async requests() {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.requests);
-                return result;
-            },
-            async providers() {
-                const result = await PluginRegistry.apiWrapper(cvat.lambda.providers);
                 return result;
             },
         },
@@ -271,17 +305,22 @@ function build() {
                 const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
                 return result;
             },
-            async acceptInvitation(username, firstName, lastName, email, password, userConfirmations, key) {
+            async acceptInvitation(key) {
                 const result = await PluginRegistry.apiWrapper(
                     cvat.organizations.acceptInvitation,
-                    username,
-                    firstName,
-                    lastName,
-                    email,
-                    password,
-                    userConfirmations,
                     key,
                 );
+                return result;
+            },
+            async declineInvitation(key) {
+                const result = await PluginRegistry.apiWrapper(
+                    cvat.organizations.declineInvitation,
+                    key,
+                );
+                return result;
+            },
+            async invitations(filter = {}) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.invitations, filter);
                 return result;
             },
         },
@@ -333,6 +372,7 @@ function build() {
             Organization,
             Webhook,
             AnnotationGuide,
+            BaseSingleFrameAction,
         },
         utils: {
             mask2Rle,

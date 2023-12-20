@@ -8,6 +8,7 @@ import {
     CanvasVersion,
     RectDrawingMethod,
     CuboidDrawingMethod,
+    CanvasHint as _CanvasHint,
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
     HighlightSeverity as _HighlightSeverity,
@@ -32,6 +33,7 @@ export function convertShapesForInteractor(shapes: InteractionResult[], button: 
 export type InteractionData = _InteractionData;
 export type InteractionResult = _InteractionResult;
 export type HighlightSeverity = _HighlightSeverity;
+export type CanvasHint = _CanvasHint;
 
 export {
     Canvas, CanvasMode, CanvasVersion, RectDrawingMethod, CuboidDrawingMethod,

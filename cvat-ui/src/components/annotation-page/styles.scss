@@ -214,7 +214,7 @@
 
 .cvat-job-info-modal-window {
     > div {
-        margin-top: 10px;
+        margin-top: $grid-unit-size;
     }
 
     > div:nth-child(1) {
@@ -244,6 +244,10 @@
             }
 
             .ant-table-thead {
+                .cvat-info-circle-icon {
+                    margin-left: $grid-unit-size;
+                }
+
                 > tr > th {
                     padding: $grid-unit-size 0 $grid-unit-size $grid-unit-size * 0.5;
                 }

@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +12,6 @@ export interface KeyMapItem {
     sequences: string[];
     displayedSequences?: string[];
     action: 'keydown' | 'keyup' | 'keypress';
-    applicable: any[];
 }
 
 export interface KeyMap {
@@ -49,6 +49,7 @@ export default function GlobalHotKeys(props: Props): JSX.Element {
         };
     });
 
+    // eslint-disable-next-line react/jsx-no-useless-fragment
     return children || <></>;
 }
 
