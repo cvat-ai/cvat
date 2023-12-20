@@ -355,7 +355,7 @@ class ServerProxy {
                 }
             }
 
-            return (await getJobs({ id })).results[0];
+            return (await getJobs({ id }))[0];
         }
 
         async function getUsers() {
