@@ -465,9 +465,6 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
 
             return {
                 ...state,
-                player: {
-                    ...state.player,
-                },
                 shapes: {
                     ...defaultState.shapes,
                     opacity: clampedOpacity,
