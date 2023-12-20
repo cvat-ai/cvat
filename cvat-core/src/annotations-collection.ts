@@ -66,7 +66,6 @@ export default class Collection {
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
     private objects: Record<number, Shape | Tag | Track>;
-    private count: number;
     private groups: { max: number };
     private injection: BasicInjection;
 
@@ -96,7 +95,6 @@ export default class Collection {
         this.tags = {}; // key is a frame
         this.tracks = [];
         this.objects = {}; // key is a client id
-        this.count = 0;
         this.flush = false;
         this.groups = {
             max: 0,
@@ -108,7 +106,7 @@ export default class Collection {
             history: this.history,
             dimension: data.dimension,
             jobType: data.jobType,
-            nextClientID: () => ++this.count,
+            nextClientID: () => ++config.globalObjectsCounter,
             groupColors: {},
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
                 .filter((object) => object instanceof MaskShape),
@@ -123,7 +121,7 @@ export default class Collection {
         };
 
         for (const tag of data.tags) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const color = colors[clientID % colors.length];
             const tagModel = new Tag(tag, clientID, color, this.injection);
             this.tags[tagModel.frame] = this.tags[tagModel.frame] || [];
@@ -134,7 +132,7 @@ export default class Collection {
         }
 
         for (const shape of data.shapes) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const shapeModel = shapeFactory(shape, clientID, this.injection);
             this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
             this.shapes[shapeModel.frame].push(shapeModel);
@@ -144,7 +142,7 @@ export default class Collection {
         }
 
         for (const track of data.tracks) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const trackModel = trackFactory(track, clientID, this.injection);
             // The function can return null if track doesn't have any shapes.
             // In this case a corresponded message will be sent to the console
@@ -808,7 +806,6 @@ export default class Collection {
             this.tags = {};
             this.tracks = [];
             this.objects = {};
-            this.count = 0;
 
             this.flush = true;
         } else {

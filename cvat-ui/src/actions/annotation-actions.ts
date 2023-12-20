@@ -365,12 +365,17 @@ export function updateCanvasBrushTools(config: {
 export function removeAnnotationsAsync(
     startFrame: number, endFrame: number, delTrackKeyframesOnly: boolean,
 ): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
             await jobInstance.annotations.clear(false, startFrame, endFrame, delTrackKeyframesOnly);
             await jobInstance.actions.clear();
             dispatch(fetchAnnotationsAsync());
+
+            const state = getState();
+            if (!state.annotation.job.groundTruthInstance) {
+                getCore().config.globalObjectsCounter = 0;
+            }
 
             dispatch({
                 type: AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_SUCCESS,
@@ -910,6 +915,7 @@ export function getJobAsync(
                 true,
             );
 
+            getCore().config.globalObjectsCounter = 0;
             const [job] = await cvat.jobs.get({ jobID: jid });
             let gtJob: Job | null = null;
             if (job.type === JobType.ANNOTATION) {
@@ -918,20 +924,6 @@ export function getJobAsync(
                 } catch (e) {
                     // gtJob is not available for workers
                     // do nothing
-                }
-            }
-
-            let groundTruthJobFramesMeta = null;
-            if (gtJob) {
-                gtJob.annotations.get(0); // fetch gt annotations from the server
-                groundTruthJobFramesMeta = await cvat.frames.getMeta('job', gtJob.id);
-            }
-
-            let conflicts: QualityConflict[] = [];
-            if (gtJob) {
-                const [report] = await cvat.analytics.quality.reports({ jobId: job.id, target: 'job' });
-                if (report) {
-                    conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
                 }
             }
 
@@ -954,6 +946,20 @@ export function getJobAsync(
             const issues = await job.issues();
             const [minZ, maxZ] = computeZRange(states);
             const colors = [...cvat.enums.colors];
+
+            let groundTruthJobFramesMeta = null;
+            if (gtJob) {
+                gtJob.annotations.clear(true); // fetch gt annotations from the server
+                groundTruthJobFramesMeta = await cvat.frames.getMeta('job', gtJob.id);
+            }
+
+            let conflicts: QualityConflict[] = [];
+            if (gtJob) {
+                const [report] = await cvat.analytics.quality.reports({ jobId: job.id, target: 'job' });
+                if (report) {
+                    conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
+                }
+            }
 
             loadJobEvent.close(await jobInfoGenerator(job));
 

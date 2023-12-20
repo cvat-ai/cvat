@@ -274,6 +274,9 @@ function build(): CVATCore {
             set onOrganizationChange(value: (orgId: number) => void) {
                 config.onOrganizationChange = value;
             },
+            set globalObjectsCounter(value: number) {
+                config.globalObjectsCounter = value;
+            },
         },
         client: {
             version: `${pjson.version}`,

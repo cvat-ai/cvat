@@ -123,6 +123,7 @@ export default interface CVATCore {
         uploadChunkSize: typeof config.uploadChunkSize;
         removeUnderlyingMaskPixels: typeof config.removeUnderlyingMaskPixels;
         onOrganizationChange: typeof config.onOrganizationChange;
+        globalObjectsCounter: typeof config.globalObjectsCounter;
     },
     client: {
         version: string;
