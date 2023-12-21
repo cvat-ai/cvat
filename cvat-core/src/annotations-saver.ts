@@ -257,16 +257,28 @@ export default class AnnotationsSaver {
             // from nginx proxy, when the request is still being processed by the server
             // that is not good that client knows about the server details
             // but we implemented a workaround here
-            const retryIf504Status = async (error: unknown): Promise<void> => {
+            const retryIf504Status = async (
+                error: unknown,
+                requestBody: RequestBody,
+                action: 'update' | 'delete' | 'create',
+            ): Promise<ResponseBody> => {
                 if (error instanceof ServerError && error.code === 504) {
-                    const RETRY_PERIOD = 10000;
+                    const RETRY_PERIOD = 5000;
                     this.collection.flush = true;
 
                     let retryCount = 10;
                     while (retryCount) {
                         try {
-                            await this.save(onUpdateArg);
-                            return;
+                            if (action === 'update') {
+                                return await this._update(requestBody);
+                            }
+
+                            if (action === 'delete') {
+                                return await this._update(requestBody);
+                            }
+
+                            // todo: implement for create
+                            return await this._create(requestBody);
                         } catch (_: unknown) {
                             retryCount--;
                             await sleep(RETRY_PERIOD);
@@ -279,35 +291,17 @@ export default class AnnotationsSaver {
 
             const { created, updated, deleted } = this._split(exported);
 
-            onUpdate('Created objects are being saved on the server');
-            const indexes = this._extractClientIDs(created);
-            let createdData = null;
-            try {
-                createdData = await this._create({ ...created, version: this.version });
-                this.version = createdData.version;
-            } catch (error: unknown) {
-                await retryIf504Status(error);
-                return;
-            }
-
-            this._updateCreatedObjects(createdData, indexes);
-            for (const type of Object.keys(this.initialObjects)) {
-                for (const object of createdData[type]) {
-                    this.initialObjects[type][object.id] = object;
-                }
-            }
-
             onUpdate('Updated objects are being saved on the server');
             this._extractClientIDs(updated);
+            let requestBody = { ...updated, version: this.version };
             let updatedData = null;
             try {
-                updatedData = await this._update({ ...updated, version: this.version });
+                updatedData = await this._update(requestBody);
             } catch (error: unknown) {
-                await retryIf504Status(error);
-                return;
+                updatedData = await retryIf504Status(error, requestBody, 'update');
             }
-            this.version = updatedData.version;
 
+            this.version = updatedData.version;
             for (const type of Object.keys(this.initialObjects)) {
                 for (const object of updatedData[type]) {
                     this.initialObjects[type][object.id] = object;
@@ -316,18 +310,38 @@ export default class AnnotationsSaver {
 
             onUpdate('Deleted objects are being deleted from the server');
             this._extractClientIDs(deleted);
+            requestBody = { ...deleted, version: this.version };
             let deletedData = null;
             try {
-                deletedData = await this._delete({ ...deleted, version: this.version });
+                deletedData = await this._delete(requestBody);
             } catch (error: unknown) {
-                await retryIf504Status(error);
+                await retryIf504Status(error, requestBody, 'delete');
                 return;
             }
-            this.version = deletedData.version;
 
+            this.version = deletedData.version;
             for (const type of Object.keys(this.initialObjects)) {
                 for (const object of deletedData[type]) {
                     delete this.initialObjects[type][object.id];
+                }
+            }
+
+            onUpdate('Created objects are being saved on the server');
+            const indexes = this._extractClientIDs(created);
+            requestBody = { ...created, version: this.version };
+            let createdData = null;
+            try {
+                createdData = await this._create(requestBody);
+            } catch (error: unknown) {
+                await retryIf504Status(error, requestBody, 'create');
+                return;
+            }
+
+            this.version = createdData.version;
+            this._updateCreatedObjects(createdData, indexes);
+            for (const type of Object.keys(this.initialObjects)) {
+                for (const object of createdData[type]) {
+                    this.initialObjects[type][object.id] = object;
                 }
             }
         }
