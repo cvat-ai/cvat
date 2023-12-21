@@ -41,10 +41,6 @@ BASE_DIR = str(Path(__file__).parents[2])
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
 
-redis_host = os.getenv('CVAT_REDIS_HOST', 'localhost')
-redis_port = os.getenv('CVAT_REDIS_PORT', 6379)
-redis_password = os.getenv('CVAT_REDIS_PASSWORD', '')
-
 def generate_secret_key():
     """
     Creates secret_key.py in such a way that multiple processes calling
@@ -282,62 +278,49 @@ class CVAT_QUEUES(Enum):
     ANALYTICS_REPORTS = 'analytics_reports'
     CLEANING = 'cleaning'
 
+redis_inmem_host = os.getenv('CVAT_REDIS_INMEM_HOST', 'localhost')
+redis_inmem_port = os.getenv('CVAT_REDIS_INMEM_PORT', 6379)
+redis_inmem_password = os.getenv('CVAT_REDIS_INMEM_PASSWORD', '')
+
+shared_queue_settings = {
+    'HOST': redis_inmem_host,
+    'PORT': redis_inmem_port,
+    'DB': 0,
+    'PASSWORD': urllib.parse.quote(redis_inmem_password),
+}
+
 RQ_QUEUES = {
     CVAT_QUEUES.IMPORT_DATA.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '4h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.EXPORT_DATA.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '4h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.AUTO_ANNOTATION.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '24h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.WEBHOOKS.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.NOTIFICATIONS.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.QUALITY_REPORTS.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.ANALYTICS_REPORTS.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
     CVAT_QUEUES.CLEANING.value: {
-        'HOST': redis_host,
-        'PORT': redis_port,
-        'DB': 0,
+        **shared_queue_settings,
         'DEFAULT_TIMEOUT': '1h',
-        'PASSWORD': urllib.parse.quote(redis_password),
     },
 }
 
@@ -536,15 +519,22 @@ RESTRICTIONS = {
     'analytics_visibility': True,
 }
 
+redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
+# The default port is not Redis's default port (6379).
+# This is so that a developer can run both in-mem and on-disk Redis on their machine
+# without running into a port conflict.
+redis_ondisk_port = os.getenv('CVAT_REDIS_ONDISK_PORT', 6479)
+redis_ondisk_password = os.getenv('CVAT_REDIS_ONDISK_PASSWORD', '')
+
 CACHES = {
    'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
-   'media' : {
+    'media': {
        'BACKEND' : 'django.core.cache.backends.redis.RedisCache',
-       "LOCATION": f"redis://:{urllib.parse.quote(redis_password)}@{redis_host}:{redis_port}",
+       "LOCATION": f"redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}",
        'TIMEOUT' : 3600 * 24, # 1 day
-   }
+    }
 }
 
 USE_CACHE = True

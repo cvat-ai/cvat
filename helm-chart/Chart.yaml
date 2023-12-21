@@ -56,6 +56,11 @@ dependencies:
     repository: https://helm.traefik.io/traefik
     condition: traefik.enabled
 
+  - name: redis
+    version: "18.5.*"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+
   - name: keydb
     version: 0.48.0
     repository: https://enapter.github.io/charts/
