@@ -52,10 +52,6 @@ function getStore(): Store<CombinedState> {
 }
 
 export function receiveAnnotationsParameters(): AnnotationsParameters {
-    if (store === null) {
-        store = getCVATStore();
-    }
-
     const state: CombinedState = getStore().getState();
     const {
         annotation: {
