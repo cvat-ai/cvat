@@ -250,7 +250,6 @@ export default class AnnotationsSaver {
                     while (retryCount) {
                         try {
                             await this.save(onUpdateArg);
-                            return;
                         } catch (_: unknown) {
                             retryCount--;
                             await sleep(RETRY_PERIOD);
@@ -271,6 +270,7 @@ export default class AnnotationsSaver {
                 this.version = createdData.version;
             } catch (error: unknown) {
                 await retryIf504Status(error);
+                return;
             }
 
             this._updateCreatedObjects(createdData, indexes);
@@ -287,6 +287,7 @@ export default class AnnotationsSaver {
                 updatedData = await this._update({ ...updated, version: this.version });
             } catch (error: unknown) {
                 await retryIf504Status(error);
+                return;
             }
             this.version = updatedData.version;
 
@@ -303,6 +304,7 @@ export default class AnnotationsSaver {
                 deletedData = await this._delete({ ...deleted, version: this.version });
             } catch (error: unknown) {
                 await retryIf504Status(error);
+                return;
             }
             this.version = deletedData.version;
 
