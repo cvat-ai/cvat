@@ -29,6 +29,7 @@ import BaseSingleFrameAction, { listActions, registerAction, runActions } from '
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';
+import { PaginatedResource } from './core-types';
 
 export default interface CVATCore {
     plugins: {
@@ -72,13 +73,37 @@ export default interface CVATCore {
         get: any;
     };
     jobs: {
-        get: any;
+        get: (filter: {
+            page?: number;
+            filter?: string;
+            sort?: string;
+            search?: string;
+            jobID?: number;
+            taskID?: number;
+            type?: string;
+        }) => Promise<PaginatedResource<Job>>;
     };
     tasks: {
-        get: any;
+        get: (filter: {
+            page?: number;
+            projectId?: number;
+            id?: number;
+            sort?: string;
+            search?: string;
+            filter?: string;
+            ordering?: string;
+        }) => Promise<PaginatedResource<Task>>;
     }
     projects: {
-        get: any;
+        get: (
+            filter: {
+                id: number;
+                page: number;
+                search: string;
+                sort: string;
+                filter: string;
+            }
+        ) => Promise<PaginatedResource<Project>>;
         searchNames: any;
     };
     cloudStorages: {
@@ -123,6 +148,7 @@ export default interface CVATCore {
         uploadChunkSize: typeof config.uploadChunkSize;
         removeUnderlyingMaskPixels: typeof config.removeUnderlyingMaskPixels;
         onOrganizationChange: typeof config.onOrganizationChange;
+        globalObjectsCounter: typeof config.globalObjectsCounter;
     },
     client: {
         version: string;

@@ -35,7 +35,7 @@ export default class Project {
         importDataset: CallableFunction;
     };
 
-    constructor(initialData: SerializedProject & { labels?: SerializedLabel[] }) {
+    constructor(initialData: Readonly<SerializedProject & { labels?: SerializedLabel[] }>) {
         const data = {
             id: undefined,
             name: undefined,

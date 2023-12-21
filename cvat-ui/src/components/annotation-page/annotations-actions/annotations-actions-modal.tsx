@@ -306,7 +306,9 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                 <Text strong>It affects only the local browser state. </Text>
                                 <Text>Once an action has finished, </Text>
                                 <Text strong>it cannot be reverted. </Text>
-                                <Text>You may reload the page to get annotations from the server</Text>
+                                <Text>You may reload the page to get annotations from the server. </Text>
+                                <Text strong>It is strongly recommended to review the changes </Text>
+                                <Text strong>before saving annotations to the server. </Text>
                             </div>
                         )}
                         type='info'
@@ -324,10 +326,10 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                         type='link'
                                         onClick={() => {
                                             storage.dispatch(
-                                                saveAnnotationsAsync(storage.getState().annotation.job.instance as Job),
-                                            ).then(() => {
-                                                dispatch(reducerActions.setJobSavedFlag(true));
-                                            });
+                                                saveAnnotationsAsync(() => {
+                                                    dispatch(reducerActions.setJobSavedFlag(true));
+                                                }),
+                                            );
                                         }}
                                     >
                                         Click to save the job

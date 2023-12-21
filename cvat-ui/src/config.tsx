@@ -127,6 +127,7 @@ const RESET_NOTIFICATIONS_PATHS = {
 const BUCKET_CONTENT_KEY = 'All files';
 
 const NUMERIC_VALUE_CLAMP_THRESHOLD = 5000;
+const OPENCV_PATH = '/assets/opencv_4.8.0.js';
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
@@ -164,4 +165,5 @@ export default {
     RESET_NOTIFICATIONS_PATHS,
     BUCKET_CONTENT_KEY,
     NUMERIC_VALUE_CLAMP_THRESHOLD,
+    OPENCV_PATH,
 };

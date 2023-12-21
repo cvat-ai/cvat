@@ -9,7 +9,7 @@ import { checkObjectType, clamp } from './common';
 import { DataError, ArgumentError, ScriptingError } from './exceptions';
 import { Label } from './labels';
 import {
-    colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType,
+    colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType, JobType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
 import { SerializedShape, SerializedTrack, SerializedTag } from './server-response-types';
@@ -51,6 +51,7 @@ export interface BasicInjection {
     parentID?: number;
     readOnlyFields?: string[];
     dimension: DimensionType;
+    jobType: JobType;
     nextClientID: () => number;
     getMasksOnFrame: (frame: number) => MaskShape[];
 }
@@ -66,14 +67,13 @@ class Annotation {
     protected history: any;
     protected groupColors: Record<number, string>;
     public serverID: number | null;
-    public jobID: number;
     protected parentID: number | null;
     protected dimension: DimensionType;
+    protected jobType: JobType;
     public group: number;
     public label: Label;
     public frame: number;
     private _removed: boolean;
-    protected isGroundTruth: boolean;
     public lock: boolean;
     protected readOnlyFields: string[];
     protected color: string;
@@ -91,18 +91,16 @@ class Annotation {
         this.groupColors = injection.groupColors;
         this.clientID = clientID;
         this.serverID = data.id || null;
-        this.jobID = data.job_id;
         this.parentID = injection.parentID || null;
         this.dimension = injection.dimension;
         this.group = data.group;
         this.label = this.taskLabels[data.label_id];
         this.frame = data.frame;
         this._removed = false;
-        this.isGroundTruth = data.is_gt || false;
         this.lock = false;
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
-        this.source = data.source;
+        this.source = injection.jobType === JobType.GROUND_TRUTH ? Source.GT : data.source;
         this.updated = Date.now();
         this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
             attributeAccumulator[attr.spec_id] = attr.value;
@@ -554,7 +552,6 @@ export class Shape extends Drawn {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
-            jobID: this.jobID,
             parentID: this.parentID,
             occluded: this.occluded,
             lock: this.lock,
@@ -569,7 +566,6 @@ export class Shape extends Drawn {
             hidden: this.hidden,
             updated: this.updated,
             pinned: this.pinned,
-            isGroundTruth: this.isGroundTruth,
             frame,
             source: this.source,
             ...this.withContext(frame),
@@ -899,7 +895,6 @@ export class Track extends Drawn {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
-            jobID: this.jobID,
             parentID: this.parentID,
             lock: this.lock,
             color: this.color,
@@ -915,7 +910,6 @@ export class Track extends Drawn {
             },
             frame,
             source: this.source,
-            isGroundTruth: this.isGroundTruth,
             ...this.withContext(frame),
         };
     }
@@ -1425,7 +1419,6 @@ export class Tag extends Annotation {
             objectType: ObjectType.TAG,
             clientID: this.clientID,
             serverID: this.serverID,
-            jobID: this.jobID,
             lock: this.lock,
             attributes: { ...this.attributes },
             label: this.label,
@@ -1434,7 +1427,6 @@ export class Tag extends Annotation {
             updated: this.updated,
             frame,
             source: this.source,
-            isGroundTruth: this.isGroundTruth,
             ...this.withContext(frame),
         };
     }
@@ -1951,11 +1943,9 @@ export class SkeletonShape extends Shape {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
-            jobID: this.jobID,
             points: this.points,
             zOrder: this.zOrder,
             rotation: 0,
-            isGroundTruth: this.isGroundTruth,
             attributes: { ...this.attributes },
             descriptions: [...this.descriptions],
             elements,
@@ -2887,8 +2877,6 @@ export class SkeletonTrack extends Track {
             shapeType: this.shapeType,
             clientID: this.clientID,
             serverID: this.serverID,
-            jobID: this.jobID,
-            isGroundTruth: this.isGroundTruth,
             color: this.color,
             updated: Math.max(this.updated, ...this.elements.map((element) => element.updated)),
             label: this.label,

@@ -99,7 +99,7 @@ export class Label {
     public patched: boolean;
     public readonly hasParent?: boolean;
 
-    constructor(initialData: SerializedLabel) {
+    constructor(initialData: Readonly<SerializedLabel>) {
         const data = {
             id: undefined,
             name: undefined,
