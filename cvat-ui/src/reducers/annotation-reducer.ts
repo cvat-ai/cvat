@@ -13,7 +13,6 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { DimensionType, JobStage } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
-import { SettingsActionTypes } from 'actions/settings-actions';
 import {
     ActiveControl,
     AnnotationState,
@@ -57,7 +56,7 @@ const defaultState: AnnotationState = {
         labels: [],
         groundTruthJobFramesMeta: null,
         requestedId: null,
-        groundTruthJobId: null,
+        groundTruthInstance: null,
         instance: null,
         attributes: {},
         fetching: false,
@@ -95,7 +94,6 @@ const defaultState: AnnotationState = {
         },
         collapsed: {},
         collapsedAll: true,
-        statesSources: [],
         states: [],
         filters: [],
         resetGroupFlag: false,
@@ -155,7 +153,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frameData: data,
                 minZ,
                 maxZ,
-                groundTruthJobId,
+                groundTruthInstance,
                 groundTruthJobFramesMeta,
             } = action.payload;
 
@@ -188,7 +186,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
-                    groundTruthJobId,
+                    groundTruthInstance,
                     groundTruthJobFramesMeta,
                 },
                 annotations: {
@@ -200,7 +198,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         max: maxZ,
                         cur: maxZ,
                     },
-                    statesSources: [job.id],
                 },
                 player: {
                     ...state.player,
@@ -290,6 +287,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 changeTime,
                 changeFrameLog,
             } = action.payload;
+
             return {
                 ...state,
                 player: {
@@ -359,15 +357,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS: {
-            const { states } = action.payload;
-            const { activatedStateID } = state.annotations;
-
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    states,
-                    activatedStateID: updateActivatedStateID(states, activatedStateID),
                     saving: {
                         ...state.annotations.saving,
                         uploading: false,
@@ -548,16 +541,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED: {
-            const { states } = action.payload;
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    states,
-                },
-            };
-        }
         case AnnotationActionTypes.RESET_ANNOTATIONS_GROUP: {
             return {
                 ...state,
@@ -573,23 +556,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     resetGroupFlag: false,
-                },
-            };
-        }
-        case AnnotationActionTypes.SPLIT_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.MERGE_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.SLICE_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.JOIN_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.GROUP_ANNOTATIONS_SUCCESS: {
-            const { states, history } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    states,
-                    history,
                 },
             };
         }
@@ -808,16 +774,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        // Added Remove Annotations
         case AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_SUCCESS: {
-            const { history } = action.payload;
-            const { states } = action.payload;
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    history,
-                    states,
                     activatedStateID: null,
                     collapsed: {},
                 },
@@ -855,28 +816,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     brushTools: {
                         ...state.canvas.brushTools,
                         ...action.payload,
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.REDO_ACTION_SUCCESS:
-        case AnnotationActionTypes.UNDO_ACTION_SUCCESS: {
-            const { activatedStateID } = state.annotations;
-            const {
-                history, states, minZ, maxZ,
-            } = action.payload;
-
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    activatedStateID: updateActivatedStateID(states, activatedStateID),
-                    states,
-                    history,
-                    zLayer: {
-                        min: minZ,
-                        max: maxZ,
-                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                     },
                 },
             };
@@ -994,19 +933,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 return state;
             }
 
-            let { statesSources } = state.annotations;
-            if (workspace !== Workspace.REVIEW_WORKSPACE) {
-                statesSources = [state.job.instance.id];
-            }
-
             return {
                 ...state,
                 workspace,
                 annotations: {
                     ...state.annotations,
+                    states: state.annotations.states.filter((_state) => !_state.isGroundTruth),
                     activatedStateID: null,
                     activatedAttributeID: null,
-                    statesSources,
                 },
             };
         }
@@ -1074,11 +1008,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         fetching: false,
                     },
                 },
-                annotations: {
-                    ...state.annotations,
-                    history: action.payload.history,
-                    states: action.payload.states,
-                },
                 canvas: {
                     ...state.canvas,
                     ready: true,
@@ -1108,29 +1037,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     highlightedConflict: conflict,
-                },
-            };
-        }
-        case SettingsActionTypes.CHANGE_SHOW_GROUND_TRUTH: {
-            if (action.payload.showGroundTruth) {
-                return {
-                    ...state,
-                    annotations: {
-                        ...state.annotations,
-                        statesSources: [
-                            state.job.instance.id,
-                            state.job.groundTruthJobId,
-                        ],
-                    },
-                };
-            }
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    statesSources: [
-                        state.job.instance.id,
-                    ],
                 },
             };
         }

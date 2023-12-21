@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { omit } from 'lodash';
 import { ArgumentError } from './exceptions';
 import { HistoryActions, JobType, RQStatus } from './enums';
 import { Storage } from './storage';
@@ -23,7 +24,7 @@ import {
 } from './frames';
 import Issue from './issue';
 import { Label } from './labels';
-import { SerializedLabel } from './server-response-types';
+import { SerializedLabel, SerializedTask } from './server-response-types';
 import { checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
@@ -209,8 +210,7 @@ export function implementJob(Job) {
         return findFrame(this.id, frameFrom, frameTo, filters);
     };
 
-    // TODO: Check filter for annotations
-    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters, groundTruthJobId) {
+    Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
         if (!Array.isArray(filters)) {
             throw new ArgumentError('Filters must be an array');
         }
@@ -223,7 +223,7 @@ export function implementJob(Job) {
             throw new ArgumentError(`Frame ${frame} does not exist in the job`);
         }
 
-        const annotationsData = await getAnnotations(this, frame, allTracks, filters, groundTruthJobId);
+        const annotationsData = await getAnnotations(this, frame, allTracks, filters);
         const deletedFrames = await getDeletedFrames('job', this.id);
         if (frame in deletedFrames) {
             return [];
@@ -308,7 +308,7 @@ export function implementJob(Job) {
     };
 
     Job.prototype.annotations.statistics.implementation = function () {
-        return getCollection(this).statistics({ jobID: this.id });
+        return getCollection(this).statistics();
     };
 
     Job.prototype.annotations.put.implementation = function (objectStates) {
@@ -442,19 +442,19 @@ export function implementTask(Task) {
 
             this._updateTrigger.reset();
 
-            let serializedTask = null;
+            let serializedTask: SerializedTask = null;
             if (Object.keys(taskData).length) {
                 serializedTask = await serverProxy.tasks.save(this.id, taskData);
             } else {
                 [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
             }
+
             const labels = await serverProxy.labels.get({ task_id: this.id });
             const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
-
             return new Task({
-                ...serializedTask,
+                ...omit(serializedTask, ['jobs', 'labels']),
                 progress: serializedTask.jobs,
-                jobs: jobs.results,
+                jobs,
                 labels: labels.results,
             });
         }
@@ -511,9 +511,9 @@ export function implementTask(Task) {
         }, true);
 
         return new Task({
-            ...task,
+            ...omit(task, ['jobs', 'labels']),
+            jobs,
             progress: task.jobs,
-            jobs: jobs.results,
             labels: labels.results,
         });
     };
@@ -523,7 +523,7 @@ export function implementTask(Task) {
     ): Promise<TaskClass> {
         if (Number.isInteger(this.id) && this.size === 0) {
             const serializedTask = await serverProxy.tasks.listenToCreate(this.id, onUpdate);
-            return new Task(serializedTask);
+            return new Task(omit(serializedTask, ['labels', 'jobs']));
         }
 
         return this;
@@ -772,7 +772,7 @@ export function implementTask(Task) {
     };
 
     Task.prototype.annotations.statistics.implementation = function () {
-        return getCollection(this).statistics({});
+        return getCollection(this).statistics();
     };
 
     Task.prototype.annotations.put.implementation = function (objectStates) {

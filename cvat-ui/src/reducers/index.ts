@@ -693,9 +693,9 @@ export interface AnnotationState {
         openTime: null | number;
         labels: Label[];
         requestedId: number | null;
-        groundTruthJobId: number | null;
         groundTruthJobFramesMeta: FramesMetaData | null;
         instance: Job | null | undefined;
+        groundTruthInstance: Job | null;
         attributes: Record<number, any[]>;
         fetching: boolean;
         saving: boolean;
@@ -733,7 +733,6 @@ export interface AnnotationState {
         highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
-        statesSources: number[];
         states: any[];
         filters: any[];
         resetGroupFlag: boolean;

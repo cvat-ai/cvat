@@ -22,7 +22,7 @@ import { LogType } from 'cvat-logger';
 import { Canvas, HighlightSeverity, CanvasHint } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, FramesMetaData, Job, ObjectState, QualityConflict, getCore,
+    AnnotationConflict, FramesMetaData, ObjectState, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -72,7 +72,6 @@ interface StateToProps {
     activatedStateID: number | null;
     activatedElementID: number | null;
     activatedAttributeID: number | null;
-    statesSources: number[];
     annotations: any[];
     frameData: any;
     frameAngle: number;
@@ -125,12 +124,12 @@ interface DispatchToProps {
     onResetCanvas: () => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateAnnotations(states: ObjectState[]): void;
-    onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onSplitAnnotations(sessionInstance: Job, frame: number, state: ObjectState): void;
-    onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void;
-    onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void;
-    onSliceAnnotations(sessionInstance: Job, state: ObjectState, results: number[][]): void;
+    onCreateAnnotations(states: ObjectState[]): void;
+    onMergeAnnotations(states: ObjectState[]): void;
+    onSplitAnnotations(state: ObjectState): void;
+    onGroupAnnotations(states: ObjectState[]): void;
+    onJoinAnnotations(states: ObjectState[], points: number[]): void;
+    onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
@@ -162,7 +161,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 activatedAttributeID,
-                statesSources,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
                 highlightedConflict,
             },
@@ -251,7 +249,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             activeControl === ActiveControl.DRAW_POLYLINE ||
             activeControl === ActiveControl.DRAW_MASK ||
             activeControl === ActiveControl.EDIT,
-        statesSources,
         conflicts,
         showGroundTruth,
         highlightedConflict,
@@ -274,23 +271,23 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        onCreateAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
-            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
+        onCreateAnnotations(states: ObjectState[]): void {
+            dispatch(createAnnotationsAsync(states));
         },
-        onMergeAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
-            dispatch(mergeAnnotationsAsync(sessionInstance, frame, states));
+        onMergeAnnotations(states: ObjectState[]): void {
+            dispatch(mergeAnnotationsAsync(states));
         },
-        onGroupAnnotations(sessionInstance: Job, frame: number, states: ObjectState[]): void {
-            dispatch(groupAnnotationsAsync(sessionInstance, frame, states));
+        onGroupAnnotations(states: ObjectState[]): void {
+            dispatch(groupAnnotationsAsync(states));
         },
-        onJoinAnnotations(sessionInstance: Job, states: ObjectState[], points: number[]): void {
-            dispatch(joinAnnotationsAsync(sessionInstance, states, points));
+        onJoinAnnotations(states: ObjectState[], points: number[]): void {
+            dispatch(joinAnnotationsAsync(states, points));
         },
-        onSliceAnnotations(sessionInstance: Job, state: ObjectState, results: number[][]): void {
-            dispatch(sliceAnnotationsAsync(sessionInstance, state, results));
+        onSliceAnnotations(state: ObjectState, results: number[][]): void {
+            dispatch(sliceAnnotationsAsync(state, results));
         },
-        onSplitAnnotations(sessionInstance: any, frame: number, state: ObjectState): void {
-            dispatch(splitAnnotationsAsync(sessionInstance, frame, state));
+        onSplitAnnotations(state: ObjectState): void {
+            dispatch(splitAnnotationsAsync(state));
         },
         onActivateObject(activatedStateID: number | null, activatedElementID: number | null = null): void {
             if (activatedStateID === null) {
@@ -431,7 +428,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             showProjections,
             colorBy,
             onFetchAnnotation,
-            statesSources,
             showGroundTruth,
             highlightedConflict,
             imageFilters,
@@ -526,7 +522,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         if (
             prevProps.annotations !== annotations ||
-            prevProps.statesSources !== statesSources ||
             prevProps.frameData !== frameData ||
             prevProps.curZLayer !== curZLayer
         ) {
@@ -662,12 +657,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         const objectState = new cvat.classes.ObjectState(state);
-        onCreateAnnotations(jobInstance, frame, [objectState]);
+        onCreateAnnotations([objectState]);
     };
 
     private onCanvasObjectsMerged = (event: any): void => {
         const {
-            jobInstance, frame, onMergeAnnotations, updateActiveControl,
+            jobInstance, onMergeAnnotations, updateActiveControl,
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
@@ -676,12 +671,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             duration,
             count: states.length,
         });
-        onMergeAnnotations(jobInstance, frame, states);
+        onMergeAnnotations(states);
     };
 
     private onCanvasObjectsGroupped = (event: any): void => {
         const {
-            jobInstance, frame, onGroupAnnotations, updateActiveControl,
+            jobInstance, onGroupAnnotations, updateActiveControl,
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
@@ -690,7 +685,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             duration,
             count: states.length,
         });
-        onGroupAnnotations(jobInstance, frame, states);
+        onGroupAnnotations(states);
     };
 
     private onCanvasObjectsJoined = (event: any): void => {
@@ -704,12 +699,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             duration,
             count: states.length,
         });
-        onJoinAnnotations(jobInstance, states, points);
+        onJoinAnnotations(states, points);
     };
 
     private onCanvasTrackSplitted = (event: any): void => {
         const {
-            jobInstance, frame, onSplitAnnotations, updateActiveControl,
+            jobInstance, onSplitAnnotations, updateActiveControl,
         } = this.props;
 
         updateActiveControl(ActiveControl.CURSOR);
@@ -718,7 +713,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             duration,
             count: 1,
         });
-        onSplitAnnotations(jobInstance, frame, state);
+        onSplitAnnotations(state);
     };
 
     private onCanvasPositionSelected = (event: any): void => {
@@ -803,7 +798,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
-
         if (result && result.state) {
             if (['polyline', 'points'].includes(result.state.shapeType)) {
                 if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
@@ -845,7 +839,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             duration,
             clientID: state.clientID,
         });
-        onSliceAnnotations(jobInstance, state, results);
+        onSliceAnnotations(state, results);
     };
     private onCanvasDragStart = (): void => {
         const { updateActiveControl } = this.props;
@@ -924,14 +918,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateCanvas(): void {
         const {
-            curZLayer, annotations, frameData, statesSources,
-            workspace, groundTruthJobFramesMeta, frame, imageFilters,
+            curZLayer, annotations, frameData,
+            workspace, groundTruthJobFramesMeta,
+            frame, imageFilters,
         } = this.props;
-        const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
+        const { canvasInstance } = this.props as { canvasInstance: Canvas };
         if (frameData !== null && canvasInstance) {
             const filteredAnnotations = filterAnnotations(annotations, {
-                statesSources,
                 frame,
                 groundTruthJobFramesMeta,
                 workspace,

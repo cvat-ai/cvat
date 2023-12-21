@@ -146,6 +146,7 @@ Client events:
 - `press:shortcut`
 - `send:debug_info`
 
+- `run:annotations_action`
 - `click:element`
 
 <!--lint enable maximum-line-length-->
