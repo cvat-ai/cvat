@@ -250,6 +250,7 @@ export default class AnnotationsSaver {
                     while (retryCount) {
                         try {
                             await this.save(onUpdateArg);
+                            return;
                         } catch (_: unknown) {
                             retryCount--;
                             await sleep(RETRY_PERIOD);
