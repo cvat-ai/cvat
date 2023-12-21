@@ -3,9 +3,23 @@
 //
 // SPDX-License-Identifier: MIT
 
-import serverProxy from './server-proxy';
+import serverProxy, { sleep } from './server-proxy';
 import { Task } from './session';
-import { ScriptingError } from './exceptions';
+import { ScriptingError, ServerError } from './exceptions';
+import { SerializedShape, SerializedTag, SerializedTrack } from './server-response-types';
+
+function removeServerID<T extends SerializedShape | SerializedTag | SerializedTrack>(object: T): T {
+    delete object.id;
+    if ('shapes' in object) {
+        for (const shape of object.shapes) {
+            delete shape.id;
+        }
+    }
+
+    if ('elements' in object) {
+        object.elements = object.elements.map((element) => removeServerID(element));
+    }
+}
 
 export default class AnnotationsSaver {
     private sessionType: 'task' | 'job';
@@ -202,14 +216,20 @@ export default class AnnotationsSaver {
         const exported = this.collection.export();
         const { flush } = this.collection;
         if (flush) {
-            onUpdate('Created objects are being saved on the server');
+            onUpdate('All collection is being saved on the server');
             const indexes = this._receiveIndexes(exported);
+
+            // remove server IDs if there are any, annotations will be rewritten
+            for (const type of Object.keys(exported)) {
+                for (const object of exported[type]) {
+                    removeServerID(object);
+                }
+            }
             const savedData = await this._put({ ...exported, version: this.version });
             this.version = savedData.version;
             this.collection.flush = false;
 
             this._updateCreatedObjects(savedData, indexes);
-
             this._resetState();
             for (const type of Object.keys(this.initialObjects)) {
                 for (const object of savedData[type]) {
@@ -217,15 +237,43 @@ export default class AnnotationsSaver {
                 }
             }
         } else {
+            // with using ASGI server it is possible to get 504 (RequestTimeout)
+            // from nginx proxy, when the request is still being processed by the server
+            // that is not good that client knows about the server details
+            // but we implemented a workaround here
+            const retryIf504Status = async (error: unknown): Promise<void> => {
+                if (error instanceof ServerError && error.code === 504) {
+                    const RETRY_PERIOD = 10000;
+                    this.collection.flush = true;
+
+                    let retryCount = 10;
+                    while (retryCount) {
+                        try {
+                            await this.save(onUpdateArg);
+                            return;
+                        } catch (_: unknown) {
+                            retryCount--;
+                            await sleep(RETRY_PERIOD);
+                        }
+                    }
+                }
+
+                throw error;
+            };
+
             const { created, updated, deleted } = this._split(exported);
 
             onUpdate('Created objects are being saved on the server');
             const indexes = this._receiveIndexes(created);
-            const createdData = await this._create({ ...created, version: this.version });
-            this.version = createdData.version;
+            let createdData = null;
+            try {
+                createdData = await this._create({ ...created, version: this.version });
+                this.version = createdData.version;
+            } catch (error: unknown) {
+                await retryIf504Status(error);
+            }
 
             this._updateCreatedObjects(createdData, indexes);
-
             for (const type of Object.keys(this.initialObjects)) {
                 for (const object of createdData[type]) {
                     this.initialObjects[type][object.id] = object;
@@ -234,7 +282,12 @@ export default class AnnotationsSaver {
 
             onUpdate('Updated objects are being saved on the server');
             this._receiveIndexes(updated);
-            const updatedData = await this._update({ ...updated, version: this.version });
+            let updatedData = null;
+            try {
+                updatedData = await this._update({ ...updated, version: this.version });
+            } catch (error: unknown) {
+                await retryIf504Status(error);
+            }
             this.version = updatedData.version;
 
             for (const type of Object.keys(this.initialObjects)) {
@@ -245,7 +298,12 @@ export default class AnnotationsSaver {
 
             onUpdate('Deleted objects are being deleted from the server');
             this._receiveIndexes(deleted);
-            const deletedData = await this._delete({ ...deleted, version: this.version });
+            let deletedData = null;
+            try {
+                deletedData = await this._delete({ ...deleted, version: this.version });
+            } catch (error: unknown) {
+                await retryIf504Status(error);
+            }
             this.version = deletedData.version;
 
             for (const type of Object.keys(this.initialObjects)) {

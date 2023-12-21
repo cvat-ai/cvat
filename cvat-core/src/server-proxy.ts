@@ -575,6 +575,8 @@ export interface ServerRequestConfig {
     fetchAll: boolean,
 }
 
+export const sleep = (time: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, time));
+
 const defaultRequestConfig = {
     fetchAll: false,
 };
