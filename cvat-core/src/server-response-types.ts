@@ -310,9 +310,9 @@ export interface SerializedTag {
 }
 
 export interface SerializedCollection {
-    tags: SerializedTag[],
-    shapes: SerializedShape[],
-    tracks: SerializedTrack[],
+    tags: SerializedTag[];
+    shapes: SerializedShape[];
+    tracks: SerializedTrack[];
 }
 
 export interface SerializedCloudStorage {

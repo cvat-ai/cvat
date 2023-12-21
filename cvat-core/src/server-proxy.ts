@@ -17,6 +17,7 @@ import {
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
     SerializedQualitySettingsData, SerializedInvitationData, SerializedCloudStorage,
     SerializedFramesMetaData,
+    SerializedCollection,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -1622,8 +1623,10 @@ async function saveMeta(
     return response.data;
 }
 
-// Session is 'task' or 'job'
-async function getAnnotations(session, id) {
+async function getAnnotations(
+    session: 'task' | 'job',
+    id: number,
+): Promise<SerializedCollection & { version: number }> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1635,11 +1638,15 @@ async function getAnnotations(session, id) {
     return response.data;
 }
 
-// Session is 'task' or 'job'
-async function updateAnnotations(session, id, data, action) {
+async function updateAnnotations(
+    session: 'task' | 'job',
+    id: number,
+    data: SerializedCollection & { version: number },
+    action: 'create' | 'update' | 'delete' | 'put',
+): Promise<SerializedCollection & { version: number }> {
     const { backendAPI } = config;
     const url = `${backendAPI}/${session}s/${id}/annotations`;
-    const params = {};
+    const params: Record<string, string> = {};
     let method: string;
 
     if (action.toUpperCase() === 'PUT') {

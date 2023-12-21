@@ -4,21 +4,46 @@
 // SPDX-License-Identifier: MIT
 
 import serverProxy, { sleep } from './server-proxy';
-import { Task } from './session';
-import { ScriptingError, ServerError } from './exceptions';
-import { SerializedShape, SerializedTag, SerializedTrack } from './server-response-types';
+import { Job, Task } from './session';
+import { DataError, ServerError } from './exceptions';
+import {
+    SerializedCollection, SerializedShape,
+    SerializedTag, SerializedTrack,
+} from './server-response-types';
 
-function removeServerID<T extends SerializedShape | SerializedTag | SerializedTrack>(object: T): T {
-    delete object.id;
+interface ExtractedIDs {
+    shapes: number[];
+    tracks: number[];
+    tags: number[];
+}
+
+interface SplittedCollection {
+    created: SerializedCollection;
+    updated: SerializedCollection;
+    deleted: SerializedCollection;
+}
+
+type ResponseBody = Awaited<ReturnType<typeof serverProxy['annotations']['updateAnnotations']>>;
+type RequestBody = ResponseBody;
+
+const COLLECTION_KEYS: (keyof SerializedCollection)[] = ['shapes', 'tracks', 'tags'];
+
+function removeIDFromObject<T extends SerializedShape | SerializedTag | SerializedTrack>(
+    object: T,
+    property: 'id' | 'clientID',
+): T {
+    delete object[property];
     if ('shapes' in object) {
         for (const shape of object.shapes) {
-            delete shape.id;
+            delete shape[property];
         }
     }
 
     if ('elements' in object) {
-        object.elements = object.elements.map((element) => removeServerID(element));
+        object.elements = object.elements.map((element) => removeIDFromObject(element, property));
     }
+
+    return object;
 }
 
 export default class AnnotationsSaver {
@@ -27,75 +52,62 @@ export default class AnnotationsSaver {
     private version: number;
     private collection: any;
     private hash: string;
-    private initialObjects: any;
+    private initialObjects: {
+        shapes: Record<number, SerializedCollection['shapes'][0]>,
+        tracks: Record<number, SerializedCollection['tracks'][0]>,
+        tags: Record<number, SerializedCollection['tags'][0]>,
+    };
 
-    constructor(version, collection, session) {
+    constructor(version: number, collection, session: Task | Job) {
         this.sessionType = session instanceof Task ? 'task' : 'job';
         this.id = session.id;
         this.version = version;
         this.collection = collection;
-        this.initialObjects = {};
         this.hash = this._getHash();
+        this.initialObjects = { shapes: {}, tracks: {}, tags: {} };
 
         // We need use data from export instead of initialData
-        // Otherwise we have differ keys order and JSON comparison code incorrect
+        // Otherwise we have differ keys order and JSON comparison code works incorrectly
         const exported = this.collection.export();
-
-        this._resetState();
-        for (const shape of exported.shapes) {
-            this.initialObjects.shapes[shape.id] = shape;
-        }
-
-        for (const track of exported.tracks) {
-            this.initialObjects.tracks[track.id] = track;
-        }
-
-        for (const tag of exported.tags) {
-            this.initialObjects.tags[tag.id] = tag;
+        for (const key of COLLECTION_KEYS) {
+            for (const object of exported[key]) {
+                this.initialObjects[key][object.id] = object;
+            }
         }
     }
 
-    _resetState() {
-        this.initialObjects = {
-            shapes: {},
-            tracks: {},
-            tags: {},
-        };
-    }
-
-    _getHash() {
+    _getHash(): string {
         const exported = this.collection.export();
         return JSON.stringify(exported);
     }
 
-    async _request(data, action) {
+    async _request(data: RequestBody, action: 'put' | 'create' | 'update' | 'delete'): Promise<ResponseBody> {
         const result = await serverProxy.annotations.updateAnnotations(this.sessionType, this.id, data, action);
-
         return result;
     }
 
-    async _put(data) {
+    async _put(data: RequestBody): Promise<ResponseBody> {
         const result = await this._request(data, 'put');
         return result;
     }
 
-    async _create(created) {
+    async _create(created: RequestBody): Promise<ResponseBody> {
         const result = await this._request(created, 'create');
         return result;
     }
 
-    async _update(updated) {
+    async _update(updated: RequestBody): Promise<ResponseBody> {
         const result = await this._request(updated, 'update');
         return result;
     }
 
-    async _delete(deleted) {
+    async _delete(deleted: RequestBody): Promise<ResponseBody> {
         const result = await this._request(deleted, 'delete');
         return result;
     }
 
-    _split(exported) {
-        const splitted = {
+    _split(exported: SerializedCollection): SplittedCollection {
+        const splitted: SplittedCollection = {
             created: {
                 shapes: [],
                 tracks: [],
@@ -133,20 +145,16 @@ export default class AnnotationsSaver {
         ];
 
         // Find created and updated objects
-        for (const type of Object.keys(exported)) {
+        for (const type of COLLECTION_KEYS) {
             for (const object of exported[type]) {
-                if (object.id in this.initialObjects[type]) {
+                if (typeof object.id === 'undefined') {
+                    splitted.created[type].push(object as any);
+                } else if (object.id in this.initialObjects[type]) {
                     const exportedHash = JSON.stringify(object, keys);
                     const initialHash = JSON.stringify(this.initialObjects[type][object.id], keys);
                     if (exportedHash !== initialHash) {
-                        splitted.updated[type].push(object);
+                        splitted.updated[type].push(object as any);
                     }
-                } else if (typeof object.id === 'undefined') {
-                    splitted.created[type].push(object);
-                } else {
-                    throw new ScriptingError(
-                        `Id of object is defined "${object.id}" but it absents in initial state`,
-                    );
                 }
             }
         }
@@ -158,7 +166,7 @@ export default class AnnotationsSaver {
             tags: exported.tags.map((object) => +object.id),
         };
 
-        for (const type of Object.keys(this.initialObjects)) {
+        for (const type of COLLECTION_KEYS) {
             for (const id of Object.keys(this.initialObjects[type])) {
                 if (!indexes[type].includes(+id)) {
                     const object = this.initialObjects[type][id];
@@ -170,11 +178,11 @@ export default class AnnotationsSaver {
         return splitted;
     }
 
-    _updateCreatedObjects(saved, indexes) {
+    _updateCreatedObjects(saved: ResponseBody, indexes: ExtractedIDs): void {
         const savedLength = saved.tracks.length + saved.shapes.length + saved.tags.length;
         const indexesLength = indexes.tracks.length + indexes.shapes.length + indexes.tags.length;
         if (indexesLength !== savedLength) {
-            throw new ScriptingError(
+            throw new DataError(
                 `Number of indexes is differed by number of saved objects ${indexesLength} vs ${savedLength}`,
             );
         }
@@ -188,8 +196,8 @@ export default class AnnotationsSaver {
         }
     }
 
-    _receiveIndexes(exported) {
-        // Receive client indexes before saving
+    _extractClientIDs(exported: SerializedCollection): ExtractedIDs {
+        // Receive client IDs before saving
         const indexes = {
             tracks: exported.tracks.map((track) => track.clientID),
             shapes: exported.shapes.map((shape) => shape.clientID),
@@ -197,18 +205,25 @@ export default class AnnotationsSaver {
         };
 
         // Remove them from the request body
-        exported.tracks
-            .concat(exported.shapes)
-            .concat(exported.tags)
-            .map((value) => {
-                delete value.clientID;
-                return value;
-            });
+        for (const type of COLLECTION_KEYS) {
+            for (const object of exported[type]) {
+                removeIDFromObject(object, 'clientID');
+            }
+        }
 
         return indexes;
     }
 
-    async save(onUpdateArg) {
+    _updateInitialObjects(ResponseBody: ResponseBody): void {
+        this.version = ResponseBody.version;
+        for (const type of COLLECTION_KEYS) {
+            for (const object of ResponseBody[type]) {
+                this.initialObjects[type][object.id] = object;
+            }
+        }
+    }
+
+    async save(onUpdateArg?: (message: string) => void): Promise<void> {
         const onUpdate = typeof onUpdateArg === 'function' ? onUpdateArg : (message) => {
             console.log(message);
         };
@@ -217,21 +232,22 @@ export default class AnnotationsSaver {
         const { flush } = this.collection;
         if (flush) {
             onUpdate('All collection is being saved on the server');
-            const indexes = this._receiveIndexes(exported);
-
             // remove server IDs if there are any, annotations will be rewritten
-            for (const type of Object.keys(exported)) {
+            const indexes = this._extractClientIDs(exported);
+            for (const type of COLLECTION_KEYS) {
                 for (const object of exported[type]) {
-                    removeServerID(object);
+                    removeIDFromObject(object, 'id');
                 }
             }
+
             const savedData = await this._put({ ...exported, version: this.version });
             this.version = savedData.version;
             this.collection.flush = false;
 
             this._updateCreatedObjects(savedData, indexes);
-            this._resetState();
-            for (const type of Object.keys(this.initialObjects)) {
+            this.initialObjects = { shapes: {}, tracks: {}, tags: {} };
+
+            for (const type of COLLECTION_KEYS) {
                 for (const object of savedData[type]) {
                     this.initialObjects[type][object.id] = object;
                 }
@@ -264,7 +280,7 @@ export default class AnnotationsSaver {
             const { created, updated, deleted } = this._split(exported);
 
             onUpdate('Created objects are being saved on the server');
-            const indexes = this._receiveIndexes(created);
+            const indexes = this._extractClientIDs(created);
             let createdData = null;
             try {
                 createdData = await this._create({ ...created, version: this.version });
@@ -282,7 +298,7 @@ export default class AnnotationsSaver {
             }
 
             onUpdate('Updated objects are being saved on the server');
-            this._receiveIndexes(updated);
+            this._extractClientIDs(updated);
             let updatedData = null;
             try {
                 updatedData = await this._update({ ...updated, version: this.version });
@@ -299,7 +315,7 @@ export default class AnnotationsSaver {
             }
 
             onUpdate('Deleted objects are being deleted from the server');
-            this._receiveIndexes(deleted);
+            this._extractClientIDs(deleted);
             let deletedData = null;
             try {
                 deletedData = await this._delete({ ...deleted, version: this.version });
