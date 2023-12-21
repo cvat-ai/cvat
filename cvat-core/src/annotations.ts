@@ -5,7 +5,7 @@
 
 import { Storage } from './storage';
 import serverProxy from './server-proxy';
-import AnnotationsCollection from './annotations-collection';
+import AnnotationsCollection, { FrameMeta } from './annotations-collection';
 import AnnotationsSaver from './annotations-saver';
 import AnnotationsHistory from './annotations-history';
 import { checkObjectType } from './common';
@@ -68,7 +68,7 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
         // Get meta information about frames
         const startFrame = session instanceof Job ? session.startFrame : 0;
         const stopFrame = session instanceof Job ? session.stopFrame : session.size - 1;
-        const frameMeta: any = {};
+        const frameMeta: Partial<FrameMeta> = {};
         for (let i = startFrame; i <= stopFrame; i++) {
             frameMeta[i] = await session.frames.get(i);
         }
@@ -79,7 +79,7 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
             labels: session.labels,
             history,
             stopFrame,
-            frameMeta,
+            frameMeta: frameMeta as FrameMeta,
             jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
             dimension: session.dimension,
         });

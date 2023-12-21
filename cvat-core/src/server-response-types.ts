@@ -335,3 +335,20 @@ export interface SerializedCloudStorage {
     manifest_path?: string;
     manifests?: string[];
 }
+
+export interface SerializedFramesMetaData {
+    chunk_size: number;
+    deleted_frames: number[];
+    included_frames: number[];
+    frame_filter: string;
+    frames: {
+        width: number;
+        height: number;
+        name: string;
+        related_files: number;
+    }[];
+    image_quality: number;
+    size: number;
+    start_frame: number;
+    stop_frame: number;
+}

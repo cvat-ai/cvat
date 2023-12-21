@@ -54,12 +54,14 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     }, {})
 );
 
+export type FrameMeta = Record<number, Awaited<ReturnType<Job['frames']['get']>>> & {
+    deleted_frames: Record<number, boolean>
+};
+
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
-    private frameMeta: Record<number, Awaited<ReturnType<Job['frames']['get']>>> & {
-        deleted_frames: Record<number, boolean>
-    };
+    private frameMeta: FrameMeta;
     private labels: Record<number, Label>;
     private annotationsFilter: AnnotationsFilter;
     private history: AnnotationHistory;

@@ -763,9 +763,11 @@ export function undoActionAsync(): ThunkAction {
             await jobInstance.actions.undo();
             await undoLog.close();
 
-            dispatch(fetchAnnotationsAsync());
             if (frame !== undoOnFrame || ['Removed frame', 'Restored frame'].includes(undo[0])) {
+                // the action below fetches annotations
                 dispatch(changeFrameAsync(undoOnFrame, undefined, undefined, true));
+            } else {
+                dispatch(fetchAnnotationsAsync());
             }
         } catch (error) {
             dispatch({
@@ -800,9 +802,11 @@ export function redoActionAsync(): ThunkAction {
             await jobInstance.actions.redo();
             await redoLog.close();
 
-            dispatch(fetchAnnotationsAsync());
             if (frame !== redoOnFrame || ['Removed frame', 'Restored frame'].includes(redo[0])) {
+                // the action below fetches annotations
                 dispatch(changeFrameAsync(redoOnFrame, undefined, undefined, true));
+            } else {
+                dispatch(fetchAnnotationsAsync());
             }
         } catch (error) {
             dispatch({

@@ -188,6 +188,7 @@ context('Review pipeline feature', () => {
             // this is the same test, but Cypress can't handle too many commands
             // in one test, sometimes raising out of memory exception
             // this test is devided artifically into two parts
+            // https://github.com/cypress-io/cypress/issues/27415
 
             const countIssuesByFrame = [[0, 1, 'Wrong position'], [1, 1, customIssueDescription], [2, 1, customIssueDescription]];
             for (const [frame, issues, text] of countIssuesByFrame) {

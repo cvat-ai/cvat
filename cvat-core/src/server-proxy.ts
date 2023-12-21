@@ -16,6 +16,7 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
     SerializedQualitySettingsData, SerializedInvitationData, SerializedCloudStorage,
+    SerializedFramesMetaData,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -1589,29 +1590,12 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality, retry 
     }
 }
 
-export interface RawFramesMetaData {
-    chunk_size: number;
-    deleted_frames: number[];
-    included_frames: number[];
-    frame_filter: string;
-    frames: {
-        width: number;
-        height: number;
-        name: string;
-        related_files: number;
-    }[];
-    image_quality: number;
-    size: number;
-    start_frame: number;
-    stop_frame: number;
-}
-
-async function getMeta(session, jid): Promise<RawFramesMetaData> {
+async function getMeta(session: 'job' | 'task', id: number): Promise<SerializedFramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/${session}s/${jid}/data/meta`);
+        response = await Axios.get(`${backendAPI}/${session}s/${id}/data/meta`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1619,12 +1603,16 @@ async function getMeta(session, jid): Promise<RawFramesMetaData> {
     return response.data;
 }
 
-async function saveMeta(session, jid, meta) {
+async function saveMeta(
+    session: 'job' | 'task',
+    id: number,
+    meta: Partial<SerializedFramesMetaData>,
+): Promise<SerializedFramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/${session}s/${jid}/data/meta`, meta);
+        response = await Axios.patch(`${backendAPI}/${session}s/${id}/data/meta`, meta);
     } catch (errorData) {
         throw generateError(errorData);
     }
