@@ -273,19 +273,21 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
-            const {
-                states, minZ, maxZ, curZ,
-            } = action.payload;
             const { activatedStateID } = state.annotations;
             const {
                 number,
                 data,
                 filename,
                 relatedFiles,
+                states,
+                minZ,
+                maxZ,
+                curZ,
                 delay,
                 changeTime,
                 changeFrameLog,
             } = action.payload;
+
             return {
                 ...state,
                 player: {
