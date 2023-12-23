@@ -197,7 +197,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
-    'cvat.apps.iam.views.ContextMiddleware',
+    'cvat.apps.iam.middleware.ContextMiddleware',
 ]
 
 UI_URL = ''
@@ -230,25 +230,18 @@ TEMPLATES = [
 # IAM settings
 IAM_TYPE = 'BASIC'
 IAM_BASE_EXCEPTION = None # a class which will be used by IAM to report errors
-
-# FIXME: There are several ways to "replace" default IAM role.
-# One of them is to assign groups when you create a user inside Crowdsourcing plugin and don't add more groups
-# if user.groups field isn't empty.
-# the function should be in uppercase to able get access from django.conf.settings
-def GET_IAM_DEFAULT_ROLES(user) -> list:
-    return ['user']
+IAM_DEFAULT_ROLE = 'user'
 
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
 IAM_OPA_HOST = 'http://opa:8181'
 IAM_OPA_DATA_URL = f'{IAM_OPA_HOST}/v1/data'
+IAM_OPA_RULES_PATH = 'cvat/apps/iam/rules:'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
 OBJECTS_NOT_RELATED_WITH_ORG = ['user', 'function', 'request', 'server',]
-# FIXME: It looks like an internal function of IAM app.
-IAM_CONTEXT_BUILDERS = ['cvat.apps.iam.utils.build_iam_context',]
 
 # ORG settings
 ORG_INVITATION_CONFIRM = 'No'
@@ -701,8 +694,6 @@ ASSET_MAX_IMAGE_SIZE = 1920
 ASSET_MAX_COUNT_PER_GUIDE = 30
 
 SMOKESCREEN_ENABLED = True
-
-EXTRA_RULES_PATHS = []
 
 # By default, email backend is django.core.mail.backends.smtp.EmailBackend
 # But it won't work without additional configuration, so we set it to None

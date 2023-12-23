@@ -9,12 +9,11 @@ import operator
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from enum import Enum
-from importlib import import_module
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast, TypeVar
 
 from attrs import define, field
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, Model
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import BasePermission
 
@@ -85,18 +84,24 @@ def get_membership(request, organization):
         is_active=True
     ).first()
 
+def build_iam_context(request, organization: Optional[Organization], membership: Optional[Membership]):
+    return {
+        'user_id': request.user.id,
+        'group_name': request.iam_context['privilege'],
+        'org_id': getattr(organization, 'id', None),
+        'org_slug': getattr(organization, 'slug', None),
+        'org_owner_id': getattr(organization.owner, 'id', None)
+            if organization else None,
+        'org_role': getattr(membership, 'role', None),
+    }
 
-def get_iam_context(request, obj):
+
+def get_iam_context(request, obj) -> Dict[str, Any]:
     organization = get_organization(request, obj)
     membership = get_membership(request, organization)
 
-    iam_context = dict()
-    for builder_func_path in settings.IAM_CONTEXT_BUILDERS:
-        package, attr = builder_func_path.rsplit('.', 1)
-        builder_func = getattr(import_module(package), attr)
-        iam_context.update(builder_func(request, organization, membership))
+    return build_iam_context(request, organization, membership)
 
-    return iam_context
 
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
     url: str
@@ -1994,22 +1999,27 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
 
         return data
 
+T = TypeVar('T', bound=Model)
+
+def is_public_obj(obj: T) -> bool:
+    return getattr(obj, "is_public", False)
 
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
-    def check_permission(self, request, view, obj):
-        permissions: List[OpenPolicyAgentPermission] = []
-
-        iam_context = get_iam_context(request, obj)
-
+    def check_permission(self, request, view, obj) -> bool:
         # DRF can send OPTIONS request. Internally it will try to get
         # information about serializers for PUT and POST requests (clone
         # request and replace the http method). To avoid handling
         # ('POST', 'metadata') and ('PUT', 'metadata') in every request,
         # the condition below is enough.
-        if not self.is_metadata_request(request, view):
-            for perm in OpenPolicyAgentPermission.__subclasses__():
-                permissions.extend(perm.create(request, view, obj, iam_context))
+        if self.is_metadata_request(request, view) or obj and is_public_obj(obj):
+            return True
+
+        permissions: List[OpenPolicyAgentPermission] = []
+        iam_context = get_iam_context(request, obj)
+
+        for perm in OpenPolicyAgentPermission.__subclasses__():
+            permissions.extend(perm.create(request, view, obj, iam_context))
 
         allow = True
         for perm in permissions:
@@ -2031,6 +2041,14 @@ class PolicyEnforcer(BasePermission):
     def is_metadata_request(request, view):
         return request.method == 'OPTIONS' \
             or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
+
+class IsAuthenticatedOrReadPublicResource(BasePermission):
+    def has_object_permission(self, request, view, obj) -> bool:
+        return bool(
+            request.user and request.user.is_authenticated or
+            request.method == 'GET' and is_public_obj(obj)
+        )
+
 
 class AnalyticsReportPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):
