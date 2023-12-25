@@ -50,13 +50,13 @@ function removeIDFromObject<T extends SerializedShape | SerializedTag | Serializ
     property: 'id' | 'clientID',
 ): T {
     delete object[property];
-    if ('shapes' in object) {
+    if ('shapes' in object && Array.isArray(object.shapes)) {
         for (const shape of object.shapes) {
             delete shape[property];
         }
     }
 
-    if ('elements' in object) {
+    if ('elements' in object && Array.isArray(object.elements)) {
         object.elements = object.elements.map((element) => removeIDFromObject(element, property));
     }
 
@@ -264,15 +264,15 @@ export default class AnnotationsSaver {
                     attributes: object.attributes
                         .sort(({ spec_id: specID1 }, { spec_id: specID2 }) => specID1 - specID2),
                 } : {}),
-                ...('points' in object ? {
+                ...('points' in object && Array.isArray(object.points) ? {
                     points: object.points.map((coord) => +coord.toFixed(2)),
                 } : {}),
-                ...('elements' in object ? {
+                ...('elements' in object && Array.isArray(object.elements) ? {
                     elements: object.elements
                         .sort(({ label_id: labelID1 }, { label_id: labelID2 }) => labelID1 - labelID2)
                         .map((element) => mutateForCompare(element)),
                 } : {}),
-                ...('shapes' in object ? {
+                ...('shapes' in object && Array.isArray(object.shapes) ? {
                     shapes: object.shapes
                         .map((shape) => mutateForCompare(shape)),
                 } : {}),
