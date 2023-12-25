@@ -9,7 +9,7 @@ import {
     SkeletonShape, SkeletonTrack, PolygonShape, CuboidShape,
     RectangleShape, PolylineShape, PointsShape, EllipseShape,
 } from './annotations-objects';
-import { SerializedCollection, SerializedTrack } from './server-response-types';
+import { SerializedCollection, SerializedShape, SerializedTrack } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
@@ -161,14 +161,14 @@ export default class Collection {
 
     export(): Omit<SerializedCollection, 'version'> {
         const data = {
-            tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
+            tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON() as SerializedTrack),
             shapes: Object.values(this.shapes)
                 .reduce((accumulator, frameShapes) => {
                     accumulator.push(...frameShapes);
                     return accumulator;
                 }, [])
                 .filter((shape) => !shape.removed)
-                .map((shape) => shape.toJSON()),
+                .map((shape) => shape.toJSON() as SerializedShape),
             tags: Object.values(this.tags)
                 .reduce((accumulator, frameTags) => {
                     accumulator.push(...frameTags);
@@ -331,7 +331,7 @@ export default class Collection {
             }
 
             if (object.shapeType === ShapeType.SKELETON) {
-                for (const element of (object as SkeletonShape | SkeletonTrack).elements) {
+                for (const element of (object as unknown as SkeletonShape | SkeletonTrack).elements) {
                     // for each track/shape element get its first objectState and keep it
                     elements[element.label.id] = [
                         ...(elements[element.label.id] || []), element,

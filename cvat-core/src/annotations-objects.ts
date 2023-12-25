@@ -499,7 +499,12 @@ export class Shape extends Drawn {
     public rotation: number;
     public zOrder: number;
 
-    constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
+    constructor(
+        data: SerializedShape | SerializedShape['elements'][0],
+        clientID: number,
+        color: string,
+        injection: AnnotationInjection,
+    ) {
         super(data, clientID, color, injection);
         this.points = data.points;
         this.rotation = data.rotation || 0;
@@ -509,7 +514,7 @@ export class Shape extends Drawn {
     }
 
     // Method is used to export data to the server
-    public toJSON(): SerializedShape {
+    public toJSON(): SerializedShape | SerializedShape['elements'][0] {
         const result: SerializedShape = {
             type: this.shapeType,
             clientID: this.clientID,
@@ -803,7 +808,12 @@ export interface InterpolatedPosition {
 
 export class Track extends Drawn {
     public shapes: Record<number, TrackedShape>;
-    constructor(data: SerializedTrack, clientID: number, color: string, injection: AnnotationInjection) {
+    constructor(
+        data: SerializedTrack | SerializedTrack['elements'][0],
+        clientID: number,
+        color: string,
+        injection: AnnotationInjection,
+    ) {
         super(data, clientID, color, injection);
         this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
             shapeAccumulator[value.frame] = {
@@ -824,7 +834,7 @@ export class Track extends Drawn {
     }
 
     // Method is used to export data to the server
-    public toJSON(): SerializedTrack {
+    public toJSON(): SerializedTrack | SerializedTrack['elements'][0] {
         const labelAttributes = attrsAsAnObject(this.label.attributes);
 
         const result: SerializedTrack = {
@@ -843,6 +853,7 @@ export class Track extends Drawn {
 
                 return attributeAccumulator;
             }, []),
+            elements: [],
             shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
                 shapesAccumulator.push({
                     type: this.shapeType,
@@ -877,6 +888,10 @@ export class Track extends Drawn {
 
         if (this.serverID !== null) {
             result.id = this.serverID;
+        }
+
+        if (this.parentID !== null) {
+            return omit(result, 'elements');
         }
 
         return result;
@@ -1553,7 +1568,12 @@ export class EllipseShape extends Shape {
 }
 
 class PolyShape extends Shape {
-    constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
+    constructor(
+        data: SerializedShape | SerializedShape['elements'][0],
+        clientID: number,
+        color: string,
+        injection: AnnotationInjection,
+    ) {
         super(data, clientID, color, injection);
         this.rotation = 0; // is not supported
     }
@@ -1675,7 +1695,12 @@ export class PolylineShape extends PolyShape {
 }
 
 export class PointsShape extends PolyShape {
-    constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
+    constructor(
+        data: SerializedShape | SerializedShape['elements'][0],
+        clientID: number,
+        color: string,
+        injection: AnnotationInjection,
+    ) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.POINTS;
         checkNumberOfPoints(this.shapeType, this.points);
@@ -2122,7 +2147,7 @@ export class MaskShape extends Shape {
     public bottom: number;
     private getMasksOnFrame: AnnotationInjection['getMasksOnFrame'];
 
-    constructor(data, clientID, color, injection) {
+    constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
         this.getMasksOnFrame = injection.getMasksOnFrame;
@@ -2323,7 +2348,12 @@ export class EllipseTrack extends Track {
 }
 
 class PolyTrack extends Track {
-    constructor(data: SerializedTrack, clientID: number, color: string, injection: AnnotationInjection) {
+    constructor(
+        data: SerializedTrack | SerializedTrack['elements'][0],
+        clientID: number,
+        color: string,
+        injection: AnnotationInjection,
+    ) {
         super(data, clientID, color, injection);
         for (const shape of Object.values(this.shapes)) {
             shape.rotation = 0; // is not supported
@@ -2633,7 +2663,12 @@ export class PolylineTrack extends PolyTrack {
 }
 
 export class PointsTrack extends PolyTrack {
-    constructor(data: SerializedTrack, clientID: number, color: string, injection: AnnotationInjection) {
+    constructor(
+        data: SerializedTrack | SerializedTrack['elements'][0],
+        clientID: number,
+        color: string,
+        injection: AnnotationInjection,
+    ) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.POINTS;
         for (const shape of Object.values(this.shapes)) {
@@ -2834,6 +2869,7 @@ export class SkeletonTrack extends Track {
             source: this.source,
             group: this.group,
         }));
+
         result.elements.forEach((element) => {
             element.shapes.forEach((shape) => {
                 shape.rotation = 0;
@@ -3078,35 +3114,39 @@ Object.defineProperty(EllipseTrack, 'distance', { value: EllipseShape.distance }
 Object.defineProperty(CuboidTrack, 'distance', { value: CuboidShape.distance });
 Object.defineProperty(SkeletonTrack, 'distance', { value: SkeletonShape.distance });
 
-export function shapeFactory(data: SerializedShape, clientID: number, injection: AnnotationInjection): Shape {
+export function shapeFactory(
+    data: SerializedShape | SerializedShape['elements'][0],
+    clientID: number,
+    injection: AnnotationInjection,
+): Shape {
     const { type } = data;
     const color = colors[clientID % colors.length];
 
     let shapeModel = null;
     switch (type) {
         case ShapeType.RECTANGLE:
-            shapeModel = new RectangleShape(data, clientID, color, injection);
+            shapeModel = new RectangleShape(data as SerializedShape, clientID, color, injection);
             break;
         case ShapeType.POLYGON:
-            shapeModel = new PolygonShape(data, clientID, color, injection);
+            shapeModel = new PolygonShape(data as SerializedShape, clientID, color, injection);
             break;
         case ShapeType.POLYLINE:
-            shapeModel = new PolylineShape(data, clientID, color, injection);
+            shapeModel = new PolylineShape(data as SerializedShape, clientID, color, injection);
             break;
         case ShapeType.POINTS:
             shapeModel = new PointsShape(data, clientID, color, injection);
             break;
         case ShapeType.ELLIPSE:
-            shapeModel = new EllipseShape(data, clientID, color, injection);
+            shapeModel = new EllipseShape(data as SerializedShape, clientID, color, injection);
             break;
         case ShapeType.CUBOID:
-            shapeModel = new CuboidShape(data, clientID, color, injection);
+            shapeModel = new CuboidShape(data as SerializedShape, clientID, color, injection);
             break;
         case ShapeType.MASK:
-            shapeModel = new MaskShape(data, clientID, color, injection);
+            shapeModel = new MaskShape(data as SerializedShape, clientID, color, injection);
             break;
         case ShapeType.SKELETON:
-            shapeModel = new SkeletonShape(data, clientID, color, injection);
+            shapeModel = new SkeletonShape(data as SerializedShape, clientID, color, injection);
             break;
         default:
             throw new DataError(`An unexpected type of shape "${type}"`);
@@ -3115,7 +3155,11 @@ export function shapeFactory(data: SerializedShape, clientID: number, injection:
     return shapeModel;
 }
 
-export function trackFactory(trackData: SerializedTrack, clientID: number, injection: AnnotationInjection): Track {
+export function trackFactory(
+    trackData: SerializedTrack | SerializedTrack['elements'][0],
+    clientID: number,
+    injection: AnnotationInjection,
+): Track {
     if (trackData.shapes.length) {
         const { type } = trackData.shapes[0];
         const color = colors[clientID % colors.length];
@@ -3123,25 +3167,25 @@ export function trackFactory(trackData: SerializedTrack, clientID: number, injec
         let trackModel = null;
         switch (type) {
             case ShapeType.RECTANGLE:
-                trackModel = new RectangleTrack(trackData, clientID, color, injection);
+                trackModel = new RectangleTrack(trackData as SerializedTrack, clientID, color, injection);
                 break;
             case ShapeType.POLYGON:
-                trackModel = new PolygonTrack(trackData, clientID, color, injection);
+                trackModel = new PolygonTrack(trackData as SerializedTrack, clientID, color, injection);
                 break;
             case ShapeType.POLYLINE:
-                trackModel = new PolylineTrack(trackData, clientID, color, injection);
+                trackModel = new PolylineTrack(trackData as SerializedTrack, clientID, color, injection);
                 break;
             case ShapeType.POINTS:
                 trackModel = new PointsTrack(trackData, clientID, color, injection);
                 break;
             case ShapeType.ELLIPSE:
-                trackModel = new EllipseTrack(trackData, clientID, color, injection);
+                trackModel = new EllipseTrack(trackData as SerializedTrack, clientID, color, injection);
                 break;
             case ShapeType.CUBOID:
-                trackModel = new CuboidTrack(trackData, clientID, color, injection);
+                trackModel = new CuboidTrack(trackData as SerializedTrack, clientID, color, injection);
                 break;
             case ShapeType.SKELETON:
-                trackModel = new SkeletonTrack(trackData, clientID, color, injection);
+                trackModel = new SkeletonTrack(trackData as SerializedTrack, clientID, color, injection);
                 break;
             default:
                 throw new DataError(`An unexpected type of track "${type}"`);
