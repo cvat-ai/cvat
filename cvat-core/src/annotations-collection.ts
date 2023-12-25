@@ -116,7 +116,7 @@ export default class Collection {
         };
     }
 
-    import(data: SerializedCollection): ImportedCollection {
+    import(data: Omit<SerializedCollection, 'version'>): ImportedCollection {
         const result = {
             tags: [],
             shapes: [],
@@ -159,7 +159,7 @@ export default class Collection {
         return result;
     }
 
-    export(): SerializedCollection {
+    export(): Omit<SerializedCollection, 'version'> {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
             shapes: Object.values(this.shapes)

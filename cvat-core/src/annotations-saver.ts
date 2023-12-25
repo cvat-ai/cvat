@@ -18,16 +18,14 @@ interface ExtractedIDs {
 }
 
 interface SplittedCollection {
-    created: SerializedCollection;
-    updated: SerializedCollection;
-    deleted: SerializedCollection;
+    created: Omit<SerializedCollection, 'version'>;
+    updated: Omit<SerializedCollection, 'version'>;
+    deleted: Omit<SerializedCollection, 'version'>;
 }
 
 type CollectionObject = SerializedShape | SerializedTrack | SerializedTag;
-type ResponseBody = Awaited<ReturnType<typeof serverProxy['annotations']['updateAnnotations']>>;
-type RequestBody = ResponseBody;
 
-const COLLECTION_KEYS: (keyof SerializedCollection)[] = ['shapes', 'tracks', 'tags'];
+const COLLECTION_KEYS: ('shapes' | 'tracks' | 'tags')[] = ['shapes', 'tracks', 'tags'];
 const JSON_SERIALIZER_KEYS = [
     'id',
     'label_id',
@@ -100,27 +98,27 @@ export default class AnnotationsSaver {
         return JSON.stringify(exported);
     }
 
-    async _request(data: RequestBody, action: 'put' | 'create' | 'update' | 'delete'): Promise<ResponseBody> {
+    async _request(data: SerializedCollection, action: 'put' | 'create' | 'update' | 'delete'): Promise<SerializedCollection> {
         const result = await serverProxy.annotations.updateAnnotations(this.sessionType, this.id, data, action);
         return result;
     }
 
-    async _put(data: RequestBody): Promise<ResponseBody> {
+    async _put(data: SerializedCollection): Promise<SerializedCollection> {
         const result = await this._request(data, 'put');
         return result;
     }
 
-    async _create(created: RequestBody): Promise<ResponseBody> {
+    async _create(created: SerializedCollection): Promise<SerializedCollection> {
         const result = await this._request(created, 'create');
         return result;
     }
 
-    async _update(updated: RequestBody): Promise<ResponseBody> {
+    async _update(updated: SerializedCollection): Promise<SerializedCollection> {
         const result = await this._request(updated, 'update');
         return result;
     }
 
-    async _delete(deleted: RequestBody): Promise<ResponseBody> {
+    async _delete(deleted: SerializedCollection): Promise<SerializedCollection> {
         const result = await this._request(deleted, 'delete');
         return result;
     }
@@ -178,7 +176,7 @@ export default class AnnotationsSaver {
         return splitted;
     }
 
-    _updateCreatedObjects(saved: ResponseBody, indexes: ExtractedIDs): void {
+    _updateCreatedObjects(saved: SerializedCollection, indexes: ExtractedIDs): void {
         const savedLength = saved.tracks.length + saved.shapes.length + saved.tags.length;
         const indexesLength = indexes.tracks.length + indexes.shapes.length + indexes.tags.length;
         if (indexesLength !== savedLength) {
@@ -196,7 +194,7 @@ export default class AnnotationsSaver {
         }
     }
 
-    _extractClientIDs(exported: SerializedCollection): ExtractedIDs {
+    _extractClientIDs(exported: Omit<SerializedCollection, 'version'>): ExtractedIDs {
         // Receive client IDs before saving
         const indexes = {
             tracks: exported.tracks.map((track) => track.clientID),
@@ -214,10 +212,10 @@ export default class AnnotationsSaver {
         return indexes;
     }
 
-    _updateInitialObjects(ResponseBody: ResponseBody): void {
-        this.version = ResponseBody.version;
+    _updateInitialObjects(responseBody: SerializedCollection): void {
+        this.version = responseBody.version;
         for (const type of COLLECTION_KEYS) {
-            for (const object of ResponseBody[type]) {
+            for (const object of responseBody[type]) {
                 this.initialObjects[type][object.id] = object;
             }
         }
@@ -281,9 +279,9 @@ export default class AnnotationsSaver {
             });
 
             const findPair = (
-                key: keyof SerializedCollection,
+                key: typeof COLLECTION_KEYS[0],
                 objectToSave: CollectionObject,
-                serverCollection: ResponseBody,
+                serverCollection: SerializedCollection,
             ): CollectionObject | null => {
                 const collection = serverCollection[key];
                 const { frame, label_id: labelID } = objectToSave;
@@ -302,9 +300,9 @@ export default class AnnotationsSaver {
 
             const retryIf504Status = async (
                 error: unknown,
-                requestBody: RequestBody,
+                requestBody: SerializedCollection,
                 action: 'update' | 'delete' | 'create',
-            ): Promise<ResponseBody> => {
+            ): Promise<SerializedCollection> => {
                 if (error instanceof ServerError && error.code === 504) {
                     setTimeout(() => {
                         // just for logging
@@ -328,7 +326,7 @@ export default class AnnotationsSaver {
                                 case 'create': {
                                     const serverCollection = await serverProxy.annotations
                                         .getAnnotations(this.sessionType, this.id);
-                                    const foundPairs: ResponseBody = {
+                                    const foundPairs: SerializedCollection = {
                                         shapes: [],
                                         tracks: [],
                                         tags: [],

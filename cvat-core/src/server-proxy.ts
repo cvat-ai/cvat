@@ -16,8 +16,7 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
     SerializedQualitySettingsData, SerializedInvitationData, SerializedCloudStorage,
-    SerializedFramesMetaData,
-    SerializedCollection,
+    SerializedFramesMetaData, SerializedCollection,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -1626,7 +1625,7 @@ async function saveMeta(
 async function getAnnotations(
     session: 'task' | 'job',
     id: number,
-): Promise<SerializedCollection & { version: number }> {
+): Promise<SerializedCollection> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1641,9 +1640,9 @@ async function getAnnotations(
 async function updateAnnotations(
     session: 'task' | 'job',
     id: number,
-    data: SerializedCollection & { version: number },
+    data: SerializedCollection,
     action: 'create' | 'update' | 'delete' | 'put',
-): Promise<SerializedCollection & { version: number }> {
+): Promise<SerializedCollection> {
     const { backendAPI } = config;
     const url = `${backendAPI}/${session}s/${id}/annotations`;
     const params: Record<string, string> = {};

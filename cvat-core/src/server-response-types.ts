@@ -313,6 +313,7 @@ export interface SerializedCollection {
     tags: SerializedTag[];
     shapes: SerializedShape[];
     tracks: SerializedTrack[];
+    version: number;
 }
 
 export interface SerializedCloudStorage {
