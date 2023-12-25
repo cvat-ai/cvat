@@ -538,10 +538,7 @@ export class Shape extends Drawn {
         }
 
         if (this.parentID !== null) {
-            return {
-                ...omit(result, 'elements'),
-                outside: this.outside,
-            };
+            return omit(result, 'elements');
         }
 
         return result;
