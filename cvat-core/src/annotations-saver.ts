@@ -23,10 +23,29 @@ interface SplittedCollection {
     deleted: SerializedCollection;
 }
 
+type CollectionObject = SerializedShape | SerializedTrack | SerializedTag;
 type ResponseBody = Awaited<ReturnType<typeof serverProxy['annotations']['updateAnnotations']>>;
 type RequestBody = ResponseBody;
 
 const COLLECTION_KEYS: (keyof SerializedCollection)[] = ['shapes', 'tracks', 'tags'];
+const JSON_SERIALIZER_KEYS = [
+    'id',
+    'label_id',
+    'group',
+    'frame',
+    'occluded',
+    'z_order',
+    'points',
+    'rotation',
+    'type',
+    'shapes',
+    'elements',
+    'attributes',
+    'value',
+    'spec_id',
+    'source',
+    'outside',
+];
 
 function removeIDFromObject<T extends SerializedShape | SerializedTag | SerializedTrack>(
     object: T,
@@ -125,33 +144,14 @@ export default class AnnotationsSaver {
             },
         };
 
-        const keys = [
-            'id',
-            'label_id',
-            'group',
-            'frame',
-            'occluded',
-            'z_order',
-            'points',
-            'rotation',
-            'type',
-            'shapes',
-            'elements',
-            'attributes',
-            'value',
-            'spec_id',
-            'source',
-            'outside',
-        ];
-
         // Find created and updated objects
         for (const type of COLLECTION_KEYS) {
             for (const object of exported[type]) {
                 if (typeof object.id === 'undefined') {
                     splitted.created[type].push(object as any);
                 } else if (object.id in this.initialObjects[type]) {
-                    const exportedHash = JSON.stringify(object, keys);
-                    const initialHash = JSON.stringify(this.initialObjects[type][object.id], keys);
+                    const exportedHash = JSON.stringify(object, JSON_SERIALIZER_KEYS);
+                    const initialHash = JSON.stringify(this.initialObjects[type][object.id], JSON_SERIALIZER_KEYS);
                     if (exportedHash !== initialHash) {
                         splitted.updated[type].push(object as any);
                     }
@@ -257,31 +257,100 @@ export default class AnnotationsSaver {
             // from nginx proxy, when the request is still being processed by the server
             // that is not good that client knows about the server details
             // but we implemented a workaround here
+
+            const mutateForCompare = (
+                object: CollectionObject | SerializedTrack['shapes'][0],
+            ): CollectionObject | SerializedTrack['shapes'][0] => ({
+                ...object,
+                ...('attributes' in object ? {
+                    attributes: object.attributes
+                        .sort(({ spec_id: specID1 }, { spec_id: specID2 }) => specID1 - specID2),
+                } : {}),
+                ...('points' in object ? {
+                    points: object.points.map((coord) => +coord.toFixed(2)),
+                } : {}),
+                ...('elements' in object ? {
+                    elements: object.elements
+                        .sort(({ label_id: labelID1 }, { label_id: labelID2 }) => labelID1 - labelID2)
+                        .map((element) => mutateForCompare(element)),
+                } : {}),
+                ...('shapes' in object ? {
+                    shapes: object.shapes
+                        .map((shape) => mutateForCompare(shape)),
+                } : {}),
+            });
+
+            const findPair = (
+                key: keyof SerializedCollection,
+                objectToSave: CollectionObject,
+                serverCollection: ResponseBody,
+            ): CollectionObject | null => {
+                const collection = serverCollection[key];
+                const { frame, label_id: labelID } = objectToSave;
+
+                // optimization to avoid stringifying each object in collection
+                const potentialObjects = collection.filter(
+                    (object) => object.frame === frame && object.label_id === labelID,
+                );
+
+                const comparedKeys = JSON_SERIALIZER_KEYS.filter((_key) => !['id'].includes(_key));
+                const stringifiedObjectToSave = JSON.stringify(mutateForCompare(objectToSave), comparedKeys);
+                return potentialObjects.find((object) => (
+                    JSON.stringify(mutateForCompare(object), comparedKeys) === stringifiedObjectToSave
+                )) || null;
+            };
+
             const retryIf504Status = async (
                 error: unknown,
                 requestBody: RequestBody,
                 action: 'update' | 'delete' | 'create',
             ): Promise<ResponseBody> => {
                 if (error instanceof ServerError && error.code === 504) {
-                    const RETRY_PERIOD = 5000;
-                    this.collection.flush = true;
+                    setTimeout(() => {
+                        // just for logging
+                        throw new Error(
+                            `Code 504 received from the server when ${action} objects, running workaround`,
+                        );
+                    });
 
+                    const RETRY_PERIOD = 10000;
                     let retryCount = 10;
                     while (retryCount) {
                         try {
-                            if (action === 'update') {
-                                return await this._update(requestBody);
-                            }
+                            await sleep(RETRY_PERIOD);
+                            switch (action) {
+                                case 'update': {
+                                    return await this._update(requestBody);
+                                }
+                                case 'delete': {
+                                    return await this._delete(requestBody);
+                                }
+                                case 'create': {
+                                    const serverCollection = await serverProxy.annotations
+                                        .getAnnotations(this.sessionType, this.id);
+                                    const foundPairs: ResponseBody = {
+                                        shapes: [],
+                                        tracks: [],
+                                        tags: [],
+                                        version: serverCollection.version,
+                                    };
+                                    for (const type of COLLECTION_KEYS) {
+                                        for (const obj of requestBody[type]) {
+                                            const pair = findPair(type, obj, serverCollection);
+                                            if (pair === null) {
+                                                throw new Error('Pair not found this iteration');
+                                            }
+                                            foundPairs[type].push(pair as any);
+                                        }
+                                    }
 
-                            if (action === 'delete') {
-                                return await this._update(requestBody);
+                                    return foundPairs;
+                                }
+                                default:
+                                    throw new Error('Unknown action');
                             }
-
-                            // todo: implement for create
-                            return await this._create(requestBody);
                         } catch (_: unknown) {
                             retryCount--;
-                            await sleep(RETRY_PERIOD);
                         }
                     }
                 }
@@ -315,8 +384,7 @@ export default class AnnotationsSaver {
             try {
                 deletedData = await this._delete(requestBody);
             } catch (error: unknown) {
-                await retryIf504Status(error, requestBody, 'delete');
-                return;
+                deletedData = await retryIf504Status(error, requestBody, 'delete');
             }
 
             this.version = deletedData.version;
@@ -333,8 +401,7 @@ export default class AnnotationsSaver {
             try {
                 createdData = await this._create(requestBody);
             } catch (error: unknown) {
-                await retryIf504Status(error, requestBody, 'create');
-                return;
+                createdData = await retryIf504Status(error, requestBody, 'create');
             }
 
             this.version = createdData.version;
