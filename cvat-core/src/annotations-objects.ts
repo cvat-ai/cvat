@@ -499,12 +499,7 @@ export class Shape extends Drawn {
     public rotation: number;
     public zOrder: number;
 
-    constructor(
-        data: SerializedShape | SerializedShape['elements'][0],
-        clientID: number,
-        color: string,
-        injection: AnnotationInjection,
-    ) {
+    constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.points = data.points;
         this.rotation = data.rotation || 0;
@@ -514,7 +509,7 @@ export class Shape extends Drawn {
     }
 
     // Method is used to export data to the server
-    public toJSON(): SerializedShape | SerializedShape['elements'][0] {
+    public toJSON(): SerializedShape {
         const result: SerializedShape = {
             type: this.shapeType,
             clientID: this.clientID,
@@ -1561,12 +1556,7 @@ export class EllipseShape extends Shape {
 }
 
 class PolyShape extends Shape {
-    constructor(
-        data: SerializedShape | SerializedShape['elements'][0],
-        clientID: number,
-        color: string,
-        injection: AnnotationInjection,
-    ) {
+    constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.rotation = 0; // is not supported
     }
@@ -1688,12 +1678,7 @@ export class PolylineShape extends PolyShape {
 }
 
 export class PointsShape extends PolyShape {
-    constructor(
-        data: SerializedShape | SerializedShape['elements'][0],
-        clientID: number,
-        color: string,
-        injection: AnnotationInjection,
-    ) {
+    constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.POINTS;
         checkNumberOfPoints(this.shapeType, this.points);
@@ -3097,7 +3082,7 @@ Object.defineProperty(CuboidTrack, 'distance', { value: CuboidShape.distance });
 Object.defineProperty(SkeletonTrack, 'distance', { value: SkeletonShape.distance });
 
 export function shapeFactory(
-    data: SerializedShape | SerializedShape['elements'][0],
+    data: SerializedShape,
     clientID: number,
     injection: AnnotationInjection,
 ): Shape {

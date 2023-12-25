@@ -260,7 +260,7 @@ export interface SerializedShape {
     frame: number;
     source: Source;
     attributes: { spec_id: number; value: string }[];
-    elements: Omit<SerializedShape, 'elements'>[];
+    elements?: Omit<SerializedShape, 'elements'>[];
     occluded: boolean;
     outside: boolean;
     points?: number[];
