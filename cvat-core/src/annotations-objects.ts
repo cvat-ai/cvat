@@ -3081,39 +3081,35 @@ Object.defineProperty(EllipseTrack, 'distance', { value: EllipseShape.distance }
 Object.defineProperty(CuboidTrack, 'distance', { value: CuboidShape.distance });
 Object.defineProperty(SkeletonTrack, 'distance', { value: SkeletonShape.distance });
 
-export function shapeFactory(
-    data: SerializedShape,
-    clientID: number,
-    injection: AnnotationInjection,
-): Shape {
+export function shapeFactory(data: SerializedShape, clientID: number, injection: AnnotationInjection): Shape {
     const { type } = data;
     const color = colors[clientID % colors.length];
 
     let shapeModel = null;
     switch (type) {
         case ShapeType.RECTANGLE:
-            shapeModel = new RectangleShape(data as SerializedShape, clientID, color, injection);
+            shapeModel = new RectangleShape(data, clientID, color, injection);
             break;
         case ShapeType.POLYGON:
-            shapeModel = new PolygonShape(data as SerializedShape, clientID, color, injection);
+            shapeModel = new PolygonShape(data, clientID, color, injection);
             break;
         case ShapeType.POLYLINE:
-            shapeModel = new PolylineShape(data as SerializedShape, clientID, color, injection);
+            shapeModel = new PolylineShape(data, clientID, color, injection);
             break;
         case ShapeType.POINTS:
-            shapeModel = new PointsShape(data as SerializedShape, clientID, color, injection);
+            shapeModel = new PointsShape(data, clientID, color, injection);
             break;
         case ShapeType.ELLIPSE:
-            shapeModel = new EllipseShape(data as SerializedShape, clientID, color, injection);
+            shapeModel = new EllipseShape(data, clientID, color, injection);
             break;
         case ShapeType.CUBOID:
-            shapeModel = new CuboidShape(data as SerializedShape, clientID, color, injection);
+            shapeModel = new CuboidShape(data, clientID, color, injection);
             break;
         case ShapeType.MASK:
-            shapeModel = new MaskShape(data as SerializedShape, clientID, color, injection);
+            shapeModel = new MaskShape(data, clientID, color, injection);
             break;
         case ShapeType.SKELETON:
-            shapeModel = new SkeletonShape(data as SerializedShape, clientID, color, injection);
+            shapeModel = new SkeletonShape(data, clientID, color, injection);
             break;
         default:
             throw new DataError(`An unexpected type of shape "${type}"`);
