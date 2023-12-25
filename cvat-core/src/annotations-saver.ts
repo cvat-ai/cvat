@@ -265,7 +265,7 @@ export default class AnnotationsSaver {
                         .sort(({ spec_id: specID1 }, { spec_id: specID2 }) => specID1 - specID2),
                 } : {}),
                 ...('points' in object && Array.isArray(object.points) ? {
-                    points: object.points.map((coord) => +coord.toFixed(2)),
+                    points: object.points.map((coord) => +coord.toFixed(4)),
                 } : {}),
                 ...('elements' in object && Array.isArray(object.elements) ? {
                     elements: object.elements
@@ -284,14 +284,17 @@ export default class AnnotationsSaver {
                 serverCollection: SerializedCollection,
             ): CollectionObject | null => {
                 const collection = serverCollection[key];
+                const existingIDs = Object.keys(this.initialObjects[key]).map((id) => +id);
                 const { frame, label_id: labelID } = objectToSave;
 
                 // optimization to avoid stringifying each object in collection
                 const potentialObjects = collection.filter(
-                    (object) => object.frame === frame && object.label_id === labelID,
+                    (object) => object.frame === frame &&
+                    object.label_id === labelID &&
+                    !existingIDs.includes(object.id), // exclude objects that client knows
                 );
 
-                const comparedKeys = JSON_SERIALIZER_KEYS.filter((_key) => !['id'].includes(_key));
+                const comparedKeys = JSON_SERIALIZER_KEYS.filter((_key) => !['id', 'attributes'].includes(_key));
                 const stringifiedObjectToSave = JSON.stringify(mutateForCompare(objectToSave), comparedKeys);
                 return potentialObjects.find((object) => {
                     const stringifiedObject = JSON.stringify(mutateForCompare(object), comparedKeys);
