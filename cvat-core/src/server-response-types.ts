@@ -260,17 +260,9 @@ export interface SerializedShape {
     frame: number;
     source: Source;
     attributes: { spec_id: number; value: string }[];
-    elements: {
-        id?: number;
-        attributes: SerializedTrack['attributes'];
-        label_id: number;
-        occluded: boolean;
-        outside: boolean;
-        points: number[];
-        type: ShapeType;
-    }[];
+    elements: Omit<SerializedShape, 'elements'>[];
     occluded: boolean;
-    outside?: boolean; // only for skeleton elements
+    outside: boolean;
     points?: number[];
     rotation: number;
     z_order: number;
@@ -296,7 +288,7 @@ export interface SerializedTrack {
         type: ShapeType;
         z_order: number;
     }[];
-    elements?: SerializedTrack[];
+    elements?: Omit<SerializedTrack, 'elements'>[];
 }
 
 export interface SerializedTag {

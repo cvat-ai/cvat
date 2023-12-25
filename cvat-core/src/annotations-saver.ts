@@ -293,9 +293,10 @@ export default class AnnotationsSaver {
 
                 const comparedKeys = JSON_SERIALIZER_KEYS.filter((_key) => !['id'].includes(_key));
                 const stringifiedObjectToSave = JSON.stringify(mutateForCompare(objectToSave), comparedKeys);
-                return potentialObjects.find((object) => (
-                    JSON.stringify(mutateForCompare(object), comparedKeys) === stringifiedObjectToSave
-                )) || null;
+                return potentialObjects.find((object) => {
+                    const stringifiedObject = JSON.stringify(mutateForCompare(object), comparedKeys);
+                    return stringifiedObject === stringifiedObjectToSave;
+                }) || null;
             };
 
             const retryIf504Status = async (
