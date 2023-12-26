@@ -19,6 +19,9 @@ from packaging import version
 # the initial version for the documentation site
 MINIMUM_VERSION = version.Version("1.5.0")
 
+# apply new hugo version starting from release 2.9.2
+UPDATED_HUGO_FROM = version.Version("2.9.2")
+
 # Start the name with HUGO_ for Hugo default security checks
 VERSION_URL_ENV_VAR = "HUGO_VERSION_REL_URL"
 
@@ -142,12 +145,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
             run_npm_install()
 
             # find correct hugo version
-            major_number, minor_number, patch_number = map(int, 'v2.9.2'[1:].split('.'))
-            hugo = hugo110 if major_number > MAJOR_TAG or (
-                major_number == MAJOR_TAG and minor_number > MINOR_TAG
-            ) or (
-                major_number == MAJOR_TAG and minor_number == MINOR_TAG and patch_number >= PATCH_TAG
-            ) else hugo83
+            hugo = hugo110 if version.parse(tag) >= UPDATED_HUGO_FROM else hugo83
 
             run_hugo(
                 output_dir / tag.name,
