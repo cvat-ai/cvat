@@ -5,6 +5,7 @@
 
 import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
 import waitFor from 'utils/wait-for';
+import config from 'config';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
@@ -57,14 +58,14 @@ export class OpenCVWrapper {
         this.injectionProcess = null;
     }
 
-    private checkInitialization() {
+    private checkInitialization(): void {
         if (!this.initialized) {
             throw new Error('Need to initialize OpenCV first');
         }
     }
 
     private async inject(): Promise<void> {
-        const response = await fetch('/assets/opencv_4.8.0.js');
+        const response = await fetch(config.OPENCV_PATH);
         if (response.status !== 200) {
             throw new Error(`Response status ${response.status}. ${response.statusText}`);
         }
@@ -189,8 +190,12 @@ export class OpenCVWrapper {
                     cv.copyMakeBorder(src, expanded, 1, 1, 1, 1, cv.BORDER_CONSTANT);
                     // morpth transform to get better contour including all the pixels
                     cv.dilate(
-                        expanded, expanded, kernel,
-                        anchor, 1, cv.BORDER_CONSTANT,
+                        expanded,
+                        expanded,
+                        kernel,
+                        anchor,
+                        1,
+                        cv.BORDER_CONSTANT,
                         cv.morphologyDefaultBorderValue(),
                     );
                     cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
@@ -276,12 +281,12 @@ export class OpenCVWrapper {
         }
 
         throw new Error(`Not implemented getContour for ${state.shapeType}`);
-    }
+    };
 
     public getContourFromState = async (state: ObjectState): Promise<number[]> => {
         const contours = await this.getContoursFromState(state);
         return contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
-    }
+    };
 
     public get segmentation(): Segmentation {
         this.checkInitialization();

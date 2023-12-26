@@ -242,7 +242,7 @@ class Data(models.Model):
         return int(match.group(1)) if match else 1
 
     def get_valid_frame_indices(self):
-        return range(self.start_frame, self.stop_frame, self.get_frame_step())
+        return range(self.start_frame, self.stop_frame + 1, self.get_frame_step())
 
     def get_data_dirname(self):
         return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
@@ -599,7 +599,7 @@ class Segment(models.Model):
             )
 
         if self.stop_frame < self.start_frame:
-            raise ValidationError("stop_frame cannot be lesser than start_frame")
+            raise ValidationError("stop_frame cannot be less than start_frame")
 
         return super().clean()
 
@@ -678,6 +678,12 @@ class Job(models.Model):
 
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
+
+    def get_target_storage(self) -> Optional[Storage]:
+        return self.segment.task.target_storage
+
+    def get_source_storage(self) -> Optional[Storage]:
+        return self.segment.task.source_storage
 
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))

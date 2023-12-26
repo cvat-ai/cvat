@@ -33,9 +33,9 @@ export default class Project {
     public annotations: {
         exportDataset: CallableFunction;
         importDataset: CallableFunction;
-    }
+    };
 
-    constructor(initialData: SerializedProject & { labels?: SerializedLabel[] }) {
+    constructor(initialData: Readonly<SerializedProject & { labels?: SerializedLabel[] }>) {
         const data = {
             id: undefined,
             name: undefined,
@@ -68,6 +68,16 @@ export default class Project {
             data.labels = initialData.labels
                 .map((labelData) => new Label(labelData)).filter((label) => !label.hasParent);
         }
+
+        data.source_storage = new Storage({
+            location: initialData.source_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.source_storage?.cloud_storage_id,
+        });
+
+        data.target_storage = new Storage({
+            location: initialData.target_storage?.location || StorageLocation.LOCAL,
+            cloudStorageId: initialData.target_storage?.cloud_storage_id,
+        });
 
         Object.defineProperties(
             this,
@@ -173,20 +183,10 @@ export default class Project {
                     get: () => [...data.task_subsets],
                 },
                 sourceStorage: {
-                    get: () => (
-                        new Storage({
-                            location: data.source_storage?.location || StorageLocation.LOCAL,
-                            cloudStorageId: data.source_storage?.cloud_storage_id,
-                        })
-                    ),
+                    get: () => data.source_storage,
                 },
                 targetStorage: {
-                    get: () => (
-                        new Storage({
-                            location: data.target_storage?.location || StorageLocation.LOCAL,
-                            cloudStorageId: data.target_storage?.cloud_storage_id,
-                        })
-                    ),
+                    get: () => data.target_storage,
                 },
                 _internalData: {
                     get: () => data,

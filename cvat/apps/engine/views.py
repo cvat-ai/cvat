@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import io
 import os
 import os.path as osp
 from PIL import Image
@@ -82,7 +81,7 @@ from . import models, task
 from .log import ServerLogManager
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
-    TaskPermission, UserPermission)
+    TaskPermission, UserPermission, PolicyEnforcer, IsAuthenticatedOrReadPublicResource)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.view_utils import tus_chunk_action
@@ -679,7 +678,7 @@ class DataChunkGetter:
                 buff, mime = cache.get_frame_context_images(db_data, self.number)
                 if not buff:
                     return HttpResponseNotFound()
-                return HttpResponse(io.BytesIO(buff), content_type=mime)
+                return HttpResponse(buff, content_type=mime)
             else:
                 return Response(data='unknown data type {}.'.format(self.type),
                     status=status.HTTP_400_BAD_REQUEST)
@@ -2677,6 +2676,11 @@ class AssetsViewSet(
     def check_object_permissions(self, request, obj):
         super().check_object_permissions(request, obj.guide)
 
+    def get_permissions(self):
+        if self.action == 'retrieve':
+            return [IsAuthenticatedOrReadPublicResource(), PolicyEnforcer()]
+        return super().get_permissions()
+
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return AssetReadSerializer
@@ -2728,21 +2732,6 @@ class AssetsViewSet(
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
-
-    # FIXME: It should be done in another way. It is better to introduce a "public resource" concept and handle it
-    # properly in PolicyEnfocer. Looks like PolicyEnfocer should handle rest_framework.permissions.IsAuthenticated internally.
-    @action(methods=['GET'], detail=True, url_path='public', permission_classes=[])
-    def public_retrieve(self, request, *args, **kwargs):
-        # Note: It is not a good approach to implement one more endpoint for receiving public assets
-        # but it separated to 2 endpoints for better server API specification.
-        # It could be implemented via overwriting get_permissions func,
-        # but in that case the specification would contain incorrect security information.
-        # Note: we cannot move this logic to OPA because OPA permissions
-        # don't imply that the user will be anonymous.
-        instance = self.get_object()
-        if instance.guide.is_public:
-            return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance):
         full_path = os.path.join(instance.get_asset_dir(), instance.filename)
@@ -2907,7 +2896,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 func=import_resource_with_clean_up_after,
                 args=(rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly),
                 job_id=rq_id,
-                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                depends_on=dependent_job or define_dependent_job(queue, user_id, rq_id=rq_id),
                 meta={
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=db_obj),
@@ -3039,7 +3028,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
             args=(db_instance.id, format_name, server_address),
             job_id=rq_id,
             meta=get_rq_job_meta(request=request, db_obj=db_instance),
-            depends_on=define_dependent_job(queue, user_id),
+            depends_on=define_dependent_job(queue, user_id, rq_id=rq_id),
             result_ttl=ttl,
             failure_ttl=ttl,
         )
@@ -3121,7 +3110,7 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                     'tmp_file': filename,
                     **get_rq_job_meta(request=request, db_obj=db_obj),
                 },
-                depends_on=dependent_job or define_dependent_job(queue, user_id),
+                depends_on=dependent_job or define_dependent_job(queue, user_id, rq_id=rq_id),
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )

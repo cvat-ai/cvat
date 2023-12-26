@@ -590,13 +590,13 @@ class TestPatchTaskAnnotations:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetTaskDataset:
-    def _test_export_task(self, username, tid, **kwargs):
+    def _test_export_task(self, username: str, tid: int, **kwargs):
         with make_api_client(username) as api_client:
             return export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=tid, **kwargs)
 
     def test_can_export_task_dataset(self, admin_user, tasks_with_shapes):
         task = tasks_with_shapes[0]
-        response = self._test_export_task(admin_user, task["id"], format="CVAT for images 1.1")
+        response = self._test_export_task(admin_user, task["id"])
         assert response.data
 
     @pytest.mark.parametrize("tid", [21])
@@ -722,14 +722,33 @@ class TestGetTaskDataset:
 
         task_id, _ = create_task(admin_user, task_spec, task_data)
 
-        response = self._test_export_task(admin_user, task_id, format="CVAT for images 1.1")
+        response = self._test_export_task(admin_user, task_id)
         assert response.status == HTTPStatus.OK
         assert zipfile.is_zipfile(io.BytesIO(response.data))
+
+    def test_export_dataset_after_deleting_related_cloud_storage(self, admin_user, tasks):
+        related_field = "target_storage"
+
+        task = next(
+            t for t in tasks if t[related_field] and t[related_field]["location"] == "cloud_storage"
+        )
+        task_id = task["id"]
+        cloud_storage_id = task[related_field]["cloud_storage_id"]
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.cloudstorages_api.destroy(cloud_storage_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+            result, response = api_client.tasks_api.retrieve(task_id)
+            assert not result[related_field]
+
+            response = export_dataset(api_client.tasks_api.retrieve_dataset_endpoint, id=task["id"])
+            assert response.data
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
-@pytest.mark.usefixtures("restore_redis_db_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -1869,7 +1888,7 @@ class TestPatchTaskLabel:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
-@pytest.mark.usefixtures("restore_redis_db_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
@@ -2432,7 +2451,8 @@ class TestImportTaskAnnotations:
         self.tmp_dir = tmp_path
         self.client = self._make_client()
         self.user = admin_user
-        self.format = "COCO 1.0"
+        self.export_format = "CVAT for images 1.1"
+        self.import_format = "CVAT 1.1"
 
         with self.client:
             self.client.login((self.user, USER_PASS))
@@ -2462,11 +2482,11 @@ class TestImportTaskAnnotations:
             filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
 
         task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.format, filename, include_images=False)
+        task.export_dataset(self.export_format, filename, include_images=False)
 
         self._delete_annotations(task_id)
 
-        params = {"format": self.format, "filename": filename.name}
+        params = {"format": self.import_format, "filename": filename.name}
         url = self.client.api_map.make_endpoint_url(
             self.client.api_client.tasks_api.create_annotations_endpoint.path
         ).format(id=task_id)
@@ -2475,7 +2495,7 @@ class TestImportTaskAnnotations:
         if successful_upload:
             # define time required to upload file with annotations
             start_time = time()
-            task.import_annotations(self.format, filename)
+            task.import_annotations(self.import_format, filename)
             required_time = ceil(time() - start_time) * 2
             self._delete_annotations(task_id)
 
@@ -2499,7 +2519,7 @@ class TestImportTaskAnnotations:
         if successful_upload:
             self._check_annotations(task_id)
             self._delete_annotations(task_id)
-        task.import_annotations(self.format, filename)
+        task.import_annotations(self.import_format, filename)
         self._check_annotations(task_id)
 
     @pytest.mark.skip("Fails sometimes, needs to be fixed")
@@ -2509,9 +2529,9 @@ class TestImportTaskAnnotations:
         with NamedTemporaryFile() as f:
             filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
         task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.format, filename, include_images=False)
+        task.export_dataset(self.export_format, filename, include_images=False)
 
-        params = {"format": self.format, "filename": filename.name}
+        params = {"format": self.import_format, "filename": filename.name}
         url = self.client.api_map.make_endpoint_url(
             self.client.api_client.tasks_api.create_annotations_endpoint.path
         ).format(id=task_id)
@@ -2538,6 +2558,38 @@ class TestImportTaskAnnotations:
             if not number_of_files:
                 break
         assert not number_of_files
+
+    def test_import_annotations_after_deleting_related_cloud_storage(
+        self, admin_user: str, tasks_with_shapes
+    ):
+        related_field = "source_storage"
+
+        task = next(
+            t
+            for t in tasks_with_shapes
+            if t[related_field] and t[related_field]["location"] == "cloud_storage"
+        )
+        task_id = task["id"]
+        cloud_storage_id = task["source_storage"]["cloud_storage_id"]
+
+        # generate temporary destination
+        with NamedTemporaryFile(dir=self.tmp_dir, suffix=f"task_{task_id}.zip") as f:
+            file_path = Path(f.name)
+
+        task = self.client.tasks.retrieve(task_id)
+        self._check_annotations(task_id)
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.cloudstorages_api.destroy(cloud_storage_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+        task = self.client.tasks.retrieve(task_id)
+        assert not getattr(task, related_field)
+
+        task.export_dataset(self.export_format, file_path, include_images=False)
+        self._delete_annotations(task_id)
+        task.import_annotations(self.import_format, file_path)
+        self._check_annotations(task_id)
 
 
 class TestImportWithComplexFilenames:

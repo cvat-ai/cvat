@@ -62,18 +62,36 @@ Create the name of the service account to use
 {{- end }}
 
 {{- define "cvat.sharedBackendEnv" }}
+{{- if .Values.redis.enabled }}
+- name: CVAT_REDIS_INMEM_HOST
+  value: "{{ .Release.Name }}-redis-master"
+{{- else }}
+- name: CVAT_REDIS_INMEM_HOST
+  value: "{{ .Values.redis.external.host }}"
+{{- end }}
+- name: CVAT_REDIS_INMEM_PORT
+  value: "6379"
+- name: CVAT_REDIS_INMEM_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: "{{ tpl (.Values.redis.secret.name) . }}"
+      key: password
+
 {{- if .Values.keydb.enabled }}
-- name: CVAT_REDIS_HOST
+- name: CVAT_REDIS_ONDISK_HOST
   value: "{{ .Release.Name }}-keydb"
 {{- else }}
-- name: CVAT_REDIS_HOST
+- name: CVAT_REDIS_ONDISK_HOST
   value: "{{ .Values.keydb.external.host }}"
 {{- end }}
-- name: CVAT_REDIS_PASSWORD
+- name: CVAT_REDIS_ONDISK_PORT
+  value: "6379"
+- name: CVAT_REDIS_ONDISK_PASSWORD
   valueFrom:
     secretKeyRef:
       name: "{{ tpl (.Values.keydb.secret.name) . }}"
       key: password
+
 {{- if .Values.postgresql.enabled }}
 - name: CVAT_POSTGRES_HOST
   value: "{{ .Release.Name }}-postgresql"

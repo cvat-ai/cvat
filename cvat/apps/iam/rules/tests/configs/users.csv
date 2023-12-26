@@ -1,5 +1,6 @@
 Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
-list,User,N/A,N/A,,GET,/users,None,N/A
+list,N/A,Sandbox,N/A,,GET,/users,None,N/A
+list,N/A,Organization,N/A,,GET,/users,None,Worker
 view,User,Sandbox,None,,GET,/users/{id},Admin,N/A
 view,User,N/A,Self,,GET,/users/{id},None,N/A
 view,User,Organization,None,"resource[""membership""][""role""] != None",GET,/users/{id},None,Worker

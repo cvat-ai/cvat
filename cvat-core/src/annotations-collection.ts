@@ -5,9 +5,11 @@
 
 import {
     shapeFactory, trackFactory, Track, Shape, Tag,
-    MaskShape, BasicInjection, RawShapeData,
-    RawTrackData, RawTagData, SkeletonShape, SkeletonTrack, PolygonShape,
+    MaskShape, BasicInjection,
+    SkeletonShape, SkeletonTrack, PolygonShape, CuboidShape,
+    RectangleShape, PolylineShape, PointsShape, EllipseShape,
 } from './annotations-objects';
+import { SerializedCollection, SerializedTrack } from './server-response-types';
 import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
@@ -17,15 +19,10 @@ import ObjectState from './object-state';
 import { cropMask } from './object-utils';
 import config from './config';
 import {
-    HistoryActions, ShapeType, ObjectType, colors, Source,
+    HistoryActions, ShapeType, ObjectType, colors, Source, DimensionType, JobType,
 } from './enums';
 import AnnotationHistory from './annotations-history';
-
-interface RawCollection {
-    tags: RawTagData[],
-    shapes: RawShapeData[],
-    tracks: RawTrackData[],
-}
+import { Job } from './session';
 
 interface ImportedCollection {
     tags: Tag[],
@@ -57,22 +54,32 @@ const labelAttributesAsDict = (label: Label): Record<number, Attribute> => (
     }, {})
 );
 
+export type FrameMeta = Record<number, Awaited<ReturnType<Job['frames']['get']>>> & {
+    deleted_frames: Record<number, boolean>
+};
+
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
-    private frameMeta: any;
-    private labels: Record<number, Label>
+    private frameMeta: FrameMeta;
+    private labels: Record<number, Label>;
     private annotationsFilter: AnnotationsFilter;
     private history: AnnotationHistory;
     private shapes: Record<number, Shape[]>;
     private tags: Record<number, Tag[]>;
     private tracks: Track[];
     private objects: Record<number, Shape | Tag | Track>;
-    private count: number;
     private groups: { max: number };
     private injection: BasicInjection;
 
-    constructor(data) {
+    constructor(data: {
+        labels: Label[];
+        history: AnnotationHistory;
+        stopFrame: number;
+        dimension: DimensionType;
+        frameMeta: Collection['frameMeta'];
+        jobType: JobType;
+    }) {
         this.stopFrame = data.stopFrame;
         this.frameMeta = data.frameMeta;
 
@@ -91,7 +98,6 @@ export default class Collection {
         this.tags = {}; // key is a frame
         this.tracks = [];
         this.objects = {}; // key is a client id
-        this.count = 0;
         this.flush = false;
         this.groups = {
             max: 0,
@@ -102,14 +108,15 @@ export default class Collection {
             frameMeta: this.frameMeta,
             history: this.history,
             dimension: data.dimension,
-            nextClientID: () => ++this.count,
+            jobType: data.jobType,
+            nextClientID: () => ++config.globalObjectsCounter,
             groupColors: {},
             getMasksOnFrame: (frame: number) => (this.shapes[frame] as MaskShape[])
                 .filter((object) => object instanceof MaskShape),
         };
     }
 
-    import(data: RawCollection): ImportedCollection {
+    import(data: SerializedCollection): ImportedCollection {
         const result = {
             tags: [],
             shapes: [],
@@ -117,7 +124,7 @@ export default class Collection {
         };
 
         for (const tag of data.tags) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const color = colors[clientID % colors.length];
             const tagModel = new Tag(tag, clientID, color, this.injection);
             this.tags[tagModel.frame] = this.tags[tagModel.frame] || [];
@@ -128,7 +135,7 @@ export default class Collection {
         }
 
         for (const shape of data.shapes) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const shapeModel = shapeFactory(shape, clientID, this.injection);
             this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
             this.shapes[shapeModel.frame].push(shapeModel);
@@ -138,7 +145,7 @@ export default class Collection {
         }
 
         for (const track of data.tracks) {
-            const clientID = ++this.count;
+            const clientID = this.injection.nextClientID();
             const trackModel = trackFactory(track, clientID, this.injection);
             // The function can return null if track doesn't have any shapes.
             // In this case a corresponded message will be sent to the console
@@ -152,7 +159,7 @@ export default class Collection {
         return result;
     }
 
-    export(): RawCollection {
+    export(): SerializedCollection {
         const data = {
             tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
             shapes: Object.values(this.shapes)
@@ -174,7 +181,7 @@ export default class Collection {
         return data;
     }
 
-    get(frame: number, allTracks: boolean, filters: string[]): ObjectState[] {
+    public get(frame: number, allTracks: boolean, filters: string[]): ObjectState[] {
         const { tracks } = this;
         const shapes = this.shapes[frame] || [];
         const tags = this.tags[frame] || [];
@@ -208,8 +215,8 @@ export default class Collection {
         return objectStates;
     }
 
-    _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): RawTrackData {
-        const keyframes: Record<number, RawTrackData['shapes'][0]> = {}; // frame: position
+    _mergeInternal(objectsForMerge: (Track | Shape)[], shapeType: ShapeType, label: Label): SerializedTrack {
+        const keyframes: Record<number, SerializedTrack['shapes'][0]> = {}; // frame: position
         const elements = {}; // element_sublabel_id: [element], each sublabel will be merged recursively
 
         if (!Object.values(ShapeType).includes(shapeType)) {
@@ -448,7 +455,7 @@ export default class Collection {
         );
     }
 
-    _splitInternal(objectState: ObjectState, object: Track, frame: number): RawTrackData[] {
+    _splitInternal(objectState: ObjectState, object: Track, frame: number): SerializedTrack[] {
         const labelAttributes = labelAttributesAsDict(object.label);
         // first clear all server ids which may exist in the object being splitted
         const copy = trackFactory(object.toJSON(), -1, this.injection);
@@ -802,7 +809,6 @@ export default class Collection {
             this.tags = {};
             this.tracks = [];
             this.objects = {};
-            this.count = 0;
 
             this.flush = true;
         } else {
@@ -812,7 +818,7 @@ export default class Collection {
         }
     }
 
-    statistics(filter): Statistics {
+    statistics(): Statistics {
         const labels = {};
         const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
         const body = {
@@ -900,10 +906,6 @@ export default class Collection {
 
         for (const object of Object.values(this.objects)) {
             if (object.removed) {
-                continue;
-            }
-
-            if ((object.jobID && filter?.jobID) && object.jobID !== filter.jobID) {
                 continue;
             }
 
@@ -1137,11 +1139,37 @@ export default class Collection {
                 continue;
             }
 
-            const object = this.objects[state.clientID];
-            if (typeof object === 'undefined') {
-                throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+            let distanceMetric: typeof RectangleShape['distance'] | null = null;
+            switch (state.shapeType) {
+                case ShapeType.CUBOID:
+                    distanceMetric = CuboidShape.distance;
+                    break;
+                case ShapeType.ELLIPSE:
+                    distanceMetric = EllipseShape.distance;
+                    break;
+                case ShapeType.MASK:
+                    distanceMetric = MaskShape.distance;
+                    break;
+                case ShapeType.POINTS:
+                    distanceMetric = PointsShape.distance;
+                    break;
+                case ShapeType.POLYGON:
+                    distanceMetric = PolygonShape.distance;
+                    break;
+                case ShapeType.POLYLINE:
+                    distanceMetric = PolylineShape.distance;
+                    break;
+                case ShapeType.RECTANGLE:
+                    distanceMetric = RectangleShape.distance;
+                    break;
+                case ShapeType.SKELETON:
+                    distanceMetric = SkeletonShape.distance;
+                    break;
+                default:
+                    throw new ArgumentError(`Unknown shape type "${state.shapeType}"`);
             }
-            const distance = object.constructor.distance(state.points, x, y, state.rotation);
+
+            const distance = distanceMetric(state.points, x, y, state.rotation);
             if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                 minimumDistance = distance;
                 minimumState = state;

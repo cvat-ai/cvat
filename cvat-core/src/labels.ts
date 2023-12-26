@@ -5,7 +5,7 @@
 
 import {
     AttrInputType, LabelType, SerializedAttribute, SerializedLabel,
-} from 'server-response-types';
+} from './server-response-types';
 import { ShapeType, AttributeType } from './enums';
 import { ArgumentError } from './exceptions';
 
@@ -99,7 +99,7 @@ export class Label {
     public patched: boolean;
     public readonly hasParent?: boolean;
 
-    constructor(initialData: SerializedLabel) {
+    constructor(initialData: Readonly<SerializedLabel>) {
         const data = {
             id: undefined,
             name: undefined,
