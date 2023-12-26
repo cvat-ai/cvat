@@ -6,7 +6,9 @@
 import config from './config';
 import ObjectState, { SerializedData } from './object-state';
 import { checkObjectType, clamp } from './common';
-import { DataError, ArgumentError, ScriptingError } from './exceptions';
+import {
+    DataError, ArgumentError, ScriptingError, IncorrectUpdateError,
+} from './exceptions';
 import { Label } from './labels';
 import {
     colors, Source, ShapeType, ObjectType, HistoryActions, DimensionType,
@@ -2143,6 +2145,9 @@ export class MaskShape extends Shape {
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
         Annotation.prototype.validateStateBeforeSave.call(this, data, updated);
+        if (data.points.length === 5) {
+            throw new IncorrectUpdateError('cant save empty mask', [data.clientID]);
+        }
         if (updated.points) {
             const { width, height } = this.frameMeta[frame];
             return cropMask(data.points, width, height);
@@ -2192,9 +2197,16 @@ export class MaskShape extends Shape {
             }
         }
 
+        const incorrectMasks = [];
         for (const object of Object.values(updatedObjects)) {
             object.points = mask2Rle(masks[object.clientID]);
             object.updated = Date.now();
+            if (object.points.length === 1) {
+                incorrectMasks.push(object.clientID);
+            }
+        }
+        if (incorrectMasks.length !== 0) {
+            throw new IncorrectUpdateError('cant save empty mask', incorrectMasks);
         }
     }
 

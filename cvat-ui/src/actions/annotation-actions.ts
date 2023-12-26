@@ -13,7 +13,7 @@ import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
 import {
-    getCore, MLModel, JobType, Job, QualityConflict,
+    getCore, MLModel, JobType, Job, QualityConflict, IncorrectUpdateError,
 } from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -199,6 +199,7 @@ export enum AnnotationActionTypes {
     RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
     UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
     HIGHLIGHT_CONFLICT = 'HIGHLIGHT_CONFCLICT',
+    INCORRECT_ANNOTATIONS_UPDATE = 'INCORRECT_ANNOTATIONS_UPDATE',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -1075,7 +1076,23 @@ export function updateAnnotationsAsync(statesToUpdate: any[]): ThunkAction {
             }
 
             const promises = statesToUpdate.map((objectState: any): Promise<any> => objectState.save());
-            const states = await Promise.all(promises);
+            let results = await Promise.allSettled(promises);
+            results = results.map((s, index) => {
+                if (s.status === 'fulfilled') {
+                    return Promise.resolve(s.value);
+                }
+                if (s.reason instanceof IncorrectUpdateError) {
+                    dispatch({
+                        type: AnnotationActionTypes.INCORRECT_ANNOTATIONS_UPDATE,
+                        payload: {
+                            error: s.reason,
+                        },
+                    });
+                    return statesToUpdate[index].delete(frame);
+                }
+                return Promise.reject(s.reason);
+            });
+            const states = await Promise.all(results);
 
             const needToUpdateAll = states
                 .some((state: any) => state.shapeType === ShapeType.MASK || state.parentID !== null);
@@ -1113,7 +1130,24 @@ export function createAnnotationsAsync(sessionInstance: NonNullable<CombinedStat
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
-            await sessionInstance.annotations.put(statesToCreate);
+            try {
+                await sessionInstance.annotations.put(statesToCreate);
+            } catch (error) {
+                const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+                if (error instanceof IncorrectUpdateError) {
+                    await Promise.all(error.clientIDs.map((clientID: number) => (
+                        states.find(((state) => state.clientID === clientID))?.delete(frame))),
+                    );
+                    dispatch({
+                        type: AnnotationActionTypes.INCORRECT_ANNOTATIONS_UPDATE,
+                        payload: {
+                            error,
+                        },
+                    });
+                } else {
+                    throw error;
+                }
+            }
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
             const history = await sessionInstance.actions.get();
 

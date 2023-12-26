@@ -13,7 +13,7 @@ import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
 import { Attribute, Label } from './labels';
-import { ArgumentError, ScriptingError } from './exceptions';
+import { ArgumentError, IncorrectUpdateError, ScriptingError } from './exceptions';
 import ObjectState from './object-state';
 import { cropMask } from './object-utils';
 import config from './config';
@@ -997,6 +997,12 @@ export default class Collection {
                     throw new ArgumentError(
                         `Object shape must be one of: ${JSON.stringify(Object.values(ShapeType))}`,
                     );
+                }
+
+                if (state.shapeType === 'mask') {
+                    if (state.points.length === 5) {
+                        throw new IncorrectUpdateError('Cant create empty mask', [state.clientID]);
+                    }
                 }
 
                 if (state.objectType === 'shape') {

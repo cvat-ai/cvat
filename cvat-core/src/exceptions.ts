@@ -120,6 +120,21 @@ export class Exception extends Error {
 
 export class ArgumentError extends Exception {}
 
+export class IncorrectUpdateError extends Exception {
+    constructor(message, clientIDs) {
+        super(message);
+
+        Object.defineProperties(
+            this,
+            Object.freeze({
+                clientIDs: {
+                    get: () => clientIDs,
+                },
+            }),
+        );
+    }
+}
+
 export class DataError extends Exception {}
 
 export class ScriptingError extends Exception {}

@@ -1901,6 +1901,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AnnotationActionTypes.INCORRECT_ANNOTATIONS_UPDATE: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        updating: {
+                            message: 'Could not update annotations',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-update-annotations-failed',
+                        },
+                    },
+                },
+            };
+        }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };
