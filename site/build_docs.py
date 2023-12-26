@@ -146,7 +146,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
             hugo = hugo110 if major_number > MAJOR_TAG or (
                 major_number == MAJOR_TAG and minor_number > MINOR_TAG
             ) or (
-                major_number == MAJOR_TAG and minor_number == MINOR_TAG and patch_number > PATCH_TAG
+                major_number == MAJOR_TAG and minor_number == MINOR_TAG and patch_number >= PATCH_TAG
             ) else hugo83
 
             run_hugo(
