@@ -142,7 +142,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
             run_npm_install()
 
             # find correct hugo version
-            hugo = hugo110 if version.parse(tag) >= UPDATED_HUGO_FROM else hugo83
+            hugo = hugo110 if version.parse(tag.name) >= UPDATED_HUGO_FROM else hugo83
 
             run_hugo(
                 output_dir / tag.name,
