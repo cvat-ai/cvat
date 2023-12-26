@@ -131,17 +131,29 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         temp_repo = git.Repo(temp_repo_path)
         temp_repo.git.reset(hard=True, recurse_submodules=True)
 
+        # apply new hugo version starting from release 2.9.2
+        [MAJOR_TAG, MINOR_TAG, PATCH_TAG] = [2, 9, 2]
+
         # Process older versions
         generate_versioning_config(versioning_toml_path, (t.name for t in tags), "/..")
         for tag in tags:
             git_checkout(tag.name, temp_repo, Path(temp_dir))
             change_version_menu_toml(versioning_toml_path, tag.name)
             run_npm_install()
+
+            # find correct hugo version
+            major_number, minor_number, patch_number = map(int, 'v2.9.2'[1:].split('.'))
+            hugo = hugo110 if major_number > MAJOR_TAG or (
+                major_number == MAJOR_TAG and minor_number > MINOR_TAG
+            ) or (
+                major_number == MAJOR_TAG and minor_number == MINIMUM_VERSION and patch_number > PATCH_TAG
+            ) else hugo83
+
             run_hugo(
                 output_dir / tag.name,
                 # Docsy doesn't forward the current version url to templates
                 extra_env_vars={VERSION_URL_ENV_VAR: f"/cvat/{tag.name}/docs"},
-                executable=hugo83,
+                executable=hugo,
             )
 
 
