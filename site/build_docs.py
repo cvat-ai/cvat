@@ -134,9 +134,6 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         temp_repo = git.Repo(temp_repo_path)
         temp_repo.git.reset(hard=True, recurse_submodules=True)
 
-        # apply new hugo version starting from release 2.9.2
-        [MAJOR_TAG, MINOR_TAG, PATCH_TAG] = [2, 9, 2]
-
         # Process older versions
         generate_versioning_config(versioning_toml_path, (t.name for t in tags), "/..")
         for tag in tags:
