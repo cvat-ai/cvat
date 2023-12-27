@@ -2199,14 +2199,37 @@ export class MaskShape extends Shape {
 
         const incorrectMasks = [];
         for (const object of Object.values(updatedObjects)) {
-            object.points = mask2Rle(masks[object.clientID]);
-            object.updated = Date.now();
-            if (object.points.length === 1) {
-                incorrectMasks.push(object.clientID);
+            const points = mask2Rle(masks[object.clientID]);
+            if (points.length === 1) {
+                object.removed = true;
+                incorrectMasks.push(object);
+            } else {
+                object.points = points;
             }
+            object.updated = Date.now();
         }
+
         if (incorrectMasks.length !== 0) {
-            throw new IncorrectUpdateError('cant save empty mask', incorrectMasks);
+            const undo = (): void => {
+                for (const object of incorrectMasks) {
+                    object.removed = false;
+                    object.updated = Date.now();
+                }
+            };
+
+            const redo = (): void => {
+                for (const object of incorrectMasks) {
+                    object.removed = true;
+                    object.updated = Date.now();
+                }
+            };
+
+            this.history.do(
+                HistoryActions.REMOVED_OBJECT,
+                undo, redo, incorrectMasks.map((object) => object.clientID), frame,
+            );
+
+            console.log(incorrectMasks);
         }
     }
 
