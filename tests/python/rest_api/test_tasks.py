@@ -837,6 +837,7 @@ class TestPostTaskData:
                             # original is 480x640 with 90/-90 degrees rotation
                             assert frame_meta.height == 640 and frame_meta.width == 480
                             assert im.height == 640 and im.width == 480
+                            assert im.getexif().get(274, 1) == 1
 
     def test_can_create_task_with_big_images(self):
         # Checks for regressions about the issue
@@ -921,6 +922,7 @@ class TestPostTaskData:
                         im = Image.open(zipped_img)
                         # raw image is horizontal 100x150 with -90 degrees rotation
                         assert im.height == 150 and im.width == 100
+                        assert im.getexif().get(274, 1) == 1
 
     def test_can_create_task_with_sorting_method_natural(self):
         task_spec = {
