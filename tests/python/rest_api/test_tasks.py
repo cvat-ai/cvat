@@ -3,13 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-import base64
 import io
 import json
 import os
 import os.path as osp
 import zipfile
-from io import BytesIO
 from copy import deepcopy
 from functools import partial
 from http import HTTPStatus
