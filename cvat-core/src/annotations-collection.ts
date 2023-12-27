@@ -1094,12 +1094,24 @@ export default class Collection {
         // eslint-disable-next-line no-unsanitized/method
         const imported = this.import(constructed);
         const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+        const additionalUndo = [];
+        const additionalRedo = [];
+        const additionalClientIDs = [];
         for (const object of importedArray) {
-            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels) {
-                (object as MaskShape).removeUnderlyingPixels(object.frame);
+            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels.enabled) {
+                const {
+                    clientIDs,
+                    undo: undoWithRemoveIncorrectMasks,
+                    redo: redoWithRemoveIncorrectMasks,
+                } = (object as MaskShape).removeUnderlyingPixels(object.frame);
+                additionalUndo.push(undoWithRemoveIncorrectMasks);
+                additionalRedo.push(redoWithRemoveIncorrectMasks);
+                additionalClientIDs.push(clientIDs);
             }
         }
-
+        if (config.removeUnderlyingMaskPixels.enabled && additionalClientIDs.length !== 0) {
+            config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
+        }
         if (objectStates.length) {
             this.history.do(
                 HistoryActions.CREATED_OBJECTS,
@@ -1107,14 +1119,21 @@ export default class Collection {
                     importedArray.forEach((object) => {
                         object.removed = true;
                     });
+                    additionalUndo.forEach((undo) => {
+                        undo();
+                    });
                 },
                 () => {
                     importedArray.forEach((object) => {
                         object.removed = false;
                         object.serverID = undefined;
                     });
+
+                    additionalRedo.forEach((redo) => {
+                        redo();
+                    });
                 },
-                importedArray.map((object) => object.clientID),
+                [...importedArray.map((object) => object.clientID), ...additionalClientIDs.flat()],
                 objectStates[0].frame,
             );
         }

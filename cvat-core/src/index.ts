@@ -121,7 +121,10 @@ export default interface CVATCore {
         backendAPI: typeof config.backendAPI;
         origin: typeof config.origin;
         uploadChunkSize: typeof config.uploadChunkSize;
-        removeUnderlyingMaskPixels: typeof config.removeUnderlyingMaskPixels;
+        removeUnderlyingMaskPixels: {
+            enabled: boolean;
+            onEmptyMaskOccurrence: () => void | null;
+        };
         onOrganizationChange: typeof config.onOrganizationChange;
     },
     client: {

@@ -11,6 +11,7 @@ import Button from 'antd/lib/button';
 import Icon, { VerticalAlignBottomOutlined } from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
+import notification from 'antd/lib/notification';
 
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import { getCore, Label, LabelType } from 'cvat-core-wrapper';
@@ -62,9 +63,16 @@ function BrushTools(): React.ReactPortal | null {
         DraggableArea,
     );
 
+    getCore().config.removeUnderlyingMaskPixels.onEmptyMaskOccurrence = () => {
+        notification.warning({
+            message: 'As a result of removing the underlying pixels, some masks became empty and were subsequently deleted.',
+            className: 'cvat-empty-masks-notification',
+        });
+    };
+
     useEffect(() => {
         const label = labels.find((_label: any) => _label.id === defaultLabelID);
-        getCore().config.removeUnderlyingMaskPixels = removeUnderlyingPixels;
+        getCore().config.removeUnderlyingMaskPixels.enabled = removeUnderlyingPixels;
         if (visible && label && canvasInstance instanceof Canvas) {
             const onUpdateConfiguration = ({ brushTool }: any): void => {
                 if (brushTool?.size) {

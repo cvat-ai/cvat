@@ -2156,7 +2156,7 @@ export class MaskShape extends Shape {
         return [];
     }
 
-    public removeUnderlyingPixels(frame: number): void {
+    public removeUnderlyingPixels(frame: number): { clientIDs: number[], undo: Function, redo: Function } {
         if (frame !== this.frame) {
             throw new ArgumentError(
                 `Wrong "frame" attribute: is not equal to the shape frame (${frame} vs ${this.frame})`,
@@ -2201,36 +2201,32 @@ export class MaskShape extends Shape {
         for (const object of Object.values(updatedObjects)) {
             const points = mask2Rle(masks[object.clientID]);
             if (points.length === 1) {
-                object.removed = true;
                 incorrectMasks.push(object);
+                object.removed = true;
             } else {
                 object.points = points;
             }
             object.updated = Date.now();
         }
 
-        if (incorrectMasks.length !== 0) {
-            const undo = (): void => {
-                for (const object of incorrectMasks) {
-                    object.removed = false;
-                    object.updated = Date.now();
-                }
-            };
+        const undo = (): void => {
+            for (const object of incorrectMasks) {
+                object.removed = false;
+                object.updated = Date.now();
+            }
+        };
+        const redo = (): void => {
+            for (const object of incorrectMasks) {
+                object.removed = true;
+                object.updated = Date.now();
+            }
+        };
 
-            const redo = (): void => {
-                for (const object of incorrectMasks) {
-                    object.removed = true;
-                    object.updated = Date.now();
-                }
-            };
-
-            this.history.do(
-                HistoryActions.REMOVED_OBJECT,
-                undo, redo, incorrectMasks.map((object) => object.clientID), frame,
-            );
-
-            console.log(incorrectMasks);
-        }
+        return {
+            clientIDs: incorrectMasks.map((object: MaskShape) => object.clientID),
+            undo,
+            redo,
+        };
     }
 
     protected savePoints(maskPoints: number[], frame: number): void {
@@ -2267,15 +2263,31 @@ export class MaskShape extends Shape {
             this.updated = Date.now();
         };
 
-        this.history.do(
-            HistoryActions.CHANGED_POINTS,
-            undo, redo, [this.clientID], frame,
-        );
-
         redo();
-
-        if (config.removeUnderlyingMaskPixels) {
-            this.removeUnderlyingPixels(frame);
+        if (config.removeUnderlyingMaskPixels.enabled) {
+            const {
+                clientIDs,
+                undo: undoWithRemoveIncorrectMasks,
+                redo: redoWithRemoveIncorrectMasks,
+            } = this.removeUnderlyingPixels(frame);
+            config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
+            this.history.do(
+                HistoryActions.CHANGED_POINTS,
+                () => {
+                    undoWithRemoveIncorrectMasks();
+                    undo();
+                },
+                () => {
+                    redoWithRemoveIncorrectMasks();
+                    redo();
+                },
+                [this.clientID, ...clientIDs], frame,
+            );
+        } else {
+            this.history.do(
+                HistoryActions.CHANGED_POINTS,
+                undo, redo, [this.clientID], frame,
+            );
         }
     }
 
