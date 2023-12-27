@@ -2200,7 +2200,7 @@ export class MaskShape extends Shape {
         const incorrectMasks = [];
         for (const object of Object.values(updatedObjects)) {
             const points = mask2Rle(masks[object.clientID]);
-            if (points.length === 1) {
+            if (points.length < 2) {
                 incorrectMasks.push(object);
                 object.removed = true;
             } else {
