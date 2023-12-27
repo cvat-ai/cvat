@@ -906,31 +906,21 @@ class TestPostTaskData:
 
         task_id, _ = create_task(self._USERNAME, task_spec, task_data)
 
-        # check that the frame has correct width and height
-        with make_api_client(self._USERNAME) as api_client:
-            _, response = api_client.tasks_api.retrieve_data(
-                task_id, number=0, type="chunk", quality="original"
-            )
-            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                assert len(zip_file.namelist()) == 1
-                name = zip_file.namelist()[0]
-                assert name == "000000.tif"
-                with zip_file.open(name) as zipped_img:
-                    im = Image.open(zipped_img)
-                    # raw image is horizontal 100x150 with -90 degrees rotation
-                    assert im.height == 150 and im.width == 100
+        for chunk_quality in ["original", "compressed"]:
+            # check that the frame has correct width and height
+            with make_api_client(self._USERNAME) as api_client:
+                _, response = api_client.tasks_api.retrieve_data(
+                    task_id, number=0, type="chunk", quality=chunk_quality
+                )
 
-            _, response = api_client.tasks_api.retrieve_data(
-                task_id, number=0, type="chunk", quality="compressed"
-            )
-            with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                assert len(zip_file.namelist()) == 1
-                name = zip_file.namelist()[0]
-                assert name == "000000.jpeg"
-                with zip_file.open(name) as zipped_img:
-                    im = Image.open(zipped_img)
-                    # raw image is horizontal 100x150 with -90 degrees rotation
-                    assert im.height == 150 and im.width == 100
+                with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                    assert len(zip_file.namelist()) == 1
+                    name = zip_file.namelist()[0]
+                    assert name == "000000.tif"
+                    with zip_file.open(name) as zipped_img:
+                        im = Image.open(zipped_img)
+                        # raw image is horizontal 100x150 with -90 degrees rotation
+                        assert im.height == 150 and im.width == 100
 
     def test_can_create_task_with_sorting_method_natural(self):
         task_spec = {
