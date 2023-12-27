@@ -130,7 +130,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         if (canvasReady && showConflicts) {
             const newconflictMapping = qualityConflicts.map((conflict: QualityConflict) => {
                 const c = conflict.annotationConflicts[0];
-                const state = objectStates.find((s: ObjectState) => s.jobID === c.jobID && s.serverID === c.serverID);
+                const state = objectStates.find((s: ObjectState) => s.serverID === c.serverID);
                 if (state) {
                     const points = canvasInstance.setupConflictRegions(state);
                     if (points) {

@@ -52,7 +52,7 @@ anchor = "smart"
 [[menu.main]]
     name = "GitHub"
     weight = 60
-    url = "https://github.com/cvat-ai/cvat"
+    url = "https://github.com/opencv/cvat"
     pre = "<i class='fab fa-github'></i>"
 
 [services]
@@ -112,9 +112,9 @@ version = "0.0"
 url_latest_version = "https://example.com"
 
 # Repository configuration (URLs for in-page links to opening issues and suggesting changes)
-github_repo = "https://github.com/cvat-ai/cvat"
+github_repo = "https://github.com/opencv/cvat"
 # An optional link to a related project repo. For example, the sibling repository where your product code lives.
-github_project_repo = "https://github.com/cvat-ai/cvat"
+github_project_repo = "https://github.com/opencv/cvat"
 
 # Specify a value here if your content directory is not in your repo's root directory
 github_subdir = "site"
@@ -171,31 +171,31 @@ enable = false
 	name ="Gitter public chat"
 	url = "https://gitter.im/opencv-cvat/public"
 	icon = "fab fa-gitter"
-        desc = "Join our Gitter channel for community support."
+	desc = "Join our Gitter channel for community support."
 [[params.links.user]]
 	name = "Stack Overflow"
 	url = "https://stackoverflow.com/search?q=%23cvat"
 	icon = "fab fa-stack-overflow"
-        desc = "Practical questions and curated answers"
+	desc = "Practical questions and curated answers"
 [[params.links.user]]
 	name = "YouTube"
 	url = "https://www.youtube.com/@cvat-ai"
 	icon = "fab fa-youtube"
-        desc = "YouTube channel of CVAT.ai"
+	desc = "YouTube channel of CVAT.ai"
 
 # Developer relevant links. These will show up on right side of footer and in the community page if you have one.
 [[params.links.developer]]
 	name = "GitHub"
-	url = "https://github.com/cvat-ai/cvat"
+	url = "https://github.com/opencv/cvat"
 	icon = "fab fa-github"
-        desc = "Development takes place here!"
+	desc = "Development takes place here!"
 [[params.links.developer]]
 	name ="Gitter developers chat"
 	url = "https://gitter.im/opencv-cvat/dev"
 	icon = "fab fa-gitter"
-        desc = "Join our Gitter channel for community support."
+	desc = "Join our Gitter channel for community support."
 [[params.links.developer]]
 	name = "Discord chat"
 	url = "https://discord.gg/fNR3eXfk6C"
 	icon = "fab fa-discord"
-        desc = "Join our Discord server for community support."
+	desc = "Join our Discord server for community support."

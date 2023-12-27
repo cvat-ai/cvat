@@ -7,6 +7,7 @@ import {
     DimensionType, JobStage, JobState, JobType, ProjectStatus,
     ShapeType, StorageLocation,
     ShareFileType, Source, TaskMode, TaskStatus,
+    CloudStorageCredentialsType, CloudStorageProviderType,
 } from './enums';
 
 export interface SerializedAnnotationImporter {
@@ -89,7 +90,12 @@ export interface SerializedTask {
     dimension: DimensionType;
     id: number;
     image_quality: number;
-    jobs: { count: 1; completed: 0; url: string; validation: 0 };
+    jobs: {
+        count: number;
+        completed: number;
+        url: string;
+        validation: number;
+    };
     labels: { count: number; url: string; };
     mode: TaskMode | '';
     name: string;
@@ -254,17 +260,9 @@ export interface SerializedShape {
     frame: number;
     source: Source;
     attributes: { spec_id: number; value: string }[];
-    elements: {
-        id?: number;
-        attributes: SerializedTrack['attributes'];
-        label_id: number;
-        occluded: boolean;
-        outside: boolean;
-        points: number[];
-        type: ShapeType;
-    }[];
+    elements: Omit<SerializedShape, 'elements'>[];
     occluded: boolean;
-    outside?: boolean; // only for skeleton elements
+    outside: boolean;
     points?: number[];
     rotation: number;
     z_order: number;
@@ -290,7 +288,7 @@ export interface SerializedTrack {
         type: ShapeType;
         z_order: number;
     }[];
-    elements?: SerializedTrack[];
+    elements: Omit<SerializedTrack, 'elements'>[];
 }
 
 export interface SerializedTag {
@@ -304,7 +302,46 @@ export interface SerializedTag {
 }
 
 export interface SerializedCollection {
-    tags: SerializedTag[],
-    shapes: SerializedShape[],
-    tracks: SerializedTrack[],
+    tags: SerializedTag[];
+    shapes: SerializedShape[];
+    tracks: SerializedTrack[];
+    version: number;
+}
+
+export interface SerializedCloudStorage {
+    id?: number;
+    display_name?: string;
+    description?: string;
+    credentials_type?: CloudStorageCredentialsType;
+    provider_type?: CloudStorageProviderType;
+    resource?: string;
+    account_name?: string;
+    key?: string;
+    secret_key?: string;
+    session_token?: string;
+    key_file?: File;
+    connection_string?: string;
+    specific_attributes?: string;
+    owner?: any;
+    created_date?: string;
+    updated_date?: string;
+    manifest_path?: string;
+    manifests?: string[];
+}
+
+export interface SerializedFramesMetaData {
+    chunk_size: number;
+    deleted_frames: number[];
+    included_frames: number[];
+    frame_filter: string;
+    frames: {
+        width: number;
+        height: number;
+        name: string;
+        related_files: number;
+    }[];
+    image_quality: number;
+    size: number;
+    start_frame: number;
+    stop_frame: number;
 }

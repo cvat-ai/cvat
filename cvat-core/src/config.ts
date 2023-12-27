@@ -16,6 +16,7 @@ const config = {
         onEmptyMaskOccurrence: null,
     },
     onOrganizationChange: null,
+    globalObjectsCounter: 0,
 };
 
 export default config;
