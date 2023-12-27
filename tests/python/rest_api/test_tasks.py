@@ -917,17 +917,6 @@ class TestPostTaskData:
                 )
 
                 with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
-                    namelist = zip_file.namelist()
-                    if len(namelist) > 1:
-                        print(namelist)
-                        for name in namelist:
-                            with zip_file.open(name) as zipped_img:
-                                im = Image.open(zipped_img)
-                                buffered = BytesIO()
-                                im.save(buffered, format="JPEG")
-                                im_str = base64.b64encode(buffered.getvalue())
-                                print(f'{im_str}\n')
-
                     assert len(zip_file.namelist()) == 1
                     name = zip_file.namelist()[0]
                     assert name == "000000.tif" if chunk_quality == "original" else "000000.jpeg"
