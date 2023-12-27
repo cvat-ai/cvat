@@ -551,9 +551,9 @@ class JobAnnotation:
         for db_shape in db_shapes:
             self._extend_attributes(db_shape.labeledshapeattributeval_set,
                 self.db_attributes[db_shape.label_id]["all"].values())
-            db_shape.elements = []
 
             if db_shape.parent is None:
+                db_shape.elements = []
                 shapes[db_shape.id] = db_shape
             else:
                 if db_shape.parent not in elements:
@@ -647,6 +647,7 @@ class JobAnnotation:
                 default_attribute_values = db_shape["trackedshapeattributeval_set"]
 
             if db_track.parent is None:
+                db_track.elements = []
                 tracks[db_track.id] = db_track
             else:
                 if db_track.parent not in elements:
