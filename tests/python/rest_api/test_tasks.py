@@ -915,6 +915,7 @@ class TestPostTaskData:
                 )
 
                 with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+                    print(zip_file.namelist())
                     assert len(zip_file.namelist()) == 1
                     name = zip_file.namelist()[0]
                     assert name == "000000.tif" if chunk_quality == "original" else "000000.jpeg"
