@@ -11,7 +11,7 @@ import ObjectState from './object-state';
 import { getAnnotations, getCollection } from './annotations';
 
 export interface SingleFrameActionInput {
-    collection: Omit<SerializedCollection, 'tracks' | 'tags'>;
+    collection: Omit<SerializedCollection, 'tracks' | 'tags' | 'version'>;
     frameData: {
         width: number;
         height: number;
@@ -20,7 +20,7 @@ export interface SingleFrameActionInput {
 }
 
 export interface SingleFrameActionOutput {
-    collection: Omit<SerializedCollection, 'tracks' | 'tags'>;
+    collection: Omit<SerializedCollection, 'tracks' | 'tags' | 'version'>;
 }
 
 export enum ActionParameterType {
