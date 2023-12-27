@@ -751,6 +751,7 @@ class TestGetTaskDataset:
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
