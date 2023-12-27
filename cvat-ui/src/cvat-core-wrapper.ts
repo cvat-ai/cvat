@@ -21,7 +21,7 @@ import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings from 'cvat-core/src/quality-settings';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
-import { ServerError, IncorrectUpdateError } from 'cvat-core/src/exceptions';
+import { ServerError } from 'cvat-core/src/exceptions';
 import {
     ShapeType, LabelType, ModelKind, ModelProviders,
     ModelReturnType, DimensionType, JobType,
@@ -93,7 +93,6 @@ export {
     AnalyticsEntry,
     AnalyticsEntryViewType,
     ServerError,
-    IncorrectUpdateError,
     EventLogger,
     FrameData,
     ActionParameterType,

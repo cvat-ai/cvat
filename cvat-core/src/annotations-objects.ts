@@ -7,7 +7,7 @@ import config from './config';
 import ObjectState, { SerializedData } from './object-state';
 import { checkObjectType, clamp } from './common';
 import {
-    DataError, ArgumentError, ScriptingError, IncorrectUpdateError,
+    DataError, ArgumentError, ScriptingError,
 } from './exceptions';
 import { Label } from './labels';
 import {
@@ -2145,8 +2145,8 @@ export class MaskShape extends Shape {
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
         Annotation.prototype.validateStateBeforeSave.call(this, data, updated);
-        if (data.points.length === 5) {
-            throw new IncorrectUpdateError('cant save empty mask', [data.clientID]);
+        if (data.points.length < 6) {
+            throw new ArgumentError('Could not save empty mask');
         }
         if (updated.points) {
             const { width, height } = this.frameMeta[frame];

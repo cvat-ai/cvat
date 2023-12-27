@@ -13,7 +13,7 @@ import AnnotationsFilter from './annotations-filter';
 import { checkObjectType } from './common';
 import Statistics from './statistics';
 import { Attribute, Label } from './labels';
-import { ArgumentError, IncorrectUpdateError, ScriptingError } from './exceptions';
+import { ArgumentError, ScriptingError } from './exceptions';
 import ObjectState from './object-state';
 import { cropMask } from './object-utils';
 import config from './config';
@@ -999,10 +999,10 @@ export default class Collection {
                     );
                 }
 
-                if (state.shapeType === 'mask') {
-                    if (state.points.length === 5) {
-                        throw new IncorrectUpdateError('Cant create empty mask', [state.clientID]);
-                    }
+                if (state.shapeType === 'mask' && state.points.length < 6) {
+                    throw new ArgumentError(
+                        'Could not create empty mask',
+                    );
                 }
 
                 if (state.objectType === 'shape') {
