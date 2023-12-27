@@ -751,7 +751,6 @@ class TestGetTaskDataset:
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_cvat_data")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
-@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestPostTaskData:
     _USERNAME = "admin1"
 
@@ -904,7 +903,7 @@ class TestPostTaskData:
             "server_files": image_files,
             "image_quality": 70,
             "segment_size": 500,
-            "use_cache": True,
+            "use_cache": False,
             "sorting_method": "natural",
         }
 
