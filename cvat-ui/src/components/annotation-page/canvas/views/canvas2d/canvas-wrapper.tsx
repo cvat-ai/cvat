@@ -72,7 +72,7 @@ interface StateToProps {
     activatedStateID: number | null;
     activatedElementID: number | null;
     activatedAttributeID: number | null;
-    annotations: any[];
+    annotations: ObjectState[];
     frameData: any;
     frameAngle: number;
     canvasIsReady: boolean;
@@ -481,12 +481,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         if (prevProps.highlightedConflict !== highlightedConflict) {
-            const severity: HighlightSeverity | null =
-                highlightedConflict?.severity ? (highlightedConflict?.severity as any) : null;
-            const highlightedElementsIDs = highlightedConflict?.annotationConflicts.map(
-                (conflict: AnnotationConflict) => conflict.clientID,
-            );
-            canvasInstance.highlight(highlightedElementsIDs || null, severity);
+            const severity: HighlightSeverity | undefined = highlightedConflict
+                ?.severity as unknown as HighlightSeverity;
+            const highlightedClientIDs = (highlightedConflict?.annotationConflicts || [])
+                .map((conflict: AnnotationConflict) => annotations
+                    .find((state) => state.serverID === conflict.serverID && state.objectType === conflict.type),
+                ).filter((state: ObjectState | undefined) => !!state)
+                .map((state) => state?.clientID) as number[];
+
+            canvasInstance.highlight(highlightedClientIDs, severity || null);
         }
 
         if (gridSize !== prevProps.gridSize) {

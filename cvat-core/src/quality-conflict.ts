@@ -26,7 +26,6 @@ export interface SerializedQualityConflictData {
 export interface SerializedAnnotationConflictData {
     job_id?: number;
     obj_id?: number;
-    client_id?: number;
     type?: string;
     shape_type?: string | null;
     conflict_type?: string;
@@ -36,7 +35,6 @@ export interface SerializedAnnotationConflictData {
 export class AnnotationConflict {
     #jobID: number;
     #serverID: number;
-    #clientID: number;
     #type: string;
     #shapeType: string | null;
     #conflictType: QualityConflictType;
@@ -46,7 +44,6 @@ export class AnnotationConflict {
     constructor(initialData: SerializedAnnotationConflictData) {
         this.#jobID = initialData.job_id;
         this.#serverID = initialData.obj_id;
-        this.#clientID = initialData.client_id;
         this.#type = initialData.type;
         this.#shapeType = initialData.shape_type;
         this.#conflictType = initialData.conflict_type as QualityConflictType;
@@ -62,14 +59,6 @@ export class AnnotationConflict {
 
     get serverID(): number {
         return this.#serverID;
-    }
-
-    get clientID(): number {
-        return this.#clientID;
-    }
-
-    set clientID(newID: number) {
-        this.#clientID = newID;
     }
 
     get type(): string {
