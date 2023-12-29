@@ -65,8 +65,10 @@ function BrushTools(): React.ReactPortal | null {
 
     getCore().config.removeUnderlyingMaskPixels.onEmptyMaskOccurrence = () => {
         notification.warning({
-            message: 'As a result of removing the underlying pixels, some masks became empty and were subsequently deleted.',
+            message: 'Some objects were deleted',
+            description: 'As a result of removing the underlying pixels, some masks became empty and were subsequently deleted.',
             className: 'cvat-empty-masks-notification',
+            duration: null,
         });
     };
 
