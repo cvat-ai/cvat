@@ -660,12 +660,17 @@ class ZipChunkWriter(IChunkWriter):
                 ext = os.path.splitext(path)[1].replace('.', '')
                 output = io.BytesIO()
                 if self._dimension == DimensionType.DIM_2D:
-                    if has_exif_rotation(image):
+                    # current version of Pillow applies exif rotation immediately when TIFF image opened
+                    # and it removes rotation tag after that
+                    # so, has_exif_rotation(image) will return False for TIFF images even if they were actually rotated
+                    # and original files will be added to the archive (without applied rotation)
+                    # that is why we need the second part of the condition
+                    if has_exif_rotation(image) or image.format == 'TIFF':
                         rot_image = ImageOps.exif_transpose(image)
                         try:
-                            if rot_image.format == 'TIFF':
-                            # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
-                            # use loseless lzw compression for tiff images
+                            if image.format == 'TIFF':
+                                # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html
+                                # use loseless lzw compression for tiff images
                                 rot_image.save(output, format='TIFF', compression='tiff_lzw')
                             else:
                                 rot_image.save(
