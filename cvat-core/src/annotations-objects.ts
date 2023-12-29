@@ -2158,10 +2158,7 @@ export class MaskShape extends Shape {
     }
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
-        Annotation.prototype.validateStateBeforeSave.call(this, data, updated);
-        if (data.points.length < 6) {
-            throw new ArgumentError('Could not save empty mask');
-        }
+        super.validateStateBeforeSave(data, updated, frame);
         if (updated.points) {
             const { width, height } = this.frameMeta[frame];
             return cropMask(data.points, width, height);
