@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    AttrInputType, LabelType, SerializedAttribute, SerializedLabel,
+    AttrInputType, SerializedAttribute, SerializedLabel,
 } from './server-response-types';
-import { ShapeType, AttributeType } from './enums';
+import { ShapeType, AttributeType, LabelType } from './enums';
 import { ArgumentError } from './exceptions';
 
 export class Attribute {

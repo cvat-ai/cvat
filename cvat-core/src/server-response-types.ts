@@ -5,7 +5,7 @@
 import {
     ChunkType,
     DimensionType, JobStage, JobState, JobType, ProjectStatus,
-    ShapeType, StorageLocation,
+    ShapeType, StorageLocation, LabelType,
     ShareFileType, Source, TaskMode, TaskStatus,
     CloudStorageCredentialsType, CloudStorageProviderType,
 } from './enums';
@@ -150,7 +150,6 @@ export interface SerializedAttribute {
     id?: number;
 }
 
-export type LabelType = 'rectangle' | 'polygon' | 'polyline' | 'points' | 'ellipse' | 'cuboid' | 'skeleton' | 'mask' | 'tag' | 'any';
 export interface SerializedLabel {
     id?: number;
     name: string;

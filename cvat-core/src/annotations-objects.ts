@@ -1856,22 +1856,42 @@ export class SkeletonShape extends Shape {
         this.pinned = false;
         this.rotation = 0;
         this.occluded = false;
-        this.points = undefined;
+        this.points = [];
         this.readOnlyFields = ['points', 'label', 'occluded'];
 
-        /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
-        this.elements = data.elements.map((element) => shapeFactory({
-            ...element,
-            group: this.group,
-            z_order: this.zOrder,
-            source: this.source,
-            rotation: 0,
-            frame: data.frame,
-        }, injection.nextClientID(), {
-            ...injection,
-            parentID: this.clientID,
-            readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
-        })) as any as Shape[];
+        const [cx, cy] = data.elements.reduce((acc, element, idx) => {
+            if (idx === data.elements.length - 1) {
+                return [acc[0] / data.elements.length, acc[1] / data.elements.length];
+            }
+
+            return [acc[0] + element.points[0], acc[1] + element.points[1]];
+        }, [0, 0]);
+
+        this.elements = this.label.structure.sublabels.map((sublabel: Label) => {
+            const element = data.elements.find((_element) => _element.label_id === sublabel.id);
+            const elementData = element || {
+                label_id: sublabel.id,
+                attributes: [],
+                occluded: false,
+                outside: false,
+                points: [cx, cy],
+                type: sublabel.type as unknown as ShapeType,
+            };
+
+            /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
+            return shapeFactory({
+                ...elementData,
+                group: this.group,
+                z_order: this.zOrder,
+                source: this.source,
+                rotation: 0,
+                frame: data.frame,
+            }, injection.nextClientID(), {
+                ...injection,
+                parentID: this.clientID,
+                readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
+            });
+        });
     }
 
     static distance(points: number[], x: number, y: number): number {
@@ -2766,20 +2786,53 @@ export class SkeletonTrack extends Track {
         this.shapeType = ShapeType.SKELETON;
         this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
         this.pinned = false;
-        this.elements = data.elements.map((element: SerializedTrack['elements'][0]) => (
+
+        const [cx, cy] = data.elements.reduce((acc, element, idx) => {
+            const shape = element.shapes[0];
+
+            if (!shape || shape.frame !== this.frame) {
+                return acc;
+            }
+
+            if (idx === data.elements.length - 1) {
+                return [acc[0] / acc[2], acc[1] / acc[2]];
+            }
+
+            return [acc[0] + shape.points[0], acc[1] + shape.points[1], acc[2] + 1];
+        }, [0, 0, 0]);
+
+        this.elements = this.label.structure.sublabels.map((sublabel) => {
+            const element = data.elements.find((_element) => _element.label_id === sublabel.id);
+            const elementData = element || {
+                label_id: sublabel.id,
+                frame: this.frame,
+                attributes: [],
+                shapes: [{
+                    attributes: [],
+                    points: [cx, cy],
+                    frame: this.frame,
+                    occluded: false,
+                    outside: true,
+                    rotation: 0,
+                    type: sublabel.type as unknown as ShapeType,
+                }],
+            };
+
             /* eslint-disable-next-line @typescript-eslint/no-use-before-define */
-            trackFactory({
-                ...element,
+            return trackFactory({
+                ...elementData,
                 group: this.group,
                 source: this.source,
+                shapes: elementData.shapes.map((shape) => ({
+                    ...shape,
+                    z_order: this.shapes[shape.frame]?.zOrder || 0,
+                })),
             }, injection.nextClientID(), {
                 ...injection,
                 parentID: this.clientID,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
-            })
-
-            // todo z_order: this.zOrder,
-        )).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id) as any as Track[];
+            });
+        }).sort((a: Annotation, b: Annotation) => a.label.id - b.label.id);
     }
 
     public updateServerID(body: SerializedTrack): void {
