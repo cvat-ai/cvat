@@ -1104,19 +1104,22 @@ export default class Collection {
         const additionalUndo = [];
         const additionalRedo = [];
         const additionalClientIDs = [];
+        let globalEmptyMaskOccured = false;
         for (const object of importedArray) {
             if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels.enabled) {
                 const {
                     clientIDs,
-                    undo: undoWithRemoveIncorrectMasks,
-                    redo: redoWithRemoveIncorrectMasks,
+                    emptyMaskOccured,
+                    undo: undoWithUnderlyingPixels,
+                    redo: redoWithUnderlyingPixels,
                 } = (object as MaskShape).removeUnderlyingPixels(object.frame);
-                additionalUndo.push(undoWithRemoveIncorrectMasks);
-                additionalRedo.push(redoWithRemoveIncorrectMasks);
+                additionalUndo.push(undoWithUnderlyingPixels);
+                additionalRedo.push(redoWithUnderlyingPixels);
                 additionalClientIDs.push(clientIDs);
+                globalEmptyMaskOccured = emptyMaskOccured || globalEmptyMaskOccured;
             }
         }
-        if (config.removeUnderlyingMaskPixels.enabled && additionalClientIDs.length !== 0) {
+        if (config.removeUnderlyingMaskPixels.enabled && globalEmptyMaskOccured) {
             config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
         }
         if (objectStates.length) {
