@@ -431,6 +431,11 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const conflicts = conflictsData.map((conflict) => new QualityConflict({ ...conflict }));
         const frames = Array.from(new Set(conflicts.map((conflict) => conflict.frame)))
             .sort((a, b) => a - b);
+
+        // each QualityConflict may have several AnnotationConflicts bound
+        // at the same time, many quality conflicts may refer
+        // to the same labeled object (e.g. mismatch label, low overlap)
+        // the code below unites quality conflicts bound to the same object into one QualityConflict object
         const mergedConflicts: QualityConflict[] = [];
 
         for (const frame of frames) {
@@ -446,6 +451,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
             for (const objectConflicts of Object.values(conflictsByObject)) {
                 if (objectConflicts.length === 1) {
+                    // only one quality conflict refers to the object on current frame
                     mergedConflicts.push(objectConflicts[0]);
                 } else {
                     const mainObjectConflict = objectConflicts

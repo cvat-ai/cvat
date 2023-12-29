@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ObjectType } from './enums';
+
 export enum QualityConflictType {
     EXTRA = 'extra_annotation',
     MISMATCHING = 'mismatching_label',
@@ -26,7 +28,7 @@ export interface SerializedQualityConflictData {
 export interface SerializedAnnotationConflictData {
     job_id?: number;
     obj_id?: number;
-    type?: string;
+    type?: ObjectType;
     shape_type?: string | null;
     conflict_type?: string;
     severity?: string;
@@ -35,7 +37,7 @@ export interface SerializedAnnotationConflictData {
 export class AnnotationConflict {
     #jobID: number;
     #serverID: number;
-    #type: string;
+    #type: ObjectType;
     #shapeType: string | null;
     #conflictType: QualityConflictType;
     #severity: ConflictSeverity;
@@ -61,7 +63,7 @@ export class AnnotationConflict {
         return this.#serverID;
     }
 
-    get type(): string {
+    get type(): ObjectType {
         return this.#type;
     }
 

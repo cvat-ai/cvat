@@ -47,7 +47,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const showConflicts = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
     const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
 
-    const highlightedObjectsIDs = highlightedConflict?.annotationConflicts?.map((c: AnnotationConflict) => c.serverID);
+    const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
+        ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
 
     const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
 
@@ -131,9 +132,9 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
             const updatedConflictMapping = qualityConflicts
                 .map((conflict: QualityConflict) => {
                     const mainAnnotationsConflict = conflict.annotationConflicts[0];
-                    const state = objectStates.find((s: ObjectState) => (
-                        s.serverID === mainAnnotationsConflict.serverID &&
-                        s.objectType === mainAnnotationsConflict.type
+                    const state = objectStates.find((_state: ObjectState) => (
+                        _state.serverID === mainAnnotationsConflict.serverID &&
+                        _state.objectType === mainAnnotationsConflict.type
                     ));
 
                     if (state) {
