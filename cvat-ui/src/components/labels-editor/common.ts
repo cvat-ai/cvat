@@ -122,7 +122,7 @@ export function toSVGCoord(svg: SVGSVGElement, coord: number[], raiseError = fal
 
 export function fromSVGCoord(svg: SVGSVGElement, coord: number[], raiseError = false): number[] {
     const result = [];
-    const ctm = svg.getCTM();
+    const ctm = svg.getScreenCTM();
     if (!ctm) {
         if (raiseError) throw new Error('Inversed screen CTM is null');
         return coord;

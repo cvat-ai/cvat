@@ -24,13 +24,17 @@ function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
 
     const elementLabel = labels[elementID];
     const element = container.querySelector(`[data-element-id="${elementID}"]`);
-    const [portalContainer] = window.document.getElementsByClassName('cvat-skeleton-canvas-wrapper');
+    const portalContainer = window.document
+        .getElementsByClassName('cvat-create-work-form-wrapper')[0] as unknown as HTMLDivElement;
     if (!element || !portalContainer) {
         throw new Error('SVG container or portal container are not found');
     }
 
+    const clientRect = portalContainer.getBoundingClientRect();
+
     const cx = element.getAttribute('cx');
     const cy = element.getAttribute('cy');
+
     if (!cx || !cy) {
         throw new Error('Circle attributes "cx", "cy" are not defined');
     }
@@ -42,6 +46,7 @@ function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
                 okButtonProps={{ hidden: true }}
                 cancelButtonProps={{ hidden: true }}
                 visible={modalVisible}
+                destroyOnClose
                 onCancel={() => {
                     setModalVisible(false);
                     onConfigureLabel(elementID, null);
@@ -73,7 +78,10 @@ function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
                             }
                         }}
                         className='cvat-skeleton-configurator-context-menu'
-                        style={{ top: y, left: x }}
+                        style={{
+                            top: y - clientRect.top + portalContainer.scrollTop,
+                            left: x - clientRect.left + portalContainer.scrollLeft,
+                        }}
                     >
                         <Menu.Item icon={<EditOutlined />} key='configure_label'>Configure</Menu.Item>
                         <Menu.Item icon={<DeleteOutlined />} key='delete'>Delete</Menu.Item>
