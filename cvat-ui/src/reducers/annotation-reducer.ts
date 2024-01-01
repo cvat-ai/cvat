@@ -1017,15 +1017,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.HIGHLIGHT_CONFLICT: {
             const { conflict } = action.payload;
             if (conflict) {
-                const { annotationConflicts } = conflict;
-                const [mainConflict] = annotationConflicts;
-                const { clientID } = mainConflict;
+                const { annotationConflicts: [mainConflict] } = conflict;
+
+                // object may be hidden using annotations filter
+                // it is not guaranteed to be visible
+                const conflictObject = state.annotations.states
+                    .find((_state) => _state.serverID === mainConflict.serverID);
+
                 return {
                     ...state,
                     annotations: {
                         ...state.annotations,
                         highlightedConflict: conflict,
-                        activatedStateID: clientID,
+                        activatedStateID: conflictObject?.clientID || null,
                         activatedElementID: null,
                         activatedAttributeID: null,
                     },
