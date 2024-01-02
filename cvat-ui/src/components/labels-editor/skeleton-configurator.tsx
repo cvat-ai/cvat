@@ -19,7 +19,7 @@ import { PointIcon } from 'icons';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ShortcutsContext from 'components/shortcuts.context';
-import { ShapeType } from 'cvat-core-wrapper';
+import { LabelType, ShapeType } from 'cvat-core-wrapper';
 import config from 'config';
 import {
     idGenerator, LabelOptColor, SkeletonConfiguration, toSVGCoord,
@@ -300,7 +300,9 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             if (text) {
                 text.setAttribute('fill', 'red');
             }
+        });
 
+        circle.addEventListener('contextmenu', () => {
             this.setState({
                 contextMenuElement: elementID,
             });
@@ -418,7 +420,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             }),
             color: labels[elementID]?.color || undefined,
             id: (labels[elementID]?.id || 0) > 0 ? labels[elementID].id : idGenerator(),
-            type: ShapeType.POINTS,
+            type: ShapeType.POINTS as any as LabelType,
             has_parent: true,
         };
 
@@ -685,18 +687,20 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         onConfigureLabel={(elementID: number, data: LabelOptColor | null) => {
                             this.setState({ contextMenuVisible: false });
                             if (data) {
-                                this.labels[elementID] = data;
+                                this.labels[elementID] = {
+                                    ...data,
+                                    has_parent: true,
+                                };
+
                                 if (data.color && svgRef.current) {
                                     const element = svgRef.current.querySelector(`[data-element-id="${elementID}"]`);
                                     if (element) {
                                         element.setAttribute('fill', data.color);
                                     }
                                 }
+
                                 this.setupTextLabels();
                             }
-                        }}
-                        onCancel={() => {
-                            this.setState({ contextMenuVisible: false });
                         }}
                     />
                 ) : null}
