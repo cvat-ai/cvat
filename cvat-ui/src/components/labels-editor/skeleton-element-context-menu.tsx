@@ -38,7 +38,8 @@ function WrappedSkeletonElementLabelForm(props: ContextMenuProps & { hideConfigu
         >
             <LabelForm
                 label={elementLabel}
-                labelNames={Object.values(labels).map((label: LabelOptColor) => label.name)
+                labelNames={Object
+                    .values(labels).map((label: LabelOptColor) => label.name)
                     .filter((name: string) => name !== elementLabel.name)}
                 onSubmit={(data) => {
                     onConfigureLabel(elementID, data);

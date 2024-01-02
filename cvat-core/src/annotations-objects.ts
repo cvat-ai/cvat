@@ -1873,7 +1873,7 @@ export class SkeletonShape extends Shape {
                 label_id: sublabel.id,
                 attributes: [],
                 occluded: false,
-                outside: false,
+                outside: true,
                 points: [cx, cy],
                 type: sublabel.type as unknown as ShapeType,
             };
