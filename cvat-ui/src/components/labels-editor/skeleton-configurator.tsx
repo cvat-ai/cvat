@@ -455,7 +455,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                 'data-element-id': elementID,
                 'data-node-id': nodeID,
             });
-            circle.style.transition = 'all 0.25s';
+            circle.style.transition = 'r 0.25s';
             svg.appendChild(circle);
 
             if (this.setupCircle(svg, circle)) {
