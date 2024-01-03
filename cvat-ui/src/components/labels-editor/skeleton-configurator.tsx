@@ -820,6 +820,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                         <Upload
                             disabled={disabled}
                             showUploadList={false}
+                            accept='.svg'
                             beforeUpload={(file: RcFile) => {
                                 file.text().then((result) => {
                                     const tmpSvg = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
