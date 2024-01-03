@@ -3070,11 +3070,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const SVGElement = makeSVGFromTemplate(state.label.structure.svg);
 
-        let xtl = Number.MAX_SAFE_INTEGER;
-        let ytl = Number.MAX_SAFE_INTEGER;
-        let xbr = Number.MIN_SAFE_INTEGER;
-        let ybr = Number.MIN_SAFE_INTEGER;
-
+        let [xtl, ytl, xbr, ybr] = [null, null, null, null];
         const svgElements: Record<number, SVG.Element> = {};
         const templateElements = Array.from(SVGElement.children()).filter((el: SVG.Element) => el.type === 'circle');
         for (let i = 0; i < state.elements.length; i++) {
@@ -3084,10 +3080,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 const [cx, cy] = this.translateToCanvas(points);
 
                 if (!element.outside) {
-                    xtl = Math.min(xtl, cx);
-                    ytl = Math.min(ytl, cy);
-                    xbr = Math.max(xbr, cx);
-                    ybr = Math.max(ybr, cy);
+                    xtl = xtl === null ? cx : Math.min(xtl, cx);
+                    ytl = ytl === null ? cy : Math.min(ytl, cy);
+                    xbr = xbr === null ? cx : Math.max(xbr, cx);
+                    ybr = ybr === null ? cy : Math.max(ybr, cy);
                 }
 
                 const templateElement = templateElements.find((el: SVG.Circle) => el.attr('data-label-id') === element.label.id);
@@ -3182,6 +3178,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         }
 
+        // if all elements were outside, set coordinates to zeros
+        xtl = xtl || 0;
+        ytl = ytl || 0;
+        xbr = xbr || 0;
+        ybr = ybr || 0;
+
+        // apply bounding box margin
         xtl -= consts.SKELETON_RECT_MARGIN;
         ytl -= consts.SKELETON_RECT_MARGIN;
         xbr += consts.SKELETON_RECT_MARGIN;
