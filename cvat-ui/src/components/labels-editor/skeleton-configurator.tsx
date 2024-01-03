@@ -293,6 +293,8 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             'stroke-width': 0.1,
         });
 
+        circle.style.transition = 'r 0.25s';
+
         circle.addEventListener('mouseover', () => {
             circle.setAttribute('stroke-width', '0.3');
             circle.setAttribute('r', '1');
@@ -455,7 +457,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                 'data-element-id': elementID,
                 'data-node-id': nodeID,
             });
-            circle.style.transition = 'r 0.25s';
+
             svg.appendChild(circle);
 
             if (this.setupCircle(svg, circle)) {
@@ -707,11 +709,13 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                 <div>
                     <div className='cvat-skeleton-configurator-image-dragger'>
                         <Upload
+                            accept='.jpg,.jpeg,.png'
                             showUploadList={false}
                             beforeUpload={(file: RcFile) => {
-                                if (!file.type.startsWith('image/')) {
+                                if (!['image/jpeg', 'image/png'].includes(file.type)) {
                                     notification.error({
-                                        message: `File must be an image. Got mime type: ${file.type}`,
+                                        message:
+                                            `File must be a JPEG or PNG image. Detected mime type is "${file.type}"`,
                                     });
                                 }
                                 this.setState({ image: file }, () => {
@@ -777,6 +781,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                         const copy = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                                         // eslint-disable-next-line no-unsanitized/property
                                         copy.innerHTML = svgRef.current.innerHTML;
+                                        copy.setAttribute('viewBox', '0 0 100 100');
                                         this.setupTextLabels();
 
                                         const desc = window.document.createElementNS('http://www.w3.org/2000/svg', 'desc');
@@ -789,6 +794,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                         (desc as SVGDescElement).textContent = stringifiedLabels;
                                         copy.appendChild(desc);
                                         Array.from(copy.children).forEach((child: Element) => {
+                                            child.removeAttribute('style');
                                             if (child.hasAttribute('data-label-id')) {
                                                 const elementID = +(child.getAttribute('data-element-id') as string);
                                                 child.removeAttribute('data-label-id');
@@ -796,7 +802,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                             }
                                         });
 
-                                        const text = copy.innerHTML;
+                                        const text = copy.outerHTML;
                                         const blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
                                         const url = URL.createObjectURL(blob);
                                         const anchor = window.document.getElementById('downloadAnchor');
@@ -819,6 +825,12 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                                     const tmpSvg = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                                     // eslint-disable-next-line no-unsanitized/property
                                     tmpSvg.innerHTML = result;
+
+                                    if (tmpSvg.children[0]?.tagName === 'svg') {
+                                        // eslint-disable-next-line no-unsanitized/property
+                                        tmpSvg.innerHTML = tmpSvg.children[0].innerHTML;
+                                    }
+
                                     let isSVG = true;
                                     for (let c = tmpSvg.childNodes, i = c.length; i--;) {
                                         isSVG = isSVG && c[i].nodeType === 1;
