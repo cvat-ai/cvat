@@ -1860,11 +1860,13 @@ export class SkeletonShape extends Shape {
         this.readOnlyFields = ['points', 'label', 'occluded'];
 
         const [cx, cy] = data.elements.reduce((acc, element, idx) => {
+            const result = [acc[0] + element.points[0], acc[1] + element.points[1]];
             if (idx === data.elements.length - 1) {
-                return [acc[0] / data.elements.length, acc[1] / data.elements.length];
+                // length can not be 0 because we are inside reduce
+                result[0] /= data.elements.length;
+                result[1] /= data.elements.length;
             }
-
-            return [acc[0] + element.points[0], acc[1] + element.points[1]];
+            return result;
         }, [0, 0]);
 
         this.elements = this.label.structure.sublabels.map((sublabel: Label) => {
@@ -2789,16 +2791,17 @@ export class SkeletonTrack extends Track {
 
         const [cx, cy] = data.elements.reduce((acc, element, idx) => {
             const shape = element.shapes[0];
-
             if (!shape || shape.frame !== this.frame) {
                 return acc;
             }
 
+            const result = [acc[0] + shape.points[0], acc[1] + shape.points[1], acc[2] + 1];
             if (idx === data.elements.length - 1) {
-                return [acc[0] / acc[2], acc[1] / acc[2]];
+                // avoid division by 0, additionally
+                return [result[0] / (result[2] || 1), result[1] / (result[2] || 1)];
             }
 
-            return [acc[0] + shape.points[0], acc[1] + shape.points[1], acc[2] + 1];
+            return result;
         }, [0, 0, 0]);
 
         this.elements = this.label.structure.sublabels.map((sublabel) => {
