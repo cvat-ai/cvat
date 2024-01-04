@@ -1,8 +1,8 @@
-from distutils.util import strtobool
 import os
 from django.apps import AppConfig
 
 from .utils import create_opa_bundle
+from utils.utils import strtobool
 
 class IAMConfig(AppConfig):
     name = 'cvat.apps.iam'

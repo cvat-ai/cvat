@@ -12,7 +12,6 @@ import traceback
 import textwrap
 from copy import copy
 from datetime import datetime
-from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
 
@@ -85,6 +84,7 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.view_utils import tus_chunk_action
+from utils.utils import strtobool
 
 slogger = ServerLogManager(__name__)
 

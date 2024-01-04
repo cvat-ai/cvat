@@ -9,7 +9,6 @@ import os
 import os.path
 import uuid
 from dataclasses import asdict, dataclass
-from distutils.util import strtobool
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest import mock
@@ -25,6 +24,7 @@ from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.utils import get_import_rq_id
+from utils.utils import strtobool
 
 slogger = ServerLogManager(__name__)
 

@@ -9,13 +9,13 @@ import json
 import logging
 import os
 import textwrap
-from distutils.util import strtobool
 from pathlib import Path
 from typing import Any, Tuple
 
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 from .version import VERSION
+from utils.utils import strtobool
 
 
 def get_auth(s):

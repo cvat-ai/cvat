@@ -11,10 +11,10 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 from rest_framework import serializers
-from distutils.util import strtobool
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.iam.utils import get_dummy_user
 from .models import Invitation, Membership, Organization
+from utils.utils import strtobool
 
 class OrganizationReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True)

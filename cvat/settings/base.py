@@ -20,7 +20,6 @@ import os
 import sys
 import tempfile
 from datetime import timedelta
-from distutils.util import strtobool
 from enum import Enum
 import urllib
 
@@ -34,6 +33,7 @@ mimetypes.add_type("application/wasm", ".wasm", True)
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
+from utils.utils import strtobool
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
