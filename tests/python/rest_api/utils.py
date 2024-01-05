@@ -32,7 +32,9 @@ def export_dataset(
         assert response.status == HTTPStatus.ACCEPTED
         sleep(interval)
     else:
-        assert False, f"Export process was not finished within allowed time ({interval * max_retries}, sec)"
+        assert (
+            False
+        ), f"Export process was not finished within allowed time ({interval * max_retries}, sec)"
 
     if response.status == HTTPStatus.CREATED:
         (_, response) = endpoint.call_with_http_info(
