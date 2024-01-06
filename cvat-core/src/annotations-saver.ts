@@ -363,7 +363,7 @@ export default class AnnotationsSaver {
             const { created, updated, deleted } = this._split(exported);
 
             onUpdate('Updated objects are being saved on the server');
-            this._extractClientIDs(updated);
+            const updatedIndexes = this._extractClientIDs(updated);
             let requestBody = { ...updated, version: this.version };
             let updatedData = null;
             try {
@@ -373,6 +373,7 @@ export default class AnnotationsSaver {
             }
 
             this.version = updatedData.version;
+            this._updateCreatedObjects(updatedData, updatedIndexes);
             for (const type of Object.keys(this.initialObjects)) {
                 for (const object of updatedData[type]) {
                     this.initialObjects[type][object.id] = object;
@@ -397,7 +398,7 @@ export default class AnnotationsSaver {
             }
 
             onUpdate('Created objects are being saved on the server');
-            const indexes = this._extractClientIDs(created);
+            const createdIndexes = this._extractClientIDs(created);
             requestBody = { ...created, version: this.version };
             let createdData = null;
             try {
@@ -407,7 +408,7 @@ export default class AnnotationsSaver {
             }
 
             this.version = createdData.version;
-            this._updateCreatedObjects(createdData, indexes);
+            this._updateCreatedObjects(createdData, createdIndexes);
             for (const type of Object.keys(this.initialObjects)) {
                 for (const object of createdData[type]) {
                     this.initialObjects[type][object.id] = object;
