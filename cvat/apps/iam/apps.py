@@ -11,5 +11,5 @@ class IAMConfig(AppConfig):
         from .signals import register_signals
         register_signals(self)
 
-        if to_bool(os.environ.get("IAM_OPA_BUNDLE", '0')):
+        if to_bool(os.environ.get("IAM_OPA_BUNDLE", False)):
             create_opa_bundle()
