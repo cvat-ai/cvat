@@ -32,6 +32,7 @@ from cvat import __version__
 mimetypes.add_type("application/wasm", ".wasm", True)
 
 from pathlib import Path
+from typing import Optional
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -158,17 +159,30 @@ REST_FRAMEWORK = {
     'SEARCH_PARAM': 'search',
     # Disable default handling of the 'format' query parameter by REST framework
     'URL_FORMAT_OVERRIDE': 'scheme',
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/minute',
-    },
+    'DEFAULT_THROTTLE_CLASSES': [],
+    'DEFAULT_THROTTLE_RATES': {},
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
     'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
     'EXCEPTION_HANDLER': 'cvat.apps.events.handlers.handle_viewset_exception',
 }
 
+def parse_rate_limit(s: Optional[str]) -> int:
+    if s is None: return 0
+
+    rl = int(s)
+    if rl < 0:
+        raise ImproperlyConfigured(f"Rate limit may not be negative: {rl}")
+    return rl
+
+# Note that both AnonRateThrottle and UserRateThrottle throttle anonymous requests,
+# so when CVAT_API_RATE_LIMIT_USER is specified, CVAT_API_RATE_LIMIT_ANON should be set
+# to a smaller value or it will essentially have no effect.
+
+for scope, default in (('anon', '100'), ('user', None)):
+    if rate_limit := parse_rate_limit(os.getenv(f'CVAT_API_RATE_LIMIT_{scope.upper()}', default)):
+        REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'].append(
+            f'rest_framework.throttling.{scope.title()}RateThrottle')
+        REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'][scope] = f'{rate_limit}/minute'
 
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.iam.serializers.RegisterSerializerEx',
