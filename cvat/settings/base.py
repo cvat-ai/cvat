@@ -15,7 +15,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
-from attr.converters import to_bool
 import mimetypes
 import os
 import sys
@@ -24,6 +23,7 @@ from datetime import timedelta
 from enum import Enum
 import urllib
 
+from attr.converters import to_bool
 from corsheaders.defaults import default_headers
 from logstash_async.constants import constants as logstash_async_constants
 

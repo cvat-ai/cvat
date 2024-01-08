@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from attr.converters import to_bool
 import base64
 import json
 import os
@@ -15,6 +14,7 @@ from tempfile import NamedTemporaryFile
 from unittest import mock
 
 import django_rq
+from attr.converters import to_bool
 from django.conf import settings
 from rest_framework import mixins, status
 from rest_framework.response import Response

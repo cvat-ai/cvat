@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from attr.converters import to_bool
 import argparse
 import getpass
 import json
@@ -13,6 +12,7 @@ import textwrap
 from pathlib import Path
 from typing import Any, Tuple
 
+from attr.converters import to_bool
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 from .version import VERSION

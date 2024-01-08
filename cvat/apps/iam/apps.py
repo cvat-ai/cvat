@@ -1,5 +1,5 @@
-from attr.converters import to_bool
 import os
+from attr.converters import to_bool
 from django.apps import AppConfig
 
 from .utils import create_opa_bundle

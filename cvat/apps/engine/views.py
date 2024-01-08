@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from attr.converters import to_bool
 import os
 import os.path as osp
 from PIL import Image
@@ -17,6 +16,7 @@ from tempfile import NamedTemporaryFile
 from textwrap import dedent
 
 import django_rq
+from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction

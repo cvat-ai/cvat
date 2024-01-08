@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from attr.converters import to_bool
 import io
 import os
 from enum import Enum
@@ -18,6 +17,7 @@ from datetime import datetime
 from tempfile import NamedTemporaryFile
 
 import django_rq
+from attr.converters import to_bool
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
