@@ -1,8 +1,8 @@
+from attr.converters import to_bool
 import os
 from django.apps import AppConfig
 
 from .utils import create_opa_bundle
-from utils.utils import strtobool
 
 class IAMConfig(AppConfig):
     name = 'cvat.apps.iam'
@@ -11,5 +11,5 @@ class IAMConfig(AppConfig):
         from .signals import register_signals
         register_signals(self)
 
-        if strtobool(os.environ.get("IAM_OPA_BUNDLE", '0')):
+        if to_bool(os.environ.get("IAM_OPA_BUNDLE", '0')):
             create_opa_bundle()

@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from attr.converters import to_bool
 import base64
 import json
 import os
@@ -24,7 +25,6 @@ from cvat.apps.engine.models import Location
 from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.utils import get_import_rq_id
-from utils.utils import strtobool
 
 slogger = ServerLogManager(__name__)
 
@@ -390,7 +390,7 @@ class AnnotationMixin:
         filename = request.query_params.get("filename", "")
 
         use_default_location = request.query_params.get("use_default_location", True)
-        use_settings = strtobool(str(use_default_location))
+        use_settings = to_bool(use_default_location)
         obj = db_obj if use_settings else request.query_params
         location_conf = get_location_configuration(
             obj=obj,
@@ -425,8 +425,8 @@ class AnnotationMixin:
             return self.init_tus_upload(request)
 
         use_default_location = request.query_params.get('use_default_location', True)
-        conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
-        use_settings = strtobool(str(use_default_location))
+        conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', 'True'))
+        use_settings = to_bool(use_default_location)
         obj = db_obj if use_settings else request.query_params
         location_conf = get_location_configuration(
             obj=obj,

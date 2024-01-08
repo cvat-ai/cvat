@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from attr.converters import to_bool
 import argparse
 import getpass
 import json
@@ -15,7 +16,6 @@ from typing import Any, Tuple
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 from .version import VERSION
-from utils.utils import strtobool
 
 
 def get_auth(s):
@@ -60,7 +60,7 @@ def parse_function_parameter(s: str) -> Tuple[str, Any]:
     elif type_ == "str":
         pass
     elif type_ == "bool":
-        value = bool(strtobool(value))
+        value = to_bool(value)
     else:
         raise argparse.ArgumentTypeError(f"unsupported parameter type {type_!r}")
 
@@ -339,7 +339,7 @@ def make_cmdline_parser() -> argparse.ArgumentParser:
     )
     dump_parser.add_argument(
         "--with-images",
-        type=strtobool,
+        type=to_bool,
         default=False,
         dest="include_images",
         help="Whether to include images or not (default: %(default)s)",

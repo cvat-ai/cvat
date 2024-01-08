@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from attr.converters import to_bool
 import io
 import os
 from enum import Enum
@@ -47,7 +48,6 @@ from cvat.apps.engine.location import StorageType, get_location_configuration
 from cvat.apps.engine.view_utils import get_cloud_storage_for_import_or_export
 from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
 from cvat.apps.dataset_manager.bindings import CvatImportError
-from utils.utils import strtobool
 
 slogger = ServerLogManager(__name__)
 
@@ -944,7 +944,7 @@ def export(db_instance, request, queue_name):
     else:
         raise Exception(
             "Unexpected type of db_instance: {}".format(type(db_instance)))
-    use_settings = strtobool(str(use_target_storage_conf))
+    use_settings = to_bool(use_target_storage_conf)
     obj = db_instance if use_settings else request.query_params
     location_conf = get_location_configuration(
         obj=obj,
