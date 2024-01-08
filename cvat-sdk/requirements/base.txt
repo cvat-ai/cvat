@@ -2,7 +2,7 @@
 
 attrs >= 21.4.0
 packaging >= 21.3
-Pillow >= 10.0.1
+Pillow >= 10.1.0
 platformdirs >= 2.1.0
 tqdm >= 4.64.0
 tuspy == 0.2.5 # have it pinned, because SDK has lots of patched TUS code

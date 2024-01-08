@@ -56,8 +56,8 @@ export enum HighlightSeverity {
 }
 
 export interface HighlightedElements {
-    elementsIDs: number [];
-    severity: HighlightSeverity;
+    elementsIDs: number[];
+    severity: HighlightSeverity | null;
 }
 
 export enum RectDrawingMethod {
@@ -267,7 +267,7 @@ export interface CanvasModel {
     setup(frameData: any, objectStates: any[], zLayer: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     activate(clientID: number | null, attributeID: number | null): void;
-    highlight(clientIDs: number[] | null, severity: HighlightSeverity): void;
+    highlight(clientIDs: number[], severity: HighlightSeverity): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
@@ -641,18 +641,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
     }
 
-    public highlight(clientIDs: number[] | null, severity: HighlightSeverity | null): void {
-        if (Array.isArray(clientIDs)) {
-            this.data.highlightedElements = {
-                elementsIDs: clientIDs,
-                severity,
-            };
-        } else {
-            this.data.highlightedElements = {
-                elementsIDs: [],
-                severity: null,
-            };
-        }
+    public highlight(clientIDs: number[], severity: HighlightSeverity | null): void {
+        this.data.highlightedElements = {
+            elementsIDs: clientIDs,
+            severity,
+        };
 
         this.notify(UpdateReasons.SHAPE_HIGHLIGHTED);
     }

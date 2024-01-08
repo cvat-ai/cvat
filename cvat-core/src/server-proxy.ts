@@ -16,7 +16,7 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
     SerializedQualitySettingsData, SerializedInvitationData, SerializedCloudStorage,
-    SerializedFramesMetaData,
+    SerializedFramesMetaData, SerializedCollection,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -575,6 +575,8 @@ async function healthCheck(
 export interface ServerRequestConfig {
     fetchAll: boolean,
 }
+
+export const sleep = (time: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, time));
 
 const defaultRequestConfig = {
     fetchAll: false,
@@ -1623,8 +1625,10 @@ async function saveMeta(
     return response.data;
 }
 
-// Session is 'task' or 'job'
-async function getAnnotations(session, id) {
+async function getAnnotations(
+    session: 'task' | 'job',
+    id: number,
+): Promise<SerializedCollection> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1636,11 +1640,15 @@ async function getAnnotations(session, id) {
     return response.data;
 }
 
-// Session is 'task' or 'job'
-async function updateAnnotations(session, id, data, action) {
+async function updateAnnotations(
+    session: 'task' | 'job',
+    id: number,
+    data: SerializedCollection,
+    action: 'create' | 'update' | 'delete' | 'put',
+): Promise<SerializedCollection> {
     const { backendAPI } = config;
     const url = `${backendAPI}/${session}s/${id}/annotations`;
-    const params = {};
+    const params: Record<string, string> = {};
     let method: string;
 
     if (action.toUpperCase() === 'PUT') {
