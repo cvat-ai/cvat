@@ -5,8 +5,8 @@
 
 import React from 'react';
 
-const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
 const NO_BREAK_SPACE = '\u00a0';
+const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
 const CHANGELOG_URL = 'https://github.com/opencv/cvat/blob/develop/CHANGELOG.md';
 const LICENSE_URL = 'https://github.com/opencv/cvat/blob/develop/LICENSE';
 const DISCORD_URL = 'https://discord.gg/fNR3eXfk6C';

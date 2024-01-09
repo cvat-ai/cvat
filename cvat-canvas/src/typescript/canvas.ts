@@ -109,7 +109,7 @@ class CanvasImpl implements Canvas {
         this.model.activate(clientID, attributeID);
     }
 
-    public highlight(clientIDs: number[] | null, severity: HighlightSeverity | null = null): void {
+    public highlight(clientIDs: number[], severity: HighlightSeverity | null = null): void {
         this.model.highlight(clientIDs, severity);
     }
 

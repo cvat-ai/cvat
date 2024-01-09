@@ -29,7 +29,7 @@ import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import { SerializedAsset } from './server-response-types';
 import QualityReport from './quality-report';
-import QualityConflict from './quality-conflict';
+import QualityConflict, { ConflictSeverity } from './quality-conflict';
 import QualitySettings from './quality-settings';
 import { FramesMetaData } from './frames';
 import AnalyticsReport from './analytics-report';
@@ -427,9 +427,74 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             };
         }
 
-        const reportsData = await serverProxy.analytics.quality.conflicts(updatedParams);
+        const conflictsData = await serverProxy.analytics.quality.conflicts(updatedParams);
+        const conflicts = conflictsData.map((conflict) => new QualityConflict({ ...conflict }));
+        const frames = Array.from(new Set(conflicts.map((conflict) => conflict.frame)))
+            .sort((a, b) => a - b);
 
-        return reportsData.map((conflict) => new QualityConflict({ ...conflict }));
+        // each QualityConflict may have several AnnotationConflicts bound
+        // at the same time, many quality conflicts may refer
+        // to the same labeled object (e.g. mismatch label, low overlap)
+        // the code below unites quality conflicts bound to the same object into one QualityConflict object
+        const mergedConflicts: QualityConflict[] = [];
+
+        for (const frame of frames) {
+            const frameConflicts = conflicts.filter((conflict) => conflict.frame === frame);
+            const conflictsByObject: Record<string, QualityConflict[]> = {};
+
+            frameConflicts.forEach((qualityConflict: QualityConflict) => {
+                const { type, serverID } = qualityConflict.annotationConflicts[0];
+                const firstObjID = `${type}_${serverID}`;
+                conflictsByObject[firstObjID] = conflictsByObject[firstObjID] || [];
+                conflictsByObject[firstObjID].push(qualityConflict);
+            });
+
+            for (const objectConflicts of Object.values(conflictsByObject)) {
+                if (objectConflicts.length === 1) {
+                    // only one quality conflict refers to the object on current frame
+                    mergedConflicts.push(objectConflicts[0]);
+                } else {
+                    const mainObjectConflict = objectConflicts
+                        .find((conflict) => conflict.severity === ConflictSeverity.ERROR) || objectConflicts[0];
+                    const descriptionList: string[] = [mainObjectConflict.description];
+
+                    for (const objectConflict of objectConflicts) {
+                        if (objectConflict !== mainObjectConflict) {
+                            descriptionList.push(objectConflict.description);
+
+                            for (const annotationConflict of objectConflict.annotationConflicts) {
+                                if (!mainObjectConflict.annotationConflicts.find((_annotationConflict) => (
+                                    _annotationConflict.serverID === annotationConflict.serverID &&
+                                    _annotationConflict.type === annotationConflict.type))
+                                ) {
+                                    mainObjectConflict.annotationConflicts.push(annotationConflict);
+                                }
+                            }
+                        }
+                    }
+
+                    // decorate the original conflict to avoid changing it
+                    const description = descriptionList.join(', ');
+                    const visibleConflict = new Proxy(mainObjectConflict, {
+                        get(target, prop) {
+                            if (prop === 'description') {
+                                return description;
+                            }
+
+                            // By default, it looks like Reflect.get(target, prop, receiver)
+                            // which has a different value of `this`. It doesn't allow to
+                            // work with methods / properties that use private members.
+                            const val = Reflect.get(target, prop);
+                            return typeof val === 'function' ? (...args: any[]) => val.apply(target, args) : val;
+                        },
+                    });
+
+                    mergedConflicts.push(visibleConflict);
+                }
+            }
+        }
+
+        return mergedConflicts;
     });
     implementationMixin(cvat.analytics.quality.settings.get, async (taskID: number) => {
         const settings = await serverProxy.analytics.quality.settings.get(taskID);

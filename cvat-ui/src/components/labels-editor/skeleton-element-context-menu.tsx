@@ -1,7 +1,12 @@
+// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import Menu from 'antd/lib/menu';
+import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 
 import LabelForm from './label-form';
@@ -13,75 +18,100 @@ interface ContextMenuProps {
     container: SVGSVGElement;
     onConfigureLabel(elementID: number, data: LabelOptColor | null): void;
     onDelete(element: SVGElement): void;
-    onCancel(): void;
+}
+
+function WrappedSkeletonElementLabelForm(props: ContextMenuProps & { hideConfigurator: () => void }): JSX.Element {
+    const {
+        elementID, labels, onConfigureLabel, hideConfigurator,
+    } = props;
+
+    const elementLabel = labels[elementID];
+
+    return (
+        <Modal
+            visible
+            width={700}
+            cancelButtonProps={{ hidden: true }}
+            okButtonProps={{ hidden: true }}
+            closable={false}
+            destroyOnClose
+        >
+            <LabelForm
+                label={elementLabel}
+                labelNames={Object
+                    .values(labels).map((label: LabelOptColor) => label.name)
+                    .filter((name: string) => name !== elementLabel.name)}
+                onSubmit={(data) => {
+                    onConfigureLabel(elementID, data);
+                    hideConfigurator();
+                }}
+                onCancel={() => {
+                    onConfigureLabel(elementID, null);
+                    hideConfigurator();
+                }}
+            />
+        </Modal>
+    );
 }
 
 function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
     const {
-        container, elementID, labels, onConfigureLabel, onDelete, onCancel,
+        container, elementID, onDelete,
     } = props;
-    const [modalVisible, setModalVisible] = useState<boolean>(false);
+    const [configuratorVisible, setConfiguratorVisible] = useState(false);
 
-    const elementLabel = labels[elementID];
-    const element = container.querySelector(`[data-element-id="${elementID}"]`);
-    const [portalContainer] = window.document.getElementsByClassName('cvat-skeleton-canvas-wrapper');
-    if (!element || !portalContainer) {
-        throw new Error('SVG container or portal container are not found');
+    const targetPoint = container.querySelector(`[data-element-id="${elementID}"]`);
+    if (!targetPoint) {
+        throw new Error('Target SVG point was not found');
     }
 
-    const cx = element.getAttribute('cx');
-    const cy = element.getAttribute('cy');
+    const cx = targetPoint.getAttribute('cx');
+    const cy = targetPoint.getAttribute('cy');
+
     if (!cx || !cy) {
         throw new Error('Circle attributes "cx", "cy" are not defined');
     }
 
     const [x, y] = fromSVGCoord(container, [+cx, +cy]);
-    return (
+    return ReactDOM.createPortal((
         <>
-            <Modal
-                okButtonProps={{ hidden: true }}
-                cancelButtonProps={{ hidden: true }}
-                visible={modalVisible}
-                onCancel={() => {
-                    setModalVisible(false);
-                    onConfigureLabel(elementID, null);
-                }}
-                width={700}
-            >
-                <LabelForm
-                    label={elementLabel}
-                    labelNames={Object.values(labels).map((label: LabelOptColor) => label.name)
-                        .filter((name: string) => name !== elementLabel.name)}
-                    onSubmit={(data) => {
-                        setModalVisible(false);
-                        onConfigureLabel(elementID, data);
-                    }}
-                    onCancel={() => {
-                        setModalVisible(false);
-                        onCancel();
+            {configuratorVisible && (
+                <WrappedSkeletonElementLabelForm
+                    {...props}
+                    hideConfigurator={() => {
+                        setConfiguratorVisible(false);
                     }}
                 />
-            </Modal>
-            { ReactDOM.createPortal(
-                (
-                    <Menu
-                        onClick={({ key }) => {
-                            if (key === 'configure_label') {
-                                setModalVisible(true);
-                            } else if (key === 'delete') {
-                                onDelete(element as SVGElement);
-                            }
+            )}
+            {!configuratorVisible && (
+                <div
+                    className='cvat-skeleton-configurator-context-menu'
+                    style={{ top: y, left: x }}
+                >
+                    <Button
+                        type='link'
+                        onClick={() => {
+                            setConfiguratorVisible(true);
                         }}
-                        className='cvat-skeleton-configurator-context-menu'
-                        style={{ top: y, left: x }}
+                        icon={<EditOutlined />}
+                        key='configure_label'
                     >
-                        <Menu.Item icon={<EditOutlined />} key='configure_label'>Configure</Menu.Item>
-                        <Menu.Item icon={<DeleteOutlined />} key='delete'>Delete</Menu.Item>
-                    </Menu>
-                ), portalContainer,
-            ) }
+                        Configure
+                    </Button>
+                    <Button
+                        type='link'
+                        onClick={() => {
+                            onDelete(targetPoint as SVGElement);
+                        }}
+                        icon={<DeleteOutlined />}
+                        key='delete'
+                    >
+                        Delete
+                    </Button>
+                </div>
+            )}
         </>
-    );
+    ), window.document.body);
 }
 
 export default React.memo(SkeletonElementContextMenu);
