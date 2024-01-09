@@ -124,6 +124,12 @@ function BrushTools(): React.ReactPortal | null {
     }, []);
 
     useEffect(() => {
+        const resetCurrentTool = (): void => {
+            if (['eraser', 'polygon-minus'].includes(currentTool)) {
+                setCurrentTool('brush');
+            }
+        };
+
         const hideToolset = (): void => {
             if (visible) {
                 dispatch(updateCanvasBrushTools({ visible: false }));
@@ -151,6 +157,7 @@ function BrushTools(): React.ReactPortal | null {
             canvasInstance.html().addEventListener('canvas.drawn', hideToolset);
             canvasInstance.html().addEventListener('canvas.canceled', hideToolset);
             canvasInstance.html().addEventListener('canvas.canceled', updateEditableState);
+            canvasInstance.html().addEventListener('canvas.drawstart', resetCurrentTool);
             canvasInstance.html().addEventListener('canvas.drawstart', showToolset);
             canvasInstance.html().addEventListener('canvas.editstart', showToolset);
             canvasInstance.html().addEventListener('canvas.editstart', updateEditableState);
@@ -162,6 +169,7 @@ function BrushTools(): React.ReactPortal | null {
                 canvasInstance.html().removeEventListener('canvas.drawn', hideToolset);
                 canvasInstance.html().removeEventListener('canvas.canceled', hideToolset);
                 canvasInstance.html().removeEventListener('canvas.canceled', updateEditableState);
+                canvasInstance.html().removeEventListener('canvas.drawstart', resetCurrentTool);
                 canvasInstance.html().removeEventListener('canvas.drawstart', showToolset);
                 canvasInstance.html().removeEventListener('canvas.editstart', showToolset);
                 canvasInstance.html().removeEventListener('canvas.editstart', updateEditableState);
