@@ -123,7 +123,6 @@ RUN apt-get update && \
         p7zip-full \
         poppler-utils \
         python3 \
-        python3-distutils \
         python3-venv \
         supervisor \
         tzdata \

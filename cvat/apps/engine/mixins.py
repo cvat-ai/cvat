@@ -9,13 +9,13 @@ import os
 import os.path
 import uuid
 from dataclasses import asdict, dataclass
-from distutils.util import strtobool
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest import mock
 from typing import Optional, Callable, Dict, Any
 
 import django_rq
+from attr.converters import to_bool
 from django.conf import settings
 from rest_framework import mixins, status
 from rest_framework.response import Response
@@ -399,7 +399,7 @@ class AnnotationMixin:
         filename = request.query_params.get("filename", "")
 
         use_default_location = request.query_params.get("use_default_location", True)
-        use_settings = strtobool(str(use_default_location))
+        use_settings = to_bool(use_default_location)
         obj = db_obj if use_settings else request.query_params
         location_conf = get_location_configuration(
             obj=obj,
@@ -434,8 +434,8 @@ class AnnotationMixin:
             return self.init_tus_upload(request)
 
         use_default_location = request.query_params.get('use_default_location', True)
-        conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
-        use_settings = strtobool(str(use_default_location))
+        conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
+        use_settings = to_bool(use_default_location)
         obj = db_obj if use_settings else request.query_params
         location_conf = get_location_configuration(
             obj=obj,

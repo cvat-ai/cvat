@@ -20,10 +20,10 @@ import os
 import sys
 import tempfile
 from datetime import timedelta
-from distutils.util import strtobool
 from enum import Enum
 import urllib
 
+from attr.converters import to_bool
 from corsheaders.defaults import default_headers
 from logstash_async.constants import constants as logstash_async_constants
 
@@ -179,7 +179,7 @@ REST_AUTH_SERIALIZERS = {
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
-if strtobool(os.getenv('CVAT_ANALYTICS', '0')):
+if to_bool(os.getenv('CVAT_ANALYTICS', False)):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
@@ -700,7 +700,7 @@ SMOKESCREEN_ENABLED = True
 # to check configuration and throw ImproperlyConfigured if thats a case
 EMAIL_BACKEND = None
 
-ONE_RUNNING_JOB_IN_QUEUE_PER_USER = strtobool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_PER_USER', 'false'))
+ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_PER_USER', False))
 
 # How many chunks can be prepared simultaneously during task creation in case the cache is not used
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSING', 1))

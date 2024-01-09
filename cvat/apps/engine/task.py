@@ -12,7 +12,6 @@ from rest_framework.serializers import ValidationError
 import rq
 import re
 import shutil
-from distutils.dir_util import copy_tree
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 import django_rq
@@ -98,7 +97,7 @@ def _copy_data_from_share_point(
             source_path = os.path.join(server_dir, os.path.normpath(path))
         target_path = os.path.join(upload_dir, path)
         if os.path.isdir(source_path):
-            copy_tree(source_path, target_path)
+            shutil.copytree(source_path, target_path)
         else:
             target_dir = os.path.dirname(target_path)
             if not os.path.exists(target_dir):
