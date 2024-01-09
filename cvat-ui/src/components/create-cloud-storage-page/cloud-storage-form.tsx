@@ -430,7 +430,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     {...internalCommonProps}
                 >
                     <Input.Password
-                        maxLength={440}
+                        maxLength={1024}
                         visibilityToggle={connectionStringVisibility}
                         onChange={() => setConnectionStringVisibility(true)}
                     />

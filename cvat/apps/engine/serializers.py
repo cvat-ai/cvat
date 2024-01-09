@@ -1765,7 +1765,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
-    connection_string = serializers.CharField(max_length=440, allow_blank=True, required=False)
+    connection_string = serializers.CharField(max_length=1024, allow_blank=True, required=False)
 
     class Meta:
         model = models.CloudStorage
@@ -1925,7 +1925,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         })
         credentials_dict = {k:v for k,v in validated_data.items() if k in {
             'key','secret_key', 'account_name', 'session_token', 'key_file_path',
-            'credentials_type'
+            'credentials_type', 'connection_string'
         }}
 
         key_file = validated_data.pop('key_file', None)
