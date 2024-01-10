@@ -135,7 +135,7 @@ def _kube_get_redis_inmem_pod_name():
 
 
 def _kube_get_redis_ondisk_pod_name():
-    return _kube_get_pod_name("app.kubernetes.io/name=keydb")
+    return _kube_get_pod_name("app.kubernetes.io/name=cvat,tier=kvrocks")
 
 
 def docker_cp(source, target):
