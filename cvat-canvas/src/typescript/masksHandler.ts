@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { fabric } from 'fabric';
+import debounce from 'lodash/debounce';
 
 import {
     DrawData, MasksEditData, Geometry, Configuration, BrushTool, ColorBy,
@@ -136,7 +137,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isDrawing = false;
         this.isInsertion = false;
         this.redraw = null;
-        this.drawnObjects = [];
+        this.drawnObjects = this.createDrawnObjectsArray();
         this.onDrawDone(null);
     }
 
@@ -150,7 +151,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.clear();
         this.canvas.renderAll();
         this.isEditing = false;
-        this.drawnObjects = [];
+        this.drawnObjects = this.createDrawnObjectsArray();
         this.onEditDone(null, null);
     }
 
@@ -294,6 +295,46 @@ export class MasksHandlerImpl implements MasksHandler {
         }
     }
 
+    private checkEmpty(): void {
+        if (this.drawnObjects.length === 0) {
+            this.tool.configureBlockedTools({
+                eraser: true,
+                'polygon-minus': true,
+            });
+            return;
+        }
+        const wrappingBbox = this.getDrawnObjectsWrappingBox();
+        if (this.brushMarker) {
+            this.canvas.remove(this.brushMarker);
+        }
+        const imageData = this.imageDataFromCanvas(wrappingBbox);
+        if (this.brushMarker) {
+            this.canvas.add(this.brushMarker);
+        }
+        const rle = zipChannels(imageData);
+        const emptyMask = rle.length < 2;
+        this.tool.configureBlockedTools({
+            eraser: emptyMask,
+            'polygon-minus': emptyMask,
+        });
+    }
+
+    private createDrawnObjectsArray(): (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image)[] {
+        const drawnObjects = [];
+        const checkEmptyDebounced = debounce(this.checkEmpty.bind(this), 250);
+        return new Proxy(drawnObjects, {
+            deleteProperty(target, property) {
+                delete target[property];
+                return true;
+            },
+            set(target, property, value) {
+                target[property] = value;
+                checkEmptyDebounced();
+                return true;
+            },
+        });
+    }
+
     public constructor(
         onDrawDone: MasksHandlerImpl['onDrawDone'],
         onDrawRepeat: MasksHandlerImpl['onDrawRepeat'],
@@ -310,7 +351,6 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isPolygonDrawing = false;
         this.drawData = null;
         this.editData = null;
-        this.drawnObjects = [];
         this.drawingOpacity = 0.5;
         this.brushMarker = null;
         this.colorBy = ColorBy.LABEL;
@@ -326,6 +366,7 @@ export class MasksHandlerImpl implements MasksHandler {
             defaultCursor: 'inherit',
         });
         this.canvas.imageSmoothingEnabled = false;
+        this.drawnObjects = this.createDrawnObjectsArray();
 
         this.canvas.getElement().parentElement.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
         this.latestMousePos = { x: -1, y: -1 };
@@ -445,7 +486,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 }
 
                 this.canvas.add(shape);
-                if (tool.type === 'brush') {
+                if (['brush', 'eraser'].includes(tool?.type)) {
                     this.drawnObjects.push(shape);
                 }
 
@@ -467,7 +508,7 @@ export class MasksHandlerImpl implements MasksHandler {
                         });
 
                         this.canvas.add(line);
-                        if (tool.type === 'brush') {
+                        if (['brush', 'eraser'].includes(tool?.type)) {
                             this.drawnObjects.push(line);
                         }
                     }
@@ -549,6 +590,10 @@ export class MasksHandlerImpl implements MasksHandler {
                     this.isDrawing = true;
                     this.redraw = drawData.redraw || null;
                 }
+            }
+
+            if (drawData.brushTool) {
+                this.checkEmpty();
             }
 
             this.canvas.getElement().parentElement.style.display = 'block';

@@ -33,6 +33,10 @@
         }
     }
 
+    > button:disabled {
+        opacity: .5;
+    }
+
     .cvat-brush-tools-brush,
     .cvat-brush-tools-eraser {
         svg {

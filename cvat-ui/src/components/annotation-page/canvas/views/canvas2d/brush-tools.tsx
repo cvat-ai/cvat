@@ -4,7 +4,7 @@
 
 import './brush-toolbox-styles.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
@@ -48,6 +48,11 @@ function BrushTools(): React.ReactPortal | null {
     const [brushSize, setBrushSize] = useState(10);
     const [applicableLabels, setApplicableLabels] = useState<Label[]>([]);
 
+    const [blockedState, setBlockedState] = useState<Record<'eraser' | 'polygon-minus', boolean>>({
+        eraser: false,
+        'polygon-minus': false,
+    });
+
     const [removeUnderlyingPixels, setRemoveUnderlyingPixels] = useState(false);
     const dragBar = useDraggable(
         (): number[] => {
@@ -62,6 +67,10 @@ function BrushTools(): React.ReactPortal | null {
         (newTop, newLeft) => setTopLeft([newTop, newLeft]),
         DraggableArea,
     );
+
+    const configureBlockedTools = useCallback((configuration: Record<'eraser' | 'polygon-minus', boolean>) => {
+        setBlockedState(configuration);
+    }, []);
 
     getCore().config.removeUnderlyingMaskPixels.onEmptyMaskOccurrence = () => {
         notification.warning({
@@ -92,6 +101,7 @@ function BrushTools(): React.ReactPortal | null {
                         size: brushSize,
                         form: brushForm,
                         color: label.color,
+                        configureBlockedTools,
                     },
                     onUpdateConfiguration,
                 });
@@ -104,6 +114,7 @@ function BrushTools(): React.ReactPortal | null {
                         size: brushSize,
                         form: brushForm,
                         color: label.color,
+                        configureBlockedTools,
                     },
                     onUpdateConfiguration,
                 });
@@ -231,6 +242,7 @@ function BrushTools(): React.ReactPortal | null {
                 className={['cvat-brush-tools-eraser', ...(currentTool === 'eraser' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
                 icon={<Icon component={EraserIcon} />}
                 onClick={() => setCurrentTool('eraser')}
+                disabled={blockedState.eraser}
             />
             <Button
                 type='text'
@@ -243,6 +255,7 @@ function BrushTools(): React.ReactPortal | null {
                 className={['cvat-brush-tools-polygon-minus', ...(currentTool === 'polygon-minus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
                 icon={<Icon component={PolygonMinusIcon} />}
                 onClick={() => setCurrentTool('polygon-minus')}
+                disabled={blockedState['polygon-minus']}
             />
             { ['brush', 'eraser'].includes(currentTool) ? (
                 <CVATTooltip title='Brush size [Hold Alt + Right Mouse Click + Drag Left/Right]'>
