@@ -232,7 +232,7 @@ def kube_restore_clickhouse_db():
 
 
 def docker_restore_redis_inmem():
-    docker_exec_redis_inmem(["redis-cli",  "flushall"])
+    docker_exec_redis_inmem(["redis-cli", "flushall"])
 
 
 def kube_restore_redis_inmem():
@@ -244,7 +244,9 @@ def docker_restore_redis_ondisk():
 
 
 def kube_restore_redis_ondisk():
-    kube_exec_redis_ondisk(["redis-cli", "-p", "6666", "-a", "${CVAT_REDIS_ONDISK_PASSWORD}", "flushall"])
+    kube_exec_redis_ondisk(
+        ["redis-cli", "-p", "6666", "-a", "${CVAT_REDIS_ONDISK_PASSWORD}", "flushall"]
+    )
 
 
 def running_containers():
