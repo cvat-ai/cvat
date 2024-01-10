@@ -240,11 +240,11 @@ def kube_restore_redis_inmem():
 
 
 def docker_restore_redis_ondisk():
-    docker_exec_redis_ondisk(["keydb-cli", "flushall"])
+    docker_exec_redis_ondisk(["redis-cli", "flushall"])
 
 
 def kube_restore_redis_ondisk():
-    kube_exec_redis_ondisk(["keydb-cli", "flushall"])
+    kube_exec_redis_ondisk(["redis-cli", "flushall"])
 
 
 def running_containers():

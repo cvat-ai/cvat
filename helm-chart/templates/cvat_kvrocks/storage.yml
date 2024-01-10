@@ -1,0 +1,26 @@
+{{- if and .Values.cvat.kvrocks.enabled .Values.cvat.kvrocks.defaultStorage.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-kvrocks-data
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/resource-policy: keep
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: kvroocks
+spec:
+  accessModes:
+    {{- if .Values.cvat.kvrocks.defaultStorage.accessModes }}
+    {{ .Values.cvat.kvrocks.defaultStorage.accessModes | toYaml | nindent 4 }}
+    {{- else }}
+    - ReadWriteOnce
+    {{- end }}
+  {{-  if .Values.cvat.kvrocks.defaultStorage.storageClassName }}
+  storageClassName: {{ .Values.cvat.kvrocks.defaultStorage.storageClassName }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.cvat.kvrocks.defaultStorage.size }}
+{{- end }}
