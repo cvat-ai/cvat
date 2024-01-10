@@ -1765,7 +1765,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
-    connection_string = serializers.CharField(max_length=440, allow_blank=True, required=False)
+    connection_string = serializers.CharField(max_length=1024, allow_blank=True, required=False)
 
     class Meta:
         model = models.CloudStorage
@@ -1796,14 +1796,14 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         # AWS S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
         # Azure Container: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
         # GCS: https://cloud.google.com/storage/docs/buckets#naming
-        COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS = (
+        ALLOWED_RESOURCE_NAME_SYMBOLS = (
             string.ascii_lowercase + string.digits + "-"
         )
-        ALLOWED_RESOURCE_NAME_SYMBOLS = (
-            COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS
-            if provider_type != models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE
-            else COMMON_ALLOWED_RESOURCE_NAME_SYMBOLS + "_"
-        )
+
+        if provider_type == models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
+            ALLOWED_RESOURCE_NAME_SYMBOLS += "_."
+        elif provider_type == models.CloudProviderChoice.AWS_S3:
+            ALLOWED_RESOURCE_NAME_SYMBOLS += "."
 
         # We need to check only basic naming rule
         if (resource := attrs.get("resource")) and (
@@ -1925,7 +1925,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
         })
         credentials_dict = {k:v for k,v in validated_data.items() if k in {
             'key','secret_key', 'account_name', 'session_token', 'key_file_path',
-            'credentials_type'
+            'credentials_type', 'connection_string'
         }}
 
         key_file = validated_data.pop('key_file', None)

@@ -29,7 +29,7 @@ interface Props {
     stopFrame: number;
     removeAnnotations(startnumber: number | null, endnumber: number | null, delTrackKeyframesOnly: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
-    saveAnnotations(jobInstance: any, afterSave?: () => void): void;
+    saveAnnotations(afterSave?: () => void): void;
 }
 
 export enum Actions {
@@ -72,7 +72,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                         children: 'No',
                     },
                     onOk: () => {
-                        saveAnnotations(jobInstance, () => onClickMenu(_params));
+                        saveAnnotations(() => onClickMenu(_params));
                     },
                     onCancel: () => {
                         // do not ask leave confirmation

@@ -26,7 +26,7 @@ interface ConflictMappingElement {
     severity: ConflictSeverity;
     x: number;
     y: number;
-    clientID: number;
+    serverID: number;
     conflict: QualityConflict;
 }
 
@@ -47,7 +47,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const showConflicts = useSelector((state: CombinedState) => state.settings.shapes.showGroundTruth);
     const highlightedConflict = useSelector((state: CombinedState) => state.annotation.annotations.highlightedConflict);
 
-    const highlightedObjectsIDs = highlightedConflict?.annotationConflicts?.map((c: AnnotationConflict) => c.clientID);
+    const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
+        ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
 
     const activeControl = useSelector((state: CombinedState) => state.annotation.canvas.activeControl);
 
@@ -127,30 +128,37 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     }, [newIssuePosition, frameIssues, issuesResolvedHidden, issuesHidden, canvasReady, showConflicts]);
 
     useEffect(() => {
-        if (canvasReady && showConflicts) {
-            const newconflictMapping = qualityConflicts.map((conflict: QualityConflict) => {
-                const c = conflict.annotationConflicts[0];
-                const state = objectStates.find((s: ObjectState) => s.jobID === c.jobID && s.serverID === c.serverID);
-                if (state) {
-                    const points = canvasInstance.setupConflictRegions(state);
-                    if (points) {
-                        return {
-                            description: conflict.description,
-                            severity: conflict.severity,
-                            x: points[0],
-                            y: points[1],
-                            clientID: c.clientID,
-                            conflict,
-                        };
+        if (canvasReady && showConflicts && qualityConflicts.length) {
+            const updatedConflictMapping = qualityConflicts
+                .map((conflict: QualityConflict) => {
+                    const mainAnnotationsConflict = conflict.annotationConflicts[0];
+                    const state = objectStates.find((_state: ObjectState) => (
+                        _state.serverID === mainAnnotationsConflict.serverID &&
+                        _state.objectType === mainAnnotationsConflict.type
+                    ));
+
+                    if (state) {
+                        const points = canvasInstance.setupConflictRegions(state);
+                        if (points) {
+                            return {
+                                description: conflict.description,
+                                severity: conflict.severity,
+                                x: points[0],
+                                y: points[1],
+                                serverID: state.serverID,
+                                conflict,
+                            };
+                        }
                     }
-                }
-                return null;
-            }).filter((element) => element);
-            setConflictMapping(newconflictMapping as ConflictMappingElement[]);
+
+                    return null;
+                }).filter((element) => element) as ConflictMappingElement[];
+
+            setConflictMapping(updatedConflictMapping);
         } else {
             setConflictMapping([]);
         }
-    }, [geometry, objectStates, showConflicts, canvasReady]);
+    }, [geometry, objectStates, showConflicts, canvasReady, qualityConflicts]);
 
     if (!canvasReady || !geometry) {
         return null;
@@ -238,6 +246,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         null;
 
     for (const conflict of conflictMapping) {
+        const isConflictHighligted = highlightedObjectsIDs?.includes(conflict.serverID) || false;
         conflictLabels.push(
             <ConflictLabel
                 key={(Math.random() + 1).toString(36).substring(7)}
@@ -247,13 +256,11 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                 angle={-geometry.angle}
                 scale={1 / geometry.scale}
                 severity={conflict.severity}
-                darken={!!highlightedConflict && !!highlightedObjectsIDs &&
-                        (!highlightedObjectsIDs.includes(conflict.clientID))}
+                darken={!isConflictHighligted}
                 conflict={conflict.conflict}
                 onEnter={onEnter}
                 onLeave={onLeave}
-                tooltipVisible={!!highlightedConflict && !!highlightedObjectsIDs &&
-                        highlightedObjectsIDs.includes(conflict.clientID)}
+                tooltipVisible={isConflictHighligted}
             />,
         );
     }

@@ -7,7 +7,7 @@ import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
     Webhook, MLModel, Organization, Job, Label,
-    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger,
+    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger, Invitation,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -435,7 +435,6 @@ export interface NotificationsState {
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
             loadAuthActions: null | ErrorState;
-            acceptingInvitation: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;
@@ -549,7 +548,6 @@ export interface NotificationsState {
             inviting: null | ErrorState;
             updatingMembership: null | ErrorState;
             removingMembership: null | ErrorState;
-            resendingInvitation: null | ErrorState;
             deletingInvitation: null | ErrorState;
         };
         webhooks: {
@@ -562,6 +560,12 @@ export interface NotificationsState {
             fetching: null | ErrorState;
             fetchingSettings: null | ErrorState;
             updatingSettings: null | ErrorState;
+        };
+        invitations: {
+            fetching: null | ErrorState;
+            acceptingInvitation: null | ErrorState;
+            decliningInvitation: null | ErrorState;
+            resendingInvitation: null | ErrorState;
         }
     };
     messages: {
@@ -578,7 +582,6 @@ export interface NotificationsState {
             registerDone: string;
             requestPasswordResetDone: string;
             resetPasswordDone: string;
-            acceptInvitationDone: string;
         };
         projects: {
             restoringDone: string;
@@ -593,7 +596,10 @@ export interface NotificationsState {
             annotation: string;
             backup: string;
         };
-        organizations: {
+        invitations: {
+            newInvitations: string;
+            acceptInvitationDone: string;
+            declineInvitationDone: string;
             resendingInvitation: string;
         }
     };
@@ -687,9 +693,9 @@ export interface AnnotationState {
         openTime: null | number;
         labels: Label[];
         requestedId: number | null;
-        groundTruthJobId: number | null;
         groundTruthJobFramesMeta: FramesMetaData | null;
         instance: Job | null | undefined;
+        groundTruthInstance: Job | null;
         attributes: Record<number, any[]>;
         fetching: boolean;
         saving: boolean;
@@ -727,7 +733,6 @@ export interface AnnotationState {
         highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
-        statesSources: number[];
         states: any[];
         filters: any[];
         resetGroupFlag: boolean;
@@ -927,6 +932,18 @@ export interface AnalyticsState {
     }
 }
 
+export interface InvitationsQuery {
+    page: number;
+}
+
+export interface InvitationsState {
+    fetching: boolean;
+    initialized: boolean;
+    current: Invitation[];
+    count: number;
+    query: InvitationsQuery;
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -946,6 +963,7 @@ export interface CombinedState {
     import: ImportState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
+    invitations: InvitationsState;
     webhooks: WebhooksState;
     analytics: AnalyticsState;
 }

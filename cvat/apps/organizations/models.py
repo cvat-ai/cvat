@@ -7,6 +7,8 @@ from datetime import timedelta
 from django.conf import settings
 from allauth.account.adapter import get_adapter
 from django.contrib.sites.shortcuts import get_current_site
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -66,11 +68,18 @@ class Invitation(models.Model):
         return self.membership.organization_id
 
     @property
+    @extend_schema_field(OpenApiTypes.BOOL)
     def expired(self):
-        expiration_date = self.sent_date + timedelta(
-            days=settings.ORG_INVITATION_EXPIRY_DAYS,
-        )
-        return expiration_date <= timezone.now()
+        if self.sent_date:
+            expiration_date = self.sent_date + timedelta(
+                days=settings.ORG_INVITATION_EXPIRY_DAYS,
+            )
+            return expiration_date <= timezone.now()
+        return None
+
+    @property
+    def accepted(self):
+        return self.membership.is_active
 
     @property
     def organization_slug(self):

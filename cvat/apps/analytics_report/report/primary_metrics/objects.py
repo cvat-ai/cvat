@@ -48,7 +48,7 @@ class JobObjects(PrimaryMetricBase):
                 objects_statistics[f"{action}d"].append(
                     {
                         "value": sum(statistics[action][t].get(date, 0) for t in obj_types),
-                        "datetime": date.isoformat() + "Z",
+                        "datetime": date.strftime("%Y-%m-%dT%H:%M:%SZ"),
                     }
                 )
 

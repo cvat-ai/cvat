@@ -19,6 +19,9 @@ from packaging import version
 # the initial version for the documentation site
 MINIMUM_VERSION = version.Version("1.5.0")
 
+# apply new hugo version starting from release 2.9.2
+UPDATED_HUGO_FROM = version.Version("2.9.2")
+
 # Start the name with HUGO_ for Hugo default security checks
 VERSION_URL_ENV_VAR = "HUGO_VERSION_REL_URL"
 
@@ -137,11 +140,15 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
             git_checkout(tag.name, temp_repo, Path(temp_dir))
             change_version_menu_toml(versioning_toml_path, tag.name)
             run_npm_install()
+
+            # find correct hugo version
+            hugo = hugo110 if version.parse(tag.name) >= UPDATED_HUGO_FROM else hugo83
+
             run_hugo(
                 output_dir / tag.name,
                 # Docsy doesn't forward the current version url to templates
                 extra_env_vars={VERSION_URL_ENV_VAR: f"/cvat/{tag.name}/docs"},
-                executable=hugo83,
+                executable=hugo,
             )
 
 

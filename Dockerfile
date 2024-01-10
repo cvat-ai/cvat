@@ -123,7 +123,6 @@ RUN apt-get update && \
         p7zip-full \
         poppler-utils \
         python3 \
-        python3-distutils \
         python3-venv \
         supervisor \
         tzdata \
@@ -177,7 +176,7 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
-COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh ${HOME}/
+COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 COPY --chown=${USER} rqscheduler.py ${HOME}

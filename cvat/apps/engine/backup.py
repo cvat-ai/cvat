@@ -17,6 +17,7 @@ from datetime import datetime
 from tempfile import NamedTemporaryFile
 
 import django_rq
+from attr.converters import to_bool
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
@@ -26,7 +27,6 @@ from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
-from distutils.util import strtobool
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
@@ -944,7 +944,7 @@ def export(db_instance, request, queue_name):
     else:
         raise Exception(
             "Unexpected type of db_instance: {}".format(type(db_instance)))
-    use_settings = strtobool(str(use_target_storage_conf))
+    use_settings = to_bool(use_target_storage_conf)
     obj = db_instance if use_settings else request.query_params
     location_conf = get_location_configuration(
         obj=obj,

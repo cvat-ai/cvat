@@ -12,11 +12,11 @@ import traceback
 import textwrap
 from copy import copy
 from datetime import datetime
-from distutils.util import strtobool
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
 
 import django_rq
+from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
@@ -81,7 +81,7 @@ from . import models, task
 from .log import ServerLogManager
 from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, LabelPermission, ProjectPermission,
-    TaskPermission, UserPermission)
+    TaskPermission, UserPermission, PolicyEnforcer, IsAuthenticatedOrReadPublicResource)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.view_utils import tus_chunk_action
@@ -197,8 +197,8 @@ class ServerViewSet(viewsets.ViewSet):
     def plugins(request):
         data = {
             'GIT_INTEGRATION': False, # kept for backwards compatibility
-            'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
-            'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
+            'ANALYTICS': to_bool(os.environ.get("CVAT_ANALYTICS", False)),
+            'MODELS': to_bool(os.environ.get("CVAT_SERVERLESS", False)),
             'PREDICT': False, # FIXME: it is unused anymore (for UI only)
         }
         return Response(PluginsSerializer(data).data)
@@ -418,7 +418,7 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'dataset':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
-            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+            conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
             tmp_dir = self._object.get_tmp_dirname()
             uploaded_file = None
             if os.path.isfile(os.path.join(tmp_dir, filename)):
@@ -999,7 +999,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         def _handle_upload_annotations(request):
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
-            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+            conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
             tmp_dir = self._object.get_tmp_dirname()
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
@@ -1353,8 +1353,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             format_name = request.query_params.get('format', '')
             if format_name:
                 # NOTE: continue process of import annotations
-                use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
-                conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+                use_settings = to_bool(request.query_params.get('use_default_location', True))
+                conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
                 obj = self._object if use_settings else request.query_params
                 location_conf = get_location_configuration(
                     obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
@@ -1639,7 +1639,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
-            conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+            conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
             tmp_dir = self.get_upload_dir()
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
@@ -1791,8 +1791,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
             if format_name:
-                use_settings = strtobool(str(request.query_params.get('use_default_location', True)))
-                conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
+                use_settings = to_bool(request.query_params.get('use_default_location', True))
+                conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
                 obj = self._object.segment.task if use_settings else request.query_params
                 location_conf = get_location_configuration(
                     obj=obj, use_settings=use_settings, field_name=StorageType.SOURCE
@@ -2676,6 +2676,11 @@ class AssetsViewSet(
     def check_object_permissions(self, request, obj):
         super().check_object_permissions(request, obj.guide)
 
+    def get_permissions(self):
+        if self.action == 'retrieve':
+            return [IsAuthenticatedOrReadPublicResource(), PolicyEnforcer()]
+        return super().get_permissions()
+
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return AssetReadSerializer
@@ -2727,21 +2732,6 @@ class AssetsViewSet(
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
-
-    # FIXME: It should be done in another way. It is better to introduce a "public resource" concept and handle it
-    # properly in PolicyEnfocer. Looks like PolicyEnfocer should handle rest_framework.permissions.IsAuthenticated internally.
-    @action(methods=['GET'], detail=True, url_path='public', permission_classes=[])
-    def public_retrieve(self, request, *args, **kwargs):
-        # Note: It is not a good approach to implement one more endpoint for receiving public assets
-        # but it separated to 2 endpoints for better server API specification.
-        # It could be implemented via overwriting get_permissions func,
-        # but in that case the specification would contain incorrect security information.
-        # Note: we cannot move this logic to OPA because OPA permissions
-        # don't imply that the user will be anonymous.
-        instance = self.get_object()
-        if instance.guide.is_public:
-            return sendfile(request, os.path.join(settings.ASSETS_ROOT, str(instance.uuid), instance.filename))
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_destroy(self, instance):
         full_path = os.path.join(instance.get_asset_dir(), instance.filename)

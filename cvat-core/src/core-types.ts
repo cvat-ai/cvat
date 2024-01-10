@@ -53,3 +53,5 @@ export interface SerializedModel {
     created_date?: string;
     updated_date?: string;
 }
+
+export type PaginatedResource<T> = T[] & { count: number };

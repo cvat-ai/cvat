@@ -19,7 +19,7 @@ import {
 
 import CVATSigningInput, { CVATInputType } from 'components/signing-common/cvat-signing-input';
 import { CombinedState } from 'reducers';
-import { usePlugins } from 'utils/hooks';
+import { useAuthQuery, usePlugins } from 'utils/hooks';
 
 export interface LoginData {
     credential: string;
@@ -36,6 +36,8 @@ function LoginFormComponent(props: Props): JSX.Element {
     const {
         fetching, onSubmit, renderResetPassword,
     } = props;
+
+    const authQuery = useAuthQuery();
     const [form] = Form.useForm();
     const [credential, setCredential] = useState('');
     const pluginsToRender = usePlugins(
@@ -44,12 +46,16 @@ function LoginFormComponent(props: Props): JSX.Element {
         { credential },
     );
 
+    let resetSearch = authQuery ? new URLSearchParams(authQuery).toString() : '';
+    if (credential.includes('@')) {
+        const updatedAuthQuery = authQuery ? { ...authQuery, email: credential } : { email: credential };
+        resetSearch = new URLSearchParams(updatedAuthQuery).toString();
+    }
+
     const forgotPasswordLink = (
         <Col className='cvat-credentials-link'>
             <Text strong>
-                <Link to={credential.includes('@') ?
-                    `/auth/password/reset?credential=${credential}` : '/auth/password/reset'}
-                >
+                <Link to={{ pathname: '/auth/password/reset', search: resetSearch }}>
                     Forgot password?
                 </Link>
             </Text>
@@ -78,7 +84,13 @@ function LoginFormComponent(props: Props): JSX.Element {
                             <Col className='cvat-credentials-link'>
                                 <Text strong>
                                     New user?&nbsp;
-                                    <Link to='/auth/register'>Create an account</Link>
+                                    <Link to={{
+                                        pathname: '/auth/register',
+                                        search: authQuery ? new URLSearchParams(authQuery).toString() : '',
+                                    }}
+                                    >
+                                        Create an account
+                                    </Link>
                                 </Text>
                             </Col>
                         </Row>

@@ -21,6 +21,7 @@ import Icon, {
     UserOutlined,
     TeamOutlined,
     PlusOutlined,
+    MailOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -321,6 +322,16 @@ function HeaderComponent(props: Props): JSX.Element {
                     Settings
                 </Menu.Item>
             ) : null}
+            <Menu.Item
+                icon={<MailOutlined />}
+                className='cvat-header-menu-organization-invitations-item'
+                key='invitations'
+                onClick={() => {
+                    history.push('/invitations');
+                }}
+            >
+                Invitations
+            </Menu.Item>
             <Menu.Item icon={<PlusOutlined />} key='create_organization' onClick={() => history.push('/organizations/create')} className='cvat-header-menu-create-organization'>Create</Menu.Item>
             { !!organizationsList && viewType === 'list' && (
                 <Menu.Item

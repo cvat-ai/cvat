@@ -81,6 +81,7 @@ export default function (state = defaultState, action: AuthActions | BoundariesA
             return {
                 ...state,
                 fetching: false,
+                initialized: false,
                 user: action.payload.user,
             };
         case AuthActionTypes.REGISTER_FAILED:

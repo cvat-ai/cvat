@@ -14,7 +14,9 @@ import {
     SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedQualitySettingsData,
+    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
+    SerializedQualitySettingsData, SerializedInvitationData, SerializedCloudStorage,
+    SerializedFramesMetaData, SerializedCollection,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -261,6 +263,15 @@ Axios.interceptors.request.use((reqConfig) => {
         return reqConfig;
     }
 
+    // we want to get invitations from all organizations
+    const { backendAPI } = config;
+    const getInvitations = reqConfig.url.endsWith('/invitations') && reqConfig.method === 'get';
+    const acceptDeclineInvitation = reqConfig.url.startsWith(`${backendAPI}/invitations`) &&
+                                    (reqConfig.url.endsWith('/accept') || reqConfig.url.endsWith('/decline'));
+    if (getInvitations || acceptDeclineInvitation) {
+        return reqConfig;
+    }
+
     if (isResourceURL(reqConfig.url)) {
         return reqConfig;
     }
@@ -457,31 +468,26 @@ async function resetPassword(newPassword1: string, newPassword2: string, uid: st
 }
 
 async function acceptOrganizationInvitation(
-    username: string,
-    firstName: string,
-    lastName: string,
-    email: string,
-    password: string,
-    confirmations: Record<string, string>,
     key: string,
-): Promise<SerializedAcceptInvitation> {
+): Promise<string> {
     let response = null;
     let orgSlug = null;
     try {
-        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`, {
-            username,
-            first_name: firstName,
-            last_name: lastName,
-            password1: password,
-            password2: password,
-            confirmations,
-        });
+        response = await Axios.post(`${config.backendAPI}/invitations/${key}/accept`);
         orgSlug = response.data.organization_slug;
     } catch (errorData) {
         throw generateError(errorData);
     }
 
     return orgSlug;
+}
+
+async function declineOrganizationInvitation(key: string): Promise<void> {
+    try {
+        await Axios.post(`${config.backendAPI}/invitations/${key}/decline`);
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
 }
 
 async function getSelf(): Promise<SerializedUser> {
@@ -569,6 +575,8 @@ async function healthCheck(
 export interface ServerRequestConfig {
     fetchAll: boolean,
 }
+
+export const sleep = (time: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, time));
 
 const defaultRequestConfig = {
     fetchAll: false,
@@ -1311,7 +1319,7 @@ async function createTask(
 async function getJobs(
     filter: JobsFilter = {},
     aggregate = false,
-): Promise<{ results: SerializedJob[], count: number }> {
+): Promise<SerializedJob[] & { count: number }> {
     const { backendAPI } = config;
     const id = filter.id || null;
 
@@ -1319,30 +1327,30 @@ async function getJobs(
     try {
         if (id !== null) {
             response = await Axios.get(`${backendAPI}/jobs/${id}`);
-            return ({
-                results: [response.data],
-                count: 1,
-            });
+            return Object.assign([response.data], { count: 1 });
         }
 
         if (aggregate) {
-            return await fetchAll(`${backendAPI}/jobs`, {
-                ...filter,
-                ...enableOrganization(),
+            response = {
+                data: await fetchAll(`${backendAPI}/jobs`, {
+                    ...filter,
+                    ...enableOrganization(),
+                }),
+            };
+        } else {
+            response = await Axios.get(`${backendAPI}/jobs`, {
+                params: {
+                    ...filter,
+                    page_size: 12,
+                },
             });
         }
-
-        response = await Axios.get(`${backendAPI}/jobs`, {
-            params: {
-                ...filter,
-                page_size: 12,
-            },
-        });
     } catch (errorData) {
         throw generateError(errorData);
     }
 
-    return response.data;
+    response.data.results.count = response.data.count;
+    return response.data.results;
 }
 
 async function getIssues(filter) {
@@ -1584,29 +1592,12 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality, retry 
     }
 }
 
-export interface RawFramesMetaData {
-    chunk_size: number;
-    deleted_frames: number[];
-    included_frames: number[];
-    frame_filter: string;
-    frames: {
-        width: number;
-        height: number;
-        name: string;
-        related_files: number;
-    }[];
-    image_quality: number;
-    size: number;
-    start_frame: number;
-    stop_frame: number;
-}
-
-async function getMeta(session, jid): Promise<RawFramesMetaData> {
+async function getMeta(session: 'job' | 'task', id: number): Promise<SerializedFramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/${session}s/${jid}/data/meta`);
+        response = await Axios.get(`${backendAPI}/${session}s/${id}/data/meta`);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1614,12 +1605,16 @@ async function getMeta(session, jid): Promise<RawFramesMetaData> {
     return response.data;
 }
 
-async function saveMeta(session, jid, meta) {
+async function saveMeta(
+    session: 'job' | 'task',
+    id: number,
+    meta: Partial<SerializedFramesMetaData>,
+): Promise<SerializedFramesMetaData> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.patch(`${backendAPI}/${session}s/${jid}/data/meta`, meta);
+        response = await Axios.patch(`${backendAPI}/${session}s/${id}/data/meta`, meta);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -1627,8 +1622,10 @@ async function saveMeta(session, jid, meta) {
     return response.data;
 }
 
-// Session is 'task' or 'job'
-async function getAnnotations(session, id) {
+async function getAnnotations(
+    session: 'task' | 'job',
+    id: number,
+): Promise<SerializedCollection> {
     const { backendAPI } = config;
 
     let response = null;
@@ -1640,11 +1637,15 @@ async function getAnnotations(session, id) {
     return response.data;
 }
 
-// Session is 'task' or 'job'
-async function updateAnnotations(session, id, data, action) {
+async function updateAnnotations(
+    session: 'task' | 'job',
+    id: number,
+    data: SerializedCollection,
+    action: 'create' | 'update' | 'delete' | 'put',
+): Promise<SerializedCollection> {
     const { backendAPI } = config;
     const url = `${backendAPI}/${session}s/${id}/annotations`;
-    const params = {};
+    const params: Record<string, string> = {};
     let method: string;
 
     if (action.toUpperCase() === 'PUT') {
@@ -1863,7 +1864,7 @@ async function updateCloudStorage(id, storageDetail) {
     }
 }
 
-async function getCloudStorages(filter = {}) {
+async function getCloudStorages(filter = {}): Promise<SerializedCloudStorage[] & { count: number }> {
     const { backendAPI } = config;
 
     let response = null;
@@ -2050,12 +2051,29 @@ async function deleteOrganizationMembership(membershipId: number): Promise<void>
     }
 }
 
-async function getMembershipInvitation(id) {
+async function getMembershipInvitations(
+    filter: { page?: number, filter?: string, key?: string },
+): Promise<{ results: SerializedInvitationData[], count: number }> {
     const { backendAPI } = config;
 
     let response = null;
     try {
-        response = await Axios.get(`${backendAPI}/invitations/${id}`);
+        const key = filter.key || null;
+
+        if (key) {
+            response = await Axios.get(`${backendAPI}/invitations/${key}`);
+            return ({
+                results: [response.data],
+                count: 1,
+            });
+        }
+
+        response = await Axios.get(`${backendAPI}/invitations`, {
+            params: {
+                ...filter,
+                page_size: 11,
+            },
+        });
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
@@ -2434,13 +2452,14 @@ export default Object.freeze({
         create: createOrganization,
         update: updateOrganization,
         members: getOrganizationMembers,
-        invitation: getMembershipInvitation,
+        invitations: getMembershipInvitations,
         delete: deleteOrganization,
         invite: inviteOrganizationMembers,
         resendInvitation: resendOrganizationInvitation,
         updateMembership: updateOrganizationMembership,
         deleteMembership: deleteOrganizationMembership,
         acceptInvitation: acceptOrganizationInvitation,
+        declineInvitation: declineOrganizationInvitation,
     }),
 
     webhooks: Object.freeze({

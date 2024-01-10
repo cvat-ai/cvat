@@ -71,15 +71,15 @@ allow {
     utils.has_perm(utils.BUSINESS)
 }
 
-allow {
-    input.scope == utils.LIST
-}
-
 filter := [] { # Django Q object to filter list of entries
     utils.is_admin
 } else := qobject {
     user := input.auth.user
-    qobject := [ {"owner_id": user.id}, {"members__user_id": user.id}, "|" ]
+    qobject := [{"members__user_id": user.id}, {"members__is_active": true}, "&", {"owner_id": user.id}, "|" ]
+}
+
+allow {
+    input.scope == utils.LIST
 }
 
 allow {
