@@ -14,6 +14,8 @@ import LoginForm, { LoginData } from './login-form';
 interface LoginPageComponentProps {
     fetching: boolean;
     renderResetPassword: boolean;
+    renderRegistrationComponent: boolean;
+    renderBasicLoginComponent: boolean;
     hasEmailVerificationBeenSent: boolean;
     onLogin: (credential: string, password: string) => void;
 }
@@ -21,13 +23,13 @@ interface LoginPageComponentProps {
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
     const history = useHistory();
     const {
-        fetching, renderResetPassword, hasEmailVerificationBeenSent, onLogin,
+        fetching, renderResetPassword, renderRegistrationComponent, renderBasicLoginComponent,
+        hasEmailVerificationBeenSent, onLogin,
     } = props;
 
     if (hasEmailVerificationBeenSent) {
         history.push('/auth/email-verification-sent');
     }
-
     return (
         <SigningLayout>
             <Col {...formSizes.wrapper}>
@@ -36,6 +38,8 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                         <LoginForm
                             fetching={fetching}
                             renderResetPassword={renderResetPassword}
+                            renderRegistrationComponent={renderRegistrationComponent}
+                            renderBasicLoginComponent={renderBasicLoginComponent}
                             onSubmit={(loginData: LoginData): void => {
                                 onLogin(loginData.credential, loginData.password);
                             }}

@@ -11,6 +11,8 @@ interface StateToProps {
     fetching: boolean;
     renderResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
+    renderRegistrationComponent: boolean;
+    renderBasicLoginComponent: boolean;
 }
 
 interface DispatchToProps {
@@ -20,7 +22,9 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     return {
         fetching: state.auth.fetching,
-        renderResetPassword: state.auth.allowResetPassword,
+        renderResetPassword: state.serverAPI.isPasswordResetEnabled,
+        renderRegistrationComponent: state.serverAPI.isRegistrationEnabled,
+        renderBasicLoginComponent: state.serverAPI.isBasicLoginEnabled,
         hasEmailVerificationBeenSent: state.auth.hasEmailVerificationBeenSent,
     };
 }

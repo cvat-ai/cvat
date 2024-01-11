@@ -1841,6 +1841,17 @@ async function installedApps() {
     }
 }
 
+async function getApiSchema() {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/schema/?scheme=json`);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function createCloudStorage(storageDetail) {
     const { backendAPI } = config;
 
@@ -2352,6 +2363,7 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
+        apiSchema: getApiSchema,
     }),
 
     projects: Object.freeze({

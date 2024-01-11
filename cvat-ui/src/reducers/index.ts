@@ -18,11 +18,7 @@ export interface AuthState {
     initialized: boolean;
     fetching: boolean;
     user: any;
-    authActionsFetching: boolean;
-    authActionsInitialized: boolean;
     showChangePasswordDialog: boolean;
-    allowChangePassword: boolean;
-    allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
 }
 
@@ -345,6 +341,16 @@ export interface AboutState {
     initialized: boolean;
 }
 
+export interface ServerAPIState {
+    schema: any;
+    fetching: boolean;
+    initialized: boolean;
+    isRegistrationEnabled: boolean;
+    isBasicLoginEnabled: boolean;
+    isPasswordResetEnabled: boolean;
+    isPasswordChangeEnabled: boolean;
+}
+
 export interface UserAgreement {
     name: string;
     urlDisplayText: string;
@@ -434,7 +440,9 @@ export interface NotificationsState {
             changePassword: null | ErrorState;
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
-            loadAuthActions: null | ErrorState;
+        };
+        serverAPI: {
+            fetching: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;
@@ -966,6 +974,7 @@ export interface CombinedState {
     invitations: InvitationsState;
     webhooks: WebhooksState;
     analytics: AnalyticsState;
+    serverAPI: ServerAPIState;
 }
 
 export interface Indexable {
