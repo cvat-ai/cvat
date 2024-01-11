@@ -977,7 +977,7 @@ def export(db_instance, request, queue_name):
                         return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
                     elif not os.path.exists(file_path):
-                        return Response('Result file does not exists in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
                     filename = filename or build_backup_file_name(
                         class_name=obj_type,

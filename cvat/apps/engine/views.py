@@ -20,7 +20,7 @@ from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Model
+from django.db.models import Count
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, HttpRequest, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
@@ -2924,7 +2924,7 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
     return Response(status=status.HTTP_202_ACCEPTED)
 
 def _export_annotations(
-    db_instance: Model,
+    db_instance: models.Project | models.Task | models.Job,
     rq_id: str,
     request: HttpRequest,
     format_name: str,
@@ -2960,7 +2960,7 @@ def _export_annotations(
         last_instance_update_time = max(tasks_update + [last_instance_update_time])
 
     timestamp = datetime.strftime(last_instance_update_time, "%Y_%m_%d_%H_%M_%S")
-    are_annotations_exported = 'annotations' in rq_id
+    is_annotation_file = rq_id.startswith('export:annotations')
 
     if rq_job:
         rq_request = rq_job.meta.get('request', None)
@@ -2982,7 +2982,7 @@ def _export_annotations(
                     if not file_path:
                         return Response('A result for exporting job was not found for finished RQ job', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                     elif not osp.exists(file_path):
-                        return Response('Result file does not exists in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        return Response('The result file does not exist in export cache', status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
                     if action == "download":
                         filename = filename or \
@@ -2991,7 +2991,7 @@ def _export_annotations(
                                 identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
                                 timestamp=timestamp,
                                 format_name=format_name,
-                                is_annotation_file=are_annotations_exported,
+                                is_annotation_file=is_annotation_file,
                                 extension=osp.splitext(file_path)[1]
                             )
 
@@ -3043,7 +3043,7 @@ def _export_annotations(
             identifier=db_instance.name if isinstance(db_instance, (Task, Project)) else db_instance.id,
             timestamp=timestamp,
             format_name=format_name,
-            is_annotation_file=are_annotations_exported,
+            is_annotation_file=is_annotation_file,
         )
         func_args = (db_storage, filename, filename_pattern, callback) + func_args
 
