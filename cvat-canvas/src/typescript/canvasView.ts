@@ -363,7 +363,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onEditDone = (state: any, points: number[], rotation?: number): void => {
         this.canvas.style.cursor = '';
-        if (state && points && (state.shapeType === 'mask' && points.length > 5)) {
+        const emptyMask = state && points && state.shapeType === 'mask' && points.length < 6;
+
+        if (state && points && !emptyMask) {
             const event: CustomEvent = new CustomEvent('canvas.edited', {
                 bubbles: false,
                 cancelable: true,
