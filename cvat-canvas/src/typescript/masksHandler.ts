@@ -323,10 +323,6 @@ export class MasksHandlerImpl implements MasksHandler {
         const drawnObjects = [];
         const checkEmptyDebounced = debounce(this.checkEmpty.bind(this), 250);
         return new Proxy(drawnObjects, {
-            deleteProperty(target, property) {
-                delete target[property];
-                return true;
-            },
             set(target, property, value) {
                 target[property] = value;
                 checkEmptyDebounced();
