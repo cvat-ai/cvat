@@ -253,7 +253,7 @@ cvat:
     additionalEnv: []
     # Example:
     # - name: TEST
-    #  value: "test"
+    #   value: "test"
     additionalVolumes: []
     # Example(assumes that pvc was already created):
     # - name: tmp
