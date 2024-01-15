@@ -58,7 +58,7 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           volumeMounts:
-          - name: cvat-kvrocks-data
+          - name: {{ .Release.Name }}-kvrocks-data
             mountPath: /var/lib/kvrocks/data
           {{- with .Values.cvat.kvrocks.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
