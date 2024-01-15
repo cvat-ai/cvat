@@ -187,7 +187,7 @@ CVAT includes the following licenses:
 | [**LGPL License (FFmpeg)**](https://www.ffmpeg.org)    | Cloud and Self-hosted  | Incorporates LGPL-licensed components from the FFmpeg project. Users should verify if their use of FFmpeg requires additional licenses. CVAT.ai Corporation does not provide these licenses and is not liable for any related licensing fees. |
 | **Commercial License**                                 | Self-hosted Enterprise | For commercial use of the Enterprise solution of CVAT, a separate commercial license is applicable. This is tailored for businesses and commercial entities.                                                                                  |
 | [**Terms of Use**](https://www.cvat.ai/terms-of-use)   | Cloud and Self-hosted  | Outlines the terms of use and confidential information handling for CVAT. Important for understanding the legal framework of using the platform.                                                                                              |
-| [**Privacy Policy**](https://www.cvat.ai/privacy)      | Cloud                  | Our Privacy Policy governs your visit to https://cvat.ai and your use of https://app.cvat.ai, and explains how we collect, safeguard and disclose information that results from your use of our Service.                                      |
+| [**Privacy Policy**](https://www.cvat.ai/privacy)      | Cloud                  | Our Privacy Policy governs your visit to <https://cvat.ai> and your use of <https://app.cvat.ai>, and explains how we collect, safeguard and disclose information that results from your use of our Service.                                      |
 
 <!--lint enable maximum-line-length-->
 
