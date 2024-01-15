@@ -165,12 +165,19 @@ To see the list, Go to **Username** > **Organization** > **Invitations**.
 
 You will see the page with the list of invitations.
 
+
+You will also see pop-up notification the link to the page with
+invitations list.
+
 ### Resending and removing invitations
 
 The organization owner and maintainers can remove members, by
 clicking on the three dots, and selecting **Remove invitation**
 
-![](/images/recend-remove-invitation.jpg)
+![](/images/resend-remove-invitation.jpg)
+
+The organization owner can remove members, by
+clicking on the **Bin** icon.
 
 ## Delete organization
 
