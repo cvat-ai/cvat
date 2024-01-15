@@ -157,7 +157,7 @@ To invite members to **Organization** do the following:
 
 ### Invitations list
 
-User can see the list of active invitation.
+User can see the list of active invitations.
 
 To see the list, Go to **Username** > **Organization** > **Invitations**.
 
