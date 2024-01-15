@@ -797,10 +797,11 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
                     .then((response) => {
                         const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
                         const { status } = response;
-                        if (status === 201) params.action = 'download';
-                        if (status === 202 || (isCloudStorage && status === 201)) {
+
+                        if (status === 202) {
                             setTimeout(request, 3000);
                         } else if (status === 201) {
+                            params.action = 'download';
                             resolve(`${baseURL}?${new URLSearchParams(params).toString()}`);
                         } else if (isCloudStorage && status === 200) {
                             resolve();
@@ -927,10 +928,11 @@ async function backupTask(id: number, targetStorage: Storage, useDefaultSettings
                 });
                 const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
                 const { status } = response;
-                if (status === 201) params.action = 'download';
-                if (status === 202 || (isCloudStorage && status === 201)) {
+
+                if (status === 202) {
                     setTimeout(request, 3000);
                 } else if (status === 201) {
+                    params.action = 'download';
                     resolve(`${url}?${new URLSearchParams(params).toString()}`);
                 } else if (isCloudStorage && status === 200) {
                     resolve();
@@ -1032,10 +1034,11 @@ async function backupProject(
                 });
                 const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
                 const { status } = response;
-                if (status === 201) params.action = 'download';
-                if (status === 202 || (isCloudStorage && status === 201)) {
+
+                if (status === 202) {
                     setTimeout(request, 3000);
                 } else if (status === 201) {
+                    params.action = 'download';
                     resolve(`${url}?${new URLSearchParams(params).toString()}`);
                 } else if (isCloudStorage && status === 200) {
                     resolve();
