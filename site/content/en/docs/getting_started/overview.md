@@ -25,9 +25,9 @@ CVAT offers two versions:
   for setup.
 
 - **Self-hosted CVAT Enterprise Edition**: We provide [**Enterprise-level support**](https://www.cvat.ai/pricing/on-prem)
- for this version, **including premium features** like **SSO**, **LDAP**, advanced integrations with
- [**Roboflow and HuggingFace**](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models),
-and **advanced analytics**. We also offer **professional training** and **24-hour SLA support**.
+  for this version, **including premium features** like **SSO**, **LDAP**, advanced integrations with
+  [**Roboflow and HuggingFace**](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models),
+  and **advanced analytics**. We also offer **professional training** and **24-hour SLA support**.
 
 See:
 
@@ -76,7 +76,7 @@ image and video labeling:
 | [**Attribute Annotation Mode**](/docs/manual/advanced/attribute-annotation-mode-advanced/) | Useful for adding detailed information to objects, like color, size, or other specific characteristics.        |
 | [**Annotation with Rectangles**](/docs/manual/advanced/annotation-with-rectangles/)        | Best for simple object detection where objects have a box-like shape, such as detecting windows in a building. |
 | [**Annotation with Polygons**](/docs/manual/advanced/annotation-with-polygons/)            | Suited for complex shapes in images, like outlining geographical features in maps or detailed product shapes.  |
-| [**Annotation with Polylines**](/docs/manual/advanced/annotation-with-polylines/)           | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
+| [**Annotation with Polylines**](/docs/manual/advanced/annotation-with-polylines/)          | Great for annotating linear objects like roads, pathways, or limbs in pose estimation.                         |
 | [**Annotation with Ellipses**](/docs/manual/advanced/annotation-with-ellipses/)            | Ideal for objects like plates, balls, or eyes, where a circular or oval annotation is needed.                  |
 | [**Annotation with Cuboids**](/docs/manual/advanced/annotation-with-cuboids/)              | Useful for 3D objects in 2D images, like boxes or furniture in room layouts.                                   |
 | [**Annotation with Skeletons**](/docs/manual/advanced/skeletons/)                          | Ideal for human pose estimation, animation, and movement analysis in sports or medical fields.                 |
@@ -102,9 +102,9 @@ Below is a detailed table of the supported algorithms and the platforms they ope
 
 <!--lint disable maximum-line-length-->
 
-| Algorithm Name                                                                                          | Category   | Framework  | CPU Support | GPU Support |
-| ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | ----------- | ----------- |
-| [Segment Anything](https://github.com/opencv/cvat/tree/develop/serverless/pytorch/facebookresearch/sam/nuclio)                                   | Interactor | PyTorch    | ✔️          | ✔️          |
+| Algorithm Name                                                                                                                                     | Category   | Framework  | CPU Support | GPU Support |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------- | ----------- | ----------- |
+| [Segment Anything](https://github.com/opencv/cvat/tree/develop/serverless/pytorch/facebookresearch/sam/nuclio)                                     | Interactor | PyTorch    | ✔️          | ✔️          |
 | [Deep Extreme Cut](https://github.com/opencv/cvat/tree/develop/serverless/openvino/dextr/nuclio)                                                   | Interactor | OpenVINO   | ✔️          |             |
 | [Faster RCNN](https://github.com/opencv/cvat/tree/develop/serverless/openvino/omz/public/faster_rcnn_inception_resnet_v2_atrous_coco/nuclio)       | Detector   | OpenVINO   | ✔️          |             |
 | [Mask RCNN](https://github.com/opencv/cvat/tree/develop/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | Detector   | OpenVINO   | ✔️          |             |
@@ -120,7 +120,7 @@ Below is a detailed table of the supported algorithms and the platforms they ope
 | [Inside-Outside Guidance](https://github.com/opencv/cvat/tree/develop/serverless/pytorch/shiyinzhang/iog/nuclio)                                   | Interactor | PyTorch    | ✔️          |             |
 | [Faster RCNN](https://github.com/opencv/cvat/tree/develop/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | Detector   | TensorFlow | ✔️          | ✔️          |
 | [Mask RCNN](https://github.com/opencv/cvat/tree/develop/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | Detector   | TensorFlow | ✔️          | ✔️          |
-| [RetinaNet](https://github.com/opencv/cvat/tree/develop/serverless/pytorch/facebookresearch/detectron2/retinanet_r101/nuclio)                       | Detector   | PyTorch    | ✔️          | ✔️          |
+| [RetinaNet](https://github.com/opencv/cvat/tree/develop/serverless/pytorch/facebookresearch/detectron2/retinanet_r101/nuclio)                      | Detector   | PyTorch    | ✔️          | ✔️          |
 | [Face Detection](https://github.com/opencv/cvat/tree/develop/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | Detector   | OpenVINO   | ✔️          |             |
 
 <!--lint enable maximum-line-length-->
@@ -140,7 +140,6 @@ Start here if you're unsure where to begin with CVAT.
 | [**Subscription Management**](/docs/enterprise/subscription-managment/)                   | Learn how to [**choose a plan**](https://www.cvat.ai/post/cvat-ai-pricing-plans-choosing-the-right-plan-for-your-needs), subscribe, and manage your subscription effectively.                                                                                       |
 | [**XML Annotation Format**](/docs/manual/advanced/xml_format/)                            | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                                                                 |
 
-
 ### Self-Hosted
 
 | Name                                                                                           | Description                                                                                                                                                                                                                |
@@ -152,7 +151,7 @@ Start here if you're unsure where to begin with CVAT.
 | [**Command Line Tool**](/docs/api_sdk/cli/)                                                    | This tool offers a straightforward command line interface for managing CVAT tasks. Currently featuring basic functionalities, it has the potential to develop into a more advanced administration tool for CVAT.           |
 | [**XML Annotation Format**](/docs/manual/advanced/xml_format/)                                 | Detailed documentation on the XML format used for annotations in CVAT essential for understanding data structure and compatibility.                                                                                        |
 | [**AWS Deployment Guide**](/docs/administration/basics/aws-deployment-guide/)                  | A step-by-step guide for deploying CVAT on Amazon Web Services, covering all necessary procedures and tips.                                                                                                                |
-| [**Frequently Asked Questions**](/docs/faq/)                                              | This section addresses common queries and provides helpful answers and insights about using CVAT.                                                                                                                          |
+| [**Frequently Asked Questions**](/docs/faq/)                                                   | This section addresses common queries and provides helpful answers and insights about using CVAT.                                                                                                                          |
 
 <!--lint enable maximum-line-length-->
 
@@ -186,9 +185,9 @@ CVAT includes the following licenses:
 | ------------------------------------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [**MIT License**](https://opensource.org/licenses/MIT) | Self-hosted            | This code is distributed under the MIT License, a permissive free software license that allows for broad use, modification, and distribution.                                                                                                 |
 | [**LGPL License (FFmpeg)**](https://www.ffmpeg.org)    | Cloud and Self-hosted  | Incorporates LGPL-licensed components from the FFmpeg project. Users should verify if their use of FFmpeg requires additional licenses. CVAT.ai Corporation does not provide these licenses and is not liable for any related licensing fees. |
-| **Commercial License**                            | Self-hosted Enterprise | For commercial use of the Enterprise solution of CVAT, a separate commercial license is applicable. This is tailored for businesses and commercial entities.                                                                                  |
+| **Commercial License**                                 | Self-hosted Enterprise | For commercial use of the Enterprise solution of CVAT, a separate commercial license is applicable. This is tailored for businesses and commercial entities.                                                                                  |
 | [**Terms of Use**](https://www.cvat.ai/terms-of-use)   | Cloud and Self-hosted  | Outlines the terms of use and confidential information handling for CVAT. Important for understanding the legal framework of using the platform.                                                                                              |
-|[**Privacy Policy**](https://www.cvat.ai/privacy)| Cloud | Our Privacy Policy governs your visit to https://cvat.ai and your use of https://app.cvat.ai, and explains how we collect, safeguard and disclose information that results from your use of our Service.|
+| [**Privacy Policy**](https://www.cvat.ai/privacy)      | Cloud                  | Our Privacy Policy governs your visit to https://cvat.ai and your use of https://app.cvat.ai, and explains how we collect, safeguard and disclose information that results from your use of our Service.                                      |
 
 <!--lint enable maximum-line-length-->
 
