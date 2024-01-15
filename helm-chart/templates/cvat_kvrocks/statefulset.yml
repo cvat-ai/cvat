@@ -1,6 +1,6 @@
 {{- if .Values.cvat.kvrocks.enabled }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ .Release.Name }}-kvrocks
   namespace: {{ .Release.Namespace }}
@@ -9,9 +9,7 @@ metadata:
     app: cvat-app
     tier: kvrocks
 spec:
-  replicas: {{ .Values.cvat.kvrocks.replicas }}
-  strategy:
-    type: Recreate
+  replicas: 1
   selector:
     matchLabels:
       {{- include "cvat.labels" . | nindent 6 }}
@@ -26,10 +24,10 @@ spec:
         {{- with .Values.cvat.kvrocks.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.cvat.kvrocks.annotations }}
+      {{- with .Values.cvat.kvrocks.annotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
-        {{- end }}
+      {{- end }}
     spec:
       containers:
         - name: cvat-kvrocks-app-container
@@ -42,7 +40,7 @@ spec:
             - "$(CVAT_REDIS_ONDISK_PASSWORD)"
           {{- with .Values.cvat.kvrocks.resources }}
           resources:
-          {{- toYaml . | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
           - containerPort: 6666
@@ -57,24 +55,18 @@ spec:
                 {{- end }}
                 key: password
           {{- with .Values.cvat.kvrocks.additionalEnv }}
-          env:
           {{- toYaml . | nindent 10 }}
           {{- end }}
           volumeMounts:
-          - mountPath: /var/lib/kvrocks/data
-            name: cvat-kvrocks-data
+          - name: cvat-kvrocks-data
+            mountPath: /var/lib/kvrocks/data
           {{- with .Values.cvat.kvrocks.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+      {{- with .Values.cvat.kvrocks.additionalVolumes }}
       volumes:
-        {{- if .Values.cvat.kvrocks.defaultStorage.enabled }}
-        - name: cvat-kvrocks-data
-          persistentVolumeClaim:
-            claimName: "{{ .Release.Name }}-kvrocks-data"
-        {{- end }}
-        {{- with .Values.cvat.kvrocks.additionalVolumes }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
+      {{- end }}
       {{- with .Values.cvat.kvrocks.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
@@ -87,4 +79,29 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+  {{- if .Values.cvat.kvrocks.defaultStorage.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ .Release.Name }}-kvrocks-data
+      namespace: {{ .Release.Namespace }}
+      annotations:
+        helm.sh/resource-policy: keep
+      labels:
+        {{- include "cvat.labels" . | nindent 8 }}
+        app: cvat-app
+        tier: kvroocks
+    spec:
+      accessModes:
+      {{- if .Values.cvat.kvrocks.defaultStorage.accessModes }}
+      {{ .Values.cvat.kvrocks.defaultStorage.accessModes | toYaml | nindent 6 }}
+      {{- else }}
+      - ReadWriteOnce
+      {{- end }}
+      {{-  if .Values.cvat.kvrocks.defaultStorage.storageClassName }}
+      storageClassName: {{ .Values.cvat.kvrocks.defaultStorage.storageClassName }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.cvat.kvrocks.defaultStorage.size }}
+  {{- end}}
 {{- end }}

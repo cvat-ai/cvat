@@ -181,7 +181,7 @@ cvat:
     replicas: 1
     image: openpolicyagent/opa
     tag: 0.45.0-rootless
-    imagepullploicy: IfNotPresent
+    imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
@@ -225,16 +225,15 @@ cvat:
   kvrocks:
     enabled: true
     external:
-      host: 127.0.0.1
+      host: kvrocks-external.localdomain
     existingSecret: "cvat-kvrocks-secret"
     secret:
       create: true
       name: cvat-kvrocks-secret
       password: cvat_kvrocks
-    replicas: 1
     image: apache/kvrocks
     tag: 2.7.0
-    imagepullploicy: IfNotPresent
+    imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
@@ -242,7 +241,7 @@ cvat:
     resources: {}
     affinity: {}
     tolerations: []
-    # nodeAffinity:
+    nodeAffinity: {}
     #   requiredDuringSchedulingIgnoredDuringExecution:
     #     nodeSelectorTerms:
     #     - matchExpressions:
@@ -253,7 +252,6 @@ cvat:
     #         - e2e-az2
     additionalEnv: []
     # Example:
-    #  - name: volume-from-secret
     # - name: TEST
     #  value: "test"
     additionalVolumes: []
