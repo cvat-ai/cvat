@@ -2193,7 +2193,7 @@ export class MaskShape extends Shape {
     {
         clientIDs: number[],
         undo: Function, redo: Function,
-        emptyMaskOccured: boolean,
+        emptyMaskOccurred: boolean,
     } {
         if (frame !== this.frame) {
             throw new ArgumentError(
@@ -2235,7 +2235,7 @@ export class MaskShape extends Shape {
             }
         }
 
-        let emptyMaskOccured = false;
+        let emptyMaskOccurred = false;
         let stashedPoints = [];
         const undo = (): void => {
             for (const [index, object] of Object.values(updatedObjects).entries()) {
@@ -2255,7 +2255,7 @@ export class MaskShape extends Shape {
                 object.points = points;
                 if (points.length < 2) {
                     object.removed = true;
-                    emptyMaskOccured = true;
+                    emptyMaskOccurred = true;
                 }
                 object.updated = Date.now();
             }
@@ -2264,7 +2264,7 @@ export class MaskShape extends Shape {
 
         return {
             clientIDs: Object.keys(updatedObjects).map((clientID) => +clientID),
-            emptyMaskOccured,
+            emptyMaskOccurred,
             undo,
             redo,
         };

@@ -1007,9 +1007,7 @@ export default class Collection {
                 }
 
                 if (state.shapeType === 'mask' && state.points.length < 6) {
-                    throw new ArgumentError(
-                        'Could not create empty mask',
-                    );
+                    throw new ArgumentError('Could not create empty mask');
                 }
 
                 if (state.objectType === 'shape') {
@@ -1104,22 +1102,22 @@ export default class Collection {
         const additionalUndo = [];
         const additionalRedo = [];
         const additionalClientIDs = [];
-        let globalEmptyMaskOccured = false;
+        let globalEmptyMaskOccurred = false;
         for (const object of importedArray) {
             if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels.enabled) {
                 const {
                     clientIDs,
-                    emptyMaskOccured,
+                    emptyMaskOccurred,
                     undo: undoWithUnderlyingPixels,
                     redo: redoWithUnderlyingPixels,
                 } = (object as MaskShape).removeUnderlyingPixels(object.frame);
                 additionalUndo.push(undoWithUnderlyingPixels);
                 additionalRedo.push(redoWithUnderlyingPixels);
                 additionalClientIDs.push(clientIDs);
-                globalEmptyMaskOccured = emptyMaskOccured || globalEmptyMaskOccured;
+                globalEmptyMaskOccurred = emptyMaskOccurred || globalEmptyMaskOccurred;
             }
         }
-        if (config.removeUnderlyingMaskPixels.enabled && globalEmptyMaskOccured) {
+        if (config.removeUnderlyingMaskPixels.enabled && globalEmptyMaskOccurred) {
             config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
         }
         if (objectStates.length) {
