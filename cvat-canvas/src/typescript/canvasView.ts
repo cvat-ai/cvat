@@ -283,9 +283,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         }
 
-        const emptyMask = data && data.shapeType === 'mask' && data.points.length < 6;
-
-        if (data && !emptyMask) {
+        if (data) {
             const { clientID, elements } = data as any;
             const points = data.points || elements.map((el: any) => el.points).flat();
             if (typeof clientID === 'number') {
@@ -318,7 +316,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             this.canvas.dispatchEvent(event);
-        } else if (!continueDraw || emptyMask) {
+        } else if (!continueDraw) {
             this.canvas.dispatchEvent(new CustomEvent('canvas.canceled', {
                 bubbles: false,
                 cancelable: true,
@@ -363,9 +361,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onEditDone = (state: any, points: number[], rotation?: number): void => {
         this.canvas.style.cursor = '';
-        const emptyMask = state && points && state.shapeType === 'mask' && points.length < 6;
 
-        if (state && points && !emptyMask) {
+        if (state && points) {
             const event: CustomEvent = new CustomEvent('canvas.edited', {
                 bubbles: false,
                 cancelable: true,

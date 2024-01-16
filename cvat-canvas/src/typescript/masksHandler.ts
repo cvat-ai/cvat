@@ -604,11 +604,17 @@ export class MasksHandlerImpl implements MasksHandler {
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
                     const rle = zipChannels(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
-                    this.onDrawDone({
-                        shapeType: this.drawData.shapeType,
-                        points: rle,
-                        ...(Number.isInteger(this.redraw) ? { clientID: this.redraw } : {}),
-                    }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
+
+                    const isEmptyMask = rle.length < 6;
+                    if (isEmptyMask) {
+                        this.onDrawDone(null);
+                    } else {
+                        this.onDrawDone({
+                            shapeType: this.drawData.shapeType,
+                            points: rle,
+                            ...(Number.isInteger(this.redraw) ? { clientID: this.redraw } : {}),
+                        }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
+                    }
                 }
             } finally {
                 this.releaseDraw();
@@ -675,7 +681,12 @@ export class MasksHandlerImpl implements MasksHandler {
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
                     const rle = zipChannels(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
-                    this.onEditDone(this.editData.state, rle);
+                    const isEmptyMask = rle.length < 6;
+                    if (isEmptyMask) {
+                        this.onEditDone(null, null);
+                    } else {
+                        this.onEditDone(this.editData.state, rle);
+                    }
                 }
             } finally {
                 this.releaseEdit();
