@@ -10,6 +10,23 @@ function closeActionsModal() {
     cy.get('.cvat-action-runner-content').should('not.exist');
 }
 
+function runActionAndCancel() {
+    cy.get('.cvat-action-runner-run-btn').click();
+    cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
+    cy.get('.cvat-action-runner-run-btn').should('be.disabled');
+    cy.get('.cvat-action-runner-cancel-btn').should('have.text', 'Cancel').click();
+    cy.get('.cvat-action-runner-cancel-btn').click();
+    cy.get('.cvat-action-runner-progress').should('not.exist');
+    cy.get('.cvat-action-runner-run-btn').should('not.be.disabled');
+    cy.get('.cvat-action-runner-content').should('exist').and('be.visible');
+}
+
+function runActionAndWait() {
+    cy.get('.cvat-action-runner-run-btn').click();
+    cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
+    cy.get('.cvat-action-runner-progress').should('not.exist'); // wait until action ends
+}
+
 context('Testing annotations actions workflow', () => {
     let taskID = null;
     let jobID = null;
@@ -218,14 +235,7 @@ context('Testing annotations actions workflow', () => {
         it('Apply and cancel action, check buttons state and text', () => {
             cy.interactMenu('Run actions');
             cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', ACTION_NAME);
-            cy.get('.cvat-action-runner-run-btn').click();
-            cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
-            cy.get('.cvat-action-runner-run-btn').should('be.disabled');
-            cy.get('.cvat-action-runner-cancel-btn').should('have.text', 'Cancel').click();
-            cy.get('.cvat-action-runner-cancel-btn').click();
-            cy.get('.cvat-action-runner-progress').should('not.exist');
-            cy.get('.cvat-action-runner-run-btn').should('not.be.disabled');
-            cy.get('.cvat-action-runner-content').should('exist').and('be.visible');
+            runActionAndCancel();
             closeActionsModal();
         });
 
@@ -236,9 +246,7 @@ context('Testing annotations actions workflow', () => {
             cy.interactMenu('Run actions');
             cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', ACTION_NAME);
             cy.get('.cvat-action-runner-frames-predefined button').contains('From current').click();
-            cy.get('.cvat-action-runner-run-btn').click();
-            cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
-            cy.get('.cvat-action-runner-progress').should('not.exist'); // wait until action ends
+            runActionAndWait();
             closeActionsModal();
 
             frames.forEach((frame) => {
@@ -266,9 +274,7 @@ context('Testing annotations actions workflow', () => {
 
             cy.interactMenu('Run actions');
             cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', ACTION_NAME);
-            cy.get('.cvat-action-runner-run-btn').click();
-            cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
-            cy.get('.cvat-action-runner-progress').should('not.exist'); // wait until action ends
+            runActionAndWait();
             closeActionsModal();
 
             cy.clearFilters();
