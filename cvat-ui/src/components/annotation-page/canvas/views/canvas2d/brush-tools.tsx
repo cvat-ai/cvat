@@ -68,7 +68,7 @@ function BrushTools(): React.ReactPortal | null {
         DraggableArea,
     );
 
-    const configureBlockedTools = useCallback((configuration: Record<'eraser' | 'polygon-minus', boolean>) => {
+    const onBlockUpdated = useCallback((configuration: Record<'eraser' | 'polygon-minus', boolean>) => {
         setBlockedState(configuration);
     }, []);
 
@@ -101,7 +101,7 @@ function BrushTools(): React.ReactPortal | null {
                         size: brushSize,
                         form: brushForm,
                         color: label.color,
-                        configureBlockedTools,
+                        onBlockUpdated,
                     },
                     onUpdateConfiguration,
                 });
@@ -114,7 +114,7 @@ function BrushTools(): React.ReactPortal | null {
                         size: brushSize,
                         form: brushForm,
                         color: label.color,
-                        configureBlockedTools,
+                        onBlockUpdated,
                     },
                     onUpdateConfiguration,
                 });

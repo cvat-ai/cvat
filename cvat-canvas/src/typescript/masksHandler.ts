@@ -297,7 +297,7 @@ export class MasksHandlerImpl implements MasksHandler {
 
     private checkEmpty(): void {
         if (this.drawnObjects.length === 0) {
-            this.tool.configureBlockedTools({
+            this.tool.onBlockUpdated({
                 eraser: true,
                 'polygon-minus': true,
             });
@@ -313,13 +313,13 @@ export class MasksHandlerImpl implements MasksHandler {
         }
         const rle = zipChannels(imageData);
         const emptyMask = rle.length < 2;
-        this.tool.configureBlockedTools({
+        this.tool.onBlockUpdated({
             eraser: emptyMask,
             'polygon-minus': emptyMask,
         });
     }
 
-    private createDrawnObjectsArray(): (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image)[] {
+    private createDrawnObjectsArray(): MasksHandlerImpl['drawnObjects'] {
         const drawnObjects = [];
         const checkEmptyDebounced = debounce(this.checkEmpty.bind(this), 250);
         return new Proxy(drawnObjects, {

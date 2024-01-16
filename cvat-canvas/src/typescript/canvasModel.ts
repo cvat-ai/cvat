@@ -103,7 +103,7 @@ export interface BrushTool {
     color: string;
     form: 'circle' | 'square';
     size: number;
-    configureBlockedTools: (blockToolsConfiguration: Record<'eraser' | 'polygon-minus', boolean>) => void,
+    onBlockUpdated: (blockedTools: Record<'eraser' | 'polygon-minus', boolean>) => void,
 }
 
 export interface DrawData {
