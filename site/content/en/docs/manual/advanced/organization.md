@@ -17,9 +17,10 @@ See:
 - [Create new organization](#create-new-organization)
   - [Switching between organizations](#switching-between-organizations)
 - [Organization page](#organization-page)
-- [Invite members into organization](#invite-members-into-organization)
-  - [Inviting members with existing CVAT accounts](#inviting-members-with-existing-cvat-accounts)
-  - [Inviting members without CVAT accounts](#inviting-members-without-cvat-accounts)
+- [Invite members into organization: menu and roles](#invite-members-into-organization-menu-and-roles)
+  - [Inviting members to Organization](#inviting-members-to-organization)
+  - [Invitations list](#invitations-list)
+  - [Resending and removing invitations](#resending-and-removing-invitations)
 - [Delete organization](#delete-organization)
 
 ## Personal workspace
@@ -111,7 +112,7 @@ To go to the **Organization page**, do the following:
 
 ![](/images/image235.jpg)
 
-## Invite members into organization
+## Invite members into organization: menu and roles
 
 Invite members form is available from [Organization page](#organization-page).
 
@@ -136,21 +137,7 @@ Members of **Organization** will appear on the **Organization page**:
 The member of the organization can leave the organization
 by going to **Organization page** > **Leave organization**.
 
-The organization owner can remove members, by
-clicking on the **Bin** icon.
-
-### Inviting members with existing CVAT accounts
-
-To invite members to **Organization** do the following:
-
-1. Go to the [**Organization page**](#organization-page), and click **Invite members**.
-2. Fill in the form (see below).
-
-   ![](/images/image236.jpg)
-
-3. Click **Ok**.
-
-### Inviting members without CVAT accounts
+### Inviting members to Organization
 
 To invite members to **Organization** do the following:
 
@@ -164,12 +151,33 @@ To invite members to **Organization** do the following:
 
    ![](/images/invitation_to_org.jpg)
 
-5. Person must click the link and
-   [**set up an account**](/docs/manual/basics/registration/#user-registration).
+5. Person must click the link and:
+   1. If the invitee does not have the CVAT account, then [**set up an account**](/docs/manual/basics/registration/#user-registration).
+   2. If the invitee has a CVAT account, then log in to the account.
 
-Owners and maintainers can resend and remove invitations.
+### Invitations list
 
-![Resend revoke invitation](/images/remove-resend-inv.png)
+User can see the list of active invitations.
+
+To see the list, Go to **Username** > **Organization** > **Invitations**.
+
+![](/images/invitations_list.jpg)
+
+You will see the page with the list of invitations.
+
+
+You will also see pop-up notification the link to the page with
+invitations list.
+
+### Resending and removing invitations
+
+The organization owner and maintainers can remove members, by
+clicking on the three dots, and selecting **Remove invitation**
+
+![](/images/resend-remove-invitation.jpg)
+
+The organization owner can remove members, by
+clicking on the **Bin** icon.
 
 ## Delete organization
 
