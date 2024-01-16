@@ -42,7 +42,7 @@ context('Testing annotations actions workflow', () => {
 
         cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
             taskID = response.taskID;
-            [jobID] = response.jobID;
+            [jobID] = response.jobIDs;
 
             cy.intercept(`/api/labels?**job_id=${jobID}**`).as('getJobLabels');
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
