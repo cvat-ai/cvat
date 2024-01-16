@@ -28,6 +28,17 @@ Cypress.Commands.add('cancelAnnotationsAction', () => {
     cy.get('.cvat-action-runner-content').should('exist').and('be.visible');
 });
 
+Cypress.Commands.add('selectAnnotationsAction', (name) => {
+    cy.get('.cvat-action-runner-list .ant-select').click();
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden').within(() => {
+            cy.get('.rc-virtual-list-holder')
+                .contains('.ant-select-item-option', name)
+                .click();
+        });
+    cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', name);
+});
+
 Cypress.Commands.add('waitAnnotationsAction', () => {
     cy.get('.cvat-action-runner-progress').should('not.exist'); // wait until action ends
 });

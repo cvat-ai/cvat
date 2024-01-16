@@ -210,7 +210,7 @@ context('Testing annotations actions workflow', () => {
 
         it('Apply and cancel action, check buttons state and text', () => {
             cy.openAnnotationsActionsModal();
-            cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', ACTION_NAME);
+            cy.selectAnnotationsAction(ACTION_NAME);
             cy.runAnnotationsAction();
             cy.cancelAnnotationsAction();
             cy.closeAnnotationsActionsModal();
@@ -221,7 +221,7 @@ context('Testing annotations actions workflow', () => {
             cy.goCheckFrameNumber(middleFrame);
 
             cy.openAnnotationsActionsModal();
-            cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', ACTION_NAME);
+            cy.selectAnnotationsAction(ACTION_NAME);
             cy.get('.cvat-action-runner-frames-predefined button').contains('From current').click();
             cy.runAnnotationsAction();
             cy.waitAnnotationsAction();
@@ -251,7 +251,7 @@ context('Testing annotations actions workflow', () => {
             });
 
             cy.openAnnotationsActionsModal();
-            cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', ACTION_NAME);
+            cy.selectAnnotationsAction(ACTION_NAME);
             cy.runAnnotationsAction();
             cy.waitAnnotationsAction();
             cy.closeAnnotationsActionsModal();
