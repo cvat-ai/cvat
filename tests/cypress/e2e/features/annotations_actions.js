@@ -4,29 +4,6 @@
 
 /// <reference types="cypress" />
 
-function closeActionsModal() {
-    cy.get('.cvat-action-runner-cancel-btn').should('have.text', 'Close');
-    cy.get('.cvat-action-runner-cancel-btn').click();
-    cy.get('.cvat-action-runner-content').should('not.exist');
-}
-
-function runActionAndCancel() {
-    cy.get('.cvat-action-runner-run-btn').click();
-    cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
-    cy.get('.cvat-action-runner-run-btn').should('be.disabled');
-    cy.get('.cvat-action-runner-cancel-btn').should('have.text', 'Cancel').click();
-    cy.get('.cvat-action-runner-cancel-btn').click();
-    cy.get('.cvat-action-runner-progress').should('not.exist');
-    cy.get('.cvat-action-runner-run-btn').should('not.be.disabled');
-    cy.get('.cvat-action-runner-content').should('exist').and('be.visible');
-}
-
-function runActionAndWait() {
-    cy.get('.cvat-action-runner-run-btn').click();
-    cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
-    cy.get('.cvat-action-runner-progress').should('not.exist'); // wait until action ends
-}
-
 context('Testing annotations actions workflow', () => {
     let taskID = null;
     let jobID = null;
@@ -85,8 +62,7 @@ context('Testing annotations actions workflow', () => {
             const middleFrame = Math.round(latestFrameNumber / 2);
             cy.goCheckFrameNumber(middleFrame);
 
-            cy.interactMenu('Run actions');
-            cy.get('.cvat-action-runner-content').should('exist').and('be.visible');
+            cy.openAnnotationsActionsModal();
             cy.get('.cvat-action-runner-info').should('exist').and('be.visible');
             cy.get('.cvat-action-runner-list').should('exist').and('be.visible');
             cy.get('.cvat-action-runner-frames').should('exist').and('be.visible');
@@ -108,7 +84,7 @@ context('Testing annotations actions workflow', () => {
                     .last().should('have.value', frameTo);
             }
 
-            closeActionsModal();
+            cy.closeAnnotationsActionsModal();
         });
 
         it('Recommendation to save the job appears if there are unsaved changes', () => {
@@ -122,13 +98,13 @@ context('Testing annotations actions workflow', () => {
                 secondY: 450,
             });
 
-            cy.interactMenu('Run actions');
+            cy.openAnnotationsActionsModal();
             cy.intercept(`/api/jobs/${jobID}/annotations?**action=create**`).as('createAnnotationsRequest');
             cy.get('.cvat-action-runner-save-job-recommendation').should('exist').and('be.visible').click();
             cy.wait('@createAnnotationsRequest').its('response.statusCode').should('equal', 200);
             cy.get('.cvat-action-runner-save-job-recommendation').should('not.exist');
 
-            closeActionsModal();
+            cy.closeAnnotationsActionsModal();
         });
 
         it('Recommendation to disable automatic saving appears in modal if automatic saving is enabled', () => {
@@ -139,10 +115,10 @@ context('Testing annotations actions workflow', () => {
             });
             cy.closeSettings();
 
-            cy.interactMenu('Run actions');
+            cy.openAnnotationsActionsModal();
             cy.get('.cvat-action-runner-disable-autosave-recommendation').should('exist').and('be.visible').click();
             cy.get('.cvat-action-runner-disable-autosave-recommendation').should('not.exist');
-            closeActionsModal();
+            cy.closeAnnotationsActionsModal();
 
             cy.openSettings();
             cy.contains('Workspace').click();
@@ -233,21 +209,23 @@ context('Testing annotations actions workflow', () => {
         });
 
         it('Apply and cancel action, check buttons state and text', () => {
-            cy.interactMenu('Run actions');
+            cy.openAnnotationsActionsModal();
             cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', ACTION_NAME);
-            runActionAndCancel();
-            closeActionsModal();
+            cy.runAnnotationsAction();
+            cy.cancelAnnotationsAction();
+            cy.closeAnnotationsActionsModal();
         });
 
         it('Apply action on specific frames, tracks and tags are not affected', () => {
             const middleFrame = Math.round(latestFrameNumber / 2);
             cy.goCheckFrameNumber(middleFrame);
 
-            cy.interactMenu('Run actions');
+            cy.openAnnotationsActionsModal();
             cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', ACTION_NAME);
             cy.get('.cvat-action-runner-frames-predefined button').contains('From current').click();
-            runActionAndWait();
-            closeActionsModal();
+            cy.runAnnotationsAction();
+            cy.waitAnnotationsAction();
+            cy.closeAnnotationsActionsModal();
 
             frames.forEach((frame) => {
                 cy.goCheckFrameNumber(frame);
@@ -272,10 +250,11 @@ context('Testing annotations actions workflow', () => {
                 submit: true,
             });
 
-            cy.interactMenu('Run actions');
+            cy.openAnnotationsActionsModal();
             cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', ACTION_NAME);
-            runActionAndWait();
-            closeActionsModal();
+            cy.runAnnotationsAction();
+            cy.waitAnnotationsAction();
+            cy.closeAnnotationsActionsModal();
 
             cy.clearFilters();
             cy.addFiltersRule(0);

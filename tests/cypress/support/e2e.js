@@ -12,6 +12,7 @@ require('./commands_models');
 require('./commands_opencv');
 require('./commands_organizations');
 require('./commands_cloud_storages');
+require('./commands_annotations_actions');
 require('./commands_webhooks');
 require('@cypress/code-coverage/support');
 require('cypress-real-events/support');
