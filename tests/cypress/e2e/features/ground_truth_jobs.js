@@ -143,7 +143,7 @@ context('Ground truth jobs', () => {
             .should('be.visible');
     }
 
-    function checkConflicts(type, amount, sidebar = true) {
+    function checkConflicts(type = '', amount = 0, sidebar = true) {
         switch (type) {
             case 'warning': {
                 cy.get('.cvat-conflict-warning').should('have.length', amount);
@@ -269,8 +269,6 @@ context('Ground truth jobs', () => {
                 cy.checkFrameNum(frame);
                 cy.get('.cvat-player-next-button').click();
             });
-
-            cy.checkFrameNum(groundTruthFrames[groundTruthFrames.length - 1]);
         });
 
         it('Check ground truth annotations in regular job', () => {
@@ -378,21 +376,19 @@ context('Ground truth jobs', () => {
                 submit: true,
             });
 
-            cy.goCheckFrameNumber(groundTruthFrames[0]);
-            checkConflicts('', 0, false);
+            groundTruthFrames.forEach((frame, index) => {
+                if (index !== groundTruthFrames.length - 1) {
+                    cy.goCheckFrameNumber(frame);
+                    checkConflicts('', 0, false);
+                }
+            });
 
-            cy.goCheckFrameNumber(groundTruthFrames[1]);
-            checkConflicts('', 0, false);
-
-            cy.goCheckFrameNumber(groundTruthFrames[2]);
-            checkConflicts('', 0, false);
-
-            cy.goCheckFrameNumber(groundTruthFrames[3]);
+            cy.goCheckFrameNumber(groundTruthFrames[groundTruthFrames.length - 1]);
             checkConflicts('error', 1, false);
         });
 
         it('Frames with conflicts navigation', () => {
-            cy.goCheckFrameNumber(0);
+            cy.goCheckFrameNumber(groundTruthFrames[0]);
 
             cy.get('.cvat-issues-sidebar-next-frame').click();
             cy.checkFrameNum(groundTruthFrames[1]);
