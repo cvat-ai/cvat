@@ -2,7 +2,7 @@
 title: 'CVAT Overview'
 linkTitle: 'Introduction to CVAT'
 weight: 1
-description: 'CVAT: The open-source tool for image and video annotation and data labeling'
+description: 'The open-source tool for image and video annotation and data labeling'
 ---
 
 Machine learning systems often struggle due to poor-quality data. Without effective tools,
