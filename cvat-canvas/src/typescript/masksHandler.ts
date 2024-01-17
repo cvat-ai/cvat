@@ -121,7 +121,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.clear();
         this.canvas.renderAll();
         this.isInsertion = false;
-        this.drawnObjects = [];
+        this.drawnObjects = this.createDrawnObjectsArray();
         this.onDrawDone(null);
     }
 
@@ -386,6 +386,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.onDrawDone({
                     shapeType: this.drawData.shapeType,
                     points: rle,
+                    label: this.drawData.initialState.label,
                 }, Date.now() - this.startTimestamp, continueInserting, this.drawData);
 
                 if (!continueInserting) {
