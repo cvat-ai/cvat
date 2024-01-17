@@ -124,16 +124,19 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
     }
 
     const state = objectStates.find((_state: any): boolean => _state.clientID === contextMenuClientID);
-    const conflict = frameConflicts.find((qualityConflict: QualityConflict) => qualityConflict.annotationConflicts.some(
-        (annotationConflict: AnnotationConflict) => (
-            annotationConflict.serverID === state.serverID &&
-            annotationConflict.type === state.objectType
-        ),
-    ));
 
     const copyObject = state?.isGroundTruth ? state : null;
 
     if (workspace === Workspace.REVIEW_WORKSPACE) {
+        // there are not conflicts for skeleton elements
+        const conflict = contextMenuParentID === null ? frameConflicts
+            .find((qualityConflict: QualityConflict) => qualityConflict.annotationConflicts.some(
+                (annotationConflict: AnnotationConflict) => (
+                    annotationConflict.serverID === state.serverID &&
+                    annotationConflict.type === state.objectType
+                ),
+            )) : undefined;
+
         return ReactDOM.createPortal(
             <ReviewContextMenu
                 key={contextMenuClientID}
