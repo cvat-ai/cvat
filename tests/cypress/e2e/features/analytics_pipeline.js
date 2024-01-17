@@ -134,7 +134,7 @@ context('Analytics pipeline', () => {
                 sorting_method: 'lexicographical',
             }).then((taskResponse) => {
                 taskID = taskResponse.taskID;
-                [jobID] = taskResponse.jobID;
+                [jobID] = taskResponse.jobIDs;
 
                 cy.visit(`/tasks/${taskID}`);
                 cy.get('.cvat-task-details').should('exist').and('be.visible');
