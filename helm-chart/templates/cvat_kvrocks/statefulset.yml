@@ -84,8 +84,6 @@ spec:
   - metadata:
       name: {{ .Release.Name }}-kvrocks-data
       namespace: {{ .Release.Namespace }}
-      annotations:
-        helm.sh/resource-policy: keep
       labels:
         {{- include "cvat.labels" . | nindent 8 }}
         app: cvat-app
