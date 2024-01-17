@@ -204,7 +204,8 @@ context('Testing annotations actions workflow', () => {
 
         beforeEach(() => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
-            cy.get('.cvat-spinner').should('not.exist');
+            cy.get('.cvat-canvas-container').should('not.exist');
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
 
         it('Apply and cancel action, check buttons state and text', () => {
