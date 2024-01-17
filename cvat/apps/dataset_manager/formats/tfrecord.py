@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -22,10 +22,9 @@ except ImportError:
 
 @exporter(name='TFRecord', ext='ZIP', version='1.0', enabled=tf_available)
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
-        instance_data, include_images=save_images), env=dm_env)
-
-    dataset.export(temp_dir, 'tf_detection_api', save_images=save_images)
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, 'tf_detection_api', save_images=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 
