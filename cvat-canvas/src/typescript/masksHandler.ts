@@ -256,6 +256,8 @@ export class MasksHandlerImpl implements MasksHandler {
             if (this.isDrawing || this.isEditing) {
                 this.setupBrushMarker();
             }
+
+            this.checkEmpty();
         }
 
         if (this.tool?.type?.startsWith('polygon-')) {
@@ -587,10 +589,6 @@ export class MasksHandlerImpl implements MasksHandler {
                     this.isDrawing = true;
                     this.redraw = drawData.redraw || null;
                 }
-            }
-
-            if (drawData.brushTool) {
-                this.checkEmpty();
             }
 
             this.canvas.getElement().parentElement.style.display = 'block';

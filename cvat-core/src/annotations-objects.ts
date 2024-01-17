@@ -2241,9 +2241,10 @@ export class MaskShape extends Shape {
             for (const [index, object] of Object.values(updatedObjects).entries()) {
                 if (object.points.length < 2) {
                     object.removed = false;
+                } else {
+                    object.points = stashedPoints[index];
+                    object.updated = Date.now();
                 }
-                object.points = stashedPoints[index];
-                object.updated = Date.now();
             }
         };
 
@@ -2252,12 +2253,13 @@ export class MaskShape extends Shape {
             for (const object of Object.values(updatedObjects)) {
                 const points = mask2Rle(masks[object.clientID]);
                 stashedPoints.push([...object.points]);
-                object.points = points;
                 if (points.length < 2) {
                     object.removed = true;
                     emptyMaskOccurred = true;
+                } else {
+                    object.points = points;
+                    object.updated = Date.now();
                 }
-                object.updated = Date.now();
             }
         };
         redo();
