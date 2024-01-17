@@ -1122,7 +1122,8 @@ export default class Collection {
         }
         if (objectStates.length) {
             this.history.do(
-                HistoryActions.CREATED_OBJECTS,
+                additionalUndo.length === 0 ?
+                    HistoryActions.CREATED_OBJECTS : HistoryActions.CREATE_MASK_WITH_REMOVE_UNDERLYING_PIXELS,
                 () => {
                     importedArray.forEach((object) => {
                         object.removed = true;

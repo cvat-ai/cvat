@@ -154,6 +154,7 @@ export enum HistoryActions {
     REMOVED_OBJECT = 'Removed object',
     REMOVED_FRAME = 'Removed frame',
     RESTORED_FRAME = 'Restored frame',
+    CREATE_MASK_WITH_REMOVE_UNDERLYING_PIXELS = 'Create mask with remove underlying pixels',
 }
 
 export enum ModelKind {
