@@ -257,7 +257,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.setupBrushMarker();
             }
 
-            this.checkEmpty();
+            this.updateBlockedTools();
         }
 
         if (this.tool?.type?.startsWith('polygon-')) {
@@ -297,7 +297,7 @@ export class MasksHandlerImpl implements MasksHandler {
         }
     }
 
-    private checkEmpty(): void {
+    private updateBlockedTools(): void {
         if (this.drawnObjects.length === 0) {
             this.tool.onBlockUpdated({
                 eraser: true,
@@ -323,11 +323,11 @@ export class MasksHandlerImpl implements MasksHandler {
 
     private createDrawnObjectsArray(): MasksHandlerImpl['drawnObjects'] {
         const drawnObjects = [];
-        const checkEmptyDebounced = debounce(this.checkEmpty.bind(this), 250);
+        const updateBlockedToolsDebounced = debounce(this.updateBlockedTools.bind(this), 250);
         return new Proxy(drawnObjects, {
             set(target, property, value) {
                 target[property] = value;
-                checkEmptyDebounced();
+                updateBlockedToolsDebounced();
                 return true;
             },
         });
