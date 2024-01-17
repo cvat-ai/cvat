@@ -254,7 +254,7 @@ Cypress.Commands.add('getDownloadFileName', () => {
 });
 
 Cypress.Commands.add('waitForFileUploadToCloudStorage', () => {
-    cy.intercept('GET', '**=download').as('download');
+    cy.intercept('GET', /.*\/(annotations|dataset|backup)/).as('download');
     cy.wait('@download', { requestTimeout: 7000 }).then((interseption) => {
         expect(interseption.response.statusCode).to.be.equal(200);
     });
