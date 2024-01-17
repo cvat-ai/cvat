@@ -134,7 +134,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         const conflict = frameConflicts
             .find((qualityConflict: QualityConflict) => qualityConflict.annotationConflicts.some(
                 (annotationConflict: AnnotationConflict) => (
-                    annotationConflict.serverID === state.serverID &&
+                    state && annotationConflict.serverID === state.serverID &&
                     annotationConflict.type === state.objectType
                 ),
             ));
