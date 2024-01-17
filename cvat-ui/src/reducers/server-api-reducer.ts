@@ -10,10 +10,12 @@ const defaultState: ServerAPIState = {
     schema: null,
     fetching: false,
     initialized: false,
-    isRegistrationEnabled: true,
-    isBasicLoginEnabled: true,
-    isPasswordResetEnabled: true,
-    isPasswordChangeEnabled: true,
+    configuration: {
+        isRegistrationEnabled: false,
+        isBasicLoginEnabled: false,
+        isPasswordResetEnabled: false,
+        isPasswordChangeEnabled: false,
+    },
 };
 
 export default function (
@@ -39,11 +41,13 @@ export default function (
                 ...state,
                 fetching: false,
                 initialized: true,
-                schema: action.payload.schema,
-                isRegistrationEnabled,
-                isBasicLoginEnabled,
-                isPasswordResetEnabled,
-                isPasswordChangeEnabled,
+                schema,
+                configuration: {
+                    isRegistrationEnabled,
+                    isBasicLoginEnabled,
+                    isPasswordResetEnabled,
+                    isPasswordChangeEnabled,
+                },
             };
         }
         case ServerAPIActionTypes.GET_SERVER_API_SCHEMA_FAILED: {

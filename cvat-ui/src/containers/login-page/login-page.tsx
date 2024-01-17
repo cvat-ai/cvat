@@ -22,9 +22,9 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     return {
         fetching: state.auth.fetching,
-        renderResetPassword: state.serverAPI.isPasswordResetEnabled,
-        renderRegistrationComponent: state.serverAPI.isRegistrationEnabled,
-        renderBasicLoginComponent: state.serverAPI.isBasicLoginEnabled,
+        renderResetPassword: state.serverAPI.configuration.isPasswordResetEnabled,
+        renderRegistrationComponent: state.serverAPI.configuration.isRegistrationEnabled,
+        renderBasicLoginComponent: state.serverAPI.configuration.isBasicLoginEnabled,
         hasEmailVerificationBeenSent: state.auth.hasEmailVerificationBeenSent,
     };
 }

@@ -99,8 +99,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         invitationsInitialized: invitations.initialized,
         serverAPISchemaFetching: serverAPI.fetching,
         serverAPISchemaInitialized: serverAPI.initialized,
-        isPasswordResetEnabled: serverAPI.isPasswordResetEnabled,
-        isRegistrationEnabled: serverAPI.isRegistrationEnabled,
+        isPasswordResetEnabled: serverAPI.configuration.isPasswordResetEnabled,
+        isRegistrationEnabled: serverAPI.configuration.isRegistrationEnabled,
     };
 }
 

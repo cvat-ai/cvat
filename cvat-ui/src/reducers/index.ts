@@ -345,10 +345,12 @@ export interface ServerAPIState {
     schema: any;
     fetching: boolean;
     initialized: boolean;
-    isRegistrationEnabled: boolean;
-    isBasicLoginEnabled: boolean;
-    isPasswordResetEnabled: boolean;
-    isPasswordChangeEnabled: boolean;
+    configuration: {
+        isRegistrationEnabled: boolean;
+        isBasicLoginEnabled: boolean;
+        isPasswordResetEnabled: boolean;
+        isPasswordChangeEnabled: boolean;
+    };
 }
 
 export interface UserAgreement {
