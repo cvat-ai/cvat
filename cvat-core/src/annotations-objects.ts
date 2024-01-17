@@ -2308,11 +2308,11 @@ export class MaskShape extends Shape {
         if (config.removeUnderlyingMaskPixels.enabled) {
             const {
                 clientIDs,
-                emptyMaskOccured,
+                emptyMaskOccurred,
                 undo: undoWithUnderlyingPixels,
                 redo: redoWithUnderlyingPixels,
             } = this.removeUnderlyingPixels(frame);
-            if (emptyMaskOccured) {
+            if (emptyMaskOccurred) {
                 config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
             }
             this.history.do(
