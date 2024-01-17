@@ -57,7 +57,7 @@ CVAT's supports the following formats:
 - **For 3D**: `.pcd`, `.bin`
 - **For image**: everything supported by the Python
   [**Pillow library**](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html),
-  including formats like `JPEG`, `PNG`, `BMP`, `GIG`, `PPM`and `TIFF`.
+  including formats like `JPEG`, `PNG`, `BMP`, `GIF`, `PPM`and `TIFF`.
 - **For video**: all formats, supported by ffmpeg, including `MP4`, `AVI`, and `MOV`.
 
 For annotation export and import formats, see
