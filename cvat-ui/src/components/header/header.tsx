@@ -85,7 +85,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
         shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
         settings: { showDialog: settingsModalVisible },
         organizations: { fetching: organizationFetching, current: currentOrganization },
-        serverAPI: { isPasswordChangeEnabled: renderChangePasswordItem },
+        serverAPI: {
+            configuration: {
+                isPasswordChangeEnabled: renderChangePasswordItem,
+            },
+        },
     } = state;
 
     return {
