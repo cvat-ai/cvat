@@ -73,7 +73,7 @@ context('Testing annotations actions workflow', () => {
                 'Current frame': [middleFrame, middleFrame],
                 'All frames': [0, latestFrameNumber],
                 'From current': [middleFrame, latestFrameNumber],
-                'Up to curren': [0, middleFrame],
+                'Up to current': [0, middleFrame],
             };
 
             for (const [button, [frameFrom, frameTo]] of Object.entries(buttonFrames)) {
