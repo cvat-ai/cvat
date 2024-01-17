@@ -15,7 +15,7 @@ vision community worldwide.
 Our goal is to help developers, businesses,
 and organizations globally by using a Data-centric AI approach.
 
-CVAT offers two versions:
+CVAT offers three versions:
 
 - [**CVAT Cloud**](https://app.cvat.ai/): Start online with CVAT,
   **available for free**. You can also choose a [**subscription**](https://www.cvat.ai/pricing/cloud)
