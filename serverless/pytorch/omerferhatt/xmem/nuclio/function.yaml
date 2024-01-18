@@ -1,0 +1,66 @@
+metadata:
+  name: pth-omerferhatt-xmem
+  namespace: cvat
+  annotations:
+    name: XMem
+    type: tracker
+    spec:
+    framework: pytorch
+
+spec:
+  description: Long-Term Object Segmentation with an Atkinson-Shiffrin Memory Model
+  runtime: 'python:3.9'
+  handler: main:handler
+  eventTimeout: 30s
+
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/xmem
+
+  build:
+    image: cvat.pth.omerferhatt.xmem
+    baseImage: ubuntu:20.04
+
+    directives:
+      preCopy:
+        - kind: RUN
+          value: |-
+            apt update \
+              && apt install -y --no-install-recommends \
+                wget \
+                git \
+                ca-certificates \
+                python-is-python3 \
+                python3 \
+                python3-pip \
+              && rm -rf /var/lib/apt/lists/*
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: git clone --branch main https://github.com/hkchengrex/XMem xmem
+        - kind: RUN
+          value: |-
+            pip install \
+              jsonpickle opencv-python-headless \
+              torch torchvision \
+              --extra-index-url https://download.pytorch.org/whl/cpu
+        - kind: RUN
+          value: pip3 install debugpy
+        - kind: RUN
+          value: wget 'https://www.dropbox.com/scl/fi/5m1l747p15qzgq023e0q9/xmem.pth?rlkey=ss2kjaq4qlvvk5juucyvtmrh8&dl=0' -O '/xmem.pth'
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 1
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        # Set value from the calculation of tracking of 100 objects at the same time on a 4k image
+        maxRequestBodySize: 268435456 # 256MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

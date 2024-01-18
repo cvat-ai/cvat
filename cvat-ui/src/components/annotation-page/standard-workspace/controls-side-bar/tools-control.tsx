@@ -145,6 +145,7 @@ interface State {
     activeLabelID: number;
     activeTracker: MLModel | null;
     convertMasksToPolygons: boolean;
+    selectedObjectType: ObjectType;
     trackedShapes: TrackedShape[];
     fetching: boolean;
     pointsReceived: boolean;
@@ -153,23 +154,23 @@ interface State {
     portals: React.ReactPortal[];
 }
 
-function trackedRectangleMapper(shape: number[]): number[] {
-    return shape.reduce(
-        (acc: number[], value: number, index: number): number[] => {
-            if (index % 2) {
-                // y
-                acc[1] = Math.min(acc[1], value);
-                acc[3] = Math.max(acc[3], value);
-            } else {
-                // x
-                acc[0] = Math.min(acc[0], value);
-                acc[2] = Math.max(acc[2], value);
-            }
-            return acc;
-        },
-        [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
-    );
-}
+// function trackedRectangleMapper(shape: number[]): number[] {
+//     return shape.reduce(
+//         (acc: number[], value: number, index: number): number[] => {
+//             if (index % 2) {
+//                 // y
+//                 acc[1] = Math.min(acc[1], value);
+//                 acc[3] = Math.max(acc[3], value);
+//             } else {
+//                 // x
+//                 acc[0] = Math.min(acc[0], value);
+//                 acc[2] = Math.max(acc[2], value);
+//             }
+//             return acc;
+//         },
+//         [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER],
+//     );
+// }
 
 function registerPlugin(): (callback: null | (() => void)) => void {
     let onTrigger: null | (() => void) = null;
@@ -230,6 +231,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         super(props);
         this.state = {
             convertMasksToPolygons: false,
+            selectedObjectType: ObjectType.SHAPE,
             activeInteractor: props.interactors.length ? props.interactors[0] : null,
             activeTracker: props.trackers.length ? props.trackers[0] : null,
             activeLabelID: props.labels.length ? props.labels[0].id : null,
@@ -590,7 +592,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const portals = !activeTracker ?
             [] :
             states
-                .filter((objectState) => objectState.objectType === 'track' && objectState.shapeType === 'rectangle')
+                .filter((objectState) => objectState.objectType === 'track' && (objectState.shapeType === 'rectangle' || objectState.shapeType === 'polygon'))
                 .map((objectState: any): React.ReactPortal | null => {
                     const { clientID } = objectState;
                     const selectorID = `#cvat-objects-sidebar-state-item-${clientID}`;
@@ -818,7 +820,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             job: jobInstance.id,
                         });
 
-                        response.shapes = response.shapes.map(trackedRectangleMapper);
+                        // response.shapes = response.shapes.map(trackedRectangleMapper);
                         for (let i = 0; i < trackableObjects.clientIDs.length; i++) {
                             const clientID = trackableObjects.clientIDs[i];
                             const shape = response.shapes[i];
@@ -855,7 +857,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private async constructFromPoints(): Promise<void> {
-        const { convertMasksToPolygons } = this.state;
+        const { convertMasksToPolygons, selectedObjectType } = this.state;
         const {
             frame, labels, curZOrder, activeLabelID, createAnnotations,
         } = this.props;
@@ -863,7 +865,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         if (convertMasksToPolygons) {
             const object = new core.classes.ObjectState({
                 frame,
-                objectType: ObjectType.SHAPE,
+                objectType: selectedObjectType,
                 source: core.enums.Source.SEMI_AUTO,
                 label: labels.length ? labels.filter((label: any) => label.id === activeLabelID)[0] : null,
                 shapeType: ShapeType.POLYGON,
@@ -950,6 +952,29 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     }}
                 />
                 <Text>Convert masks to polygons</Text>
+            </Row>
+        );
+    }
+
+    private renderObjectTypeBlock(): JSX.Element {
+        const { selectedObjectType } = this.state;
+        const objectTypes = Object.values(ObjectType);
+        objectTypes.splice(objectTypes.indexOf(ObjectType.TAG), 1);
+        return (
+            <Row className='cvat-interactors-setups-container'>
+                <Select
+                    value={selectedObjectType}
+                    onChange={(value: ObjectType) => {
+                        this.setState({ selectedObjectType: value });
+                    }}
+                >
+                    {objectTypes.map((type) => (
+                        <Select.Option key={type} value={type}>
+                            {type}
+                        </Select.Option>
+                    ))}
+                </Select>
+                <Text>Object Type</Text>
             </Row>
         );
     }
@@ -1347,6 +1372,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private renderPopoverContent(): JSX.Element {
+        const { convertMasksToPolygons } = this.state;
         return (
             <div className='cvat-tools-control-popover-content'>
                 <Row justify='start'>
@@ -1359,6 +1385,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 <Tabs type='card' tabBarGutter={8}>
                     <Tabs.TabPane key='interactors' tab='Interactors'>
                         {this.renderMasksConvertingBlock()}
+                        {convertMasksToPolygons ? this.renderObjectTypeBlock() : null}
                         {this.renderLabelBlock()}
                         {this.renderInteractorBlock()}
                     </Tabs.TabPane>
