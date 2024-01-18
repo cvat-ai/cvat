@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2024 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -361,7 +361,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onEditDone = (state: any, points: number[], rotation?: number): void => {
         this.canvas.style.cursor = '';
-
         if (state && points) {
             const event: CustomEvent = new CustomEvent('canvas.edited', {
                 bubbles: false,
