@@ -521,9 +521,9 @@ RESTRICTIONS = {
 
 redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
 # The default port is not Redis's default port (6379).
-# This is so that a developer can run both in-mem and on-disk Redis on their machine
+# This is so that a developer can run both in-mem Redis and on-disk Kvrocks on their machine
 # without running into a port conflict.
-redis_ondisk_port = os.getenv('CVAT_REDIS_ONDISK_PORT', 6479)
+redis_ondisk_port = os.getenv('CVAT_REDIS_ONDISK_PORT', 6666)
 redis_ondisk_password = os.getenv('CVAT_REDIS_ONDISK_PASSWORD', '')
 
 CACHES = {

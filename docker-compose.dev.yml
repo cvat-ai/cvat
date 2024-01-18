@@ -111,4 +111,4 @@ services:
 
   cvat_redis_ondisk:
     ports:
-      - '6479:6379'
+      - '6666:6666'

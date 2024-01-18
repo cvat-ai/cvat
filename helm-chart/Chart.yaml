@@ -16,7 +16,7 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.11.2
+version: 0.12.0
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
@@ -60,8 +60,3 @@ dependencies:
     version: "18.5.*"
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
-
-  - name: keydb
-    version: 0.48.0
-    repository: https://enapter.github.io/charts/
-    condition: keydb.enabled
