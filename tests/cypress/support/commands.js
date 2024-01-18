@@ -284,7 +284,7 @@ Cypress.Commands.add('headlessCreateTask', (taskSpec, dataSpec) => {
         }
 
         const result = await task.save();
-        return cy.wrap({ taskID: result.id, jobID: result.jobs.map((job) => job.id) });
+        return cy.wrap({ taskID: result.id, jobIDs: result.jobs.map((job) => job.id) });
     });
 });
 
