@@ -44,8 +44,6 @@ spec:
               jsonpickle opencv-python-headless \
               torch torchvision
         - kind: RUN
-          value: pip3 install debugpy
-        - kind: RUN
           value: wget 'https://www.dropbox.com/scl/fi/5m1l747p15qzgq023e0q9/xmem.pth?rlkey=ss2kjaq4qlvvk5juucyvtmrh8&dl=0' -O '/xmem.pth'
 
   triggers:

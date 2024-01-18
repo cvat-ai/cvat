@@ -1,7 +1,3 @@
-import debugpy
-
-debugpy.listen(5678)
-
 import base64
 import io
 import json
@@ -13,7 +9,6 @@ from PIL import Image
 
 
 def init_context(context):
-    torch.autograd.set_grad_enabled(False)
     context.logger.info("Init context...  0%")
     model = ModelHandler()
     context.user_data.model = model
@@ -31,11 +26,14 @@ def handler(context, event):
     image = np.array(image)[:, :, ::-1].copy()
     results = {"shapes": [], "states": []}
     for i, shape in enumerate(shapes):
+        context.logger.info(f"Inference [{i}] started")
+
         shape, state = context.user_data.model.infer(
             image, shape, states[i] if i < len(states) else None
         )
         results["shapes"].append(shape)
         results["states"].append(state)
+        context.logger.info(f"Inference [{i}] finised")
 
     return context.Response(
         body=json.dumps(results),
