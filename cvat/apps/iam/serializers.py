@@ -5,6 +5,7 @@
 
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import PasswordResetSerializer, LoginSerializer
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
 from allauth.account import app_settings
@@ -56,7 +57,7 @@ class RegisterSerializerEx(RegisterSerializer):
         if "password1" in self.cleaned_data:
             try:
                 adapter.clean_password(self.cleaned_data['password1'], user=user)
-            except ValidationError as exc:
+            except DjangoValidationError as exc:
                 raise serializers.ValidationError(
                     detail=serializers.as_serializer_error(exc)
             )

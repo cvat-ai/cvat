@@ -167,9 +167,54 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
 
 function generateError(errorData: AxiosError<{ message?: string }>): ServerError {
     if (errorData.response) {
-        if (errorData.response.data?.message) {
-            return new ServerError(errorData.response.data?.message, errorData.response.status);
+        if (errorData.response.status >= 500) {
+            if (typeof errorData.response.data === 'string') {
+                return new ServerError(errorData.response.data, errorData.response.status);
+            }
+
+            return new ServerError(
+                errorData.response.statusText || errorData.message,
+                errorData.response.status,
+            );
         }
+
+        if (errorData.response.status >= 400 && errorData.response.data) {
+            // serializer.ValidationError
+            if (typeof errorData.response.data === 'object') {
+                const generalFields = ['non_field_errors', 'detail'];
+                const generalFieldsHelpers = {
+                    'Invalid token.': 'Not authenticated request, try to login again',
+                };
+
+                for (const field of generalFields) {
+                    if (field in errorData.response.data) {
+                        const message = errorData.response.data[field].toString();
+                        return new ServerError(
+                            generalFieldsHelpers[message] || message,
+                            errorData.response.status,
+                        );
+                    }
+                }
+
+                // serializers fields
+                const message = Object.keys(errorData.response.data).map((key) => (
+                    `{${key}: ${errorData.response.data[key].toString()}}`
+                )).join('\n');
+                return new ServerError(message, errorData.response.status);
+            }
+
+            // errors with string data
+            if (typeof errorData.response.data === 'string') {
+                return new ServerError(errorData.response.data, errorData.response.status);
+            }
+
+            // default handling
+            return new ServerError(
+                errorData.response.statusText || errorData.message,
+                errorData.response.status,
+            );
+        }
+
         const message = `${errorData.message}. ${JSON.stringify(errorData.response.data || '')}.`;
         return new ServerError(message, errorData.response.status);
     }
@@ -1155,11 +1200,16 @@ function listenToCreateTask(
                     const [createdTask] = await getTasks({ id, ...params });
                     resolve(createdTask);
                 } else if (state === RQStatus.FAILED) {
-                    const failMessage = 'Data processing failed';
+                    const failMessage = 'Images processing failed';
                     listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
                         callback(state, 0, failMessage);
                     });
-                    const message = `Could not create task. ${failMessage}. ${response.data.message}`;
+
+                    let message = `${response.data.message}`;
+                    if (response.data.message.startsWith('Traceback')) {
+                        message = `${response.data.message.split('\n').slice(-1)[0]}`;
+                    }
+
                     reject(new ServerError(message, 400));
                 } else {
                     const failMessage = 'Unknown status received';
