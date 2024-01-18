@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -146,7 +146,10 @@ export default interface CVATCore {
         backendAPI: typeof config.backendAPI;
         origin: typeof config.origin;
         uploadChunkSize: typeof config.uploadChunkSize;
-        removeUnderlyingMaskPixels: typeof config.removeUnderlyingMaskPixels;
+        removeUnderlyingMaskPixels: {
+            enabled: boolean;
+            onEmptyMaskOccurrence: () => void | null;
+        };
         onOrganizationChange: typeof config.onOrganizationChange;
         globalObjectsCounter: typeof config.globalObjectsCounter;
     },

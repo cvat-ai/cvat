@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -262,11 +262,16 @@ function build(): CVATCore {
             set uploadChunkSize(value) {
                 config.uploadChunkSize = value;
             },
-            get removeUnderlyingMaskPixels(): boolean {
-                return config.removeUnderlyingMaskPixels;
-            },
-            set removeUnderlyingMaskPixels(value: boolean) {
-                config.removeUnderlyingMaskPixels = value;
+            removeUnderlyingMaskPixels: {
+                get enabled() {
+                    return config.removeUnderlyingMaskPixels.enabled;
+                },
+                set enabled(value: boolean) {
+                    config.removeUnderlyingMaskPixels.enabled = value;
+                },
+                set onEmptyMaskOccurrence(value: () => void) {
+                    config.removeUnderlyingMaskPixels.onEmptyMaskOccurrence = value;
+                },
             },
             get onOrganizationChange(): (orgId: number) => void {
                 return config.onOrganizationChange;
