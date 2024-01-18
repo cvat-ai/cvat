@@ -165,7 +165,7 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
     });
 }
 
-function generateError(errorData: AxiosError<{ message?: string }>): ServerError {
+function generateError(errorData: AxiosError): ServerError {
     if (errorData.response) {
         if (errorData.response.status >= 500 && typeof errorData.response.data === 'string') {
             return new ServerError(errorData.response.data, errorData.response.status);
