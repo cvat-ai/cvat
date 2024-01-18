@@ -174,7 +174,7 @@ function generateError(errorData: AxiosError): ServerError {
         if (errorData.response.status >= 400 && errorData.response.data) {
             // serializer.ValidationError
             if (typeof errorData.response.data === 'object') {
-                const generalFields = ['non_field_errors', 'detail'];
+                const generalFields = ['non_field_errors', 'detail', 'message'];
                 const generalFieldsHelpers = {
                     'Invalid token.': 'Not authenticated request, try to login again',
                 };
