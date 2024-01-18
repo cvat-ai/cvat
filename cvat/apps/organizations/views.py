@@ -3,22 +3,30 @@
 #
 # SPDX-License-Identifier: MIT
 
-from rest_framework import mixins, viewsets
-from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
+from django.db import transaction
+from django.core.exceptions import ImproperlyConfigured
+
+from rest_framework import mixins, viewsets, status
+from rest_framework.permissions import SAFE_METHODS
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
-from cvat.apps.engine.mixins import PartialUpdateModelMixin
 
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
+from cvat.apps.organizations.throttle import ResendOrganizationInvitationThrottle
+from cvat.apps.engine.mixins import PartialUpdateModelMixin
+
 from .models import Invitation, Membership, Organization
 
 from .serializers import (
     InvitationReadSerializer, InvitationWriteSerializer,
     MembershipReadSerializer, MembershipWriteSerializer,
-    OrganizationReadSerializer, OrganizationWriteSerializer)
+    OrganizationReadSerializer, OrganizationWriteSerializer,
+    AcceptInvitationReadSerializer)
 
 @extend_schema(tags=['organizations'])
 @extend_schema_view(
@@ -58,9 +66,9 @@ class OrganizationViewSet(viewsets.GenericViewSet,
                    PartialUpdateModelMixin,
     ):
     queryset = Organization.objects.select_related('owner').all()
-    search_fields = ('name', 'owner')
-    filter_fields = list(search_fields) + ['id', 'slug']
-    simple_filters = list(search_fields) + ['slug']
+    search_fields = ('name', 'owner', 'slug')
+    filter_fields = list(search_fields) + ['id']
+    simple_filters = list(search_fields)
     lookup_fields = {'owner': 'owner__username'}
     ordering_fields = list(filter_fields)
     ordering = '-id'
@@ -169,7 +177,30 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
         summary='Method deletes an invitation',
         responses={
             '204': OpenApiResponse(description='The invitation has been deleted'),
-        })
+        }),
+    accept=extend_schema(
+        operation_id='invitations_accept',
+        request=None,
+        summary='Method registers user and accepts invitation to organization',
+        responses={
+            '200': OpenApiResponse(response=AcceptInvitationReadSerializer, description='The invitation is accepted'),
+            '400': OpenApiResponse(description='The invitation is expired or already accepted'),
+        }),
+    decline=extend_schema(
+        operation_id='invitations_decline',
+        request=None,
+        summary='Method declines the invitation to organization',
+        responses={
+            '204': OpenApiResponse(description='The invitation has been declined'),
+        }),
+    resend=extend_schema(
+        operation_id='invitations_resend',
+        summary='Method resends the invitation to organization',
+        request=None,
+        responses={
+            '204': OpenApiResponse(description='Invitation has been sent'),
+            '400': OpenApiResponse(description='The invitation is already accepted'),
+        }),
 )
 class InvitationViewSet(viewsets.GenericViewSet,
                    mixins.RetrieveModelMixin,
@@ -183,11 +214,15 @@ class InvitationViewSet(viewsets.GenericViewSet,
     iam_organization_field = 'membership__organization'
 
     search_fields = ('owner',)
-    filter_fields = list(search_fields)
+    filter_fields = list(search_fields) + ['user_id', 'accepted']
     simple_filters = list(search_fields)
-    ordering_fields = list(filter_fields) + ['created_date']
+    ordering_fields = list(simple_filters) + ['created_date']
     ordering = '-created_date'
-    lookup_fields = {'owner': 'owner__username'}
+    lookup_fields = {
+        'owner': 'owner__username',
+        'user_id': 'membership__user__id',
+        'accepted': 'membership__is_active',
+    }
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -201,11 +236,22 @@ class InvitationViewSet(viewsets.GenericViewSet,
         permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
+    def create(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            self.perform_create(serializer)
+        except ImproperlyConfigured:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data="Email backend is not configured.")
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     def perform_create(self, serializer):
         serializer.save(
             owner=self.request.user,
             key=get_random_string(length=64),
-            organization=self.request.iam_context['organization']
+            organization=self.request.iam_context['organization'],
+            request=self.request,
         )
 
     def perform_update(self, serializer):
@@ -213,3 +259,42 @@ class InvitationViewSet(viewsets.GenericViewSet,
             serializer.instance.accept()
         else:
             super().perform_update(serializer)
+
+    @transaction.atomic
+    @action(detail=True, methods=['POST'], url_path='accept')
+    def accept(self, request, pk):
+        try:
+            invitation = self.get_object() # force to call check_object_permissions
+            if invitation.expired:
+                return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is expired. Please contact organization owner to renew it.")
+            if invitation.membership.is_active:
+                return Response(status=status.HTTP_400_BAD_REQUEST, data="Your invitation is already accepted.")
+            invitation.accept()
+            response_serializer = AcceptInvitationReadSerializer(data={'organization_slug': invitation.membership.organization.slug})
+            response_serializer.is_valid(raise_exception=True)
+            return Response(status=status.HTTP_200_OK, data=response_serializer.data)
+        except Invitation.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist. Please contact organization owner.")
+
+    @action(detail=True, methods=['POST'], url_path='resend', throttle_classes=[ResendOrganizationInvitationThrottle])
+    def resend(self, request, pk):
+        try:
+            invitation = self.get_object() # force to call check_object_permissions
+            if invitation.membership.is_active:
+                return Response(status=status.HTTP_400_BAD_REQUEST, data="This invitation is already accepted.")
+            invitation.send(request)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Invitation.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist.")
+        except ImproperlyConfigured:
+            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR, data="Email backend is not configured.")
+
+    @action(detail=True, methods=['POST'], url_path='decline')
+    def decline(self, request, pk):
+        try:
+            invitation = self.get_object() # force to call check_object_permissions
+            membership = invitation.membership
+            membership.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Invitation.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND, data="This invitation does not exist.")

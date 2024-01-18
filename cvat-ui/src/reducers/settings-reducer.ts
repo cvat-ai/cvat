@@ -12,7 +12,7 @@ import { AnnotationActionTypes } from 'actions/annotation-actions';
 import {
     SettingsState, GridColor, FrameSpeed, ColorBy,
 } from 'reducers';
-import { ObjectState, ShapeType, DimensionType } from 'cvat-core-wrapper';
+import { clampOpacity } from 'utils/clamp-opacity';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -438,46 +438,39 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 imageFilters: [],
             };
         }
-        case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS:
-        case AnnotationActionTypes.CREATE_ANNOTATIONS_SUCCESS:
+        case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.CHANGE_FRAME_SUCCESS: {
             const { states } = action.payload;
-            if (states.some((_state: ObjectState): boolean => _state.shapeType === ShapeType.MASK)) {
-                const MIN_OPACITY = 30;
-                const { shapes: { opacity } } = state;
-                if (opacity < MIN_OPACITY) {
-                    return {
-                        ...state,
-                        shapes: {
-                            ...state.shapes,
-                            opacity: MIN_OPACITY,
-                            selectedOpacity: MIN_OPACITY * 2,
-                        },
-                    };
-                }
-            }
-
-            return state;
+            const { shapes } = state;
+            const [clampedOpacity, clampedSelectedOpacity] = clampOpacity(states, shapes);
+            return {
+                ...state,
+                shapes: {
+                    ...state.shapes,
+                    opacity: clampedOpacity,
+                    selectedOpacity: clampedSelectedOpacity,
+                },
+            };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
-            const { job } = action.payload;
+            const { job, states } = action.payload;
+            const { shapes } = state;
+            const filters = [...state.imageFilters];
+            filters.forEach((imageFilter) => {
+                imageFilter.modifier.currentProcessedImage = null;
+            });
+
+            const [clampedOpacity, clampedSelectedOpacity] = clampOpacity(states, shapes, job);
 
             return {
                 ...state,
-                player: {
-                    ...state.player,
-                },
                 shapes: {
                     ...defaultState.shapes,
-                    ...(job.dimension === DimensionType.DIMENSION_3D ?
-                        {
-                            opacity: 40,
-                            selectedOpacity: 60,
-                        } :
-                        {}),
+                    opacity: clampedOpacity,
+                    selectedOpacity: clampedSelectedOpacity,
                 },
-                imageFilters: [],
+                imageFilters: filters,
             };
         }
         case AnnotationActionTypes.INTERACT_WITH_CANVAS: {

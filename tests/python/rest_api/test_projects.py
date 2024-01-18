@@ -266,14 +266,14 @@ class TestGetProjectBackup:
     def test_org_supervisor_cannot_get_project_backup(
         self, find_users, projects, is_project_staff, is_org_member
     ):
-        users = find_users(role="supervisor", exclude_privilege="admin")
+        users = find_users(exclude_privilege="admin")
 
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
             if not is_project_staff(user["id"], project["id"])
             and project["organization"]
-            and is_org_member(user["id"], project["organization"])
+            and is_org_member(user["id"], project["organization"], role="supervisor")
         )
 
         self._test_cannot_get_project_backup(user["username"], project["id"])
@@ -514,16 +514,16 @@ def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestImportExportDatasetProject:
-    def _test_export_project(self, username, pid, format_name):
+    def _test_export_project(self, username: str, pid: int, **kwargs):
         with make_api_client(username) as api_client:
             return export_dataset(
-                api_client.projects_api.retrieve_dataset_endpoint, id=pid, format=format_name
+                api_client.projects_api.retrieve_dataset_endpoint, id=pid, **kwargs
             )
 
-    def _export_annotations(self, username, pid, format_name):
+    def _export_annotations(self, username: str, pid: int, **kwargs):
         with make_api_client(username) as api_client:
             return export_dataset(
-                api_client.projects_api.retrieve_annotations_endpoint, id=pid, format=format_name
+                api_client.projects_api.retrieve_annotations_endpoint, id=pid, **kwargs
             )
 
     def _test_import_project(self, username, project_id, format_name, data):
@@ -557,7 +557,7 @@ class TestImportExportDatasetProject:
     def test_can_import_dataset_in_org(self, admin_user):
         project_id = 4
 
-        response = self._test_export_project(admin_user, project_id, "CVAT for images 1.1")
+        response = self._test_export_project(admin_user, project_id)
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -571,7 +571,7 @@ class TestImportExportDatasetProject:
     def test_can_export_and_import_dataset_with_skeletons_coco_keypoints(self, admin_user):
         project_id = 5
 
-        response = self._test_export_project(admin_user, project_id, "COCO Keypoints 1.0")
+        response = self._test_export_project(admin_user, project_id, format="COCO Keypoints 1.0")
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -584,7 +584,7 @@ class TestImportExportDatasetProject:
     def test_can_export_and_import_dataset_with_skeletons_cvat_for_images(self, admin_user):
         project_id = 5
 
-        response = self._test_export_project(admin_user, project_id, "CVAT for images 1.1")
+        response = self._test_export_project(admin_user, project_id)
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -597,7 +597,7 @@ class TestImportExportDatasetProject:
     def test_can_export_and_import_dataset_with_skeletons_cvat_for_video(self, admin_user):
         project_id = 5
 
-        response = self._test_export_project(admin_user, project_id, "CVAT for video 1.1")
+        response = self._test_export_project(admin_user, project_id, format="CVAT for video 1.1")
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -643,7 +643,7 @@ class TestImportExportDatasetProject:
         username = "admin1"
         project_id = 4
 
-        response = self._test_export_project(username, project_id, format_name)
+        response = self._test_export_project(username, project_id, format=format_name)
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -693,7 +693,7 @@ class TestImportExportDatasetProject:
             ],
         }
 
-        response = self._export_annotations(username, pid, anno_format)
+        response = self._export_annotations(username, pid, format=anno_format)
         assert response.data
         with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
             content = zip_file.read(anno_file_name)
@@ -704,7 +704,7 @@ class TestImportExportDatasetProject:
         username = "admin1"
         project_id = 4
 
-        response = self._test_export_project(username, project_id, "CVAT for images 1.1")
+        response = self._test_export_project(username, project_id)
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -732,11 +732,11 @@ class TestImportExportDatasetProject:
         username = "admin1"
         project_id = 11
 
-        self._test_export_project(username, project_id, "COCO Keypoints 1.0")
+        self._test_export_project(username, project_id, format="COCO Keypoints 1.0")
 
     def test_can_export_dataset_for_empty_project(self, projects):
         empty_project = next((p for p in projects if 0 == p["tasks"]["count"]))
-        self._test_export_project("admin1", empty_project["id"], "COCO 1.0")
+        self._test_export_project("admin1", empty_project["id"], format="COCO 1.0")
 
     def test_can_export_project_dataset_when_some_tasks_have_no_data(self, projects):
         project = next((p for p in projects if 0 < p["tasks"]["count"]))
@@ -747,7 +747,7 @@ class TestImportExportDatasetProject:
         )
         assert response.status_code == HTTPStatus.CREATED
 
-        self._test_export_project("admin1", project["id"], "COCO 1.0")
+        self._test_export_project("admin1", project["id"], format="COCO 1.0")
 
     def test_can_export_project_dataset_when_all_tasks_have_no_data(self, projects):
         project = next((p for p in projects if 0 == p["tasks"]["count"]))
@@ -763,7 +763,38 @@ class TestImportExportDatasetProject:
         )
         assert response.status_code == HTTPStatus.CREATED
 
-        self._test_export_project("admin1", project["id"], "COCO 1.0")
+        self._test_export_project("admin1", project["id"], format="COCO 1.0")
+
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    def test_can_export_and_import_dataset_after_deleting_related_storage(
+        self, admin_user, projects, cloud_storage_id: int
+    ):
+        project = next(
+            p
+            for p in projects
+            if p["source_storage"]
+            and p["source_storage"]["cloud_storage_id"] == cloud_storage_id
+            and p["target_storage"]
+            and p["target_storage"]["cloud_storage_id"] == cloud_storage_id
+        )
+        project_id = project["id"]
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.cloudstorages_api.destroy(cloud_storage_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+        result, response = api_client.projects_api.retrieve(project_id)
+        assert all([not getattr(result, field) for field in ("source_storage", "target_storage")])
+
+        response = self._test_export_project(admin_user, project_id)
+
+        with io.BytesIO(response.data) as tmp_file:
+            tmp_file.name = "dataset.zip"
+            import_data = {
+                "dataset_file": tmp_file,
+            }
+
+            self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -775,16 +806,18 @@ class TestPatchProjectLabel:
                 api_client.labels_api.list_endpoint, project_id=pid, **kwargs
             )
 
-    def test_can_delete_label(self, projects, labels, admin_user):
-        project = [p for p in projects if p["labels"]["count"] > 0][0]
+    def test_can_delete_label(self, projects_wlc, labels, admin_user):
+        project = [p for p in projects_wlc if p["labels"]["count"] > 0][0]
         label = deepcopy([l for l in labels if l.get("project_id") == project["id"]][0])
         label_payload = {"id": label["id"], "deleted": True}
 
+        prev_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         response = patch_method(
             admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
+        curr_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK, response.content
-        assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
+        assert curr_lc == prev_lc - 1
 
     def test_can_delete_skeleton_label(self, projects, labels, admin_user):
         project = next(
@@ -802,17 +835,19 @@ class TestPatchProjectLabel:
         project_labels.remove(label)
         label_payload = {"id": label["id"], "deleted": True}
 
+        prev_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         response = patch_method(
             admin_user, f'projects/{project["id"]}', {"labels": [label_payload]}
         )
+        curr_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] - 1
+        assert curr_lc == prev_lc - 1
 
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
 
-    def test_can_rename_label(self, projects, labels, admin_user):
-        project = [p for p in projects if p["labels"]["count"] > 0][0]
+    def test_can_rename_label(self, projects_wlc, labels, admin_user):
+        project = [p for p in projects_wlc if p["labels"]["count"] > 0][0]
         project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
         project_labels[0].update({"name": "new name"})
 
@@ -824,8 +859,8 @@ class TestPatchProjectLabel:
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
 
-    def test_cannot_rename_label_to_duplicate_name(self, projects, labels, admin_user):
-        project = [p for p in projects if p["labels"]["count"] > 1][0]
+    def test_cannot_rename_label_to_duplicate_name(self, projects_wlc, labels, admin_user):
+        project = [p for p in projects_wlc if p["labels"]["count"] > 1][0]
         project_labels = deepcopy([l for l in labels if l.get("project_id") == project["id"]])
         project_labels[0].update({"name": project_labels[1]["name"]})
 
@@ -849,9 +884,11 @@ class TestPatchProjectLabel:
         project = list(projects)[0]
         new_label = {"name": "new name"}
 
+        prev_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_label]})
+        curr_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     @pytest.mark.parametrize("role", ["maintainer", "owner"])
     def test_non_project_staff_privileged_org_members_can_add_label(
@@ -872,14 +909,16 @@ class TestPatchProjectLabel:
             and is_org_member(user["id"], project["organization"])
         )
 
+        prev_lc = get_method(user["username"], "labels", project_id=project["id"]).json()["count"]
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'projects/{project["id"]}',
             {"labels": [new_label]},
         )
+        curr_lc = get_method(user["username"], "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     @pytest.mark.parametrize("role", ["supervisor", "worker"])
     def test_non_project_staff_org_members_cannot_add_label(
@@ -890,14 +929,14 @@ class TestPatchProjectLabel:
         is_org_member,
         role,
     ):
-        users = find_users(role=role, exclude_privilege="admin")
+        users = find_users(exclude_privilege="admin")
 
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
             if not is_project_staff(user["id"], project["id"])
             and project["organization"]
-            and is_org_member(user["id"], project["organization"])
+            and is_org_member(user["id"], project["organization"], role=role)
         )
 
         new_label = {"name": "new name"}
@@ -913,25 +952,27 @@ class TestPatchProjectLabel:
     def test_project_staff_org_members_can_add_label(
         self, find_users, projects, is_project_staff, is_org_member, labels, role
     ):
-        users = find_users(role=role, exclude_privilege="admin")
+        users = find_users(exclude_privilege="admin")
 
         user, project = next(
             (user, project)
             for user, project in product(users, projects)
             if is_project_staff(user["id"], project["id"])
             and project["organization"]
-            and is_org_member(user["id"], project["organization"])
+            and is_org_member(user["id"], project["organization"], role=role)
             and any(label.get("project_id") == project["id"] for label in labels)
         )
 
+        prev_lc = get_method(user["username"], "labels", project_id=project["id"]).json()["count"]
         new_label = {"name": "new name"}
         response = patch_method(
             user["username"],
             f'projects/{project["id"]}',
             {"labels": [new_label]},
         )
+        curr_lc = get_method(user["username"], "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
     def test_admin_can_add_skeleton(self, projects, admin_user):
         project = list(projects)[0]
@@ -949,9 +990,11 @@ class TestPatchProjectLabel:
             'data-element-id="1" data-node-id="1" data-label-name="597501"></circle>',
         }
 
+        prev_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         response = patch_method(admin_user, f'projects/{project["id"]}', {"labels": [new_skeleton]})
+        curr_lc = get_method(admin_user, "labels", project_id=project["id"]).json()["count"]
         assert response.status_code == HTTPStatus.OK
-        assert response.json()["labels"]["count"] == project["labels"]["count"] + 1
+        assert curr_lc == prev_lc + 1
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

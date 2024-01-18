@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from collections import defaultdict
+from copy import deepcopy
 
 import pytest
 
@@ -59,15 +61,59 @@ def tasks():
 
 
 @pytest.fixture(scope="session")
+def tasks_wlc(labels, tasks):  # tasks with labels count
+    tasks = deepcopy(tasks)
+    tasks_by_project = defaultdict(list)
+    for task in tasks:
+        tasks_by_project[task["project_id"]].append(task)
+        task["labels"]["count"] = 0
+
+    for label in labels:
+        task_id = label.get("task_id")
+        project_id = label.get("project_id")
+        if not label["parent_id"]:
+            if task_id:
+                tasks[task_id]["labels"]["count"] += 1
+            elif project_id:
+                for task in tasks_by_project[project_id]:
+                    task["labels"]["count"] += 1
+
+    return tasks
+
+
+@pytest.fixture(scope="session")
 def projects():
     with open(ASSETS_DIR / "projects.json") as f:
         return Container(json.load(f)["results"])
 
 
 @pytest.fixture(scope="session")
+def projects_wlc(projects, labels):  # projects with labels count
+    projects = deepcopy(projects)
+    for project in projects:
+        project["labels"]["count"] = 0
+
+    for label in labels:
+        project_id = label.get("project_id")
+        if not label["parent_id"] and project_id:
+            projects[project_id]["labels"]["count"] += 1
+
+    return projects
+
+
+@pytest.fixture(scope="session")
 def jobs():
     with open(ASSETS_DIR / "jobs.json") as f:
         return Container(json.load(f)["results"])
+
+
+@pytest.fixture(scope="session")
+def jobs_wlc(jobs, tasks_wlc):  # jobs with labels count
+    jobs = deepcopy(jobs)
+    for job in jobs:
+        tid = job["task_id"]
+        job["labels"]["count"] = tasks_wlc[tid]["labels"]["count"]
+    return jobs
 
 
 @pytest.fixture(scope="session")

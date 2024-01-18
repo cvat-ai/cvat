@@ -3,17 +3,21 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { ObjectState, ShapeType, getCore } from 'cvat-core-wrapper';
+import waitFor from 'utils/wait-for';
+import config from 'config';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 import { OpenCVTracker } from './opencv-interfaces';
+
+const core = getCore();
 
 export interface Segmentation {
     intelligentScissorsFactory: (onChangeToolsBlockerState:(event:string)=>void) => IntelligentScissors;
 }
 
 export interface MatSpace {
-    empty: () => any;
     fromData: (width: number, height: number, type: MatType, data: number[]) => any;
 }
 
@@ -22,7 +26,8 @@ export interface MatVectorSpace {
 }
 
 export interface Contours {
-    findContours: (src: any, contours: any) => number[][];
+    convexHull: (src: any) => number[];
+    findContours: (src: any, findLongest: boolean) => number[][];
     approxPoly: (points: number[] | any, threshold: number, closed?: boolean) => number[][];
 }
 
@@ -53,14 +58,14 @@ export class OpenCVWrapper {
         this.injectionProcess = null;
     }
 
-    private checkInitialization() {
+    private checkInitialization(): void {
         if (!this.initialized) {
             throw new Error('Need to initialize OpenCV first');
         }
     }
 
     private async inject(): Promise<void> {
-        const response = await fetch('/assets/opencv.js');
+        const response = await fetch(config.OPENCV_PATH);
         if (response.status !== 200) {
             throw new Error(`Response status ${response.status}. ${response.statusText}`);
         }
@@ -94,14 +99,19 @@ export class OpenCVWrapper {
             }
         }
 
+        let runtimeInitialized = false;
+        (window as any).Module = {
+            onRuntimeInitialized: () => {
+                runtimeInitialized = true;
+                delete (window as any).Module;
+            },
+        };
         // Inject opencv to DOM
         // eslint-disable-next-line @typescript-eslint/no-implied-eval
         const OpenCVConstructor = new Function(decodedScript);
         OpenCVConstructor();
-
-        const global = window as any;
-
-        this.cv = await global.cv;
+        this.cv = (window as any).cv;
+        await waitFor(2, () => runtimeInitialized);
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {
@@ -132,8 +142,6 @@ export class OpenCVWrapper {
         this.checkInitialization();
         const { cv } = this;
         return {
-            empty: () => new cv.Mat(),
-
             fromData: (width: number, height: number, type: MatType, data: number[]) => {
                 const typeToCVType = {
                     [MatType.CV_8UC1]: cv.CV_8UC1,
@@ -159,24 +167,57 @@ export class OpenCVWrapper {
         this.checkInitialization();
         const { cv } = this;
         return {
-            findContours: (src: any, contours: any): number[][] => {
-                const jsContours: number[][] = [];
-                const hierarchy = new cv.Mat();
+            convexHull: (contours: number[][]): number[] => {
+                const points = contours.flat();
+                const input = cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
+                const output = new cv.Mat();
                 try {
-                    cv.findContours(src, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
+                    cv.convexHull(input, output, false, true);
+                    return Array.from(output.data32S);
+                } finally {
+                    output.delete();
+                    input.delete();
+                }
+            },
+            findContours: (src: any, findLongest: boolean): number[][] => {
+                const contours = this.matVector.empty();
+                const hierarchy = new cv.Mat();
+                const expanded = new cv.Mat();
+                const kernel = cv.Mat.ones(2, 2, cv.CV_8U);
+                const anchor = new cv.Point(-1, -1);
+                const jsContours: number[][] = [];
+                try {
+                    cv.copyMakeBorder(src, expanded, 1, 1, 1, 1, cv.BORDER_CONSTANT);
+                    // morpth transform to get better contour including all the pixels
+                    cv.dilate(
+                        expanded,
+                        expanded,
+                        kernel,
+                        anchor,
+                        1,
+                        cv.BORDER_CONSTANT,
+                        cv.morphologyDefaultBorderValue(),
+                    );
+                    cv.findContours(expanded, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE);
                     for (let i = 0; i < contours.size(); i++) {
                         const contour = contours.get(i);
-                        jsContours.push(Array.from(contour.data32S));
+                        // substract offset we created when copied source image
+                        jsContours.push(Array.from(contour.data32S as number[]).map((el) => el - 1));
                         contour.delete();
                     }
                 } finally {
+                    kernel.delete();
+                    expanded.delete();
                     hierarchy.delete();
+                    contours.delete();
                 }
 
-                const longest = jsContours.sort((arr1, arr2) => arr2.length - arr1.length)[0];
-                return [longest];
-            },
+                if (findLongest) {
+                    return [jsContours.sort((arr1, arr2) => arr2.length - arr1.length)[0]];
+                }
 
+                return jsContours;
+            },
             approxPoly: (points: number[] | number[][], threshold: number, closed = true): number[][] => {
                 const isArrayOfArrays = Array.isArray(points[0]);
                 if (points.length < 3) {
@@ -202,6 +243,50 @@ export class OpenCVWrapper {
             },
         };
     }
+
+    public getContoursFromState = async (state: ObjectState): Promise<number[][]> => {
+        const points = state.points as number[];
+        if (state.shapeType === ShapeType.MASK) {
+            if (!this.isInitialized) {
+                try {
+                    await this.initialize(() => {});
+                } catch (error: any) {
+                    throw new Error('Could not initialize OpenCV');
+                }
+            }
+
+            const [left, top, right, bottom] = points.slice(-4);
+            const width = right - left + 1;
+            const height = bottom - top + 1;
+
+            const mask = core.utils.rle2Mask(points.slice(0, -4), width, height);
+            const src = this.mat.fromData(width, height, MatType.CV_8UC1, mask);
+
+            try {
+                const contours = this.contours.findContours(src, false);
+                if (contours.length) {
+                    return contours.map((contour) => contour.map((val, idx) => {
+                        if (idx % 2) {
+                            return val + top;
+                        }
+                        return val + left;
+                    }));
+                }
+                throw new Error('Empty contour received from state');
+            } finally {
+                src.delete();
+            }
+        } else if (state.shapeType === ShapeType.POLYGON) {
+            return [points];
+        }
+
+        throw new Error(`Not implemented getContour for ${state.shapeType}`);
+    };
+
+    public getContourFromState = async (state: ObjectState): Promise<number[]> => {
+        const contours = await this.getContoursFromState(state);
+        return contours.length > 1 ? this.contours.convexHull(contours) : contours[0];
+    };
 
     public get segmentation(): Segmentation {
         this.checkInitialization();

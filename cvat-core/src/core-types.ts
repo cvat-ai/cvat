@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { ModelKind, ModelReturnType } from './enums';
+import { ModelKind, ModelReturnType, ShapeType } from './enums';
 
 export interface ModelAttribute {
     name: string;
@@ -19,17 +19,24 @@ export interface ModelParams {
     };
 }
 
-export interface ModelTip {
+export interface MLModelTip {
     message: string;
     gif: string;
+}
+
+export interface MLModelLabel {
+    name: string;
+    type: ShapeType | 'unknown';
+    attributes: ModelAttribute[];
+    sublabels?: MLModelLabel[];
+    svg?: string,
 }
 
 export interface SerializedModel {
     id?: string | number;
     name?: string;
-    labels?: string[];
+    labels_v2?: MLModelLabel[];
     version?: number;
-    attributes?: Record<string, ModelAttribute>;
     framework?: string;
     description?: string;
     kind?: ModelKind;
@@ -37,7 +44,6 @@ export interface SerializedModel {
     return_type?: ModelReturnType;
     owner?: any;
     provider?: string;
-    api_key?: string;
     url?: string;
     help_message?: string;
     animated_gif?: string;
@@ -47,3 +53,5 @@ export interface SerializedModel {
     created_date?: string;
     updated_date?: string;
 }
+
+export type PaginatedResource<T> = T[] & { count: number };

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.7.0
+  version: 2.11.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -176,32 +176,6 @@ paths:
       responses:
         '204':
           description: The asset has been deleted
-  /api/assets/{uuid}/public:
-    get:
-      operationId: assets_retrieve_public
-      parameters:
-      - in: path
-        name: uuid
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this asset.
-        required: true
-      tags:
-      - assets
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/AssetRead'
-          description: ''
   /api/auth/login:
     post:
       operationId: auth_create_login
@@ -767,42 +741,6 @@ paths:
               schema:
                 type: string
           description: Cloud Storage actions (GET | PUT | DELETE)
-  /api/cloudstorages/{id}/content:
-    get:
-      operationId: cloudstorages_retrieve_content
-      description: 'This method is deprecated and will be removed in version 2.6.0.
-        Please use the new version of API: /cloudstorages/id/content-v2/'
-      summary: Method returns a manifest content
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this cloud storage.
-        required: true
-      - in: query
-        name: manifest_path
-        schema:
-          type: string
-        description: Path to the manifest file in a cloud storage
-      tags:
-      - cloudstorages
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: array
-                items:
-                  type: string
-          description: A manifest content
   /api/cloudstorages/{id}/content-v2:
     get:
       operationId: cloudstorages_retrieve_content_v2
@@ -1356,7 +1294,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner'].
+           Available filter_fields: ['owner', 'user_id', 'accepted'].
         schema:
           type: string
       - name: org
@@ -1531,6 +1469,80 @@ paths:
       responses:
         '204':
           description: The invitation has been deleted
+  /api/invitations/{key}/accept:
+    post:
+      operationId: invitations_accept
+      summary: Method registers user and accepts invitation to organization
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/AcceptInvitationRead'
+          description: The invitation is accepted
+        '400':
+          description: The invitation is expired or already accepted
+  /api/invitations/{key}/decline:
+    post:
+      operationId: invitations_decline
+      summary: Method declines the invitation to organization
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The invitation has been declined
+  /api/invitations/{key}/resend:
+    post:
+      operationId: invitations_resend
+      summary: Method resends the invitation to organization
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: Invitation has been sent
+        '400':
+          description: The invitation is already accepted
   /api/issues:
     get:
       operationId: issues_list
@@ -2009,8 +2021,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -2400,8 +2412,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -3059,7 +3071,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'owner', 'id', 'slug'].
+           Available filter_fields: ['name', 'owner', 'slug', 'id'].
         schema:
           type: string
       - name: name
@@ -3087,7 +3099,8 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''owner'')'
+        description: 'A search term. Available search_fields: (''name'', ''owner'',
+          ''slug'')'
         schema:
           type: string
       - name: slug
@@ -3099,7 +3112,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''owner'', ''id'', ''slug'']'
+          [''name'', ''owner'', ''slug'', ''id'']'
         schema:
           type: string
       tags:
@@ -3447,8 +3460,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -3589,8 +3602,8 @@ paths:
           enum:
           - download
           - import_status
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -4479,6 +4492,11 @@ paths:
         schema:
           type: string
         description: Directory to browse
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Search for specific files
       tags:
       - server
       security:
@@ -4769,8 +4787,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -5293,8 +5311,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -6100,6 +6118,13 @@ components:
       - description
       - name
       - version
+    AcceptInvitationRead:
+      type: object
+      properties:
+        organization_slug:
+          type: string
+      required:
+      - organization_slug
     AnalyticsReport:
       type: object
       properties:
@@ -6362,6 +6387,16 @@ components:
       oneOf:
       - $ref: '#/components/schemas/ProjectFileRequest'
       nullable: true
+    BasicOrganization:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
     BasicUser:
       type: object
       properties:
@@ -6546,10 +6581,10 @@ components:
           maxLength: 40
         secret_key:
           type: string
-          maxLength: 44
+          maxLength: 64
         connection_string:
           type: string
-          maxLength: 440
+          maxLength: 1024
         key_file:
           type: string
           format: binary
@@ -6733,7 +6768,10 @@ components:
             type: string
             format: binary
           default: []
-          description: Uploaded files
+          description: |2
+
+            Uploaded files.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
         server_files:
           type: array
           items:
@@ -6741,8 +6779,10 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
-          description: Paths to files from a file share mounted on the server, or
-            from a cloud storage
+          description: |2
+
+            Paths to files from a file share mounted on the server, or from a cloud storage.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
         remote_files:
           type: array
           items:
@@ -6750,7 +6790,10 @@ components:
             minLength: 1
             maxLength: 1024
           default: []
-          description: Direct download URLs for files
+          description: |2
+
+            Direct download URLs for files.
+            Must contain all files from job_file_mapping if job_file_mapping is not empty.
         use_zip_chunks:
           type: boolean
           default: false
@@ -6825,12 +6868,18 @@ components:
           writeOnly: true
           description: |2
 
-            Represents a file-to-job mapping. Useful to specify a custom job
-            configuration during task creation. This option is not compatible with
-            most other job split-related options. Files in the jobs must not overlap or repeat.
+            Represents a file-to-job mapping.
+            Useful to specify a custom job configuration during task creation.
+            This option is not compatible with most other job split-related options.
+            Files in the jobs must not overlap or repeat.
+            Job file mapping files must be a subset of the input files.
+            If directories are specified in server_files, all files obtained by recursive search
+            in the specified directories will be used as input files.
+            In case of missing items in the input files, an error will be raised.
 
             Example:
             [
+
                 ["file1.jpg", "file2.jpg"], # job #1 files
                 ["file3.png"], # job #2 files
                 ["file4.jpg", "file5.png", "file6.bmp"], # job #3 files
@@ -7210,10 +7259,10 @@ components:
           description: The name of the function to execute
         task:
           type: integer
-          description: The id of the task to annotate
+          description: The id of the task to be annotated
         job:
           type: integer
-          description: The id of the job to annotate
+          description: The id of the job to be annotated
         quality:
           allOf:
           - $ref: '#/components/schemas/QualityEnum'
@@ -7223,22 +7272,23 @@ components:
 
             * `compressed` - compressed
             * `original` - original
-        cleanup:
-          type: boolean
-          default: false
-        convMaskToPoly:
-          type: boolean
-          default: false
+        max_distance:
+          type: integer
         threshold:
           type: number
           format: double
+        cleanup:
+          type: boolean
+          default: false
+          description: Whether existing annotations should be removed
+        convMaskToPoly:
+          type: boolean
+          default: false
         mapping:
           type: object
           additionalProperties:
-            type: object
+            $ref: '#/components/schemas/LabelMappingEntryRequest'
           description: Label mapping from the model to the task labels
-        max_distance:
-          type: integer
       required:
       - function
       - task
@@ -7286,8 +7336,15 @@ components:
           $ref: '#/components/schemas/BasicUser'
         organization:
           type: integer
+        expired:
+          type: boolean
+          readOnly: true
+          nullable: true
+        organization_info:
+          $ref: '#/components/schemas/BasicOrganization'
       required:
       - organization
+      - organization_info
       - owner
       - role
       - user
@@ -7480,6 +7537,14 @@ components:
           type: integer
           readOnly: true
           nullable: true
+        target_storage:
+          allOf:
+          - $ref: '#/components/schemas/Storage'
+          nullable: true
+        source_storage:
+          allOf:
+          - $ref: '#/components/schemas/Storage'
+          nullable: true
       required:
       - issues
       - labels
@@ -7613,6 +7678,25 @@ components:
         has_parent:
           type: boolean
           readOnly: true
+      required:
+      - name
+    LabelMappingEntryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
+        sublabels:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/SublabelMappingEntryRequest'
+          description: Label mapping for from the model to the task sublabels within
+            a parent label
       required:
       - name
     LabeledData:
@@ -7901,9 +7985,6 @@ components:
           type: string
           format: uri
           readOnly: true
-        count:
-          type: integer
-          readOnly: true
     LocationEnum:
       enum:
       - cloud_storage
@@ -7951,6 +8032,7 @@ components:
         invitation:
           type: string
           readOnly: true
+          nullable: true
       required:
       - user
     MetaUser:
@@ -8485,10 +8567,10 @@ components:
           maxLength: 40
         secret_key:
           type: string
-          maxLength: 44
+          maxLength: 64
         connection_string:
           type: string
-          maxLength: 440
+          maxLength: 1024
         key_file:
           type: string
           format: binary
@@ -9297,8 +9379,6 @@ components:
           $ref: '#/components/schemas/LocationEnum'
         cloud_storage_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           nullable: true
     StorageMethod:
       enum:
@@ -9315,8 +9395,6 @@ components:
           $ref: '#/components/schemas/LocationEnum'
         cloud_storage_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           nullable: true
     StorageType:
       enum:
@@ -9518,6 +9596,19 @@ components:
           description: Associated annotation type for this label
         has_parent:
           type: boolean
+      required:
+      - name
+    SublabelMappingEntryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        attributes:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
       required:
       - name
     SublabelRequest:

@@ -5,11 +5,10 @@
 
 import React from 'react';
 
-const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
 const NO_BREAK_SPACE = '\u00a0';
+const UNDEFINED_ATTRIBUTE_VALUE = '__undefined__';
 const CHANGELOG_URL = 'https://github.com/opencv/cvat/blob/develop/CHANGELOG.md';
 const LICENSE_URL = 'https://github.com/opencv/cvat/blob/develop/LICENSE';
-const GITTER_URL = 'https://gitter.im/opencv-cvat';
 const DISCORD_URL = 'https://discord.gg/fNR3eXfk6C';
 const GITHUB_URL = 'https://github.com/opencv/cvat';
 const GITHUB_IMAGE_URL = 'https://github.com/opencv/cvat/raw/develop/site/content/en/images/cvat.jpg';
@@ -19,6 +18,7 @@ const SHARE_MOUNT_GUIDE_URL =
     'https://opencv.github.io/cvat/docs/administration/basics/installation/#share-path';
 const NUCLIO_GUIDE =
     'https://opencv.github.io/cvat//docs/administration/advanced/installation_automatic_annotation/';
+const FILTERS_GUIDE_URL = 'https://opencv.github.io/cvat/docs/manual/advanced/filter/';
 const DATASET_MANIFEST_GUIDE_URL = 'https://opencv.github.io/cvat/docs/manual/advanced/dataset_manifest/';
 const CANVAS_BACKGROUND_COLORS = ['#ffffff', '#f1f1f1', '#e5e5e5', '#d8d8d8', '#CCCCCC', '#B3B3B3', '#999999'];
 const NEW_LABEL_COLOR = '#b3b3b3';
@@ -127,13 +127,13 @@ const RESET_NOTIFICATIONS_PATHS = {
 const BUCKET_CONTENT_KEY = 'All files';
 
 const NUMERIC_VALUE_CLAMP_THRESHOLD = 5000;
+const OPENCV_PATH = '/assets/opencv_4.8.0.js';
 
 export default {
     UNDEFINED_ATTRIBUTE_VALUE,
     NO_BREAK_SPACE,
     CHANGELOG_URL,
     LICENSE_URL,
-    GITTER_URL,
     DISCORD_URL,
     GITHUB_URL,
     GITHUB_IMAGE_URL,
@@ -143,6 +143,7 @@ export default {
     CANVAS_BACKGROUND_COLORS,
     NEW_LABEL_COLOR,
     NUCLIO_GUIDE,
+    FILTERS_GUIDE_URL,
     LATEST_COMMENTS_SHOWN_QUICK_ISSUE,
     QUICK_ISSUE_INCORRECT_POSITION_TEXT,
     QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
@@ -164,4 +165,5 @@ export default {
     RESET_NOTIFICATIONS_PATHS,
     BUCKET_CONTENT_KEY,
     NUMERIC_VALUE_CLAMP_THRESHOLD,
+    OPENCV_PATH,
 };

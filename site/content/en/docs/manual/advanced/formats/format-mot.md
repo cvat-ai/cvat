@@ -1,15 +1,30 @@
 ---
+title: 'MOT'
 linkTitle: 'MOT'
 weight: 3
+description: 'How to export and import data in MOT format'
 ---
 
-# [MOT sequence](https://arxiv.org/pdf/1906.04567.pdf)
+The MOT (Multiple Object Tracking) sequence format is widely
+used for evaluating multi-object tracking algorithms, particularly in
+the domains of pedestrian tracking, vehicle tracking, and more.
+The MOT sequence format essentially contains frames of video
+along with annotations that specify object locations and identities over time.
 
+For more information, see:
+
+- [MOT sequence paper](https://arxiv.org/pdf/1906.04567.pdf)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/mot_dataset)
 
 ## MOT export
 
-Downloaded file: a zip archive of the following structure:
+For export of images and videos:
+
+- Supported annotations: Bounding Boxes, Tracks.
+- Attributes: `visibility` (number), `ignored` (checkbox)
+- Tracks: Supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -33,17 +48,15 @@ person
 
 ```
 
-- supported annotations: Rectangle shapes and tracks
-- supported attributes: `visibility` (number), `ignored` (checkbox)
-
 ## MOT import
 
 Uploaded file: a zip archive of the structure above or:
 
 ```bash
-taskname.zip/
-├── labels.txt # optional, mandatory for non-official labels
-└── gt.txt
+archive.zip/
+└── gt/
+    └── gt.txt
+    └── labels.txt # optional, mandatory for non-official labels
 ```
 
 - supported annotations: Rectangle tracks

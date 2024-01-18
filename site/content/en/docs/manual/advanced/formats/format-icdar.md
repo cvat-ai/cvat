@@ -1,18 +1,41 @@
 ---
+title: 'ICDAR13/15'
 linkTitle: 'ICDAR13/15'
 weight: 14
+description: 'How to export and import data in ICDAR13/15 format'
 ---
 
-# [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)
+ICDAR 13/15 formats are typically used for text detection and recognition tasks
+and OCR (Optical Character Recognition).
 
+These formats are usually paired with specialized text detection and recognition models.
+
+For more information, see:
+
+- [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/icdar_dataset)
 
 ## ICDAR13/15 export
 
-Downloaded file: a zip archive of the following structure:
+For export of images:
+
+- **ICDAR Recognition 1.0** (Text recognition):
+  - Supported annotations: Tag `icdar`
+  - Attributes: `caption`.
+- **ICDAR Detection 1.0** (Text detection):
+  - Supported annotations: Bounding Boxes, Polygons with lavel `icdar`
+    added in constructor.
+  - Attributes: `text`.
+- **ICDAR Segmentation 1.0** (Text segmentation):
+  - Supported annotations: Bounding Boxes, Polygons with label `icdar`
+    added in constructor.
+  - Attributes: `index`, `text`, `color`, `center`
+- Tracks: Not supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
-# word recognition task
+# text recognition task
 taskname.zip/
 └── word_recognition/
     └── <any_subset_name>/
@@ -41,20 +64,6 @@ taskname.zip/
         ├── 2_GT.bmp
         └── 2_GT.txt
 ```
-
-**Word recognition task**:
-
-- supported annotations: Label `icdar` with attribute `caption`
-
-**Text localization task**:
-
-- supported annotations: Rectangles and Polygons with label `icdar`
-  and attribute `text`
-
-**Text segmentation task**:
-
-- supported annotations: Rectangles and Polygons with label `icdar`
-  and attributes `index`, `text`, `color`, `center`
 
 ## ICDAR13/15 import
 

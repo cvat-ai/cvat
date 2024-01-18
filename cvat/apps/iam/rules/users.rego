@@ -27,22 +27,29 @@ import data.organizations
 #     } or null,
 # }
 
-default allow = false
+default allow := false
+
 allow {
     utils.is_admin
 }
 
 allow {
     input.scope == utils.LIST
+    utils.is_sandbox
 }
 
-filter = [] { # Django Q object to filter list of entries
+allow {
+    input.scope == utils.LIST
+    organizations.is_member
+}
+
+filter := [] { # Django Q object to filter list of entries
     utils.is_admin
     utils.is_sandbox
-} else = qobject {
+} else := qobject {
     utils.is_sandbox
     qobject := [ {"id": input.auth.user.id} ]
-} else = qobject {
+} else := qobject {
     org_id := input.auth.organization.id
     qobject := [ {"memberships__organization": org_id} ]
 }

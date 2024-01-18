@@ -113,7 +113,6 @@ RUN apt-get update && \
         ca-certificates \
         curl \
         git \
-        git-lfs \
         libgeos-c1v5 \
         libgl1 \
         libgomp1 \
@@ -124,9 +123,7 @@ RUN apt-get update && \
         p7zip-full \
         poppler-utils \
         python3 \
-        python3-distutils \
         python3-venv \
-        ssh \
         supervisor \
         tzdata \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
@@ -140,12 +137,7 @@ COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
 # Add a non-root user
 ENV USER=${USER}
 ENV HOME /home/${USER}
-RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
-    if [ -z ${socks_proxy} ]; then \
-        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30\"" >> ${HOME}/.bashrc; \
-    else \
-        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
-    fi
+RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER}
 
 ARG CLAM_AV="no"
 RUN if [ "$CLAM_AV" = "yes" ]; then \
@@ -184,8 +176,7 @@ RUN if [ "${CVAT_DEBUG_ENABLED}" = 'yes' ]; then \
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=${USER} components /tmp/components
 COPY --chown=${USER} supervisord/ ${HOME}/supervisord
-COPY --chown=${USER} ssh ${HOME}/.ssh
-COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh ${HOME}/
+COPY --chown=${USER} wait-for-it.sh manage.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
 COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} cvat/ ${HOME}/cvat
 COPY --chown=${USER} rqscheduler.py ${HOME}

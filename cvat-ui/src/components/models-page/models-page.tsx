@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { getModelProvidersAsync, getModelsAsync } from 'actions/models-actions';
+import { getModelsAsync } from 'actions/models-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
@@ -23,10 +23,6 @@ function ModelsPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.models.fetching);
     const query = useSelector((state: CombinedState) => state.models.query);
     const totalCount = useSelector((state: CombinedState) => state.models.totalCount);
-
-    const onCreateModel = useCallback(() => {
-        history.push('/models/create');
-    }, []);
 
     const updatedQuery = { ...query };
     const queryParams = new URLSearchParams(history.location.search);
@@ -44,7 +40,6 @@ function ModelsPageComponent(): JSX.Element {
 
     const pageOutOfBounds = totalCount && updatedQuery.page > Math.ceil(totalCount / PAGE_SIZE);
     useEffect(() => {
-        dispatch(getModelProvidersAsync());
         dispatch(getModelsAsync(updatedQuery));
         if (pageOutOfBounds) {
             notification.error({
@@ -63,7 +58,6 @@ function ModelsPageComponent(): JSX.Element {
             <TopBar
                 disabled
                 query={updatedQuery}
-                onCreateModel={onCreateModel}
                 onApplySearch={(search: string | null) => {
                     dispatch(
                         getModelsAsync({

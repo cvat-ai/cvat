@@ -180,6 +180,7 @@ context('New organization pipeline.', () => {
             cy.activateOrganization(organizationParams.shortName);
             cy.openOrganization(organizationParams.shortName);
             cy.contains('button', 'Leave organization').should('be.visible').click();
+            cy.once('uncaught:exception', () => false); // thrown exception is expected in this test
             cy.get('.cvat-modal-organization-leave-confirm')
                 .should('be.visible')
                 .within(() => {
@@ -222,14 +223,14 @@ context('New organization pipeline.', () => {
         it('Open the task, assign one of jobs to the third user. Rename the task.', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
-            cy.assignJobToUser(0, thirdUserName);
+            cy.getJobIDFromIdx(0).then((_jobID) => {
+                jobID = _jobID;
+                cy.assignJobToUser(_jobID, thirdUserName);
+            });
             cy.renameTask(taskName, newTaskName);
             cy.url().then((url) => {
                 const [link] = url.split('?');
                 taskID = Number(link.split('/').slice(-1)[0]);
-            });
-            cy.getJobNum(0).then(($jobID) => {
-                jobID = $jobID;
             });
         });
 

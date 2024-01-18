@@ -5,8 +5,6 @@
 
 import { Mutex } from 'async-mutex';
 import { MP4Reader, Bytestream } from './3rdparty/mp4';
-import ZipDecoder from './unzip_imgs.worker';
-import H264Decoder from './3rdparty/Decoder.worker';
 
 export class RequestOutdatedError extends Error {}
 
@@ -28,26 +26,29 @@ export enum DimensionType {
 export function decodeContextImages(
     block: any, start: number, end: number,
 ): Promise<Record<string, ImageBitmap>> {
-    const decodeZipWorker = ((decodeContextImages as any).zipWorker || new (ZipDecoder as any)()) as Worker;
+    const decodeZipWorker = (decodeContextImages as any).zipWorker || new Worker(
+        new URL('./unzip_imgs.worker', import.meta.url),
+    );
     (decodeContextImages as any).zipWorker = decodeZipWorker;
     return new Promise((resolve, reject) => {
         decodeContextImages.mutex.acquire().then((release) => {
             const result: Record<string, ImageBitmap> = {};
             let decoded = 0;
 
-            decodeZipWorker.onerror = (e: ErrorEvent) => {
+            decodeZipWorker.onerror = (event: ErrorEvent) => {
                 release();
-                reject(new Error(`Archive can not be decoded. ${e.message}`));
+                reject(event.error);
             };
 
             decodeZipWorker.onmessage = async (event) => {
-                const { error, fileName } = event.data;
-                if (error) {
-                    decodeZipWorker.onerror(new ErrorEvent('error', { message: error.toString() }));
+                if (event.data.error) {
+                    this.zipWorker.onerror(new ErrorEvent('error', {
+                        error: event.data.error,
+                    }));
                     return;
                 }
 
-                const { data } = event.data;
+                const { data, fileName } = event.data;
                 result[fileName.split('.')[0]] = data;
                 decoded++;
 
@@ -220,7 +221,9 @@ export class FrameDecoder {
             this.requestedChunkToDecode = null;
 
             if (this.blockType === BlockType.MP4VIDEO) {
-                const worker = new H264Decoder() as any as Worker;
+                const worker = new Worker(
+                    new URL('./3rdparty/Decoder.worker', import.meta.url),
+                );
                 let index = start;
 
                 worker.onmessage = (e) => {
@@ -253,10 +256,10 @@ export class FrameDecoder {
                     index++;
                 };
 
-                worker.onerror = () => {
+                worker.onerror = (event: ErrorEvent) => {
                     release();
                     worker.terminate();
-                    this.chunkIsBeingDecoded.onReject(new Error('Error occured during decode'));
+                    this.chunkIsBeingDecoded.onReject(event.error);
                     this.chunkIsBeingDecoded = null;
                 };
 
@@ -285,12 +288,16 @@ export class FrameDecoder {
                     });
                 }
             } else {
-                this.zipWorker = this.zipWorker || new (ZipDecoder as any)() as any as Worker;
+                this.zipWorker = this.zipWorker || new Worker(
+                    new URL('./unzip_imgs.worker', import.meta.url),
+                );
                 let index = start;
 
                 this.zipWorker.onmessage = async (event) => {
                     if (event.data.error) {
-                        this.zipWorker.onerror(new ErrorEvent('error', { message: event.data.error.toString() }));
+                        this.zipWorker.onerror(new ErrorEvent('error', {
+                            error: event.data.error,
+                        }));
                         return;
                     }
 
@@ -306,10 +313,9 @@ export class FrameDecoder {
                     index++;
                 };
 
-                this.zipWorker.onerror = () => {
+                this.zipWorker.onerror = (event: ErrorEvent) => {
                     release();
-
-                    this.chunkIsBeingDecoded.onReject(new Error('Error occured during decode'));
+                    this.chunkIsBeingDecoded.onReject(event.error);
                     this.chunkIsBeingDecoded = null;
                 };
 

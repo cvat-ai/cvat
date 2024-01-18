@@ -14,7 +14,7 @@ export interface RawCommentData {
     owner?: any;
 }
 
-interface SerializedCommentData extends RawCommentData{
+interface SerializedCommentData extends RawCommentData {
     owner_id?: number;
     issue?: number;
 }

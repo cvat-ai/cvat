@@ -745,7 +745,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         if (![Mode.DRAG_CANVAS, Mode.IDLE].includes(this.mode)) return;
         this.isPerspectiveBeingDragged = true;
         this.enablePerspectiveDragging();
-    }
+    };
 
     private startAction(view: any, event: MouseEvent): void {
         const { clientID } = this.model.data.activeElement;
@@ -863,13 +863,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.resetActions();
     }
 
-    private onGroupDone(objects?: any[]): void {
+    private onGroupDone(objects?: any[], duration?: number): void {
         if (objects && objects.length !== 0) {
             this.dispatchEvent(
                 new CustomEvent('canvas.groupped', {
                     bubbles: false,
                     cancelable: true,
                     detail: {
+                        duration,
                         states: objects,
                     },
                 }),
@@ -910,12 +911,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onSplitDone(object: ObjectState): void {
+    private onSplitDone(object: ObjectState, duration?: number): void {
         if (object) {
             const event: CustomEvent = new CustomEvent('canvas.splitted', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
+                    duration,
                     state: object,
                     frame: object.frame,
                 },
@@ -1149,10 +1151,6 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             this.statesToBeGrouped = [];
             this.clearScene();
 
-            const onPCDLoadFailed = (): void => {
-                model.unlockFrameUpdating();
-            };
-
             const onPCDLoadSuccess = (points: any): void => {
                 try {
                     this.onSceneImageLoaded(points);
@@ -1164,14 +1162,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             };
 
             try {
-                if (!model.data.image) {
-                    throw new Error('No image data found');
-                }
-
-                const loader = new PCDLoader();
-                const objectURL = URL.createObjectURL(model.data.image.imageData);
-
-                try {
+                if (model.data.image) {
+                    const loader = new PCDLoader();
                     this.views.perspective.renderer.dispose();
                     if (this.controller.imageIsDeleted) {
                         try {
@@ -1202,14 +1194,97 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                             model.unlockFrameUpdating();
                         }
                     } else {
-                        loader.load(objectURL, onPCDLoadSuccess, () => {}, onPCDLoadFailed);
+                        model.data.image.imageData.arrayBuffer().then((data) => {
+                            const defaultImpl = console.error;
+                            // loader.parse will throw some errors to console when nan values are in PCD file
+                            // there is not way to prevent it, because three.js opinion is that nan values
+                            // in input data is incorrect
+                            let cloud = null;
+                            try {
+                                console.error = () => {};
+                                cloud = loader.parse(data) as THREE.Points;
+                            } finally {
+                                console.error = defaultImpl;
+                            }
+
+                            let {
+                                position, color, normal, intensity, label,
+                            } = cloud.geometry.attributes;
+                            cloud.material.vertexColors = true;
+
+                            ({
+                                color, position, normal, intensity, label,
+                            } = position.array.reduce((acc, _, i, array) => {
+                                if (
+                                    i % 3 === 0 &&
+                                    Number.isFinite(array[i]) &&
+                                    Number.isFinite(array[i + 1]) &&
+                                    Number.isFinite(array[i + 2])
+                                ) {
+                                    acc.position.push(array[i], array[i + 1], array[i + 2]);
+
+                                    if (
+                                        color &&
+                                        Number.isFinite(color.array[i]) &&
+                                        Number.isFinite(color.array[i + 1]) &&
+                                        Number.isFinite(color.array[i + 2])
+                                    ) {
+                                        acc.color.push(color.array[i], color.array[i + 1], color.array[i + 2]);
+                                    } else {
+                                        acc.color.push(255, 255, 255);
+                                    }
+
+                                    if (
+                                        normal &&
+                                        Number.isFinite(normal.array[i]) &&
+                                        Number.isFinite(normal.array[i + 1]) &&
+                                        Number.isFinite(normal.array[i + 2])
+                                    ) {
+                                        acc.normal.push(normal.array[i], normal.array[i + 1], normal.array[i + 2]);
+                                    }
+
+                                    if (intensity) {
+                                        acc.intensity.push(intensity.array[i / 3]);
+                                    }
+
+                                    if (label) {
+                                        acc.label.push(label.array[i / 3]);
+                                    }
+                                }
+
+                                return acc;
+                            }, {
+                                position: [], color: [], normal: [], intensity: [], label: [],
+                            }));
+
+                            if (position.length) {
+                                cloud.geometry.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
+                            }
+
+                            if (color.length) {
+                                cloud.geometry.setAttribute('color', new THREE.Float32BufferAttribute(color, 3));
+                            }
+
+                            if (normal.length) {
+                                cloud.geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normal, 3));
+                            }
+
+                            if (intensity.length) {
+                                cloud.geometry.setAttribute('intensity', new THREE.Float32BufferAttribute(intensity, 1));
+                            }
+
+                            if (label.length) {
+                                cloud.geometry.setAttribute('label', new THREE.Float32BufferAttribute(label, 1));
+                            }
+
+                            cloud.geometry.computeBoundingSphere();
+                            onPCDLoadSuccess(cloud);
+                        });
                         const [overlay] = window.document.getElementsByClassName('cvat_3d_canvas_deleted_overlay');
                         if (overlay) {
                             overlay.remove();
                         }
                     }
-                } finally {
-                    URL.revokeObjectURL(objectURL);
                 }
             } catch (error: any) {
                 model.unlockFrameUpdating();
@@ -1476,7 +1551,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // Setup TopView
         const canvasTopView = this.views.top.renderer.domElement;
         const topScenePlane = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
+            new THREE.PlaneGeometry(
                 canvasTopView.offsetHeight,
                 canvasTopView.offsetWidth,
                 canvasTopView.offsetHeight,
@@ -1499,7 +1574,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // Setup Side View
         const canvasSideView = this.views.side.renderer.domElement;
         const sideScenePlane = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
+            new THREE.PlaneGeometry(
                 canvasSideView.offsetHeight,
                 canvasSideView.offsetWidth,
                 canvasSideView.offsetHeight,
@@ -1521,7 +1596,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         // Setup front View
         const canvasFrontView = this.views.front.renderer.domElement;
         const frontScenePlane = new THREE.Mesh(
-            new THREE.PlaneBufferGeometry(
+            new THREE.PlaneGeometry(
                 canvasFrontView.offsetHeight,
                 canvasFrontView.offsetWidth,
                 canvasFrontView.offsetHeight,
@@ -1604,7 +1679,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     private renderRayCaster = (viewType: RenderView): void => {
         viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector, viewType.camera);
         if (this.mode === Mode.DRAW) {
-            const [intersection] = viewType.rayCaster.renderer.intersectObjects(this.views.perspective.scene.children);
+            const [intersection] = viewType.rayCaster.renderer
+                .intersectObjects(this.views.perspective.scene.children, false);
             if (intersection) {
                 const object = this.views.perspective.scene.getObjectByName('drawTemplate');
                 const { x, y, z } = intersection.point;

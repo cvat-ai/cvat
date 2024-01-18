@@ -242,7 +242,7 @@ class Data(models.Model):
         return int(match.group(1)) if match else 1
 
     def get_valid_frame_indices(self):
-        return range(self.start_frame, self.stop_frame, self.get_frame_step())
+        return range(self.start_frame, self.stop_frame + 1, self.get_frame_step())
 
     def get_data_dirname(self):
         return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
@@ -366,23 +366,6 @@ class Project(models.Model):
         return self.name
 
 class TaskQuerySet(models.QuerySet):
-    def with_label_summary(self):
-        return self.prefetch_related(
-            'label_set',
-            'label_set__parent',
-            'project__label_set',
-            'project__label_set__parent',
-        ).annotate(
-            task_labels_count=models.Count('label',
-                filter=models.Q(label__parent__isnull=True),
-                distinct=True
-            ),
-            proj_labels_count=models.Count('project__label',
-                filter=models.Q(project__label__parent__isnull=True),
-                distinct=True
-            )
-        )
-
     def with_job_summary(self):
         return self.prefetch_related(
             'segment_set__job_set',
@@ -437,7 +420,9 @@ class Task(models.Model):
 
     def get_labels(self):
         project = self.project
-        return project.get_labels() if project else self.label_set.filter(parent__isnull=True)
+        if project:
+            return project.get_labels()
+        return self.label_set.filter(parent__isnull=True)
 
     def get_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
@@ -614,7 +599,7 @@ class Segment(models.Model):
             )
 
         if self.stop_frame < self.start_frame:
-            raise ValidationError("stop_frame cannot be lesser than start_frame")
+            raise ValidationError("stop_frame cannot be less than start_frame")
 
         return super().clean()
 
@@ -659,6 +644,9 @@ class JobQuerySet(models.QuerySet):
         return super().update_or_create(*args, **kwargs)
 
     def _validate_constraints(self, obj: Dict[str, Any]):
+        if 'type' not in obj:
+            return
+
         # Constraints can't be set on the related model fields
         # This method requires the save operation to be called as a transaction
         if obj['type'] == JobType.GROUND_TRUTH and self.filter(
@@ -690,6 +678,12 @@ class Job(models.Model):
 
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
+
+    def get_target_storage(self) -> Optional[Storage]:
+        return self.segment.task.target_storage
+
+    def get_source_storage(self) -> Optional[Storage]:
+        return self.segment.task.source_storage
 
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
@@ -1083,7 +1077,7 @@ class CloudStorage(models.Model):
     # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
     # https://cloud.google.com/storage/docs/naming-buckets#requirements
     # AWS access key id - 20, Oracle OCI access key id - 40
-    # AWS secret access key - 40, Oracle OCI secret key id - 44
+    # AWS secret access key - 40, Oracle OCI secret access key - 44, Cloudflare R2 secret access key - 64
     # AWS temporary session token - None
     # The size of the security token that AWS STS API operations return is not fixed.
     # We strongly recommend that you make no assumptions about the maximum size.
@@ -1098,7 +1092,7 @@ class CloudStorage(models.Model):
         on_delete=models.SET_NULL, related_name="cloud_storages")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
-    credentials = models.CharField(max_length=500, null=True, blank=True)
+    credentials = models.CharField(max_length=1024, null=True, blank=True)
     credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
     specific_attributes = models.CharField(max_length=1024, blank=True)
     description = models.TextField(blank=True)
@@ -1126,7 +1120,12 @@ class CloudStorage(models.Model):
 
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
-    cloud_storage_id = models.IntegerField(null=True, blank=True, default=None)
+    cloud_storage = models.ForeignKey(
+        CloudStorage,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='+',
+    )
 
     class Meta:
         default_permissions = ()

@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ import {
 import consts from './consts';
 import { DrawHandler } from './drawHandler';
 import {
-    PropType, computeWrappingBox, alphaChannelOnly, expandChannels, imageDataToDataURL,
+    PropType, computeWrappingBox, zipChannels, expandChannels, imageDataToDataURL,
 } from './shared';
 
 interface WrappingBBox {
@@ -295,15 +295,10 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     public constructor(
-        onDrawDone: (
-            data: object | null,
-            duration?: number,
-            continueDraw?: boolean,
-            prevDrawData?: DrawData,
-        ) => void,
-        onDrawRepeat: (data: DrawData) => void,
-        onEditStart: (state: any) => void,
-        onEditDone: (state: any, points: number[]) => void,
+        onDrawDone: MasksHandlerImpl['onDrawDone'],
+        onDrawRepeat: MasksHandlerImpl['onDrawRepeat'],
+        onEditStart: MasksHandlerImpl['onEditStart'],
+        onEditDone: MasksHandlerImpl['onEditDone'],
         vectorDrawHandler: DrawHandler,
         canvas: HTMLCanvasElement,
     ) {
@@ -348,12 +343,12 @@ export class MasksHandlerImpl implements MasksHandler {
                 const continueInserting = options.e.ctrlKey;
                 const wrappingBbox = this.getDrawnObjectsWrappingBox();
                 const imageData = this.imageDataFromCanvas(wrappingBbox);
-                const alpha = alphaChannelOnly(imageData);
-                alpha.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
+                const rle = zipChannels(imageData);
+                rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
 
                 this.onDrawDone({
                     shapeType: this.drawData.shapeType,
-                    points: alpha,
+                    points: rle,
                 }, Date.now() - this.startTimestamp, continueInserting, this.drawData);
 
                 if (!continueInserting) {
@@ -528,7 +523,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 const { points } = drawData.initialState;
                 const color = fabric.Color.fromHex(this.getStateColor(drawData.initialState)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
-                const imageBitmap = expandChannels(color[0], color[1], color[2], points, 4);
+                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
                 imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
@@ -547,28 +542,30 @@ export class MasksHandlerImpl implements MasksHandler {
                     }));
 
                 this.isInsertion = true;
-            } else if (!this.isDrawing) {
-                // initialize drawing pipeline if not started
-                this.isDrawing = true;
-                this.redraw = drawData.redraw || null;
+            } else {
+                this.updateBrushTools(drawData.brushTool);
+                if (!this.isDrawing) {
+                    // initialize drawing pipeline if not started
+                    this.isDrawing = true;
+                    this.redraw = drawData.redraw || null;
+                }
             }
 
             this.canvas.getElement().parentElement.style.display = 'block';
             this.startTimestamp = Date.now();
         }
 
-        this.updateBrushTools(drawData.brushTool);
-
         if (!drawData.enabled && this.isDrawing) {
             try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                    this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
-                    const alpha = alphaChannelOnly(imageData);
-                    alpha.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
+                    const rle = zipChannels(imageData);
+                    rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
                     this.onDrawDone({
                         shapeType: this.drawData.shapeType,
-                        points: alpha,
+                        points: rle,
                         ...(Number.isInteger(this.redraw) ? { clientID: this.redraw } : {}),
                     }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
                 }
@@ -600,7 +597,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 const { points } = editData.state;
                 const color = fabric.Color.fromHex(this.getStateColor(editData.state)).getSource();
                 const [left, top, right, bottom] = points.slice(-4);
-                const imageBitmap = expandChannels(color[0], color[1], color[2], points, 4);
+                const imageBitmap = expandChannels(color[0], color[1], color[2], points);
                 imageDataToDataURL(imageBitmap, right - left + 1, bottom - top + 1,
                     (dataURL: string) => new Promise((resolve) => {
                         fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
@@ -633,10 +630,11 @@ export class MasksHandlerImpl implements MasksHandler {
             try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                    this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
-                    const alpha = alphaChannelOnly(imageData);
-                    alpha.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
-                    this.onEditDone(this.editData.state, alpha);
+                    const rle = zipChannels(imageData);
+                    rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
+                    this.onEditDone(this.editData.state, rle);
                 }
             } finally {
                 this.releaseEdit();

@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from enum import Enum
 from io import BytesIO
 from multiprocessing.pool import ThreadPool
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any, Callable
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
@@ -96,8 +96,8 @@ def validate_file_status(func):
 
 class _CloudStorage(ABC):
 
-    def __init__(self):
-        self._files = []
+    def __init__(self, prefix: Optional[str] = None):
+        self.prefix = prefix
 
     @abstractproperty
     def name(self):
@@ -126,7 +126,6 @@ class _CloudStorage(ABC):
     @abstractmethod
     def get_file_last_modified(self, key):
         pass
-
 
     @abstractmethod
     def download_fileobj(self, key):
@@ -234,7 +233,7 @@ class _CloudStorage(ABC):
     @abstractmethod
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
@@ -242,22 +241,51 @@ class _CloudStorage(ABC):
 
     def list_files_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
         _use_flat_listing: bool = False,
         _use_sort: bool = False,
     ) -> Dict:
-        result = self._list_raw_content_on_one_page(prefix, next_token, page_size)
+
+        if self.prefix and prefix and not (self.prefix.startswith(prefix) or prefix.startswith(self.prefix)):
+            return {
+                'content': [],
+                'next': None,
+            }
+
+        search_prefix = prefix
+        if self.prefix and (len(prefix) < len(self.prefix)):
+            if prefix and '/' in self.prefix[len(prefix):]:
+                next_layer_and_tail = self.prefix[prefix.find('/') + 1:].split(
+                    "/", maxsplit=1
+                )
+                if 2 == len(next_layer_and_tail):
+                    directory = (
+                        next_layer_and_tail[0]
+                        if not _use_flat_listing
+                        else self.prefix[: prefix.find('/') + 1] + next_layer_and_tail[0] + "/"
+                    )
+                    return {
+                        "content": [{"name": directory, "type": "DIR"}],
+                        "next": None,
+                    }
+                else:
+                    search_prefix = self.prefix
+            else:
+                search_prefix = self.prefix
+
+        result = self._list_raw_content_on_one_page(search_prefix, next_token, page_size)
 
         if not _use_flat_listing:
             result['directories'] = [d.strip('/') for d in result['directories']]
         content = [{'name': f, 'type': 'REG'} for f in result['files']]
         content.extend([{'name': d, 'type': 'DIR'} for d in result['directories']])
 
-        if not _use_flat_listing and prefix and prefix.endswith('/'):
+        if not _use_flat_listing and search_prefix and '/' in search_prefix:
+            last_slash = search_prefix.rindex('/')
             for f in content:
-                f['name'] = f['name'][len(prefix):]
+                f['name'] = f['name'][last_slash + 1:]
 
         if _use_sort:
             content = sorted(content, key=lambda x: x['type'])
@@ -269,7 +297,7 @@ class _CloudStorage(ABC):
 
     def list_files(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         _use_flat_listing: bool = False,
     ) -> List[str]:
         all_files = []
@@ -283,17 +311,6 @@ class _CloudStorage(ABC):
 
         return all_files
 
-
-    def __contains__(self, file_name):
-        return file_name in (item['name'] for item in self._files)
-
-    def __len__(self):
-        return len(self._files)
-
-    @property
-    def content(self):
-        return list(map(lambda x: x['name'] , self._files))
-
     @abstractproperty
     def supported_actions(self):
         pass
@@ -306,7 +323,12 @@ class _CloudStorage(ABC):
     def write_access(self):
         return Permissions.WRITE in self.access
 
-def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_attributes=None, endpoint=None):
+def get_cloud_storage_instance(
+    cloud_provider: CloudProviderChoice,
+    resource: str,
+    credentials: str,
+    specific_attributes: Optional[Dict[str, Any]] = None,
+):
     instance = None
     if cloud_provider == CloudProviderChoice.AWS_S3:
         instance = AWS_S3(
@@ -316,13 +338,15 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
             session_token=credentials.session_token,
             region=specific_attributes.get('region'),
             endpoint_url=specific_attributes.get('endpoint_url'),
+            prefix=specific_attributes.get('prefix'),
         )
     elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
         instance = AzureBlobContainer(
             container=resource,
             account_name=credentials.account_name,
             sas_token=credentials.session_token,
-            connection_string=credentials.connection_string
+            connection_string=credentials.connection_string,
+            prefix=specific_attributes.get('prefix'),
         )
     elif cloud_provider == CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
         instance = GoogleCloudStorage(
@@ -334,7 +358,7 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
             project=specific_attributes.get('project')
         )
     else:
-        raise NotImplementedError()
+        raise NotImplementedError(f"The {cloud_provider} provider is not supported")
     return instance
 
 class AWS_S3(_CloudStorage):
@@ -348,36 +372,47 @@ class AWS_S3(_CloudStorage):
 
 
     def __init__(self,
-                bucket,
-                region,
-                access_key_id=None,
-                secret_key=None,
-                session_token=None,
-                endpoint_url=None):
-        super().__init__()
-        if all([access_key_id, secret_key, session_token]):
-            self._s3 = boto3.resource(
-                's3',
-                aws_access_key_id=access_key_id,
-                aws_secret_access_key=secret_key,
-                aws_session_token=session_token,
-                region_name=region,
-                endpoint_url=endpoint_url
+                bucket: str,
+                region: Optional[str] = None,
+                access_key_id: Optional[str] = None,
+                secret_key: Optional[str] = None,
+                session_token: Optional[str] = None,
+                endpoint_url: Optional[str] = None,
+                prefix: Optional[str] = None,
+    ):
+        super().__init__(prefix=prefix)
+        if (
+            sum(
+                1
+                for credential in (access_key_id, secret_key, session_token)
+                if credential
             )
-        elif access_key_id and secret_key:
-            self._s3 = boto3.resource(
-                's3',
-                aws_access_key_id=access_key_id,
-                aws_secret_access_key=secret_key,
-                region_name=region,
-                endpoint_url=endpoint_url
-            )
-        elif any([access_key_id, secret_key, session_token]):
-            raise Exception('Insufficient data for authorization')
+            == 1
+        ):
+            raise Exception("Insufficient data for authorization")
+
+        kwargs = dict()
+        for key, arg_v in zip(
+            (
+                "aws_access_key_id",
+                "aws_secret_access_key",
+                "aws_session_token",
+                "region_name",
+            ),
+            (access_key_id, secret_key, session_token, region),
+        ):
+            if arg_v:
+                kwargs[key] = arg_v
+
+        session = boto3.Session(**kwargs)
+        self._s3 = session.resource("s3", endpoint_url=endpoint_url)
+
         # anonymous access
         if not any([access_key_id, secret_key, session_token]):
-            self._s3 = boto3.resource('s3', region_name=region, endpoint_url=endpoint_url)
-            self._s3.meta.client.meta.events.register('choose-signer.s3.*', disable_signing)
+            self._s3.meta.client.meta.events.register(
+                "choose-signer.s3.*", disable_signing
+            )
+
         self._client = self._s3.meta.client
         self._bucket = self._s3.Bucket(bucket)
         self.region = region
@@ -451,7 +486,7 @@ class AWS_S3(_CloudStorage):
 
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
@@ -467,7 +502,7 @@ class AWS_S3(_CloudStorage):
             **({'Prefix': prefix} if prefix else {}),
             **({'ContinuationToken': next_token} if next_token else {}),
         )
-        files = [f['Key'] for f in response.get('Contents', [])]
+        files = [f['Key'] for f in response.get('Contents', []) if not f['Key'].endswith('/')]
         directories = [p['Prefix'] for p in response.get('CommonPrefixes', [])]
 
         return {
@@ -565,9 +600,10 @@ class AzureBlobContainer(_CloudStorage):
         container: str,
         account_name: Optional[str] = None,
         sas_token: Optional[str] = None,
-        connection_string: Optional[str] = None
+        connection_string: Optional[str] = None,
+        prefix: Optional[str] = None,
     ):
-        super().__init__()
+        super().__init__(prefix=prefix)
         self._account_name = account_name
         if connection_string:
             self._blob_service_client = BlobServiceClient.from_connection_string(connection_string)
@@ -653,7 +689,7 @@ class AzureBlobContainer(_CloudStorage):
 
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
@@ -720,8 +756,16 @@ class GoogleCloudStorage(_CloudStorage):
     class Effect:
         pass
 
-    def __init__(self, bucket_name, prefix=None, service_account_json=None, anonymous_access=False, project=None, location=None):
-        super().__init__()
+    def __init__(
+        self,
+        bucket_name: str,
+        prefix: Optional[str] = None,
+        service_account_json: Optional[Any] = None,
+        anonymous_access: bool = False,
+        project: Optional[str] = None,
+        location: Optional[str] = None,
+    ):
+        super().__init__(prefix=prefix)
         if service_account_json:
             self._client = storage.Client.from_service_account_json(service_account_json)
         elif anonymous_access:
@@ -733,7 +777,6 @@ class GoogleCloudStorage(_CloudStorage):
 
         self._bucket = self._client.bucket(bucket_name, user_project=project)
         self._bucket_location = location
-        self._prefix = prefix
 
     @property
     def bucket(self):
@@ -761,7 +804,7 @@ class GoogleCloudStorage(_CloudStorage):
 
     def _list_raw_content_on_one_page(
         self,
-        prefix: Optional[str] = None,
+        prefix: str = "",
         next_token: Optional[str] = None,
         page_size: int = settings.BUCKET_CONTENT_MAX_PAGE_SIZE,
     ) -> Dict:
@@ -773,7 +816,7 @@ class GoogleCloudStorage(_CloudStorage):
             **({'page_token': next_token} if next_token else {}),
         )
         # NOTE: we should firstly iterate and only then we can define common prefixes
-        files = [f.name for f in iterator]
+        files = [f.name for f in iterator if not f.name.endswith('/')] # skip manually created "directories"
         directories = iterator.prefixes
 
         return {
@@ -919,3 +962,23 @@ def db_storage_to_storage_instance(db_storage):
         'specific_attributes': db_storage.get_specific_attributes()
     }
     return get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+
+def download_file_from_bucket(db_storage: Any, filename: str, key: str) -> None:
+    storage = db_storage_to_storage_instance(db_storage)
+
+    with storage.download_fileobj(key) as data, open(filename, 'wb+') as f:
+        f.write(data.getbuffer())
+
+def export_resource_to_cloud_storage(
+    db_storage: Any,
+    key: str,
+    key_pattern: str,
+    func: Callable[[int, Optional[str], Optional[str]], str],
+    *args,
+    **kwargs,
+) -> str:
+    file_path = func(*args, **kwargs)
+    storage = db_storage_to_storage_instance(db_storage)
+    storage.upload_file(file_path, key if key else key_pattern.format(os.path.splitext(file_path)[1].lower()))
+
+    return file_path

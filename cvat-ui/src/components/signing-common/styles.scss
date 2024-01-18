@@ -2,21 +2,18 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../styles.scss';
+@import '../../styles';
 
 $heading-font: 'Sora', sans-serif;
 $signing-font: 'Roboto Flex', sans-serif;
-
 $heading-color: white;
 $error-color: #ff4d4f;
 $action-button-color-1: black;
 $action-button-color-2: gray;
 $action-button-color-3: #d4d4d4;
 $placeholder-color: #c5bfbf;
-
 $base-transition: all 0.8s ease;
 $input-transition: all 0.3s ease;
-
 $social-google-background: #4286f5;
 
 .cvat-signing-layout {
@@ -40,7 +37,7 @@ $social-google-background: #4286f5;
 .cvat-signing-header {
     background: transparent;
     position: fixed;
-    padding: $grid-unit-size*2 0 0 0;
+    padding: $grid-unit-size * 2 0 0 0;
     width: 100%;
 
     .cvat-logo-icon {
@@ -52,7 +49,7 @@ $social-google-background: #4286f5;
     position: absolute;
     width: 100%;
     height: 100%;
-    min-width: $grid-unit-size*128;
+    min-width: $grid-unit-size * 128;
 }
 
 .cvat-credentials-link {
@@ -125,6 +122,10 @@ $social-google-background: #4286f5;
         }
     }
 
+    .ant-input-affix-wrapper-disabled {
+        background: transparent;
+    }
+
     .cvat-signing-input-not-empty {
         @extend .cvat-input-floating-label;
     }
@@ -145,7 +146,7 @@ $social-google-background: #4286f5;
 }
 
 .cvat-credentials-navigation {
-    margin-bottom: $grid-unit-size*4;
+    margin-bottom: $grid-unit-size * 4;
 }
 
 .cvat-credentials-action-button {
@@ -336,6 +337,6 @@ $social-google-background: #4286f5;
     .cvat-register-form {
         @extend .cvat-signing-form;
 
-        height: $grid-unit-size*76;
+        height: $grid-unit-size * 76;
     }
 }

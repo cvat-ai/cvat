@@ -6,17 +6,13 @@
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, ModelProvider, Organization,
-    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus,
+    Webhook, MLModel, Organization, Job, Label,
+    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger, Invitation,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
 import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 import { ImageFilter } from 'utils/image-processing';
-
-export type StringObject = {
-    [index: string]: string;
-};
 
 export interface AuthState {
     initialized: boolean;
@@ -84,8 +80,6 @@ export interface JobsQuery {
     search: string | null;
     filter: string | null;
 }
-
-export type Job = any;
 
 export interface JobsState {
     query: JobsQuery;
@@ -260,7 +254,6 @@ export interface CloudStoragesState {
 }
 
 export enum SupportedPlugins {
-    GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
 }
@@ -296,6 +289,21 @@ export interface PluginsState {
         loginPage: {
             loginForm: PluginComponent[];
         };
+        modelsPage: {
+            topBar: {
+                items: PluginComponent[],
+            },
+            modelItem: {
+                menu: {
+                    items: PluginComponent[],
+                },
+                topBar:{
+                    menu: {
+                        items: PluginComponent[],
+                    }
+                },
+            }
+        };
         projectActions: {
             items: PluginComponent[];
         };
@@ -314,7 +322,12 @@ export interface PluginsState {
             };
         };
         settings: {
-            player: PluginComponent[],
+            player: PluginComponent[];
+        }
+        about: {
+            links: {
+                items: PluginComponent[];
+            }
         }
         router: PluginComponent[];
         loggedInModals: PluginComponent[];
@@ -375,12 +388,6 @@ export enum TaskStatus {
     COMPLETED = 'completed',
 }
 
-export enum JobStage {
-    ANNOTATION = 'annotation',
-    REVIEW = 'validation',
-    ACCEPTANCE = 'acceptance',
-}
-
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
@@ -405,10 +412,6 @@ export interface ModelsState {
     modelRunnerIsVisible: boolean;
     modelRunnerTask: any;
     query: ModelsQuery;
-    providers: {
-        fetching: boolean;
-        list: ModelProvider[];
-    }
     previews: {
         [index: string]: Preview;
     };
@@ -416,7 +419,8 @@ export interface ModelsState {
 
 export interface ErrorState {
     message: string;
-    reason: string;
+    reason: Error;
+    shouldLog?: boolean;
     className?: string;
 }
 
@@ -485,6 +489,8 @@ export interface NotificationsState {
             creating: null | ErrorState;
             merging: null | ErrorState;
             grouping: null | ErrorState;
+            joining: null | ErrorState;
+            slicing: null | ErrorState;
             splitting: null | ErrorState;
             removing: null | ErrorState;
             propagating: null | ErrorState;
@@ -500,6 +506,7 @@ export interface NotificationsState {
             deleteFrame: null | ErrorState;
             restoreFrame: null | ErrorState;
             savingLogs: null | ErrorState;
+            canvas: null | ErrorState;
         };
         boundaries: {
             resetError: null | ErrorState;
@@ -541,6 +548,7 @@ export interface NotificationsState {
             inviting: null | ErrorState;
             updatingMembership: null | ErrorState;
             removingMembership: null | ErrorState;
+            deletingInvitation: null | ErrorState;
         };
         webhooks: {
             fetching: null | ErrorState;
@@ -552,6 +560,12 @@ export interface NotificationsState {
             fetching: null | ErrorState;
             fetchingSettings: null | ErrorState;
             updatingSettings: null | ErrorState;
+        };
+        invitations: {
+            fetching: null | ErrorState;
+            acceptingInvitation: null | ErrorState;
+            decliningInvitation: null | ErrorState;
+            resendingInvitation: null | ErrorState;
         }
     };
     messages: {
@@ -582,6 +596,12 @@ export interface NotificationsState {
             annotation: string;
             backup: string;
         };
+        invitations: {
+            newInvitations: string;
+            acceptInvitationDone: string;
+            declineInvitationDone: string;
+            resendingInvitation: string;
+        }
     };
 }
 
@@ -599,7 +619,9 @@ export enum ActiveControl {
     DRAW_SKELETON = 'draw_skeleton',
     MERGE = 'merge',
     GROUP = 'group',
+    JOIN = 'join',
     SPLIT = 'split',
+    SLICE = 'slice',
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
@@ -669,11 +691,11 @@ export interface AnnotationState {
     };
     job: {
         openTime: null | number;
-        labels: any[];
+        labels: Label[];
         requestedId: number | null;
-        groundTruthJobId: number | null;
         groundTruthJobFramesMeta: FramesMetaData | null;
-        instance: any | null | undefined;
+        instance: Job | null | undefined;
+        groundTruthInstance: Job | null;
         attributes: Record<number, any[]>;
         fetching: boolean;
         saving: boolean;
@@ -687,6 +709,7 @@ export interface AnnotationState {
             fetching: boolean;
             delay: number;
             changeTime: number | null;
+            changeFrameLog: EventLogger | null;
         };
         ranges: string;
         navigationBlocked: boolean;
@@ -710,7 +733,6 @@ export interface AnnotationState {
         highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
-        statesSources: number[];
         states: any[];
         filters: any[];
         resetGroupFlag: boolean;
@@ -864,7 +886,6 @@ export interface ReviewState {
 }
 
 export interface OrganizationState {
-    list: any[];
     current?: Organization | null;
     initialized: boolean;
     fetching: boolean;
@@ -911,6 +932,18 @@ export interface AnalyticsState {
     }
 }
 
+export interface InvitationsQuery {
+    page: number;
+}
+
+export interface InvitationsState {
+    fetching: boolean;
+    initialized: boolean;
+    current: Invitation[];
+    count: number;
+    query: InvitationsQuery;
+}
+
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
@@ -930,6 +963,7 @@ export interface CombinedState {
     import: ImportState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
+    invitations: InvitationsState;
     webhooks: WebhooksState;
     analytics: AnalyticsState;
 }

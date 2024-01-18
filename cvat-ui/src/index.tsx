@@ -20,8 +20,9 @@ import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import createRootReducer from 'reducers/root-reducer';
-import { getOrganizationsAsync } from 'actions/organization-actions';
+import { activateOrganizationAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from 'actions/notification-actions';
+import { getInvitationsAsync } from 'actions/invitations-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
 
 createCVATStore(createRootReducer);
@@ -35,8 +36,8 @@ interface StateToProps {
     modelsFetching: boolean;
     userInitialized: boolean;
     userFetching: boolean;
-    organizationsFetching: boolean;
-    organizationsInitialized: boolean;
+    organizationFetching: boolean;
+    organizationInitialized: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
     formatsInitialized: boolean;
@@ -51,6 +52,8 @@ interface StateToProps {
     user: any;
     isModelPluginActive: boolean;
     pluginComponents: PluginsState['components'];
+    invitationsFetching: boolean;
+    invitationsInitialized: boolean;
 }
 
 interface DispatchToProps {
@@ -63,7 +66,8 @@ interface DispatchToProps {
     resetMessages: () => void;
     loadUserAgreements: () => void;
     loadAuthActions: () => void;
-    loadOrganizations: () => void;
+    loadOrganization: () => void;
+    initInvitations: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -74,12 +78,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { userAgreements } = state;
     const { models } = state;
     const { organizations } = state;
+    const { invitations } = state;
 
     return {
         userInitialized: auth.initialized,
         userFetching: auth.fetching,
-        organizationsFetching: organizations.fetching,
-        organizationsInitialized: organizations.initialized,
+        organizationFetching: organizations.fetching,
+        organizationInitialized: organizations.initialized,
         pluginsInitialized: plugins.initialized,
         pluginsFetching: plugins.fetching,
         modelsInitialized: models.initialized,
@@ -98,6 +103,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         user: auth.user,
         pluginComponents: plugins.components,
         isModelPluginActive: plugins.list.MODELS,
+        invitationsFetching: invitations.fetching,
+        invitationsInitialized: invitations.initialized,
     };
 }
 
@@ -112,7 +119,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
-        loadOrganizations: (): void => dispatch(getOrganizationsAsync()),
+        loadOrganization: (): void => dispatch(activateOrganizationAsync()),
+        initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
     };
 }
 
@@ -147,7 +155,7 @@ window.addEventListener('error', (errorEvent: ErrorEvent) => {
         const store = getCVATStore();
         const state: CombinedState = store.getState();
         const { pathname } = window.location;
-        const re = RegExp(/\/tasks\/[0-9]+\/jobs\/[0-9]+$/);
+        const re = /\/tasks\/[0-9]+\/jobs\/[0-9]+$/;
         const { instance: job } = state.annotation.job;
         if (re.test(pathname) && job) {
             job.logger.log(LogType.exception, logPayload);

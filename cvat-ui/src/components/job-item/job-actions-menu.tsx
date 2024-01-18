@@ -1,6 +1,7 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
+
 import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
@@ -15,13 +16,12 @@ import {
 } from 'cvat-core-wrapper';
 import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
-import { updateJobAsync } from 'actions/tasks-actions';
 
 const core = getCore();
 
 interface Props {
     job: Job;
-    onJobUpdate?: (job: Job) => void;
+    onJobUpdate: (job: Job) => void;
 }
 
 function JobActionsMenu(props: Props): JSX.Element {
@@ -46,37 +46,31 @@ function JobActionsMenu(props: Props): JSX.Element {
     }, [job]);
 
     return (
-        <Menu onClick={(action: MenuInfo) => {
-            if (action.key === 'task') {
-                history.push(`/tasks/${job.taskId}`);
-            } else if (action.key === 'project') {
-                history.push(`/projects/${job.projectId}`);
-            } else if (action.key === 'bug_tracker') {
-                if (job.bugTracker) window.open(job.bugTracker, '_blank', 'noopener noreferrer');
-            } else if (action.key === 'import_job') {
-                dispatch(importActions.openImportDatasetModal(job));
-            } else if (action.key === 'export_job') {
-                dispatch(exportActions.openExportDatasetModal(job));
-            } else if (action.key === 'view_analytics') {
-                history.push(`/tasks/${job.taskId}/jobs/${job.id}/analytics`);
-            } else if (action.key === 'renew_job') {
-                job.state = core.enums.JobState.NEW;
-                job.stage = JobStage.ANNOTATION;
-                if (onJobUpdate) {
+        <Menu
+            className='cvat-job-item-menu'
+            onClick={(action: MenuInfo) => {
+                if (action.key === 'task') {
+                    history.push(`/tasks/${job.taskId}`);
+                } else if (action.key === 'project') {
+                    history.push(`/projects/${job.projectId}`);
+                } else if (action.key === 'bug_tracker') {
+                    if (job.bugTracker) window.open(job.bugTracker, '_blank', 'noopener noreferrer');
+                } else if (action.key === 'import_job') {
+                    dispatch(importActions.openImportDatasetModal(job));
+                } else if (action.key === 'export_job') {
+                    dispatch(exportActions.openExportDatasetModal(job));
+                } else if (action.key === 'view_analytics') {
+                    history.push(`/tasks/${job.taskId}/jobs/${job.id}/analytics`);
+                } else if (action.key === 'renew_job') {
+                    job.state = core.enums.JobState.NEW;
+                    job.stage = JobStage.ANNOTATION;
                     onJobUpdate(job);
-                } else {
-                    dispatch(updateJobAsync(job));
-                }
-            } else if (action.key === 'finish_job') {
-                job.stage = JobStage.ACCEPTANCE;
-                job.state = core.enums.JobState.COMPLETED;
-                if (onJobUpdate) {
+                } else if (action.key === 'finish_job') {
+                    job.stage = JobStage.ACCEPTANCE;
+                    job.state = core.enums.JobState.COMPLETED;
                     onJobUpdate(job);
-                } else {
-                    dispatch(updateJobAsync(job));
                 }
-            }
-        }}
+            }}
         >
             <Menu.Item key='task' disabled={job.taskId === null}>Go to the task</Menu.Item>
             <Menu.Item key='project' disabled={job.projectId === null}>Go to the project</Menu.Item>

@@ -60,7 +60,7 @@ interface Props {
 interface DispatchToProps {
     onInteractionStart(activeInteractor: OpenCVTool, activeLabelID: number): void;
     updateAnnotations(statesToUpdate: any[]): void;
-    createAnnotations(sessionInstance: any, frame: number, statesToCreate: any[]): void;
+    createAnnotations(statesToCreate: any[]): void;
     fetchAnnotations(): void;
     changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void;
@@ -207,8 +207,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props;
+        const { trackedShapes } = this.state;
         canvasInstance.html().removeEventListener('canvas.interacted', this.interactionListener);
         openCVWrapper.removeProgressCallback();
+        trackedShapes.forEach((shape: TrackedShape) => shape.trackerModel.delete());
     }
 
     private interactionListener = async (e: Event): Promise<void> => {
@@ -226,7 +228,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     private onInteraction = async (e: Event): Promise<void> => {
         const { approxPolyAccuracy } = this.state;
         const {
-            createAnnotations, isActivated, jobInstance, frame, labels, curZOrder, canvasInstance, toolsBlockerState,
+            createAnnotations, isActivated, frame, labels, curZOrder, canvasInstance, toolsBlockerState,
         } = this.props;
         const { activeLabelID } = this.state;
         if (!isActivated || !this.activeTool) {
@@ -284,7 +286,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     occluded: false,
                     zOrder: curZOrder,
                 });
-                createAnnotations(jobInstance, frame, [finalObject]);
+                createAnnotations([finalObject]);
             }
         } catch (error: any) {
             notification.error({
@@ -735,33 +737,31 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         </Tabs.TabPane>
                     </Tabs>
                 ) : (
-                    <>
-                        <Row justify='start' align='middle'>
+                    <Row justify='start' align='middle'>
+                        <Col>
+                            {
+                                initializationProgress >= 0 ?
+                                    <Text>OpenCV is loading</Text> : (
+                                        <Button
+                                            className='cvat-opencv-initialization-button'
+                                            onClick={() => { this.initializeOpenCV(); }}
+                                        >
+                                            Reload OpenCV
+                                        </Button>
+                                    )
+                            }
+                        </Col>
+                        {initializationProgress >= 0 && (
                             <Col>
-                                {
-                                    initializationProgress >= 0 ?
-                                        <Text>OpenCV is loading</Text> : (
-                                            <Button
-                                                className='cvat-opencv-initialization-button'
-                                                onClick={() => { this.initializeOpenCV(); }}
-                                            >
-                                                Reload OpenCV
-                                            </Button>
-                                        )
-                                }
+                                <Progress
+                                    width={8 * 5}
+                                    percent={initializationProgress}
+                                    type='circle'
+                                    status={initializationError ? 'exception' : undefined}
+                                />
                             </Col>
-                            {initializationProgress >= 0 && (
-                                <Col>
-                                    <Progress
-                                        width={8 * 5}
-                                        percent={initializationProgress}
-                                        type='circle'
-                                        status={initializationError ? 'exception' : undefined}
-                                    />
-                                </Col>
-                            )}
-                        </Row>
-                    </>
+                        )}
+                    </Row>
                 )}
             </div>
         );
@@ -809,6 +809,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         } else if (libraryInitialized !== openCVWrapper.isInitialized) {
                             this.setState({
                                 libraryInitialized: openCVWrapper.isInitialized,
+                                trackers: Object.values(openCVWrapper.tracking),
+                                activeTracker: Object.values(openCVWrapper.tracking)[0] || null,
                             });
                         }
                     }}

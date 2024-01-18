@@ -340,22 +340,6 @@
             "console": "internalConsole"
         },
         {
-            "name": "server: git",
-            "type": "python",
-            "request": "launch",
-            "justMyCode": false,
-            "stopOnEntry": false,
-            "python": "${command:python.interpreterPath}",
-            "program": "${workspaceRoot}/manage.py",
-            "args": [
-                "update_git_states"
-            ],
-            "django": true,
-            "cwd": "${workspaceFolder}",
-            "env": {},
-            "console": "internalConsole"
-        },
-        {
             "name": "server: RQ - cleaning",
             "type": "python",
             "request": "launch",
@@ -471,7 +455,7 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "sdk docs: Postprocess generated docs",
+            "name": "docs: Postprocess SDK docs",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -482,6 +466,17 @@
                 "--input-dir", "${workspaceFolder}/cvat-sdk/docs/",
                 "--site-root", "${workspaceFolder}/site/",
             ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "docs: Build docs",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/site/build_docs.py",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
         },
@@ -524,7 +519,7 @@
             "program": "${workspaceFolder}/node_modules/.bin/jest",
             "args": [
                 "--config",
-                "${workspaceFolder}/cvat-core/jest.config.js"
+                "${workspaceFolder}/cvat-core/jest.config.cjs"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
@@ -543,8 +538,7 @@
                 "server: RQ - scheduler",
                 "server: RQ - quality reports",
                 "server: RQ - analytics reports",
-                "server: RQ - cleaning",
-                "server: git",
+                "server: RQ - cleaning"
             ]
         }
     ]

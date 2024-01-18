@@ -206,3 +206,17 @@ class TestTaskDataset:
         )
 
         assert dataset.samples[6].annotations.shapes[0].label_id == self.expected_labels[0].id
+
+    def test_no_annotations(self):
+        dataset = cvatds.TaskDataset(self.client, self.task.id, load_annotations=False)
+
+        for index, sample in enumerate(dataset.samples):
+            assert sample.frame_index == index
+            assert sample.frame_name == self.images[index].name
+
+            actual_image = sample.media.load_image()
+            expected_image = PIL.Image.open(self.images[index])
+
+            assert actual_image == expected_image
+
+            assert sample.annotations is None

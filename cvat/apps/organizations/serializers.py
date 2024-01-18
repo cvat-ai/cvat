@@ -3,11 +3,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+from attr.converters import to_bool
 from django.contrib.auth import get_user_model
+from allauth.account.models import EmailAddress
 from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.db import transaction
+
 from rest_framework import serializers
-from .models import Invitation, Membership, Organization
 from cvat.apps.engine.serializers import BasicUserSerializer
+from cvat.apps.iam.utils import get_dummy_user
+from .models import Invitation, Membership, Organization
 
 class OrganizationReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True)
@@ -15,6 +22,12 @@ class OrganizationReadSerializer(serializers.ModelSerializer):
         model = Organization
         fields = ['id', 'slug', 'name', 'description', 'created_date',
             'updated_date', 'contact', 'owner']
+        read_only_fields = fields
+
+class BasicOrganizationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ['id', 'slug']
         read_only_fields = fields
 
 class OrganizationWriteSerializer(serializers.ModelSerializer):
@@ -49,13 +62,18 @@ class InvitationReadSerializer(serializers.ModelSerializer):
     organization = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(),
         source='membership.organization')
+    organization_info = BasicOrganizationSerializer(source='membership.organization')
     owner = BasicUserSerializer(allow_null=True)
 
     class Meta:
         model = Invitation
-        fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization']
+        fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization', 'expired', 'organization_info']
         read_only_fields = fields
-
+        extra_kwargs = {
+            'expired': {
+                'allow_null': True,
+            }
+        }
 
 class InvitationWriteSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(Membership.role.field.choices,
@@ -73,6 +91,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
         fields = ['key', 'created_date', 'owner', 'role', 'organization', 'email']
         read_only_fields = ['key', 'created_date', 'owner', 'organization']
 
+    @transaction.atomic
     def create(self, validated_data):
         membership_data = validated_data.pop('membership')
         organization = validated_data.pop('organization')
@@ -81,10 +100,13 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
                 email__iexact=membership_data['user']['email'])
             del membership_data['user']
         except ObjectDoesNotExist:
-            raise serializers.ValidationError(f'You cannot invite an user '
-                f'with {membership_data["user"]["email"]} email. It is not '
-                f'a valid email in the system.')
-
+            user_email = membership_data['user']['email']
+            user = User.objects.create_user(username=user_email, email=user_email)
+            user.set_unusable_password()
+            email = EmailAddress.objects.create(user=user, email=user_email, primary=True, verified=False)
+            user.save()
+            email.save()
+            del membership_data['user']
         membership, created = Membership.objects.get_or_create(
             defaults=membership_data,
             user=user, organization=organization)
@@ -99,19 +121,29 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         return super().update(instance, {})
 
-    def save(self, **kwargs):
+    def save(self, request, **kwargs):
         invitation = super().save(**kwargs)
-        invitation.send()
+        dummy_user = get_dummy_user(invitation.membership.user.email)
+        if not to_bool(settings.ORG_INVITATION_CONFIRM) and not dummy_user:
+            invitation.accept()
+        else:
+            invitation.send(request)
 
         return invitation
 
 class MembershipReadSerializer(serializers.ModelSerializer):
     user = BasicUserSerializer()
+
     class Meta:
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role',
             'invitation']
         read_only_fields = fields
+        extra_kwargs = {
+            'invitation': {
+                'allow_null': True, # owner of an organization does not have an invitation
+            }
+        }
 
 class MembershipWriteSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
@@ -122,3 +154,6 @@ class MembershipWriteSerializer(serializers.ModelSerializer):
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
         read_only_fields = ['user', 'organization', 'is_active', 'joined_date']
+
+class AcceptInvitationReadSerializer(serializers.Serializer):
+    organization_slug = serializers.CharField()

@@ -71,16 +71,14 @@ function RightGroup(props: Props): JSX.Element {
                                 width: window.screen.availWidth - PADDING,
                                 className: 'cvat-annotation-view-markdown-guide-modal',
                                 content: (
-                                    <>
-                                        <MDEditor
-                                            visibleDragbar={false}
-                                            data-color-mode='light'
-                                            height={window.screen.availHeight - PADDING}
-                                            preview='preview'
-                                            hideToolbar
-                                            value={guide.markdown}
-                                        />
-                                    </>
+                                    <MDEditor
+                                        visibleDragbar={false}
+                                        data-color-mode='light'
+                                        height={window.screen.availHeight - PADDING}
+                                        preview='preview'
+                                        hideToolbar
+                                        value={guide.markdown}
+                                    />
                                 ),
                             });
                         } catch (error: any) {

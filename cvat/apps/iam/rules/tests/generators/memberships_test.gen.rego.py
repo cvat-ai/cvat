@@ -98,6 +98,16 @@ def eval_rule(scope, context, ownership, privilege, membership, data):
         return False
 
     if scope != "create" and not data["resource"]["is_active"]:
+        is_staff = membership == "owner" or membership == 'maintainer'
+        if is_staff:
+            if scope != 'view':
+                if ORG_ROLES.index(membership) >= ORG_ROLES.index(resource["role"]):
+                    return False
+                if GROUPS.index(privilege) > GROUPS.index("user"):
+                    return False
+                if resource["user"]['id'] == data["auth"]["user"]['id']:
+                    return False
+            return True
         return False
 
     return bool(rules)

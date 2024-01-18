@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+import CVATCore from 'cvat-core/src';
 import _cvat from 'cvat-core/src/api';
+
 import ObjectState from 'cvat-core/src/object-state';
 import Webhook from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
@@ -18,22 +20,26 @@ import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
 import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
 import QualitySettings from 'cvat-core/src/quality-settings';
-import { FramesMetaData } from 'cvat-core/src/frames';
+import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
+import { ServerError } from 'cvat-core/src/exceptions';
 import {
-    ShapeType, LabelType, ModelKind, ModelProviders, ModelReturnType, DimensionType, JobType,
+    ShapeType, LabelType, ModelKind, ModelProviders,
+    ModelReturnType, DimensionType, JobType,
     JobStage, JobState, RQStatus,
 } from 'cvat-core/src/enums';
 import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
-import Organization from 'cvat-core/src/organization';
+import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
 import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
+import { EventLogger } from 'cvat-core/src/log';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
+import BaseSingleFrameAction, { ActionParameterType } from 'cvat-core/src/annotations-actions';
 
-const cvat: any = _cvat;
+const cvat: CVATCore = _cvat;
 
 cvat.config.backendAPI = '/api';
 cvat.config.origin = window.location.origin;
@@ -42,7 +48,7 @@ cvat.config.origin = window.location.origin;
 cvat.config.uploadChunkSize = 2;
 (globalThis as any).cvat = cvat;
 
-function getCore(): any {
+function getCore(): typeof cvat {
     return cvat;
 }
 
@@ -63,6 +69,8 @@ export {
     User,
     CloudStorage,
     Organization,
+    Membership,
+    Invitation,
     Comment,
     MLModel,
     ModelKind,
@@ -74,6 +82,7 @@ export {
     JobStage,
     JobState,
     RQStatus,
+    BaseSingleFrameAction,
     QualityReport,
     QualityConflict,
     QualitySettings,
@@ -83,6 +92,10 @@ export {
     AnalyticsReport,
     AnalyticsEntry,
     AnalyticsEntryViewType,
+    ServerError,
+    EventLogger,
+    FrameData,
+    ActionParameterType,
 };
 
 export type {
@@ -92,4 +105,5 @@ export type {
     ModelProvider,
     APIWrapperEnterOptions,
     QualitySummary,
+    CVATCore,
 };

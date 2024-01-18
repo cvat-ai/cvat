@@ -1,16 +1,38 @@
 ---
-linkTitle: 'MS COCO'
+title: 'COCO'
+linkTitle: 'COCO'
 weight: 5
+description: 'How to export and import data in COCO format'
 ---
 
-# [MS COCO Object Detection](http://cocodataset.org/#format-data)
+A widely-used machine learning structure, the COCO dataset is instrumental
+for tasks involving object identification and image segmentation.
+This format is compatible with projects that employ bounding boxes or
+polygonal image annotations.
 
-- [Format specification](https://openvinotoolkit.github.io/datumaro/docs/formats/coco/)
+For more information, see:
+
+- [COCO Object Detection site](http://cocodataset.org/#format-data)
+- [Format specification](https://openvinotoolkit.github.io/datumaro/stable/docs/data-formats/formats/coco.html)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/coco_dataset)
 
 ## COCO export
 
-Downloaded file: a zip archive with the structure described [here](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
+For export of images and videos:
+
+- Supported annotations: Bounding Boxes, Polygons.
+- Attributes:
+  - `is_crowd` This can either be a checkbox or an integer
+    (with values of 0 or 1). It indicates that the instance
+    (or group of objects) should include an RLE-encoded mask in the `segmentation` field.
+    All shapes within the group coalesce into a single, overarching mask,
+    with the largest shape setting the properties for the entire object group.
+  - `score`: This numerical field represents the annotation `score`.
+  - Arbitrary attributes: These will be stored within the `attributes`
+    section of the annotation.
+- Tracks: Not supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```
 archive.zip/
@@ -28,68 +50,19 @@ archive.zip/
    └── ...
 ```
 
-If the dataset is exported from a Project, the subsets are named the same way as they are named
-in the project. In other cases there will be a single `default` subset, containing all the data.
-The `<task>` part corresponds to one of the COCO tasks: `instances`, `person_keypoints`,
-`panoptic`, `image_info`, `labels`, `captions`, `stuff`. There can be several annotation
-files in the archive.
-
-- supported annotations: Polygons, Rectangles
-- supported attributes:
-  - `is_crowd` (checkbox or integer with values 0 and 1) -
-    specifies that the instance (an object group) should have an
-    RLE-encoded mask in the `segmentation` field. All the grouped shapes
-    are merged into a single mask, the largest one defines all
-    the object properties
-  - `score` (number) - the annotation `score` field
-  - arbitrary attributes - will be stored in the `attributes` annotation section
-
-Support for COCO tasks via Datumaro is described [here](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#export-to-other-formats)
-For example, [support for COCO keypoints over Datumaro](https://github.com/openvinotoolkit/cvat/issues/2910#issuecomment-726077582):
-
-1. Install [Datumaro](https://github.com/openvinotoolkit/datumaro)
-   `pip install datumaro`
-2. Export the task in the `Datumaro` format, unzip
-3. Export the Datumaro project in `coco` / `coco_person_keypoints` formats
-   `datum export -f coco -p path/to/project [-- --save-images]`
-
-This way, one can export CVAT points as single keypoints or
-keypoint lists (without the `visibility` COCO flag).
+When exporting a dataset from a Project, subset names will mirror those used within the project itself.
+Otherwise, a singular default subset will be created to house all the dataset information.
+The <task> section aligns with one of the specific COCO tasks,
+such as `instances`, `panoptic`, `image_info`, `labels`, `captions`, or `stuff`.
 
 ## COCO import
 
-Uploaded file: a single unpacked `*.json` or a zip archive with the structure described above or
+Uplod format: a single unpacked `*.json` or a zip archive with the structure described above or
 [here](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
 (without images).
 
 - supported annotations: Polygons, Rectangles (if the `segmentation` field is empty)
 - supported tasks: `instances`, `person_keypoints` (only segmentations will be imported), `panoptic`
-
-# [MS COCO Keypoint Detection](https://cocodataset.org/#keypoints-2020)
-
-- [Format specification](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html)
-
-## COCO export
-
-Downloaded file: a zip archive with the structure described [here](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
-
-- supported annotations: Skeletons
-- supported attributes:
-  - `is_crowd` (checkbox or integer with values 0 and 1) -
-    specifies that the instance (an object group) should have an
-    RLE-encoded mask in the `segmentation` field. All the grouped shapes
-    are merged into a single mask, the largest one defines all
-    the object properties
-  - `score` (number) - the annotation `score` field
-  - arbitrary attributes - will be stored in the `attributes` annotation section
-
-## COCO import
-
-Uploaded file: a single unpacked `*.json` or a zip archive with the structure described
-[here](https://openvinotoolkit.github.io/datumaro/latest/docs/data-formats/formats/coco.html#import-coco-dataset)
-(without images).
-
-- supported annotations: Skeletons
 
 ## How to create a task from MS COCO dataset
 

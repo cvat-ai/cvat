@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +14,7 @@ interface ConstructorViewerProps {
     labels: LabelOptColor[];
     onUpdate: (label: LabelOptColor) => void;
     onDelete: (label: LabelOptColor) => void;
-    onCreate: (creatorType: 'basic' | 'skeleton') => void;
+    onCreate: (creatorType: 'basic' | 'skeleton' | 'model') => void;
 }
 
 function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
@@ -27,6 +28,10 @@ function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
         </Button>,
         <Button key='create_skeleton' type='ghost' onClick={() => onCreate('skeleton')} className='cvat-constructor-viewer-new-skeleton-item'>
             Setup skeleton
+            <PlusCircleOutlined />
+        </Button>,
+        <Button key='from_model' type='ghost' onClick={() => onCreate('model')} className='cvat-constructor-viewer-new-from-model-item'>
+            From model
             <PlusCircleOutlined />
         </Button>,
     ];

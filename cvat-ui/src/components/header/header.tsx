@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -21,6 +21,7 @@ import Icon, {
     UserOutlined,
     TeamOutlined,
     PlusOutlined,
+    MailOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -28,10 +29,11 @@ import Menu from 'antd/lib/menu';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
-import Select from 'antd/lib/select';
+import notification from 'antd/lib/notification';
 
 import config from 'config';
 
+import { Organization, getCore } from 'cvat-core-wrapper';
 import { CVATLogo } from 'icons';
 import ChangePasswordDialog from 'components/change-password-modal/change-password-modal';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -39,9 +41,10 @@ import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from '
 import { logoutAsync, authActions } from 'actions/auth-actions';
 import { shortcutsActions } from 'actions/shortcuts-actions';
 import { AboutState, CombinedState } from 'reducers';
-import { usePlugins } from 'utils/hooks';
+import { useIsMounted, usePlugins } from 'utils/hooks';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import SettingsModal from './settings-modal/settings-modal';
+import OrganizationsSearch from './organizations-search';
 
 interface StateToProps {
     user: any;
@@ -56,9 +59,7 @@ interface StateToProps {
     renderChangePasswordItem: boolean;
     isAnalyticsPluginActive: boolean;
     isModelsPluginActive: boolean;
-    isGitPluginActive: boolean;
-    organizationsFetching: boolean;
-    organizationsList: any[];
+    organizationFetching: boolean;
     currentOrganization: any | null;
 }
 
@@ -68,6 +69,8 @@ interface DispatchToProps {
     switchShortcutsModalVisible: (visible: boolean) => void;
     switchChangePasswordModalVisible: (visible: boolean) => void;
 }
+
+const core = getCore();
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -82,7 +85,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         about,
         shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
         settings: { showDialog: settingsModalVisible },
-        organizations: { fetching: organizationsFetching, current: currentOrganization, list: organizationsList },
+        organizations: { fetching: organizationFetching, current: currentOrganization },
     } = state;
 
     return {
@@ -98,10 +101,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         renderChangePasswordItem,
         isAnalyticsPluginActive: list.ANALYTICS,
         isModelsPluginActive: list.MODELS,
-        isGitPluginActive: list.GIT_INTEGRATION,
-        organizationsFetching,
+        organizationFetching,
         currentOrganization,
-        organizationsList,
     };
 }
 
@@ -135,17 +136,49 @@ function HeaderComponent(props: Props): JSX.Element {
         renderChangePasswordItem,
         isAnalyticsPluginActive,
         isModelsPluginActive,
-        organizationsFetching,
+        organizationFetching,
         currentOrganization,
-        organizationsList,
         switchSettingsModalVisible,
         switchShortcutsModalVisible,
         switchChangePasswordModalVisible,
     } = props;
 
     const {
-        CHANGELOG_URL, LICENSE_URL, GITTER_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
+        CHANGELOG_URL, LICENSE_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
     } = config;
+
+    const isMounted = useIsMounted();
+    const [listFetching, setListFetching] = useState(false);
+    const [organizationsList, setOrganizationList] = useState<Organization[] | null>(null);
+
+    const searchCallback = useCallback((search?: string): Promise<Organization[]> => new Promise((resolve, reject) => {
+        const promise = core.organizations.get(search ? { search } : {});
+
+        setListFetching(true);
+        promise.then((organizations: Organization[]) => {
+            resolve(organizations);
+        }).catch((error: unknown) => {
+            reject(error);
+        }).finally(() => {
+            if (isMounted()) {
+                setListFetching(false);
+            }
+        });
+    }), []);
+
+    useEffect(() => {
+        searchCallback().then((organizations: Organization[]) => {
+            if (isMounted()) {
+                setOrganizationList(organizations);
+            }
+        }).catch((error: unknown) => {
+            setOrganizationList([]);
+            notification.error({
+                message: 'Could not receive a list of organizations',
+                description: error instanceof Error ? error.message : '',
+            });
+        });
+    }, []);
 
     const history = useHistory();
     const location = useLocation();
@@ -170,6 +203,33 @@ function HeaderComponent(props: Props): JSX.Element {
         },
     };
 
+    const aboutPlugins = usePlugins((state: CombinedState) => state.plugins.components.about.links.items, props);
+    const aboutLinks: [JSX.Element, number][] = [];
+    aboutLinks.push([(
+        <Col>
+            <a href={CHANGELOG_URL} target='_blank' rel='noopener noreferrer'>
+                What&apos;s new?
+            </a>
+        </Col>
+    ), 0]);
+    aboutLinks.push([(
+        <Col>
+            <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>
+                MIT License
+            </a>
+        </Col>
+    ), 10]);
+    aboutLinks.push([(
+        <Col>
+            <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
+                Find us on Discord
+            </a>
+        </Col>
+    ), 20]);
+    aboutLinks.push(...aboutPlugins.map(({ component: Component, weight }, index: number) => (
+        [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
+    )));
+
     const showAboutModal = useCallback((): void => {
         Modal.info({
             title: `${about.server.name}`,
@@ -193,26 +253,8 @@ function HeaderComponent(props: Props): JSX.Element {
                         <Text type='secondary'>{` ${about.packageVersion.ui}`}</Text>
                     </p>
                     <Row justify='space-around'>
-                        <Col>
-                            <a href={CHANGELOG_URL} target='_blank' rel='noopener noreferrer'>
-                                What&apos;s new?
-                            </a>
-                        </Col>
-                        <Col>
-                            <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>
-                                MIT License
-                            </a>
-                        </Col>
-                        <Col>
-                            <a href={GITTER_URL} target='_blank' rel='noopener noreferrer'>
-                                Need help?
-                            </a>
-                        </Col>
-                        <Col>
-                            <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
-                                Find us on Discord
-                            </a>
-                        </Col>
+                        { aboutLinks.sort((item1, item2) => item1[1] - item2[1])
+                            .map((item) => item[0]) }
                     </Row>
                 </div>
             ),
@@ -267,59 +309,55 @@ function HeaderComponent(props: Props): JSX.Element {
         ), 0]);
     }
 
+    const viewType: 'menu' | 'list' = (organizationsList?.length || 0) > 5 ? 'list' : 'menu';
     menuItems.push([(
         <Menu.SubMenu
-            disabled={organizationsFetching}
+            disabled={organizationFetching || listFetching}
             key='organization'
             title='Organization'
-            icon={organizationsFetching ? <LoadingOutlined /> : <TeamOutlined />}
+            icon={organizationFetching || listFetching ? <LoadingOutlined /> : <TeamOutlined />}
         >
             {currentOrganization ? (
                 <Menu.Item icon={<SettingOutlined />} key='open_organization' onClick={() => history.push('/organization')} className='cvat-header-menu-open-organization'>
                     Settings
                 </Menu.Item>
             ) : null}
+            <Menu.Item
+                icon={<MailOutlined />}
+                className='cvat-header-menu-organization-invitations-item'
+                key='invitations'
+                onClick={() => {
+                    history.push('/invitations');
+                }}
+            >
+                Invitations
+            </Menu.Item>
             <Menu.Item icon={<PlusOutlined />} key='create_organization' onClick={() => history.push('/organizations/create')} className='cvat-header-menu-create-organization'>Create</Menu.Item>
-            { organizationsList.length > 5 ? (
+            { !!organizationsList && viewType === 'list' && (
                 <Menu.Item
                     key='switch_organization'
                     onClick={() => {
                         Modal.confirm({
+                            icon: undefined,
                             title: 'Select an organization',
                             okButtonProps: {
                                 style: { display: 'none' },
                             },
                             content: (
-                                <Select
-                                    showSearch
-                                    className='cvat-modal-organization-selector'
-                                    value={currentOrganization?.slug}
-                                    onChange={(value: string) => {
-                                        if (value === '$personal') {
-                                            resetOrganization();
-                                            return;
-                                        }
-
-                                        const [organization] = organizationsList
-                                            .filter((_organization): boolean => _organization.slug === value);
-                                        if (organization) {
-                                            setNewOrganization(organization);
-                                        }
-                                    }}
-                                >
-                                    <Select.Option value='$personal'>Personal workspace</Select.Option>
-                                    {organizationsList.map((organization: any): JSX.Element => {
-                                        const { slug } = organization;
-                                        return <Select.Option key={slug} value={slug}>{slug}</Select.Option>;
-                                    })}
-                                </Select>
+                                <OrganizationsSearch
+                                    defaultOrganizationList={organizationsList}
+                                    resetOrganization={resetOrganization}
+                                    searchOrganizations={searchCallback}
+                                    setNewOrganization={setNewOrganization}
+                                />
                             ),
                         });
                     }}
                 >
                     Switch organization
                 </Menu.Item>
-            ) : (
+            )}
+            { !!organizationsList && viewType === 'menu' && (
                 <>
                     <Menu.Divider />
                     <Menu.ItemGroup>

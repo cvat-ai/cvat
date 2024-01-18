@@ -46,7 +46,7 @@ context('Filtering, sorting jobs.', () => {
     }
 
     function checkContentsRow(index, stage, state, assignee) {
-        cy.getJobNum(index).then(($job) => {
+        cy.getJobIDFromIdx(index).then(($job) => {
             cy.get('.cvat-task-job-list')
                 .contains('a', `Job #${$job}`)
                 .parents('.cvat-job-item').within(() => {
@@ -67,6 +67,7 @@ context('Filtering, sorting jobs.', () => {
             cy.contains('.cvat-switch-filters-constructor-button', 'Filter').click();
             cy.get('.cvat-resource-page-filters-builder').within(() => {
                 cy.contains('button', 'Add rule').click();
+                cy.contains('.ant-select-selector', 'Select field').should('be.visible');
                 cy.contains('.ant-select-selector', 'Select field').get('input').last().type(`${column}{enter}`);
                 cy.get('.ant-select-selector').last().get('input').last().type(`${menuItem}`);
                 if (column !== 'Assignee') {
@@ -84,6 +85,7 @@ context('Filtering, sorting jobs.', () => {
                 cy.contains('button', 'Apply').click();
             });
         }
+        cy.get('.cvat-resource-page-filters-builder').should('not.exist');
     }
 
     function testSetJobSorting({ column, reset }) {
@@ -100,6 +102,7 @@ context('Filtering, sorting jobs.', () => {
             cy.get('.cvat-resource-page-sorting-list').trigger('mouseup', 'top');
             cy.get('.cvat-jobs-list-filters-wrapper').click();
         }
+        cy.get('.cvat-resource-page-sorting-list').should('not.exist');
     }
 
     before(() => {
@@ -127,11 +130,11 @@ context('Filtering, sorting jobs.', () => {
         );
 
         cy.openTask(taskName);
-        cy.assignJobToUser(0, secondUserName);
-        cy.assignJobToUser(1, secondUserName);
+        cy.getJobIDFromIdx(0).then((jobID) => cy.assignJobToUser(jobID, secondUserName));
+        cy.getJobIDFromIdx(1).then((jobID) => cy.assignJobToUser(jobID, secondUserName));
 
         // The first job - stage "validation"
-        cy.setJobStage(0, 'validation');
+        cy.getJobIDFromIdx(0).then((jobID) => cy.setJobStage(jobID, 'validation'));
 
         // The second job - status "completed"
         cy.openJob(1);
@@ -187,11 +190,14 @@ context('Filtering, sorting jobs.', () => {
             testSetJobFilter({ column: 'State', menuItem: 'new' });
             checkJobsTableRowCount(2);
             testSetJobFilter({ reset: true });
+            checkJobsTableRowCount(3);
         });
 
         it('Filtering jobs by validation, new, assignee to user.', () => {
             testSetJobFilter({ column: 'Stage', menuItem: 'validation' });
+            checkJobsTableRowCount(1);
             testSetJobFilter({ column: 'State', menuItem: 'new' });
+            checkJobsTableRowCount(1);
             testSetJobFilter({ column: 'Assignee', menuItem: secondUserName });
             checkJobsTableRowCount(1);
             checkContentsRow(0, 'validation', 'New', secondUserName);

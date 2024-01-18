@@ -52,7 +52,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             sorting_method: 'lexicographical',
         }).then((response) => {
             taskID = response.taskID;
-            [jobID] = response.jobID;
+            [jobID] = response.jobIDs;
         }).then(() => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
@@ -131,6 +131,27 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.goCheckFrameNumber(serverFiles.length - 1);
             cy.get('.cvat-canvas-container').click();
             cy.get('#cvat_canvas_shape_2').should('exist').and('be.visible');
+        });
+
+        it('Check hidden mask still invisible after changing frame/opacity', () => {
+            cy.startMaskDrawing();
+            cy.drawMask(drawingActions);
+            cy.finishMaskDrawing();
+
+            cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
+                cy.get('.cvat-object-item-button-hidden')
+                    .should('exist').and('be.visible').click();
+                cy.get('.cvat-object-item-button-hidden')
+                    .should('have.class', 'cvat-object-item-button-hidden-enabled');
+            });
+
+            cy.goCheckFrameNumber(serverFiles.length - 1);
+            cy.goCheckFrameNumber(0);
+
+            cy.get('.cvat-appearance-opacity-slider').click('right');
+            cy.get('.cvat-appearance-opacity-slider').click('center');
+            cy.get('#cvat_canvas_shape_1')
+                .should('exist').and('have.class', 'cvat_canvas_hidden').and('not.be.visible');
         });
 
         it('Editing a drawn mask', () => {

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,6 +18,7 @@ import {
     copyShape as copyShapeAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
     removeObject as removeObjectAction,
+    fetchAnnotationsAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -51,7 +52,6 @@ interface StateToProps {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
-    statesSources: number[];
     groundTruthJobFramesMeta: FramesMetaData | null;
     workspace: Workspace;
 }
@@ -78,7 +78,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 zLayer: { min: minZLayer, max: maxZLayer },
-                statesSources,
             },
             job: { instance: jobInstance, groundTruthJobFramesMeta },
             player: {
@@ -130,7 +129,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         showGroundTruth,
-        statesSources,
         groundTruthJobFramesMeta,
         workspace,
     };
@@ -161,6 +159,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         changeShowGroundTruth(value: boolean): void {
             dispatch(changeShowGroundTruthAction(value));
+            dispatch(fetchAnnotationsAsync());
         },
     };
 }
@@ -212,25 +211,20 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.updateObjects();
     }
 
-    public componentDidUpdate(prevProps: Props): void {
-        const {
-            statesSources, objectStates,
-        } = this.props;
-        const { objectStates: stateObjects } = this.state;
-        if (objectStates !== stateObjects ||
-            statesSources !== prevProps.statesSources
-        ) {
+    public componentDidUpdate(): void {
+        const { objectStates } = this.props;
+        const { objectStates: prevObjectStates } = this.state;
+        if (objectStates !== prevObjectStates) {
             this.updateObjects();
         }
     }
 
     private updateObjects = (): void => {
         const {
-            statesSources, objectStates, frameNumber, groundTruthJobFramesMeta, workspace,
+            objectStates, frameNumber, groundTruthJobFramesMeta, workspace,
         } = this.props;
         const { statesOrdering } = this.state;
         const filteredStates = filterAnnotations(objectStates, {
-            statesSources,
             frame: frameNumber,
             groundTruthJobFramesMeta,
             workspace,
@@ -240,7 +234,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             filteredStates,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
         });
-    }
+    };
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
         const { filteredStates } = this.state;
@@ -276,7 +270,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     private changeShowGroundTruth = (): void => {
         const { showGroundTruth, changeShowGroundTruth } = this.props;
-
         changeShowGroundTruth(!showGroundTruth);
     };
 
@@ -354,16 +347,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             NEXT_KEY_FRAME: keyMap.NEXT_KEY_FRAME,
             PREV_KEY_FRAME: keyMap.PREV_KEY_FRAME,
             CHANGE_OBJECT_COLOR: keyMap.CHANGE_OBJECT_COLOR,
-            TILT_UP: keyMap.TILT_UP,
-            TILT_DOWN: keyMap.TILT_DOWN,
-            ROTATE_LEFT: keyMap.ROTATE_LEFT,
-            ROTATE_RIGHT: keyMap.ROTATE_RIGHT,
-            MOVE_UP: keyMap.MOVE_UP,
-            MOVE_DOWN: keyMap.MOVE_DOWN,
-            MOVE_LEFT: keyMap.MOVE_LEFT,
-            MOVE_RIGHT: keyMap.MOVE_RIGHT,
-            ZOOM_IN: keyMap.ZOOM_IN,
-            ZOOM_OUT: keyMap.ZOOM_OUT,
         };
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -390,16 +373,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         };
 
         const handlers = {
-            TILT_UP: () => {}, // Handled by CVAT 3D Independently
-            TILT_DOWN: () => {},
-            ROTATE_LEFT: () => {},
-            ROTATE_RIGHT: () => {},
-            MOVE_UP: () => {},
-            MOVE_DOWN: () => {},
-            MOVE_LEFT: () => {},
-            MOVE_RIGHT: () => {},
-            ZOOM_IN: () => {},
-            ZOOM_OUT: () => {},
             SWITCH_ALL_LOCK: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);
@@ -488,8 +461,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            COPY_SHAPE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
+            COPY_SHAPE: () => {
                 const state = activatedState();
                 if (state && !readonly) {
                     copyShape(state);

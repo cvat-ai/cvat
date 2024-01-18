@@ -1,17 +1,31 @@
 ---
+title: 'YOLO'
 linkTitle: 'YOLO'
 weight: 7
+description: 'How to export and import data in YOLO format'
 ---
 
-# [YOLO](https://pjreddie.com/darknet/yolo/)
+YOLO, which stands for "You Only Look Once," is a renowned framework
+predominantly utilized for real-time object detection tasks.
+Its efficiency and speed make it an ideal choice for many applications.
+While YOLO has its unique data format,
+this format can be tailored to suit other object detection models as well.
 
+For more information, see:
+
+- [YOLO Specification](https://pjreddie.com/darknet/yolo/)
 - [Format specification](https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/yolo_dataset)
-- supported annotations: Rectangles
 
 ## YOLO export
 
-Downloaded file: a zip archive with following structure:
+For export of images:
+
+- Supported annotations: Bounding Boxes.
+- Attributes: Not supported.
+- Tracks: Not supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 archive.zip/
@@ -48,12 +62,16 @@ airplane
 2 0.7 0.2 0.3 0.1
 ```
 
-Each annotation `*.txt` file has a name that corresponds to the name of
-the image file (e. g. `frame_000001.txt` is the annotation
-for the `frame_000001.jpg` image).
-The `*.txt` file structure: each line describes label and bounding box
-in the following format `label_id cx cy w h`.
-`obj.names` contains the ordered list of label names.
+Each annotation file, with the `.txt` extension,
+is named to correspond with its associated image file.
+
+For example, `frame_000001.txt` serves as the annotation for the
+`frame_000001.jpg` image.
+
+The structure of the `.txt` file is as follows:
+each line describes a label and a bounding box
+in the format `label_id cx cy w h`.
+The file `obj.names` contains an ordered list of label names.
 
 ## YOLO import
 
@@ -70,14 +88,14 @@ and annotation file name. There are 2 options:
 
 ## How to create a task from YOLO formatted dataset (from VOC for example)
 
-1. Follow the official [guide](https://pjreddie.com/darknet/yolo/)(see Training YOLO on VOC section)
+1. Follow the official [guide](https://pjreddie.com/darknet/yolo/) (see Training YOLO on VOC section)
    and prepare the YOLO formatted annotation files.
 
 1. Zip train images
 
-```bash
-zip images.zip -j -@ < train.txt
-```
+   ```bash
+   zip images.zip -j -@ < train.txt
+   ```
 
 1. Create a CVAT task with the following labels:
 
@@ -116,12 +134,11 @@ zip images.zip -j -@ < train.txt
    tvmonitor
    ```
 
-1. Zip all label files together (we need to add only label files that correspond to the train subset)
+1. Zip all label files together (we need to add only label files that correspond to the train subset):
 
    ```bash
    cat train.txt | while read p; do echo ${p%/*/*}/labels/${${p##*/}%%.*}.txt; done | zip labels.zip -j -@ obj.names
    ```
 
 1. Click `Upload annotation` button, choose `YOLO 1.1` and select the zip
-
    file with labels from the previous step.

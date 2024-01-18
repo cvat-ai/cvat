@@ -31,6 +31,9 @@ jobs:
       - name: Verify version consistency
         run: ./dev/update_version.py --verify-current
 
+      - name: Check changelog fragments
+        run: ./dev/check_changelog_fragments.py
+
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@v3
         with:
@@ -171,6 +174,8 @@ jobs:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
           pytest tests/python/ --cov --cov-report=json
+          for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
+          ONE_RUNNING_JOB_IN_QUEUE_PER_USER="true" pytest tests/python/rest_api/test_queues.py --cov --cov-report=json
 
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@v3.1.1
@@ -220,9 +225,8 @@ jobs:
           python cvat/apps/iam/rules/tests/generate_tests.py \
             --output-dir cvat/apps/iam/rules/
 
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
-          chmod +x ./opa
-          ./opa test cvat/apps/iam/rules
+          docker compose run --rm -v "$PWD/cvat/apps/iam/rules/:/mnt/rules" \
+            cvat_opa test /mnt/rules
 
       - name: Running unit tests
         env:
@@ -279,7 +283,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-            node-version: '16.x'
+            node-version: '18.x'
 
       - name: Download CVAT server image
         uses: actions/download-artifact@v3
@@ -619,32 +623,28 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Download CVAT server images
-        uses: actions/download-artifact@v3
-        with:
-          name: cvat_server
-          path: /tmp/cvat_server/
-
-      - name: Download CVAT server images
+      - name: Download CVAT SDK
         uses: actions/download-artifact@v3
         with:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
 
-      - name: Load Docker images
-        run: |
-          docker load --input /tmp/cvat_server/image.tar
-
       - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v2
-        with:
-          hugo-version: '0.83.1'
-          extended: true
+        run: |
+          wget https://github.com/gohugoio/hugo/releases/download/v0.110.0/hugo_extended_0.110.0_Linux-64bit.tar.gz
+          (mkdir hugo_extended_0.110.0_Linux-64bit && tar -xf hugo_extended_0.110.0_Linux-64bit.tar.gz -C hugo_extended_0.110.0_Linux-64bit)
+
+          wget https://github.com/gohugoio/hugo/releases/download/v0.83.0/hugo_extended_0.83.0_Linux-64bit.tar.gz
+          (mkdir hugo_extended_0.83.0_Linux-64bit && tar -xf hugo_extended_0.83.0_Linux-64bit.tar.gz -C hugo_extended_0.83.0_Linux-64bit)
+
+          mkdir hugo
+          cp hugo_extended_0.110.0_Linux-64bit/hugo hugo/hugo-0.110
+          cp hugo_extended_0.83.0_Linux-64bit/hugo hugo/hugo-0.83
 
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
+          node-version: '18.x'
 
       - name: Install npm packages
         working-directory: ./site
@@ -655,7 +655,7 @@ jobs:
         run: |
           pip install -r site/requirements.txt
           python site/process_sdk_docs.py --input-dir /tmp/cvat_sdk/docs/ --site-root site/
-          python site/build_docs.py
+          PATH="$PWD/hugo:$PATH" python site/build_docs.py
         env:
           HUGO_ENV: production
 
@@ -692,7 +692,7 @@ jobs:
           docker load --input /tmp/cvat_ui/image.tar
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}

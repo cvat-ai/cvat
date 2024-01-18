@@ -1,18 +1,16 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Store } from 'antd/lib/form/interface';
-import { User } from 'components/task-page/user-selector';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, User } from 'cvat-core-wrapper';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
 const core = getCore();
 
 export enum OrganizationActionsTypes {
-    GET_ORGANIZATIONS = 'GET_ORGANIZATIONS',
-    GET_ORGANIZATIONS_SUCCESS = 'GET_ORGANIZATIONS_SUCCESS',
-    GET_ORGANIZATIONS_FAILED = 'GET_ORGANIZATIONS_FAILED',
+    ACTIVATE_ORGANIZATION = 'ACTIVATE_ORGANIZATION',
     ACTIVATE_ORGANIZATION_SUCCESS = 'ACTIVATE_ORGANIZATION_SUCCESS',
     ACTIVATE_ORGANIZATION_FAILED = 'ACTIVATE_ORGANIZATION_FAILED',
     CREATE_ORGANIZATION_SUCCESS = 'CREATE_ORGANIZATION_SUCCESS',
@@ -40,11 +38,13 @@ export enum OrganizationActionsTypes {
 }
 
 const organizationActions = {
-    getOrganizations: () => createAction(OrganizationActionsTypes.GET_ORGANIZATIONS),
-    getOrganizationsSuccess: (list: any[]) => createAction(
-        OrganizationActionsTypes.GET_ORGANIZATIONS_SUCCESS, { list },
+    activateOrganization: () => createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION),
+    activateOrganizationSuccess: (organization: any | null) => createAction(
+        OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS, { organization },
     ),
-    getOrganizationsFailed: (error: any) => createAction(OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED, { error }),
+    activateOrganizationFailed: (error: any, slug: string | null) => createAction(
+        OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED, { slug, error },
+    ),
     createOrganizationSuccess: (organization: any) => createAction(
         OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS, { organization },
     ),
@@ -57,12 +57,6 @@ const organizationActions = {
     ),
     updateOrganizationFailed: (slug: string, error: any) => createAction(
         OrganizationActionsTypes.UPDATE_ORGANIZATION_FAILED, { slug, error },
-    ),
-    activateOrganizationSuccess: (organization: any | null) => createAction(
-        OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS, { organization },
-    ),
-    activateOrganizationFailed: (error: any, slug: string | null) => createAction(
-        OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED, { slug, error },
     ),
     removeOrganization: () => createAction(OrganizationActionsTypes.REMOVE_ORGANIZATION),
     removeOrganizationSuccess: (slug: string) => createAction(
@@ -99,40 +93,33 @@ const organizationActions = {
     ),
 };
 
-export function getOrganizationsAsync(): ThunkAction {
+export function activateOrganizationAsync(): ThunkAction {
     return async function (dispatch) {
-        dispatch(organizationActions.getOrganizations());
+        dispatch(organizationActions.activateOrganization());
+        const curSlug = localStorage.getItem('currentOrganization');
 
-        try {
-            const organizations = await core.organizations.get();
-            let currentOrganization = null;
-
+        if (curSlug) {
             try {
-                // this action is dispatched after user is authentificated
-                // need to configure organization at cvat-core immediately to get relevant data
-                const curSlug = localStorage.getItem('currentOrganization');
-                if (curSlug) {
-                    currentOrganization =
-                        organizations.find((organization: any) => organization.slug === curSlug) || null;
-                    if (currentOrganization) {
-                        await core.organizations.activate(currentOrganization);
-                    } else {
-                        // not valid anymore (for example when organization
-                        // does not exist anymore, or the user has been kicked from it)
-                        localStorage.removeItem('currentOrganization');
-                    }
+                const organizations = await core.organizations.get(curSlug ? {
+                    filter: `{"and":[{"==":[{"var":"slug"},"${curSlug}"]}]}`,
+                } : {});
+                const [organization] = organizations;
+                if (organization?.slug === curSlug) {
+                    await core.organizations.activate(organization);
+                    dispatch(organizationActions.activateOrganizationSuccess(organization));
+                } else {
+                    localStorage.removeItem('currentOrganization');
+                    dispatch(organizationActions.activateOrganizationSuccess(null));
                 }
-
-                dispatch(organizationActions.activateOrganizationSuccess(currentOrganization));
-            } catch (error) {
-                dispatch(
-                    organizationActions.activateOrganizationFailed(error, localStorage.getItem('currentOrganization')),
-                );
-            } finally {
-                dispatch(organizationActions.getOrganizationsSuccess(organizations));
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    dispatch(organizationActions.activateOrganizationFailed(curSlug, error.toString()));
+                } else {
+                    dispatch(organizationActions.activateOrganizationFailed(curSlug, 'Unknown error'));
+                }
             }
-        } catch (error) {
-            dispatch(organizationActions.getOrganizationsFailed(error));
+        } else {
+            dispatch(organizationActions.activateOrganizationSuccess(null));
         }
     };
 }
@@ -212,14 +199,17 @@ export function inviteOrganizationMembersAsync(
     };
 }
 
-export function leaveOrganizationAsync(organization: any): ThunkAction {
+export function leaveOrganizationAsync(
+    organization: any,
+    onLeaveSuccess?: () => void,
+): ThunkAction {
     return async function (dispatch, getState) {
         const { user } = getState().auth;
         dispatch(organizationActions.leaveOrganization());
         try {
             await organization.leave(user);
             dispatch(organizationActions.leaveOrganizationSuccess());
-            localStorage.removeItem('currentOrganization');
+            if (onLeaveSuccess) onLeaveSuccess();
         } catch (error) {
             dispatch(organizationActions.leaveOrganizationFailed(error));
         }

@@ -16,8 +16,6 @@ import {
 import GammaCorrection from 'utils/fabric-wrapper/gamma-correciton';
 import { ImageFilterAlias, hasFilter } from 'utils/image-processing';
 
-import './image-setups.scss';
-
 export default function GammaFilter(): JSX.Element {
     const dispatch = useDispatch();
     const [gamma, setGamma] = useState<number>(1);
@@ -46,6 +44,8 @@ export default function GammaFilter(): JSX.Element {
     useEffect(() => {
         if (filters.length === 0) {
             setGamma(1);
+        } else if (gammaFilter) {
+            setGamma((gammaFilter.modifier as GammaCorrection).gamma);
         }
     }, [filters]);
 

@@ -36,9 +36,14 @@ cvat:
 nuclio:
   enabled: true
 
+keydb:
+  resources:
+    requests:
+
 traefik:
   logs:
     general:
       level: DEBUG
     access:
       enabled: true
+

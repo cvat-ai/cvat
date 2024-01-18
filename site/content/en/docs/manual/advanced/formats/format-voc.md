@@ -1,29 +1,35 @@
 ---
+title: 'Pascal VOC'
 linkTitle: 'Pascal VOC'
 weight: 6
+description: 'How to export and import data in Pascal VOC format'
 ---
 
-# [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
+The Pascal VOC (Visual Object Classes) format
+is one of the earlier established benchmarks for object classification and detection,
+which provides a standardized image data set for object class recognition.
 
+The export data format is XML-based and has been widely adopted in computer vision tasks.
+
+For more information, see:
+
+- [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
 - [Format specification](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf)
 - [Dataset examples](https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/voc_dataset)
 
-- supported annotations:
-
-  - Rectangles (`detection` and `layout` tasks)
-  - Tags (`action-` and `classification` tasks)
-  - Polygons (`segmentation` task)
-
-- supported attributes:
-
-  - `occluded` (both UI option and a separate attribute)
-  - `truncated` and `difficult` (should be defined for labels as `checkbox` -es)
-  - action attributes (import only, should be defined as `checkbox` -es)
-  - arbitrary attributes (in the `attributes` section of XML files)
-
 ## Pascal VOC export
 
-Downloaded file: a zip archive of the following structure:
+For export of images:
+
+- Supported annotations: Bounding Boxes (detection),
+  Tags (classification), Polygons (segmentation)
+- Attributes:
+  - `occluded` as both UI option and a separate attribute.
+  - `truncated` and `difficult` must be defined for labels as `checkbox`.
+  - Arbitrary attributes in the `attributes` section of XML files.
+- Tracks: Not supported.
+
+The downloaded file is a .zip archive with the following structure:
 
 ```bash
 taskname.zip/
@@ -50,6 +56,8 @@ bird:::
 
 ## Pascal VOC import
 
+Supported attributes: action attributes (import only, should be defined as `checkbox` -es)
+
 Uploaded file: a zip archive of the structure declared above or the following:
 
 ```bash
@@ -71,82 +79,6 @@ There are 2 options:
 1. match by frame number. File name should be `<number>.jpg`
    or `frame_000000.jpg`. It should be used when task was created from video.
 
-## Segmentation mask export
-
-Downloaded file: a zip archive of the following structure:
-
-```bash
-taskname.zip/
-├── labelmap.txt # optional, required for non-VOC labels
-├── ImageSets/
-│   └── Segmentation/
-│       └── default.txt # list of image names without extension
-├── SegmentationClass/ # merged class masks
-│   ├── image1.png
-│   └── image2.png
-└── SegmentationObject/ # merged instance masks
-    ├── image1.png
-    └── image2.png
-
-# labelmap.txt
-# label : color (RGB) : 'body' parts : actions
-background:0,128,0::
-aeroplane:10,10,128::
-bicycle:10,128,0::
-bird:0,108,128::
-boat:108,0,100::
-bottle:18,0,8::
-bus:12,28,0::
-```
-
-Mask is a `png` image with 1 or 3 channels where each pixel
-has own color which corresponds to a label.
-Colors are generated following to Pascal VOC [algorithm](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/devkit_doc.html#sec:voclabelcolormap).
-`(0, 0, 0)` is used for background by default.
-
-- supported shapes: Rectangles, Polygons
-
-## Segmentation mask import
-
-Uploaded file: a zip archive of the following structure:
-
-```bash
-  taskname.zip/
-  ├── labelmap.txt # optional, required for non-VOC labels
-  ├── ImageSets/
-  │   └── Segmentation/
-  │       └── <any_subset_name>.txt
-  ├── SegmentationClass/
-  │   ├── image1.png
-  │   └── image2.png
-  └── SegmentationObject/
-      ├── image1.png
-      └── image2.png
-```
-
-It is also possible to import grayscale (1-channel) PNG masks.
-For grayscale masks provide a list of labels with the number of lines equal
-to the maximum color index on images. The lines must be in the right order
-so that line index is equal to the color index. Lines can have arbitrary,
-but different, colors. If there are gaps in the used color
-indices in the annotations, they must be filled with arbitrary dummy labels.
-Example:
-
-```
-q:0,128,0:: # color index 0
-aeroplane:10,10,128:: # color index 1
-_dummy2:2,2,2:: # filler for color index 2
-_dummy3:3,3,3:: # filler for color index 3
-boat:108,0,100:: # color index 3
-...
-_dummy198:198,198,198:: # filler for color index 198
-_dummy199:199,199,199:: # filler for color index 199
-...
-the last label:12,28,0:: # color index 200
-```
-
-- supported shapes: Polygons
-
 ## How to create a task from Pascal VOC dataset
 
 1. Download the Pascal Voc dataset (Can be downloaded from the
@@ -165,9 +97,9 @@ the last label:12,28,0:: # color index 200
    Select interesting image files
    (See [Creating an annotation task](/docs/manual/basics/creating_an_annotation_task/) guide for details)
 
-2. zip the corresponding annotation files
+1. zip the corresponding annotation files
 
-3. click `Upload annotation` button, choose `Pascal VOC ZIP 1.1`
+1. click `Upload annotation` button, choose `Pascal VOC ZIP 1.1`
 
    and select the zip file with annotations from previous step.
    It may take some time.

@@ -10,11 +10,11 @@ import { createAnnotationsAsync, rememberObject } from 'actions/annotation-actio
 import SetupTagPopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/setup-tag-popover';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { getCore, Label } from 'cvat-core-wrapper';
+import { getCore, Label, ObjectState } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 interface DispatchToProps {
-    onAnnotationCreate(sessionInstance: any, frame: number, states: any[]): void;
+    onAnnotationCreate(states: ObjectState[]): void;
     onRememberObject(labelID: number): void;
 }
 
@@ -29,8 +29,8 @@ interface StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onAnnotationCreate(sessionInstance: any, frame: number, states: any[]): void {
-            dispatch(createAnnotationsAsync(sessionInstance, frame, states));
+        onAnnotationCreate(states: ObjectState[]): void {
+            dispatch(createAnnotationsAsync(states));
         },
         onRememberObject(labelID: number): void {
             dispatch(rememberObject({
@@ -127,7 +127,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
 
     private onSetup = (): void => {
         const {
-            frame, labels, jobInstance, canvasInstance, onAnnotationCreate, onRememberObject,
+            frame, labels, canvasInstance, onAnnotationCreate, onRememberObject,
         } = this.props;
 
         const { selectedLabelID, canAddSelectedTag } = this.state;
@@ -142,7 +142,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
                 frame,
             });
 
-            onAnnotationCreate(jobInstance, frame, [objectState]);
+            onAnnotationCreate([objectState]);
         }
     };
 

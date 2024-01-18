@@ -3,12 +3,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { DimensionType } from 'enums';
+import { DimensionType } from './enums';
 import {
     SerializedAnnotationExporter,
     SerializedAnnotationFormats,
     SerializedAnnotationImporter,
-} from 'server-response-types';
+} from './server-response-types';
 
 export class Loader {
     public name: string;

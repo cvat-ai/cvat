@@ -21,7 +21,7 @@ import data.organizations
 #     }
 # }
 
-default allow = false
+default allow := false
 
 allow {
     utils.is_admin
@@ -43,22 +43,22 @@ allow {
     organizations.has_perm(organizations.WORKER)
 }
 
-filter = [] {
+filter := [] {
     utils.is_admin
     utils.is_sandbox
-} else = qobject {
+} else := qobject {
     utils.is_admin
     utils.is_organization
     qobject := [ {"org_id": input.auth.organization.id} ]
-} else = qobject {
+} else := qobject {
     utils.is_sandbox
     qobject := [ {"user_id": input.auth.user.id} ]
-} else = qobject {
+} else := qobject {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
     qobject := [ {"org_id": input.auth.organization.id} ]
-} else = qobject {
+} else := qobject {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.WORKER)
