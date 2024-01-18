@@ -2192,7 +2192,8 @@ export class MaskShape extends Shape {
     public removeUnderlyingPixels(frame: number):
     {
         clientIDs: number[],
-        undo: Function, redo: Function,
+        undo: Function,
+        redo: Function,
         emptyMaskOccurred: boolean,
     } {
         if (frame !== this.frame) {
@@ -2207,7 +2208,7 @@ export class MaskShape extends Shape {
         const height = this.bottom - this.top + 1;
         const updatedObjects: Record<number, MaskShape> = {};
 
-        const masks = {};
+        let masks = {};
         const currentMask = rle2Mask(this.points, width, height);
         for (let i = 0; i < currentMask.length; i++) {
             if (currentMask[i]) {
@@ -2235,35 +2236,37 @@ export class MaskShape extends Shape {
             }
         }
 
+        const wrapper = {
+            stashedPoints: Object.values(updatedObjects).map((object) => object.points),
+            stashedRemoved: Object.values(updatedObjects).map((object) => object.removed),
+        };
+
         let emptyMaskOccurred = false;
-        let stashedPoints = [];
+        for (const object of Object.values(updatedObjects)) {
+            const points = mask2Rle(masks[object.clientID]);
+            if (points.length < 2) {
+                object.removed = true;
+                emptyMaskOccurred = true;
+            } else {
+                object.points = points;
+                object.updated = Date.now();
+            }
+        }
+        masks = null;
+
         const undo = (): void => {
+            const updatedStashedPoints = Object.values(updatedObjects).map((object) => object.points);
+            const updatedStashedRemoved = Object.values(updatedObjects).map((object) => object.removed);
             for (const [index, object] of Object.values(updatedObjects).entries()) {
-                if (object.points.length < 2) {
-                    object.removed = false;
-                } else {
-                    object.points = stashedPoints[index];
-                    object.updated = Date.now();
-                }
+                object.points = wrapper.stashedPoints[index];
+                object.removed = wrapper.stashedRemoved[index];
+                object.updated = Date.now();
             }
+            wrapper.stashedPoints = updatedStashedPoints;
+            wrapper.stashedRemoved = updatedStashedRemoved;
         };
 
-        const redo = (): void => {
-            stashedPoints = [];
-            for (const object of Object.values(updatedObjects)) {
-                const points = mask2Rle(masks[object.clientID]);
-                stashedPoints.push([...object.points]);
-                if (points.length < 2) {
-                    object.removed = true;
-                    emptyMaskOccurred = true;
-                } else {
-                    object.points = points;
-                    object.updated = Date.now();
-                }
-            }
-        };
-        redo();
-
+        const redo = undo;
         return {
             clientIDs: Object.keys(updatedObjects).map((clientID) => +clientID),
             emptyMaskOccurred,
