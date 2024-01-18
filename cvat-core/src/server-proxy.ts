@@ -198,8 +198,8 @@ function generateError(errorData: AxiosError<{ message?: string }>): ServerError
 
                 // serializers fields
                 const message = Object.keys(errorData.response.data).map((key) => (
-                    `{${key}: ${errorData.response.data[key].toString()}}`
-                )).join('\n');
+                    `**${key}**: ${errorData.response.data[key].toString()}`
+                )).join('\n\n');
                 return new ServerError(message, errorData.response.status);
             }
 
