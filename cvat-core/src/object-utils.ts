@@ -33,7 +33,13 @@ export function checkNumberOfPoints(shapeType: ShapeType, points: number[]): voi
         }
     } else if (shapeType === ShapeType.MASK) {
         if (points.length < 6) {
-            throw new DataError('Could not save empty mask');
+            throw new DataError('Mask must not be empty');
+        }
+
+        const [left, top, right, bottom] = points.slice(-4);
+        const [width, height] = [right - left, bottom - top];
+        if (width < 0 || !Number.isInteger(width) || height < 0 || !Number.isInteger(height)) {
+            throw new DataError(`Mask width, height must be positive integers, but got ${width}x${height}`);
         }
     } else {
         throw new ArgumentError(`Unknown value of shapeType has been received ${shapeType}`);
