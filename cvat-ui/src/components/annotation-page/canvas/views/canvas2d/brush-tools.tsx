@@ -48,7 +48,7 @@ function BrushTools(): React.ReactPortal | null {
     const [brushSize, setBrushSize] = useState(10);
     const [applicableLabels, setApplicableLabels] = useState<Label[]>([]);
 
-    const [blockedState, setBlockedState] = useState<Record<'eraser' | 'polygon-minus', boolean>>({
+    const [blockedTools, setBlockedTools] = useState<Record<'eraser' | 'polygon-minus', boolean>>({
         eraser: false,
         'polygon-minus': false,
     });
@@ -68,8 +68,8 @@ function BrushTools(): React.ReactPortal | null {
         DraggableArea,
     );
 
-    const onBlockUpdated = useCallback((configuration: Record<'eraser' | 'polygon-minus', boolean>) => {
-        setBlockedState(configuration);
+    const onBlockUpdated = useCallback((blockedToolsConfiguration: typeof blockedTools) => {
+        setBlockedTools(blockedToolsConfiguration);
     }, []);
 
     getCore().config.removeUnderlyingMaskPixels.onEmptyMaskOccurrence = () => {
@@ -187,7 +187,7 @@ function BrushTools(): React.ReactPortal | null {
                 canvasInstance.html().removeEventListener('canvas.editdone', updateEditableState);
             }
         };
-    }, [visible, editableState]);
+    }, [visible, editableState, currentTool]);
 
     if (!labels.length) {
         return null;
@@ -242,7 +242,7 @@ function BrushTools(): React.ReactPortal | null {
                 className={['cvat-brush-tools-eraser', ...(currentTool === 'eraser' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
                 icon={<Icon component={EraserIcon} />}
                 onClick={() => setCurrentTool('eraser')}
-                disabled={blockedState.eraser}
+                disabled={blockedTools.eraser}
             />
             <Button
                 type='text'
@@ -255,7 +255,7 @@ function BrushTools(): React.ReactPortal | null {
                 className={['cvat-brush-tools-polygon-minus', ...(currentTool === 'polygon-minus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
                 icon={<Icon component={PolygonMinusIcon} />}
                 onClick={() => setCurrentTool('polygon-minus')}
-                disabled={blockedState['polygon-minus']}
+                disabled={blockedTools['polygon-minus']}
             />
             { ['brush', 'eraser'].includes(currentTool) ? (
                 <CVATTooltip title='Brush size [Hold Alt + Right Mouse Click + Drag Left/Right]'>
