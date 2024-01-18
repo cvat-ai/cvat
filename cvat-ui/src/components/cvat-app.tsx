@@ -368,7 +368,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     private showErrors(): void {
         function showError(title: string, _error: Error, shouldLog?: boolean, className?: string): void {
-            const error = _error.message || _error.toString();
+            const error = _error?.message || _error.toString();
             const dynamicProps = typeof className === 'undefined' ? {} : { className };
             notification.error({
                 ...dynamicProps,
