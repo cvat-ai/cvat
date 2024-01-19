@@ -165,10 +165,22 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
     });
 }
 
+function filterPythonTraceback(data: string): string {
+    if (typeof data === 'string' && data.trim().startsWith('Traceback')) {
+        const lastRow = data.split('\n').findLastIndex((str) => str.trim().length);
+        return `${data.split('\n').slice(lastRow, lastRow + 1)[0]}`;
+    }
+
+    return data;
+}
+
 function generateError(errorData: AxiosError): ServerError {
     if (errorData.response) {
         if (errorData.response.status >= 500 && typeof errorData.response.data === 'string') {
-            return new ServerError(errorData.response.data, errorData.response.status);
+            return new ServerError(
+                filterPythonTraceback(errorData.response.data),
+                errorData.response.status,
+            );
         }
 
         if (errorData.response.status >= 400 && errorData.response.data) {
@@ -1195,12 +1207,7 @@ function listenToCreateTask(
                         callback(state, 0, failMessage);
                     });
 
-                    let message = `${response.data.message}`;
-                    if (response.data.message.startsWith('Traceback')) {
-                        message = `${response.data.message.split('\n').slice(-1)[0]}`;
-                    }
-
-                    reject(new ServerError(message, 400));
+                    reject(new ServerError(filterPythonTraceback(response.data.message), 400));
                 } else {
                     const failMessage = 'Unknown status received';
                     listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
