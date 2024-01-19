@@ -185,6 +185,14 @@ function generateError(errorData: AxiosError): ServerError {
 
         if (errorData.response.status >= 400 && errorData.response.data) {
             // serializer.ValidationError
+
+            if (Array.isArray(errorData.response.data)) {
+                return new ServerError(
+                    errorData.response.data.join('\n\n'),
+                    errorData.response.status,
+                );
+            }
+
             if (typeof errorData.response.data === 'object') {
                 const generalFields = ['non_field_errors', 'detail', 'message'];
                 const generalFieldsHelpers = {
