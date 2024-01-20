@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.10.0
+  version: 2.11.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2021,8 +2021,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -2412,8 +2412,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -3460,8 +3460,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -3602,8 +3602,8 @@ paths:
           enum:
           - download
           - import_status
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -4787,8 +4787,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -5311,8 +5311,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -6584,7 +6584,7 @@ components:
           maxLength: 64
         connection_string:
           type: string
-          maxLength: 440
+          maxLength: 1024
         key_file:
           type: string
           format: binary
@@ -8570,7 +8570,7 @@ components:
           maxLength: 64
         connection_string:
           type: string
-          maxLength: 440
+          maxLength: 1024
         key_file:
           type: string
           format: binary

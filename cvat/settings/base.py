@@ -20,10 +20,10 @@ import os
 import sys
 import tempfile
 from datetime import timedelta
-from distutils.util import strtobool
 from enum import Enum
 import urllib
 
+from attr.converters import to_bool
 from corsheaders.defaults import default_headers
 from logstash_async.constants import constants as logstash_async_constants
 
@@ -179,7 +179,7 @@ REST_AUTH_SERIALIZERS = {
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
-if strtobool(os.getenv('CVAT_ANALYTICS', '0')):
+if to_bool(os.getenv('CVAT_ANALYTICS', False)):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
@@ -521,9 +521,9 @@ RESTRICTIONS = {
 
 redis_ondisk_host = os.getenv('CVAT_REDIS_ONDISK_HOST', 'localhost')
 # The default port is not Redis's default port (6379).
-# This is so that a developer can run both in-mem and on-disk Redis on their machine
+# This is so that a developer can run both in-mem Redis and on-disk Kvrocks on their machine
 # without running into a port conflict.
-redis_ondisk_port = os.getenv('CVAT_REDIS_ONDISK_PORT', 6479)
+redis_ondisk_port = os.getenv('CVAT_REDIS_ONDISK_PORT', 6666)
 redis_ondisk_password = os.getenv('CVAT_REDIS_ONDISK_PASSWORD', '')
 
 CACHES = {
@@ -700,7 +700,7 @@ SMOKESCREEN_ENABLED = True
 # to check configuration and throw ImproperlyConfigured if thats a case
 EMAIL_BACKEND = None
 
-ONE_RUNNING_JOB_IN_QUEUE_PER_USER = strtobool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_PER_USER', 'false'))
+ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv('ONE_RUNNING_JOB_IN_QUEUE_PER_USER', False))
 
 # How many chunks can be prepared simultaneously during task creation in case the cache is not used
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv('CVAT_CONCURRENT_CHUNK_PROCESSING', 1))

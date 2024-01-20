@@ -52,7 +52,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             sorting_method: 'lexicographical',
         }).then((response) => {
             taskID = response.taskID;
-            [jobID] = response.jobID;
+            [jobID] = response.jobIDs;
         }).then(() => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');

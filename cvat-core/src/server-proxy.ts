@@ -165,13 +165,68 @@ async function chunkUpload(file: File, uploadConfig): Promise<{ uploadSentSize: 
     });
 }
 
-function generateError(errorData: AxiosError<{ message?: string }>): ServerError {
+function filterPythonTraceback(data: string): string {
+    if (typeof data === 'string' && data.trim().startsWith('Traceback')) {
+        const lastRow = data.split('\n').findLastIndex((str) => str.trim().length);
+        return `${data.split('\n').slice(lastRow, lastRow + 1)[0]}`;
+    }
+
+    return data;
+}
+
+function generateError(errorData: AxiosError): ServerError {
     if (errorData.response) {
-        if (errorData.response.data?.message) {
-            return new ServerError(errorData.response.data?.message, errorData.response.status);
+        if (errorData.response.status >= 500 && typeof errorData.response.data === 'string') {
+            return new ServerError(
+                filterPythonTraceback(errorData.response.data),
+                errorData.response.status,
+            );
         }
-        const message = `${errorData.message}. ${JSON.stringify(errorData.response.data || '')}.`;
-        return new ServerError(message, errorData.response.status);
+
+        if (errorData.response.status >= 400 && errorData.response.data) {
+            // serializer.ValidationError
+
+            if (Array.isArray(errorData.response.data)) {
+                return new ServerError(
+                    errorData.response.data.join('\n\n'),
+                    errorData.response.status,
+                );
+            }
+
+            if (typeof errorData.response.data === 'object') {
+                const generalFields = ['non_field_errors', 'detail', 'message'];
+                const generalFieldsHelpers = {
+                    'Invalid token.': 'Not authenticated request, try to login again',
+                };
+
+                for (const field of generalFields) {
+                    if (field in errorData.response.data) {
+                        const message = errorData.response.data[field].toString();
+                        return new ServerError(
+                            generalFieldsHelpers[message] || message,
+                            errorData.response.status,
+                        );
+                    }
+                }
+
+                // serializers fields
+                const message = Object.keys(errorData.response.data).map((key) => (
+                    `**${key}**: ${errorData.response.data[key].toString()}`
+                )).join('\n\n');
+                return new ServerError(message, errorData.response.status);
+            }
+
+            // errors with string data
+            if (typeof errorData.response.data === 'string') {
+                return new ServerError(errorData.response.data, errorData.response.status);
+            }
+        }
+
+        // default handling
+        return new ServerError(
+            errorData.response.statusText || errorData.message,
+            errorData.response.status,
+        );
     }
 
     // Server is unavailable (no any response)
@@ -797,10 +852,11 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
                     .then((response) => {
                         const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
                         const { status } = response;
-                        if (status === 201) params.action = 'download';
-                        if (status === 202 || (isCloudStorage && status === 201)) {
+
+                        if (status === 202) {
                             setTimeout(request, 3000);
                         } else if (status === 201) {
+                            params.action = 'download';
                             resolve(`${baseURL}?${new URLSearchParams(params).toString()}`);
                         } else if (isCloudStorage && status === 200) {
                             resolve();
@@ -927,10 +983,11 @@ async function backupTask(id: number, targetStorage: Storage, useDefaultSettings
                 });
                 const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
                 const { status } = response;
-                if (status === 201) params.action = 'download';
-                if (status === 202 || (isCloudStorage && status === 201)) {
+
+                if (status === 202) {
                     setTimeout(request, 3000);
                 } else if (status === 201) {
+                    params.action = 'download';
                     resolve(`${url}?${new URLSearchParams(params).toString()}`);
                 } else if (isCloudStorage && status === 200) {
                     resolve();
@@ -1032,10 +1089,11 @@ async function backupProject(
                 });
                 const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
                 const { status } = response;
-                if (status === 201) params.action = 'download';
-                if (status === 202 || (isCloudStorage && status === 201)) {
+
+                if (status === 202) {
                     setTimeout(request, 3000);
                 } else if (status === 201) {
+                    params.action = 'download';
                     resolve(`${url}?${new URLSearchParams(params).toString()}`);
                 } else if (isCloudStorage && status === 200) {
                     resolve();
@@ -1152,12 +1210,12 @@ function listenToCreateTask(
                     const [createdTask] = await getTasks({ id, ...params });
                     resolve(createdTask);
                 } else if (state === RQStatus.FAILED) {
-                    const failMessage = 'Data processing failed';
+                    const failMessage = 'Images processing failed';
                     listenToCreateCallbacks[id].onUpdate.forEach((callback) => {
                         callback(state, 0, failMessage);
                     });
-                    const message = `Could not create task. ${failMessage}. ${response.data.message}`;
-                    reject(new ServerError(message, 400));
+
+                    reject(new ServerError(filterPythonTraceback(response.data.message), 400));
                 } else {
                     const failMessage = 'Unknown status received';
                     listenToCreateCallbacks[id].onUpdate.forEach((callback) => {

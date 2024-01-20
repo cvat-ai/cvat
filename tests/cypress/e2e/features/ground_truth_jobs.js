@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,13 +34,23 @@ context('Ground truth jobs', () => {
             points: 'By 2 Points',
             type: 'Shape',
             labelName,
+            firstX: 570,
+            firstY: 650,
+            secondX: 670,
+            secondY: 750,
+        },
+        {
+            id: 2,
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName,
             firstX: 250,
             firstY: 350,
             secondX: 350,
             secondY: 450,
         },
         {
-            id: 2,
+            id: 3,
             points: 'By 2 Points',
             type: 'Shape',
             labelName,
@@ -50,7 +60,7 @@ context('Ground truth jobs', () => {
             secondY: 550,
         },
         {
-            id: 3,
+            id: 4,
             points: 'By 2 Points',
             type: 'Shape',
             labelName,
@@ -72,7 +82,16 @@ context('Ground truth jobs', () => {
             secondY: 450,
         },
         {
-            id: 2,
+            points: 'By 2 Points',
+            type: 'Shape',
+            labelName,
+            firstX: 270,
+            firstY: 350,
+            secondX: 370,
+            secondY: 450,
+        },
+        {
+            id: 3,
             points: 'By 2 Points',
             type: 'Shape',
             labelName,
@@ -97,8 +116,8 @@ context('Ground truth jobs', () => {
     let taskID = null;
     let qualityReportID = null;
 
-    // With seed = 1, frameCount = 3, totalFrames = 10 - predifined ground truth frames are:
-    const groundTruthFrames = [1, 6, 7];
+    // With seed = 1, frameCount = 4, totalFrames = 10 - predifined ground truth frames are:
+    const groundTruthFrames = [0, 1, 5, 6];
 
     function checkCardValue(className, value) {
         cy.get(className)
@@ -124,25 +143,36 @@ context('Ground truth jobs', () => {
             .should('be.visible');
     }
 
-    function checkConflicts(type, amount) {
+    function checkConflicts(type = '', amount = 0, sidebar = true) {
         switch (type) {
             case 'warning': {
                 cy.get('.cvat-conflict-warning').should('have.length', amount);
-                cy.get('.cvat-objects-sidebar-warning-item').should('have.length', amount);
+                if (sidebar) {
+                    cy.get('.cvat-objects-sidebar-warning-item').should('have.length', amount);
+                }
                 break;
             }
             case 'error': {
                 cy.get('.cvat-conflict-error').should('have.length', amount);
-                cy.get('.cvat-objects-sidebar-conflict-item').should('have.length', amount);
+                if (sidebar) {
+                    cy.get('.cvat-objects-sidebar-conflict-item').should('have.length', amount);
+                }
                 break;
             }
             default: {
                 cy.get('.cvat-conflict-warning').should('not.exist');
                 cy.get('.cvat-conflict-error').should('not.exist');
-                cy.get('.cvat-objects-sidebar-warning-item').should('not.exist');
-                cy.get('.cvat-objects-sidebar-conflict-item').should('not.exist');
+                if (sidebar) {
+                    cy.get('.cvat-objects-sidebar-warning-item').should('not.exist');
+                    cy.get('.cvat-objects-sidebar-conflict-item').should('not.exist');
+                }
             }
         }
+    }
+
+    function checkHighlight(darkenConflicts) {
+        cy.get('.cvat-conflict-label').first().trigger('mouseover');
+        cy.get('.cvat-conflict-label.cvat-conflict-darken').should('have.length', darkenConflicts);
     }
 
     function waitForReport(authKey, rqID) {
@@ -214,7 +244,7 @@ context('Ground truth jobs', () => {
                 });
             cy.createJob({
                 ...jobOptions,
-                frameCount: 3,
+                frameCount: 4,
                 seed: 1,
                 fromTaskPage: false,
             });
@@ -239,8 +269,6 @@ context('Ground truth jobs', () => {
                 cy.checkFrameNum(frame);
                 cy.get('.cvat-player-next-button').click();
             });
-
-            cy.checkFrameNum(groundTruthFrames[2]);
         });
 
         it('Check ground truth annotations in regular job', () => {
@@ -300,8 +328,8 @@ context('Ground truth jobs', () => {
             cy.openTask(taskName);
             openQualityTab();
             cy.wait('@getReport');
-            checkCardValue('.cvat-task-mean-annotation-quality', '50.0%');
-            checkCardValue('.cvat-task-gt-conflicts', '3');
+            checkCardValue('.cvat-task-mean-annotation-quality', '33.3%');
+            checkCardValue('.cvat-task-gt-conflicts', '5');
             checkCardValue('.cvat-task-issues', '0');
         });
 
@@ -323,23 +351,50 @@ context('Ground truth jobs', () => {
             cy.get('.cvat-objects-sidebar-show-ground-truth').filter(':visible').click();
 
             cy.goCheckFrameNumber(groundTruthFrames[0]);
-            checkConflicts('warning', 1);
+            checkConflicts('error', 2);
+            checkHighlight(1);
 
             cy.goCheckFrameNumber(groundTruthFrames[1]);
-            checkConflicts();
+            checkConflicts('warning', 1);
 
             cy.goCheckFrameNumber(groundTruthFrames[2]);
+            checkConflicts();
+
+            cy.goCheckFrameNumber(groundTruthFrames[3]);
             checkConflicts('error', 2);
+            checkHighlight(1);
+        });
+
+        it('Conflicts with annotation filter enabled', () => {
+            cy.addFiltersRule(0);
+            cy.setFilter({
+                groupIndex: 0,
+                ruleIndex: 0,
+                field: 'ObjectID',
+                operator: '>',
+                value: '5',
+                submit: true,
+            });
+
+            groundTruthFrames.forEach((frame, index) => {
+                if (index !== groundTruthFrames.length - 1) {
+                    cy.goCheckFrameNumber(frame);
+                    checkConflicts('', 0, false);
+                }
+            });
+
+            cy.goCheckFrameNumber(groundTruthFrames[groundTruthFrames.length - 1]);
+            checkConflicts('error', 1, false);
         });
 
         it('Frames with conflicts navigation', () => {
-            cy.goCheckFrameNumber(0);
+            cy.goCheckFrameNumber(groundTruthFrames[0]);
 
             cy.get('.cvat-issues-sidebar-next-frame').click();
-            cy.checkFrameNum(groundTruthFrames[0]);
+            cy.checkFrameNum(groundTruthFrames[1]);
 
             cy.get('.cvat-issues-sidebar-next-frame').click();
-            cy.checkFrameNum(groundTruthFrames[2]);
+            cy.checkFrameNum(groundTruthFrames[3]);
         });
     });
 });
