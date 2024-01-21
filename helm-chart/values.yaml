@@ -181,7 +181,7 @@ cvat:
     replicas: 1
     image: openpolicyagent/opa
     tag: 0.45.0-rootless
-    imagepullploicy: IfNotPresent
+    imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
@@ -222,6 +222,55 @@ cvat:
           protocol: TCP
           name: http
 
+  kvrocks:
+    enabled: true
+    external:
+      host: kvrocks-external.localdomain
+    existingSecret: "cvat-kvrocks-secret"
+    secret:
+      create: true
+      name: cvat-kvrocks-secret
+      password: cvat_kvrocks
+    image: apache/kvrocks
+    tag: 2.7.0
+    imagePullPolicy: IfNotPresent
+    labels: {}
+    #  test: test
+    annotations: {}
+    # test.io/test: test
+    resources: {}
+    affinity: {}
+    tolerations: []
+    nodeAffinity: {}
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #     - matchExpressions:
+    #       - key: kubernetes.io/e2e-az-name
+    #         operator: In
+    #         values:
+    #         - e2e-az1
+    #         - e2e-az2
+    additionalEnv: []
+    # Example:
+    # - name: TEST
+    #   value: "test"
+    additionalVolumes: []
+    # Example(assumes that pvc was already created):
+    # - name: tmp
+    #   persistentVolumeClaim:
+    #       claimName: tmp
+    additionalVolumeMounts: []
+    # Example:
+    # -   mountPath: /tmp
+    #     name: tmp
+    #     subPath: test
+    defaultStorage:
+      enabled: true
+#     storageClassName: default
+#     accessModes:
+#       - ReadWriteOnce
+      size: 100Gi
+
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
   enabled: true # false for external db
@@ -257,27 +306,6 @@ redis:
     name: cvat-redis-secret
     password: cvat_redis
   # TODO: persistence options
-
-# https://artifacthub.io/packages/helm/enapter/keydb
-keydb:
-  enabled: true
-  external:
-    host: 127.0.0.1
-  existingSecret: "cvat-keydb-secret"
-  secret:
-    create: true
-    name: cvat-keydb-secret
-    password: cvat_keydb
-  multiMaster: false
-  activeReplicas: false
-  nodes: 1
-  configExtraArgs:
-  - storage-provider: ["flash", "/data/flash"]
-  - maxmemory: "5G"
-  - maxmemory-policy: "allkeys-lfu"
-  resources:
-    requests:
-      memory: "7G"
 
 nuclio:
   enabled: false

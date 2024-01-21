@@ -2137,7 +2137,7 @@
   resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
 
-"@types/lodash@^4.14.172", "@types/lodash@^4.14.191":
+"@types/lodash@^4.14.191":
   version "4.14.202"
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.202.tgz#f09dbd2fb082d507178b2f2a5c7e74bd72ff98f8"
   integrity sha512-OvlIYQK9tNneDlS0VN54LLd5uiPCBOp7gS5Z0f1mjoJYBrtStzgmJBxONW3U6OZqdtNzZPmn9BS/7WI7BFFcFQ==
@@ -4225,9 +4225,8 @@ custom-error-instance@2.1.1:
     svg.select.js "3.0.1"
 
 "cvat-core@link:./cvat-core":
-  version "14.0.3"
+  version "14.1.1"
   dependencies:
-    "@types/lodash" "^4.14.191"
     axios "^1.6.0"
     axios-retry "^4.0.0"
     cvat-data "link:./cvat-data"
@@ -4236,7 +4235,6 @@ custom-error-instance@2.1.1:
     form-data "^4.0.0"
     js-cookie "^3.0.1"
     json-logic-js "^2.0.1"
-    lodash "^4.17.21"
     platform "^1.3.5"
     quickhull "^1.0.3"
     store "^2.0.12"

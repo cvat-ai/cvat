@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1006,6 +1006,10 @@ export default class Collection {
                     );
                 }
 
+                if (state.shapeType === 'mask' && state.points.length < 6) {
+                    throw new ArgumentError('Could not create empty mask');
+                }
+
                 if (state.objectType === 'shape') {
                     constructed.shapes.push({
                         attributes,
@@ -1095,12 +1099,27 @@ export default class Collection {
         // eslint-disable-next-line no-unsanitized/method
         const imported = this.import(constructed);
         const importedArray = imported.tags.concat(imported.tracks).concat(imported.shapes);
+        const additionalUndo = [];
+        const additionalRedo = [];
+        const additionalClientIDs = [];
+        let globalEmptyMaskOccurred = false;
         for (const object of importedArray) {
-            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels) {
-                (object as MaskShape).removeUnderlyingPixels(object.frame);
+            if (object.shapeType === ShapeType.MASK && config.removeUnderlyingMaskPixels.enabled) {
+                const {
+                    clientIDs,
+                    emptyMaskOccurred,
+                    undo: undoWithUnderlyingPixels,
+                    redo: redoWithUnderlyingPixels,
+                } = (object as MaskShape).removeUnderlyingPixels(object.frame);
+                additionalUndo.push(undoWithUnderlyingPixels);
+                additionalRedo.push(redoWithUnderlyingPixels);
+                additionalClientIDs.push(clientIDs);
+                globalEmptyMaskOccurred = emptyMaskOccurred || globalEmptyMaskOccurred;
             }
         }
-
+        if (config.removeUnderlyingMaskPixels.enabled && globalEmptyMaskOccurred) {
+            config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
+        }
         if (objectStates.length) {
             this.history.do(
                 HistoryActions.CREATED_OBJECTS,
@@ -1108,14 +1127,21 @@ export default class Collection {
                     importedArray.forEach((object) => {
                         object.removed = true;
                     });
+                    additionalUndo.forEach((undo) => {
+                        undo();
+                    });
                 },
                 () => {
                     importedArray.forEach((object) => {
                         object.removed = false;
                         object.serverID = undefined;
                     });
+
+                    additionalRedo.forEach((redo) => {
+                        redo();
+                    });
                 },
-                importedArray.map((object) => object.clientID),
+                [...importedArray.map((object) => object.clientID), ...additionalClientIDs.flat()],
                 objectStates[0].frame,
             );
         }
