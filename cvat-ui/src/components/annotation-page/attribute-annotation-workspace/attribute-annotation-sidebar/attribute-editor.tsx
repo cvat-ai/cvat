@@ -30,6 +30,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
 
     const ref = useRef<TextAreaRef>(null);
     const [selectionStart, setSelectionStart] = useState<number>(currentValue.length);
+    const [localCurrentValue, setCurrentValue] = useState(currentValue);
 
     useEffect(() => {
         const textArea = ref?.current?.resizableTextArea?.textArea;
@@ -39,13 +40,26 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         }
     }, [currentValue]);
 
+    useEffect(() => {
+        if (currentValue !== localCurrentValue) {
+            setCurrentValue(currentValue);
+        }
+    }, [currentValue]);
+
+    useEffect(() => {
+        if (localCurrentValue !== currentValue) {
+            onChange(localCurrentValue);
+        }
+    }, [localCurrentValue]);
+
+
     const renderCheckbox = (): JSX.Element => (
         <>
             <Text strong>Checkbox: </Text>
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
                 <Checkbox
-                    onChange={(event: CheckboxChangeEvent): void => onChange(event.target.checked ? 'true' : 'false')}
-                    checked={currentValue === 'true'}
+                    onChange={(event: CheckboxChangeEvent): void => setCurrentValue(event.target.checked ? 'true' : 'false')}
+                    checked={localCurrentValue === 'true'}
                 />
             </div>
         </>
@@ -56,9 +70,9 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
             <Text strong>Values: </Text>
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
                 <Select
-                    value={currentValue}
+                    value={localCurrentValue}
                     style={{ width: '80%' }}
-                    onChange={(value: SelectValue) => onChange(value as string)}
+                    onChange={(value: SelectValue) => setCurrentValue(value as string)}
                 >
                     {values.map(
                         (value: string): JSX.Element => (
@@ -76,7 +90,7 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
         <>
             <Text strong>Values: </Text>
             <div className='attribute-annotation-sidebar-attr-elem-wrapper'>
-                <Radio.Group value={currentValue} onChange={(event: RadioChangeEvent) => onChange(event.target.value)}>
+                <Radio.Group value={localCurrentValue} onChange={(event: RadioChangeEvent) => setCurrentValue(event.target.value)}>
                     {values.map(
                         (value: string): JSX.Element => (
                             <Radio style={{ display: 'block' }} key={value} value={value}>
@@ -109,11 +123,11 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                         min={+min}
                         max={+max}
                         step={+step}
-                        value={+currentValue}
+                        value={+localCurrentValue}
                         key={`${clientID}:${attrID}`}
                         onChange={(value: number | null) => {
                             if (typeof value === 'number') {
-                                onChange(`${value}`);
+                                setCurrentValue(`${value}`);
                             }
                         }}
                         onKeyDown={handleKeydown}
@@ -131,13 +145,13 @@ function renderInputElement(parameters: InputElementParameters): JSX.Element {
                     autoFocus
                     ref={ref}
                     key={`${clientID}:${attrID}`}
-                    value={currentValue}
+                    value={localCurrentValue}
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
                         const { value } = event.target;
                         if (ref.current?.resizableTextArea?.textArea) {
                             setSelectionStart(ref.current.resizableTextArea.textArea.selectionStart);
                         }
-                        onChange(value);
+                        setCurrentValue(value);
                     }}
                     onKeyDown={handleKeydown}
                 />
