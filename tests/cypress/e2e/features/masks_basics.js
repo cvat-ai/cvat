@@ -1,84 +1,84 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
 context('Manipulations with masks', { scrollBehavior: false }, () => {
-    const taskName = 'Basic actions with masks';
-    const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
-    const drawingActions = [{
-        method: 'brush',
-        coordinates: [[300, 300], [700, 300], [700, 700], [300, 700]],
-    }, {
-        method: 'polygon-plus',
-        coordinates: [[450, 210], [650, 400], [450, 600], [260, 400]],
-    }, {
-        method: 'brush-size',
-        value: 150,
-    }, {
-        method: 'eraser',
-        coordinates: [[500, 500]],
-    }, {
-        method: 'brush-size',
-        value: 10,
-    }, {
-        method: 'polygon-minus',
-        coordinates: [[450, 400], [600, 400], [450, 550], [310, 400]],
-    }];
-
-    const editingActions = [{
-        method: 'polygon-minus',
-        coordinates: [[50, 400], [800, 400], [800, 800], [50, 800]],
-    }];
-
-    let taskID = null;
-    let jobID = null;
-
-    before(() => {
-        cy.visit('auth/login');
-        cy.login();
-        cy.headlessCreateTask({
-            labels: [{ name: 'mask label', attributes: [], type: 'any' }],
-            name: taskName,
-            project_id: null,
-            source_storage: { location: 'local' },
-            target_storage: { location: 'local' },
+    describe('Basic masks actions', () => {
+        const taskName = 'Basic actions with masks';
+        const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
+        const drawingActions = [{
+            method: 'brush',
+            coordinates: [[300, 300], [700, 300], [700, 700], [300, 700]],
         }, {
-            server_files: serverFiles,
-            image_quality: 70,
-            use_zip_chunks: true,
-            use_cache: true,
-            sorting_method: 'lexicographical',
-        }).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
-        }).then(() => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
-            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
-        });
-    });
+            method: 'polygon-plus',
+            coordinates: [[450, 210], [650, 400], [450, 600], [260, 400]],
+        }, {
+            method: 'brush-size',
+            value: 150,
+        }, {
+            method: 'eraser',
+            coordinates: [[500, 500]],
+        }, {
+            method: 'brush-size',
+            value: 10,
+        }, {
+            method: 'polygon-minus',
+            coordinates: [[450, 400], [600, 400], [450, 550], [310, 400]],
+        }];
 
-    after(() => {
-        cy.logout();
-        cy.getAuthKey().then((response) => {
-            const authKey = response.body.key;
-            cy.request({
-                method: 'DELETE',
-                url: `/api/tasks/${taskID}`,
-                headers: {
-                    Authorization: `Token ${authKey}`,
-                },
+        const editingActions = [{
+            method: 'polygon-minus',
+            coordinates: [[50, 400], [800, 400], [800, 800], [50, 800]],
+        }];
+
+        let taskID = null;
+        let jobID = null;
+
+        before(() => {
+            cy.visit('auth/login');
+            cy.login();
+            cy.headlessCreateTask({
+                labels: [{ name: 'mask label', attributes: [], type: 'any' }],
+                name: taskName,
+                project_id: null,
+                source_storage: { location: 'local' },
+                target_storage: { location: 'local' },
+            }, {
+                server_files: serverFiles,
+                image_quality: 70,
+                use_zip_chunks: true,
+                use_cache: true,
+                sorting_method: 'lexicographical',
+            }).then((response) => {
+                taskID = response.taskID;
+                [jobID] = response.jobIDs;
+            }).then(() => {
+                cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+                cy.get('.cvat-canvas-container').should('exist').and('be.visible');
             });
         });
-    });
 
-    beforeEach(() => {
-        cy.removeAnnotations();
-        cy.goCheckFrameNumber(0);
-    });
+        after(() => {
+            cy.logout();
+            cy.getAuthKey().then((response) => {
+                const authKey = response.body.key;
+                cy.request({
+                    method: 'DELETE',
+                    url: `/api/tasks/${taskID}`,
+                    headers: {
+                        Authorization: `Token ${authKey}`,
+                    },
+                });
+            });
+        });
 
-    describe('Draw a couple of masks masks', () => {
+        beforeEach(() => {
+            cy.removeAnnotations();
+            cy.goCheckFrameNumber(0);
+        });
+
         it('Drawing a couple of masks. Save job, reopen job, masks must exist', () => {
             cy.startMaskDrawing();
             cy.drawMask(drawingActions);
@@ -165,6 +165,130 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Edit').click();
             cy.drawMask(editingActions);
             cy.finishMaskDrawing();
+        });
+    });
+
+    describe('Test empty masks', () => {
+        const taskName = 'Task for testing empty mask';
+
+        let taskID = null;
+        let jobID = null;
+
+        function checkEraseTools(baseTool = '.cvat-brush-tools-brush', disabled = true) {
+            cy.get(baseTool).should('have.class', 'cvat-brush-tools-active-tool');
+
+            const condition = disabled ? 'be.disabled' : 'not.be.disabled';
+            cy.get('.cvat-brush-tools-eraser').should(condition);
+            cy.get('.cvat-brush-tools-polygon-minus').should(condition);
+        }
+
+        before(() => {
+            cy.visit('auth/login');
+            cy.login();
+            cy.headlessCreateTask({
+                labels: [{ name: 'mask label', attributes: [], type: 'any' }],
+                name: taskName,
+                project_id: null,
+                source_storage: { location: 'local' },
+                target_storage: { location: 'local' },
+            }, {
+                server_files: ['archive.zip'],
+                image_quality: 70,
+                use_zip_chunks: true,
+                use_cache: true,
+                sorting_method: 'lexicographical',
+            }).then((response) => {
+                taskID = response.taskID;
+                [jobID] = response.jobIDs;
+            }).then(() => {
+                cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+                cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+            });
+        });
+
+        after(() => {
+            cy.logout();
+            cy.getAuthKey().then((response) => {
+                const authKey = response.body.key;
+                cy.request({
+                    method: 'DELETE',
+                    url: `/api/tasks/${taskID}`,
+                    headers: {
+                        Authorization: `Token ${authKey}`,
+                    },
+                });
+            });
+        });
+
+        beforeEach(() => {
+            cy.removeAnnotations();
+            cy.goCheckFrameNumber(0);
+        });
+
+        it('Drawing a mask, fully erase it. Empty shape is not created', () => {
+            const erasedMask = [{
+                method: 'brush',
+                coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
+            }, {
+                method: 'polygon-minus',
+                coordinates: [[100, 100], [700, 100], [700, 700], [100, 700]],
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(erasedMask);
+            cy.finishMaskDrawing();
+
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+        });
+
+        it('Drawing a mask, finish with erasing tool. On new mask drawing tool is reset', () => {
+            const masks = [
+                [
+                    {
+                        method: 'brush',
+                        coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
+                    }, {
+                        method: 'polygon-minus',
+                        coordinates: [[100, 100], [400, 100], [400, 400], [100, 400]],
+                    },
+                ],
+                [
+                    {
+                        method: 'brush',
+                        coordinates: [[550, 350], [700, 500], [550, 650], [400, 500]],
+                    }, {
+                        method: 'eraser',
+                        coordinates: [[550, 350]],
+                    },
+                ],
+            ];
+            for (const [index, mask] of masks.entries()) {
+                cy.startMaskDrawing();
+                cy.drawMask(mask);
+                cy.finishMaskDrawing();
+
+                cy.get(`#cvat_canvas_shape_${index + 1}`).should('exist').and('be.visible');
+
+                cy.startMaskDrawing();
+                checkEraseTools();
+                cy.finishMaskDrawing();
+            }
+        });
+
+        it('Erase tools are blocked with empty mask', () => {
+            const erasedMask = [{
+                method: 'brush',
+                coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
+            }, {
+                method: 'polygon-minus',
+                coordinates: [[100, 100], [700, 100], [700, 700], [100, 700]],
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(erasedMask);
+
+            cy.get('.cvat-brush-tools-brush').click();
+            checkEraseTools();
         });
     });
 });
