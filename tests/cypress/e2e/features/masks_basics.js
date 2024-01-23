@@ -190,6 +190,20 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-brush-tools-polygon-minus').should(condition);
         }
 
+        function checkMaskNotEmpty(selector) {
+            cy.get(selector).should('exist').and('be.visible');
+            cy.get(selector)
+                .should('have.attr', 'height')
+                .then((height) => {
+                    expect(+height).to.be.gt(1);
+                });
+            cy.get(selector)
+                .should('have.attr', 'width')
+                .then((width) => {
+                    expect(+width).to.be.gt(1);
+                });
+        }
+
         it('Erase tools are locked when nothing to erase', () => {
             const erasedMask = [{
                 method: 'brush',
@@ -270,6 +284,30 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             for (const id of [1, 4]) {
                 cy.get(`#cvat_canvas_shape_${id}`).should('exist').and('be.visible');
             }
+        });
+
+        it('Erasing a mask during editing is not allowed', () => {
+            const mask = [{
+                method: 'brush',
+                coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
+            }];
+            const eraseAction = [{
+                method: 'polygon-minus',
+                coordinates: [[100, 100], [700, 100], [700, 700], [100, 700]],
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(mask);
+            cy.finishMaskDrawing();
+
+            cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
+                cy.get('[aria-label="more"]').trigger('mouseover');
+            });
+            cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Edit').click();
+            cy.drawMask(eraseAction);
+            cy.finishMaskDrawing();
+
+            checkMaskNotEmpty('#cvat_canvas_shape_1');
         });
     });
 });
