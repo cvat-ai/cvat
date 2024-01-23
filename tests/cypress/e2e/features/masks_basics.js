@@ -74,7 +74,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         });
     });
 
-    describe('Basic masks actions', () => {
+    describe('Tests to make sure that basic features work with masks', () => {
         beforeEach(() => {
             cy.removeAnnotations();
             cy.goCheckFrameNumber(0);
@@ -173,7 +173,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         });
     });
 
-    describe('Empty masks actions', () => {
+    describe('Tests to make sure that empty masks cannot be created', () => {
         beforeEach(() => {
             cy.removeAnnotations();
         });
@@ -190,47 +190,40 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-brush-tools-polygon-minus').should(condition);
         }
 
-        it(
-            'Drawing a mask, fully erase it. Erase tools are blocked with empty mask. Empty shape is not created.',
-            () => {
-                const erasedMask = [{
+        it('Erase tools are locked when nothing to erase', () => {
+            const erasedMask = [{
+                method: 'brush',
+                coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
+            }, {
+                method: 'polygon-minus',
+                coordinates: [[100, 100], [700, 100], [700, 700], [100, 700]],
+            }];
+
+            cy.startMaskDrawing();
+            cy.drawMask(erasedMask);
+
+            cy.get('.cvat-brush-tools-brush').click();
+            checkEraseTools();
+
+            cy.finishMaskDrawing();
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+        });
+
+        it('Drawing a mask, finish with erasing tool. On new mask drawing tool is reset', () => {
+            const masks = [
+                [{
                     method: 'brush',
                     coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
                 }, {
                     method: 'polygon-minus',
-                    coordinates: [[100, 100], [700, 100], [700, 700], [100, 700]],
-                }];
-
-                cy.startMaskDrawing();
-                cy.drawMask(erasedMask);
-
-                cy.get('.cvat-brush-tools-brush').click();
-                checkEraseTools();
-
-                cy.finishMaskDrawing();
-                cy.get('#cvat_canvas_shape_1').should('not.exist');
-            });
-
-        it('Drawing a mask, finish with erasing tool. On new mask drawing tool is reset', () => {
-            const masks = [
-                [
-                    {
-                        method: 'brush',
-                        coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
-                    }, {
-                        method: 'polygon-minus',
-                        coordinates: [[100, 100], [400, 100], [400, 400], [100, 400]],
-                    },
-                ],
-                [
-                    {
-                        method: 'brush',
-                        coordinates: [[550, 350], [700, 500], [550, 650], [400, 500]],
-                    }, {
-                        method: 'eraser',
-                        coordinates: [[550, 350]],
-                    },
-                ],
+                    coordinates: [[100, 100], [400, 100], [400, 400], [100, 400]],
+                }], [{
+                    method: 'brush',
+                    coordinates: [[550, 350], [700, 500], [550, 650], [400, 500]],
+                }, {
+                    method: 'eraser',
+                    coordinates: [[550, 350]],
+                }],
             ];
             for (const [index, mask] of masks.entries()) {
                 cy.startMaskDrawing();
