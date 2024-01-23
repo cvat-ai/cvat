@@ -211,21 +211,20 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         });
 
         it('Drawing a mask, finish with erasing tool. On new mask drawing tool is reset', () => {
-            const masks = [
-                [{
-                    method: 'brush',
-                    coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
-                }, {
-                    method: 'polygon-minus',
-                    coordinates: [[100, 100], [400, 100], [400, 400], [100, 400]],
-                }], [{
-                    method: 'brush',
-                    coordinates: [[550, 350], [700, 500], [550, 650], [400, 500]],
-                }, {
-                    method: 'eraser',
-                    coordinates: [[550, 350]],
-                }],
-            ];
+            const masks = [[{
+                method: 'brush',
+                coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
+            }, {
+                method: 'polygon-minus',
+                coordinates: [[100, 100], [400, 100], [400, 400], [100, 400]],
+            }], [{
+                method: 'brush',
+                coordinates: [[550, 350], [700, 500], [550, 650], [400, 500]],
+            }, {
+                method: 'eraser',
+                coordinates: [[550, 350]],
+            }]];
+
             for (const [index, mask] of masks.entries()) {
                 cy.startMaskDrawing();
                 cy.drawMask(mask);
@@ -240,33 +239,19 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         });
 
         it('Empty masks are deleted using remove underlying pixels feature', () => {
-            const masks = [
-                [
-                    {
-                        method: 'brush',
-                        coordinates: [[150, 150], [170, 170]],
-                    },
-                ],
-                [
-                    {
-                        method: 'brush',
-                        coordinates: [[250, 250], [270, 270]],
-                    },
-                ],
-                [
-                    {
-                        method: 'brush',
-                        coordinates: [[350, 350], [370, 370]],
-                    },
-                ],
-                [
-
-                    {
-                        method: 'polygon-plus',
-                        coordinates: [[100, 100], [400, 100], [400, 400], [100, 400]],
-                    },
-                ],
-            ];
+            const masks = [[{
+                method: 'brush',
+                coordinates: [[150, 150], [170, 170]],
+            }], [{
+                method: 'brush',
+                coordinates: [[250, 250], [270, 270]],
+            }], [{
+                method: 'brush',
+                coordinates: [[350, 350], [370, 370]],
+            }], [{
+                method: 'polygon-plus',
+                coordinates: [[100, 100], [400, 100], [400, 400], [100, 400]],
+            }]];
 
             cy.startMaskDrawing();
             cy.get('.cvat-brush-tools-underlying-pixels').click();
