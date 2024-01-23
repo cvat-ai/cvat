@@ -225,21 +225,26 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.goCheckFrameNumber(0);
         });
 
-        it('Drawing a mask, fully erase it. Empty shape is not created', () => {
-            const erasedMask = [{
-                method: 'brush',
-                coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
-            }, {
-                method: 'polygon-minus',
-                coordinates: [[100, 100], [700, 100], [700, 700], [100, 700]],
-            }];
+        it(
+            'Drawing a mask, fully erase it. Erase tools are blocked with empty mask. Empty shape is not created.',
+            () => {
+                const erasedMask = [{
+                    method: 'brush',
+                    coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
+                }, {
+                    method: 'polygon-minus',
+                    coordinates: [[100, 100], [700, 100], [700, 700], [100, 700]],
+                }];
 
-            cy.startMaskDrawing();
-            cy.drawMask(erasedMask);
-            cy.finishMaskDrawing();
+                cy.startMaskDrawing();
+                cy.drawMask(erasedMask);
 
-            cy.get('#cvat_canvas_shape_1').should('not.exist');
-        });
+                cy.get('.cvat-brush-tools-brush').click();
+                checkEraseTools();
+
+                cy.finishMaskDrawing();
+                cy.get('#cvat_canvas_shape_1').should('not.exist');
+            });
 
         it('Drawing a mask, finish with erasing tool. On new mask drawing tool is reset', () => {
             const masks = [
@@ -275,20 +280,52 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             }
         });
 
-        it('Erase tools are blocked with empty mask', () => {
-            const erasedMask = [{
-                method: 'brush',
-                coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
-            }, {
-                method: 'polygon-minus',
-                coordinates: [[100, 100], [700, 100], [700, 700], [100, 700]],
-            }];
+        it('Empty masks are deleted using remove underlying pixels feature', () => {
+            const masks = [
+                [
+                    {
+                        method: 'brush',
+                        coordinates: [[150, 150], [170, 170]],
+                    },
+                ],
+                [
+                    {
+                        method: 'brush',
+                        coordinates: [[250, 250], [270, 270]],
+                    },
+                ],
+                [
+                    {
+                        method: 'brush',
+                        coordinates: [[350, 350], [370, 370]],
+                    },
+                ],
+                [
+
+                    {
+                        method: 'polygon-plus',
+                        coordinates: [[100, 100], [400, 100], [400, 400], [100, 400]],
+                    },
+                ],
+            ];
 
             cy.startMaskDrawing();
-            cy.drawMask(erasedMask);
+            cy.get('.cvat-brush-tools-underlying-pixels').click();
+            cy.get('.cvat-brush-tools-underlying-pixels').should('have.class', 'cvat-brush-tools-active-tool');
+            cy.finishMaskDrawing();
 
-            cy.get('.cvat-brush-tools-brush').click();
-            checkEraseTools();
+            for (const [index, mask] of masks.entries()) {
+                cy.startMaskDrawing();
+                cy.drawMask(mask);
+                cy.finishMaskDrawing();
+
+                cy.get(`#cvat_canvas_shape_${index + 1}`).should('exist').and('be.visible');
+            }
+
+            cy.contains('Some objects were deleted').should('exist').and('be.visible');
+            for (const id of [1, 4]) {
+                cy.get(`#cvat_canvas_shape_${id}`).should('exist').and('be.visible');
+            }
         });
     });
 });
