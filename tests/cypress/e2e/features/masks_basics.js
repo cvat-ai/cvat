@@ -200,6 +200,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             }];
 
             cy.startMaskDrawing();
+            checkEraseTools();
             cy.drawMask(erasedMask);
 
             cy.get('.cvat-brush-tools-brush').click();
