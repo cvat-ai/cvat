@@ -194,7 +194,6 @@ Access **Manage Solo plan** > **Manage** > **Renew plan**
 
 Access **Manage Team Plan** > **Manage** > **Renew plan**
 
-
 ## Subscription management video tutorial
 
 <!--lint disable maximum-line-length-->
