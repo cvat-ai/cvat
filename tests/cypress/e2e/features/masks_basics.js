@@ -80,10 +80,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.goCheckFrameNumber(0);
         });
 
-        after(() => {
-            cy.removeAnnotations();
-        });
-
         it('Drawing a couple of masks. Save job, reopen job, masks must exist', () => {
             cy.startMaskDrawing();
             cy.drawMask(drawingActions);
@@ -175,10 +171,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
 
     describe('Tests to make sure that empty masks cannot be created', () => {
         beforeEach(() => {
-            cy.removeAnnotations();
-        });
-
-        after(() => {
             cy.removeAnnotations();
         });
 
