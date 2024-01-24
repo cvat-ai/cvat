@@ -255,10 +255,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         it('Empty masks are deleted using remove underlying pixels feature', () => {
             const masks = [[{
                 method: 'brush',
-                coordinates: [[150, 150], [170, 170]],
-            }], [{
-                method: 'brush',
-                coordinates: [[250, 250], [270, 270]],
+                coordinates: [[150, 150], [270, 270]],
             }], [{
                 method: 'brush',
                 coordinates: [[350, 350], [370, 370]],
@@ -280,10 +277,30 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 cy.get(`#cvat_canvas_shape_${index + 1}`).should('exist').and('be.visible');
             }
 
+            // Fist mask is updated, second mask is removed after third mask is drawn
             cy.contains('Some objects were deleted').should('exist').and('be.visible');
-            for (const id of [1, 4]) {
+            for (const id of [1, 3]) {
                 cy.get(`#cvat_canvas_shape_${id}`).should('exist').and('be.visible');
             }
+            cy.get('#cvat_canvas_shape_2').should('not.exist');
+            cy.saveJob('PATCH', 200, 'removeUnderlyingPixelsUndoRedo');
+
+            // Undo creating mask, second mask is restored
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            for (const id of [1, 2]) {
+                cy.get(`#cvat_canvas_shape_${id}`).should('exist').and('be.visible');
+            }
+            cy.saveJob('PATCH', 200, 'removeUnderlyingPixelsUndoRedo');
+
+            // Redo creating mask, second mask is removed
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
+            for (const id of [1, 3]) {
+                cy.get(`#cvat_canvas_shape_${id}`).should('exist').and('be.visible');
+            }
+            cy.get('#cvat_canvas_shape_2').should('not.exist');
+            cy.saveJob('PATCH', 200, 'removeUnderlyingPixelsUndoRedo');
+
+            cy.get('.cvat-notification-notice-save-annotations-failed').should('not.exist');
         });
 
         it('Erasing a mask during editing is not allowed', () => {
