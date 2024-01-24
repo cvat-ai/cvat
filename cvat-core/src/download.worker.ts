@@ -20,8 +20,9 @@ onmessage = (e) => {
         .catch((error) => {
             postMessage({
                 id: e.data.id,
-                message: error.message,
-                code: error.code,
+                message: error.response?.data instanceof ArrayBuffer ?
+                    new TextDecoder().decode(error.response.data) : error.message,
+                code: error.response?.status || 0,
                 isSuccess: false,
             });
         });

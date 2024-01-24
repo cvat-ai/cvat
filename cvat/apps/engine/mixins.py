@@ -12,6 +12,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest import mock
+from typing import Optional, Callable, Dict, Any
 
 import django_rq
 from attr.converters import to_bool
@@ -384,7 +385,15 @@ class UploadMixin:
         raise NotImplementedError('Must be implemented in the derived class')
 
 class AnnotationMixin:
-    def export_annotations(self, request, db_obj, export_func, callback, get_data=None):
+    def export_annotations(
+        self,
+        request,
+        db_obj,
+        export_func,
+        callback: Callable[[int, Optional[str], Optional[str]], str],
+        *,
+        get_data: Optional[Callable[[int], Dict[str, Any]]]= None,
+    ):
         format_name = request.query_params.get("format", "")
         action = request.query_params.get("action", "").lower()
         filename = request.query_params.get("filename", "")
@@ -399,7 +408,7 @@ class AnnotationMixin:
         )
 
         object_name = self._object.__class__.__name__.lower()
-        rq_id = f"export:annotations-for-{object_name}.id{self._object.pk}-in-{format_name.replace(' ', '_')}-format"
+        rq_id = f"export:{request.path.strip('/').split('/')[-1]}-for-{object_name}.id{self._object.pk}-in-{format_name.replace(' ', '_')}-format"
 
         if format_name:
             return export_func(db_instance=self._object,

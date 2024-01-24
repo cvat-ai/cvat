@@ -16,6 +16,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.10.1'></a>
+## \[2.10.1\] - 2024-01-18
+
+### Changed
+
+- KeyDB used as data cache replaced by Kvrocks
+  (<https://github.com/opencv/cvat/pull/7339>)
+
+### Fixed
+
+- 504 Timeout error when exporting resources to cloud storage
+  (<https://github.com/opencv/cvat/pull/7317>)
+- Enqueuing deferred jobs when their dependencies have been started -> cancelled -> restarted -> finished
+  (<https://github.com/opencv/cvat/pull/7317>)
+
+- UI failed when open context menu for a skeleton element on a frame with a conflict
+  (<https://github.com/opencv/cvat/pull/7362>)
+- Issue can not be created for a skeleton element in review mode
+  (<https://github.com/opencv/cvat/pull/7362>)
+
 <a id='changelog-2.10.0'></a>
 ## \[2.10.0\] - 2024-01-10
 
