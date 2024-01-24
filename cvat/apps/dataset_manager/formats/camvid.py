@@ -1,5 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,17 +17,17 @@ from .utils import make_colormap
 
 @exporter(name='CamVid', ext='ZIP', version='1.0')
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
-        instance_data, include_images=save_images), env=dm_env)
-    dataset.transform(RotatedBoxesToPolygons)
-    dataset.transform('polygons_to_masks')
-    dataset.transform('boxes_to_masks')
-    dataset.transform('merge_instance_segments')
-    label_map = make_colormap(instance_data)
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.transform(RotatedBoxesToPolygons)
+        dataset.transform('polygons_to_masks')
+        dataset.transform('boxes_to_masks')
+        dataset.transform('merge_instance_segments')
+        label_map = make_colormap(instance_data)
 
-    dataset.export(temp_dir, 'camvid',
-        save_images=save_images, apply_colormap=True,
-        label_map={label: label_map[label][0] for label in label_map})
+        dataset.export(temp_dir, 'camvid',
+            save_images=save_images, apply_colormap=True,
+            label_map={label: label_map[label][0] for label in label_map})
 
     make_zip_archive(temp_dir, dst_file)
 

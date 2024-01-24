@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -27,11 +27,13 @@ class RemoveTrackingInformation(ItemTransform):
 
 @exporter(name='Kitti Raw Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _export_images(dst_file, temp_dir, task_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+    with GetCVATDataExtractor(
         task_data, include_images=save_images, format_type="kitti_raw",
-        dimension=DimensionType.DIM_3D), env=dm_env)
-    dataset.transform(RemoveTrackingInformation)
-    dataset.export(temp_dir, 'kitti_raw', save_images=save_images, reindex=True)
+        dimension=DimensionType.DIM_3D,
+    ) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.transform(RemoveTrackingInformation)
+        dataset.export(temp_dir, 'kitti_raw', save_images=save_images, reindex=True)
 
     make_zip_archive(temp_dir, dst_file)
 
