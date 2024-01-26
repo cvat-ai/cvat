@@ -1,4 +1,4 @@
 ### Fixed
 
-- TrackerMIL was applied one frame late
+- OpenCV tracker MIL works one frame behind
   (<https://github.com/opencv/cvat/pull/7399>)
