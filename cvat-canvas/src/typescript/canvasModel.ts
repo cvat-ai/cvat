@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -103,6 +103,7 @@ export interface BrushTool {
     color: string;
     form: 'circle' | 'square';
     size: number;
+    onBlockUpdated: (blockedTools: Record<'eraser' | 'polygon-minus', boolean>) => void;
 }
 
 export interface DrawData {

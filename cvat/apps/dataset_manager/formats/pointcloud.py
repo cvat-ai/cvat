@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,11 +17,12 @@ from .registry import dm_env, exporter, importer
 
 @exporter(name='Sly Point Cloud Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
 def _export_images(dst_file, temp_dir, task_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+    with GetCVATDataExtractor(
         task_data, include_images=save_images, format_type='sly_pointcloud',
-        dimension=DimensionType.DIM_3D), env=dm_env)
-
-    dataset.export(temp_dir, 'sly_pointcloud', save_images=save_images, allow_undeclared_attrs=True)
+        dimension=DimensionType.DIM_3D,
+    ) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, 'sly_pointcloud', save_images=save_images, allow_undeclared_attrs=True)
 
     make_zip_archive(temp_dir, dst_file)
 
