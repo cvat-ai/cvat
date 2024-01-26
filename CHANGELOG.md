@@ -16,6 +16,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.10.2'></a>
+## \[2.10.2\] - 2024-01-26
+
+### Changed
+
+- Enhanced errors messaging for better perception by users
+  (<https://github.com/opencv/cvat/pull/7331>)
+
+### Fixed
+
+- Empty masks might be created with `polygon-minus` tool (<https://github.com/opencv/cvat/pull/7295>)
+- Empty masks might be created as a result of removing underlying pixels (<https://github.com/opencv/cvat/pull/7295>)
+
+- Fixed excessive memory usage
+  when exporting a project with multiple video tasks
+  (<https://github.com/opencv/cvat/pull/7374>)
+
+- OpenCV tracker MIL works one frame behind
+  (<https://github.com/opencv/cvat/pull/7399>)
+
 <a id='changelog-2.10.1'></a>
 ## \[2.10.1\] - 2024-01-18
 
