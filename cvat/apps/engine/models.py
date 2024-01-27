@@ -922,6 +922,7 @@ class Shape(models.Model):
     z_order = models.IntegerField(default=0)
     points = FloatArrayField(default=[])
     rotation = FloatField(default=0)
+    transcript = models.TextField(default="")
 
     class Meta:
         abstract = True

@@ -1644,6 +1644,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
             filename = request.query_params.get("filename", "")
             conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
             tmp_dir = self.get_upload_dir()
+            slogger.glob.debug("ANNOCATION UPLOAD")
+            slogger.glob.debug(format_name)
+            slogger.glob.debug(filename)
+            slogger.glob.debug(conv_mask_to_poly)
+            slogger.glob.debug(tmp_dir)
             if os.path.isfile(os.path.join(tmp_dir, filename)):
                 annotation_file = os.path.join(tmp_dir, filename)
                 return _import_annotations(
