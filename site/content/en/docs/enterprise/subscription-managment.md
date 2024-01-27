@@ -174,7 +174,7 @@ Please, fill out the feedback form, to help us improve our platform.
 
 To cancel **Team** plan, do the following:
 
-1. In the top right corner click on your nickname, then **Organization** > Organization name..
+1. In the top right corner click on your nickname, then **Organization** > Organization name.
 2. Click again on the nickname, then follow to **Manage Team plan** > **Manage** > **Cancel plan**
 
 Please, fill out the feedback form, to help us improve our platform.
