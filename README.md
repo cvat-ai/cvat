@@ -7,15 +7,12 @@
 <body>
     <a href="https://app.cvat.ai" target="_blank">
         <video width="320" height="240" autoplay loop muted>
-            <source src="https://opencv.github.io/cvat/site/content/en/images/cvat-intro-vid.mp4" type="video/mp4">
+            <source src="/site/content/en/images/cvat-intro-vid.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
     </a>
 </body>
 </html>
-
-
-![CVAT logo](site/content/en/images/cvat_poster_with_name.png)
 
 # Computer Vision Annotation Tool (CVAT)
 
@@ -35,8 +32,7 @@ AI approach.
 
 Start using CVAT online: [cvat.ai](https://cvat.ai). You can use it for free,
 or [subscribe](https://www.cvat.ai/pricing/cloud) to get unlimited data,
-organizations, autoannotations, and [Roboflow and HuggingFace integration](
-  https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models).
+organizations, autoannotations, and [Roboflow and HuggingFace integration](https://www.cvat.ai/post/integrating-hugging-face-and-roboflow-models).
 
 Or set CVAT up as a self-hosted solution:
 [Self-hosted Installation Guide](https://opencv.github.io/cvat/docs/administration/basics/installation/).
@@ -112,19 +108,20 @@ The images have been downloaded more than 1M times so far.
 Here are some screencasts showing how to use CVAT.
 
 <!--lint disable maximum-line-length-->
+
 [Computer Vision Annotation Course](https://www.youtube.com/playlist?list=PL0to7Ng4PuuYQT4eXlHb_oIlq_RPeuasN):
 we introduce our course series designed to help you annotate data faster and better
 using CVAT. This course is about CVAT deployment and integrations, it includes
 presentations and covers the following topics:
 
 - **Speeding up your data annotation process: introduction to CVAT and Datumaro**.
-What problems do CVAT and Datumaro solve, and how they can speed up your model
-training process. Some resources you can use to learn more about how to use them.
+  What problems do CVAT and Datumaro solve, and how they can speed up your model
+  training process. Some resources you can use to learn more about how to use them.
 - **Deployment and use CVAT**. Use the app online at [app.cvat.ai](app.cvat.ai).
-A local deployment. A containerized local deployment with Docker Compose (for regular use),
-and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute
-tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how
-to deploy CVAT using Docker Compose.
+  A local deployment. A containerized local deployment with Docker Compose (for regular use),
+  and a local cluster deployment with Kubernetes (for enterprise users). A 2-minute
+  tour of the interface, a breakdown of CVAT’s internals, and a demonstration of how
+  to deploy CVAT using Docker Compose.
 
 [Product tour](https://www.youtube.com/playlist?list=PL0to7Ng4Puua37NJVMIShl_pzqJTigFzg): in this course, we show how to use CVAT, and help to get familiar with CVAT functionality and interfaces. This course does not cover integrations and is dedicated solely to CVAT. It covers the following topics:
 
@@ -200,7 +197,7 @@ up to 10x. Here is a list of the algorithms we support, and the platforms they c
 
 | Name                                                                                                    | Type       | Framework  | CPU | GPU |
 | ------------------------------------------------------------------------------------------------------- | ---------- | ---------- | --- | --- |
-| [Segment Anything](/serverless/pytorch/facebookresearch/sam/nuclio/)                                    | interactor | PyTorch    | ✔️  | ✔️ |
+| [Segment Anything](/serverless/pytorch/facebookresearch/sam/nuclio/)                                    | interactor | PyTorch    | ✔️  | ✔️  |
 | [Deep Extreme Cut](/serverless/openvino/dextr/nuclio)                                                   | interactor | OpenVINO   | ✔️  |     |
 | [Faster RCNN](/serverless/openvino/omz/public/faster_rcnn_inception_resnet_v2_atrous_coco/nuclio)       | detector   | OpenVINO   | ✔️  |     |
 | [Mask RCNN](/serverless/openvino/omz/public/mask_rcnn_inception_resnet_v2_atrous_coco/nuclio)           | detector   | OpenVINO   | ✔️  |     |
