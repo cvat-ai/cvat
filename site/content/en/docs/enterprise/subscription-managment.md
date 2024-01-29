@@ -12,8 +12,6 @@ unnecessary subscriptions, to optimize your finances and save time.
 Whether you're a business owner or an individual,
 you'll learn how to take control of your subscriptions and manage them.
 
-[![CVAT Intro](/images/cvat-intro-gif-small.gif)](https://app.cvat.ai)
-
 See:
 
 - [Billing](#billing)
