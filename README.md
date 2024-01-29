@@ -1,3 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your GitHub Page</title>
+    <!-- Add CSS for styling if needed -->
+</head>
+<body>
+    <a href="https://app.cvat.ai" target="_blank">
+        <video width="320" height="240" autoplay loop muted>
+            <source src="https://opencv.github.io/cvat/site/content/en/images/cvat-intro-vid.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </a>
+</body>
+</html>
+
+
 ![CVAT logo](site/content/en/images/cvat_poster_with_name.png)
 
 # Computer Vision Annotation Tool (CVAT)
