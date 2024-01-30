@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,6 +29,7 @@ import {
     ShapeType,
     Workspace,
 } from 'reducers';
+import { writeLatestFrame } from 'utils/remember-latest-frame';
 import { updateJobAsync } from './jobs-actions';
 import { switchToolsBlockerState } from './settings-actions';
 
@@ -678,7 +679,7 @@ export function changeFrameAsync(
             });
 
             // commit the latest job frame to local storage
-            localStorage.setItem(`Job_${job.id}_frame`, `${toFrame}`);
+            writeLatestFrame(job.id, toFrame);
             const changeFrameLog = await job.logger.log(LogType.changeFrame, {
                 from: frame,
                 to: toFrame,

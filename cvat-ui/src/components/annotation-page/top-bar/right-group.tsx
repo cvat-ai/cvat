@@ -1,9 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { Col } from 'antd/lib/grid';
 import Icon from '@ant-design/icons';
@@ -15,7 +15,9 @@ import notification from 'antd/lib/notification';
 import {
     FilterIcon, FullscreenIcon, GuideIcon, InfoIcon,
 } from 'icons';
-import { DimensionType } from 'cvat-core-wrapper';
+import {
+    DimensionType, Job, JobStage, JobState,
+} from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
 
 import MDEditor from '@uiw/react-md-editor';
@@ -25,7 +27,7 @@ interface Props {
     showStatistics(): void;
     showFilters(): void;
     changeWorkspace(workspace: Workspace): void;
-    jobInstance: any;
+    jobInstance: Job;
 }
 
 function RightGroup(props: Props): JSX.Element {
@@ -39,6 +41,59 @@ function RightGroup(props: Props): JSX.Element {
 
     const annotationFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
     const filters = annotationFilters.length;
+
+    const openGuide = useCallback(() => {
+        const PADDING = Math.min(window.screen.availHeight, window.screen.availWidth) * 0.4;
+        jobInstance.guide().then((guide) => {
+            if (guide?.markdown) {
+                Modal.info({
+                    icon: null,
+                    width: window.screen.availWidth - PADDING,
+                    className: 'cvat-annotation-view-markdown-guide-modal',
+                    content: (
+                        <MDEditor
+                            visibleDragbar={false}
+                            data-color-mode='light'
+                            height={window.screen.availHeight - PADDING}
+                            preview='preview'
+                            hideToolbar
+                            value={guide.markdown}
+                        />
+                    ),
+                });
+            }
+        }).catch((error: unknown) => {
+            notification.error({
+                message: 'Could not receive annotation guide',
+                description: error instanceof Error ? error.message : console.error('error'),
+            });
+        });
+    }, [jobInstance]);
+
+    useEffect(() => {
+        if (
+            jobInstance &&
+            jobInstance.stage === JobStage.ANNOTATION &&
+            jobInstance.state === JobState.NEW &&
+            jobInstance.guideId !== null
+        ) {
+            try {
+                let seenGuides = JSON.parse(localStorage.getItem('seenGuides') || '[]');
+                if (!Array.isArray(seenGuides) || seenGuides.some((el) => !Number.isInteger(el))) {
+                    throw new Error('Wrong array stored in local storage');
+                }
+
+                if (!seenGuides.includes(jobInstance.guideId)) {
+                    openGuide();
+                    seenGuides = Array.from(new Set([jobInstance.guideId, ...seenGuides.slice(0, 9)]));
+                    localStorage.setItem('seenGuides', JSON.stringify(seenGuides));
+                }
+            } catch (error: unknown) {
+                openGuide();
+                localStorage.setItem('seenGuides', JSON.stringify([jobInstance.guideId]));
+            }
+        }
+    }, []);
 
     return (
         <Col className='cvat-annotation-header-right-group'>
@@ -62,32 +117,7 @@ function RightGroup(props: Props): JSX.Element {
                 <Button
                     type='link'
                     className='cvat-annotation-header-guide-button cvat-annotation-header-button'
-                    onClick={async (): Promise<void> => {
-                        const PADDING = Math.min(window.screen.availHeight, window.screen.availWidth) * 0.4;
-                        try {
-                            const guide = await jobInstance.guide();
-                            Modal.info({
-                                icon: null,
-                                width: window.screen.availWidth - PADDING,
-                                className: 'cvat-annotation-view-markdown-guide-modal',
-                                content: (
-                                    <MDEditor
-                                        visibleDragbar={false}
-                                        data-color-mode='light'
-                                        height={window.screen.availHeight - PADDING}
-                                        preview='preview'
-                                        hideToolbar
-                                        value={guide.markdown}
-                                    />
-                                ),
-                            });
-                        } catch (error: any) {
-                            notification.error({
-                                message: 'Could not receive annotation guide',
-                                description: error.toString(),
-                            });
-                        }
-                    }}
+                    onClick={openGuide}
                 >
                     <Icon component={GuideIcon} />
                     Guide

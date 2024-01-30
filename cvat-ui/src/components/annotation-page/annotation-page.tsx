@@ -9,7 +9,9 @@ import Layout from 'antd/lib/layout';
 import Result from 'antd/lib/result';
 import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
+import Button from 'antd/lib/button';
 
+import './styles.scss';
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
 import StandardWorkspaceComponent from 'components/annotation-page/standard-workspace/standard-workspace';
@@ -20,8 +22,7 @@ import StatisticsModalComponent from 'components/annotation-page/top-bar/statist
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
-import './styles.scss';
-import Button from 'antd/lib/button';
+import { readLatestFrame } from 'utils/remember-latest-frame';
 
 interface Props {
     job: any | null | undefined;
@@ -69,7 +70,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         if (prevFetching && !fetching && !prevJob && job) {
-            const latestFrame = localStorage.getItem(`Job_${job.id}_frame`);
+            const latestFrame = readLatestFrame(job.id);
             if (latestFrame && Number.isInteger(+latestFrame)) {
                 const parsedFrame = +latestFrame;
                 if (parsedFrame !== frameNumber && parsedFrame >= job.startFrame && parsedFrame <= job.stopFrame) {
