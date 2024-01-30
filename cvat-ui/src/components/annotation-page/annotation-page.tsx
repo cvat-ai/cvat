@@ -71,33 +71,34 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     useEffect(() => {
         if (prevFetching && !fetching && !prevJob && job) {
             const latestFrame = readLatestFrame(job.id);
-            if (latestFrame && Number.isInteger(+latestFrame)) {
-                const parsedFrame = +latestFrame;
-                if (parsedFrame !== frameNumber && parsedFrame >= job.startFrame && parsedFrame <= job.stopFrame) {
-                    const notificationKey = `cvat-notification-continue-job-${job.id}`;
-                    notification.info({
-                        key: notificationKey,
-                        message: `You finished working on frame ${parsedFrame}`,
-                        description: (
-                            <span>
-                                Press
-                                <Button
-                                    className='cvat-notification-continue-job-button'
-                                    type='link'
-                                    onClick={() => {
-                                        changeFrame(parsedFrame);
-                                        notification.close(notificationKey);
-                                    }}
-                                >
-                                    here
-                                </Button>
-                                if you would like to continue
-                            </span>
-                        ),
-                        placement: 'topRight',
-                        className: 'cvat-notification-continue-job',
-                    });
-                }
+            if (latestFrame === null) {
+                return;
+            }
+
+            if (latestFrame !== frameNumber && latestFrame >= job.startFrame && latestFrame <= job.stopFrame) {
+                const notificationKey = `cvat-notification-continue-job-${job.id}`;
+                notification.info({
+                    key: notificationKey,
+                    message: `You finished working on frame ${latestFrame}`,
+                    description: (
+                        <span>
+                            Press
+                            <Button
+                                className='cvat-notification-continue-job-button'
+                                type='link'
+                                onClick={() => {
+                                    changeFrame(latestFrame);
+                                    notification.close(notificationKey);
+                                }}
+                            >
+                                here
+                            </Button>
+                            if you would like to continue
+                        </span>
+                    ),
+                    placement: 'topRight',
+                    className: 'cvat-notification-continue-job',
+                });
             }
 
             if (!job.labels.length) {

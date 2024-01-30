@@ -91,14 +91,8 @@ function RightGroup(props: Props): JSX.Element {
             if (!seenGuides.includes(jobInstance.guideId)) {
                 // open guide if the user have not seen it yet
                 openGuide();
-                localStorage.setItem(
-                    'seenGuides',
-                    JSON.stringify(
-                        Array.from(
-                            new Set([jobInstance.guideId, ...seenGuides.slice(0, limit - 1)]),
-                        ),
-                    ),
-                );
+                const updatedSeenGuides = Array.from(new Set([jobInstance.guideId, ...seenGuides.slice(0, limit - 1)]));
+                localStorage.setItem('seenGuides', JSON.stringify(updatedSeenGuides));
             }
         }
     }, []);
