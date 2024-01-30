@@ -41,6 +41,7 @@ import {
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { switchToolsBlockerState } from 'actions/settings-actions';
+import { writeLatestFrame } from 'utils/remember-latest-frame';
 
 interface StateToProps {
     jobInstance: any;
@@ -228,8 +229,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
         this.unblock = history.block((location: any) => {
-            const { forceExit } = self.props;
+            const { forceExit, frameNumber } = self.props;
             const { id: jobID, taskId: taskID } = jobInstance;
+            writeLatestFrame(jobInstance.id, frameNumber);
 
             if (
                 jobInstance.annotations.hasUnsavedChanges() &&
@@ -538,6 +540,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
     private beforeUnloadCallback = (event: BeforeUnloadEvent): string | undefined => {
         const { jobInstance, forceExit, setForceExitAnnotationFlag } = this.props;
+        const { frameNumber } = this.props;
+
+        writeLatestFrame(jobInstance.id, frameNumber);
         if (jobInstance.annotations.hasUnsavedChanges() && !forceExit) {
             const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
             // eslint-disable-next-line no-param-reassign

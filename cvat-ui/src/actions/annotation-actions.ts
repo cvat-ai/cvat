@@ -29,7 +29,6 @@ import {
     ShapeType,
     Workspace,
 } from 'reducers';
-import { writeLatestFrame } from 'utils/remember-latest-frame';
 import { updateJobAsync } from './jobs-actions';
 import { switchToolsBlockerState } from './settings-actions';
 
@@ -678,8 +677,6 @@ export function changeFrameAsync(
                 payload: {},
             });
 
-            // commit the latest job frame to local storage
-            writeLatestFrame(job.id, toFrame);
             const changeFrameLog = await job.logger.log(LogType.changeFrame, {
                 from: frame,
                 to: toFrame,
