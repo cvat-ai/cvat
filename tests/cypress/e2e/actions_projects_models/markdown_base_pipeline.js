@@ -167,6 +167,11 @@ context('Basic markdown pipeline', () => {
     describe('Staff can see markdown', () => {
         function checkGuideAndAssetAvailableOnAnnotationView() {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            // when open job for the first time, guide is opened automatically
+            cy.get('.cvat-annotation-view-markdown-guide-modal button').contains('OK').click();
+
+            // when reopen the job, guide is not opened automatically, but can be opened manually
+            cy.reload();
             cy.intercept('GET', `/api/assets/${assetID}**`).as('assetGet');
             cy.get('.cvat-annotation-header-guide-button').should('exist').and('be.visible').click();
             cy.wait('@assetGet');
@@ -174,22 +179,27 @@ context('Basic markdown pipeline', () => {
             cy.get('.cvat-annotation-view-markdown-guide-modal button').contains('OK').click();
         }
 
+        beforeEach(() => {
+            cy.clearLocalStorage('seenGuides');
+        });
+
+        afterEach(() => {
+            cy.logout();
+        });
+
         it('Project owner can see markdown on annotation view', () => {
             cy.login();
             checkGuideAndAssetAvailableOnAnnotationView();
-            cy.logout();
         });
 
         it('Job assignee can see markdown on annotation view', () => {
             cy.login(additionalUsers.jobAssignee.username, additionalUsers.jobAssignee.password);
             checkGuideAndAssetAvailableOnAnnotationView();
-            cy.logout();
         });
 
         it('Task assignee can see markdown on annotation view', () => {
             cy.login(additionalUsers.taskAssignee.username, additionalUsers.taskAssignee.password);
             checkGuideAndAssetAvailableOnAnnotationView();
-            cy.logout();
         });
 
         it('Not assignee can not access the guide and the asset', () => {
@@ -204,7 +214,6 @@ context('Basic markdown pipeline', () => {
                 url: `/api/assets/${assetID}`,
                 failOnStatusCode: false,
             }).its('status').should('equal', 403);
-            cy.logout();
         });
     });
 });
