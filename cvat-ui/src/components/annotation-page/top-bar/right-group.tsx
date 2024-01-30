@@ -77,6 +77,7 @@ function RightGroup(props: Props): JSX.Element {
             jobInstance.state === JobState.NEW &&
             jobInstance.guideId !== null
         ) {
+            const limit = 10;
             let seenGuides = [];
             try {
                 seenGuides = JSON.parse(localStorage.getItem('seenGuides') || '[]');
@@ -94,7 +95,7 @@ function RightGroup(props: Props): JSX.Element {
                     'seenGuides',
                     JSON.stringify(
                         Array.from(
-                            new Set([jobInstance.guideId, ...seenGuides.slice(0, 9)]),
+                            new Set([jobInstance.guideId, ...seenGuides.slice(0, limit - 1)]),
                         ),
                     ),
                 );

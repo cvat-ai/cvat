@@ -28,7 +28,7 @@ export function writeLatestFrame(jobID: number, frame: number): void {
     if (storage.has(jobID)) {
         storage.set(jobID, frame);
     } else {
-        storage = new Map([[jobID, frame], ...Array.from(storage.entries()).slice(0, limit - 2)]);
+        storage = new Map([[jobID, frame], ...Array.from(storage.entries()).slice(0, limit - 1)]);
     }
     localStorage.setItem('latestFrameStorage', JSON.stringify(Array.from(storage.entries())));
 }
