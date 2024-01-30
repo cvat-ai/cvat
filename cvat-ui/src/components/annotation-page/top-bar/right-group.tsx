@@ -77,20 +77,27 @@ function RightGroup(props: Props): JSX.Element {
             jobInstance.state === JobState.NEW &&
             jobInstance.guideId !== null
         ) {
+            let seenGuides = [];
             try {
-                let seenGuides = JSON.parse(localStorage.getItem('seenGuides') || '[]');
+                seenGuides = JSON.parse(localStorage.getItem('seenGuides') || '[]');
                 if (!Array.isArray(seenGuides) || seenGuides.some((el) => !Number.isInteger(el))) {
-                    throw new Error('Wrong array stored in local storage');
-                }
-
-                if (!seenGuides.includes(jobInstance.guideId)) {
-                    openGuide();
-                    seenGuides = Array.from(new Set([jobInstance.guideId, ...seenGuides.slice(0, 9)]));
-                    localStorage.setItem('seenGuides', JSON.stringify(seenGuides));
+                    throw new Error('Wrong structure stored in local storage');
                 }
             } catch (error: unknown) {
+                seenGuides = [];
+            }
+
+            if (!seenGuides.includes(jobInstance.guideId)) {
+                // open guide if the user have not seen it yet
                 openGuide();
-                localStorage.setItem('seenGuides', JSON.stringify([jobInstance.guideId]));
+                localStorage.setItem(
+                    'seenGuides',
+                    JSON.stringify(
+                        Array.from(
+                            new Set([jobInstance.guideId, ...seenGuides.slice(0, 9)]),
+                        ),
+                    ),
+                );
             }
         }
     }, []);
