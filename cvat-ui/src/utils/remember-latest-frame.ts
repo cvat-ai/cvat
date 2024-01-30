@@ -29,7 +29,7 @@ export function writeLatestFrame(jobID: number, frame: number): void {
     } else {
         storage = new Map([[jobID, frame], ...Array.from(storage.entries()).slice(0, 8)]);
     }
-    localStorage.setItem('latestFrameStorage', JSON.stringify(storage.entries()));
+    localStorage.setItem('latestFrameStorage', JSON.stringify(Array.from(storage.entries())));
 }
 
 export function readLatestFrame(jobID: number): number | null {
