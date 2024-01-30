@@ -23,11 +23,12 @@ export function readLatestFrameStorage(): Map<number, number> {
 }
 
 export function writeLatestFrame(jobID: number, frame: number): void {
+    const limit = 20;
     let storage = readLatestFrameStorage();
     if (storage.has(jobID)) {
         storage.set(jobID, frame);
     } else {
-        storage = new Map([[jobID, frame], ...Array.from(storage.entries()).slice(0, 8)]);
+        storage = new Map([[jobID, frame], ...Array.from(storage.entries()).slice(0, limit - 2)]);
     }
     localStorage.setItem('latestFrameStorage', JSON.stringify(Array.from(storage.entries())));
 }
