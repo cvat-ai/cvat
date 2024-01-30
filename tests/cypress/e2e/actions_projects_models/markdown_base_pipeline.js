@@ -172,6 +172,7 @@ context('Basic markdown pipeline', () => {
 
             // when reopen the job, guide is not opened automatically, but can be opened manually
             cy.reload();
+            cy.get('.cvat-annotation-header-guide-button').should('not.be.visible');
             cy.intercept('GET', `/api/assets/${assetID}**`).as('assetGet');
             cy.get('.cvat-annotation-header-guide-button').should('exist').and('be.visible').click();
             cy.wait('@assetGet');
