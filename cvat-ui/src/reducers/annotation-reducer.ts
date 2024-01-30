@@ -153,6 +153,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frameData: data,
                 minZ,
                 maxZ,
+                initialOpenGuide,
                 groundTruthInstance,
                 groundTruthJobFramesMeta,
             } = action.payload;
@@ -186,6 +187,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
+                    initialOpenGuide,
                     groundTruthInstance,
                     groundTruthJobFramesMeta,
                 },

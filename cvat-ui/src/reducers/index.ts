@@ -693,8 +693,9 @@ export interface AnnotationState {
         openTime: null | number;
         labels: Label[];
         requestedId: number | null;
-        groundTruthJobFramesMeta: FramesMetaData | null;
         instance: Job | null | undefined;
+        initialOpenGuide: boolean;
+        groundTruthJobFramesMeta: FramesMetaData | null;
         groundTruthInstance: Job | null;
         attributes: Record<number, any[]>;
         fetching: boolean;

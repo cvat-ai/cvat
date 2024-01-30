@@ -865,9 +865,15 @@ export function closeJob(): ThunkAction {
     };
 }
 
-export function getJobAsync(
-    tid: number, jid: number, initialFrame: number | null, initialFilters: object[],
-): ThunkAction {
+export function getJobAsync({
+    taskID, jobID, initialFrame, initialFilters, initialOpenGuide,
+}: {
+    taskID: number;
+    jobID: number;
+    initialFrame: number | null;
+    initialFilters: object[];
+    initialOpenGuide: boolean;
+}): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
             const state = getState();
@@ -883,29 +889,29 @@ export function getJobAsync(
             dispatch({
                 type: AnnotationActionTypes.GET_JOB,
                 payload: {
-                    requestedId: jid,
+                    requestedId: jobID,
                 },
             });
 
-            if (!Number.isInteger(tid) || !Number.isInteger(jid)) {
+            if (!Number.isInteger(taskID) || !Number.isInteger(jobID)) {
                 throw new Error('Requested resource id is not valid');
             }
 
             const loadJobEvent = await logger.log(
                 LogType.loadJob,
                 {
-                    task_id: tid,
-                    job_id: jid,
+                    task_id: taskID,
+                    job_id: jobID,
                 },
                 true,
             );
 
             getCore().config.globalObjectsCounter = 0;
-            const [job] = await cvat.jobs.get({ jobID: jid });
+            const [job] = await cvat.jobs.get({ jobID });
             let gtJob: Job | null = null;
             if (job.type === JobType.ANNOTATION) {
                 try {
-                    [gtJob] = await cvat.jobs.get({ taskID: tid, type: JobType.GROUND_TRUTH });
+                    [gtJob] = await cvat.jobs.get({ taskID, type: JobType.GROUND_TRUTH });
                 } catch (e) {
                     // gtJob is not available for workers
                     // do nothing
@@ -954,6 +960,7 @@ export function getJobAsync(
                 payload: {
                     openTime,
                     job,
+                    initialOpenGuide,
                     groundTruthInstance: gtJob || null,
                     groundTruthJobFramesMeta,
                     issues,

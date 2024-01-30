@@ -40,6 +40,7 @@ function RightGroup(props: Props): JSX.Element {
     } = props;
 
     const annotationFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
+    const initialOpenGuide = useSelector((state: CombinedState) => state.annotation.job.initialOpenGuide);
     const filters = annotationFilters.length;
 
     const openGuide = useCallback(() => {
@@ -88,7 +89,7 @@ function RightGroup(props: Props): JSX.Element {
                 seenGuides = [];
             }
 
-            if (!seenGuides.includes(jobInstance.guideId)) {
+            if (!seenGuides.includes(jobInstance.guideId) || initialOpenGuide) {
                 // open guide if the user have not seen it yet
                 openGuide();
                 const updatedSeenGuides = Array.from(new Set([jobInstance.guideId, ...seenGuides.slice(0, limit - 1)]));
