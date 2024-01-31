@@ -71,11 +71,12 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     useEffect(() => {
         if (prevFetching && !fetching && !prevJob && job) {
             const latestFrame = readLatestFrame(job.id);
-            if (latestFrame === null) {
-                return;
-            }
 
-            if (latestFrame !== frameNumber && latestFrame >= job.startFrame && latestFrame <= job.stopFrame) {
+            if (typeof latestFrame === 'number' &&
+                latestFrame !== frameNumber &&
+                latestFrame >= job.startFrame &&
+                latestFrame <= job.stopFrame
+            ) {
                 const notificationKey = `cvat-notification-continue-job-${job.id}`;
                 notification.info({
                     key: notificationKey,
