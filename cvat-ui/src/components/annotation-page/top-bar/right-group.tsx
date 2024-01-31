@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
 import { Col } from 'antd/lib/grid';
 import Icon from '@ant-design/icons';
 import Select from 'antd/lib/select';
@@ -18,29 +17,31 @@ import {
 import {
     DimensionType, Job, JobStage, JobState,
 } from 'cvat-core-wrapper';
-import { CombinedState, Workspace } from 'reducers';
+import { Workspace } from 'reducers';
 
 import MDEditor from '@uiw/react-md-editor';
 
 interface Props {
-    workspace: Workspace;
     showStatistics(): void;
     showFilters(): void;
     changeWorkspace(workspace: Workspace): void;
     jobInstance: Job;
+    workspace: Workspace;
+    annotationFilters: object[];
+    initialOpenGuide: boolean;
 }
 
 function RightGroup(props: Props): JSX.Element {
     const {
         showStatistics,
         changeWorkspace,
+        showFilters,
         workspace,
         jobInstance,
-        showFilters,
+        annotationFilters,
+        initialOpenGuide,
     } = props;
 
-    const annotationFilters = useSelector((state: CombinedState) => state.annotation.annotations.filters);
-    const initialOpenGuide = useSelector((state: CombinedState) => state.annotation.job.initialOpenGuide);
     const filters = annotationFilters.length;
 
     const openGuide = useCallback(() => {

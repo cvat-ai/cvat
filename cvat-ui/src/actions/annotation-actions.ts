@@ -321,7 +321,7 @@ export function fetchAnnotationsAsync(): ThunkAction {
     };
 }
 
-export function changeAnnotationsFilters(filters: any[]): AnyAction {
+export function changeAnnotationsFilters(filters: object[]): AnyAction {
     return {
         type: AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS,
         payload: { filters },

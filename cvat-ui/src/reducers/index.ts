@@ -735,7 +735,7 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
         states: any[];
-        filters: any[];
+        filters: object[];
         resetGroupFlag: boolean;
         history: {
             undo: [string, number][];

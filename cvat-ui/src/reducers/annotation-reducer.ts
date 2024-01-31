@@ -54,9 +54,10 @@ const defaultState: AnnotationState = {
     job: {
         openTime: null,
         labels: [],
-        groundTruthJobFramesMeta: null,
         requestedId: null,
+        groundTruthJobFramesMeta: null,
         groundTruthInstance: null,
+        initialOpenGuide: false,
         instance: null,
         attributes: {},
         fetching: false,

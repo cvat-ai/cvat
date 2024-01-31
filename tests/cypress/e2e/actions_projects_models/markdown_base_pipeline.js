@@ -171,7 +171,7 @@ context('Basic markdown pipeline', () => {
             cy.get('.cvat-annotation-view-markdown-guide-modal button').contains('OK').click();
 
             // when reopen the job, guide is not opened automatically, but can be opened manually
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.reload();
             cy.get('.cvat-annotation-header-guide-button').should('not.be.visible');
             cy.intercept('GET', `/api/assets/${assetID}**`).as('assetGet');
             cy.get('.cvat-annotation-header-guide-button').should('exist').and('be.visible').click();

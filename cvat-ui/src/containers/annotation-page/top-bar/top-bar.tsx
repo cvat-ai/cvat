@@ -30,7 +30,7 @@ import {
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { DimensionType, JobType } from 'cvat-core-wrapper';
+import { DimensionType, Job, JobType } from 'cvat-core-wrapper';
 import {
     CombinedState,
     FrameSpeed,
@@ -44,7 +44,7 @@ import { switchToolsBlockerState } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
 
 interface StateToProps {
-    jobInstance: any;
+    jobInstance: Job;
     frameIsDeleted: boolean;
     frameNumber: number;
     frameFilename: string;
@@ -68,6 +68,8 @@ interface StateToProps {
     forceExit: boolean;
     ranges: string;
     activeControl: ActiveControl;
+    annotationFilters: object[];
+    initialOpenGuide: boolean;
 }
 
 interface DispatchToProps {
@@ -105,8 +107,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 saving: { uploading: saving, forceExit },
                 history,
+                filters: annotationFilters,
             },
-            job: { instance: jobInstance },
+            job: { instance: jobInstance, initialOpenGuide },
             canvas: { ready: canvasIsReady, instance: canvasInstance, activeControl },
             workspace,
         },
@@ -132,7 +135,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         saving,
         frameNumber,
         frameFilename,
-        jobInstance,
+        jobInstance: jobInstance as Job,
         undoAction: history.undo.length ? history.undo[history.undo.length - 1][0] : undefined,
         redoAction: history.redo.length ? history.redo[history.redo.length - 1][0] : undefined,
         autoSave,
@@ -142,10 +145,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
         workspace,
         keyMap,
         normalizedKeyMap,
-        canvasInstance,
+        canvasInstance: canvasInstance as NonNullable<typeof canvasInstance>,
         forceExit,
         activeControl,
         ranges,
+        annotationFilters,
+        initialOpenGuide,
     };
 }
 
@@ -657,9 +662,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             ranges,
             normalizedKeyMap,
             activeControl,
+            annotationFilters,
+            initialOpenGuide,
+            toolsBlockerState,
             searchAnnotations,
             switchNavigationBlocked,
-            toolsBlockerState,
         } = this.props;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -798,6 +805,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     nextButtonType={nextButtonType}
                     prevButtonType={prevButtonType}
                     focusFrameInputShortcut={normalizedKeyMap.FOCUS_INPUT_FRAME}
+                    annotationFilters={annotationFilters}
+                    initialOpenGuide={initialOpenGuide}
                     onUndoClick={this.undo}
                     onRedoClick={this.redo}
                     onFinishDraw={this.onFinishDraw}
