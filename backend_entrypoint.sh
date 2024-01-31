@@ -11,12 +11,22 @@ wait_for_db() {
     ~/wait-for-it.sh "${CVAT_POSTGRES_HOST}:${CVAT_POSTGRES_PORT:-5432}" -t 0
 }
 
+wait_for_redis_inmem() {
+    ~/wait-for-it.sh "${CVAT_REDIS_INMEM_HOST}:${CVAT_REDIS_INMEM_PORT}" -t 0
+}
+
+wait_for_redis_ondisk() {
+    ~/wait-for-it.sh "${CVAT_REDIS_ONDISK_HOST}:${CVAT_REDIS_ONDISK_PORT}" -t 0
+}
+
 cmd_bash() {
     exec bash "$@"
 }
 
 cmd_init() {
     wait_for_db
+    wait_for_redis_inmem
+    wait_for_redis_ondisk
     ~/manage.py migrate
 }
 
@@ -30,6 +40,8 @@ cmd_run() {
     fi
 
     wait_for_db
+    wait_for_redis_inmem
+    wait_for_redis_ondisk
 
     echo "waiting for migrations to complete..."
     while ! ~/manage.py migrate --check; do
