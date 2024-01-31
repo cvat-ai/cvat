@@ -57,6 +57,12 @@ services:
     command: [
       "--dir", "/var/lib/kvrocks/data"
     ]
+    # The kvrocks image a) has a healthcheck command, and b) has a root process
+    # that doesn't reap children, so it's susceptible to the problem described here:
+    # <https://stackoverflow.com/a/77109064>. Kvrocks also uses a tiny timeout for
+    # its healthcheck command (1s), which makes the problem more likely to manifest.
+    # Use a separate init process as a workaround.
+    init: true
     volumes:
       - cvat_cache_db:/var/lib/kvrocks/data
     networks:
