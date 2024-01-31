@@ -73,28 +73,31 @@ function RightGroup(props: Props): JSX.Element {
     }, [jobInstance]);
 
     useEffect(() => {
-        if (
-            jobInstance &&
-            jobInstance.stage === JobStage.ANNOTATION &&
-            jobInstance.state === JobState.NEW &&
-            jobInstance.guideId !== null
-        ) {
-            const limit = 10;
-            let seenGuides = [];
-            try {
-                seenGuides = JSON.parse(localStorage.getItem('seenGuides') || '[]');
-                if (!Array.isArray(seenGuides) || seenGuides.some((el) => !Number.isInteger(el))) {
-                    throw new Error('Wrong structure stored in local storage');
-                }
-            } catch (error: unknown) {
-                seenGuides = [];
-            }
-
-            if (!seenGuides.includes(jobInstance.guideId) || initialOpenGuide) {
-                // open guide if the user have not seen it yet
+        if (Number.isInteger(jobInstance?.guideId)) {
+            if (initialOpenGuide) {
                 openGuide();
-                const updatedSeenGuides = Array.from(new Set([jobInstance.guideId, ...seenGuides.slice(0, limit - 1)]));
-                localStorage.setItem('seenGuides', JSON.stringify(updatedSeenGuides));
+            } else if (
+                jobInstance?.stage === JobStage.ANNOTATION &&
+                jobInstance?.state === JobState.NEW
+            ) {
+                let seenGuides = [];
+                try {
+                    seenGuides = JSON.parse(localStorage.getItem('seenGuides') || '[]');
+                    if (!Array.isArray(seenGuides) || seenGuides.some((el) => !Number.isInteger(el))) {
+                        throw new Error('Wrong structure stored in local storage');
+                    }
+                } catch (error: unknown) {
+                    seenGuides = [];
+                }
+
+                if (!seenGuides.includes(jobInstance.guideId)) {
+                    // open guide if the user have not seen it yet
+                    openGuide();
+                    const limit = 10;
+                    const updatedSeenGuides = Array
+                        .from(new Set([jobInstance.guideId, ...seenGuides.slice(0, limit - 1)]));
+                    localStorage.setItem('seenGuides', JSON.stringify(updatedSeenGuides));
+                }
             }
         }
     }, []);
