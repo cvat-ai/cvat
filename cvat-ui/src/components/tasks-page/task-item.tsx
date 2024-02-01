@@ -72,18 +72,19 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
             }).then((createdTask: Task) => {
                 if (!this.#isUnmounted) {
                     this.setState({ importingState: null });
-                }
 
-                setTimeout(() => {
-                    if (!this.#isUnmounted) {
-                        const { taskInstance: currentTaskInstance } = this.props;
-                        if (currentTaskInstance.size !== createdTask.size) {
-                            // update state only if it was not updated anywhere else
-                            // for example in createTaskAsync
-                            updateTaskInState(createdTask);
+                    setTimeout(() => {
+                        if (!this.#isUnmounted) {
+                            // check again, because the component may be unmounted to this moment
+                            const { taskInstance: currentTaskInstance } = this.props;
+                            if (currentTaskInstance.size !== createdTask.size) {
+                                // update state only if it was not updated anywhere else
+                                // for example in createTaskAsync
+                                updateTaskInState(createdTask);
+                            }
                         }
-                    }
-                }, 1000);
+                    }, 1000);
+                }
             });
         }
     }
