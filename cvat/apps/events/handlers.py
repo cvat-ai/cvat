@@ -518,7 +518,7 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     tb_strings = traceback.format_exception(exc_type, exc_value, tb)
 
     payload = {
-        "message": tb_strings[-1],
+        "message": tb_strings[-1].rstrip("\n"),
         "stack": ''.join(tb_strings),
     }
 
@@ -563,7 +563,7 @@ def handle_viewset_exception(exc, context):
             "content_type": request.content_type,
             "method": request.method,
         },
-        "message": tb_strings[-1],
+        "message": tb_strings[-1].rstrip("\n"),
         "stack": ''.join(tb_strings),
         "status_code": status_code,
     }
