@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import config from 'config';
+
 export function readLatestFrameStorage(): Map<number, number> {
     let latestFrameStorage: [number, number][] = [];
     try {
@@ -23,12 +25,15 @@ export function readLatestFrameStorage(): Map<number, number> {
 }
 
 export function writeLatestFrame(jobID: number, frame: number): void {
-    const limit = 20;
     let storage = readLatestFrameStorage();
     if (storage.has(jobID)) {
         storage.set(jobID, frame);
     } else {
-        storage = new Map([[jobID, frame], ...Array.from(storage.entries()).slice(0, limit - 1)]);
+        storage = new Map([
+            [jobID, frame],
+            ...Array.from(storage.entries())
+                .slice(0, config.LOCAL_STORAGE_LAST_FRAME_MEMORY_LIMIT - 1),
+        ]);
     }
     localStorage.setItem('latestFrameStorage', JSON.stringify(Array.from(storage.entries())));
 }

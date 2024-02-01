@@ -14,6 +14,7 @@ import notification from 'antd/lib/notification';
 import {
     FilterIcon, FullscreenIcon, GuideIcon, InfoIcon,
 } from 'icons';
+import config from 'config';
 import {
     DimensionType, Job, JobStage, JobState,
 } from 'cvat-core-wrapper';
@@ -93,9 +94,11 @@ function RightGroup(props: Props): JSX.Element {
                 if (!seenGuides.includes(jobInstance.guideId)) {
                     // open guide if the user have not seen it yet
                     openGuide();
-                    const limit = 10;
                     const updatedSeenGuides = Array
-                        .from(new Set([jobInstance.guideId, ...seenGuides.slice(0, limit - 1)]));
+                        .from(new Set([
+                            jobInstance.guideId,
+                            ...seenGuides.slice(0, config.LOCAL_STORAGE_SEEN_GUIDES_MEMORY_LIMIT - 1),
+                        ]));
                     localStorage.setItem('seenGuides', JSON.stringify(updatedSeenGuides));
                 }
             }
