@@ -448,8 +448,13 @@ export class SliceHandlerImpl implements SliceHandler {
                     return;
                 }
 
-                points.push([x, y]);
-                this.slicingLine.plot(stringifyPoints(points.flat()));
+                if (this.enabled) {
+                    // check if slicing is still enabled
+                    // because click() may finish slicing from inside
+                    // e.g. when click out of contour with enabled shift
+                    points.push([x, y]);
+                    this.slicingLine.plot(stringifyPoints(points.flat()));
+                }
             }
         };
 
