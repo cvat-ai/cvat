@@ -292,7 +292,11 @@ export default function ItemMenu(props: Props): JSX.Element {
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
 
     return (
-        <Menu className='cvat-object-item-menu' selectable={false}>
+        <Menu
+            onClick={() => window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))}
+            className='cvat-object-item-menu'
+            selectable={false}
+        >
             <CreateURLItem key={MenuKeys.CREATE_URL} toolProps={props} />
             {!readonly && objectType !== ObjectType.TAG && (
                 <MakeCopyItem key={MenuKeys.COPY} toolProps={props} />
