@@ -9,7 +9,6 @@ import { SmallDashOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ConnectedComponent } from 'react-redux';
 import withVisibilityHandling from './handle-popover-visibility';
 
 const extraControlsContentClassName = 'cvat-extra-controls-control-content';
@@ -52,7 +51,7 @@ export function ExtraControlsControl(): JSX.Element {
 }
 
 export default function ControlVisibilityObserver<P = {}>(
-    ControlComponent: React.FunctionComponent<P> | ConnectedComponent<any, any>,
+    ControlComponent: React.FunctionComponent<P>,
 ): React.FunctionComponent<P> {
     let visibilityHeightThreshold = 0; // minimum value of height when element can be pushed to main panel
 

@@ -436,7 +436,7 @@ function HeaderComponent(props: Props): JSX.Element {
     );
 
     const userMenu = (
-        <Menu className='cvat-header-menu'>
+        <Menu triggerSubMenuAction='click' className='cvat-header-menu'>
             { menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
                 .map((menuItem) => menuItem[0]) }
         </Menu>
@@ -558,7 +558,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
-                <Dropdown placement='bottomRight' overlay={userMenu} className='cvat-header-menu-user-dropdown'>
+                <Dropdown trigger={['click']} placement='bottomRight' overlay={userMenu} className='cvat-header-menu-user-dropdown'>
                     <span>
                         <UserOutlined className='cvat-header-dropdown-icon' />
                         <Row>

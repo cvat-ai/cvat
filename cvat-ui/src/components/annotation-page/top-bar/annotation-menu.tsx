@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -187,7 +187,16 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
     };
 
     return (
-        <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
+        <Menu
+            triggerSubMenuAction='click'
+            onClick={(params: MenuInfo) => {
+                // close menu and handle click
+                window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                onClickMenuWrapper(params);
+            }}
+            className='cvat-annotation-menu'
+            selectable={false}
+        >
             <Menu.Item key={Actions.LOAD_JOB_ANNO}>Upload annotations</Menu.Item>
             <Menu.Item key={Actions.EXPORT_JOB_DATASET}>Export job dataset</Menu.Item>
             <Menu.Item key={Actions.REMOVE_ANNOTATIONS}>Remove annotations</Menu.Item>
