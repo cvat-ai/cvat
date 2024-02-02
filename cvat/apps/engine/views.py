@@ -43,6 +43,7 @@ from rest_framework.settings import api_settings
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, download_file_from_bucket, export_resource_to_cloud_storage
+from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -2839,6 +2840,8 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
         dependent_job = None
         location = location_conf.get('location') if location_conf else Location.LOCAL
 
+        db_storage = None
+
         if not filename or location == Location.CLOUD_STORAGE:
             if location != Location.CLOUD_STORAGE:
                 serializer = AnnotationFileSerializer(data=request.data)
@@ -2899,6 +2902,9 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
+
+        handle_dataset_import(db_obj, format_name=format_name, cloud_storage=db_storage)
+
         serializer = RqIdSerializer(data={'rq_id': rq_id})
         serializer.is_valid(raise_exception=True)
 
@@ -3046,6 +3052,8 @@ def _export_annotations(
             is_annotation_file=is_annotation_file,
         )
         func_args = (db_storage, filename, filename_pattern, callback) + func_args
+    else:
+        db_storage = None
 
     with get_rq_lock_by_user(queue, user_id):
         queue.enqueue_call(
@@ -3057,6 +3065,10 @@ def _export_annotations(
             result_ttl=ttl,
             failure_ttl=ttl,
         )
+
+    handle_dataset_export(db_instance,
+        format_name=format_name, cloud_storage=db_storage, save_images=not is_annotation_file)
+
     return Response(status=status.HTTP_202_ACCEPTED)
 
 def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
@@ -3081,6 +3093,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
             rq_job.delete()
         dependent_job = None
         location = location_conf.get('location') if location_conf else None
+        db_storage = None
+
         if not filename and location != Location.CLOUD_STORAGE:
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
@@ -3139,6 +3153,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
+
+        handle_dataset_import(db_obj, format_name=format_name, cloud_storage=db_storage)
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 

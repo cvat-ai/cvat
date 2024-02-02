@@ -125,6 +125,8 @@ Server events:
 
 - `create:label`, `update:label`, `delete:label`
 
+- `export:dataset`, `import:dataset`
+
 Client events:
 
 - `load:cvat`
