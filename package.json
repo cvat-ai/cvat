@@ -2,7 +2,7 @@
   "name": "cvat",
   "version": "1.0.0",
   "description": "Eslint && remarklint dependencies",
-  "main": ".eslintrc.js",
+  "main": ".eslintrc.cjs",
   "private": true,
   "directories": {
     "test": "tests"
@@ -17,6 +17,7 @@
   "devDependencies": {
     "@babel/cli": "^7.13.16",
     "@babel/core": "^7.6.0",
+    "@babel/eslint-parser": "^7.23.3",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/plugin-proposal-optional-chaining": "^7.11.0",
     "@babel/preset-env": "^7.6.0",
@@ -26,27 +27,26 @@
     "@istanbuljs/nyc-config-babel": "^3.0.0",
     "@types/mousetrap": "^1.6.5",
     "@types/node": "^18.0.3",
-    "@typescript-eslint/eslint-plugin": "^5.30.5",
-    "@typescript-eslint/parser": "^5.30.5",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
     "airbnb": "0.0.2",
-    "babel-eslint": "^10.0.1",
     "babel-loader": "^8.0.6",
     "babel-plugin-import": "^1.12.2",
     "babel-plugin-istanbul": "^6.0.0",
     "bundle-declarations-webpack-plugin": "^3.1.0",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
-    "eslint": "^7.11.0",
-    "eslint-config-airbnb": "^18.0.1",
+    "eslint": "^8.54.0",
+    "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-base": "14.2.1",
-    "eslint-config-airbnb-typescript": "^12.0.0",
+    "eslint-config-airbnb-typescript": "^17.1.0",
     "eslint-plugin-cypress": "^2.11.2",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jest": "^26.5.3",
     "eslint-plugin-jsx-a11y": "^6.3.1",
     "eslint-plugin-no-unsanitized": "^3.0.2",
-    "eslint-plugin-react": "^7.21.5",
-    "eslint-plugin-react-hooks": "^4.2.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-security": "^1.4.0",
     "html-webpack-plugin": "^5.5.0",
     "husky": "^6.0.0",
@@ -78,13 +78,12 @@
     "source-map-support": "^0.5.19",
     "style-loader": "^1.0.0",
     "stylelint": "^15.10.2",
-    "stylelint-config-standard-scss": "^10.0.0",
-    "typescript": "^5.0.2",
+    "stylelint-config-standard-scss": "^11.1.0",
+    "typescript": "5.0.2",
     "vfile-reporter-json": "^2.0.2",
     "webpack": "^5.76.0",
-    "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "4.9",
-    "worker-loader": "^3.0.8"
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "4.15.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -129,6 +128,8 @@
   },
   "dependencies": {
     "@types/fabric": "^4.5.7",
-    "fabric": "^5.2.1"
+    "@types/lodash": "^4.14.191",
+    "fabric": "^5.2.1",
+    "lodash": "^4.17.21"
   }
 }

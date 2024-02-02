@@ -9,12 +9,13 @@ import os
 import os.path
 import uuid
 from dataclasses import asdict, dataclass
-from distutils.util import strtobool
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest import mock
+from typing import Optional, Callable, Dict, Any
 
 import django_rq
+from attr.converters import to_bool
 from django.conf import settings
 from rest_framework import mixins, status
 from rest_framework.response import Response
@@ -384,13 +385,21 @@ class UploadMixin:
         raise NotImplementedError('Must be implemented in the derived class')
 
 class AnnotationMixin:
-    def export_annotations(self, request, db_obj, export_func, callback, get_data=None):
+    def export_annotations(
+        self,
+        request,
+        db_obj,
+        export_func,
+        callback: Callable[[int, Optional[str], Optional[str]], str],
+        *,
+        get_data: Optional[Callable[[int], Dict[str, Any]]]= None,
+    ):
         format_name = request.query_params.get("format", "")
         action = request.query_params.get("action", "").lower()
         filename = request.query_params.get("filename", "")
 
         use_default_location = request.query_params.get("use_default_location", True)
-        use_settings = strtobool(str(use_default_location))
+        use_settings = to_bool(use_default_location)
         obj = db_obj if use_settings else request.query_params
         location_conf = get_location_configuration(
             obj=obj,
@@ -399,7 +408,7 @@ class AnnotationMixin:
         )
 
         object_name = self._object.__class__.__name__.lower()
-        rq_id = f"export:annotations-for-{object_name}.id{self._object.pk}-in-{format_name.replace(' ', '_')}-format"
+        rq_id = f"export:{request.path.strip('/').split('/')[-1]}-for-{object_name}.id{self._object.pk}-in-{format_name.replace(' ', '_')}-format"
 
         if format_name:
             return export_func(db_instance=self._object,
@@ -425,8 +434,8 @@ class AnnotationMixin:
             return self.init_tus_upload(request)
 
         use_default_location = request.query_params.get('use_default_location', True)
-        conv_mask_to_poly = strtobool(request.query_params.get('conv_mask_to_poly', 'True'))
-        use_settings = strtobool(str(use_default_location))
+        conv_mask_to_poly = to_bool(request.query_params.get('conv_mask_to_poly', True))
+        use_settings = to_bool(use_default_location)
         obj = db_obj if use_settings else request.query_params
         location_conf = get_location_configuration(
             obj=obj,

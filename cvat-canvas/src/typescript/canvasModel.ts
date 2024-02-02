@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +20,13 @@ export interface Image {
 export interface Position {
     x: number;
     y: number;
+}
+
+export interface CanvasHint {
+    type: 'text' | 'list';
+    content: string | string[];
+    className?: string;
+    icon?: 'info' | 'loading';
 }
 
 export interface Geometry {
@@ -49,8 +56,8 @@ export enum HighlightSeverity {
 }
 
 export interface HighlightedElements {
-    elementsIDs: number [];
-    severity: HighlightSeverity;
+    elementsIDs: number[];
+    severity: HighlightSeverity | null;
 }
 
 export enum RectDrawingMethod {
@@ -96,6 +103,7 @@ export interface BrushTool {
     color: string;
     form: 'circle' | 'square';
     size: number;
+    onBlockUpdated: (blockedTools: Record<'eraser' | 'polygon-minus', boolean>) => void;
 }
 
 export interface DrawData {
@@ -162,6 +170,16 @@ export interface SplitData {
     enabled: boolean;
 }
 
+export interface JoinData {
+    enabled: boolean;
+}
+
+export interface SliceData {
+    enabled: boolean;
+    clientID?: number;
+    getContour?: (state: any) => Promise<number[]>;
+}
+
 export enum FrameZoom {
     MIN = 0.1,
     MAX = 10,
@@ -189,6 +207,8 @@ export enum UpdateReasons {
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
+    JOIN = 'join',
+    SLICE = 'slice',
     SELECT = 'select',
     CANCEL = 'cancel',
     BITMAP = 'bitmap',
@@ -209,6 +229,8 @@ export enum Mode {
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
+    JOIN = 'join',
+    SLICE = 'slice',
     INTERACT = 'interact',
     SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
@@ -232,6 +254,8 @@ export interface CanvasModel {
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
     readonly groupData: GroupData;
+    readonly joinData: JoinData;
+    readonly sliceData: SliceData;
     readonly configuration: Configuration;
     readonly selected: any;
     geometry: Geometry;
@@ -244,7 +268,7 @@ export interface CanvasModel {
     setup(frameData: any, objectStates: any[], zLayer: number): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     activate(clientID: number | null, attributeID: number | null): void;
-    highlight(clientIDs: number[] | null, severity: HighlightSeverity): void;
+    highlight(clientIDs: number[], severity: HighlightSeverity): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
@@ -253,6 +277,8 @@ export interface CanvasModel {
     draw(drawData: DrawData): void;
     edit(editData: MasksEditData): void;
     group(groupData: GroupData): void;
+    join(joinData: JoinData): void;
+    slice(sliceData: SliceData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
@@ -287,6 +313,12 @@ const defaultData = {
         enabled: false,
     },
     splitData: {
+        enabled: false,
+    },
+    joinData: {
+        enabled: false,
+    },
+    sliceData: {
         enabled: false,
     },
 };
@@ -341,6 +373,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         interactionData: InteractionData;
         mergeData: MergeData;
         groupData: GroupData;
+        joinData: JoinData;
+        sliceData: SliceData;
         splitData: SplitData;
         selected: any;
         mode: Mode;
@@ -566,10 +600,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.data.objects = objectStates;
                 this.notify(UpdateReasons.OBJECTS_UPDATED);
             })
-            .catch((exception: any): void => {
-                this.data.exception = exception;
-                // don't notify when the frame is no longer needed
+            .catch((exception: unknown): void => {
                 if (typeof exception !== 'number') {
+                    // don't notify when the frame is no longer needed
+                    if (exception instanceof Error) {
+                        this.data.exception = exception;
+                    } else {
+                        this.data.exception = new Error('Unknown error occured when fetching image data');
+                    }
                     this.notify(UpdateReasons.DATA_FAILED);
                 }
             });
@@ -604,18 +642,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.SHAPE_ACTIVATED);
     }
 
-    public highlight(clientIDs: number[] | null, severity: HighlightSeverity | null): void {
-        if (Array.isArray(clientIDs)) {
-            this.data.highlightedElements = {
-                elementsIDs: clientIDs,
-                severity,
-            };
-        } else {
-            this.data.highlightedElements = {
-                elementsIDs: [],
-                severity: null,
-            };
-        }
+    public highlight(clientIDs: number[], severity: HighlightSeverity | null): void {
+        this.data.highlightedElements = {
+            elementsIDs: clientIDs,
+            severity,
+        };
 
         this.notify(UpdateReasons.SHAPE_HIGHLIGHTED);
     }
@@ -780,11 +811,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (this.data.splitData.enabled && splitData.enabled) {
-            return;
-        }
-
-        if (!this.data.splitData.enabled && !splitData.enabled) {
+        if ((this.data.splitData.enabled && splitData.enabled) || (
+            !this.data.splitData.enabled && !splitData.enabled
+        )) {
             return;
         }
 
@@ -797,11 +826,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (this.data.groupData.enabled && groupData.enabled) {
-            return;
-        }
-
-        if (!this.data.groupData.enabled && !groupData.enabled) {
+        if ((this.data.groupData.enabled && groupData.enabled) || (
+            !this.data.groupData.enabled && !groupData.enabled
+        )) {
             return;
         }
 
@@ -809,16 +836,48 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.GROUP);
     }
 
+    public join(joinData: JoinData): void {
+        if (![Mode.IDLE, Mode.JOIN].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if ((this.data.joinData.enabled && joinData.enabled) || (
+            !this.data.joinData.enabled && !joinData.enabled
+        )) {
+            return;
+        }
+
+        this.data.joinData = { ...joinData };
+        this.notify(UpdateReasons.JOIN);
+    }
+
+    public slice(sliceData: SliceData): void {
+        if (![Mode.IDLE, Mode.SLICE].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if ((this.data.sliceData.enabled && sliceData.enabled) || (
+            !this.data.sliceData.enabled && !sliceData.enabled
+        )) {
+            return;
+        }
+
+        if (sliceData.enabled && !sliceData.getContour) {
+            throw Error('Contours computing method was not provided');
+        }
+
+        this.data.sliceData = { ...sliceData };
+        this.notify(UpdateReasons.SLICE);
+    }
+
     public merge(mergeData: MergeData): void {
         if (![Mode.IDLE, Mode.MERGE].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (this.data.mergeData.enabled && mergeData.enabled) {
-            return;
-        }
-
-        if (!this.data.mergeData.enabled && !mergeData.enabled) {
+        if ((this.data.mergeData.enabled && mergeData.enabled) || (
+            !this.data.mergeData.enabled && !mergeData.enabled
+        )) {
             return;
         }
 
@@ -905,7 +964,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode) ||
+        const isUnable = [Mode.SLICE, Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode) ||
             (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
@@ -1017,6 +1076,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get splitData(): SplitData {
         return { ...this.data.splitData };
+    }
+
+    public get joinData(): JoinData {
+        return { ...this.data.joinData };
+    }
+
+    public get sliceData(): SliceData {
+        return { ...this.data.sliceData };
     }
 
     public get groupData(): GroupData {

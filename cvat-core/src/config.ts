@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,8 +11,12 @@ const config = {
     },
     origin: '',
     uploadChunkSize: 100,
-    removeUnderlyingMaskPixels: false,
+    removeUnderlyingMaskPixels: {
+        enabled: false,
+        onEmptyMaskOccurrence: null,
+    },
     onOrganizationChange: null,
+    globalObjectsCounter: 0,
 };
 
 export default config;

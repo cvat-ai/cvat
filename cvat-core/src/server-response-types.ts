@@ -1,12 +1,14 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import {
     ChunkType,
     DimensionType, JobStage, JobState, JobType, ProjectStatus,
-    ShareFileType, TaskMode, TaskStatus,
-} from 'enums';
+    ShapeType, StorageLocation, LabelType,
+    ShareFileType, Source, TaskMode, TaskStatus,
+    CloudStorageCredentialsType, CloudStorageProviderType,
+} from './enums';
 
 export interface SerializedAnnotationImporter {
     name: string;
@@ -46,6 +48,12 @@ export interface SerializedUser {
     email_verification_required: boolean;
 }
 
+interface SerializedStorage {
+    id: number;
+    location: StorageLocation;
+    cloud_storage_id: number | null;
+}
+
 export interface SerializedProject {
     assignee: SerializedUser | null;
     id: number;
@@ -57,8 +65,8 @@ export interface SerializedProject {
     organization: number | null;
     guide_id: number | null;
     owner: SerializedUser;
-    source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
-    target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
+    source_storage: SerializedStorage | null;
+    target_storage: SerializedStorage | null;
     url: string;
     tasks: { count: number; url: string; };
     task_subsets: string[];
@@ -68,6 +76,7 @@ export interface SerializedProject {
 export type TasksFilter = ProjectsFilter & { ordering?: string; }; // TODO: Need to clarify how "ordering" is used
 export type JobsFilter = ProjectsFilter & {
     task_id?: number;
+    type?: JobType;
 };
 
 export interface SerializedTask {
@@ -81,7 +90,12 @@ export interface SerializedTask {
     dimension: DimensionType;
     id: number;
     image_quality: number;
-    jobs: { count: 1; completed: 0; url: string; validation: 0 };
+    jobs: {
+        count: number;
+        completed: number;
+        url: string;
+        validation: number;
+    };
     labels: { count: number; url: string; };
     mode: TaskMode | '';
     name: string;
@@ -92,8 +106,8 @@ export interface SerializedTask {
     guide_id: number | null;
     segment_size: number;
     size: number;
-    source_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
-    target_storage: { id: number; location: 'local' | 'cloud'; cloud_storage_id: null };
+    source_storage: SerializedStorage | null;
+    target_storage: SerializedStorage | null;
     status: TaskStatus;
     subset: string;
     updated_date: string;
@@ -122,6 +136,8 @@ export interface SerializedJob {
     updated_date: string;
     created_date: string;
     url: string;
+    source_storage: SerializedStorage | null;
+    target_storage: SerializedStorage | null;
 }
 
 export type AttrInputType = 'select' | 'radio' | 'checkbox' | 'number' | 'text';
@@ -134,7 +150,6 @@ export interface SerializedAttribute {
     id?: number;
 }
 
-export type LabelType = 'rectangle' | 'polygon' | 'polyline' | 'points' | 'ellipse' | 'cuboid' | 'skeleton' | 'mask' | 'tag' | 'any';
 export interface SerializedLabel {
     id?: number;
     name: string;
@@ -173,10 +188,6 @@ export interface SerializedRegister {
     first_name: string;
     last_name: string;
     username: string;
-}
-
-export interface SerializedAcceptInvitation {
-    organization_slug: string;
 }
 
 export interface SerializedGuide {
@@ -229,4 +240,107 @@ export interface SerializedQualitySettingsData {
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
+}
+
+export interface SerializedInvitationData {
+    created_date: string;
+    key: string;
+    owner: SerializedUser;
+    expired: boolean;
+    organization: number;
+    organization_info: SerializedOrganization;
+}
+
+export interface SerializedShape {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    group: number;
+    frame: number;
+    source: Source;
+    attributes: { spec_id: number; value: string }[];
+    elements: Omit<SerializedShape, 'elements'>[];
+    occluded: boolean;
+    outside: boolean;
+    points?: number[];
+    rotation: number;
+    z_order: number;
+    type: ShapeType;
+}
+
+export interface SerializedTrack {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    group: number;
+    frame: number;
+    source: Source;
+    attributes: { spec_id: number; value: string }[];
+    shapes: {
+        attributes: SerializedTrack['attributes'];
+        id?: number;
+        points?: number[];
+        frame: number;
+        occluded: boolean;
+        outside: boolean;
+        rotation: number;
+        type: ShapeType;
+        z_order: number;
+    }[];
+    elements: Omit<SerializedTrack, 'elements'>[];
+}
+
+export interface SerializedTag {
+    id?: number;
+    clientID?: number;
+    label_id: number;
+    frame: number;
+    group: number;
+    source: Source;
+    attributes: { spec_id: number; value: string }[];
+}
+
+export interface SerializedCollection {
+    tags: SerializedTag[];
+    shapes: SerializedShape[];
+    tracks: SerializedTrack[];
+    version: number;
+}
+
+export interface SerializedCloudStorage {
+    id?: number;
+    display_name?: string;
+    description?: string;
+    credentials_type?: CloudStorageCredentialsType;
+    provider_type?: CloudStorageProviderType;
+    resource?: string;
+    account_name?: string;
+    key?: string;
+    secret_key?: string;
+    session_token?: string;
+    key_file?: File;
+    connection_string?: string;
+    specific_attributes?: string;
+    owner?: any;
+    created_date?: string;
+    updated_date?: string;
+    manifest_path?: string;
+    manifests?: string[];
+}
+
+export interface SerializedFramesMetaData {
+    chunk_size: number;
+    deleted_frames: number[];
+    included_frames: number[];
+    frame_filter: string;
+    frames: {
+        width: number;
+        height: number;
+        name: string;
+        related_files: number;
+    }[];
+    image_quality: number;
+    size: number;
+    start_frame: number;
+    stop_frame: number;
 }

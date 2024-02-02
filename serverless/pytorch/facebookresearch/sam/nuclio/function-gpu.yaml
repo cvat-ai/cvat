@@ -26,7 +26,7 @@ spec:
       value: /opt/nuclio/sam
 
   build:
-    image: cvat.pth.facebookresearch.sam.vit_h
+    image: cvat.pth.facebookresearch.sam.vit_h:latest-gpu
     baseImage: ubuntu:22.04
 
     directives:

@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,14 +32,14 @@ export function checkNumberOfPoints(shapeType: ShapeType, points: number[]): voi
             throw new DataError(`Ellipse must have 1 point, rx and ry but got ${points.toString()}`);
         }
     } else if (shapeType === ShapeType.MASK) {
+        if (points.length < 6) {
+            throw new DataError('Mask must not be empty');
+        }
+
         const [left, top, right, bottom] = points.slice(-4);
         const [width, height] = [right - left, bottom - top];
         if (width < 0 || !Number.isInteger(width) || height < 0 || !Number.isInteger(height)) {
             throw new DataError(`Mask width, height must be positive integers, but got ${width}x${height}`);
-        }
-
-        if (points.length !== width * height + 4) {
-            throw new DataError(`Points array must have length ${width}x${height} + 4, got ${points.length}`);
         }
     } else {
         throw new ArgumentError(`Unknown value of shapeType has been received ${shapeType}`);
@@ -292,7 +292,11 @@ export function cropMask(rle: number[], width: number, height: number): number[]
 
         // switch current rle value
         value = Math.abs(value - 1);
-        if (croppedCount === 0 && croppedRLE.length) {
+
+        // length - 5 === latest iteration
+        // after this iteration we do not need to pop value
+        // just push found 0 elements instead
+        if (croppedCount === 0 && croppedRLE.length && idx !== rle.length - 5) {
             croppedCount = croppedRLE.pop();
         } else {
             croppedRLE.push(croppedCount);

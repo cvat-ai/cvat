@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,7 +34,7 @@ const defaultShortcutLabelMap = {
     0: '',
 } as ShortcutLabelMap;
 
-const ShortcutsSelect = (props: Props): JSX.Element => {
+function ShortcutsSelect(props: Props): JSX.Element {
     const { labels, onShortcutPress } = props;
     const [shortcutLabelMap, setShortcutLabelMap] = useState(defaultShortcutLabelMap);
 
@@ -115,6 +115,6 @@ const ShortcutsSelect = (props: Props): JSX.Element => {
                 ))}
         </div>
     );
-};
+}
 
 export default ShortcutsSelect;

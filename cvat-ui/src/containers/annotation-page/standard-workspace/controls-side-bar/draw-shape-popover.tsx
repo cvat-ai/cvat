@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -146,8 +147,12 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             });
 
             onDrawStart(
-                shapeType, selectedLabel.id, objectType,
-                numberOfPoints, rectDrawingMethod, cuboidDrawingMethod,
+                shapeType,
+                selectedLabel.id,
+                objectType,
+                numberOfPoints,
+                rectDrawingMethod,
+                cuboidDrawingMethod,
             );
         }
     }
