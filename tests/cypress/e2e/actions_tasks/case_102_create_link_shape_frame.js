@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,9 +30,7 @@ context('Create a link for shape, frame.', () => {
             cy.window().then((win) => {
                 cy.stub(win, 'prompt').returns(win.prompt).as('copyToClipboardPromptShape');
             });
-            cy.get('#cvat-objects-sidebar-state-item-1').find('[aria-label="more"]').trigger('mouseover');
-            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Create object URL').click();
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Create object URL');
             cy.get('@copyToClipboardPromptShape').should('be.called');
             cy.get('@copyToClipboardPromptShape').then((prompt) => {
                 const url = prompt.args[0][1];

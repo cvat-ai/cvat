@@ -1503,6 +1503,16 @@ Cypress.Commands.add('joinShapes', (
     interactWithTool();
 });
 
+Cypress.Commands.overwrite('interactAnnotationObjectMenu', (parentSelector, button) => {
+    cy.get(parentSelector).within(() => {
+        cy.get('[aria-label="more"]').click();
+    });
+
+    cy.get('.cvat-object-item-menu').within(() => {
+        cy.contains('button', button).click();
+    });
+});
+
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
     orig(url, options);
     cy.closeModalUnsupportedPlatform();

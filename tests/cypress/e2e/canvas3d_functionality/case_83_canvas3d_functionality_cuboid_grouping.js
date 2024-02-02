@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -42,15 +42,7 @@ context('Canvas 3D functionality. Grouping.', () => {
     let bgColorItem;
 
     function changeGroupColor(object, color) {
-        cy.get(object).within(() => {
-            cy.get('[aria-label="more"]').click();
-        });
-        cy.wait(300);
-        cy.get('.ant-dropdown')
-            .not('.ant-dropdown-hidden')
-            .within(() => {
-                cy.contains('Change group color').click();
-            });
+        cy.interactAnnotationObjectMenu(object, 'Change group color');
         cy.changeColorViaBadge(color);
     }
 
