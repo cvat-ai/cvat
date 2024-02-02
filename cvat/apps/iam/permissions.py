@@ -1043,6 +1043,7 @@ class TaskPermission(OpenPolicyAgentPermission):
                     "id": getattr(self.obj.organization, 'id', None)
                 },
                 "project": {
+                    "id": self.obj.project.id,
                     "owner": { "id": getattr(self.obj.project.owner, 'id', None) },
                     "assignee": { "id": getattr(self.obj.project.assignee, 'id', None) },
                     'organization': {
