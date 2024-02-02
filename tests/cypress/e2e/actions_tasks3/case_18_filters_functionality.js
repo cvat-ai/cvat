@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -308,7 +308,7 @@ context('Filters functionality.', () => {
 
         it('Verify to show all filters', () => {
             cy.checkFiltersModalOpened();
-            cy.get('.recently-used-wrapper').click();
+            cy.get('.cvat-recently-used-filters-wrapper').click();
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {

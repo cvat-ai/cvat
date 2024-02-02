@@ -303,7 +303,7 @@ function FiltersModalComponent(): JSX.Element {
         >
             <div
                 key='used'
-                className='recently-used-wrapper'
+                className='cvat-recently-used-filters-wrapper'
                 style={{ display: filters.length ? 'inline-block' : 'none' }}
             >
                 <Dropdown

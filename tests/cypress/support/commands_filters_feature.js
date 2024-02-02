@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -137,7 +138,7 @@ Cypress.Commands.add(
 
 Cypress.Commands.add('selectFilterValue', (filterValue) => {
     cy.checkFiltersModalOpened();
-    cy.get('.recently-used-wrapper').trigger('mouseover');
+    cy.get('.cvat-recently-used-filters-wrapper').trigger('mouseover');
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
         .within(() => {
