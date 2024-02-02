@@ -8,7 +8,6 @@
 let selectedValueGlobal = '';
 
 Cypress.Commands.add('interactOpenCVControlButton', () => {
-    cy.get('body').focus();
     cy.get('.cvat-opencv-control').click();
     cy.get('.cvat-opencv-control').should('have.class', 'ant-popover-open');
     cy.get('.cvat-opencv-control-popover')
