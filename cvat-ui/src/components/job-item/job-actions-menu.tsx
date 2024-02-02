@@ -49,12 +49,17 @@ function JobActionsMenu(props: Props): JSX.Element {
         <Menu
             className='cvat-job-item-menu'
             onClick={(action: MenuInfo) => {
+                // close menu
+                window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+
                 if (action.key === 'task') {
                     history.push(`/tasks/${job.taskId}`);
                 } else if (action.key === 'project') {
                     history.push(`/projects/${job.projectId}`);
                 } else if (action.key === 'bug_tracker') {
-                    if (job.bugTracker) window.open(job.bugTracker, '_blank', 'noopener noreferrer');
+                    if (job.bugTracker) {
+                        window.open(job.bugTracker, '_blank', 'noopener noreferrer');
+                    }
                 } else if (action.key === 'import_job') {
                     dispatch(importActions.openImportDatasetModal(job));
                 } else if (action.key === 'export_job') {

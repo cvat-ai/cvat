@@ -258,6 +258,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 </Row>
                 <Row justify='end'>
                     <Dropdown
+                        trigger={['click']}
                         destroyPopupOnHide
                         overlay={(
                             <ActionsMenuContainer

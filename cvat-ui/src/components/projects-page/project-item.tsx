@@ -102,7 +102,11 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
                             </div>
                             <div>
-                                <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={instance} />}>
+                                <Dropdown
+                                    destroyPopupOnHide
+                                    trigger={['click']}
+                                    overlay={<ProjectActionsMenuComponent projectInstance={instance} />}
+                                >
                                     <Button className='cvat-project-details-button' type='link' size='large' icon={<MoreOutlined />} />
                                 </Dropdown>
                             </div>

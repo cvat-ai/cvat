@@ -76,7 +76,11 @@ function JobCardComponent(props: Props): JSX.Element {
                     <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
                 ) : null}
             </Descriptions>
-            <Dropdown overlay={<JobActionsMenu onJobUpdate={onJobUpdate} job={job} />}>
+            <Dropdown
+                trigger={['click']}
+                destroyPopupOnHide
+                overlay={<JobActionsMenu onJobUpdate={onJobUpdate} job={job} />}
+            >
                 <MoreOutlined className='cvat-job-card-more-button' />
             </Dropdown>
         </Card>

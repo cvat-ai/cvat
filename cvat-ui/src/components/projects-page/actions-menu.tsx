@@ -120,7 +120,13 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
     );
 
     return (
-        <Menu selectable={false} className='cvat-project-actions-menu'>
+        <Menu
+            onClick={() => {
+                window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            }}
+            selectable={false}
+            className='cvat-project-actions-menu'
+        >
             { menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
                 .map((menuItem) => menuItem[0]) }
         </Menu>

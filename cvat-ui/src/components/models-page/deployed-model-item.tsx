@@ -56,7 +56,14 @@ export default function DeployedModelItem(props: Props): JSX.Element {
         )),
     );
     const modelMenu = (
-        <Menu selectable={false} className='cvat-project-actions-menu'>
+        <Menu
+            onClick={() => {
+                // close menu
+                window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            }}
+            selectable={false}
+            className='cvat-project-actions-menu'
+        >
             {menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
                 .map((menuItem) => menuItem[0])}
         </Menu>
@@ -178,7 +185,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                             </Row>
                             {
                                 menuItems.length !== 0 && (
-                                    <Dropdown overlay={modelMenu}>
+                                    <Dropdown trigger={['click']} destroyPopupOnHide overlay={modelMenu}>
                                         <Button className='cvat-deployed-model-details-button' type='link' size='large' icon={<MoreOutlined />} />
                                     </Dropdown>
                                 )
