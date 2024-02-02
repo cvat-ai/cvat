@@ -122,6 +122,7 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
     return (
         <Menu
             onClick={() => {
+                // close menu
                 window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
             }}
             selectable={false}

@@ -124,7 +124,13 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                     trigger={['click']}
                                     destroyPopupOnHide
                                     overlay={() => (
-                                        <Menu className='cvat-organization-actions-menu'>
+                                        <Menu
+                                            onClick={() => {
+                                                // close menu
+                                                window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                                            }}
+                                            className='cvat-organization-actions-menu'
+                                        >
                                             <Menu.Item key={MenuActions.SET_WEBHOOKS}>
                                                 <a
                                                     href='/organization/webhooks'

@@ -48,6 +48,8 @@ function MemberItem(props: Props): JSX.Element {
             trigger={['click']}
             overlay={(
                 <Menu onClick={(action: MenuInfo) => {
+                    // close menu
+                    window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
                     if (action.key === MenuKeys.RESEND_INVITATION) {
                         onResendInvitation(invitation.key);
                     } else if (action.key === MenuKeys.DELETE_INVITATION) {
