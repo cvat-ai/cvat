@@ -83,14 +83,14 @@ Cypress.Commands.add('openProjectActions', (projectName) => {
         .parents('.cvat-projects-project-item-card')
         .within(() => {
             cy.get('.cvat-projects-project-item-description').within(() => {
-                cy.get('[type="button"]').trigger('mouseover');
+                cy.get('[type="button"]').click();
             });
         });
 });
 
 Cypress.Commands.add('clickInProjectMenu', (item, fromProjectPage, projectName = '') => {
     if (fromProjectPage) {
-        cy.get('.cvat-project-top-bar-actions').trigger('mouseover');
+        cy.get('.cvat-project-top-bar-actions').click();
     } else {
         cy.openProjectActions(projectName);
     }

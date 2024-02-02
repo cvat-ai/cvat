@@ -7,12 +7,12 @@
 
 Cypress.Commands.add('createOrganization', (organizationParams) => {
     cy.get('.cvat-header-menu-user-dropdown')
-        .should('exist').and('be.visible').trigger('mouseover');
+        .should('exist').and('be.visible').click();
     cy.get('.cvat-header-menu')
         .should('be.visible')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
-        .trigger('mouseover');
+        .click();
     cy.get('.cvat-header-menu-create-organization')
         .should('be.visible')
         .click();
@@ -64,13 +64,13 @@ Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelet
 });
 
 Cypress.Commands.add('activateOrganization', (organizationShortName) => {
-    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
+    cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.ant-dropdown')
         .should('be.visible')
         .not('ant-dropdown-hidden')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
-        .trigger('mouseover');
+        .click();
     cy.contains('.cvat-header-menu-organization-item', organizationShortName)
         .should('be.visible')
         .click();
@@ -81,26 +81,26 @@ Cypress.Commands.add('activateOrganization', (organizationShortName) => {
 });
 
 Cypress.Commands.add('deactivateOrganization', () => {
-    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
+    cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.ant-dropdown')
         .should('be.visible')
         .not('ant-dropdown-hidden')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
-        .trigger('mouseover');
+        .click();
     cy.contains('.cvat-header-menu-organization-item', 'Personal workspace').click();
     cy.get('.cvat-header-menu-user-dropdown').should('be.visible');
     cy.get('.cvat-header-menu-user-dropdown-organization').should('not.exist');
 });
 
 Cypress.Commands.add('openOrganization', (organizationShortName) => {
-    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
+    cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.ant-dropdown')
         .should('be.visible')
         .not('ant-dropdown-hidden')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
-        .trigger('mouseover');
+        .click();
     cy.get('.cvat-header-menu-active-organization-item')
         .should('have.text', organizationShortName);
     cy.get('.cvat-header-menu-open-organization')
@@ -110,13 +110,13 @@ Cypress.Commands.add('openOrganization', (organizationShortName) => {
 });
 
 Cypress.Commands.add('checkOrganizationExists', (organizationShortName, shouldExist = true) => {
-    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
+    cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.ant-dropdown')
         .should('be.visible')
         .not('ant-dropdown-hidden')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
-        .trigger('mouseover');
+        .click();
     if (shouldExist) {
         cy.contains('.cvat-header-menu-organization-item', organizationShortName).should('exist');
         cy.contains('.cvat-header-menu-organization-item', organizationShortName).trigger('mouseout');

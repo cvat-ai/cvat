@@ -102,7 +102,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             cy.contains('.cvat-item-task-name', taskName)
                 .parents('.cvat-tasks-list-item')
                 .find('.cvat-menu-icon')
-                .trigger('mouseover');
+                .click();
             cy.contains('Upload annotations').click();
             uploadAnnotation(
                 dumpTypePC.split(' ')[0],

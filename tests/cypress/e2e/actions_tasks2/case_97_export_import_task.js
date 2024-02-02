@@ -80,7 +80,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.contains('.cvat-item-task-name', taskName)
                 .parents('.cvat-tasks-list-item')
                 .find('.cvat-item-open-task-actions > .cvat-menu-icon')
-                .trigger('mouseover');
+                .click();
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {

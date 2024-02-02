@@ -147,7 +147,7 @@ context('Analytics pipeline', () => {
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
                 .parents('.cvat-job-item')
                 .find('.cvat-job-item-more-button')
-                .trigger('mouseover');
+                .click();
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {
@@ -230,7 +230,7 @@ context('Analytics pipeline', () => {
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
                 .parents('.cvat-job-item')
                 .find('.cvat-job-item-more-button')
-                .trigger('mouseover');
+                .click();
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {

@@ -9,10 +9,7 @@ let selectedValueGlobal = '';
 
 Cypress.Commands.add('interactOpenCVControlButton', () => {
     cy.get('body').focus();
-    cy.get('.cvat-opencv-control').trigger('mouseleave');
-    cy.get('.cvat-opencv-control').trigger('mouseout');
-    cy.get('.cvat-opencv-control').trigger('mousemove');
-    cy.get('.cvat-opencv-control').trigger('mouseover');
+    cy.get('.cvat-opencv-control').click();
     cy.get('.cvat-opencv-control').should('have.class', 'ant-popover-open');
     cy.get('.cvat-opencv-control-popover')
         .should('be.visible')

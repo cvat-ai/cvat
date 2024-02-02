@@ -33,7 +33,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
 });
 
 Cypress.Commands.add('logout', () => {
-    cy.get('.cvat-header-menu-user-dropdown-user').trigger('mouseover');
+    cy.get('.cvat-header-menu-user-dropdown-user').click();
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
     cy.visit('/auth/login');
@@ -406,7 +406,7 @@ Cypress.Commands.add('openTaskJob', (taskName, jobID = 0, removeAnnotations = tr
 
 Cypress.Commands.add('interactControlButton', (objectType) => {
     cy.get('body').trigger('mousedown');
-    cy.get(`.cvat-${objectType}-control`).trigger('mouseover');
+    cy.get(`.cvat-${objectType}-control`).trigger('mousedown');
     cy.get(`.cvat-${objectType}-popover`)
         .should('be.visible')
         .should('have.attr', 'style')
@@ -584,7 +584,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
 });
 
 Cypress.Commands.add('openSettings', () => {
-    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
+    cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.anticon-setting').should('exist').and('be.visible').click();
     cy.get('.cvat-settings-modal').should('be.visible');
 });
@@ -1278,8 +1278,7 @@ Cypress.Commands.add('goToCloudStoragesPage', () => {
 });
 
 Cypress.Commands.add('deleteCloudStorage', (displayName) => {
-    cy.get('.cvat-cloud-storage-item-menu-button').trigger('mousemove');
-    cy.get('.cvat-cloud-storage-item-menu-button').trigger('mouseover');
+    cy.get('.cvat-cloud-storage-item-menu-button').click();
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
         .within(() => {
@@ -1353,7 +1352,7 @@ Cypress.Commands.add('deleteJob', (jobID) => {
     cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
         .parents('.cvat-job-item')
         .find('.cvat-job-item-more-button')
-        .trigger('mouseover');
+        .click();
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
         .within(() => {
@@ -1419,7 +1418,7 @@ Cypress.Commands.add('drawMask', (instructions) => {
 });
 
 Cypress.Commands.add('startMaskDrawing', () => {
-    cy.get('.cvat-draw-mask-control ').trigger('mouseover');
+    cy.get('.cvat-draw-mask-control ').click();
     cy.get('.cvat-draw-mask-popover').should('exist').and('be.visible').within(() => {
         cy.get('button').click();
     });
