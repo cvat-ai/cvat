@@ -42,20 +42,23 @@ function MemberItem(props: Props): JSX.Element {
     const { username: selfUserName } = useSelector((state: CombinedState) => state.auth.user);
 
     const invitationActionsMenu = invitation && (
-        <Dropdown overlay={(
-            <Menu onClick={(action: MenuInfo) => {
-                if (action.key === MenuKeys.RESEND_INVITATION) {
-                    onResendInvitation(invitation.key);
-                } else if (action.key === MenuKeys.DELETE_INVITATION) {
-                    onDeleteInvitation(invitation.key);
-                }
-            }}
-            >
-                <Menu.Item key={MenuKeys.RESEND_INVITATION}>Resend invitation</Menu.Item>
-                <Menu.Divider />
-                <Menu.Item key={MenuKeys.DELETE_INVITATION}>Remove invitation</Menu.Item>
-            </Menu>
-        )}
+        <Dropdown
+            destroyPopupOnHide
+            trigger={['click']}
+            overlay={(
+                <Menu onClick={(action: MenuInfo) => {
+                    if (action.key === MenuKeys.RESEND_INVITATION) {
+                        onResendInvitation(invitation.key);
+                    } else if (action.key === MenuKeys.DELETE_INVITATION) {
+                        onDeleteInvitation(invitation.key);
+                    }
+                }}
+                >
+                    <Menu.Item key={MenuKeys.RESEND_INVITATION}>Resend invitation</Menu.Item>
+                    <Menu.Divider />
+                    <Menu.Item key={MenuKeys.DELETE_INVITATION}>Remove invitation</Menu.Item>
+                </Menu>
+            )}
         >
             <MoreOutlined className='cvat-organization-invitation-actions-button cvat-menu-icon' />
         </Dropdown>

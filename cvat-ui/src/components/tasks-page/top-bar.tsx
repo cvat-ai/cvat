@@ -95,6 +95,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                 <div>
                     <Dropdown
                         trigger={['click']}
+                        destroyPopupOnHide
                         overlay={(
                             <CvatDropdownMenuPaper>
                                 <Button

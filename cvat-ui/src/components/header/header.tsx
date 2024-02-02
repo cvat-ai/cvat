@@ -558,7 +558,13 @@ function HeaderComponent(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
-                <Dropdown trigger={['click']} placement='bottomRight' overlay={userMenu} className='cvat-header-menu-user-dropdown'>
+                <Dropdown
+                    trigger={['click']}
+                    destroyPopupOnHide
+                    placement='bottomRight'
+                    overlay={userMenu}
+                    className='cvat-header-menu-user-dropdown'
+                >
                     <span>
                         <UserOutlined className='cvat-header-dropdown-icon' />
                         <Row>

@@ -185,7 +185,11 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                             </Row>
                             {
                                 menuItems.length !== 0 && (
-                                    <Dropdown trigger={['click']} destroyPopupOnHide overlay={modelMenu}>
+                                    <Dropdown
+                                        trigger={['click']}
+                                        destroyPopupOnHide
+                                        overlay={modelMenu}
+                                    >
                                         <Button className='cvat-deployed-model-details-button' type='link' size='large' icon={<MoreOutlined />} />
                                     </Dropdown>
                                 )

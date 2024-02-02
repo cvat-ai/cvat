@@ -73,7 +73,11 @@ function LeftGroup(props: Props): JSX.Element {
                 <LoadingOutlined />
             </Modal>
             <Col className='cvat-annotation-header-left-group'>
-                <Dropdown trigger={['click']} destroyPopupOnHide overlay={<AnnotationMenuContainer />}>
+                <Dropdown
+                    trigger={['click']}
+                    destroyPopupOnHide
+                    overlay={<AnnotationMenuContainer />}
+                >
                     <Button type='link' className='cvat-annotation-header-menu-button cvat-annotation-header-button'>
                         <Icon component={MainMenuIcon} />
                         Menu
