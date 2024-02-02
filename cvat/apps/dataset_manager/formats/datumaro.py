@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -25,11 +25,11 @@ class DeleteImagePath(ItemTransform):
 
 @exporter(name="Datumaro", ext="ZIP", version="1.0")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
-        instance_data=instance_data, include_images=save_images), env=dm_env)
-    if not save_images:
-        dataset.transform(DeleteImagePath)
-    dataset.export(temp_dir, 'datumaro', save_images=save_images)
+    with GetCVATDataExtractor(instance_data=instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        if not save_images:
+            dataset.transform(DeleteImagePath)
+        dataset.export(temp_dir, 'datumaro', save_images=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 
@@ -45,13 +45,15 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
 
 @exporter(name="Datumaro 3D", ext="ZIP", version="1.0", dimension=DimensionType.DIM_3D)
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+    with GetCVATDataExtractor(
         instance_data=instance_data, include_images=save_images,
-            dimension=DimensionType.DIM_3D), env=dm_env)
+        dimension=DimensionType.DIM_3D,
+    ) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
 
-    if not save_images:
-        dataset.transform(DeleteImagePath)
-    dataset.export(temp_dir, 'datumaro', save_images=save_images)
+        if not save_images:
+            dataset.transform(DeleteImagePath)
+        dataset.export(temp_dir, 'datumaro', save_images=save_images)
 
     make_zip_archive(temp_dir, dst_file)
 
