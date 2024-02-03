@@ -1503,7 +1503,7 @@ Cypress.Commands.add('joinShapes', (
     interactWithTool();
 });
 
-Cypress.Commands.overwrite('interactAnnotationObjectMenu', (parentSelector, button) => {
+Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) => {
     cy.get(parentSelector).within(() => {
         cy.get('[aria-label="more"]').click();
     });
