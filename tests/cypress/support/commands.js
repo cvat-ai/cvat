@@ -385,16 +385,13 @@ Cypress.Commands.add('pressSplitControl', () => {
     cy.document().then((doc) => {
         const [el] = doc.getElementsByClassName('cvat-extra-controls-control');
         if (el) {
-            el.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+            cy.get('.cvat-extra-controls-control').click();
         }
-    });
 
-    cy.get('.cvat-split-track-control').click();
+        cy.get('.cvat-split-track-control').click();
 
-    cy.document().then((doc) => {
-        const [el] = doc.getElementsByClassName('cvat-extra-controls-control');
         if (el) {
-            el.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+            cy.get('body').click();
         }
     });
 });

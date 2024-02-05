@@ -33,7 +33,7 @@ context('Canvas 3D functionality. Make a copy.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .trigger('mouseout');
-            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Copy');
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Make a copy');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 270);
             cy.get('.cvat-canvas3d-perspective').dblclick(480, 270);
             cy.get('#cvat-objects-sidebar-state-item-1')

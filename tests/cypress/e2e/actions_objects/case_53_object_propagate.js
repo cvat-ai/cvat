@@ -49,7 +49,7 @@ context('Object propagate.', () => {
             const FROM_FRAME = 0;
             const PROPAGATE_FRAMES = 1;
 
-            cy.interactAnnotationObjectMenu('cvat-objects-sidebar-state-item-1', 'Propagate');
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Propagate');
             setupPropagateFrames(PROPAGATE_FRAMES);
             cy.get('.cvat-propagate-confirm-up-to-input') // Value of "up to the frame" field should be same
                 .find('input')
@@ -68,7 +68,7 @@ context('Object propagate.', () => {
             const FROM_FRAME = 0;
             const PROPAGATE_FRAMES = 2;
 
-            cy.interactAnnotationObjectMenu('cvat-objects-sidebar-state-item-1', 'Propagate');
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Propagate');
             setupUpToFrame(FROM_FRAME + PROPAGATE_FRAMES);
             cy.get('.cvat-propagate-confirm-object-on-frames') // Value of "copy of the object on frames" field should be same
                 .find('input')
@@ -89,7 +89,7 @@ context('Object propagate.', () => {
             const UP_TO_FRAME = 1;
             cy.goCheckFrameNumber(FROM_FRAME);
             cy.createCuboid(createCuboidShape2Points);
-            cy.interactAnnotationObjectMenu('cvat-objects-sidebar-state-item-1', 'Propagate');
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Propagate');
             setupUpToFrame(UP_TO_FRAME);
             cy.contains('button', 'Yes').click();
 
