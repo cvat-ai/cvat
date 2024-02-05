@@ -1,25 +1,25 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import '../styles.scss';
-
-import React, { useEffect } from 'react';
-import {
-    Job, JobType, Task,
-} from 'cvat-core-wrapper';
 import { Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
+import notification from 'antd/lib/notification';
+import CVATLoadingSpinner from 'components/common/loading-spinner';
 import JobItem from 'components/job-item/job-item';
-import { useDispatch, useSelector } from 'react-redux';
-import { getQualityReportsAsync, getQualitySettingsAsync } from 'actions/analytics-actions';
-import { CombinedState } from 'reducers';
-import MeanQuality from './mean-quality';
-import JobList from './job-list';
+import {
+    Job, JobType, QualityReport, QualitySettings, Task, getCore,
+} from 'cvat-core-wrapper';
+import React, { useEffect } from 'react';
+import { useIsMounted, useStateIfMounted } from 'utils/hooks';
+import EmptyGtJob from './empty-job';
 import GtConflicts from './gt-conflicts';
 import Issues from './issues';
-import EmptyGtJob from './empty-job';
+import JobList from './job-list';
+import MeanQuality from './mean-quality';
 import QualitySettingsModal from './quality-settings-modal';
+
+const core = getCore();
 
 interface Props {
     task: Task,
@@ -28,42 +28,111 @@ interface Props {
 
 function TaskQualityComponent(props: Props): JSX.Element {
     const { task, onJobUpdate } = props;
-    const dispatch = useDispatch();
-    const query = useSelector((state: CombinedState) => state.analytics.quality.query);
+    const isMounted = useIsMounted();
+    const [fetching, setFetching] = useStateIfMounted<boolean>(true);
+    const [taskReport, setTaskReport] = useStateIfMounted<QualityReport | null>(null);
+    const [jobsReports, setJobsReports] = useStateIfMounted<QualityReport[]>([]);
+    const [qualitySettings, setQualitySettings] = useStateIfMounted<QualitySettings | null>(null);
+    const [qualitySettingsVisible, setQualitySettingsVisible] = useStateIfMounted<boolean>(false);
+    const [qualitySettingsFetching, setQualitySettingsFetching] = useStateIfMounted<boolean>(true);
 
     useEffect(() => {
-        dispatch(getQualityReportsAsync(task, { ...query, taskId: task.id }));
-        dispatch(getQualitySettingsAsync(task));
-    }, []);
+        setFetching(true);
+        setQualitySettingsFetching(true);
+
+        function handleError(error: Error): void {
+            if (isMounted()) {
+                notification.error({
+                    description: error.toString(),
+                    message: 'Could not initialize quality analytics page',
+                });
+            }
+        }
+
+        core.analytics.quality.reports({ pageSize: 1, target: 'task', taskId: task.id }).then(([report]) => {
+            let reportRequest = Promise.resolve<QualityReport[]>([]);
+            if (report) {
+                reportRequest = core.analytics.quality.reports({
+                    pageSize: task.jobs.length,
+                    parentId: report.id,
+                    target: 'job',
+                });
+            }
+            const settingsRequest = core.analytics.quality.settings.get({
+                ...(!task.projectId ? { taskId: task.id } : {}),
+                ...(task.projectId ? { projectId: task.projectId } : {}),
+            }, !task.projectId);
+
+            Promise.all([reportRequest, settingsRequest]).then(([jobReports, settings]) => {
+                setQualitySettings(settings);
+                setTaskReport(report || null);
+                setJobsReports(jobReports);
+            }).catch(handleError).finally(() => {
+                setQualitySettingsFetching(false);
+                setFetching(false);
+            });
+        }).catch(handleError);
+    }, [task?.id]);
 
     const gtJob = task.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH);
 
     return (
         <div className='cvat-task-quality-page'>
-            <Row>
-                <MeanQuality task={task} />
-            </Row>
-            <Row gutter={16}>
-                <GtConflicts task={task} />
-                <Issues task={task} />
-            </Row>
-            <Row>
-                <Text type='secondary' className='cvat-task-quality-reports-hint'>
-                    Quality reports are not computed unless the GT job is in the&nbsp;
-                    <strong>completed state</strong>
-                    &nbsp;and&nbsp;
-                    <strong>acceptance stage.</strong>
-                </Text>
-            </Row>
-            <Row>
-                {gtJob ?
-                    <JobItem job={gtJob} task={task} onJobUpdate={onJobUpdate} /> :
-                    <EmptyGtJob taskId={task.id} />}
-            </Row>
-            <Row>
-                <JobList task={task} />
-            </Row>
-            <QualitySettingsModal />
+            {
+                fetching ? (
+                    <CVATLoadingSpinner size='large' />
+                ) : (
+                    <>
+                        {
+                            gtJob ? (
+                                <>
+                                    <Row>
+                                        <MeanQuality
+                                            taskReport={taskReport}
+                                            setQualitySettingsVisible={setQualitySettingsVisible}
+                                            taskId={task.id}
+                                        />
+                                    </Row>
+                                    <Row gutter={16}>
+                                        <GtConflicts taskReport={taskReport} />
+                                        <Issues task={task} />
+                                    </Row>
+                                    {
+                                        (!(gtJob && gtJob.stage === 'acceptance' && gtJob.state === 'completed')) ? (
+                                            <Row>
+                                                <Text type='secondary' className='cvat-task-quality-reports-hint'>
+                                                    Quality reports are not computed unless the GT job is in the&nbsp;
+                                                    <strong>completed state</strong>
+                                                    &nbsp;and&nbsp;
+                                                    <strong>acceptance stage.</strong>
+                                                </Text>
+                                            </Row>
+                                        ) : null
+                                    }
+                                    <Row>
+                                        <JobItem job={gtJob} task={task} onJobUpdate={onJobUpdate} />
+                                    </Row>
+                                    <Row>
+                                        <JobList jobsReports={jobsReports} task={task} />
+                                    </Row>
+                                </>
+                            ) : (
+                                <Row justify='center'>
+                                    <EmptyGtJob taskId={task.id} />
+                                </Row>
+                            )
+                        }
+                        <QualitySettingsModal
+                            fetching={qualitySettingsFetching}
+                            qualitySettings={qualitySettings}
+                            setQualitySettings={setQualitySettings}
+                            visible={qualitySettingsVisible}
+                            setVisible={setQualitySettingsVisible}
+                            redirectToProjectId={task.projectId}
+                        />
+                    </>
+                )
+            }
         </div>
     );
 }

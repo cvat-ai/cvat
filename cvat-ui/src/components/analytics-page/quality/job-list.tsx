@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,29 +24,20 @@ import { ConflictsTooltip } from './gt-conflicts';
 
 interface Props {
     task: Task;
+    jobsReports: QualityReport[];
 }
 
 function JobListComponent(props: Props): JSX.Element {
     const {
         task: taskInstance,
+        jobsReports: jobsReportsArray,
     } = props;
 
+    const jobsReports = jobsReportsArray.reduce((acc, report) => ({ ...acc, [report.jobId]: report }), {});
     const history = useHistory();
     const { id: taskId } = taskInstance;
     const { jobs } = taskInstance;
     const [renderedJobs] = useState<Job[]>(jobs.filter((job: Job) => job.type === JobType.ANNOTATION));
-    const [jobsReports, setJobsReports] = useState<Record<number, QualityReport>>({});
-    const jobReportsFromState: QualityReport[] =
-        useSelector((state: CombinedState) => state.analytics.quality.jobsReports);
-
-    useEffect(() => {
-        const jobsReportsMap: Record<number, QualityReport> = {};
-        for (const job of jobs) {
-            const report = jobReportsFromState.find((_report: QualityReport) => _report.jobId === job.id);
-            if (report) jobsReportsMap[job.id] = report;
-        }
-        setJobsReports(jobsReportsMap);
-    }, [taskInstance, jobReportsFromState]);
 
     function sorter(path: string) {
         return (obj1: any, obj2: any): number => {

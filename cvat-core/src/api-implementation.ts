@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,10 +13,12 @@ import {
     isBoolean,
     isInteger,
     isString,
+    isPageSize,
     checkFilter,
     checkExclusiveFields,
     checkObjectType,
     filterFieldsToSnakeCase,
+    fieldsToSnakeCase,
 } from './common';
 
 import User from './user';
@@ -400,24 +402,27 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     });
 
     implementationMixin(cvat.analytics.quality.reports, async (filter) => {
-        let updatedParams: Record<string, string> = {};
-        if ('taskId' in filter) {
-            updatedParams = {
-                task_id: filter.taskId,
-                sort: '-created_date',
-                target: filter.target,
-            };
-        }
-        if ('jobId' in filter) {
-            updatedParams = {
-                job_id: filter.jobId,
-                sort: '-created_date',
-                target: filter.target,
-            };
-        }
-        const reportsData = await serverProxy.analytics.quality.reports(updatedParams);
+        checkFilter(filter, {
+            page: isInteger,
+            pageSize: isPageSize,
+            parentId: isInteger,
+            projectId: isInteger,
+            taskId: isInteger,
+            jobId: isInteger,
+            target: isString,
+            filter: isString,
+            search: isString,
+            sort: isString,
+        });
 
-        return reportsData.map((report) => new QualityReport({ ...report }));
+        const params = fieldsToSnakeCase(filter, { sort: '-created_date' });
+
+        const reportsData = await serverProxy.analytics.quality.reports(params);
+        const reports = Object.assign(
+            reportsData.map((report) => new QualityReport({ ...report })),
+            { count: reportsData.count },
+        );
+        return reports;
     });
     implementationMixin(cvat.analytics.quality.conflicts, async (filter) => {
         let updatedParams: Record<string, string> = {};
