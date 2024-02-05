@@ -19,7 +19,7 @@ import { CombinedState } from 'reducers';
 import { useSelector } from 'react-redux';
 import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
-import { toRepresentation } from './common';
+import { toRepresentation } from '../utils/text-formatting';
 import { ConflictsTooltip } from './gt-conflicts';
 
 interface Props {

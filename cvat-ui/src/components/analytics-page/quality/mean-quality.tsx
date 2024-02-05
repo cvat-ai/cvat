@@ -1,30 +1,25 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import '../styles.scss';
-
 import React from 'react';
-import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
-import { QualityReport, Task, getCore } from 'cvat-core-wrapper';
-import { useSelector, useDispatch } from 'react-redux';
-import { CombinedState } from 'reducers';
+import { DownloadOutlined, SettingOutlined } from '@ant-design/icons';
+import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
-import { DownloadOutlined, MoreOutlined } from '@ant-design/icons';
-import { analyticsActions } from 'actions/analytics-actions';
+
+import { QualityReport, getCore } from 'cvat-core-wrapper';
 import AnalyticsCard from '../views/analytics-card';
-import { toRepresentation } from './common';
+import { toRepresentation } from '../utils/text-formatting';
 
 interface Props {
-    task: Task;
+    taskId: number;
+    taskReport: QualityReport | null;
+    setQualitySettingsVisible: (visible: boolean) => void;
 }
 
 function MeanQuality(props: Props): JSX.Element {
-    const { task } = props;
-    const dispatch = useDispatch();
-    const tasksReports: QualityReport[] = useSelector((state: CombinedState) => state.analytics.quality.tasksReports);
-    const taskReport = tasksReports.find((report: QualityReport) => report.taskId === task.id);
+    const { taskId, taskReport, setQualitySettingsVisible } = props;
     const reportSummary = taskReport?.summary;
 
     const tooltip = (
@@ -59,27 +54,29 @@ function MeanQuality(props: Props): JSX.Element {
         </div>
     );
 
-    const dowloadReportButton = (
-        <div>
+    const downloadReportButton = (
+        <div className='cvat-quality-summary-controls'>
             {
                 taskReport?.id ? (
-                    <>
-                        <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
-                            <a
-                                href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
-                                download={`quality-report-task_${task.id}-${taskReport?.id}.json`}
-                            >
-                                Quality Report
-                            </a>
-                        </Button>
-                        <MoreOutlined
-                            className='cvat-quality-settings-switch'
-                            onClick={() => dispatch(analyticsActions.switchQualitySettingsVisible(true))}
-                        />
-                        <div className='cvat-analytics-time-hint'>
-                            <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
-                        </div>
-                    </>
+                    <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
+                        <a
+                            href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
+                            download={`quality-report-task_${taskId}-${taskReport?.id}.json`}
+                        >
+                            Quality Report
+                        </a>
+                    </Button>
+                ) : null
+            }
+            <SettingOutlined
+                className='cvat-quality-settings-switch ant-btn ant-btn-default'
+                onClick={() => setQualitySettingsVisible(true)}
+            />
+            {
+                taskReport?.id ? (
+                    <div className='cvat-analytics-time-hint'>
+                        <Text type='secondary'>{taskReport?.createdDate ? moment(taskReport?.createdDate).fromNow() : ''}</Text>
+                    </div>
                 ) : null
             }
         </div>
@@ -91,7 +88,7 @@ function MeanQuality(props: Props): JSX.Element {
             className='cvat-task-mean-annotation-quality'
             value={toRepresentation(reportSummary?.accuracy)}
             tooltip={tooltip}
-            rightElement={dowloadReportButton}
+            rightElement={downloadReportButton}
         />
     );
 }
