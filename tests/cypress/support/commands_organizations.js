@@ -99,13 +99,10 @@ Cypress.Commands.add('checkOrganizationExists', (organizationShortName, shouldEx
     openOrganizationsMenu();
     if (shouldExist) {
         cy.contains('.cvat-header-menu-organization-item', organizationShortName).should('exist');
-        cy.contains('.cvat-header-menu-organization-item', organizationShortName).trigger('mouseout');
-        cy.contains('.cvat-header-menu-organization-item', organizationShortName).should('be.hidden');
     } else {
         cy.contains('.cvat-header-menu-organization-item', organizationShortName).should('not.exist');
-        cy.get('.cvat-header-menu-active-organization-item').trigger('mouseout');
-        cy.get('.cvat-header-menu-active-organization-item').should('be.hidden');
     }
+    cy.get('body').click();
 });
 
 Cypress.Commands.add('checkOrganizationParams', (organizationParams) => {
