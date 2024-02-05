@@ -13,12 +13,12 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
-import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import moment from 'moment';
 
 import { CloudStorage, CombinedState } from 'reducers';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
+import Menu from 'components/dropdown-menu';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Preview from 'components/common/preview';
 import Status from './cloud-storage-status';
@@ -121,13 +121,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                             trigger={['click']}
                             destroyPopupOnHide
                             overlay={(
-                                <Menu
-                                    onClick={() => {
-                                        // close menu
-                                        window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                                    }}
-                                    className='cvat-project-actions-menu'
-                                >
+                                <Menu className='cvat-project-actions-menu'>
                                     <Menu.Item onClick={onUpdate}>Update</Menu.Item>
                                     <Menu.Item onClick={onDelete}>Delete</Menu.Item>
                                 </Menu>

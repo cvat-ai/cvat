@@ -5,12 +5,10 @@
 
 import './styles.scss';
 import React, { useCallback } from 'react';
-import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import { LoadingOutlined } from '@ant-design/icons';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
 import { DimensionType, CVATCore } from 'cvat-core-wrapper';
+import Menu, { MenuInfo } from 'components/dropdown-menu';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 
@@ -54,9 +52,6 @@ function ActionsMenuComponent(props: Props): JSX.Element {
 
     const onClickMenuWrapper = useCallback(
         (params: MenuInfo) => {
-            // close menu
-            window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-
             if (!params) {
                 return;
             }

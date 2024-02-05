@@ -4,21 +4,21 @@
 
 import './styles.scss';
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import Menu from 'antd/lib/menu';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 import { MoreOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
+import Paragraph from 'antd/lib/typography/Paragraph';
 
 import { groupEvents } from 'components/setup-webhook-pages/setup-webhook-content';
-import Paragraph from 'antd/lib/typography/Paragraph';
+import Menu from 'components/dropdown-menu';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { deleteWebhookAsync } from 'actions/webhooks-actions';
-import { useDispatch } from 'react-redux';
 
 export interface WebhookItemProps {
     webhookInstance: any;
@@ -152,12 +152,7 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                             trigger={['click']}
                             destroyPopupOnHide
                             overlay={() => (
-                                <Menu
-                                    onClick={() => {
-                                        // close menu
-                                        window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                                    }}
-                                >
+                                <Menu>
                                     <Menu.Item key='edit'>
                                         <a
                                             href={`/webhooks/update/${id}`}

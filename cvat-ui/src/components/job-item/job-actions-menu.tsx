@@ -5,10 +5,7 @@
 import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
-import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
 import { exportActions } from 'actions/export-actions';
 
 import {
@@ -16,6 +13,7 @@ import {
 } from 'cvat-core-wrapper';
 import { deleteJobAsync } from 'actions/jobs-actions';
 import { importActions } from 'actions/import-actions';
+import Menu, { MenuInfo } from 'components/dropdown-menu';
 
 const core = getCore();
 
@@ -49,9 +47,6 @@ function JobActionsMenu(props: Props): JSX.Element {
         <Menu
             className='cvat-job-item-menu'
             onClick={(action: MenuInfo) => {
-                // close menu
-                window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-
                 if (action.key === 'task') {
                     history.push(`/tasks/${job.taskId}`);
                 } else if (action.key === 'project') {

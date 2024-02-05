@@ -6,13 +6,14 @@
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
-import Menu from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
 import { deleteProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { useHistory } from 'react-router';
+import Menu from 'components/dropdown-menu';
+
 import { usePlugins } from 'utils/hooks';
 
 interface Props {
@@ -120,14 +121,7 @@ function ProjectActionsMenuComponent(props: Props): JSX.Element {
     );
 
     return (
-        <Menu
-            onClick={() => {
-                // close menu
-                window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-            }}
-            selectable={false}
-            className='cvat-project-actions-menu'
-        >
+        <Menu selectable={false} className='cvat-project-actions-menu'>
             { menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
                 .map((menuItem) => menuItem[0]) }
         </Menu>

@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import moment from 'moment';
 import { Row, Col } from 'antd/lib/grid';
@@ -16,7 +17,6 @@ import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
 import Dropdown from 'antd/lib/dropdown';
-import Menu from 'antd/lib/menu';
 import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
 
@@ -31,7 +31,7 @@ import {
     removeOrganizationAsync,
     updateOrganizationAsync,
 } from 'actions/organization-actions';
-import { useHistory } from 'react-router-dom';
+import Menu from 'components/dropdown-menu';
 
 export interface Props {
     organizationInstance: any;
@@ -124,13 +124,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                     trigger={['click']}
                                     destroyPopupOnHide
                                     overlay={() => (
-                                        <Menu
-                                            onClick={() => {
-                                                // close menu
-                                                window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                                            }}
-                                            className='cvat-organization-actions-menu'
-                                        >
+                                        <Menu className='cvat-organization-actions-menu'>
                                             <Menu.Item key={MenuActions.SET_WEBHOOKS}>
                                                 <a
                                                     href='/organization/webhooks'

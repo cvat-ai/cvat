@@ -7,16 +7,15 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { withRouter, RouteComponentProps } from 'react-router';
 
-import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Checkbox from 'antd/lib/checkbox';
 import Collapse from 'antd/lib/collapse';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import Menu, { MenuInfo } from 'components/dropdown-menu';
+
 import { getCore, JobStage } from 'cvat-core-wrapper';
 import AnnotationsActionsModalContent from '../annotations-actions/annotations-actions-modal';
 
@@ -190,8 +189,6 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
         <Menu
             triggerSubMenuAction='click'
             onClick={(params: MenuInfo) => {
-                // close menu and handle click
-                window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
                 onClickMenuWrapper(params);
             }}
             className='cvat-annotation-menu'

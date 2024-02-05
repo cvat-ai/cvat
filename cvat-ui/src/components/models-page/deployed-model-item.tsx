@@ -17,8 +17,8 @@ import Divider from 'antd/lib/divider';
 import Card from 'antd/lib/card';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
-import Menu from 'antd/lib/menu';
 
+import Menu from 'components/dropdown-menu';
 import Preview from 'components/common/preview';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
@@ -56,14 +56,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
         )),
     );
     const modelMenu = (
-        <Menu
-            onClick={() => {
-                // close menu
-                window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-            }}
-            selectable={false}
-            className='cvat-project-actions-menu'
-        >
+        <Menu selectable={false} className='cvat-project-actions-menu'>
             {menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
                 .map((menuItem) => menuItem[0])}
         </Menu>

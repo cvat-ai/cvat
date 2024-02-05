@@ -8,14 +8,13 @@ import { useSelector } from 'react-redux';
 import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 import Dropdown from 'antd/lib/dropdown';
-import Menu from 'antd/lib/menu';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
 import { Row, Col } from 'antd/lib/grid';
 import moment from 'moment';
 import { DeleteOutlined, MoreOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import { CombinedState } from 'reducers';
+import Menu, { MenuInfo } from 'components/dropdown-menu';
+
 import { Membership } from 'cvat-core-wrapper';
 
 export interface Props {
@@ -48,8 +47,6 @@ function MemberItem(props: Props): JSX.Element {
             trigger={['click']}
             overlay={(
                 <Menu onClick={(action: MenuInfo) => {
-                    // close menu
-                    window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
                     if (action.key === MenuKeys.RESEND_INVITATION) {
                         onResendInvitation(invitation.key);
                     } else if (action.key === MenuKeys.DELETE_INVITATION) {
