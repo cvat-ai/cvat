@@ -13,6 +13,7 @@ import { ObjectType, ShapeType, ColorBy } from 'reducers';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import LabelSelector from 'components/label-selector/label-selector';
 import ItemMenu from './object-item-menu';
+import ColorPicker from './color-picker';
 
 interface Props {
     jobInstance: any;
@@ -87,20 +88,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         jobInstance,
     } = props;
 
-    const [menuVisible, setMenuVisible] = useState(false);
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
-
-    const changeMenuVisible = (visible: boolean): void => {
-        if (!visible && colorPickerVisible) return;
-        setMenuVisible(visible);
-    };
-
-    const changeColorPickerVisible = (visible: boolean): void => {
-        if (!visible) {
-            setMenuVisible(false);
-        }
-        setColorPickerVisible(visible);
-    };
 
     return (
         <Row align='middle'>
@@ -129,11 +117,22 @@ function ItemTopComponent(props: Props): JSX.Element {
                 </CVATTooltip>
             </Col>
             { !isGroundTruth && (
-                <Col span={2}>
+                colorPickerVisible ? (
+                    <ColorPicker
+                        visible
+                        value={color}
+                        onVisibleChange={setColorPickerVisible}
+                        onChange={(_color: string) => {
+                            changeColor(_color);
+                        }}
+                    >
+                        <Col span={2}>
+                            <MoreOutlined />
+                        </Col>
+                    </ColorPicker>
+                ) : (
                     <Dropdown
                         destroyPopupOnHide
-                        visible={menuVisible}
-                        onVisibleChange={changeMenuVisible}
                         placement='bottomLeft'
                         trigger={['click']}
                         overlay={ItemMenu({
@@ -163,14 +162,16 @@ function ItemTopComponent(props: Props): JSX.Element {
                             toBackground,
                             toForeground,
                             resetCuboidPerspective,
-                            changeColorPickerVisible,
+                            setColorPickerVisible,
                             edit,
                             slice,
                         })}
                     >
-                        <MoreOutlined />
+                        <Col span={2}>
+                            <MoreOutlined />
+                        </Col>
                     </Dropdown>
-                </Col>
+                )
             )}
         </Row>
     );
