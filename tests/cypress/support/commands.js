@@ -1508,7 +1508,7 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
         cy.get('[aria-label="more"]').click();
     });
 
-    cy.get('.cvat-object-item-menu').within(() => {
+    cy.document().find('.cvat-object-item-menu').within(() => {
         cy.contains('button', button).click();
     });
 });

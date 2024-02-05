@@ -138,7 +138,7 @@ Cypress.Commands.add(
 
 Cypress.Commands.add('selectFilterValue', (filterValue) => {
     cy.checkFiltersModalOpened();
-    cy.get('.cvat-recently-used-filters-wrapper').trigger('mouseover');
+    cy.get('.cvat-recently-used-filters-wrapper').click();
     cy.get('.ant-dropdown')
         .not('.ant-dropdown-hidden')
         .within(() => {
