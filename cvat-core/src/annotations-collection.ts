@@ -194,12 +194,18 @@ export default class Collection {
                 continue;
             }
 
-            const stateData = object.get(frame);
-            if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
-                continue;
-            }
+            try {
+                const stateData = object.get(frame);
+                if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
+                    continue;
+                }
 
-            visible.push(stateData);
+                visible.push(stateData);
+            } catch (error: unknown) {
+                setTimeout(() => {
+                    throw error;
+                });
+            }
         }
 
         const objectStates = [];
@@ -871,6 +877,11 @@ export default class Collection {
                 .sort((a, b) => +a - +b)
                 .map((el) => +el)
                 .filter((frame) => !this.frameMeta.deleted_frames[frame]);
+
+            if (!keyframes.length) {
+                // a track without keyframes or with keyframes on deleted frames
+                return;
+            }
 
             let prevKeyframe = keyframes[0];
             let visible = false;
