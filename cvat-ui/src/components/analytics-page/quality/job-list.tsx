@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import { DownloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
@@ -15,8 +15,6 @@ import {
     Task, Job, JobType, QualityReport, getCore,
 } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState } from 'reducers';
-import { useSelector } from 'react-redux';
 import { getQualityColor } from 'utils/quality-color';
 import Tag from 'antd/lib/tag';
 import { toRepresentation } from '../utils/text-formatting';
@@ -33,10 +31,10 @@ function JobListComponent(props: Props): JSX.Element {
         jobsReports: jobsReportsArray,
     } = props;
 
-    const jobsReports = jobsReportsArray.reduce((acc, report) => ({ ...acc, [report.jobId]: report }), {});
+    const jobsReports: Record<number, QualityReport> = jobsReportsArray
+        .reduce((acc, report) => ({ ...acc, [report.jobId]: report }), {});
     const history = useHistory();
-    const { id: taskId } = taskInstance;
-    const { jobs } = taskInstance;
+    const { id: taskId, jobs } = taskInstance;
     const [renderedJobs] = useState<Job[]>(jobs.filter((job: Job) => job.type === JobType.ANNOTATION));
 
     function sorter(path: string) {
@@ -59,10 +57,10 @@ function JobListComponent(props: Props): JSX.Element {
             }
 
             if (field1 === null || !Number.isFinite(field1)) {
-                return 1;
+                return -1;
             }
 
-            return -1;
+            return 1;
         };
     }
 
@@ -85,6 +83,7 @@ function JobListComponent(props: Props): JSX.Element {
             title: 'Job',
             dataIndex: 'job',
             key: 'job',
+            sorter: sorter('key'),
             render: (id: number): JSX.Element => (
                 <div>
                     <Button
@@ -142,11 +141,14 @@ function JobListComponent(props: Props): JSX.Element {
             dataIndex: 'frame_intersection',
             key: 'frame_intersection',
             className: 'cvat-job-item-frame-intersection',
+            sorter: sorter('frame_intersection'),
             render: (report?: QualityReport): JSX.Element => {
+                const frames = report?.summary.frameCount;
                 const frameSharePercent = report?.summary?.frameSharePercent;
                 return (
                     <Text>
-                        {toRepresentation(frameSharePercent)}
+                        {toRepresentation(frames, false, 0)}
+                        {frames ? ` (${toRepresentation(frameSharePercent)})` : ''}
                     </Text>
                 );
             },
