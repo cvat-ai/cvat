@@ -582,7 +582,9 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
 
 Cypress.Commands.add('openSettings', () => {
     cy.get('.cvat-header-menu-user-dropdown').click();
-    cy.get('.anticon-setting').should('exist').and('be.visible').click();
+    cy.get('.cvat-header-menu').should('exist').and('be.visible').within(() => {
+        cy.get('li').contains('Settings').click();
+    });
     cy.get('.cvat-settings-modal').should('be.visible');
 });
 

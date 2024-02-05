@@ -139,11 +139,9 @@ Cypress.Commands.add(
 Cypress.Commands.add('selectFilterValue', (filterValue) => {
     cy.checkFiltersModalOpened();
     cy.get('.cvat-recently-used-filters-wrapper').click();
-    cy.get('.ant-dropdown')
-        .not('.ant-dropdown-hidden')
-        .within(() => {
-            cy.contains('[role="menuitem"]', new RegExp(`^${filterValue}$`)).click();
-        });
+    cy.get('.cvat-recently-used-filters-dropdown').should('exist').and('be.visible').within(() => {
+        cy.get('li').contains(filterValue).click();
+    });
     cy.get('.cvat-filters-modal-visible').within(() => {
         cy.contains('button', 'Submit').click();
     });

@@ -310,6 +310,7 @@ function FiltersModalComponent(): JSX.Element {
                     destroyPopupOnHide
                     trigger={['click']}
                     overlay={menu}
+                    overlayClassName='cvat-recently-used-filters-dropdown'
                 >
                     <Button
                         type='text'
