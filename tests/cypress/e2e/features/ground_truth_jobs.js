@@ -131,7 +131,7 @@ context('Ground truth jobs', () => {
         cy.clickInTaskMenu('View analytics', true);
         cy.get('.cvat-task-analytics-tabs')
             .within(() => {
-                cy.contains('span', 'Quality').click();
+                cy.contains('Quality').click();
             });
     }
 
@@ -233,9 +233,6 @@ context('Ground truth jobs', () => {
 
         it('Check quality page, create ground truth job from quality page', () => {
             openQualityTab();
-            checkCardValue('.cvat-task-mean-annotation-quality', 'N/A');
-            checkCardValue('.cvat-task-gt-conflicts', 'N/A');
-            checkCardValue('.cvat-task-issues', '0');
 
             cy.get('.cvat-job-empty-ground-truth-item')
                 .should('be.visible')
@@ -258,6 +255,9 @@ context('Ground truth jobs', () => {
                     .parents('.cvat-job-item')
                     .find('.ant-tag')
                     .should('have.text', 'Ground truth');
+                checkCardValue('.cvat-task-mean-annotation-quality', 'N/A');
+                checkCardValue('.cvat-task-gt-conflicts', 'N/A');
+                checkCardValue('.cvat-task-issues', '0');
             });
         });
 
