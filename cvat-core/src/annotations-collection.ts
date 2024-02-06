@@ -194,18 +194,12 @@ export default class Collection {
                 continue;
             }
 
-            try {
-                const stateData = object.get(frame);
-                if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
-                    continue;
-                }
-
-                visible.push(stateData);
-            } catch (error: unknown) {
-                setTimeout(() => {
-                    throw error;
-                });
+            const stateData = object.get(frame);
+            if (stateData.outside && !stateData.keyframe && !allTracks && object instanceof Track) {
+                continue;
             }
+
+            visible.push(stateData);
         }
 
         const objectStates = [];
@@ -870,9 +864,6 @@ export default class Collection {
                 return count;
             };
 
-            const pref = prefix ? `${prefix}${sep}` : '';
-            const label = `${pref}${track.label.name}`;
-            labels[label][track.shapeType].track++;
             const keyframes = Object.keys(track.shapes)
                 .sort((a, b) => +a - +b)
                 .map((el) => +el)
@@ -880,8 +871,13 @@ export default class Collection {
 
             if (!keyframes.length) {
                 // a track without keyframes or with keyframes on deleted frames
+                // we do not consider it in statistics
                 return;
             }
+
+            const pref = prefix ? `${prefix}${sep}` : '';
+            const label = `${pref}${track.label.name}`;
+            labels[label][track.shapeType].track++;
 
             let prevKeyframe = keyframes[0];
             let visible = false;
