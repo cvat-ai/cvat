@@ -231,11 +231,11 @@ context('Analytics pipeline', () => {
                 .parents('.cvat-job-item')
                 .find('.cvat-job-item-more-button')
                 .click();
-            cy.get('.ant-dropdown')
-                .not('.ant-dropdown-hidden')
-                .within(() => {
-                    cy.contains('[role="menuitem"]', 'View analytics').click();
-                });
+            cy.get('.cvat-job-item-menu')
+                .should('be.visible')
+                .find('[role="menuitem"]')
+                .filter(':contains("View analytics")')
+                .click();
             cy.wait('@getReport');
             checkCards(true);
             checkHistograms();
