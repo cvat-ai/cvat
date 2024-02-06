@@ -7,7 +7,7 @@ import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
     Webhook, MLModel, Organization, Job, Label,
-    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger, Invitation,
+    QualityConflict, FramesMetaData, RQStatus, EventLogger, Invitation,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -919,20 +919,6 @@ export interface QualityQuery {
     parentId: number | null;
 }
 
-export interface AnalyticsState {
-    fetching: boolean;
-    quality: {
-        tasksReports: QualityReport[];
-        jobsReports: QualityReport[];
-        query: QualityQuery;
-        settings: {
-            modalVisible: boolean;
-            current: QualitySettings | null;
-            fetching: boolean;
-        }
-    }
-}
-
 export interface InvitationsQuery {
     page: number;
 }
@@ -966,7 +952,6 @@ export interface CombinedState {
     organizations: OrganizationState;
     invitations: InvitationsState;
     webhooks: WebhooksState;
-    analytics: AnalyticsState;
 }
 
 export interface Indexable {
