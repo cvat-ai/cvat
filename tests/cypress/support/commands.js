@@ -584,6 +584,7 @@ Cypress.Commands.add('openSettings', () => {
     cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.cvat-header-menu')
         .should('exist')
+        .and('not.have.class', 'ant-slide-up')
         .and('be.visible')
         .find('[role="menuitem"]')
         .filter(':contains("Settings")')
