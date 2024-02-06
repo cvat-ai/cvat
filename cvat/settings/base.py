@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'allauth.socialaccount',
     'health_check',
+    'health_check.cache',
     'health_check.db',
     'health_check.contrib.migrations',
     'health_check.contrib.psutil',

@@ -68,6 +68,14 @@ To open specification, do the following:
 1. Open the job to see the annotation interface.
 2. In the top right corner, click **Guide button**(![Guide Icon](/images/guide_icon.jpg)).
 
+The specification is opened automatically once for a user when the job has `new annotation` state.
+
+Additionally, you may tell CVAT interface to open the specification, by adding a dedicated query parameter to link:
+
+`
+/tasks/<task_id>/jobs/<job_id>?openGuide
+`
+
 ## Markdown editor guide
 
 The markdown editor for **Guide** has two panes.
