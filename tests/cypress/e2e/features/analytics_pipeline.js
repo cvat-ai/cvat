@@ -231,6 +231,8 @@ context('Analytics pipeline', () => {
                 .parents('.cvat-job-item')
                 .find('.cvat-job-item-more-button')
                 .click();
+
+            cy.wait(500); // wait for animationend
             cy.get('.cvat-job-item-menu')
                 .should('exist')
                 .and('be.visible')
