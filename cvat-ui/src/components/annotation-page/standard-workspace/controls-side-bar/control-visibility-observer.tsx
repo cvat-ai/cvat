@@ -18,13 +18,14 @@ const CustomPopover = withVisibilityHandling(Popover, 'extra-controls');
 export function ExtraControlsControl(): JSX.Element {
     const [hasChildren, setHasChildren] = useState(false);
     const [initialized, setInitialized] = useState(false);
+    const [visible, setVisible] = useState(true);
 
     useEffect(() => {
         if (!initialized) {
             setInitialized(true);
         }
 
-        window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        setVisible(false);
     }, []);
 
     onUpdateChildren = () => {
@@ -36,7 +37,8 @@ export function ExtraControlsControl(): JSX.Element {
 
     return (
         <CustomPopover
-            defaultVisible // we must render it at least one between using
+            visible={visible}
+            onVisibleChange={setVisible}
             trigger={initialized ? 'hover' : 'click'} // trigger='hover' allows to close the popover by body click
             placement='right'
             overlayStyle={{ display: initialized ? '' : 'none' }}
