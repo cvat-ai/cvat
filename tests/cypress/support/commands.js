@@ -583,7 +583,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
 Cypress.Commands.add('openSettings', () => {
     cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.cvat-header-menu').should('exist').and('be.visible').within(() => {
-        cy.get('li').contains('Settings').click();
+        cy.get('li').contains(new RegExp('^Settings$')).click();
     });
     cy.get('.cvat-settings-modal').should('be.visible');
 });
@@ -911,7 +911,7 @@ Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
             cy.contains('hex').prev().type(labelColor);
             cy.contains('button', 'Ok').click();
         });
-    cy.get('.cvat-label-color-picker').should('be.hidden');
+    cy.get('.cvat-label-color-picker').should('not.exist');
 });
 
 Cypress.Commands.add('collectLabelsName', () => {
