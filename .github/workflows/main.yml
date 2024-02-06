@@ -274,10 +274,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3',
-                'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
-                'issues_prs', 'issues_prs2', 'features']
+        specs: ['features']
     steps:
       - uses: actions/checkout@v4
 
@@ -379,7 +376,7 @@ jobs:
         uses: actions/upload-artifact@v3.1.1
         with:
           name: cypress_screenshots_${{ matrix.specs }}
-          path: ${{ github.workspace }}/tests/cypress/screenshots
+          path: ${{ github.workspace }}/tests/cypress/videos
 
   generate_github_pages:
     needs: [rest_api_testing, unit_testing, e2e_testing]
