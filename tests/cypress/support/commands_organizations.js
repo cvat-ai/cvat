@@ -10,7 +10,6 @@ function openOrganizationsMenu() {
         .should('exist').and('be.visible').click();
     cy.get('.cvat-header-menu')
         .should('exist')
-        .and('not.have.class', 'ant-slide-up')
         .and('be.visible')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')

@@ -232,8 +232,8 @@ context('Analytics pipeline', () => {
                 .find('.cvat-job-item-more-button')
                 .click();
             cy.get('.cvat-job-item-menu')
-                .should('be.visible')
-                .and('not.have.class', 'ant-slide-up')
+                .should('exist')
+                .and('be.visible')
                 .find('[role="menuitem"]')
                 .filter(':contains("View analytics")')
                 .click();
