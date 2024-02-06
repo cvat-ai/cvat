@@ -89,6 +89,7 @@ context('Group features', () => {
     function changeGroupColor(object, color) {
         cy.interactAnnotationObjectMenu(object, 'Change group color');
         cy.changeColorViaBadge(color);
+        cy.get('.cvat-label-color-picker').should('not.exist');
     }
 
     function testShapesFillEquality(equal) {

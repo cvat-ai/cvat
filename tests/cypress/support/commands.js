@@ -911,7 +911,6 @@ Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
             cy.contains('hex').prev().type(labelColor);
             cy.contains('button', 'Ok').click();
         });
-    cy.get('.cvat-label-color-picker').should('not.exist');
 });
 
 Cypress.Commands.add('collectLabelsName', () => {
@@ -954,6 +953,7 @@ Cypress.Commands.add('addNewLabel', ({ name, color }, additionalAttrs) => {
     if (color) {
         cy.get('.cvat-change-task-label-color-badge').click();
         cy.changeColorViaBadge(color);
+        cy.get('.cvat-label-color-picker').should('be.hidden');
     }
     if (additionalAttrs) {
         for (let i = 0; i < additionalAttrs.length; i++) {

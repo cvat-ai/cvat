@@ -44,6 +44,7 @@ context('Canvas 3D functionality. Grouping.', () => {
     function changeGroupColor(object, color) {
         cy.interactAnnotationObjectMenu(object, 'Change group color');
         cy.changeColorViaBadge(color);
+        cy.get('.cvat-label-color-picker').should('not.exist');
     }
 
     before(() => {
@@ -87,7 +88,6 @@ context('Canvas 3D functionality. Grouping.', () => {
 
         it('Change group color.', () => {
             changeGroupColor('#cvat-objects-sidebar-state-item-2', yellowHex);
-            cy.get('.cvat-label-color-picker').should('be.hidden');
             for (const groupedSidebarItemShape of shapeSidebarItemArray) {
                 cy.get(groupedSidebarItemShape)
                     .should('have.attr', 'style')
