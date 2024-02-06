@@ -1,8 +1,6 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
-
-import './styles.scss';
 
 import React from 'react';
 import moment from 'moment';
@@ -26,6 +24,7 @@ export enum DateIntervals {
 
 interface Props {
     report: AnalyticsReport | null;
+    timePeriod: DateIntervals;
     onTimePeriodChange: (val: DateIntervals) => void;
 }
 
@@ -38,7 +37,7 @@ const colors = [
 ];
 
 function AnalyticsOverview(props: Props): JSX.Element | null {
-    const { report, onTimePeriodChange } = props;
+    const { report, timePeriod, onTimePeriodChange } = props;
 
     if (!report) return null;
     const layout: any = [];
@@ -144,15 +143,13 @@ function AnalyticsOverview(props: Props): JSX.Element | null {
             <Row justify='space-between'>
                 <Col>
                     <Text type='secondary'>
-                        Created
-                        &nbsp;
-                        {report?.createdDate ? moment(report?.createdDate).fromNow() : ''}
+                        {`Created ${report?.createdDate ? moment(report?.createdDate).fromNow() : ''}`}
                     </Text>
                 </Col>
                 <Col>
                     <Select
                         placeholder='Select time period'
-                        defaultValue={DateIntervals.LAST_WEEK}
+                        value={timePeriod}
                         onChange={onTimePeriodChange}
                         options={[
                             {
