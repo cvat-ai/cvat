@@ -17,7 +17,7 @@ import moment from 'moment';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import AnalyticsOverview, { DateIntervals } from './analytics-performance';
-import TaskQualityComponent from './quality/task-quality-component';
+import TaskQualityComponent from './task-quality/task-quality-component';
 
 const core = getCore();
 
