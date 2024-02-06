@@ -2310,13 +2310,13 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
     }
 }
 
-async function getQualitySettings(taskID: number): Promise<SerializedQualitySettingsData> {
+async function getQualitySettings(filter): Promise<SerializedQualitySettingsData> {
     const { backendAPI } = config;
 
     try {
         const response = await Axios.get(`${backendAPI}/quality/settings`, {
             params: {
-                task_id: taskID,
+                ...filter,
             },
         });
 

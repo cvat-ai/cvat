@@ -58,10 +58,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
                     target: 'job',
                 });
             }
-            const settingsRequest = core.analytics.quality.settings.get({
-                ...(!task.projectId ? { taskId: task.id } : {}),
-                ...(task.projectId ? { projectId: task.projectId } : {}),
-            }, !task.projectId);
+            const settingsRequest = core.analytics.quality.settings.get({ taskId: task.id });
 
             Promise.all([reportRequest, settingsRequest]).then(([jobReports, settings]) => {
                 setQualitySettings(settings);
