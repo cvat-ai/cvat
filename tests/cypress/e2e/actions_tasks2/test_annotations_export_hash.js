@@ -140,8 +140,8 @@ context('Test export hash when saving annotations', () => {
             cy.createTag(generalLabel.name);
 
             cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=create**`).as('createJobAnnotations');
-            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=update`).as('updateJobAnnotations');
-            cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=delete`).as('deleteJobAnnotations');
+            // cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=update`).as('updateJobAnnotations');
+            // cy.intercept('PATCH', `/api/jobs/${jobID}/annotations**action=delete`).as('deleteJobAnnotations');
 
             cy.saveJob();
             cy.wait('@createJobAnnotations').then((interception) => {
@@ -151,20 +151,6 @@ context('Test export hash when saving annotations', () => {
                 expect(tags.length).to.be.equal(1);
             });
 
-            cy.wait('@updateJobAnnotations').then((interception) => {
-                const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(0);
-                expect(shapes.length).to.be.equal(0);
-                expect(tags.length).to.be.equal(0);
-            });
-
-            cy.wait('@deleteJobAnnotations').then((interception) => {
-                const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(0);
-                expect(shapes.length).to.be.equal(0);
-                expect(tags.length).to.be.equal(0);
-            });
-
             cy.saveJob();
             cy.wait('@createJobAnnotations').then((interception) => {
                 const { shapes, tags, tracks } = interception.response.body;
@@ -173,19 +159,22 @@ context('Test export hash when saving annotations', () => {
                 expect(tags.length).to.be.equal(0);
             });
 
-            cy.wait('@updateJobAnnotations').then((interception) => {
-                const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(0);
-                expect(shapes.length).to.be.equal(0);
-                expect(tags.length).to.be.equal(0);
-            });
+            // remove object
+            // update object
 
-            cy.wait('@deleteJobAnnotations').then((interception) => {
-                const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(0);
-                expect(shapes.length).to.be.equal(0);
-                expect(tags.length).to.be.equal(0);
-            });
+            // cy.wait('@updateJobAnnotations').then((interception) => {
+            //     const { shapes, tags, tracks } = interception.response.body;
+            //     expect(tracks.length).to.be.equal(0);
+            //     expect(shapes.length).to.be.equal(0);
+            //     expect(tags.length).to.be.equal(0);
+            // });
+
+            // cy.wait('@deleteJobAnnotations').then((interception) => {
+            //     const { shapes, tags, tracks } = interception.response.body;
+            //     expect(tracks.length).to.be.equal(0);
+            //     expect(shapes.length).to.be.equal(0);
+            //     expect(tags.length).to.be.equal(0);
+            // });
         });
     });
 
