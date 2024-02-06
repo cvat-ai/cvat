@@ -86,7 +86,7 @@ function AnalyticsPage(): JSX.Element {
             return core.tasks.get({ id });
         }
 
-        return core.projects.get({ jobID: id });
+        return core.jobs.get({ jobID: id });
     };
 
     const receiveReport = (timeInterval: DateIntervals, type: InstanceType, id: number): Promise<AnalyticsReport> => {
