@@ -9,7 +9,8 @@ function openOrganizationsMenu() {
     cy.get('.cvat-header-menu-user-dropdown')
         .should('exist').and('be.visible').click();
     cy.get('.cvat-header-menu')
-        .should('be.visible')
+        .should('exist')
+        .and('be.visible')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
         .click();
