@@ -5,9 +5,9 @@
 
 /// <reference types="cypress" />
 
-context('Delete a label from a task.', () => {
+context('Task status updated after initial save.', () => {
     const labelName = 'car';
-    const taskName = 'Test correct state changing on first annotations save';
+    const taskName = 'Test task status updated after initial save';
     const attrName = 'Dummy attribute';
     const textDefaultValue = 'Test';
     const imagesCount = 1;

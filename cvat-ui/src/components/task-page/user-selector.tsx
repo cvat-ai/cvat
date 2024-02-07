@@ -42,7 +42,10 @@ const searchUsers = debounce(
 );
 
 const initialUsersStorage: {
-    storage: Record<string, Promise<User[]>>,
+    storage: Record<string, {
+        promise: Promise<User[]>,
+        timestamp: number,
+    }>,
     get(userID?: number, organizationSLUG?: string): Promise<User[]>;
 } = {
     storage: {},
@@ -51,16 +54,22 @@ const initialUsersStorage: {
             return Promise.resolve([]);
         }
 
-        const key = `${userID} ${organizationSLUG || ''}`;
-        if (key in this.storage) {
-            return this.storage[key];
+        const key = `${userID}_${organizationSLUG || ''}`;
+        const RELOAD_INITIAL_USERS_AFTER_MS = 300000;
+        if (key in this.storage && (Date.now() - this.storage[key].timestamp) < RELOAD_INITIAL_USERS_AFTER_MS) {
+            return this.storage[key].promise;
         }
 
-        this.storage[key] = core.users.get({ limit: 10, is_active: true });
-        this.storage[key].catch(() => {
+        this.storage[key] = {
+            promise: core.users.get({ limit: 10, is_active: true }),
+            timestamp: Date.now(),
+        };
+
+        this.storage[key].promise.catch(() => {
             delete this.storage[key];
         });
-        return this.storage[key];
+
+        return this.storage[key].promise;
     },
 };
 
