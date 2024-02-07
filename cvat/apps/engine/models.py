@@ -322,6 +322,9 @@ class TimestampedModel(models.Model):
     class Meta:
         abstract = True
 
+    def touch(self) -> None:
+        self.save(update_fields=["updated_date"])
+
 class Project(TimestampedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,

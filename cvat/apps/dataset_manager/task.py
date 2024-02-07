@@ -12,7 +12,6 @@ from datumaro.components.errors import DatasetError, DatasetImportError, Dataset
 
 from django.db import transaction
 from django.db.models.query import Prefetch
-from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models, serializers
@@ -389,9 +388,7 @@ class JobAnnotation:
         self.ir_data.tags = tags
 
     def _set_updated_date(self):
-        db_task = self.db_job.segment.task
-        db_task.updated_date = timezone.now()
-        db_task.save()
+        self.db_job.segment.task.touch()
 
     def _save_to_db(self, data):
         self.reset()
@@ -404,7 +401,7 @@ class JobAnnotation:
     def _create(self, data):
         if self._save_to_db(data):
             self._set_updated_date()
-            self.db_job.save()
+            self.db_job.touch()
 
     def create(self, data):
         self._create(data)

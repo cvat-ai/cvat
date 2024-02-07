@@ -894,9 +894,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         updated_instance = serializer.instance
 
         if instance.project:
-            instance.project.save()
+            instance.project.touch()
         if updated_instance.project:
-            updated_instance.project.save()
+            updated_instance.project.touch()
 
     @transaction.atomic
     def perform_create(self, serializer, **kwargs):
@@ -905,9 +905,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             organization=self.request.iam_context['organization']
         )
 
-        if serializer.instance.project:
-            db_project = serializer.instance.project
-            db_project.save()
+        if db_project := serializer.instance.project:
+            db_project.touch()
             assert serializer.instance.organization == db_project.organization
 
         # Required for the extra summary information added in the queryset
@@ -1944,9 +1943,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     db_data.deleted_frames,
                 ))
                 db_data = serializer.save()
-                db_job.segment.task.save()
+                db_job.segment.task.touch()
                 if db_job.segment.task.project:
-                    db_job.segment.task.project.save()
+                    db_job.segment.task.project.touch()
 
         if hasattr(db_data, 'video'):
             media = [db_data.video]
@@ -2285,10 +2284,10 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 code=status.HTTP_400_BAD_REQUEST)
 
         if project := instance.project:
-            project.save(update_fields=['updated_date'])
+            project.touch()
             ProjectWriteSerializer(project).update_child_objects_on_labels_update(project)
         elif task := instance.task:
-            task.save(update_fields=['updated_date'])
+            task.touch()
             TaskWriteSerializer(task).update_child_objects_on_labels_update(task)
 
         return super().perform_destroy(instance)
