@@ -274,12 +274,12 @@ context('Test basic actions with annotations', () => {
                 expect(shapes.length).to.be.equal(7);
                 expect(tags.length).to.be.equal(0);
             });
-            cy.saveJob();
-
-            // check extra requests were not made
-            cy.expect(createCounter).to.be.equal(1);
-            cy.expect(updateCounter).to.be.equal(1);
-            cy.expect(deleteCounter).to.be.equal(1);
+            cy.saveJob().then(() => {
+                // check extra requests were not made
+                expect(createCounter).to.be.equal(1);
+                expect(updateCounter).to.be.equal(1);
+                expect(deleteCounter).to.be.equal(1);
+            });
         });
     });
 
