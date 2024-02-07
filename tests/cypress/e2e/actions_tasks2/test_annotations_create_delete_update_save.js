@@ -42,7 +42,7 @@ context('Test basic actions with annotations', () => {
     }
 
     function checkExistObject(clientID, state) {
-        cy.get(`cvat_canvas_shape_${clientID}`).should(state);
+        cy.get(`#cvat_canvas_shape_${clientID}`).should(state);
         cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should(state);
     }
 
@@ -71,8 +71,8 @@ context('Test basic actions with annotations', () => {
 
     function deleteObjectViaCanvasContextMenu(clientID) {
         cy.get('.cvat-canvas-container').within(() => {
-            cy.get(`cvat_canvas_shape_${clientID}`).trigger('mousemove');
-            cy.get(`cvat_canvas_shape_${clientID}`).rightclick();
+            cy.get(`#cvat_canvas_shape_${clientID}`).trigger('mousemove');
+            cy.get(`#cvat_canvas_shape_${clientID}`).rightclick();
         });
         cy.get('.cvat-canvas-context-menu').within(() => {
             cy.get('.cvat-objects-sidebar-state-item').within(() => {
