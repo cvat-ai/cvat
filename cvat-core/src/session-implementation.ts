@@ -23,7 +23,6 @@ import {
     decodePreview,
 } from './frames';
 import Issue from './issue';
-import { Label } from './labels';
 import { SerializedLabel, SerializedTask } from './server-response-types';
 import { checkObjectType } from './common';
 import {
@@ -421,19 +420,15 @@ export function implementTask(Task) {
                 taskData.assignee_id = taskData.assignee_id.id;
             }
 
-            await Promise.all((taskData.labels || []).map((label: Label): Promise<unknown> => {
+            for await (const label of taskData.labels || []) {
                 if (label.deleted) {
-                    return serverProxy.labels.delete(label.id);
+                    await serverProxy.labels.delete(label.id);
+                } else if (label.patched) {
+                    await serverProxy.labels.update(label.id, label.toJSON());
                 }
+            }
 
-                if (label.patched) {
-                    return serverProxy.labels.update(label.id, label.toJSON());
-                }
-
-                return Promise.resolve();
-            }));
-
-            // leave only new labels to create them via project PATCH request
+            // leave only new labels to create them via task PATCH request
             taskData.labels = (taskData.labels || [])
                 .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
             if (!taskData.labels.length) {
