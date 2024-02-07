@@ -680,6 +680,9 @@ DATABASES = {
         'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
         'PASSWORD': postgres_password,
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
+        'OPTIONS': {
+            'application_name': os.getenv('CVAT_POSTGRES_APPLICATION_NAME', 'cvat'),
+        },
     }
 }
 
