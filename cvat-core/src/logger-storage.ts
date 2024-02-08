@@ -193,7 +193,6 @@ Object.defineProperties(LoggerStorage.prototype.save, {
                 await sleep(1000);
             }
 
-            const collectionToSend = [...this.collection];
             const logPayload: any = {
                 client_id: this.clientID,
             };
@@ -202,16 +201,23 @@ Object.defineProperties(LoggerStorage.prototype.save, {
                 logPayload.is_active = this.isActiveChecker();
             }
 
+            const collectionToSend = [...this.collection];
             try {
                 this.saving = true;
+                this.collection = [];
                 await serverProxy.events.save({
                     events: collectionToSend.map((log) => log.dump()),
                     timestamp: new Date().toISOString(),
                 });
+
                 for (const rule of Object.values<IgnoreRule>(this.ignoreRules)) {
                     rule.lastLog = null;
                 }
-                this.collection = [];
+            } catch (error: unknown) {
+                // if failed, put collection back
+                // potentially new events may be generated duting saving
+                // that is why we add this.collection
+                this.collection = [...collectionToSend, ...this.collection];
             } finally {
                 this.saving = false;
             }

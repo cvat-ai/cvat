@@ -103,13 +103,10 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
         };
 
         if (job) {
-            job.logger.log(LogType.exception, logPayload);
+            job.logger.log(LogType.exception, logPayload).then(saveLogs);
         } else {
-            logger.log(LogType.exception, logPayload);
+            logger.log(LogType.exception, logPayload).then(saveLogs);
         }
-
-        // UI has failed, save such kind of exceptions immediately
-        saveLogs();
     }
 
     public render(): React.ReactNode {
