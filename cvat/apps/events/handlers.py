@@ -546,7 +546,7 @@ def handle_viewset_exception(exc, context):
     response = exception_handler(exc, context)
 
     IGNORED_EXCEPTION_CLASSES = (NotAuthenticated, )
-    if any(map(lambda Class: isinstance(exc, Class), IGNORED_EXCEPTION_CLASSES)):
+    if any([isinstance(exc, Class) for Class in IGNORED_EXCEPTION_CLASSES]):
         return response
     # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
     # exceptions types, any other will cause a 500 error
