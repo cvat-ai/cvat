@@ -933,35 +933,31 @@ export class Track extends Drawn {
     }
 
     public boundedKeyframes(targetFrame: number): ObjectState['keyframes'] {
-        const frames = Object.keys(this.shapes).map((frame) => +frame);
-        let lDiff = Number.MAX_SAFE_INTEGER;
-        let rDiff = Number.MAX_SAFE_INTEGER;
-        let first = Number.MAX_SAFE_INTEGER;
-        let last = Number.MIN_SAFE_INTEGER;
+        let [lDiff, rDiff, first, last] = [null, null, null, null];
 
-        for (const frame of frames) {
-            if (frame in this.frameMeta.deleted_frames) {
+        for (const key of Object.keys(this.shapes)) {
+            if (this.frameMeta.deleted_frames[key]) {
                 continue;
             }
 
-            if (frame < first) {
+            const frame = +key;
+            if (first === null || frame < first) {
                 first = frame;
             }
-            if (frame > last) {
+            if (last === null || frame > last) {
                 last = frame;
             }
 
             const diff = Math.abs(targetFrame - frame);
-
-            if (frame < targetFrame && diff < lDiff) {
+            if (frame < targetFrame && (lDiff === null || diff < lDiff)) {
                 lDiff = diff;
-            } else if (frame > targetFrame && diff < rDiff) {
+            } else if (frame > targetFrame && (rDiff === null || diff < rDiff)) {
                 rDiff = diff;
             }
         }
 
-        const prev = lDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame - lDiff;
-        const next = rDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame + rDiff;
+        const prev = lDiff === null ? null : targetFrame - lDiff;
+        const next = rDiff === null ? null : targetFrame + rDiff;
 
         return {
             prev,
