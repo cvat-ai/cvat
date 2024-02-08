@@ -138,7 +138,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
                             <Paragraph>
                                 <Paragraph strong>What has happened?</Paragraph>
                                 <Paragraph>Program error has just occurred</Paragraph>
-                                <Collapse accordion>
+                                <Collapse accordion defaultActiveKey={['errorMessage']}>
                                     <Collapse.Panel header='Error message' key='errorMessage'>
                                         <Text type='danger'>
                                             <TextArea
