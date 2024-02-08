@@ -61,7 +61,7 @@ export type FrameMeta = Record<number, Awaited<ReturnType<Job['frames']['get']>>
 export default class Collection {
     public flush: boolean;
     private stopFrame: number;
-    private frameMeta: FrameMeta;
+    private frameMeta: Readonly<FrameMeta>;
     private labels: Record<number, Label>;
     private annotationsFilter: AnnotationsFilter;
     private history: AnnotationHistory;
@@ -196,6 +196,16 @@ export default class Collection {
         for (const object of objects) {
             if (object.removed) {
                 continue;
+            }
+
+            if (object instanceof Track) {
+                const { keyframes } = object;
+                if (!keyframes.length) {
+                    // the track does not have visible keyframes
+                    // some keyframes may be on removed frames
+                    // it is not possible to interpolate position
+                    continue;
+                }
             }
 
             const stateData = object.get(frame);
@@ -868,11 +878,7 @@ export default class Collection {
                 return count;
             };
 
-            const keyframes = Object.keys(track.shapes)
-                .sort((a, b) => +a - +b)
-                .map((el) => +el)
-                .filter((frame) => !this.frameMeta.deleted_frames[frame]);
-
+            const keyframes = track.keyframes.sort((a, b) => +a - +b);
             if (!keyframes.length) {
                 // a track without keyframes or with keyframes on deleted frames
                 // we do not consider it in statistics

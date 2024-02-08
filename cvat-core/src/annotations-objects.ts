@@ -932,15 +932,20 @@ export class Track extends Drawn {
         };
     }
 
+    public get keyframes(): number[] {
+        return Object.keys(this.shapes).reduce<number[]>((acc: number[], key: string) => {
+            if (!this.frameMeta.deleted_frames[key]) {
+                acc.push(+key);
+            }
+            return acc;
+        }, []);
+    }
+
     public boundedKeyframes(targetFrame: number): ObjectState['keyframes'] {
         let [lDiff, rDiff, first, last] = [null, null, null, null];
+        const { keyframes } = this;
 
-        for (const key of Object.keys(this.shapes)) {
-            if (this.frameMeta.deleted_frames[key]) {
-                continue;
-            }
-
-            const frame = +key;
+        for (const frame of keyframes) {
             if (first === null || frame < first) {
                 first = frame;
             }
