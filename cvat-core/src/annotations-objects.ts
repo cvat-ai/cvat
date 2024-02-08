@@ -66,7 +66,6 @@ type AnnotationInjection = BasicInjection & {
 
 class Annotation {
     public clientID: number;
-    protected frameMeta: AnnotationInjection['frameMeta'];
     protected taskLabels: Record<number, Label>;
     protected history: any;
     protected groupColors: Record<number, string>;
@@ -77,7 +76,7 @@ class Annotation {
     public group: number;
     public label: Label;
     public frame: number;
-    protected isRemoved: boolean;
+    private _removed: boolean;
     public lock: boolean;
     protected readOnlyFields: string[];
     protected color: string;
@@ -90,7 +89,6 @@ class Annotation {
     };
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
-        this.frameMeta = injection.frameMeta;
         this.taskLabels = injection.labels;
         this.history = injection.history;
         this.groupColors = injection.groupColors;
@@ -101,7 +99,7 @@ class Annotation {
         this.group = data.group;
         this.label = this.taskLabels[data.label_id];
         this.frame = data.frame;
-        this.isRemoved = false;
+        this._removed = false;
         this.lock = false;
         this.readOnlyFields = injection.readOnlyFields || [];
         this.color = color;
@@ -374,18 +372,19 @@ class Annotation {
     }
 
     public get removed(): boolean {
-        return this.isRemoved || !!this.frameMeta.deleted_frames[this.frame];
+        return this._removed;
     }
 
     public set removed(value: boolean) {
         if (value) {
             this.clearServerID();
         }
-        this.isRemoved = value;
+        this._removed = value;
     }
 }
 
 class Drawn extends Annotation {
+    protected frameMeta: AnnotationInjection['frameMeta'];
     protected descriptions: string[];
     public hidden: boolean;
     protected pinned: boolean;
@@ -393,6 +392,7 @@ class Drawn extends Annotation {
 
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
+        this.frameMeta = injection.frameMeta;
         this.descriptions = data.descriptions || [];
         this.hidden = false;
         this.pinned = true;
@@ -1395,11 +1395,6 @@ export class Track extends Drawn {
             'No one left position or right position was found. ' +
                 `Interpolation impossible. Client ID: ${this.clientID}`,
         );
-    }
-
-    public get removed(): boolean {
-        const keyframes = Object.keys(this.shapes).filter((keyframe) => !this.frameMeta.deleted_frames[keyframe]);
-        return this.isRemoved || !keyframes.length;
     }
 }
 

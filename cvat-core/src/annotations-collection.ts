@@ -864,20 +864,13 @@ export default class Collection {
                 return count;
             };
 
+            const pref = prefix ? `${prefix}${sep}` : '';
+            const label = `${pref}${track.label.name}`;
+            labels[label][track.shapeType].track++;
             const keyframes = Object.keys(track.shapes)
                 .sort((a, b) => +a - +b)
                 .map((el) => +el)
                 .filter((frame) => !this.frameMeta.deleted_frames[frame]);
-
-            if (!keyframes.length) {
-                // a track without keyframes or with keyframes on deleted frames
-                // we do not consider it in statistics
-                return;
-            }
-
-            const pref = prefix ? `${prefix}${sep}` : '';
-            const label = `${pref}${track.label.name}`;
-            labels[label][track.shapeType].track++;
 
             let prevKeyframe = keyframes[0];
             let visible = false;
