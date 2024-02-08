@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,7 +19,6 @@ import {
     findFrame,
     getContextImage,
     patchMeta,
-    getDeletedFrames,
     decodePreview,
 } from './frames';
 import Issue from './issue';
@@ -224,11 +223,6 @@ export function implementJob(Job) {
         }
 
         const annotationsData = await getAnnotations(this, frame, allTracks, filters);
-        const deletedFrames = await getDeletedFrames('job', this.id);
-        if (frame in deletedFrames) {
-            return [];
-        }
-
         return annotationsData;
     };
 
@@ -687,12 +681,7 @@ export function implementTask(Task) {
             throw new ArgumentError(`Frame ${frame} does not exist in the task`);
         }
 
-        const result = await getAnnotations(this, frame, allTracks, filters, null);
-        const deletedFrames = await getDeletedFrames('task', this.id);
-        if (frame in deletedFrames) {
-            return [];
-        }
-
+        const result = await getAnnotations(this, frame, allTracks, filters);
         return result;
     };
 

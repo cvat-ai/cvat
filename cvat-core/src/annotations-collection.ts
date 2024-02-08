@@ -182,6 +182,10 @@ export default class Collection {
     }
 
     public get(frame: number, allTracks: boolean, filters: string[]): ObjectState[] {
+        if (this.frameMeta.deleted_frames[frame]) {
+            return [];
+        }
+
         const { tracks } = this;
         const shapes = this.shapes[frame] || [];
         const tags = this.tags[frame] || [];
