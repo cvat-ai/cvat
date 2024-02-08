@@ -28,7 +28,7 @@ context('Test annotations saving works correctly', () => {
     let taskID = null;
     let jobID = null;
 
-    function clickShortcut(clientID, shortcut) {
+    function useShortcut(clientID, shortcut) {
         cy.get('body').click();
         cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).trigger('mouseover');
         cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should('have.class', 'cvat-objects-sidebar-state-active-item');
@@ -65,7 +65,7 @@ context('Test annotations saving works correctly', () => {
         });
     });
 
-    describe('Check object saving works correct', () => {
+    describe('Check object saving works correctly', () => {
         it('Create different objects, save twice. Update, delete. Export hash works as expected', () => {
             // client id 1
             cy.createRectangle({
@@ -180,7 +180,7 @@ context('Test annotations saving works correctly', () => {
             cy.saveJob();
 
             for (const clientID of [1, 2, 3, 4, 5, 6, 7, 13]) {
-                clickShortcut(clientID, 'q');
+                useShortcut(clientID, 'q');
             }
 
             cy.saveJob();
@@ -193,7 +193,7 @@ context('Test annotations saving works correctly', () => {
             cy.saveJob();
 
             for (const clientID of [1, 2, 3, 4, 5, 6, 7, 13, 19]) {
-                clickShortcut(clientID, '{shift}{del}');
+                useShortcut(clientID, '{shift}{del}');
                 cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should('not.exist');
             }
 

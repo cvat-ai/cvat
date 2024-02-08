@@ -147,7 +147,7 @@ window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
         typeof colno === 'number' && error
     ) {
         // weird react behaviour
-        // it also gets event only in development environment, caugth and handled in componentDidCatch
+        // it also gets event only in development environment, caught and handled in componentDidCatch
         // discussion is here https://github.com/facebook/react/issues/10474
         // and workaround is:
         if (error.stack && error.stack.indexOf('invokeGuardedCallbackDev') >= 0) {

@@ -49,10 +49,8 @@ context('Task status updated after initial save.', () => {
 
     describe(`Testing "${labelName}"`, () => {
         it('State of the created task should be "new".', () => {
-            cy.intercept('GET', /\/api\/users.*/).as('searchUsers');
             cy.openTask(taskName);
             cy.get('.cvat-job-item .cvat-job-item-state').invoke('text').should('equal', 'New');
-            cy.wait('@searchUsers');
         });
 
         it('Create object, save annotation, state should be "in progress"', () => {

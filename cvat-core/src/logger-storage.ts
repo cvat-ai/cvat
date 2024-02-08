@@ -215,7 +215,7 @@ Object.defineProperties(LoggerStorage.prototype.save, {
                 }
             } catch (error: unknown) {
                 // if failed, put collection back
-                // potentially new events may be generated duting saving
+                // potentially new events may be generated during saving
                 // that is why we add this.collection
                 this.collection = [...collectionToSend, ...this.collection];
             } finally {

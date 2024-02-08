@@ -46,15 +46,15 @@ const initialUsersStorage: {
         promise: Promise<User[]>,
         timestamp: number,
     }>,
-    get(userID?: number, organizationSLUG?: string): Promise<User[]>;
+    get(userID?: number, organizationSlug?: string): Promise<User[]>;
 } = {
     storage: {},
-    get(userID?: number, organizationSLUG?: string): Promise<User[]> {
+    get(userID?: number, organizationSlug?: string): Promise<User[]> {
         if (typeof userID === 'undefined') {
             return Promise.resolve([]);
         }
 
-        const key = `${userID}_${organizationSLUG || ''}`;
+        const key = `${userID}_${organizationSlug || ''}`;
         const RELOAD_INITIAL_USERS_AFTER_MS = 300000;
         if (key in this.storage && (Date.now() - this.storage[key].timestamp) < RELOAD_INITIAL_USERS_AFTER_MS) {
             return this.storage[key].promise;
@@ -85,8 +85,8 @@ export default function UserSelector(props: Props): JSX.Element {
     useEffect(() => {
         const state = getCVATStore().getState();
         const userID = state.auth.user?.id;
-        const organizationSLUG = state.organizations.current?.slug;
-        initialUsersStorage.get(userID, organizationSLUG).then((result: User[]) => {
+        const organizationSlug = state.organizations.current?.slug;
+        initialUsersStorage.get(userID, organizationSlug).then((result: User[]) => {
             if (result) {
                 setInitialUsers(result);
             }
