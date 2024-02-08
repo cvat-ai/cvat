@@ -933,7 +933,8 @@ class ProjectDeleteAPITestCase(ApiTestBase):
                 task_dir = task.get_dirname()
                 self.assertTrue(os.path.exists(task_dir))
 
-        self._check_api_v2_projects_id(self.admin)
+        with self.captureOnCommitCallbacks(execute=True):
+            self._check_api_v2_projects_id(self.admin)
 
         for project in self.projects:
             project_dir = project.get_dirname()
@@ -2019,7 +2020,10 @@ class TaskDeleteAPITestCase(ApiTestBase):
         for task in self.tasks:
             task_dir = task.get_dirname()
             self.assertTrue(os.path.exists(task_dir))
-        self._check_api_v2_tasks_id(self.admin)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self._check_api_v2_tasks_id(self.admin)
+
         for task in self.tasks:
             task_dir = task.get_dirname()
             self.assertFalse(os.path.exists(task_dir))
