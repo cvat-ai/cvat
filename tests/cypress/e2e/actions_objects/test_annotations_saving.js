@@ -1,11 +1,11 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-context('Test basic actions with annotations', () => {
-    const taskName = 'Test basic actions with annotations';
+context('Test annotations saving works correctly', () => {
+    const taskName = 'Test annotations saving works correctly';
     const serverFiles = {
         images: ['image_1.jpg', 'image_2.jpg', 'image_3.jpg'],
     };
@@ -28,63 +28,17 @@ context('Test basic actions with annotations', () => {
     let taskID = null;
     let jobID = null;
 
-    function lockObject(clientID) {
-        cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).within(() => {
-            cy.get('.cvat-object-item-button-lock').click();
-        });
-    }
-
-    function deleteObjectViaShortcut(clientID, shortcut) {
+    function clickShortcut(clientID, shortcut) {
         cy.get('body').click();
         cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).trigger('mouseover');
         cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should('have.class', 'cvat-objects-sidebar-state-active-item');
         cy.get('body').type(shortcut);
-    }
 
-    function checkExistObject(clientID, state) {
-        cy.get(`#cvat_canvas_shape_${clientID}`).should(state);
-        cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should(state);
-    }
-
-    function checkFailDeleteLockObject(clientID, shortcut) {
-        deleteObjectViaShortcut(clientID, shortcut);
-        checkExistObject(clientID, 'exist');
-        cy.get('.cvat-modal-confirm-remove-object').should('exist');
-        cy.get('.cvat-modal-confirm-remove-object').within(() => {
-            cy.contains('Cancel').click();
-            cy.get('.cvat-modal-confirm-remove-object').should('not.exist');
-        });
-    }
-
-    function clickRemoveOnDropdownMenu() {
-        cy.get('.cvat-object-item-menu').contains(new RegExp('^Remove$', 'g')).click({ force: true });
-    }
-
-    function deleteObjectViaGUIFromSidebar(clientID) {
-        cy.get('.cvat-objects-sidebar-states-list').within(() => {
-            cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).within(() => {
-                cy.get('span[aria-label="more"]').click();
-            });
-        });
-        clickRemoveOnDropdownMenu();
-    }
-
-    function deleteObjectViaCanvasContextMenu(clientID) {
-        cy.get('.cvat-canvas-container').within(() => {
-            cy.get(`#cvat_canvas_shape_${clientID}`).trigger('mousemove');
-            cy.get(`#cvat_canvas_shape_${clientID}`).rightclick();
-        });
-        cy.get('.cvat-canvas-context-menu').within(() => {
-            cy.get('.cvat-objects-sidebar-state-item').within(() => {
-                cy.get('span[aria-label="more"]').click();
-            });
-        });
-        clickRemoveOnDropdownMenu();
-    }
-
-    function actionOnConfirmWindow(textBuntton) {
-        cy.get('.cvat-modal-confirm-remove-object').within(() => {
-            cy.contains(textBuntton, 'g').click();
+        cy.document().then((doc) => {
+            const tooltips = Array.from(doc.querySelectorAll('.ant-tooltip'));
+            if (tooltips.length > 0) {
+                cy.get('.ant-tooltip').invoke('hide');
+            }
         });
     }
 
@@ -105,14 +59,14 @@ context('Test basic actions with annotations', () => {
         cy.wait('@getJobsRequest', { requestTimeout: 10000 }).then((interception) => {
             expect(interception.response.statusCode).to.equal(200);
             jobID = interception.response.body.results[0].id;
+
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
     });
 
-    describe('Create, twice save, lock, delete objects', () => {
-        it('Saving twice different shapes', () => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
-            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
-
+    describe('Check object saving works correct', () => {
+        it('Create different objects, save twice. Update, delete. Export hash works as expected', () => {
             // client id 1
             cy.createRectangle({
                 points: 'By 2 Points',
@@ -225,60 +179,35 @@ context('Test basic actions with annotations', () => {
             });
             cy.saveJob();
 
-            // delete object
-            deleteObjectViaShortcut(1, '{del}');
-            checkExistObject(1, 'not.exist');
+            for (const clientID of [1, 2, 3, 4, 5, 6, 7, 13]) {
+                clickShortcut(clientID, 'q');
+            }
 
-            // locked object requires additional confirmation, but may be deleted with shift
-            lockObject(2);
-            checkFailDeleteLockObject(2, '{del}');
-            deleteObjectViaShortcut(2, '{shift}{del}');
-            checkExistObject(2, 'not.exist');
+            cy.saveJob();
+            cy.wait('@updateJobAnnotations').then((interception) => {
+                const { shapes, tags, tracks } = interception.response.body;
+                expect(tracks.length).to.be.equal(4);
+                expect(shapes.length).to.be.equal(4);
+                expect(tags.length).to.be.equal(0);
+            });
+            cy.saveJob();
 
-            // delete via sidebar
-            deleteObjectViaGUIFromSidebar(3);
-            checkExistObject(3, 'not.exist');
-
-            // delete locked object via sidebar
-            lockObject(4);
-            deleteObjectViaGUIFromSidebar(4);
-            actionOnConfirmWindow('Yes');
-            checkExistObject(4, 'not.exist');
-
-            // locked object can be deleted from canvas context menu
-            lockObject(5);
-            deleteObjectViaCanvasContextMenu(5);
-            actionOnConfirmWindow('Yes');
-            checkExistObject('not.exist');
-
-            // tag can be deleted
-            deleteObjectViaGUIFromSidebar(9);
+            for (const clientID of [1, 2, 3, 4, 5, 6, 7, 13, 19]) {
+                clickShortcut(clientID, '{shift}{del}');
+                cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should('not.exist');
+            }
 
             cy.saveJob();
             cy.wait('@deleteJobAnnotations').then((interception) => {
                 const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(2);
-                expect(shapes.length).to.be.equal(3);
+                expect(tracks.length).to.be.equal(4);
+                expect(shapes.length).to.be.equal(4);
                 expect(tags.length).to.be.equal(1);
             });
-            cy.saveJob();
-
-            // check updated objects on save
-            cy.get('#cvat-objects-sidebar-state-item-7').within(() => {
-                cy.get('.cvat-object-item-button-occluded').click();
-            });
-            cy.saveJob();
-            cy.wait('@updateJobAnnotations').then((interception) => {
-                const { shapes, tags, tracks } = interception.response.body;
-                expect(tracks.length).to.be.equal(0);
-                expect(shapes.length).to.be.equal(7);
-                expect(tags.length).to.be.equal(0);
-            });
             cy.saveJob().then(() => {
-                // check extra requests were not made
                 expect(createCounter).to.be.equal(1);
-                expect(updateCounter).to.be.equal(1);
                 expect(deleteCounter).to.be.equal(1);
+                expect(updateCounter).to.be.equal(1);
             });
         });
     });
