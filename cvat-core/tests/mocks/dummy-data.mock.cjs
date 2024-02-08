@@ -309,11 +309,11 @@ const tasksDummyLabelsData = {
         attributes: [],
     }],
     100: [{
-            id: 1,
-            name: 'car,',
+            id: 1001,
+            name: 'car',
             attributes: [],
         }, {
-            id: 2,
+            id: 1002,
             name: 'person',
             attributes: [],
         },
