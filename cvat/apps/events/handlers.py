@@ -545,9 +545,9 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 def handle_viewset_exception(exc, context):
     response = exception_handler(exc, context)
 
-    if isinstance(exc, NotAuthenticated):
+    IGNORED_EXCEPTION_CLASSES = (NotAuthenticated, )
+    if any(map(lambda Class: isinstance(exc, Class), IGNORED_EXCEPTION_CLASSES)):
         return response
-
     # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
     # exceptions types, any other will cause a 500 error
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
