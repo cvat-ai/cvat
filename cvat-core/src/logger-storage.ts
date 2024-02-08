@@ -169,15 +169,6 @@ Object.defineProperties(LoggerStorage.prototype.log, {
                 }
             };
 
-            if (log.scope === LogType.exception) {
-                await serverProxy.events.save({
-                    events: [log.dump()],
-                    timestamp: new Date().toISOString(),
-                });
-
-                return log;
-            }
-
             if (wait) {
                 log.onClose(pushEvent);
             } else {
@@ -199,7 +190,7 @@ Object.defineProperties(LoggerStorage.prototype.save, {
             }
 
             while (this.saving) {
-                await sleep(100);
+                await sleep(1000);
             }
 
             const collectionToSend = [...this.collection];

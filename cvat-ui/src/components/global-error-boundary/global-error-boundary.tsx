@@ -19,6 +19,7 @@ import { CombinedState } from 'reducers';
 import logger, { LogType } from 'cvat-logger';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import config from 'config';
+import { saveLogsAsync } from 'actions/annotation-actions';
 
 interface OwnProps {
     children: JSX.Element;
@@ -34,6 +35,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     restore(): void;
+    saveLogs(): void;
 }
 
 interface State {
@@ -60,6 +62,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
+        saveLogs(): void {
+            dispatch(saveLogsAsync());
+        },
         restore(): void {
             dispatch(resetAfterErrorAsync());
         },
@@ -84,7 +89,7 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
     }
 
     public componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
-        const { job } = this.props;
+        const { job, saveLogs } = this.props;
         const parsed = ErrorStackParser.parse(error);
 
         const logPayload = {
@@ -101,6 +106,9 @@ class GlobalErrorBoundary extends React.PureComponent<Props, State> {
         } else {
             logger.log(LogType.exception, logPayload);
         }
+
+        // UI has failed, save such kind of exceptions immediately
+        saveLogs();
     }
 
     public render(): React.ReactNode {

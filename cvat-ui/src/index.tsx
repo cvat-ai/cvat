@@ -137,13 +137,23 @@ ReactDOM.render(
     document.getElementById('root'),
 );
 
-window.addEventListener('error', (errorEvent: ErrorEvent) => {
+window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
+    const {
+        filename, lineno, colno, error,
+    } = errorEvent;
+
     if (
-        errorEvent.filename &&
-        typeof errorEvent.lineno === 'number' &&
-        typeof errorEvent.colno === 'number' &&
-        errorEvent.error
+        filename && typeof lineno === 'number' &&
+        typeof colno === 'number' && error
     ) {
+        // weird react behaviour
+        // it also gets event only in development environment, caugth and handled in componentDidCatch
+        // discussion is here https://github.com/facebook/react/issues/10474
+        // and workaround is:
+        if (error.stack && error.stack.indexOf('invokeGuardedCallbackDev') >= 0) {
+            return true;
+        }
+
         const logPayload = {
             filename: errorEvent.filename,
             line: errorEvent.lineno,
@@ -163,4 +173,6 @@ window.addEventListener('error', (errorEvent: ErrorEvent) => {
             logger.log(LogType.exception, logPayload);
         }
     }
+
+    return false;
 });
