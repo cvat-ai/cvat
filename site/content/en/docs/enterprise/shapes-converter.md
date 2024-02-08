@@ -17,7 +17,7 @@ See:
 
 ## Run actions menu
 
-The Shapes Converter can be accessed from the annotation menu. To access it, click on the burger icon
+Annotations actions can be accessed from the annotation menu. To access it, click on the burger icon
 and then select **Run actions**.
 
 ![](/images/run-actions-menu.jpg)
