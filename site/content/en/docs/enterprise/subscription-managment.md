@@ -33,6 +33,7 @@ See:
 - [Plan renewal](#plan-renewal)
   - [Solo plan](#solo-plan-3)
   - [Team plan](#team-plan-3)
+- [Subscription management video tutorial](#subscription-management-video-tutorial)
 
 ## Billing
 
@@ -62,6 +63,9 @@ All limits of the **Free** plan will be removed.
 > **Note**: The organization owner is also part of the team.
 > So, if you have three annotators working, you'll need to pay
 > for 4 seats (3 annotators + 1 organization owner).
+
+To add **VAT** or **Organization** details to the invoice, after subscribing to the Team plan,
+go to **Manage Team Plan** > **Manage** > **Billing information**.
 
 ## Payment methods
 
@@ -157,7 +161,10 @@ excess data or it will be deleted automatically.
 
 ### Solo plan
 
-Access **Manage Solo plan** > **Manage** > **Cancel plan**
+To cancel **Solo** plan, do the following:
+
+1. In the top right corner click on your nickname, then **Organization** > **Personal workspace**.
+2. Click again on the nickname, then follow to **Manage Solo plan** > **Manage** > **Cancel plan**
 
 Please, fill out the feedback form, to help us improve our platform.
 
@@ -165,7 +172,10 @@ Please, fill out the feedback form, to help us improve our platform.
 
 ### Team plan
 
-Access **Manage Team plan** > **Manage** -> **Cancel plan**
+To cancel **Team** plan, do the following:
+
+1. In the top right corner click on your nickname, then **Organization** > Organization name.
+2. Click again on the nickname, then follow to **Manage Team plan** > **Manage** > **Cancel plan**
 
 Please, fill out the feedback form, to help us improve our platform.
 
@@ -183,3 +193,11 @@ Access **Manage Solo plan** > **Manage** > **Renew plan**
 ### Team plan
 
 Access **Manage Team Plan** > **Manage** > **Renew plan**
+
+## Subscription management video tutorial
+
+<!--lint disable maximum-line-length-->
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AMPtbmqZKNY?si=2TLhdytDIlSJ3Fwd" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+<!--lint enable maximum-line-length-->

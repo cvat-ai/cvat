@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -169,15 +169,6 @@ Object.defineProperties(LoggerStorage.prototype.log, {
                 }
             };
 
-            if (log.scope === LogType.exception) {
-                await serverProxy.events.save({
-                    events: [log.dump()],
-                    timestamp: new Date().toISOString(),
-                });
-
-                return log;
-            }
-
             if (wait) {
                 log.onClose(pushEvent);
             } else {
@@ -199,10 +190,9 @@ Object.defineProperties(LoggerStorage.prototype.save, {
             }
 
             while (this.saving) {
-                await sleep(100);
+                await sleep(1000);
             }
 
-            const collectionToSend = [...this.collection];
             const logPayload: any = {
                 client_id: this.clientID,
             };
@@ -211,16 +201,23 @@ Object.defineProperties(LoggerStorage.prototype.save, {
                 logPayload.is_active = this.isActiveChecker();
             }
 
+            const collectionToSend = [...this.collection];
             try {
                 this.saving = true;
+                this.collection = [];
                 await serverProxy.events.save({
                     events: collectionToSend.map((log) => log.dump()),
                     timestamp: new Date().toISOString(),
                 });
+
                 for (const rule of Object.values<IgnoreRule>(this.ignoreRules)) {
                     rule.lastLog = null;
                 }
-                this.collection = [];
+            } catch (error: unknown) {
+                // if failed, put collection back
+                // potentially new events may be generated during saving
+                // that is why we add this.collection
+                this.collection = [...collectionToSend, ...this.collection];
             } finally {
                 this.saving = false;
             }

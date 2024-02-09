@@ -1266,9 +1266,9 @@ class TestPostTaskData:
             "image_quality": 75,
             "use_cache": use_cache,
             "cloud_storage_id": cloud_storage["id"],
-            "server_files": server_files
-            if not use_manifest
-            else server_files + ["test/manifest.jsonl"],
+            "server_files": (
+                server_files if not use_manifest else server_files + ["test/manifest.jsonl"]
+            ),
             "sorting_method": sorting_method,
         }
         if server_files_exclude:

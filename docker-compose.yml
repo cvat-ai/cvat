@@ -57,6 +57,12 @@ services:
     command: [
       "--dir", "/var/lib/kvrocks/data"
     ]
+    # The kvrocks image a) has a healthcheck command, and b) has a root process
+    # that doesn't reap children, so it's susceptible to the problem described here:
+    # <https://stackoverflow.com/a/77109064>. Kvrocks also uses a tiny timeout for
+    # its healthcheck command (1s), which makes the problem more likely to manifest.
+    # Use a separate init process as a workaround.
+    init: true
     volumes:
       - cvat_cache_db:/var/lib/kvrocks/data
     networks:
@@ -64,7 +70,7 @@ services:
 
   cvat_server:
     container_name: cvat_server
-    image: cvat/server:${CVAT_VERSION:-v2.10.2}
+    image: cvat/server:${CVAT_VERSION:-v2.10.3}
     restart: always
     depends_on:
       <<: *backend-deps
@@ -99,7 +105,7 @@ services:
 
   cvat_utils:
     container_name: cvat_utils
-    image: cvat/server:${CVAT_VERSION:-v2.10.2}
+    image: cvat/server:${CVAT_VERSION:-v2.10.3}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -116,7 +122,7 @@ services:
 
   cvat_worker_import:
     container_name: cvat_worker_import
-    image: cvat/server:${CVAT_VERSION:-v2.10.2}
+    image: cvat/server:${CVAT_VERSION:-v2.10.3}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -132,7 +138,7 @@ services:
 
   cvat_worker_export:
     container_name: cvat_worker_export
-    image: cvat/server:${CVAT_VERSION:-v2.10.2}
+    image: cvat/server:${CVAT_VERSION:-v2.10.3}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -148,7 +154,7 @@ services:
 
   cvat_worker_annotation:
     container_name: cvat_worker_annotation
-    image: cvat/server:${CVAT_VERSION:-v2.10.2}
+    image: cvat/server:${CVAT_VERSION:-v2.10.3}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -164,7 +170,7 @@ services:
 
   cvat_worker_webhooks:
     container_name: cvat_worker_webhooks
-    image: cvat/server:${CVAT_VERSION:-v2.10.2}
+    image: cvat/server:${CVAT_VERSION:-v2.10.3}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -180,7 +186,7 @@ services:
 
   cvat_worker_quality_reports:
     container_name: cvat_worker_quality_reports
-    image: cvat/server:${CVAT_VERSION:-v2.10.2}
+    image: cvat/server:${CVAT_VERSION:-v2.10.3}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -196,7 +202,7 @@ services:
 
   cvat_worker_analytics_reports:
     container_name: cvat_worker_analytics_reports
-    image: cvat/server:${CVAT_VERSION:-v2.10.2}
+    image: cvat/server:${CVAT_VERSION:-v2.10.3}
     restart: always
     depends_on: *backend-deps
     environment:
@@ -212,7 +218,7 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-v2.10.2}
+    image: cvat/ui:${CVAT_VERSION:-v2.10.3}
     restart: always
     depends_on:
       - cvat_server
