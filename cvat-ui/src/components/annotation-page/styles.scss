@@ -26,53 +26,66 @@
         flex: 1;
         flex-flow: unset;
     }
-}
 
-.cvat-annotation-header-left-group {
-    display: flex;
+    .ant-btn-link.cvat-annotation-header-button {
+        padding: 0;
+        width: 48px;
+        height: 48px;
+        user-select: none;
+        color: $text-color;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0 3px;
 
-    > button:first-child {
-        filter: invert(0.9);
-        background: $background-color-1;
-        border-radius: 0;
-        width: 70px;
+        &:hover {
+            color: $text-color;
+        }
+
+        > span:not([role='img']) {
+            margin-left: 0;
+            font-size: 10px;
+        }
+
+        > span[role='img'] {
+            font-size: 20px;
+        }
+
+        &:hover > span[role='img'] {
+            transform: scale(1.1);
+        }
+
+        &:active > span[role='img'] {
+            transform: scale(1.05);
+        }
+
+        &.filters-armed {
+            color: $info-icon-color;
+
+            path {
+                fill: $info-icon-color;
+            }
+        }
     }
-}
 
-.ant-btn.cvat-annotation-header-button {
-    padding: 0;
-    width: 48px;
-    height: 48px;
-    user-select: none;
-    color: $text-color;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin: 0 3px;
+    .cvat-annotation-header-left-group {
+        display: flex;
 
-    > span:not([role='img']) {
-        margin-left: 0;
-        font-size: 10px;
-    }
+        > .cvat-annotation-header-button.cvat-annotation-header-menu-button {
+            width: $grid-unit-size * 9;
+            background: black;
+            color: white;
+            border-radius: 0;
 
-    > span[role='img'] {
-        font-size: 20px;
-    }
+            &:hover {
+                background: black;
+                color: white;
+            }
 
-    &:hover > span[role='img'] {
-        transform: scale(1.1);
-    }
-
-    &:active > span[role='img'] {
-        transform: scale(1.05);
-    }
-
-    &.filters-armed {
-        color: $info-icon-color;
-
-        path {
-            fill: $info-icon-color;
+            svg {
+                fill: white;
+            }
         }
     }
 }
