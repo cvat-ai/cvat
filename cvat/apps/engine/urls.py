@@ -24,6 +24,7 @@ router.register('labels', views.LabelViewSet)
 router.register('cloudstorages', views.CloudStorageViewSet)
 router.register('assets', views.AssetsViewSet)
 router.register('guides', views.AnnotationGuidesViewSet)
+router.register('requests', views.DataProcessing,  basename="data_processing")
 
 urlpatterns = [
     # Entry point for a client

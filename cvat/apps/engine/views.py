@@ -3146,3 +3146,94 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
     serializer.is_valid(raise_exception=True)
 
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+@extend_schema(tags=['requests'],
+               parameters=[
+                 OpenApiParameter('rq_id', description='rq id',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
+               ])
+
+class DataProcessing(viewsets.GenericViewSet):
+    @action(detail=False, methods=['GET'],
+        permission_classes=[]
+    )
+    def status(self,request):
+        queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+        rq_id = request.query_params.get('rq_id')
+        if rq_id == 'rq1':
+            return Response(
+                data= {
+                        "state": "Failed",
+                        "message": "Something happened",
+                        "percent": 0},
+                status=status.HTTP_200_OK
+            )
+        elif rq_id == 'rq2':
+            return Response(
+                data= {
+                        "state": "Queued",
+                        "message": "",
+                        "percent": 0},
+                status=status.HTTP_200_OK
+            )
+        elif rq_id == 'rq3':
+            return Response(
+                data= {
+                        "state": "Started",
+                        "message": "",
+                        "percent": 20},
+                status=status.HTTP_200_OK
+            )
+        return Response(
+                data= {
+                        "state": "Started",
+                        "message": "",
+                        "percent": 20},
+                status=status.HTTP_200_OK
+            )
+
+    @action(detail=False, methods=['GET'],
+            permission_classes=[]
+        )
+    def get(self,request):
+            return Response(
+                data=[
+                    {
+                        "state": "Failed",
+                        "message": "Something happened",
+                        "percent": 0,
+                        "rq_id": "rq1",
+                        "type": "export:dataset",
+                        "entity": {
+                            "id": 1,
+                            "type": "project",
+                            "name": "hello",
+                        }
+                    },
+                    {
+                        "state": "Queued",
+                        "message": "",
+                        "percent": 0,
+                        "rq_id": "rq2",
+                        "type": "import:annotations",
+                        "entity": {
+                            "id": 2,
+                            "type": "task",
+                            "name": "hello13",
+                        }
+                    },
+                    {
+                        "state": "Started",
+                        "message": "",
+                        "percent": 20,
+                        "rq_id": "rq3",
+                        "type": "import:dataset",
+                        "entity": {
+                            "id": 3,
+                            "type": "project",
+                            "name": "hello122",
+                        }
+                    },
+                ],
+                status=status.HTTP_200_OK
+            )
