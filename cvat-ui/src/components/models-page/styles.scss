@@ -118,7 +118,7 @@
 }
 
 .cvat-models-item-card {
-    width: calc(25% - 8px);
+    width: calc(25% - $grid-unit-size);
     height: $grid-unit-size * 28;
     overflow: hidden;
     border-color: #f5f5f5;

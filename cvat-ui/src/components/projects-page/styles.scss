@@ -123,7 +123,7 @@
     padding-bottom: $grid-unit-size;
 
     .ant-ribbon-wrapper {
-        width: calc(25% - 8px);
+        width: calc(25% - $grid-unit-size);
         margin-left: $grid-unit-size;
         margin-top: $grid-unit-size;
 

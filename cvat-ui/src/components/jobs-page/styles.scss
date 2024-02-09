@@ -32,7 +32,7 @@
     }
 
     .cvat-job-page-list-item {
-        width: calc(25% - 8px);
+        width: calc(25% - $grid-unit-size);
         display: flex;
         flex-direction: column;
         border-color: #f5f5f5;
