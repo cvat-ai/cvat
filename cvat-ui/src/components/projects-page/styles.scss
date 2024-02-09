@@ -123,8 +123,9 @@
     padding-bottom: $grid-unit-size;
 
     .ant-ribbon-wrapper {
-        width: 25%;
-        border: $grid-unit-size * 0.5 solid #f0f0f0;
+        width: calc(25% - 8px);
+        margin-left: $grid-unit-size;
+        margin-top: $grid-unit-size;
 
         .cvat-projects-project-item-card {
             .cvat-projects-project-item-card-preview-wrapper {

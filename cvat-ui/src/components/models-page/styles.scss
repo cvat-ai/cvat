@@ -118,10 +118,12 @@
 }
 
 .cvat-models-item-card {
-    width: 25%;
-    border-width: $grid-unit-size * 0.5;
+    width: calc(25% - 8px);
     height: $grid-unit-size * 28;
     overflow: hidden;
+    border-color: #f5f5f5;
+    margin-left: $grid-unit-size;
+    margin-bottom: $grid-unit-size;
 
     .ant-card-meta-title {
         margin-bottom: 0 !important;

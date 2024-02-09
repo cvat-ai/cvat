@@ -18,7 +18,7 @@ import JobActionsMenu from 'components/job-item/job-actions-menu';
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-jobs-page',
     siblingClassNames: ['cvat-jobs-page-pagination', 'cvat-jobs-page-top-bar'],
-    paddings: 40,
+    paddings: 64,
     minHeight: 200,
     numberOfRows: 3,
 });
@@ -65,6 +65,7 @@ function JobCardComponent(props: Props): JSX.Element {
                     <div className='cvat-job-page-list-item-dimension'>{job.dimension.toUpperCase()}</div>
                 </>
             )}
+            hoverable
         >
             <Descriptions column={1} size='small'>
                 <Descriptions.Item label='Stage'>{job.stage}</Descriptions.Item>

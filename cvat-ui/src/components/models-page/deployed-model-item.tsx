@@ -163,6 +163,7 @@ export default function DeployedModelItem(props: Props): JSX.Element {
                 )}
                 size='small'
                 className='cvat-models-item-card'
+                hoverable
             >
                 <Meta
                     title={(

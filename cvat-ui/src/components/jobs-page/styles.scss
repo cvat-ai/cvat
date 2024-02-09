@@ -32,10 +32,12 @@
     }
 
     .cvat-job-page-list-item {
-        width: 25%;
-        border-width: $grid-unit-size * 0.5;
+        width: calc(25% - 8px);
         display: flex;
         flex-direction: column;
+        border-color: #f5f5f5;
+        margin-left: $grid-unit-size;
+        margin-top: $grid-unit-size;
 
         .ant-card-cover {
             flex: 1;

@@ -64,11 +64,11 @@
         padding: $grid-unit-size;
     }
 
-    > div:nth-child(2) {
-        > div:nth-child(2) { /* org slug */
-            font-size: 10px;
-        }
+    .cvat-header-menu-user-dropdown-organization {
+        font-size: 10px;
+    }
 
+    > div:nth-child(2) {
         max-width: $grid-unit-size * 15;
         height: $grid-unit-size * 5;
         overflow: hidden;
