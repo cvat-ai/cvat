@@ -35,13 +35,13 @@ cmd_run() {
         fail "run: expected 1 argument"
     fi
 
-    if [ "$1" = "server" ]; then
-        ~/manage.py collectstatic --no-input
-    fi
-
     wait_for_db
     wait_for_redis_inmem
     wait_for_redis_ondisk
+
+    if [ "$1" = "server" ]; then
+        ~/manage.py collectstatic --no-input
+    fi
 
     echo "waiting for migrations to complete..."
     while ! ~/manage.py migrate --check; do
