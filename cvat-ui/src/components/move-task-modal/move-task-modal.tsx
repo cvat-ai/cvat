@@ -174,7 +174,7 @@ function MoveTaskModal({
 
     return (
         <Modal
-            visible={visible}
+            open={visible}
             onCancel={onCancel}
             onOk={submitMove}
             okButtonProps={{ disabled: isUpdating }}

@@ -145,7 +145,7 @@ function ImportBackupModal(): JSX.Element {
                     {`Create ${instanceType} from backup`}
                 </Text>
             )}
-            visible={modalVisible}
+            open={modalVisible}
             onCancel={closeModal}
             onOk={() => form.submit()}
             className='cvat-modal-import-backup'

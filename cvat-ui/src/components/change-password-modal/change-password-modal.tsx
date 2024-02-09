@@ -54,7 +54,7 @@ function ChangePasswordComponent(props: ChangePasswordPageComponentProps): JSX.E
             okType='primary'
             okText='Submit'
             footer={null}
-            visible={visible}
+            open={visible}
             destroyOnClose
             onCancel={onClose}
         >

@@ -166,7 +166,7 @@ async function runSingleFrameChain(
             // Ignore deleted frames
             if (!frameData.deleted) {
                 // Get annotations according to filter
-                const states: ObjectState[] = await getAnnotations(instance, frame, false, filters, null);
+                const states: ObjectState[] = await getAnnotations(instance, frame, false, filters);
                 const frameCollectionIDs = states.reduce<IDsToHandle>((acc, val) => {
                     if (val.objectType === ObjectType.SHAPE) {
                         acc.shapes.push(val.clientID as number);

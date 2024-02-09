@@ -204,7 +204,7 @@ export default function ResourceFilterHOC(
                     predefinedFilters && onPredefinedVisibleChange ? (
                         <Dropdown
                             destroyPopupOnHide
-                            visible={predefinedVisible}
+                            open={predefinedVisible}
                             placement='bottomLeft'
                             overlay={(
                                 <div className='cvat-resource-page-predefined-filters-list'>
@@ -255,14 +255,14 @@ export default function ResourceFilterHOC(
                 <Dropdown
                     disabled={disabled}
                     placement='bottomRight'
-                    visible={builderVisible}
+                    open={builderVisible}
                     destroyPopupOnHide
                     overlay={(
                         <div className='cvat-resource-page-filters-builder'>
                             { Object.keys(recentFilters).length ? (
                                 <Dropdown
                                     placement='bottomRight'
-                                    visible={recentVisible}
+                                    open={recentVisible}
                                     destroyPopupOnHide
                                     overlay={(
                                         <div className='cvat-resource-page-recent-filters-list'>

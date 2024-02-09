@@ -809,7 +809,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     placement='right'
                     overlayClassName='cvat-opencv-control-popover'
                     content={this.renderContent()}
-                    onVisibleChange={(visible: boolean) => {
+                    onOpenChange={(visible: boolean) => {
                         const { initializationProgress } = this.state;
                         if (!visible || initializationProgress >= 0) return;
 

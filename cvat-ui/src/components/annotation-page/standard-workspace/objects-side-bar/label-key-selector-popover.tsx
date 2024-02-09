@@ -69,7 +69,7 @@ function LabelKeySelectorPopover(props: LabelKeySelectorPopoverProps): JSX.Eleme
 
     return (
         <Popover
-            destroyTooltipOnHide={{ keepParent: false }}
+            destroyTooltipOnHide
             trigger='click'
             content={(
                 <MemoizedContent

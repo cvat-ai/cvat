@@ -112,7 +112,7 @@ function ExportBackupModal(): JSX.Element {
     return (
         <Modal
             title={<Text strong>{`Export ${instanceType}`}</Text>}
-            visible={!!instance}
+            open={!!instance}
             onCancel={closeModal}
             onOk={() => form.submit()}
             className={`cvat-modal-export-${instanceType.split(' ')[0]}`}

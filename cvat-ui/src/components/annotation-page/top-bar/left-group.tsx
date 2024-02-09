@@ -68,7 +68,7 @@ function LeftGroup(props: Props): JSX.Element {
 
     return (
         <>
-            <Modal className='cvat-saving-job-modal' title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
+            <Modal className='cvat-saving-job-modal' title='Saving changes on the server' open={saving} footer={[]} closable={false}>
                 <Text>CVAT is saving your annotations, please wait </Text>
                 <LoadingOutlined />
             </Modal>

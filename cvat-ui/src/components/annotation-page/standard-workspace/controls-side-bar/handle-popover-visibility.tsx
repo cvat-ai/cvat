@@ -29,7 +29,7 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                 }}
                 trigger={['click']}
                 overlayClassName={overlayClassNames.join(' ').trim()}
-                onVisibleChange={(_visible: boolean) => {
+                onOpenChange={(_visible: boolean) => {
                     if (_visible) {
                         const [element] = window.document.getElementsByClassName(popoverClassName);
                         if (element) {

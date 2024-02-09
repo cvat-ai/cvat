@@ -75,7 +75,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
     return (
         <Modal
             title='Settings'
-            visible={visible}
+            open={visible}
             onCancel={onClose}
             width={800}
             className='cvat-settings-modal'

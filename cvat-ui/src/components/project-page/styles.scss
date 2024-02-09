@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-project-page {
     overflow-y: auto;
@@ -29,12 +29,13 @@
                 }
 
                 display: flex;
-                margin-right: $grid-unit-size * 4;
             }
 
             .cvat-project-page-tasks-search-bar {
                 width: $grid-unit-size * 32;
             }
+
+            margin-right: $grid-unit-size * 4;
         }
     }
 }
@@ -65,7 +66,7 @@
 }
 
 .ant-menu.cvat-project-actions-menu {
-    box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 17px rgba(0, 0, 0, 20%);
 
     > li:hover {
         background-color: $hover-menu-color;

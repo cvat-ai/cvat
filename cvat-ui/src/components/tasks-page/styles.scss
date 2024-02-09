@@ -13,6 +13,8 @@
     width: 100%;
 
     .cvat-tasks-page-top-bar {
+        margin-right: $grid-unit-size;
+
         > div {
             display: flex;
             justify-content: space-between;
@@ -81,7 +83,7 @@
     overflow-y: auto;
 
     .ant-ribbon-wrapper {
-        margin-left: $grid-unit-size;
+        margin: $grid-unit-size;
     }
 }
 

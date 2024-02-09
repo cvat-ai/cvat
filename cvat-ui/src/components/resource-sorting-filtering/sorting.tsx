@@ -178,7 +178,7 @@ function SortingModalComponent(props: Props): JSX.Element {
         <Dropdown
             disabled={disabled}
             destroyPopupOnHide
-            visible={visible}
+            open={visible}
             placement='bottomLeft'
             overlay={(
                 <SortableList

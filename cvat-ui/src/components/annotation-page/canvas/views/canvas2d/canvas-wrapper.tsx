@@ -1121,7 +1121,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 <Dropdown
                     destroyPopupOnHide
                     trigger={['click']}
-                    placement='topCenter'
+                    placement='top'
                     overlay={<ImageSetupsContent />}
                 >
                     <UpOutlined className='cvat-canvas-image-setups-trigger' />

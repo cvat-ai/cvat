@@ -268,7 +268,7 @@ function FiltersModalComponent(): JSX.Element {
     return (
         <Modal
             className={visible ? 'cvat-filters-modal cvat-filters-modal-visible' : 'cvat-filters-modal'}
-            visible={visible}
+            open={visible}
             closable={false}
             width={800}
             destroyOnClose

@@ -74,7 +74,6 @@ export default function AutomaticAnnotationProgress(props: Props): JSX.Element |
                         to: '#87d068',
                     }}
                     showInfo={false}
-                    strokeWidth={5}
                     size='small'
                 />
             </Col>

@@ -79,7 +79,7 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
     return (
         <Modal
             destroyOnClose
-            visible={visible}
+            open={visible}
             footer={[]}
             onCancel={(): void => closeDialog()}
             maskClosable

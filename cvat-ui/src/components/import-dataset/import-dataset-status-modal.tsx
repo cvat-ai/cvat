@@ -43,7 +43,7 @@ function ImportDatasetStatusModal(): JSX.Element {
     return (
         <Modal
             title={`Importing a dataset for the project #${importingId}`}
-            visible={importing}
+            open={importing}
             closable={false}
             footer={null}
             className='cvat-modal-import-dataset-status'

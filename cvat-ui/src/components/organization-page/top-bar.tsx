@@ -320,7 +320,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
             </Row>
             <Modal
                 className='cvat-organization-invitation-modal'
-                visible={visibleInviteModal}
+                open={visibleInviteModal}
                 onCancel={() => {
                     setVisibleInviteModal(false);
                     form.resetFields(['users']);

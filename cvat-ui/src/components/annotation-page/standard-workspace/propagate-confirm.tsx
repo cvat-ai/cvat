@@ -61,7 +61,7 @@ function PropagateConfirmComponent(): JSX.Element {
             }}
             onCancel={() => dispatch(switchPropagateVisibility(false))}
             title='Confirm propagation'
-            visible={visible}
+            open={visible}
             destroyOnClose
             okButtonProps={{ disabled: !propagateFrames }}
         >

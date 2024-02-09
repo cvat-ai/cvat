@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { withRouter, RouteComponentProps } from 'react-router';
 
 import Modal from 'antd/lib/modal';
@@ -18,7 +18,6 @@ import Menu, { MenuInfo } from 'components/dropdown-menu';
 
 import { getCore, JobStage } from 'cvat-core-wrapper';
 import AnnotationsActionsModalContent from '../annotations-actions/annotations-actions-modal';
-import { createRoot } from 'react-dom/client';
 
 const core = getCore();
 
@@ -201,7 +200,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
             <Menu.Item
                 key={Actions.RUN_ACTIONS}
                 onClick={() => {
-                    const div = window.document.createElement('div')
+                    const div = window.document.createElement('div');
                     window.document.body.append(div);
                     const root = createRoot(div);
                     root.render(

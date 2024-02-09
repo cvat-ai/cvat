@@ -35,7 +35,7 @@ export default function ConflictLabel(props: Props): ReactPortal {
     return ReactDOM.createPortal(
         <CVATTooltip
             title={text}
-            visible={tooltipVisible}
+            open={tooltipVisible}
         >
             <Tag
                 style={{

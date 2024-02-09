@@ -90,7 +90,7 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
     return (
         <Modal
             title='Active list of shortcuts'
-            visible={visible}
+            open={visible}
             closable={false}
             width={800}
             onOk={() => switchShortcutsModalVisible(false)}
