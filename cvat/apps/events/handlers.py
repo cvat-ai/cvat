@@ -9,6 +9,7 @@ import rq
 
 from rest_framework.renderers import JSONRenderer
 from rest_framework.views import exception_handler
+from rest_framework.exceptions import NotAuthenticated
 from rest_framework import status
 from crum import get_current_user, get_current_request
 
@@ -544,6 +545,9 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
 def handle_viewset_exception(exc, context):
     response = exception_handler(exc, context)
 
+    IGNORED_EXCEPTION_CLASSES = (NotAuthenticated, )
+    if isinstance(exc, IGNORED_EXCEPTION_CLASSES):
+        return response
     # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
     # exceptions types, any other will cause a 500 error
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR

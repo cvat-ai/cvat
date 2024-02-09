@@ -1,4 +1,3 @@
-black>=22.1.0
 gitpython
 inflection >= 0.5.1
 isort>=5.10.1

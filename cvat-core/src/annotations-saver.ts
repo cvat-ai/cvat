@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -362,56 +362,62 @@ export default class AnnotationsSaver {
 
             const { created, updated, deleted } = this._split(exported);
 
-            onUpdate('Updated objects are being saved on the server');
-            const updatedIndexes = this._extractClientIDs(updated);
-            let requestBody = { ...updated, version: this.version };
-            let updatedData = null;
-            try {
-                updatedData = await this._update(requestBody);
-            } catch (error: unknown) {
-                updatedData = await retryIf504Status(error, requestBody, 'update');
-            }
+            if (updated.shapes.length || updated.tags.length || updated.tracks.length) {
+                onUpdate('Updated objects are being saved on the server');
+                const updatedIndexes = this._extractClientIDs(updated);
+                const requestBody = { ...updated, version: this.version };
+                let updatedData = null;
+                try {
+                    updatedData = await this._update(requestBody);
+                } catch (error: unknown) {
+                    updatedData = await retryIf504Status(error, requestBody, 'update');
+                }
 
-            this.version = updatedData.version;
-            this._updateCreatedObjects(updatedData, updatedIndexes);
-            for (const type of Object.keys(this.initialObjects)) {
-                for (const object of updatedData[type]) {
-                    this.initialObjects[type][object.id] = object;
+                this.version = updatedData.version;
+                this._updateCreatedObjects(updatedData, updatedIndexes);
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of updatedData[type]) {
+                        this.initialObjects[type][object.id] = object;
+                    }
                 }
             }
 
-            onUpdate('Deleted objects are being deleted from the server');
-            this._extractClientIDs(deleted);
-            requestBody = { ...deleted, version: this.version };
-            let deletedData = null;
-            try {
-                deletedData = await this._delete(requestBody);
-            } catch (error: unknown) {
-                deletedData = await retryIf504Status(error, requestBody, 'delete');
-            }
+            if (deleted.shapes.length || deleted.tags.length || deleted.tracks.length) {
+                onUpdate('Deleted objects are being deleted from the server');
+                this._extractClientIDs(deleted);
+                const requestBody = { ...deleted, version: this.version };
+                let deletedData = null;
+                try {
+                    deletedData = await this._delete(requestBody);
+                } catch (error: unknown) {
+                    deletedData = await retryIf504Status(error, requestBody, 'delete');
+                }
 
-            this.version = deletedData.version;
-            for (const type of Object.keys(this.initialObjects)) {
-                for (const object of deletedData[type]) {
-                    delete this.initialObjects[type][object.id];
+                this.version = deletedData.version;
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of deletedData[type]) {
+                        delete this.initialObjects[type][object.id];
+                    }
                 }
             }
 
-            onUpdate('Created objects are being saved on the server');
-            const createdIndexes = this._extractClientIDs(created);
-            requestBody = { ...created, version: this.version };
-            let createdData = null;
-            try {
-                createdData = await this._create(requestBody);
-            } catch (error: unknown) {
-                createdData = await retryIf504Status(error, requestBody, 'create');
-            }
+            if (created.shapes.length || created.tags.length || created.tracks.length) {
+                onUpdate('Created objects are being saved on the server');
+                const createdIndexes = this._extractClientIDs(created);
+                const requestBody = { ...created, version: this.version };
+                let createdData = null;
+                try {
+                    createdData = await this._create(requestBody);
+                } catch (error: unknown) {
+                    createdData = await retryIf504Status(error, requestBody, 'create');
+                }
 
-            this.version = createdData.version;
-            this._updateCreatedObjects(createdData, createdIndexes);
-            for (const type of Object.keys(this.initialObjects)) {
-                for (const object of createdData[type]) {
-                    this.initialObjects[type][object.id] = object;
+                this.version = createdData.version;
+                this._updateCreatedObjects(createdData, createdIndexes);
+                for (const type of Object.keys(this.initialObjects)) {
+                    for (const object of createdData[type]) {
+                        this.initialObjects[type][object.id] = object;
+                    }
                 }
             }
         }
