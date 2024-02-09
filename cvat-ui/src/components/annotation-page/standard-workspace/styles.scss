@@ -134,7 +134,7 @@
 }
 
 .cvat-rotate-canvas-popover {
-    .ant-popover-inner-content {
+    .ant-popover-content > .ant-popover-inner {
         padding: 0;
     }
 }
@@ -143,7 +143,7 @@
 .cvat-opencv-control-popover,
 .cvat-setup-tag-popover,
 .cvat-tools-control-popover {
-    .ant-popover-inner-content {
+    .ant-popover-content > .ant-popover-inner {
         padding: 0;
     }
 }

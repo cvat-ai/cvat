@@ -272,16 +272,24 @@
     }
 }
 
-.ant-menu.cvat-annotation-menu {
+.ant-dropdown-menu.cvat-annotation-menu {
     box-shadow: $box-shadow-base;
 
-    > li:hover {
-        background-color: $hover-menu-color;
+    li.ant-dropdown-menu-item {
+        width: $grid-unit-size * 30;
+        height: $grid-unit-size * 5;
+        line-height: $grid-unit-size * 5;
     }
 
-    .ant-menu-submenu-title {
-        margin: 0;
-        width: 15em;
+    li.ant-dropdown-menu-submenu {
+        width: $grid-unit-size * 30;
+        height: $grid-unit-size * 5;
+
+        .ant-dropdown-menu-submenu-title {
+            width: $grid-unit-size * 31;
+            line-height: $grid-unit-size * 5;
+            padding-top: 0;
+        }
     }
 }
 
