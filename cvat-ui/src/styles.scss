@@ -14,6 +14,12 @@ hr {
     height: 1px;
 }
 
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
 .cvat-spinner {
     position: absolute;
     top: 50%;

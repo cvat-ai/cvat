@@ -556,7 +556,7 @@ export default class LabelForm extends React.Component<Props> {
     private renderNewAttributeButton(): JSX.Element {
         return (
             <Form.Item>
-                <Button type='ghost' onClick={this.addAttribute} className='cvat-new-attribute-button'>
+                <Button onClick={this.addAttribute} className='cvat-new-attribute-button'>
                     Add an attribute
                     <PlusCircleOutlined />
                 </Button>

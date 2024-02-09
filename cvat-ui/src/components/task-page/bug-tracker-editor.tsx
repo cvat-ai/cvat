@@ -58,7 +58,6 @@ export default function BugTrackerEditorComponent(props: Props): JSX.Element {
                     </Text>
                     <br />
                     <Button
-                        type='ghost'
                         onClick={(): void => {
                             window.open(bugTracker, '_blank');
                         }}

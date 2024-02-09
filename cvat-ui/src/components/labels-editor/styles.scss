@@ -42,9 +42,9 @@ textarea.ant-input.cvat-raw-labels-viewer {
     display: flex;
     align-items: center;
     padding: 2px $grid-unit-size;
-    border-radius: 2px;
+    border-radius: 6px;
     margin: 2px;
-    margin-left: $grid-unit-size * 2;
+    margin-left: $grid-unit-size;
     user-select: none;
     border: 1px solid $border-color-1;
     opacity: 0.6;
@@ -69,11 +69,11 @@ textarea.ant-input.cvat-raw-labels-viewer {
     display: flex;
     align-items: center;
     padding: 2px $grid-unit-size;
-    border-radius: 2px;
     margin: 2px;
     margin-left: $grid-unit-size;
     user-select: none;
     opacity: 1;
+    border-color: $border-color-1;
 }
 
 .cvat-label-constructor-creator,
@@ -103,10 +103,10 @@ textarea.ant-input.cvat-raw-labels-viewer {
     }
 }
 
-.cvat-change-task-label-color-badge .ant-badge-status-dot {
+.ant-badge.cvat-change-task-label-color-badge > .ant-badge-status-dot {
     width: $grid-unit-size * 2;
     height: $grid-unit-size * 2;
-    border-radius: unset;
+    border-radius: 6px;
 }
 
 .cvat-skeleton-configurator {

@@ -19,10 +19,11 @@
 .cvat-workspace-settings,
 .cvat-player-settings,
 .cvat-organizations-settings {
-    width: 100%;
+    width: calc(100% - 24px);
     height: max-content;
-    background: $background-color-1;
-    padding: 24px;
+    background: white;
+    padding-top: 24px;
+    padding-left: 24px;
 }
 
 .cvat-workspace-settings-text-content {

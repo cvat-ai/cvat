@@ -126,7 +126,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
             </Form.List>
             <Row justify='start'>
                 <Col>
-                    <Button type='ghost' onClick={onAddManifestItem} className='cvat-add-manifest-button'>
+                    <Button onClick={onAddManifestItem} className='cvat-add-manifest-button'>
                         Add manifest
                         <PlusCircleOutlined />
                     </Button>

@@ -50,7 +50,6 @@ function MessageForm(props: FormProps): JSX.Element {
                     <Button
                         onClick={cancel}
                         disabled={fetching}
-                        type='ghost'
                         className='cvat-create-issue-dialog-cancel-button'
                     >
                         Cancel

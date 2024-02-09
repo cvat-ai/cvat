@@ -133,7 +133,7 @@
 
     > .ant-slider-handle {
         z-index: 100;
-        margin-top: -3.5px;
+        margin-top: 2px;
     }
 
     > .ant-slider-track {
@@ -163,10 +163,13 @@
     max-width: $grid-unit-size * 30;
     max-height: $grid-unit-size * 3;
     line-height: $grid-unit-size * 3;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    user-select: none;
-    word-break: break-all;
+
+    > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        user-select: none;
+        word-break: break-all;
+    }
 }
 
 .cvat-player-frame-url-icon,

@@ -77,7 +77,6 @@ function PickFromModelComponent(props: Props): JSX.Element {
                 )}
                 {labels.map((label) => (
                     <Button
-                        type='ghost'
                         key={label.name}
                         disabled={labelNames.includes(label.name)}
                         onClick={() => {

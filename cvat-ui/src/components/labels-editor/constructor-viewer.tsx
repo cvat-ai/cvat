@@ -22,15 +22,15 @@ function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
         onCreate, onUpdate, onDelete, labels,
     } = props;
     const list = [
-        <Button key='create' type='ghost' onClick={() => onCreate('basic')} className='cvat-constructor-viewer-new-item'>
+        <Button key='create' onClick={() => onCreate('basic')} className='cvat-constructor-viewer-new-item'>
             Add label
             <PlusCircleOutlined />
         </Button>,
-        <Button key='create_skeleton' type='ghost' onClick={() => onCreate('skeleton')} className='cvat-constructor-viewer-new-skeleton-item'>
+        <Button key='create_skeleton' onClick={() => onCreate('skeleton')} className='cvat-constructor-viewer-new-skeleton-item'>
             Setup skeleton
             <PlusCircleOutlined />
         </Button>,
-        <Button key='from_model' type='ghost' onClick={() => onCreate('model')} className='cvat-constructor-viewer-new-from-model-item'>
+        <Button key='from_model' onClick={() => onCreate('model')} className='cvat-constructor-viewer-new-from-model-item'>
             From model
             <PlusCircleOutlined />
         </Button>,

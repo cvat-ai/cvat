@@ -48,7 +48,8 @@
     margin: $grid-unit-size * 2 0;
     background: $background-color-1;
 
-    .ant-row:nth-child(1) {
+    .cvat-project-name {
+        margin: 0;
         margin-bottom: $grid-unit-size * 2;
     }
 

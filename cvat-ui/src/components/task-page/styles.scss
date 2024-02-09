@@ -19,6 +19,11 @@
         padding: 20px;
         background: $background-color-1;
 
+        .cvat-task-name {
+            margin: 0;
+        margin-bottom: $grid-unit-size * 2;
+        }
+
         .cvat-task-details-user-block {
             > div:nth-child(2) > span {
                 margin-right: 8px;
