@@ -1357,20 +1357,30 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Text>
                     </Col>
                 </Row>
-                <Tabs type='card' tabBarGutter={8}>
-                    <Tabs.TabPane key='interactors' tab='Interactors'>
-                        {this.renderMasksConvertingBlock()}
-                        {this.renderLabelBlock()}
-                        {this.renderInteractorBlock()}
-                    </Tabs.TabPane>
-                    <Tabs.TabPane key='detectors' tab='Detectors'>
-                        {this.renderDetectorBlock()}
-                    </Tabs.TabPane>
-                    <Tabs.TabPane key='trackers' tab='Trackers'>
-                        {this.renderLabelBlock()}
-                        {this.renderTrackerBlock()}
-                    </Tabs.TabPane>
-                </Tabs>
+                <Tabs
+                    type='card'
+                    tabBarGutter={8}
+                    items={[{
+                        key: 'interactors',
+                        label: 'Interactors',
+                        children: [
+                            this.renderMasksConvertingBlock(),
+                            this.renderLabelBlock(),
+                            this.renderInteractorBlock(),
+                        ],
+                    }, {
+                        key: 'detectors',
+                        label: 'Detectors',
+                        children: [this.renderDetectorBlock()],
+                    }, {
+                        key: 'trackers',
+                        label: 'Trackers',
+                        children: [
+                            this.renderLabelBlock(),
+                            this.renderTrackerBlock(),
+                        ],
+                    }]}
+                />
             </div>
         );
     }

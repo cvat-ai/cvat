@@ -734,17 +734,25 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     </Col>
                 </Row>
                 {libraryInitialized ? (
-                    <Tabs tabBarGutter={8}>
-                        <Tabs.TabPane key='drawing' tab='Drawing' className='cvat-opencv-control-tabpane'>
-                            {this.renderDrawingContent()}
-                        </Tabs.TabPane>
-                        <Tabs.TabPane key='image' tab='Image' className='cvat-opencv-control-tabpane'>
-                            {this.renderImageContent()}
-                        </Tabs.TabPane>
-                        <Tabs.TabPane key='tracking' tab='Tracking' className='cvat-opencv-control-tabpane'>
-                            {this.renderTrackingContent()}
-                        </Tabs.TabPane>
-                    </Tabs>
+                    <Tabs
+                        tabBarGutter={8}
+                        items={[{
+                            key: 'drawing',
+                            label: 'Drawing',
+                            children: [this.renderDrawingContent()],
+                            className: 'cvat-opencv-control-tabpane',
+                        }, {
+                            key: 'image',
+                            label: 'Image',
+                            children: [this.renderImageContent()],
+                            className: 'cvat-opencv-control-tabpane',
+                        }, {
+                            key: 'tracking',
+                            label: 'Tracking',
+                            children: [this.renderTrackingContent()],
+                            className: 'cvat-opencv-control-tabpane',
+                        }]}
+                    />
                 ) : (
                     <Row justify='start' align='middle'>
                         <Col>

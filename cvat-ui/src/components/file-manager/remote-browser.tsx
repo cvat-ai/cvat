@@ -338,22 +338,21 @@ function RemoteBrowser(props: Props): JSX.Element {
     const PAGE_SIZE = 500;
     return (
         <div>
-            <Breadcrumb>
-                {currentPath.map((segment: string, idx: number) => {
-                    const key = currentPath.slice(0, idx + 1).join('/');
-                    return (
-                        <Breadcrumb.Item
-                            className='cvat-remote-browser-nav-breadcrumb'
-                            onClick={() => {
+            <Breadcrumb
+                items={
+                    currentPath.map((segment: string, idx: number) => {
+                        const key = currentPath.slice(0, idx + 1).join('/');
+                        return {
+                            className: 'cvat-remote-browser-nav-breadcrumb',
+                            onClick: () => {
                                 setCurrentPath(key.split('/'));
-                            }}
-                            key={key}
-                        >
-                            {segment}
-                        </Breadcrumb.Item>
-                    );
-                })}
-            </Breadcrumb>
+                            },
+                            key,
+                            title: segment,
+                        };
+                    })
+                }
+            />
 
             <Row className='cvat-remote-browser-search-wrapper' justify='space-between'>
                 <Col span={22}>

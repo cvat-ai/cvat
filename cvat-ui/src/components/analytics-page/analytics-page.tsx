@@ -7,7 +7,6 @@ import { useLocation, useParams } from 'react-router';
 import { Link } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Tabs from 'antd/lib/tabs';
-import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import notification from 'antd/lib/notification';
 import { useIsMounted } from 'utils/hooks';
@@ -233,21 +232,20 @@ function AnalyticsPage(): JSX.Element {
                     </Col>
                 );
                 tabs = (
-                    <Tabs type='card' className='cvat-project-analytics-tabs'>
-                        <Tabs.TabPane
-                            tab={(
-                                <span>
-                                    <Text>Performance</Text>
-                                </span>
-                            )}
-                            key='Overview'
-                        >
-                            <AnalyticsOverview
-                                report={analyticsReportInstance}
-                                onTimePeriodChange={onAnalyticsTimePeriodChange}
-                            />
-                        </Tabs.TabPane>
-                    </Tabs>
+                    <Tabs
+                        type='card'
+                        className='cvat-project-analytics-tabs'
+                        items={[{
+                            key: 'Overview',
+                            label: 'Performance',
+                            children: [(
+                                <AnalyticsOverview
+                                    report={analyticsReportInstance}
+                                    onTimePeriodChange={onAnalyticsTimePeriodChange}
+                                />
+                            )],
+                        }]}
+                    />
                 );
                 break;
             }
@@ -267,31 +265,26 @@ function AnalyticsPage(): JSX.Element {
                     </Col>
                 );
                 tabs = (
-                    <Tabs type='card' className='cvat-task-analytics-tabs'>
-                        <Tabs.TabPane
-                            tab={(
-                                <span>
-                                    <Text>Performance</Text>
-                                </span>
-                            )}
-                            key='overview'
-                        >
-                            <AnalyticsOverview
-                                report={analyticsReportInstance}
-                                onTimePeriodChange={onAnalyticsTimePeriodChange}
-                            />
-                        </Tabs.TabPane>
-                        <Tabs.TabPane
-                            tab={(
-                                <span>
-                                    <Text>Quality</Text>
-                                </span>
-                            )}
-                            key='quality'
-                        >
-                            <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />
-                        </Tabs.TabPane>
-                    </Tabs>
+                    <Tabs
+                        type='card'
+                        className='cvat-task-analytics-tabs'
+                        items={[{
+                            key: 'overview',
+                            label: 'Performance',
+                            children: [(
+                                <AnalyticsOverview
+                                    report={analyticsReportInstance}
+                                    onTimePeriodChange={onAnalyticsTimePeriodChange}
+                                />
+                            )],
+                        }, {
+                            key: 'quality',
+                            label: 'Quality',
+                            children: [(
+                                <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />
+                            )],
+                        }]}
+                    />
                 );
                 break;
             }
@@ -312,21 +305,19 @@ function AnalyticsPage(): JSX.Element {
                     </Col>
                 );
                 tabs = (
-                    <Tabs type='card'>
-                        <Tabs.TabPane
-                            tab={(
-                                <span>
-                                    <Text>Performance</Text>
-                                </span>
-                            )}
-                            key='overview'
-                        >
-                            <AnalyticsOverview
-                                report={analyticsReportInstance}
-                                onTimePeriodChange={onAnalyticsTimePeriodChange}
-                            />
-                        </Tabs.TabPane>
-                    </Tabs>
+                    <Tabs
+                        type='card'
+                        items={[{
+                            key: 'overview',
+                            label: 'Performance',
+                            children: [(
+                                <AnalyticsOverview
+                                    report={analyticsReportInstance}
+                                    onTimePeriodChange={onAnalyticsTimePeriodChange}
+                                />
+                            )],
+                        }]}
+                    />
                 );
                 break;
             }
