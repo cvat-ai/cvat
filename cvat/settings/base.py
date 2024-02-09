@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'allauth.socialaccount',
     'health_check',
+    'health_check.cache',
     'health_check.db',
     'health_check.contrib.migrations',
     'health_check.contrib.psutil',
@@ -679,6 +680,9 @@ DATABASES = {
         'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
         'PASSWORD': postgres_password,
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
+        'OPTIONS': {
+            'application_name': os.getenv('CVAT_POSTGRES_APPLICATION_NAME', 'cvat'),
+        },
     }
 }
 
