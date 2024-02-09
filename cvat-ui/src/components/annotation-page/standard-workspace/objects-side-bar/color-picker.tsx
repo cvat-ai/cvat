@@ -128,8 +128,8 @@ function ColorPicker(props: Props, ref: React.Ref<any>): JSX.Element {
             placement={placement || 'left'}
             overlayClassName='cvat-label-color-picker'
             trigger='click'
-            visible={typeof visible === 'boolean' ? visible : pickerVisible}
-            onVisibleChange={changeVisible}
+            open={typeof visible === 'boolean' ? visible : pickerVisible}
+            onOpenChange={changeVisible}
         >
             {children}
         </Popover>

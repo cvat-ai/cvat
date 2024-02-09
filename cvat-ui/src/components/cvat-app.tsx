@@ -15,7 +15,6 @@ import { DisconnectOutlined } from '@ant-design/icons';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
 import ReactMarkdown from 'react-markdown';
-import 'antd/dist/antd.css';
 
 import LogoutComponent from 'components/logout-component';
 import LoginPageContainer from 'containers/login-page/login-page';

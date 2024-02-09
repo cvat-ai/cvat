@@ -131,8 +131,8 @@ function ItemTopComponent(props: Props): JSX.Element {
             { !isGroundTruth && (
                 <Col span={2}>
                     <Dropdown
-                        visible={menuVisible}
-                        onVisibleChange={changeMenuVisible}
+                        open={menuVisible}
+                        onOpenChange={changeMenuVisible}
                         placement='bottomLeft'
                         trigger={menuVisible ? ['click'] : ['click', 'hover']}
                         overlay={ItemMenu({

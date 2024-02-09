@@ -11,7 +11,7 @@ import { useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import { CloseOutlined } from '@ant-design/icons';
-import Comment from 'antd/lib/comment';
+import { Comment } from '@ant-design/compatible';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import Button from 'antd/lib/button';

@@ -118,6 +118,10 @@
   "bugs": {
     "url": "https://github.com/cvat-ai/cvat/issues"
   },
+  "resolutions": {
+    "@types/react": "18.2.55",
+    "@types/react-dom": "18.2.19"
+  },
   "homepage": "https://github.com/cvat-ai/cvat#readme",
   "dependencies": {
     "@types/fabric": "^4.5.7",

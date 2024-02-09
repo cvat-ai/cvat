@@ -19,6 +19,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { getCore, JobStage } from 'cvat-core-wrapper';
 import AnnotationsActionsModalContent from '../annotations-actions/annotations-actions-modal';
+import { createRoot } from 'react-dom/client';
 
 const core = getCore();
 
@@ -194,10 +195,16 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
             <Menu.Item
                 key={Actions.RUN_ACTIONS}
                 onClick={() => {
-                    const div = window.document.createElement('div');
+                    const div = window.document.createElement('div')
                     window.document.body.append(div);
-                    ReactDOM.render(
-                        <AnnotationsActionsModalContent onClose={() => div.remove()} />, div,
+                    const root = createRoot(div);
+                    root.render(
+                        <AnnotationsActionsModalContent
+                            onClose={() => {
+                                root.unmount();
+                                div.remove();
+                            }}
+                        />,
                     );
                 }}
             >

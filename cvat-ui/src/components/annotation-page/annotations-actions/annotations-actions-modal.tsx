@@ -281,7 +281,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
         <Modal
             closable={false}
             width={640}
-            visible={modalVisible}
+            open={modalVisible}
             destroyOnClose
             footer={null}
             afterClose={onClose}
