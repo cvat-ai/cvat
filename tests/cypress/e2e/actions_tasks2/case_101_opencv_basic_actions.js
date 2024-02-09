@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -84,11 +84,14 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
             cy.get('.cvat-opencv-control-popover').within(() => {
                 cy.contains('OpenCV is loading').should('not.exist');
             });
-            // Intelligent cissors button be visible
-            cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
+            cy.get('body').click();
         });
 
         it('Create a shape with "Intelligent cissors". Create the second shape with the label change and "Done" button.', () => {
+            cy.interactOpenCVControlButton();
+            cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
+            cy.get('body').click();
+
             cy.opencvCreateShape(createOpencvShape);
             cy.opencvCreateShape(createOpencvShapeSecondLabel);
         });

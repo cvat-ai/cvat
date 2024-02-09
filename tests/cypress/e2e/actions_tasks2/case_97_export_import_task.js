@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -80,7 +80,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.contains('.cvat-item-task-name', taskName)
                 .parents('.cvat-tasks-list-item')
                 .find('.cvat-item-open-task-actions > .cvat-menu-icon')
-                .trigger('mouseover');
+                .click();
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {
