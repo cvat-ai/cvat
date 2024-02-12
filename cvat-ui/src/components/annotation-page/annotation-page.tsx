@@ -146,9 +146,9 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             <Layout.Content className='cvat-annotation-layout-content'>
                 {workspace === Workspace.STANDARD3D && <StandardWorkspace3DComponent />}
                 {workspace === Workspace.STANDARD && <StandardWorkspaceComponent />}
-                {workspace === Workspace.ATTRIBUTE_ANNOTATION && <AttributeAnnotationWorkspace />}
-                {workspace === Workspace.TAG_ANNOTATION && <TagAnnotationWorkspace />}
-                {workspace === Workspace.REVIEW_WORKSPACE && <ReviewAnnotationsWorkspace />}
+                {workspace === Workspace.ATTRIBUTES && <AttributeAnnotationWorkspace />}
+                {workspace === Workspace.TAGS && <TagAnnotationWorkspace />}
+                {workspace === Workspace.REVIEW && <ReviewAnnotationsWorkspace />}
             </Layout.Content>
             <FiltersModalComponent />
             <StatisticsModalComponent />

@@ -57,7 +57,7 @@ const defaultState: AnnotationState = {
         requestedId: null,
         groundTruthJobFramesMeta: null,
         groundTruthInstance: null,
-        initialOpenGuide: false,
+        queryParameters: {},
         instance: null,
         attributes: {},
         fetching: false,
@@ -154,19 +154,23 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frameData: data,
                 minZ,
                 maxZ,
-                initialOpenGuide,
+                queryParameters,
                 groundTruthInstance,
                 groundTruthJobFramesMeta,
             } = action.payload;
 
-            const isReview = job.stage === JobStage.VALIDATION;
-            let workspaceSelected = Workspace.STANDARD;
-
             const defaultLabel = job.labels.length ? job.labels[0] : null;
+            const isReview = job.stage === JobStage.VALIDATION;
+            let workspaceSelected = null;
             let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
                 defaultLabel.type : ShapeType.RECTANGLE;
 
-            if (job.dimension === DimensionType.DIMENSION_3D) {
+            if (job.dimension === DimensionType.DIMENSION_2D) {
+                if (queryParameters.initialWorkspace !== Workspace.STANDARD3D) {
+                    workspaceSelected = queryParameters.initialWorkspace;
+                }
+                workspaceSelected = workspaceSelected || (isReview ? Workspace.REVIEW : Workspace.STANDARD);
+            } else {
                 workspaceSelected = Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;
             }
@@ -188,9 +192,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
-                    initialOpenGuide,
                     groundTruthInstance,
                     groundTruthJobFramesMeta,
+                    queryParameters: {
+                        initialOpenGuide: queryParameters.initialOpenGuide,
+                    },
                 },
                 annotations: {
                     ...state.annotations,
@@ -225,7 +231,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 colors,
                 workspace: isReview && job.dimension === DimensionType.DIMENSION_2D ?
-                    Workspace.REVIEW_WORKSPACE : workspaceSelected,
+                    Workspace.REVIEW : workspaceSelected,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {

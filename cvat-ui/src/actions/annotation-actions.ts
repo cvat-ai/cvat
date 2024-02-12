@@ -866,13 +866,16 @@ export function closeJob(): ThunkAction {
 }
 
 export function getJobAsync({
-    taskID, jobID, initialFrame, initialFilters, initialOpenGuide,
+    taskID, jobID, initialFrame, initialFilters, queryParameters,
 }: {
     taskID: number;
     jobID: number;
     initialFrame: number | null;
     initialFilters: object[];
-    initialOpenGuide: boolean;
+    queryParameters: {
+        initialOpenGuide?: boolean;
+        initialWorkspace?: Workspace;
+    }
 }): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
@@ -960,7 +963,7 @@ export function getJobAsync({
                 payload: {
                     openTime,
                     job,
-                    initialOpenGuide,
+                    queryParameters,
                     groundTruthInstance: gtJob || null,
                     groundTruthJobFramesMeta,
                     issues,

@@ -694,7 +694,9 @@ export interface AnnotationState {
         labels: Label[];
         requestedId: number | null;
         instance: Job | null | undefined;
-        initialOpenGuide: boolean;
+        queryParameters: {
+            initialOpenGuide?: boolean;
+        };
         groundTruthJobFramesMeta: FramesMetaData | null;
         groundTruthInstance: Job | null;
         attributes: Record<number, any[]>;
@@ -773,9 +775,10 @@ export interface AnnotationState {
 export enum Workspace {
     STANDARD3D = 'Standard 3D',
     STANDARD = 'Standard',
-    ATTRIBUTE_ANNOTATION = 'Attribute annotation',
-    TAG_ANNOTATION = 'Tag annotation',
-    REVIEW_WORKSPACE = 'Review',
+    ATTRIBUTES = 'Attribute annotation',
+    SINGLE_OBJECT = 'Single object',
+    TAGS = 'Tag annotation',
+    REVIEW = 'Review',
 }
 
 export enum GridColor {

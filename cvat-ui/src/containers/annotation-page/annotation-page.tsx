@@ -64,6 +64,10 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const searchParams = new URLSearchParams(window.location.search);
     const initialFilters: object[] = [];
     const initialOpenGuide = searchParams.has('openGuide');
+    const initialWorkspace = Object.entries(Workspace).find(([key]) => (
+        key === searchParams.get('openWorkspace')?.toUpperCase()
+    ));
+
     const parsedFrame = +(searchParams.get('frame') || 'NaN');
     const initialFrame = Number.isInteger(parsedFrame) && parsedFrame >= 0 ? parsedFrame : null;
 
@@ -88,7 +92,10 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
                 jobID,
                 initialFrame,
                 initialFilters,
-                initialOpenGuide,
+                queryParameters: {
+                    initialOpenGuide,
+                    ...(initialWorkspace ? { initialWorkspace: initialWorkspace[1] } : {}),
+                },
             }));
         },
         saveLogs(): void {

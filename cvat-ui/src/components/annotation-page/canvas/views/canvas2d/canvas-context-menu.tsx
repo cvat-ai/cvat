@@ -130,7 +130,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
     }
 
     const copyObject = state?.isGroundTruth ? state : null;
-    if (workspace === Workspace.REVIEW_WORKSPACE) {
+    if (workspace === Workspace.REVIEW) {
         const conflict = frameConflicts
             .find((qualityConflict: QualityConflict) => qualityConflict.annotationConflicts.some(
                 (annotationConflict: AnnotationConflict) => (

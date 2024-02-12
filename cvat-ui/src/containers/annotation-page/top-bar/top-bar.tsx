@@ -109,7 +109,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 history,
                 filters: annotationFilters,
             },
-            job: { instance: jobInstance, initialOpenGuide },
+            job: { instance: jobInstance, queryParameters: { initialOpenGuide } },
             canvas: { ready: canvasIsReady, instance: canvasInstance, activeControl },
             workspace,
         },

@@ -112,7 +112,7 @@ function ObjectListHeader(props: Props): JSX.Element {
             <Row justify='space-between' align='middle'>
                 {!readonly && <LockAllSwitcher {...props} />}
                 <HideAllSwitcher {...props} />
-                { workspace === Workspace.REVIEW_WORKSPACE && (
+                { workspace === Workspace.REVIEW && (
                     <GTSwitcher {...props} />
                 )}
                 <CollapseAllSwitcher {...props} />

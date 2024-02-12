@@ -115,7 +115,7 @@ export default function LabelsListComponent(): JSX.Element {
                         </CVATTooltip>
                     </Col>
                     {
-                        workspace === Workspace.REVIEW_WORKSPACE ? (
+                        workspace === Workspace.REVIEW ? (
                             <Col offset={2}>
                                 <CVATTooltip title='Show Ground truth annotations and conflicts'>
                                     <Icon
