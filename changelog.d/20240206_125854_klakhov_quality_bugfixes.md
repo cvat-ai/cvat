@@ -1,4 +1,4 @@
 ### Fixed
 
-- On task quality page only the first job page had quality report results displayed in UI
+- On quality page for a task, only the first page with jobs has quality report metrics
   (<https://github.com/opencv/cvat/pull/7441>)
