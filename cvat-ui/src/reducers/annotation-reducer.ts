@@ -169,7 +169,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 if (queryParameters.initialWorkspace !== Workspace.STANDARD3D) {
                     workspaceSelected = queryParameters.initialWorkspace;
                 }
-                workspaceSelected = workspaceSelected || (isReview ? Workspace.REVIEW : Workspace.STANDARD);
+                workspaceSelected = workspaceSelected || (isReview ? Workspace.REVIEW : Workspace.SINGLE_SHAPE);
             } else {
                 workspaceSelected = Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;

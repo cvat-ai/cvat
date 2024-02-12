@@ -240,7 +240,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
             >
                 {sidebarCollapsed ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
-            <Row justify='center' className='labels-tag-annotation-sidebar-not-found-wrapper'>
+            <Row justify='center' className='cvat-tag-annotation-sidebar-empty'>
                 <Col>
                     <Text strong>Can&apos;t place tag on this frame.</Text>
                 </Col>

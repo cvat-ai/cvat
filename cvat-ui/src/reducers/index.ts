@@ -776,7 +776,7 @@ export enum Workspace {
     STANDARD3D = 'Standard 3D',
     STANDARD = 'Standard',
     ATTRIBUTES = 'Attribute annotation',
-    SINGLE_OBJECT = 'Single object',
+    SINGLE_SHAPE = 'Single shape',
     TAGS = 'Tag annotation',
     REVIEW = 'Review',
 }
