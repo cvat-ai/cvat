@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,17 +33,10 @@ context('Delete unlock/lock object', () => {
         cy.get('body').type(shortcut);
     }
 
-    function clickRemoveOnDropdownMenu() {
-        cy.get('.cvat-object-item-menu').contains(new RegExp('^Remove$', 'g')).click({ force: true });
-    }
-
     function deleteObjectViaGUIFromSidebar() {
         cy.get('.cvat-objects-sidebar-states-list').within(() => {
-            cy.get('.cvat-objects-sidebar-state-item').within(() => {
-                cy.get('span[aria-label="more"]').click();
-            });
+            cy.interactAnnotationObjectMenu('.cvat-objects-sidebar-state-item', 'Remove');
         });
-        clickRemoveOnDropdownMenu();
     }
 
     function deleteObjectViaGUIFromObject() {
@@ -52,11 +45,8 @@ context('Delete unlock/lock object', () => {
             cy.get('.cvat_canvas_shape').rightclick();
         });
         cy.get('.cvat-canvas-context-menu').within(() => {
-            cy.get('.cvat-objects-sidebar-state-item').within(() => {
-                cy.get('span[aria-label="more"]').click();
-            });
+            cy.interactAnnotationObjectMenu('.cvat-objects-sidebar-state-item', 'Remove');
         });
-        clickRemoveOnDropdownMenu();
     }
 
     function actionOnConfirmWindow(textBuntton) {

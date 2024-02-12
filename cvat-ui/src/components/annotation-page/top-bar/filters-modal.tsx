@@ -303,10 +303,15 @@ function FiltersModalComponent(): JSX.Element {
         >
             <div
                 key='used'
-                className='recently-used-wrapper'
+                className='cvat-recently-used-filters-wrapper'
                 style={{ display: filters.length ? 'inline-block' : 'none' }}
             >
-                <Dropdown overlay={menu}>
+                <Dropdown
+                    destroyPopupOnHide
+                    trigger={['click']}
+                    overlay={menu}
+                    overlayClassName='cvat-recently-used-filters-dropdown'
+                >
                     <Button
                         type='text'
                         className='cvat-filters-modal-recently-used-button'
