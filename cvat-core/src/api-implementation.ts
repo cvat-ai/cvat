@@ -425,14 +425,13 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return reports;
     });
     implementationMixin(cvat.analytics.quality.conflicts, async (filter) => {
-        let updatedParams: Record<string, string> = {};
-        if ('reportId' in filter) {
-            updatedParams = {
-                report_id: filter.reportId,
-            };
-        }
+        checkFilter(filter, {
+            reportId: isInteger,
+        });
 
-        const conflictsData = await serverProxy.analytics.quality.conflicts(updatedParams);
+        const params = fieldsToSnakeCase(filter);
+
+        const conflictsData = await serverProxy.analytics.quality.conflicts(params);
         const conflicts = conflictsData.map((conflict) => new QualityConflict({ ...conflict }));
         const frames = Array.from(new Set(conflicts.map((conflict) => conflict.frame)))
             .sort((a, b) => a - b);

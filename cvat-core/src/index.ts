@@ -4,8 +4,6 @@
 
 import {
     AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
-    SerializedAnalyticsReport, SerializedQualityConflictData, SerializedQualityReportData,
-    SerializedQualitySettingsData,
 } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
@@ -29,6 +27,10 @@ import { FrameData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
+import QualityReport from './quality-report';
+import QualityConflict from './quality-conflict';
+import QualitySettings from './quality-settings';
+import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
 import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
 import {
@@ -130,18 +132,14 @@ export default interface CVATCore {
     };
     analytics: {
         quality: {
-            reports: (filter: QualityReportsFilter) => Promise<SerializedQualityReportData[]>;
-            conflicts: (filter: QualityConflictsFilter) => Promise<SerializedQualityConflictData[]>;
+            reports: (filter: QualityReportsFilter) => Promise<PaginatedResource<QualityReport>>;
+            conflicts: (filter: QualityConflictsFilter) => Promise<QualityConflict[]>;
             settings: {
-                get: (filter: QualitySettingsFilter) => Promise<SerializedQualitySettingsData>;
-                update: (
-                    settingsID: number,
-                    settingsData: SerializedQualitySettingsData,
-                ) => Promise<SerializedQualitySettingsData>;
+                get: (filter: QualitySettingsFilter) => Promise<QualitySettings>;
             };
         };
         performance: {
-            reports: (filter: AnalyticsReportFilter) => Promise<SerializedAnalyticsReport>;
+            reports: (filter: AnalyticsReportFilter) => Promise<AnalyticsReport>;
         };
     };
     frames: {
