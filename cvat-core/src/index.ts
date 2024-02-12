@@ -65,6 +65,7 @@ export default interface CVATCore {
         setAuthData: any;
         removeAuthData: any;
         installedApps: any;
+        apiSchema: typeof serverProxy.server.apiSchema;
     };
     assets: {
         create: any;
