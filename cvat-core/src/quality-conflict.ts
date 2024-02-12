@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { SerializedAnnotationConflictData, SerializedQualityConflictData } from './server-response-types';
 import { ObjectType } from './enums';
 
 export enum QualityConflictType {
@@ -13,25 +14,6 @@ export enum QualityConflictType {
 export enum ConflictSeverity {
     ERROR = 'error',
     WARNING = 'warning',
-}
-
-export interface SerializedQualityConflictData {
-    id?: number;
-    frame?: number;
-    type?: string;
-    annotation_ids?: SerializedAnnotationConflictData[];
-    data?: string;
-    severity?: string;
-    description?: string;
-}
-
-export interface SerializedAnnotationConflictData {
-    job_id?: number;
-    obj_id?: number;
-    type?: ObjectType;
-    shape_type?: string | null;
-    conflict_type?: string;
-    severity?: string;
 }
 
 export class AnnotationConflict {

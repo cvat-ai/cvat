@@ -15,17 +15,15 @@ import {
     SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
-    SerializedQualitySettingsData, SerializedInvitationData, SerializedCloudStorage,
-    SerializedFramesMetaData, SerializedCollection,
+    SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
+    SerializedQualitySettingsData, QualitySettingsFilter, SerializedQualityConflictData, QualityConflictsFilter,
+    SerializedQualityReportData, QualityReportsFilter, SerializedAnalyticsReport, AnalyticsReportFilter,
 } from './server-response-types';
-import { SerializedQualityReportData } from './quality-report';
-import { SerializedAnalyticsReport } from './analytics-report';
 import { Storage } from './storage';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
 import config from './config';
 import { ServerError } from './exceptions';
-import { SerializedQualityConflictData } from './quality-conflict';
 
 type Params = {
     org: number | string,
@@ -2310,7 +2308,9 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
     }
 }
 
-async function getQualitySettings(filter): Promise<SerializedQualitySettingsData> {
+async function getQualitySettings(
+    filter: QualitySettingsFilter,
+): Promise<SerializedQualitySettingsData> {
     const { backendAPI } = config;
 
     try {
@@ -2344,7 +2344,9 @@ async function updateQualitySettings(
     }
 }
 
-async function getQualityConflicts(filter): Promise<SerializedQualityConflictData[]> {
+async function getQualityConflicts(
+    filter: QualityConflictsFilter,
+): Promise<SerializedQualityConflictData[]> {
     const params = enableOrganization();
     const { backendAPI } = config;
 
@@ -2360,7 +2362,9 @@ async function getQualityConflicts(filter): Promise<SerializedQualityConflictDat
     }
 }
 
-async function getQualityReports(filter): Promise<SerializedQualityReportData[]> {
+async function getQualityReports(
+    filter: QualityReportsFilter,
+): Promise<SerializedQualityReportData[]> {
     const { backendAPI } = config;
 
     try {
@@ -2376,7 +2380,9 @@ async function getQualityReports(filter): Promise<SerializedQualityReportData[]>
     }
 }
 
-async function getAnalyticsReports(filter): Promise<SerializedAnalyticsReport> {
+async function getAnalyticsReports(
+    filter: AnalyticsReportFilter,
+): Promise<SerializedAnalyticsReport> {
     const { backendAPI } = config;
 
     try {
