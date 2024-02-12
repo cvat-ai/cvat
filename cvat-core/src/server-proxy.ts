@@ -19,6 +19,7 @@ import {
     SerializedQualitySettingsData, QualitySettingsFilter, SerializedQualityConflictData, QualityConflictsFilter,
     SerializedQualityReportData, QualityReportsFilter, SerializedAnalyticsReport, AnalyticsReportFilter,
 } from './server-response-types';
+import { PaginatedResource } from './core-types';
 import { Storage } from './storage';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
@@ -2364,7 +2365,7 @@ async function getQualityConflicts(
 
 async function getQualityReports(
     filter: QualityReportsFilter,
-): Promise<SerializedQualityReportData[]> {
+): Promise<PaginatedResource<SerializedQualityReportData>> {
     const { backendAPI } = config;
 
     try {
@@ -2374,6 +2375,7 @@ async function getQualityReports(
             },
         });
 
+        response.data.results.count = response.data.count;
         return response.data.results;
     } catch (errorData) {
         throw generateError(errorData);
