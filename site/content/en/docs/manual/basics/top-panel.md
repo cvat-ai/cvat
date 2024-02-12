@@ -27,6 +27,9 @@ Button assignment:
 
   ![](/images/image229.jpg)
 
+- **Run actions** - opens the [Shapes converter](/docs/enterprise/shapes-converter/)
+  With **Remove filtered shapes** functionality. that is available for all plans without limitations.
+  - **Remove filtered shapes** - removes all shapes in alignment with the set-up filter. Doesn't work with tracks.
 - **Open the task** — opens a page with details about the task.
 - **Change job state** - changes the state of the job (`new`, `in progress`, `rejected`, `completed`).
 - **Finish the job**/**Renew the job** - changes the job stage and state
