@@ -16,7 +16,7 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
     SerializedQualitySettingsData, SerializedInvitationData, SerializedCloudStorage,
-    SerializedFramesMetaData, SerializedCollection,
+    SerializedFramesMetaData, SerializedCollection, SerializedAPISchema,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -1899,7 +1899,7 @@ async function installedApps() {
     }
 }
 
-async function getApiSchema() {
+async function getApiSchema(): Promise<SerializedAPISchema> {
     const { backendAPI } = config;
 
     try {
