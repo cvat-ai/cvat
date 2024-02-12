@@ -345,7 +345,7 @@ export interface SerializedAnalyticsEntry {
 }
 
 export interface ApiAnalyticsReportFilter extends ApiCommonFilterParams {
-    peoject_id?: number;
+    project_id?: number;
     task_id?: number;
     job_id?: number;
     start_date?: string;
