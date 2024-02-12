@@ -2,6 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
+import {
+    AnalyticsReportFilter, QualityConflictsFilter, QualityReportsFilter, QualitySettingsFilter,
+    SerializedAnalyticsReport, SerializedQualityConflictData, SerializedQualityReportData,
+    SerializedQualitySettingsData,
+} from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
@@ -125,12 +130,18 @@ export default interface CVATCore {
     };
     analytics: {
         quality: {
-            reports: any;
-            conflicts: any;
-            settings: any;
+            reports: (filter: QualityReportsFilter) => Promise<SerializedQualityReportData[]>;
+            conflicts: (filter: QualityConflictsFilter) => Promise<SerializedQualityConflictData[]>;
+            settings: {
+                get: (filter: QualitySettingsFilter) => Promise<SerializedQualitySettingsData>;
+                update: (
+                    settingsID: number,
+                    settingsData: SerializedQualitySettingsData,
+                ) => Promise<SerializedQualitySettingsData>;
+            };
         };
         performance: {
-            reports: any;
+            reports: (filter: AnalyticsReportFilter) => Promise<SerializedAnalyticsReport>;
         };
     };
     frames: {
