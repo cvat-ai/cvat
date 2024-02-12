@@ -6,6 +6,8 @@ from rest_framework.renderers import JSONRenderer
 from datetime import datetime, timezone
 from typing import Optional
 
+from django.db import transaction
+
 from cvat.apps.engine.log import vlogger
 
 def event_scope(action, resource):
@@ -39,6 +41,7 @@ def record_server_event(
     scope: str,
     request_id: Optional[str],
     payload: Optional[dict] = None,
+    on_commit: bool = False,
     **kwargs,
 ) -> None:
     payload = payload or {}
@@ -59,7 +62,12 @@ def record_server_event(
         **kwargs,
     }
 
-    vlogger.info(JSONRenderer().render(data).decode('UTF-8'))
+    rendered_data = JSONRenderer().render(data).decode('UTF-8')
+
+    if on_commit:
+        transaction.on_commit(lambda: vlogger.info(rendered_data), robust=True)
+    else:
+        vlogger.info(rendered_data)
 
 
 class EventScopeChoice:

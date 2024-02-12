@@ -281,6 +281,7 @@ def handle_create(scope, instance, **kwargs):
     record_server_event(
         scope=scope,
         request_id=request_id(),
+        on_commit=True,
         obj_id=getattr(instance, 'id', None),
         obj_name=_get_object_name(instance),
         org_id=oid,
@@ -313,6 +314,7 @@ def handle_update(scope, instance, old_instance, **kwargs):
         record_server_event(
             scope=scope,
             request_id=request_id(),
+            on_commit=True,
             obj_name=prop,
             obj_id=getattr(instance, f'{prop}_id', None),
             obj_val=str(change["new_value"]),
@@ -364,6 +366,7 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     record_server_event(
         scope=scope,
         request_id=request_id(),
+        on_commit=True,
         obj_id=getattr(instance, 'id', None),
         obj_name=_get_object_name(instance),
         org_id=oid,
@@ -405,6 +408,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
         record_server_event(
             scope=event_scope(action, "tags"),
             request_id=request_id(),
+            on_commit=True,
             count=len(tags),
             org_id=oid,
             org_slug=oslug,
@@ -427,6 +431,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
             record_server_event(
                 scope=scope,
                 request_id=request_id(),
+                on_commit=True,
                 obj_name=shape_type,
                 count=len(shapes),
                 org_id=oid,
@@ -455,6 +460,7 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
             record_server_event(
                 scope=scope,
                 request_id=request_id(),
+                on_commit=True,
                 obj_name=track_type,
                 count=len(tracks),
                 org_id=oid,
