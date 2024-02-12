@@ -13,13 +13,13 @@ import AnalyticsCard from '../views/analytics-card';
 import { toRepresentation } from '../utils/text-formatting';
 
 interface Props {
-    taskId: number;
+    taskID: number;
     taskReport: QualityReport | null;
     setQualitySettingsVisible: (visible: boolean) => void;
 }
 
 function MeanQuality(props: Props): JSX.Element {
-    const { taskId, taskReport, setQualitySettingsVisible } = props;
+    const { taskID, taskReport, setQualitySettingsVisible } = props;
     const reportSummary = taskReport?.summary;
 
     const tooltip = (
@@ -61,7 +61,7 @@ function MeanQuality(props: Props): JSX.Element {
                     <Button type='primary' icon={<DownloadOutlined />} className='cvat-analytics-download-report-button'>
                         <a
                             href={`${getCore().config.backendAPI}/quality/reports/${taskReport?.id}/data`}
-                            download={`quality-report-task_${taskId}-${taskReport?.id}.json`}
+                            download={`quality-report-task_${taskID}-${taskReport?.id}.json`}
                         >
                             Quality Report
                         </a>

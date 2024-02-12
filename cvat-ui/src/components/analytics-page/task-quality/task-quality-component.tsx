@@ -49,16 +49,16 @@ function TaskQualityComponent(props: Props): JSX.Element {
             }
         }
 
-        core.analytics.quality.reports({ pageSize: 1, target: 'task', taskId: task.id }).then(([report]) => {
+        core.analytics.quality.reports({ pageSize: 1, target: 'task', taskID: task.id }).then(([report]) => {
             let reportRequest = Promise.resolve<QualityReport[]>([]);
             if (report) {
                 reportRequest = core.analytics.quality.reports({
                     pageSize: task.jobs.length,
-                    parentId: report.id,
+                    parentID: report.id,
                     target: 'job',
                 });
             }
-            const settingsRequest = core.analytics.quality.settings.get({ taskId: task.id });
+            const settingsRequest = core.analytics.quality.settings.get({ taskID: task.id });
 
             Promise.all([reportRequest, settingsRequest]).then(([jobReports, settings]) => {
                 setQualitySettings(settings);
@@ -87,7 +87,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
                                         <MeanQuality
                                             taskReport={taskReport}
                                             setQualitySettingsVisible={setQualitySettingsVisible}
-                                            taskId={task.id}
+                                            taskID={task.id}
                                         />
                                     </Row>
                                     <Row gutter={16}>
@@ -115,7 +115,7 @@ function TaskQualityComponent(props: Props): JSX.Element {
                                 </>
                             ) : (
                                 <Row justify='center'>
-                                    <EmptyGtJob taskId={task.id} />
+                                    <EmptyGtJob taskID={task.id} />
                                 </Row>
                             )
                         }

@@ -32,7 +32,7 @@ function JobListComponent(props: Props): JSX.Element {
     } = props;
 
     const jobsReports: Record<number, QualityReport> = jobsReportsArray
-        .reduce((acc, report) => ({ ...acc, [report.jobId]: report }), {});
+        .reduce((acc, report) => ({ ...acc, [report.jobID]: report }), {});
     const history = useHistory();
     const { id: taskId, jobs } = taskInstance;
     const [renderedJobs] = useState<Job[]>(jobs.filter((job: Job) => job.type === JobType.ANNOTATION));

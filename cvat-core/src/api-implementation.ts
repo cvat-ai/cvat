@@ -405,10 +405,10 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         checkFilter(filter, {
             page: isInteger,
             pageSize: isPageSize,
-            parentId: isInteger,
-            projectId: isInteger,
-            taskId: isInteger,
-            jobId: isInteger,
+            parentID: isInteger,
+            projectID: isInteger,
+            taskID: isInteger,
+            jobID: isInteger,
             target: isString,
             filter: isString,
             search: isString,
@@ -426,7 +426,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     });
     implementationMixin(cvat.analytics.quality.conflicts, async (filter) => {
         checkFilter(filter, {
-            reportId: isInteger,
+            reportID: isInteger,
         });
 
         const params = fieldsToSnakeCase(filter);
@@ -502,7 +502,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     });
     implementationMixin(cvat.analytics.quality.settings.get, async (filter) => {
         checkFilter(filter, {
-            taskId: isInteger,
+            taskID: isInteger,
         });
 
         const params = fieldsToSnakeCase(filter);

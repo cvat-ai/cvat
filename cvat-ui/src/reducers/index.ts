@@ -913,12 +913,6 @@ export interface WebhooksState {
     query: WebhooksQuery;
 }
 
-export interface QualityQuery {
-    taskId: number | null;
-    jobId: number | null;
-    parentId: number | null;
-}
-
 export interface InvitationsQuery {
     page: number;
 }

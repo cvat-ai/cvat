@@ -12,11 +12,11 @@ import Button from 'antd/lib/button';
 import Title from 'antd/lib/typography/Title';
 
 interface Props {
-    taskId: number,
+    taskID: number,
 }
 
 function EmptyJobComponent(props: Props): JSX.Element {
-    const { taskId } = props;
+    const { taskID } = props;
 
     return (
         <Col span={24}>
@@ -27,7 +27,7 @@ function EmptyJobComponent(props: Props): JSX.Element {
                     </Col>
                     <Col>
                         <Button type='primary'>
-                            <Link to={`/tasks/${taskId}/jobs/create`}>Create new</Link>
+                            <Link to={`/tasks/${taskID}/jobs/create`}>Create new</Link>
                         </Button>
                     </Col>
                 </Row>
