@@ -11,10 +11,10 @@ const defaultState: ServerAPIState = {
     fetching: false,
     initialized: false,
     configuration: {
-        isRegistrationEnabled: false,
-        isBasicLoginEnabled: false,
-        isPasswordResetEnabled: false,
-        isPasswordChangeEnabled: false,
+        isRegistrationEnabled: true,
+        isBasicLoginEnabled: true,
+        isPasswordResetEnabled: true,
+        isPasswordChangeEnabled: true,
     },
 };
 
