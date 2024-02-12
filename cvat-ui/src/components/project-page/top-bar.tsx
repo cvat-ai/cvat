@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +37,11 @@ export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element
                 </Button>
             </Col>
             <Col className='cvat-project-top-bar-actions'>
-                <Dropdown overlay={<ActionsMenu projectInstance={projectInstance} />}>
+                <Dropdown
+                    destroyPopupOnHide
+                    trigger={['click']}
+                    overlay={<ActionsMenu projectInstance={projectInstance} />}
+                >
                     <Button size='middle' className='cvat-project-page-actions-button'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <MoreOutlined className='cvat-menu-icon' />

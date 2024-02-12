@@ -1,26 +1,26 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React, { useCallback } from 'react';
-import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import { LoadingOutlined } from '@ant-design/icons';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { MenuInfo } from 'rc-menu/lib/interface';
-import { DimensionType } from 'cvat-core-wrapper';
+import { DimensionType, CVATCore } from 'cvat-core-wrapper';
+import Menu, { MenuInfo } from 'components/dropdown-menu';
 import { usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
+
+type AnnotationFormats = Awaited<ReturnType<CVATCore['server']['formats']>>;
 
 interface Props {
     taskID: number;
     projectID: number | null;
     taskMode: string;
     bugTracker: string;
-    loaders: any[];
-    dumpers: any[];
+    loaders: AnnotationFormats['loaders'];
+    dumpers: AnnotationFormats['dumpers'];
     inferenceIsActive: boolean;
     taskDimension: DimensionType;
     backupIsActive: boolean;
@@ -137,7 +137,11 @@ function ActionsMenuComponent(props: Props): JSX.Element {
     );
 
     return (
-        <Menu selectable={false} className='cvat-actions-menu' onClick={onClickMenuWrapper}>
+        <Menu
+            selectable={false}
+            className='cvat-actions-menu'
+            onClick={onClickMenuWrapper}
+        >
             { menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
                 .map((menuItem) => menuItem[0]) }
         </Menu>
