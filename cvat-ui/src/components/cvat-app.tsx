@@ -574,12 +574,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     component={ResetPasswordPageConfirmComponent}
                                 />
                             )}
-                            <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
-                            <Route
-                                exact
-                                path='/auth/password/reset/confirm'
-                                component={ResetPasswordPageConfirmComponent}
-                            />
 
                             <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
                             { routesToRender }
