@@ -1,11 +1,11 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, User } from 'cvat-core-wrapper';
 
 const cvat = getCore();
 
@@ -36,15 +36,15 @@ export enum AuthActionTypes {
 
 export const authActions = {
     authorizeRequest: () => createAction(AuthActionTypes.AUTHORIZED_REQUEST),
-    authorizeSuccess: (user: any) => createAction(AuthActionTypes.AUTHORIZED_SUCCESS, { user }),
+    authorizeSuccess: (user: User | null) => createAction(AuthActionTypes.AUTHORIZED_SUCCESS, { user }),
     authorizeFailed: (error: any) => createAction(AuthActionTypes.AUTHORIZED_FAILED, { error }),
     login: () => createAction(AuthActionTypes.LOGIN),
-    loginSuccess: (user: any) => createAction(AuthActionTypes.LOGIN_SUCCESS, { user }),
+    loginSuccess: (user: User) => createAction(AuthActionTypes.LOGIN_SUCCESS, { user }),
     loginFailed: (error: any, hasEmailVerificationBeenSent = false) => (
         createAction(AuthActionTypes.LOGIN_FAILED, { error, hasEmailVerificationBeenSent })
     ),
     register: () => createAction(AuthActionTypes.REGISTER),
-    registerSuccess: (user: any) => createAction(AuthActionTypes.REGISTER_SUCCESS, { user }),
+    registerSuccess: (user: User) => createAction(AuthActionTypes.REGISTER_SUCCESS, { user }),
     registerFailed: (error: any) => createAction(AuthActionTypes.REGISTER_FAILED, { error }),
     logout: () => createAction(AuthActionTypes.LOGOUT),
     logoutSuccess: () => createAction(AuthActionTypes.LOGOUT_SUCCESS),

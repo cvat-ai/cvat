@@ -1,8 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React from 'react';
 import Popover, { PopoverProps } from 'antd/lib/popover';
 
 interface OwnProps {
@@ -12,7 +13,6 @@ interface OwnProps {
 
 export default function withVisibilityHandling(WrappedComponent: typeof Popover, popoverType: string) {
     return function (props: OwnProps & PopoverProps): JSX.Element {
-        const [visible, setVisible] = useState<boolean>(false);
         const { overlayClassName, onVisibleChange, ...rest } = props;
         const overlayClassNames = typeof overlayClassName === 'string' ? overlayClassName.split(/\s+/) : [];
         const popoverClassName = `cvat-${popoverType}-popover`;
@@ -27,7 +27,7 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                     animationDuration: '0s',
                     animationDelay: '0s',
                 }}
-                trigger={visible ? ['click'] : ['click', 'hover']}
+                trigger={['click']}
                 overlayClassName={overlayClassNames.join(' ').trim()}
                 onVisibleChange={(_visible: boolean) => {
                     if (_visible) {
@@ -38,7 +38,6 @@ export default function withVisibilityHandling(WrappedComponent: typeof Popover,
                             (element as HTMLElement).style.opacity = '';
                         }
                     }
-                    setVisible(_visible);
                     if (onVisibleChange) onVisibleChange(_visible);
                 }}
             />

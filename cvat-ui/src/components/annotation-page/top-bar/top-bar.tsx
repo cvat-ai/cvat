@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -44,6 +44,8 @@ interface Props {
     activeControl: ActiveControl;
     toolsBlockerState: ToolsBlockerState;
     deleteFrameAvailable: boolean;
+    annotationFilters: object[];
+    initialOpenGuide: boolean;
     changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
     showFilters(): void;
@@ -100,6 +102,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         focusFrameInputShortcut,
         activeControl,
         toolsBlockerState,
+        annotationFilters,
+        initialOpenGuide,
         showStatistics,
         showFilters,
         changeWorkspace,
@@ -143,7 +147,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             key='player_buttons'
             playing={playing}
             playPauseShortcut={playPauseShortcut}
-            deleteFrameShortcut={deleteFrameShortcut}
             nextFrameShortcut={nextFrameShortcut}
             previousFrameShortcut={previousFrameShortcut}
             forwardShortcut={forwardShortcut}
@@ -212,6 +215,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             <RightGroup
                 workspace={workspace}
                 jobInstance={jobInstance}
+                annotationFilters={annotationFilters}
+                initialOpenGuide={initialOpenGuide}
                 changeWorkspace={changeWorkspace}
                 showStatistics={showStatistics}
                 showFilters={showFilters}

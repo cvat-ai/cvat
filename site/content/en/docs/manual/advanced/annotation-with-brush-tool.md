@@ -70,7 +70,7 @@ To save the job with all added objects, on the top menu click **Save** ![Save](/
 
 ## Annotation with polygon-to-mask
 
-To annotat with polygon-to-mask, do the following:
+To annotate with polygon-to-mask, do the following:
 
 1. From the [controls sidebar](/docs/manual/basics/controls-sidebar/), select **Brush** ![Brush icon](/images/brushing_tools_icon.png).
 2. In the **Draw new mask** menu, select label for your mask, and click **Shape**.

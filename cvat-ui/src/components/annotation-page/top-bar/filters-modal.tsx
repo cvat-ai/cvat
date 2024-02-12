@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -203,7 +203,7 @@ function FiltersModalComponent(): JSX.Element {
         }
     }, [visible]);
 
-    const applyFilters = (filtersData: any[]): void => {
+    const applyFilters = (filtersData: object[]): void => {
         dispatch(changeAnnotationsFilters(filtersData));
         dispatch(fetchAnnotationsAsync());
         dispatch(showFilters(false));
@@ -303,10 +303,15 @@ function FiltersModalComponent(): JSX.Element {
         >
             <div
                 key='used'
-                className='recently-used-wrapper'
+                className='cvat-recently-used-filters-wrapper'
                 style={{ display: filters.length ? 'inline-block' : 'none' }}
             >
-                <Dropdown overlay={menu}>
+                <Dropdown
+                    destroyPopupOnHide
+                    trigger={['click']}
+                    overlay={menu}
+                    overlayClassName='cvat-recently-used-filters-dropdown'
+                >
                     <Button
                         type='text'
                         className='cvat-filters-modal-recently-used-button'

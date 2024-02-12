@@ -1,12 +1,12 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, Organization, Job, Label,
+    Webhook, MLModel, Organization, Job, Label, User,
     QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger, Invitation,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
@@ -17,7 +17,7 @@ import { ImageFilter } from 'utils/image-processing';
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
-    user: any;
+    user: User | null;
     showChangePasswordDialog: boolean;
     hasEmailVerificationBeenSent: boolean;
 }
@@ -703,8 +703,9 @@ export interface AnnotationState {
         openTime: null | number;
         labels: Label[];
         requestedId: number | null;
-        groundTruthJobFramesMeta: FramesMetaData | null;
         instance: Job | null | undefined;
+        initialOpenGuide: boolean;
+        groundTruthJobFramesMeta: FramesMetaData | null;
         groundTruthInstance: Job | null;
         attributes: Record<number, any[]>;
         fetching: boolean;
@@ -744,7 +745,7 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
         states: any[];
-        filters: any[];
+        filters: object[];
         resetGroupFlag: boolean;
         history: {
             undo: [string, number][];

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -49,7 +49,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
             cy.get('.cvat-right-header').within(() => {
                 cy.get('.cvat-header-menu-user-dropdown')
                     .should('have.text', Cypress.env('user'))
-                    .trigger('mouseover', { which: 1 });
+                    .click();
             });
             cy.get('span[aria-label="logout"]').click();
             cy.url().should('include', `/auth/login?next=/tasks/${taskId}`);

@@ -1,5 +1,5 @@
 # Copyright (C) 2018-2022 Intel Corporation
-# Copyright (C) 2023 CVAT.ai Corporation
+# Copyright (C) 2023-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -16,10 +16,10 @@ from .registry import dm_env, exporter, importer
 
 @exporter(name='COCO', ext='ZIP', version='1.0')
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
-        instance_data, include_images=save_images), env=dm_env)
-    dataset.export(temp_dir, 'coco_instances', save_images=save_images,
-        merge_images=True)
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, 'coco_instances', save_images=save_images,
+            merge_images=True)
 
     make_zip_archive(temp_dir, dst_file)
 
@@ -38,10 +38,10 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
 
 @exporter(name='COCO Keypoints', ext='ZIP', version='1.0')
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(
-        instance_data, include_images=save_images), env=dm_env)
-    dataset.export(temp_dir, 'coco_person_keypoints', save_images=save_images,
-        merge_images=True)
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
+        dataset.export(temp_dir, 'coco_person_keypoints', save_images=save_images,
+            merge_images=True)
 
     make_zip_archive(temp_dir, dst_file)
 

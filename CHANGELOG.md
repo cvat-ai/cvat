@@ -16,6 +16,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.10.3'></a>
+## \[2.10.3\] - 2024-02-09
+
+### Changed
+
+- The "message" field of the payload of send:exception events
+  no longer includes a trailing linebreak
+  (<https://github.com/opencv/cvat/pull/7407>)
+
+- Annotation guide is opened automatically if not seen yet when the job is "new annotation"
+  (<https://github.com/opencv/cvat/pull/7410>)
+- Annotation guide will be opened automatically if this is specified in a link `/tasks/<id>/jobs/<id>?openGuide`
+  (<https://github.com/opencv/cvat/pull/7410>)
+
+- Reduced number of server requests, made by clients
+  (<https://github.com/opencv/cvat/pull/7446>)
+
+- Server exception rest_framework.exceptions.NotAuthenticated is not logged by analytics anymore
+  (<https://github.com/opencv/cvat/pull/7457>)
+
+### Fixed
+
+- Prevented zombie processes from accumulating in the Kvrocks container
+  (<https://github.com/opencv/cvat/pull/7412>)
+
+- Fix Redis exceptions crashing the `/api/server/health/` endpoint
+  (<https://github.com/opencv/cvat/pull/7417>)
+
+- Unhandled exception "Cannot read properties of null (reading 'plot')"
+  (<https://github.com/opencv/cvat/pull/7422>)
+
+- Unhandled exception "Cannot read properties of undefined (reading 'toLowerCase')"
+  (<https://github.com/opencv/cvat/pull/7421>)
+
+<a id='changelog-2.10.2'></a>
+## \[2.10.2\] - 2024-01-26
+
+### Changed
+
+- Enhanced errors messaging for better perception by users
+  (<https://github.com/opencv/cvat/pull/7331>)
+
+### Fixed
+
+- Empty masks might be created with `polygon-minus` tool (<https://github.com/opencv/cvat/pull/7295>)
+- Empty masks might be created as a result of removing underlying pixels (<https://github.com/opencv/cvat/pull/7295>)
+
+- Fixed excessive memory usage
+  when exporting a project with multiple video tasks
+  (<https://github.com/opencv/cvat/pull/7374>)
+
+- OpenCV tracker MIL works one frame behind
+  (<https://github.com/opencv/cvat/pull/7399>)
+
+<a id='changelog-2.10.1'></a>
+## \[2.10.1\] - 2024-01-18
+
+### Changed
+
+- KeyDB used as data cache replaced by Kvrocks
+  (<https://github.com/opencv/cvat/pull/7339>)
+
+### Fixed
+
+- 504 Timeout error when exporting resources to cloud storage
+  (<https://github.com/opencv/cvat/pull/7317>)
+- Enqueuing deferred jobs when their dependencies have been started -> cancelled -> restarted -> finished
+  (<https://github.com/opencv/cvat/pull/7317>)
+
+- UI failed when open context menu for a skeleton element on a frame with a conflict
+  (<https://github.com/opencv/cvat/pull/7362>)
+- Issue can not be created for a skeleton element in review mode
+  (<https://github.com/opencv/cvat/pull/7362>)
+
 <a id='changelog-2.10.0'></a>
 ## \[2.10.0\] - 2024-01-10
 
