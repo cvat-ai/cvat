@@ -415,7 +415,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             sort: isString,
         });
 
-        const params = fieldsToSnakeCase(filter, { sort: '-created_date' });
+        const params = fieldsToSnakeCase({ ...filter, sort: '-created_date' });
 
         const reportsData = await serverProxy.analytics.quality.reports(params);
         const reports = Object.assign(

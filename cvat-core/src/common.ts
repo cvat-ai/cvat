@@ -151,10 +151,8 @@ export function isPageSize(value: number | 'all'): boolean {
     return isInteger(value) || value === 'all';
 }
 
-export function fieldsToSnakeCase(
-    params: Record<string, any>, out?: Record<string, any>,
-): Record<string, any> {
-    const result = (out !== undefined) ? out : {};
+export function fieldsToSnakeCase(params: Record<string, any>): Record<string, any> {
+    const result = {};
     for (const [k, v] of Object.entries(params)) {
         result[snakeCase(k)] = v;
     }
