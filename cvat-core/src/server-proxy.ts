@@ -16,8 +16,8 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
-    SerializedQualitySettingsData, QualitySettingsFilter, SerializedQualityConflictData, QualityConflictsFilter,
-    SerializedQualityReportData, QualityReportsFilter, SerializedAnalyticsReport, AnalyticsReportFilter,
+    SerializedQualitySettingsData, ApiQualitySettingsFilter, SerializedQualityConflictData, ApiQualityConflictsFilter,
+    SerializedQualityReportData, ApiQualityReportsFilter, SerializedAnalyticsReport, ApiAnalyticsReportFilter,
 } from './server-response-types';
 import { PaginatedResource } from './core-types';
 import { Storage } from './storage';
@@ -2310,7 +2310,7 @@ async function createAsset(file: File, guideId: number): Promise<SerializedAsset
 }
 
 async function getQualitySettings(
-    filter: QualitySettingsFilter,
+    filter: ApiQualitySettingsFilter,
 ): Promise<SerializedQualitySettingsData> {
     const { backendAPI } = config;
 
@@ -2346,7 +2346,7 @@ async function updateQualitySettings(
 }
 
 async function getQualityConflicts(
-    filter: QualityConflictsFilter,
+    filter: ApiQualityConflictsFilter,
 ): Promise<SerializedQualityConflictData[]> {
     const params = enableOrganization();
     const { backendAPI } = config;
@@ -2364,7 +2364,7 @@ async function getQualityConflicts(
 }
 
 async function getQualityReports(
-    filter: QualityReportsFilter,
+    filter: ApiQualityReportsFilter,
 ): Promise<PaginatedResource<SerializedQualityReportData>> {
     const { backendAPI } = config;
 
@@ -2383,7 +2383,7 @@ async function getQualityReports(
 }
 
 async function getAnalyticsReports(
-    filter: AnalyticsReportFilter,
+    filter: ApiAnalyticsReportFilter,
 ): Promise<SerializedAnalyticsReport> {
     const { backendAPI } = config;
 

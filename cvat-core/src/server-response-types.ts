@@ -9,6 +9,7 @@ import {
     ShareFileType, Source, TaskMode, TaskStatus,
     CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
 } from './enums';
+import { Camelized } from './type-utils';
 
 export interface SerializedAnnotationImporter {
     name: string;
@@ -25,7 +26,7 @@ export interface SerializedAnnotationFormats {
     exporters: SerializedAnnotationExporter[];
 }
 
-export interface CommonFilterParams {
+export interface ApiCommonFilterParams {
     page?: number;
     page_size?: number | 'all';
     filter?: string;
@@ -35,7 +36,7 @@ export interface CommonFilterParams {
     search?: string;
 }
 
-export interface ProjectsFilter extends CommonFilterParams {
+export interface ProjectsFilter extends ApiCommonFilterParams {
     id?: number;
 }
 
@@ -232,9 +233,10 @@ export interface SerializedOrganization {
     contact?: SerializedOrganizationContact,
 }
 
-export interface QualitySettingsFilter extends CommonFilterParams {
+export interface ApiQualitySettingsFilter extends ApiCommonFilterParams {
     task_id?: number;
 }
+export type QualitySettingsFilter = Camelized<ApiQualitySettingsFilter>;
 
 export interface SerializedQualitySettingsData {
     id?: number;
@@ -253,9 +255,10 @@ export interface SerializedQualitySettingsData {
     compare_attributes?: boolean;
 }
 
-export interface QualityConflictsFilter extends CommonFilterParams {
+export interface ApiQualityConflictsFilter extends ApiCommonFilterParams {
     report_id?: number;
 }
+export type QualityConflictsFilter = Camelized<ApiQualityConflictsFilter>;
 
 export interface SerializedAnnotationConflictData {
     job_id?: number;
@@ -276,13 +279,14 @@ export interface SerializedQualityConflictData {
     description?: string;
 }
 
-export interface QualityReportsFilter extends CommonFilterParams {
+export interface ApiQualityReportsFilter extends ApiCommonFilterParams {
     parent_id?: number;
     peoject_id?: number;
     task_id?: number;
     job_id?: number;
     target?: string;
 }
+export type QualityReportsFilter = Camelized<ApiQualityReportsFilter>;
 
 export interface SerializedQualityReportData {
     id?: number;
@@ -340,13 +344,14 @@ export interface SerializedAnalyticsEntry {
     transformations?: SerializedTransformationEntry[];
 }
 
-export interface AnalyticsReportFilter extends CommonFilterParams {
+export interface ApiAnalyticsReportFilter extends ApiCommonFilterParams {
     peoject_id?: number;
     task_id?: number;
     job_id?: number;
     start_date?: string;
     end_date?: string;
 }
+export type AnalyticsReportFilter = Camelized<ApiAnalyticsReportFilter>;
 
 export interface SerializedAnalyticsReport {
     id?: number;
