@@ -337,7 +337,7 @@ function SingleShapeSidebar(): JSX.Element {
                     </Checkbox>
                 </Col>
             </Row>
-            { state.label !== null ? (
+            { state.label !== null && state.labelType !== LabelType.ANY && (
                 <Row className='cvat-single-shape-annotation-sidebar-hint'>
                     <Col>
                         <hr />
@@ -348,12 +348,6 @@ function SingleShapeSidebar(): JSX.Element {
                             <Text strong>{` ${message} `}</Text>
                         </Paragraph>
                         <hr />
-                    </Col>
-                </Row>
-            ) : (
-                <Row className='cvat-single-shape-annotation-sidebar-hint'>
-                    <Col>
-                        <Text>There are not any labels to annotate</Text>
                     </Col>
                 </Row>
             )}
