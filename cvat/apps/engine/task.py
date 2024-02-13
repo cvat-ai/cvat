@@ -50,6 +50,7 @@ def create(db_task, data, request):
             job_id=f"create:task.id{db_task.pk}",
             meta=get_rq_job_meta(request=request, db_obj=db_task),
             depends_on=define_dependent_job(q, user_id),
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds(),
         )
 
 ############################# Internal implementation for server API

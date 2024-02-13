@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -290,6 +290,7 @@ export default function ProjectPageComponent(): JSX.Element {
                             </div>
                             <Dropdown
                                 trigger={['click']}
+                                destroyPopupOnHide
                                 overlay={(
                                     <CvatDropdownMenuPaper>
                                         <Button

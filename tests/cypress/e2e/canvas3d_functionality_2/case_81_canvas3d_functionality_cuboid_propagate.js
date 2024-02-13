@@ -1,4 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -24,8 +25,7 @@ context('Canvas 3D functionality. Cuboid propagate.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Cuboid propagate.', () => {
-            cy.get('#cvat-objects-sidebar-state-item-1').find('[aria-label="more"]').click();
-            cy.get('.ant-dropdown-menu').not('.ant-dropdown-menu-hidden').find('[aria-label="block"]').click();
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Propagate');
             cy.get('.cvat-propagate-confirm-object-on-frames').should('exist');
             cy.contains('button', 'Yes').click();
         });

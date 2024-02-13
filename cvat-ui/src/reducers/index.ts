@@ -1,13 +1,14 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
-    Webhook, MLModel, Organization, Job, Label,
+    Webhook, MLModel, Organization, Job, Label, User,
     QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger, Invitation,
+    SerializedAPISchema,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -17,12 +18,8 @@ import { ImageFilter } from 'utils/image-processing';
 export interface AuthState {
     initialized: boolean;
     fetching: boolean;
-    user: any;
-    authActionsFetching: boolean;
-    authActionsInitialized: boolean;
+    user: User | null;
     showChangePasswordDialog: boolean;
-    allowChangePassword: boolean;
-    allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
 }
 
@@ -345,6 +342,18 @@ export interface AboutState {
     initialized: boolean;
 }
 
+export interface ServerAPIState {
+    schema: SerializedAPISchema | null;
+    fetching: boolean;
+    initialized: boolean;
+    configuration: {
+        isRegistrationEnabled: boolean;
+        isBasicLoginEnabled: boolean;
+        isPasswordResetEnabled: boolean;
+        isPasswordChangeEnabled: boolean;
+    };
+}
+
 export interface UserAgreement {
     name: string;
     urlDisplayText: string;
@@ -434,7 +443,9 @@ export interface NotificationsState {
             changePassword: null | ErrorState;
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
-            loadAuthActions: null | ErrorState;
+        };
+        serverAPI: {
+            fetching: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;
@@ -693,8 +704,9 @@ export interface AnnotationState {
         openTime: null | number;
         labels: Label[];
         requestedId: number | null;
-        groundTruthJobFramesMeta: FramesMetaData | null;
         instance: Job | null | undefined;
+        initialOpenGuide: boolean;
+        groundTruthJobFramesMeta: FramesMetaData | null;
         groundTruthInstance: Job | null;
         attributes: Record<number, any[]>;
         fetching: boolean;
@@ -734,7 +746,7 @@ export interface AnnotationState {
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;
         states: any[];
-        filters: any[];
+        filters: object[];
         resetGroupFlag: boolean;
         history: {
             undo: [string, number][];
@@ -966,6 +978,7 @@ export interface CombinedState {
     invitations: InvitationsState;
     webhooks: WebhooksState;
     analytics: AnalyticsState;
+    serverAPI: ServerAPIState;
 }
 
 export interface Indexable {

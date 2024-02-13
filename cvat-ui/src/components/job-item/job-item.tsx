@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -242,7 +242,11 @@ function JobItem(props: Props): JSX.Element {
                         </Row>
                     </Col>
                 </Row>
-                <Dropdown overlay={<JobActionsMenu job={job} onJobUpdate={onJobUpdate} />}>
+                <Dropdown
+                    trigger={['click']}
+                    destroyPopupOnHide
+                    overlay={<JobActionsMenu job={job} onJobUpdate={onJobUpdate} />}
+                >
                     <MoreOutlined className='cvat-job-item-more-button' />
                 </Dropdown>
             </Card>

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1118,7 +1118,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
                 <BrushTools />
 
-                <Dropdown trigger={['click']} placement='topCenter' overlay={<ImageSetupsContent />}>
+                <Dropdown
+                    destroyPopupOnHide
+                    trigger={['click']}
+                    placement='topCenter'
+                    overlay={<ImageSetupsContent />}
+                >
                     <UpOutlined className='cvat-canvas-image-setups-trigger' />
                 </Dropdown>
 
