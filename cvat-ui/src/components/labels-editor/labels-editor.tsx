@@ -272,7 +272,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                             <Text>Raw</Text>
                         </span>
                     ),
-                    children: [<RawViewer key='raw' labels={savedAndUnsavedLabels} onSubmit={this.handleRawSubmit} />],
+                    children: <RawViewer key='raw' labels={savedAndUnsavedLabels} onSubmit={this.handleRawSubmit} />,
                 }, {
                     key: 'configurator',
                     label: (
@@ -281,7 +281,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                             <Text>Constructor</Text>
                         </span>
                     ),
-                    children: [configuratorContent],
+                    children: configuratorContent,
                 }]}
             />
         );

@@ -128,20 +128,22 @@ export class FileManager extends React.PureComponent<Props, State> {
             key: 'local',
             label: 'My computer',
             className: 'cvat-file-manager-local-tab',
-            children: [<LocalFiles
-                files={files.local}
-                many={many}
-                onUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
-                    this.setState({
-                        files: {
-                            ...files,
-                            local: newLocalFiles,
-                        },
-                    });
-                    onUploadLocalFiles(newLocalFiles);
-                    return false;
-                }}
-            />],
+            children: (
+                <LocalFiles
+                    files={files.local}
+                    many={many}
+                    onUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
+                        this.setState({
+                            files: {
+                                ...files,
+                                local: newLocalFiles,
+                            },
+                        });
+                        onUploadLocalFiles(newLocalFiles);
+                        return false;
+                    }}
+                />
+            ),
         };
     }
 
@@ -150,12 +152,12 @@ export class FileManager extends React.PureComponent<Props, State> {
             key: 'share',
             label: 'Connected file share',
             className: 'cvat-file-manager-share-tab',
-            children: [(
+            children: (
                 <RemoteBrowser
                     resource='share'
                     onSelectFiles={this.handleUploadSharedStorageFiles}
                 />
-            )],
+            ),
         };
     }
 
@@ -167,7 +169,7 @@ export class FileManager extends React.PureComponent<Props, State> {
             key: 'remote',
             label: 'Remote sources',
             className: 'cvat-file-manager-remote-tab',
-            children: [(
+            children: (
                 <Input.TextArea
                     className='cvat-file-selector-remote'
                     placeholder='Enter one URL per line'
@@ -184,7 +186,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                         onUploadRemoteFiles(urls.filter(Boolean));
                     }}
                 />
-            )],
+            ),
         };
     }
 
@@ -195,7 +197,7 @@ export class FileManager extends React.PureComponent<Props, State> {
             key: 'cloudStorage',
             label: 'Cloud Storage',
             className: 'cvat-create-task-page-cloud-storage-tab',
-            children: [(
+            children: (
                 <CloudStorageTab
                     formRef={this.cloudStorageTabFormRef}
                     cloudStorage={cloudStorage}
@@ -208,7 +210,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                     }}
                     onSelectFiles={this.handleUploadCloudStorageFiles}
                 />
-            )],
+            ),
         };
     }
 

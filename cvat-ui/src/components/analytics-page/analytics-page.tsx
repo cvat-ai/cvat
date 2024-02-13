@@ -238,12 +238,12 @@ function AnalyticsPage(): JSX.Element {
                         items={[{
                             key: 'Overview',
                             label: 'Performance',
-                            children: [(
+                            children: (
                                 <AnalyticsOverview
                                     report={analyticsReportInstance}
                                     onTimePeriodChange={onAnalyticsTimePeriodChange}
                                 />
-                            )],
+                            ),
                         }]}
                     />
                 );
@@ -271,18 +271,18 @@ function AnalyticsPage(): JSX.Element {
                         items={[{
                             key: 'overview',
                             label: 'Performance',
-                            children: [(
+                            children: (
                                 <AnalyticsOverview
                                     report={analyticsReportInstance}
                                     onTimePeriodChange={onAnalyticsTimePeriodChange}
                                 />
-                            )],
+                            ),
                         }, {
                             key: 'quality',
                             label: 'Quality',
-                            children: [(
+                            children: (
                                 <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />
-                            )],
+                            ),
                         }]}
                     />
                 );
@@ -310,12 +310,12 @@ function AnalyticsPage(): JSX.Element {
                         items={[{
                             key: 'overview',
                             label: 'Performance',
-                            children: [(
+                            children: (
                                 <AnalyticsOverview
                                     report={analyticsReportInstance}
                                     onTimePeriodChange={onAnalyticsTimePeriodChange}
                                 />
-                            )],
+                            ),
                         }]}
                     />
                 );

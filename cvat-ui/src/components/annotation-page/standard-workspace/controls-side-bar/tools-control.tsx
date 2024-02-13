@@ -1363,22 +1363,26 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     items={[{
                         key: 'interactors',
                         label: 'Interactors',
-                        children: [
-                            this.renderMasksConvertingBlock(),
-                            this.renderLabelBlock(),
-                            this.renderInteractorBlock(),
-                        ],
+                        children: (
+                            <>
+                                {this.renderMasksConvertingBlock()}
+                                {this.renderLabelBlock()}
+                                {this.renderInteractorBlock()}
+                            </>
+                        ),
                     }, {
                         key: 'detectors',
                         label: 'Detectors',
-                        children: [this.renderDetectorBlock()],
+                        children: this.renderDetectorBlock(),
                     }, {
                         key: 'trackers',
                         label: 'Trackers',
-                        children: [
-                            this.renderLabelBlock(),
-                            this.renderTrackerBlock(),
-                        ],
+                        children: (
+                            <>
+                                {this.renderLabelBlock()}
+                                {this.renderTrackerBlock()}
+                            </>
+                        ),
                     }]}
                 />
             </div>

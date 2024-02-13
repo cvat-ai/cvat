@@ -104,7 +104,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
                                 <Text>Player</Text>
                             </span>
                         ),
-                        children: [<PlayerSettingsContainer />],
+                        children: <PlayerSettingsContainer />,
                     }, {
                         key: 'workspace',
                         label: (
@@ -113,7 +113,7 @@ function SettingsModal(props: SettingsModalProps): JSX.Element {
                                 <Text>Workspace</Text>
                             </span>
                         ),
-                        children: [<WorkspaceSettingsContainer />],
+                        children: <WorkspaceSettingsContainer />,
                     }]}
                 />
             </div>

@@ -48,9 +48,10 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                 className='cvat-objects-sidebar-state-item-collapse'
                 activeKey={collapsed ? [] : ['details']}
                 onChange={collapse}
-            >
-                <Collapse.Panel header={<Text style={{ fontSize: 10 }} type='secondary'>DETAILS</Text>} key='details'>
-                    {attributes.map(
+                items={[{
+                    key: 'details',
+                    label: <Text style={{ fontSize: 10 }} type='secondary'>DETAILS</Text>,
+                    children: attributes.map(
                         (attribute: any): JSX.Element => (
                             <Row
                                 key={attribute.id}
@@ -69,9 +70,9 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                                 />
                             </Row>
                         ),
-                    )}
-                </Collapse.Panel>
-            </Collapse>
+                    ),
+                }]}
+            />
         </Row>
     );
 }

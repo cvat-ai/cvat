@@ -739,17 +739,17 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         items={[{
                             key: 'drawing',
                             label: 'Drawing',
-                            children: [this.renderDrawingContent()],
+                            children: this.renderDrawingContent(),
                             className: 'cvat-opencv-control-tabpane',
                         }, {
                             key: 'image',
                             label: 'Image',
-                            children: [this.renderImageContent()],
+                            children: this.renderImageContent(),
                             className: 'cvat-opencv-control-tabpane',
                         }, {
                             key: 'tracking',
                             label: 'Tracking',
-                            children: [this.renderTrackingContent()],
+                            children: this.renderTrackingContent(),
                             className: 'cvat-opencv-control-tabpane',
                         }]}
                     />
