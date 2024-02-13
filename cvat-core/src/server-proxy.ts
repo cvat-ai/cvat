@@ -16,7 +16,7 @@ import {
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement,
     SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset,
     SerializedQualitySettingsData, SerializedInvitationData, SerializedCloudStorage,
-    SerializedFramesMetaData, SerializedCollection,
+    SerializedFramesMetaData, SerializedCollection, SerializedAPISchema,
 } from './server-response-types';
 import { SerializedQualityReportData } from './quality-report';
 import { SerializedAnalyticsReport } from './analytics-report';
@@ -1899,6 +1899,17 @@ async function installedApps() {
     }
 }
 
+async function getApiSchema(): Promise<SerializedAPISchema> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/schema/?scheme=json`);
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 async function createCloudStorage(storageDetail) {
     const { backendAPI } = config;
 
@@ -2410,6 +2421,7 @@ export default Object.freeze({
         request: serverRequest,
         userAgreements,
         installedApps,
+        apiSchema: getApiSchema,
     }),
 
     projects: Object.freeze({

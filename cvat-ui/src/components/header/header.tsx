@@ -79,13 +79,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
             fetching: logoutFetching,
             fetching: changePasswordFetching,
             showChangePasswordDialog: changePasswordDialogShown,
-            allowChangePassword: renderChangePasswordItem,
         },
         plugins: { list },
         about,
         shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
         settings: { showDialog: settingsModalVisible },
         organizations: { fetching: organizationFetching, current: currentOrganization },
+        serverAPI: {
+            configuration: {
+                isPasswordChangeEnabled: renderChangePasswordItem,
+            },
+        },
     } = state;
 
     return {
