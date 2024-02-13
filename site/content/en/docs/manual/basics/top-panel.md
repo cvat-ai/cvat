@@ -27,8 +27,7 @@ Button assignment:
 
   ![](/images/image229.jpg)
 
-- **Run actions** - opens the [Shapes converter](/docs/enterprise/shapes-converter/)
-  With **Remove filtered shapes** functionality. that is available for all plans without limitations.
+- **Run actions** - opens annotations actions modal (annotations action is a feature that allow you to modify a bulk of annotations on many frames, e.g. [Shapes converter](/docs/enterprise/shapes-converter/)). It supports only `shape` objects. 
   - **Remove filtered shapes** - removes all shapes in alignment with the set-up filter. Doesn't work with tracks.
 - **Open the task** — opens a page with details about the task.
 - **Change job state** - changes the state of the job (`new`, `in progress`, `rejected`, `completed`).
