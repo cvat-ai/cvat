@@ -5,8 +5,7 @@ weight: 4
 description: 'How to perform bulk actions on filtered shapes'
 ---
 
-The shapes converter is a feature that enables bulk actions on filtered shapes. For example, it allows you to convert
-masks to polygons, rectangle to polygons and other functions.
+The shapes converter is a feature that enables bulk actions on filtered **shapes**. It allows you to perform mutual conversion between masks, polygons and rectangles.
 
 The shapes converter functionality also includes **Remove filtered shapes** functionality, that is
 available for all plans without limitations.
