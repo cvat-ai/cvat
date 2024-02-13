@@ -498,6 +498,7 @@
 .cvat-submenu-current-job-state-item {
     &::after {
         content: ' \2713';
+        margin-left: $grid-unit-size;
         float: right;
     }
 
