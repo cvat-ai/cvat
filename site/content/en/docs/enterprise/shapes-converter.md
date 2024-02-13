@@ -55,8 +55,7 @@ To convert shapes, do the following:
 5. (Optional) In the **Starting from frame** field, enter the frame number where the action should begin,
    and in the **up to frame** field, specify the frame number where the action should end.
 6. (Optional) Select an option from **Or choose one of the predefined options** to apply the action.
-7. Click **Run**. <br> A progress bar will appear. If it's not fully green and you want to stop the action,
-   you can click **Cancel**.
+7. Click **Run**. <br> A progress bar will appear. You may abort the process by clicking **Cancel** until the process commits modified objects at the end of pipeline.
 
    ![](/images/shapes-coverter-action-run.jpg)
 
