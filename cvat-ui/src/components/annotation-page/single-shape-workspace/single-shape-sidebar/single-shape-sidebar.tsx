@@ -2,28 +2,24 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useReducer, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useReducer } from 'react';
 import Layout, { SiderProps } from 'antd/lib/layout';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
+import Checkbox from 'antd/lib/checkbox';
+import InputNumber from 'antd/lib/input-number';
+import Select from 'antd/lib/select';
+import Paragraph from 'antd/lib/typography/Paragraph';
+
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { getCVATStore } from 'cvat-store';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { CombinedState, ObjectType, ShapeType, Workspace } from 'reducers';
-import { useDispatch } from 'react-redux';
-import { changeFrameAsync, changeWorkspace, createAnnotationsAsync, saveAnnotationsAsync } from 'actions/annotation-actions';
-import { Job, Label, LabelType, getCore } from 'cvat-core-wrapper';
-import { useSelector } from 'react-redux';
-import { Checkbox, Select } from 'antd';
+import { CombinedState, Workspace } from 'reducers';
+import { changeFrameAsync, changeWorkspace, saveAnnotationsAsync } from 'actions/annotation-actions';
+import { Job, Label, LabelType } from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
 import LabelSelector from 'components/label-selector/label-selector';
-
-enum Mode {
-    CONFIGURATION = 'configuration',
-    ANNOTATION = 'annotation',
-}
-
-const cvat = getCore();
 
 const getState = (): CombinedState => getCVATStore().getState();
 
@@ -31,7 +27,8 @@ enum ReducerActionType {
     SWITCH_SIDEBAR_COLLAPSED = 'SWITCH_SIDEBAR_COLLAPSED',
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
     SWITCH_AUTOSAVE_ON_FINISH = 'SWITCH_AUTOSAVE_ON_FINISH',
-    UPDATE_ACTIVE_LABEL = 'UPDATE_ACTIVE_LABEL',
+    SET_ACTIVE_LABEL = 'SET_ACTIVE_LABEL',
+    SET_POINTS_COUNT = 'SET_POINTS_COUNT',
 }
 
 export const reducerActions = {
@@ -44,10 +41,15 @@ export const reducerActions = {
     switchAutoSaveOnFinish: () => (
         createAction(ReducerActionType.SWITCH_AUTOSAVE_ON_FINISH)
     ),
-    setLabel: (label: Label, type?: LabelType) => (
-        createAction(ReducerActionType.UPDATE_ACTIVE_LABEL, {
+    setActiveLabel: (label: Label, type?: LabelType) => (
+        createAction(ReducerActionType.SET_ACTIVE_LABEL, {
             label,
             labelType: type || label.type,
+        })
+    ),
+    setPointsCount: (pointsCount: number) => (
+        createAction(ReducerActionType.SET_POINTS_COUNT, {
+            pointsCount,
         })
     ),
 };
@@ -56,12 +58,24 @@ interface State {
     sidebarCollabased: boolean;
     autoNextFrame: boolean;
     saveOnFinish: boolean;
-    shapeType: ShapeType;
+    pointsCount: number;
+    labels: Label[];
     label: Label | null;
     labelType: LabelType;
 }
 
 const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
+    const getMinimalPoints = (labelType: LabelType): number => {
+        let minimalPoints = 3;
+        if (labelType === LabelType.POLYLINE) {
+            minimalPoints = 2;
+        } else if (labelType === LabelType.POINTS) {
+            minimalPoints = 1;
+        }
+
+        return minimalPoints;
+    };
+
     if (action.type === ReducerActionType.SWITCH_SIDEBAR_COLLAPSED) {
         return {
             ...state,
@@ -83,11 +97,19 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
-    if (action.type === ReducerActionType.UPDATE_ACTIVE_LABEL) {
+    if (action.type === ReducerActionType.SET_ACTIVE_LABEL) {
         return {
             ...state,
             label: action.payload.label,
-            labelType: action.payload.label.type,
+            labelType: action.payload.labelType,
+            pointsCount: Math.max(state.pointsCount, getMinimalPoints(action.payload.labelType)),
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_POINTS_COUNT) {
+        return {
+            ...state,
+            pointsCount: Math.max(action.payload.pointsCount, getMinimalPoints(state.labelType)),
         };
     }
 
@@ -109,12 +131,18 @@ function SingleShapeSidebar(): JSX.Element {
         sidebarCollabased: false,
         autoNextFrame: true,
         saveOnFinish: true,
-        shapeType: ShapeType.RECTANGLE,
+        pointsCount: 1,
+        labels: (jobInstance as Job).labels.filter((label) => label.type !== LabelType.TAG),
         label: (jobInstance as Job).labels[0] || null,
         labelType: (jobInstance as Job).labels[0]?.type || LabelType.ANY,
     });
 
-    // const [mode, setMode] = useState<Mode>(Mode.ANNOTATION);
+    let message = '';
+    if (state.labelType === LabelType.POINTS) {
+        message = `${state.pointsCount === 1 ? 'one point' : `${state.pointsCount} points`}`;
+    } else {
+        message = `${state.labelType === LabelType.ELLIPSE ? 'an ellipse' : `a ${state.labelType}`}`;
+    }
 
     const siderProps: SiderProps = {
         className: 'cvat-single-shape-annotation-sidebar',
@@ -127,22 +155,12 @@ function SingleShapeSidebar(): JSX.Element {
         collapsed: state.sidebarCollabased,
     };
 
-    // todo: select label if more than one
-    // todo: shape type if label is any
-
-    // todo: check deleted frame
-    // todo: skip button
-
-    // todo: next frame delay??????//
-    // todo: simpler navigation
-    // todo: do not annotate if label is "any"?
-
     const runDrawing = (): void => {
         const canvas = getState().annotation.canvas.instance;
         canvas?.draw({
             enabled: true,
-            shapeType: ShapeType.POINTS,
-            numberOfPoints: 1,
+            shapeType: state.labelType,
+            numberOfPoints: state.pointsCount,
             crosshair: true,
         });
     };
@@ -155,7 +173,7 @@ function SingleShapeSidebar(): JSX.Element {
         if (isCanvasReady && state.label && state.labelType !== LabelType.ANY) {
             runDrawing();
         }
-    }, [isCanvasReady, state.label, state.labelType]);
+    }, [isCanvasReady, state.label, state.labelType, state.pointsCount]);
 
     useEffect(() => {
         const canvas = getState().annotation.canvas.instance as Canvas;
@@ -207,37 +225,65 @@ function SingleShapeSidebar(): JSX.Element {
             </span>
             <Row justify='start' className='cvat-single-shape-annotation-sidebar-label'>
                 <Col>
-                    <Text strong>Select label:</Text>
+                    <Text strong>Label selector</Text>
                 </Col>
             </Row>
             <Row justify='start' className='cvat-single-shape-annotation-sidebar-label-select'>
                 <Col>
                     <LabelSelector
-                        labels={(jobInstance as Job).labels}
+                        labels={state.labels}
                         value={state.label}
-                        onChange={(label) => dispatch(reducerActions.setLabel(label))}
+                        onChange={(label) => dispatch(reducerActions.setActiveLabel(label))}
                     />
                 </Col>
             </Row>
-            { state.label && state.labelType === 'any' ? (
+            { state.label && state.label.type === 'any' ? (
                 <>
                     <Row justify='start' className='cvat-single-shape-annotation-sidebar-label-type'>
                         <Col>
-                            <Text strong>Select label type:</Text>
+                            <Text strong>Label type selector</Text>
                         </Col>
                     </Row>
                     <Row justify='start' className='cvat-single-shape-annotation-sidebar-label-type-selector'>
                         <Col>
                             <Select
                                 value={state.labelType}
-                                onChange={(labelType) => dispatch(
-                                    reducerActions.setLabel(state.label as Label, labelType),
+                                onChange={(labelType: LabelType) => dispatch(
+                                    reducerActions.setActiveLabel(state.label as Label, labelType),
                                 )}
                             >
-                                {Object.keys(LabelType).filter((key) => key !== 'ANY').map((key) => (
-                                    <Select.Option key={key} value={key}>{key}</Select.Option>
-                                ))}
+                                <Select value={LabelType.RECTANGLE}>{LabelType.RECTANGLE}</Select>
+                                <Select value={LabelType.POLYGON}>{LabelType.POLYGON}</Select>
+                                <Select value={LabelType.POLYLINE}>{LabelType.POLYLINE}</Select>
+                                <Select value={LabelType.POINTS}>{LabelType.POINTS}</Select>
+                                <Select value={LabelType.ELLIPSE}>{LabelType.ELLIPSE}</Select>
+                                <Select value={LabelType.CUBOID}>{LabelType.CUBOID}</Select>
+                                <Select value={LabelType.MASK}>{LabelType.MASK}</Select>
+                                <Select value={LabelType.SKELETON}>{LabelType.SKELETON}</Select>
                             </Select>
+                        </Col>
+                    </Row>
+                </>
+            ) : null }
+            { state.label && [LabelType.POLYGON, LabelType.POLYLINE, LabelType.POINTS].includes(state.labelType) ? (
+                <>
+                    <Row justify='start' className='cvat-single-shape-annotation-sidebar-points-count'>
+                        <Col>
+                            <Text strong>Number of points</Text>
+                        </Col>
+                    </Row>
+                    <Row justify='start' className='cvat-single-shape-annotation-sidebar-points-count-input'>
+                        <Col>
+                            <InputNumber
+                                value={state.pointsCount}
+                                min={1}
+                                step={1}
+                                onChange={(value: number | null) => {
+                                    if (value !== null) {
+                                        dispatch(reducerActions.setPointsCount(value));
+                                    }
+                                }}
+                            />
                         </Col>
                     </Row>
                 </>
@@ -262,16 +308,19 @@ function SingleShapeSidebar(): JSX.Element {
                             dispatch(reducerActions.switchAutoSaveOnFinish());
                         }}
                     >
-                        Save automatically after finish
+                        Automatically save after the latest frame
                     </Checkbox>
                 </Col>
             </Row>
             { state.label !== null ? (
                 <Row className='cvat-single-shape-annotation-sidebar-hint'>
                     <Col>
-                        <Text>Please, click</Text>
-                        <Text strong>{ `${(state.label as Label).name}` }</Text>
-                        <Text>on the image</Text>
+                        <Paragraph type='secondary'>
+                            <Text>Annotate</Text>
+                            <Text strong>{` ${(state.label as Label).name} `}</Text>
+                            <Text>on the image, using</Text>
+                            <Text strong>{` ${message} `}</Text>
+                        </Paragraph>
                     </Col>
                 </Row>
             ) : (

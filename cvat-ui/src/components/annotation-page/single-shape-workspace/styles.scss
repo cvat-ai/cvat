@@ -3,3 +3,36 @@
 // SPDX-License-Identifier: MIT
 
 @import 'base';
+
+.cvat-single-shape-annotation-sidebar {
+    padding: 8px;
+
+    .cvat-single-shape-annotation-sidebar-label-select,
+    .cvat-single-shape-annotation-sidebar-label-type-selector {
+        .ant-select {
+            width: 160px;
+        }
+    }
+
+    .cvat-single-shape-annotation-sidebar-points-count-input {
+        .ant-input-number    {
+            width: 160px;
+        }
+    }
+
+    .cvat-single-shape-annotation-sidebar-label-type,
+    .cvat-single-shape-annotation-sidebar-points-count,
+    .cvat-single-shape-annotation-sidebar-label-select,
+    .cvat-single-shape-annotation-sidebar-points-count-input,
+    .cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox,
+    .cvat-single-shape-annotation-sidebar-auto-save-checkbox {
+        margin-top: 8px;
+    }
+
+    .cvat-single-shape-annotation-sidebar-hint {
+        row-gap: 0;
+        text-align: center;
+        font-size: large;
+        padding-top: 32px;
+    }
+}
