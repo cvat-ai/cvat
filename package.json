@@ -111,18 +111,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/opencv/cvat.git"
+    "url": "git+https://github.com/cvat-ai/cvat.git"
   },
   "author": "CVAT.ai",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/opencv/cvat/issues"
+    "url": "https://github.com/cvat-ai/cvat/issues"
   },
   "resolutions": {
     "@types/react": "18.2.55",
     "@types/react-dom": "18.2.19"
   },
-  "homepage": "https://github.com/opencv/cvat#readme",
+  "homepage": "https://github.com/cvat-ai/cvat#readme",
   "dependencies": {
     "@types/fabric": "^4.5.7",
     "@types/lodash": "^4.14.191",
