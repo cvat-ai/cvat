@@ -142,51 +142,53 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         }),
     );
 
-    playerItems.push([(
-        <PlayerButtons
-            key='player_buttons'
-            playing={playing}
-            playPauseShortcut={playPauseShortcut}
-            nextFrameShortcut={nextFrameShortcut}
-            previousFrameShortcut={previousFrameShortcut}
-            forwardShortcut={forwardShortcut}
-            backwardShortcut={backwardShortcut}
-            prevButtonType={prevButtonType}
-            nextButtonType={nextButtonType}
-            onPrevFrame={onPrevFrame}
-            onNextFrame={onNextFrame}
-            onForward={onForward}
-            onBackward={onBackward}
-            onFirstFrame={onFirstFrame}
-            onLastFrame={onLastFrame}
-            onSwitchPlay={onSwitchPlay}
-            setPrevButton={setPrevButtonType}
-            setNextButton={setNextButtonType}
-        />
-    ), 0]);
+    if (workspace !== Workspace.SINGLE_SHAPE) {
+        playerItems.push([(
+            <PlayerButtons
+                key='player_buttons'
+                playing={playing}
+                playPauseShortcut={playPauseShortcut}
+                nextFrameShortcut={nextFrameShortcut}
+                previousFrameShortcut={previousFrameShortcut}
+                forwardShortcut={forwardShortcut}
+                backwardShortcut={backwardShortcut}
+                prevButtonType={prevButtonType}
+                nextButtonType={nextButtonType}
+                onPrevFrame={onPrevFrame}
+                onNextFrame={onNextFrame}
+                onForward={onForward}
+                onBackward={onBackward}
+                onFirstFrame={onFirstFrame}
+                onLastFrame={onLastFrame}
+                onSwitchPlay={onSwitchPlay}
+                setPrevButton={setPrevButtonType}
+                setNextButton={setNextButtonType}
+            />
+        ), 0]);
 
-    playerItems.push([(
-        <PlayerNavigation
-            key='player_navigation'
-            startFrame={startFrame}
-            stopFrame={stopFrame}
-            playing={playing}
-            ranges={ranges}
-            frameNumber={frameNumber}
-            frameFilename={frameFilename}
-            frameDeleted={frameDeleted}
-            deleteFrameShortcut={deleteFrameShortcut}
-            focusFrameInputShortcut={focusFrameInputShortcut}
-            inputFrameRef={inputFrameRef}
-            onSliderChange={onSliderChange}
-            onInputChange={onInputChange}
-            onURLIconClick={onURLIconClick}
-            onDeleteFrame={onDeleteFrame}
-            onRestoreFrame={onRestoreFrame}
-            switchNavigationBlocked={switchNavigationBlocked}
-            deleteFrameAvailable={deleteFrameAvailable}
-        />
-    ), 10]);
+        playerItems.push([(
+            <PlayerNavigation
+                key='player_navigation'
+                startFrame={startFrame}
+                stopFrame={stopFrame}
+                playing={playing}
+                ranges={ranges}
+                frameNumber={frameNumber}
+                frameFilename={frameFilename}
+                frameDeleted={frameDeleted}
+                deleteFrameShortcut={deleteFrameShortcut}
+                focusFrameInputShortcut={focusFrameInputShortcut}
+                inputFrameRef={inputFrameRef}
+                onSliderChange={onSliderChange}
+                onInputChange={onInputChange}
+                onURLIconClick={onURLIconClick}
+                onDeleteFrame={onDeleteFrame}
+                onRestoreFrame={onRestoreFrame}
+                switchNavigationBlocked={switchNavigationBlocked}
+                deleteFrameAvailable={deleteFrameAvailable}
+            />
+        ), 10]);
+    }
 
     return (
         <Row justify='space-between'>

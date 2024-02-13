@@ -25,6 +25,7 @@
     .cvat-single-shape-annotation-sidebar-label-select,
     .cvat-single-shape-annotation-sidebar-points-count-input,
     .cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox,
+    .cvat-single-shape-annotation-sidebar-navigate-empty-checkbox,
     .cvat-single-shape-annotation-sidebar-auto-save-checkbox {
         margin-top: 8px;
     }
@@ -34,5 +35,7 @@
         text-align: center;
         font-size: large;
         padding-top: 32px;
+        bottom: 0;
+        position: absolute;
     }
 }

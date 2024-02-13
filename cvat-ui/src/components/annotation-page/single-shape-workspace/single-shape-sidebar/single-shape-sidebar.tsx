@@ -27,6 +27,7 @@ enum ReducerActionType {
     SWITCH_SIDEBAR_COLLAPSED = 'SWITCH_SIDEBAR_COLLAPSED',
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
     SWITCH_AUTOSAVE_ON_FINISH = 'SWITCH_AUTOSAVE_ON_FINISH',
+    SWITCH_NAVIGATE_EMPTY_ONLY = 'SWITCH_NAVIGATE_EMPTY_ONLY',
     SET_ACTIVE_LABEL = 'SET_ACTIVE_LABEL',
     SET_POINTS_COUNT = 'SET_POINTS_COUNT',
 }
@@ -40,6 +41,9 @@ export const reducerActions = {
     ),
     switchAutoSaveOnFinish: () => (
         createAction(ReducerActionType.SWITCH_AUTOSAVE_ON_FINISH)
+    ),
+    switchNavigateEmptyOnly: () => (
+        createAction(ReducerActionType.SWITCH_NAVIGATE_EMPTY_ONLY)
     ),
     setActiveLabel: (label: Label, type?: LabelType) => (
         createAction(ReducerActionType.SET_ACTIVE_LABEL, {
@@ -58,6 +62,7 @@ interface State {
     sidebarCollabased: boolean;
     autoNextFrame: boolean;
     saveOnFinish: boolean;
+    navigateOnlyEmpty: boolean;
     pointsCount: number;
     labels: Label[];
     label: Label | null;
@@ -87,6 +92,13 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         return {
             ...state,
             autoNextFrame: !state.autoNextFrame,
+        };
+    }
+
+    if (action.type === ReducerActionType.SWITCH_NAVIGATE_EMPTY_ONLY) {
+        return {
+            ...state,
+            navigateOnlyEmpty: !state.navigateOnlyEmpty,
         };
     }
 
@@ -131,6 +143,7 @@ function SingleShapeSidebar(): JSX.Element {
         sidebarCollabased: false,
         autoNextFrame: true,
         saveOnFinish: true,
+        navigateOnlyEmpty: true,
         pointsCount: 1,
         labels: (jobInstance as Job).labels.filter((label) => label.type !== LabelType.TAG),
         label: (jobInstance as Job).labels[0] || null,
@@ -312,15 +325,29 @@ function SingleShapeSidebar(): JSX.Element {
                     </Checkbox>
                 </Col>
             </Row>
+            <Row className='cvat-single-shape-annotation-sidebar-navigate-empty-checkbox'>
+                <Col>
+                    <Checkbox
+                        checked={state.navigateOnlyEmpty}
+                        onChange={(): void => {
+                            dispatch(reducerActions.switchNavigateEmptyOnly());
+                        }}
+                    >
+                        Navigate only empty frames
+                    </Checkbox>
+                </Col>
+            </Row>
             { state.label !== null ? (
                 <Row className='cvat-single-shape-annotation-sidebar-hint'>
                     <Col>
+                        <hr />
                         <Paragraph type='secondary'>
                             <Text>Annotate</Text>
                             <Text strong>{` ${(state.label as Label).name} `}</Text>
                             <Text>on the image, using</Text>
                             <Text strong>{` ${message} `}</Text>
                         </Paragraph>
+                        <hr />
                     </Col>
                 </Row>
             ) : (
