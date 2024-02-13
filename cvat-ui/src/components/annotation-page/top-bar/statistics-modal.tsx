@@ -94,7 +94,7 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
         okButtonProps: { style: { width: 100 } },
         onOk: closeStatistics,
         width: 1024,
-        visible,
+        open: visible,
         closable: false,
     };
 

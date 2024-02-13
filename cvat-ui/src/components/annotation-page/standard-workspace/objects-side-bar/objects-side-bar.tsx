@@ -103,13 +103,13 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 items={[{
                     key: 'objects',
                     label: 'Objects',
-                    children: [objectsList],
+                    children: objectsList,
                 }, {
                     key: 'labels',
                     label: 'Labels',
                     forceRender: true,
-                    children: [<LabelsList />],
-                }, ...(is2D ? [{ key: 'issues', label: 'Issues', children: [<IssuesListComponent />] }] : [])]}
+                    children: <LabelsList />,
+                }, ...(is2D ? [{ key: 'issues', label: 'Issues', children: <IssuesListComponent /> }] : [])]}
             />
             {!sidebarCollapsed && <AppearanceBlock />}
         </Layout.Sider>

@@ -203,27 +203,26 @@
 }
 
 .cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-active-item {
-    border-top: 2px solid $object-item-border-color;
-    border-right: 2px solid $object-item-border-color;
-    border-bottom: 2px solid $object-item-border-color;
-    padding: 3px 1px 1px 3px;
-}
-
-.cvat-objects-sidebar-state-item-color,
-.cvat-objects-sidebar-label-item-color {
+    box-shadow: $box-shadow-base;
     border: 1px solid $object-item-border-color;
-    width: 7px;
-    opacity: 1;
-
-    &:hover {
-        opacity: 0.7;
-    }
 }
 
 .cvat-objects-sidebar-state-item {
     width: 100%;
-    padding: 5px 3px 3px;
-    opacity: 1;
+    transition: box-shadow 0.5s;
+    border: 1px solid $border-color-1;
+    border-radius: 4px;
+    padding: $grid-unit-size * 0.5;
+    margin-left: $grid-unit-size * 0.25;
+    margin-right: $grid-unit-size * 0.25;
+
+    &:not(:first-child) {
+        margin-top: $grid-unit-size * 0.25;
+    }
+
+    &:not(:last-child) {
+        margin-bottom: $grid-unit-size * 0.25;
+    }
 
     > div:nth-child(1) {
         > div:nth-child(1) {
@@ -333,16 +332,18 @@
 
 .cvat-objects-sidebar-label-active-item {
     background: $active-label-background-color;
-    border-top: 2px solid $object-item-border-color;
-    border-right: 2px solid $object-item-border-color;
-    border-bottom: 2px solid $object-item-border-color;
-    padding: 3px 1px 1px 3px;
+    box-shadow: $box-shadow-base;
+    border: 1px solid $object-item-border-color;
 }
 
 .cvat-objects-sidebar-label-item {
     height: 2.5em;
-    border-bottom: 1px solid $border-color-1;
-    padding: 5px 3px 3px;
+    transition: box-shadow 0.5s;
+    border: 1px solid $border-color-1;
+    border-radius: 4px;
+    padding: $grid-unit-size * 0.5;
+    margin-left: $grid-unit-size * 0.25;
+    margin-right: $grid-unit-size * 0.25;
 
     span {
         @extend .cvat-object-sidebar-icon;
