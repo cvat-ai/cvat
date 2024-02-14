@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import PluginRegistry from './plugins';
-import loggerStorage from './logger-storage';
-import { EventLogger } from './log';
+import logger from './logger';
+import { Event } from './event';
 import ObjectState from './object-state';
 import Statistics from './statistics';
 import Comment from './comment';
@@ -246,7 +246,7 @@ function build(): CVATCore {
                 return result;
             },
         },
-        logger: loggerStorage,
+        logger,
         config: {
             get backendAPI() {
                 return config.backendAPI;
@@ -371,7 +371,7 @@ function build(): CVATCore {
             Project: implementProject(Project),
             Task: implementTask(Task),
             Job: implementJob(Job),
-            EventLogger,
+            Event,
             Attribute,
             Label,
             Statistics,

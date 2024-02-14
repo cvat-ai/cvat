@@ -35,7 +35,7 @@ import Organization, { Membership, Invitation } from 'cvat-core/src/organization
 import AnnotationGuide from 'cvat-core/src/guide';
 import AnalyticsReport, { AnalyticsEntryViewType, AnalyticsEntry } from 'cvat-core/src/analytics-report';
 import { Dumper } from 'cvat-core/src/annotation-formats';
-import { EventLogger } from 'cvat-core/src/log';
+import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 import BaseSingleFrameAction, { ActionParameterType } from 'cvat-core/src/annotations-actions';
 
@@ -93,7 +93,7 @@ export {
     AnalyticsEntry,
     AnalyticsEntryViewType,
     ServerError,
-    EventLogger,
+    Event,
     FrameData,
     ActionParameterType,
 };

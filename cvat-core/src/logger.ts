@@ -5,8 +5,8 @@
 
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
-import logFactory, { EventLogger } from './log';
-import { LogType } from './enums';
+import makeEvent, { Event } from './event';
+import { EventScope } from './enums';
 import { ArgumentError } from './exceptions';
 
 function sleep(ms): Promise<void> {
@@ -15,68 +15,68 @@ function sleep(ms): Promise<void> {
     });
 }
 
-function defaultUpdate(previousLog: EventLogger, currentPayload: any): object {
+function defaultUpdate(previousEvent: Event, currentPayload: any): object {
     return {
-        ...previousLog.payload,
+        ...previousEvent.payload,
         ...currentPayload,
     };
 }
 
 interface IgnoreRule {
-    lastLog: EventLogger | null;
+    lastEvent: Event | null;
     timeThreshold?: number;
-    ignore: (previousLog: EventLogger, currentPayload: any) => boolean;
-    update: (previousLog: EventLogger, currentPayload: any) => object;
+    ignore: (previousEvent: Event, currentPayload: any) => boolean;
+    update: (previousEvent: Event, currentPayload: any) => object;
 }
 
-type IgnoredRules = LogType.zoomImage | LogType.changeAttribute | LogType.changeFrame;
+type IgnoredRules = EventScope.zoomImage | EventScope.changeAttribute | EventScope.changeFrame;
 
-class LoggerStorage {
+class Logger {
     public clientID: string;
-    public collection: Array<EventLogger>;
+    public collection: Array<Event>;
     public ignoreRules: Record<IgnoredRules, IgnoreRule>;
     public isActiveChecker: (() => boolean) | null;
     public saving: boolean;
-    public compressedLogs: Array<LogType>;
+    public compressedScopes: Array<IgnoredRules>;
 
     constructor() {
         this.clientID = Date.now().toString().substr(-6);
         this.collection = [];
         this.isActiveChecker = null;
         this.saving = false;
-        this.compressedLogs = [LogType.changeFrame];
+        this.compressedScopes = [EventScope.changeFrame];
         this.ignoreRules = {
-            [LogType.zoomImage]: {
-                lastLog: null,
+            [EventScope.zoomImage]: {
+                lastEvent: null,
                 timeThreshold: 4000,
-                ignore(previousLog: EventLogger): boolean {
-                    return (Date.now() - previousLog.time.getTime()) < this.timeThreshold;
+                ignore(previousEvent: Event): boolean {
+                    return (Date.now() - previousEvent.timestamp.getTime()) < this.timeThreshold;
                 },
                 update: defaultUpdate,
             },
-            [LogType.changeAttribute]: {
-                lastLog: null,
-                ignore(previousLog: EventLogger, currentPayload: any): boolean {
+            [EventScope.changeAttribute]: {
+                lastEvent: null,
+                ignore(previousEvent: Event, currentPayload: any): boolean {
                     return (
-                        currentPayload.object_id === previousLog.payload.object_id &&
-                        currentPayload.id === previousLog.payload.id
+                        currentPayload.object_id === previousEvent.payload.object_id &&
+                        currentPayload.id === previousEvent.payload.id
                     );
                 },
                 update: defaultUpdate,
             },
-            [LogType.changeFrame]: {
-                lastLog: null,
-                ignore(previousLog: EventLogger, currentPayload: any): boolean {
+            [EventScope.changeFrame]: {
+                lastEvent: null,
+                ignore(previousEvent: Event, currentPayload: any): boolean {
                     return (
-                        currentPayload.job_id === previousLog.payload.job_id &&
-                        currentPayload.step === previousLog.payload.step
+                        currentPayload.job_id === previousEvent.payload.job_id &&
+                        currentPayload.step === previousEvent.payload.step
                     );
                 },
-                update(previousLog: EventLogger, currentPayload: any): object {
+                update(previousEvent: Event, currentPayload: any): object {
                     return {
-                        ...previousLog.payload,
+                        ...previousEvent.payload,
                         to: currentPayload.to,
-                        count: previousLog.payload.count + 1,
+                        count: previousEvent.payload.count + 1,
                     };
                 },
             },
@@ -86,29 +86,31 @@ class LoggerStorage {
     public async configure(isActiveChecker, activityHelper): Promise<void> {
         const result = await PluginRegistry.apiWrapper.call(
             this,
-            LoggerStorage.prototype.configure,
+            Logger.prototype.configure,
             isActiveChecker,
             activityHelper,
         );
         return result;
     }
 
-    public async log(logType: LogType, payload = {}, wait = false): Promise<EventLogger> {
-        const result = await PluginRegistry.apiWrapper.call(this, LoggerStorage.prototype.log, logType, payload, wait);
+    public async log(scope: EventScope, payload = {}, wait = false): Promise<Event> {
+        const result = await PluginRegistry.apiWrapper.call(this, Logger.prototype.log, scope, payload, wait);
         return result;
     }
 
     public async save(): Promise<void> {
-        const result = await PluginRegistry.apiWrapper.call(this, LoggerStorage.prototype.save);
+        const result = await PluginRegistry.apiWrapper.call(this, Logger.prototype.save);
         return result;
     }
 }
 
-Object.defineProperties(LoggerStorage.prototype.configure, {
+Object.defineProperties(Logger.prototype.configure, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(isActiveChecker: () => boolean, userActivityCallback: Array<any>) {
+        value: async function implementation(
+            this: Logger, isActiveChecker: () => boolean, userActivityCallback: Array<any>,
+        ) {
             if (typeof isActiveChecker !== 'function') {
                 throw new ArgumentError('isActiveChecker argument must be callable');
             }
@@ -122,11 +124,11 @@ Object.defineProperties(LoggerStorage.prototype.configure, {
     },
 });
 
-Object.defineProperties(LoggerStorage.prototype.log, {
+Object.defineProperties(Logger.prototype.log, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(logType: LogType, payload: any, wait: boolean) {
+        value: async function implementation(this: Logger, scope: EventScope, payload: any, wait: boolean) {
             if (typeof payload !== 'object') {
                 throw new ArgumentError('Payload must be an object');
             }
@@ -135,56 +137,56 @@ Object.defineProperties(LoggerStorage.prototype.log, {
                 throw new ArgumentError('Wait must be boolean');
             }
 
-            if (!this.compressedLogs.includes(logType)) {
-                this.compressedLogs.forEach((compressedType: LogType) => {
-                    this.ignoreRules[compressedType].lastLog = null;
+            if (!(this.compressedScopes as string[]).includes(scope)) {
+                this.compressedScopes.forEach((compressedScope) => {
+                    this.ignoreRules[compressedScope].lastEvent = null;
                 });
             }
 
-            if (logType in this.ignoreRules) {
-                const ignoreRule = this.ignoreRules[logType];
-                const { lastLog } = ignoreRule;
-                if (lastLog && ignoreRule.ignore(lastLog, payload)) {
-                    lastLog.payload = ignoreRule.update(lastLog, payload);
+            if (scope in this.ignoreRules) {
+                const ignoreRule = this.ignoreRules[scope as IgnoredRules];
+                const { lastEvent } = ignoreRule;
+                if (lastEvent && ignoreRule.ignore(lastEvent, payload)) {
+                    lastEvent.payload = ignoreRule.update(lastEvent, payload);
 
-                    return ignoreRule.lastLog;
+                    return ignoreRule.lastEvent;
                 }
             }
 
-            const logPayload = { ...payload };
-            logPayload.client_id = this.clientID;
+            const eventPayload = { ...payload };
+            eventPayload.client_id = this.clientID;
             if (this.isActiveChecker) {
-                logPayload.is_active = this.isActiveChecker();
+                eventPayload.is_active = this.isActiveChecker();
             }
 
-            const log = logFactory(logType, { ...logPayload });
+            const event = makeEvent(scope, { ...eventPayload });
 
             const pushEvent = (): void => {
-                log.validatePayload();
-                log.onClose(null);
-                this.collection.push(log);
+                event.validatePayload();
+                event.onClose(null);
+                this.collection.push(event);
 
-                if (logType in this.ignoreRules) {
-                    this.ignoreRules[logType].lastLog = log;
+                if (scope in this.ignoreRules) {
+                    this.ignoreRules[scope as IgnoredRules].lastEvent = event;
                 }
             };
 
             if (wait) {
-                log.onClose(pushEvent);
+                event.onClose(pushEvent);
             } else {
                 pushEvent();
             }
 
-            return log;
+            return event;
         },
     },
 });
 
-Object.defineProperties(LoggerStorage.prototype.save, {
+Object.defineProperties(Logger.prototype.save, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation() {
+        value: async function implementation(this: Logger) {
             if (!this.collection.length) {
                 return;
             }
@@ -193,12 +195,12 @@ Object.defineProperties(LoggerStorage.prototype.save, {
                 await sleep(1000);
             }
 
-            const logPayload: any = {
+            const eventPayload: any = {
                 client_id: this.clientID,
             };
 
             if (this.isActiveChecker) {
-                logPayload.is_active = this.isActiveChecker();
+                eventPayload.is_active = this.isActiveChecker();
             }
 
             const collectionToSend = [...this.collection];
@@ -206,12 +208,12 @@ Object.defineProperties(LoggerStorage.prototype.save, {
                 this.saving = true;
                 this.collection = [];
                 await serverProxy.events.save({
-                    events: collectionToSend.map((log) => log.dump()),
+                    events: collectionToSend.map((event) => event.dump()),
                     timestamp: new Date().toISOString(),
                 });
 
                 for (const rule of Object.values<IgnoreRule>(this.ignoreRules)) {
-                    rule.lastLog = null;
+                    rule.lastEvent = null;
                 }
             } catch (error: unknown) {
                 // if failed, put collection back
@@ -225,4 +227,4 @@ Object.defineProperties(LoggerStorage.prototype.save, {
     },
 });
 
-export default new LoggerStorage();
+export default new Logger();

@@ -7,7 +7,7 @@ import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
     Webhook, MLModel, Organization, Job, Label, User,
-    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, EventLogger, Invitation,
+    QualityReport, QualityConflict, QualitySettings, FramesMetaData, RQStatus, Event, Invitation,
     SerializedAPISchema,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
@@ -721,7 +721,7 @@ export interface AnnotationState {
             fetching: boolean;
             delay: number;
             changeTime: number | null;
-            changeFrameLog: EventLogger | null;
+            changeFrameEvent: Event | null;
         };
         ranges: string;
         navigationBlocked: boolean;

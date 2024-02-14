@@ -17,7 +17,7 @@ import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
 import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
-import logger, { LogType } from 'cvat-logger';
+import logger, { EventScope } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import createRootReducer from 'reducers/root-reducer';
 import { activateOrganizationAsync } from 'actions/organization-actions';
@@ -164,9 +164,9 @@ window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
         const re = /\/tasks\/[0-9]+\/jobs\/[0-9]+$/;
         const { instance: job } = state.annotation.job;
         if (re.test(pathname) && job) {
-            job.logger.log(LogType.exception, logPayload);
+            job.logger.log(EventScope.exception, logPayload);
         } else {
-            logger.log(LogType.exception, logPayload);
+            logger.log(EventScope.exception, logPayload);
         }
     }
 

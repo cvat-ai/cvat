@@ -8,7 +8,7 @@ import { CombinedState } from 'reducers';
 import ObjectItemDetails from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { AnyAction } from 'redux';
 import { updateAnnotationsAsync, collapseObjectItems } from 'actions/annotation-actions';
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import { connect } from 'react-redux';
 
 interface OwnProps {
@@ -81,7 +81,7 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
             state, readonly, jobInstance, updateState,
         } = this.props;
         if (!readonly && state) {
-            jobInstance.logger.log(LogType.changeAttribute, {
+            jobInstance.logger.log(EventScope.changeAttribute, {
                 id,
                 value,
                 object_id: state.clientID,

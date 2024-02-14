@@ -5,7 +5,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { ThunkDispatch } from 'utils/redux';
 import { updateAnnotationsAsync, changeFrameAsync } from 'actions/annotation-actions';
@@ -114,7 +114,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     private lock = (): void => {
         const { objectState, jobInstance, readonly } = this.props;
         if (!readonly) {
-            jobInstance.logger.log(LogType.lockObject, { locked: true });
+            jobInstance.logger.log(EventScope.lockObject, { locked: true });
             objectState.lock = true;
             this.commit();
         }
@@ -123,7 +123,7 @@ class ItemButtonsWrapper extends React.PureComponent<StateToProps & DispatchToPr
     private unlock = (): void => {
         const { objectState, jobInstance, readonly } = this.props;
         if (!readonly) {
-            jobInstance.logger.log(LogType.lockObject, { locked: false });
+            jobInstance.logger.log(EventScope.lockObject, { locked: false });
             objectState.lock = false;
             this.commit();
         }

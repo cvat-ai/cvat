@@ -18,7 +18,7 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
     ColorBy, GridColor, ObjectType, Workspace, ShapeType, ActiveControl, CombinedState,
 } from 'reducers';
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import { Canvas, HighlightSeverity, CanvasHint } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
@@ -654,9 +654,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         };
 
         if (isDrawnFromScratch) {
-            jobInstance.logger.log(LogType.drawObject, { count: 1, duration, ...payload });
+            jobInstance.logger.log(EventScope.drawObject, { count: 1, duration, ...payload });
         } else {
-            jobInstance.logger.log(LogType.pasteObject, { count: 1, duration, ...payload });
+            jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration, ...payload });
         }
 
         const objectState = new cvat.classes.ObjectState(state);
@@ -670,7 +670,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         updateActiveControl(ActiveControl.CURSOR);
         const { states, duration } = event.detail;
-        jobInstance.logger.log(LogType.mergeObjects, {
+        jobInstance.logger.log(EventScope.mergeObjects, {
             duration,
             count: states.length,
         });
@@ -684,7 +684,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         updateActiveControl(ActiveControl.CURSOR);
         const { states, duration } = event.detail;
-        jobInstance.logger.log(LogType.groupObjects, {
+        jobInstance.logger.log(EventScope.groupObjects, {
             duration,
             count: states.length,
         });
@@ -698,7 +698,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         updateActiveControl(ActiveControl.CURSOR);
         const { states, points, duration } = event.detail;
-        jobInstance.logger.log(LogType.joinObjects, {
+        jobInstance.logger.log(EventScope.joinObjects, {
             duration,
             count: states.length,
         });
@@ -712,7 +712,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         updateActiveControl(ActiveControl.CURSOR);
         const { state, duration } = event.detail;
-        jobInstance.logger.log(LogType.splitObjects, {
+        jobInstance.logger.log(EventScope.splitObjects, {
             duration,
             count: 1,
         });
@@ -746,23 +746,23 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasShapeDragged = (e: any): void => {
         const { jobInstance } = this.props;
         const { id } = e.detail;
-        jobInstance.logger.log(LogType.dragObject, { id });
+        jobInstance.logger.log(EventScope.dragObject, { id });
     };
 
     private onCanvasShapeResized = (e: any): void => {
         const { jobInstance } = this.props;
         const { id } = e.detail;
-        jobInstance.logger.log(LogType.resizeObject, { id });
+        jobInstance.logger.log(EventScope.resizeObject, { id });
     };
 
     private onCanvasImageFitted = (): void => {
         const { jobInstance } = this.props;
-        jobInstance.logger.log(LogType.fitImage);
+        jobInstance.logger.log(EventScope.fitImage);
     };
 
     private onCanvasZoomChanged = (): void => {
         const { jobInstance } = this.props;
-        jobInstance.logger.log(LogType.zoomImage);
+        jobInstance.logger.log(EventScope.zoomImage);
     };
 
     private onCanvasShapeClicked = (e: any): void => {
@@ -837,7 +837,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const { jobInstance, updateActiveControl, onSliceAnnotations } = this.props;
         const { state, results, duration } = event.detail;
         updateActiveControl(ActiveControl.CURSOR);
-        jobInstance.logger.log(LogType.sliceObject, {
+        jobInstance.logger.log(EventScope.sliceObject, {
             count: 1,
             duration,
             clientID: state.clientID,

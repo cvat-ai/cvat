@@ -31,7 +31,7 @@ import {
 import { CameraAction, Canvas3d, ViewsDOM } from 'cvat-canvas3d-wrapper';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import { getCore, ObjectState, Job } from 'cvat-core-wrapper';
 import GlobalHotKeys from 'utils/mousetrap-react';
 
@@ -481,9 +481,9 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         const { state, duration } = event.detail;
         const isDrawnFromScratch = !state.label;
         if (isDrawnFromScratch) {
-            jobInstance.logger.log(LogType.drawObject, { count: 1, duration });
+            jobInstance.logger.log(EventScope.drawObject, { count: 1, duration });
         } else {
-            jobInstance.logger.log(LogType.pasteObject, { count: 1, duration });
+            jobInstance.logger.log(EventScope.pasteObject, { count: 1, duration });
         }
 
         state.objectType = state.objectType || activeObjectType;

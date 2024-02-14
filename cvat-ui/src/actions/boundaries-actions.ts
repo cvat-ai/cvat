@@ -7,7 +7,7 @@ import {
     ActionUnion, createAction, ThunkAction, ThunkDispatch,
 } from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import { fetchAnnotationsAsync } from './annotation-actions';
 
 const cvat = getCore();
@@ -46,7 +46,7 @@ export function resetAfterErrorAsync(): ThunkAction {
                 const frameData = await job.frames.get(frameNumber);
                 const colors = [...cvat.enums.colors];
 
-                await job.logger.log(LogType.restoreJob);
+                await job.logger.log(EventScope.restoreJob);
 
                 dispatch(boundariesActions.resetAfterError({
                     job,
