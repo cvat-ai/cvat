@@ -1,24 +1,24 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import moment from 'moment';
 import { Col, Row } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import Menu from 'antd/lib/menu';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 import { MoreOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
+import Paragraph from 'antd/lib/typography/Paragraph';
 
 import { groupEvents } from 'components/setup-webhook-pages/setup-webhook-content';
-import Paragraph from 'antd/lib/typography/Paragraph';
+import Menu from 'components/dropdown-menu';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { deleteWebhookAsync } from 'actions/webhooks-actions';
-import { useDispatch } from 'react-redux';
 
 export interface WebhookItemProps {
     webhookInstance: any;
@@ -148,39 +148,42 @@ function WebhookItem(props: WebhookItemProps): JSX.Element | null {
                 </Row>
                 <Row justify='end'>
                     <Col>
-                        <Dropdown overlay={() => (
-                            <Menu>
-                                <Menu.Item key='edit'>
-                                    <a
-                                        href={`/webhooks/update/${id}`}
-                                        onClick={(e: React.MouseEvent) => {
-                                            e.preventDefault();
-                                            history.push(`/webhooks/update/${id}`);
-                                            return false;
+                        <Dropdown
+                            trigger={['click']}
+                            destroyPopupOnHide
+                            overlay={() => (
+                                <Menu>
+                                    <Menu.Item key='edit'>
+                                        <a
+                                            href={`/webhooks/update/${id}`}
+                                            onClick={(e: React.MouseEvent) => {
+                                                e.preventDefault();
+                                                history.push(`/webhooks/update/${id}`);
+                                                return false;
+                                            }}
+                                        >
+                                            Edit
+                                        </a>
+                                    </Menu.Item>
+                                    <Menu.Item
+                                        key='delete'
+                                        onClick={() => {
+                                            Modal.confirm({
+                                                title: 'Are you sure you want to remove the hook?',
+                                                content: 'It will stop notificating the specified URL about listed events',
+                                                className: 'cvat-modal-confirm-remove-webhook',
+                                                onOk: () => {
+                                                    dispatch(deleteWebhookAsync(webhookInstance)).then(() => {
+                                                        setIsRemoved(true);
+                                                    });
+                                                },
+                                            });
                                         }}
                                     >
-                                        Edit
-                                    </a>
-                                </Menu.Item>
-                                <Menu.Item
-                                    key='delete'
-                                    onClick={() => {
-                                        Modal.confirm({
-                                            title: 'Are you sure you want to remove the hook?',
-                                            content: 'It will stop notificating the specified URL about listed events',
-                                            className: 'cvat-modal-confirm-remove-webhook',
-                                            onOk: () => {
-                                                dispatch(deleteWebhookAsync(webhookInstance)).then(() => {
-                                                    setIsRemoved(true);
-                                                });
-                                            },
-                                        });
-                                    }}
-                                >
-                                    Delete
-                                </Menu.Item>
-                            </Menu>
-                        )}
+                                        Delete
+                                    </Menu.Item>
+                                </Menu>
+                            )}
                         >
                             <div className='cvat-webhooks-page-actions-button'>
                                 <Text className='cvat-text-color'>Actions</Text>

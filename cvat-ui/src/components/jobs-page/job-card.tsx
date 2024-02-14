@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -76,7 +76,11 @@ function JobCardComponent(props: Props): JSX.Element {
                     <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
                 ) : null}
             </Descriptions>
-            <Dropdown overlay={<JobActionsMenu onJobUpdate={onJobUpdate} job={job} />}>
+            <Dropdown
+                trigger={['click']}
+                destroyPopupOnHide
+                overlay={<JobActionsMenu onJobUpdate={onJobUpdate} job={job} />}
+            >
                 <MoreOutlined className='cvat-job-card-more-button' />
             </Dropdown>
         </Card>

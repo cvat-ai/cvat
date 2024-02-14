@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -258,6 +258,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 </Row>
                 <Row justify='end'>
                     <Dropdown
+                        trigger={['click']}
                         destroyPopupOnHide
                         overlay={(
                             <ActionsMenuContainer

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -111,12 +111,7 @@ context('Object make a copy.', () => {
             let coordX = 100;
             const coordY = 300;
             for (let id = 1; id < countObject + 1; id++) {
-                cy.get(`#cvat-objects-sidebar-state-item-${id}`).within(() => {
-                    cy.get('[aria-label="more"]').trigger('mouseover');
-                    cy.wait(300); // Wait dropdown menu transition
-                });
-                // Get the last element from cvat-object-item-menu array
-                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click();
+                cy.interactAnnotationObjectMenu(`#cvat-objects-sidebar-state-item-${id}`, 'Make a copy');
                 cy.get('.cvat-canvas-container').click(coordX, coordY);
                 cy.get('.cvat-canvas-container').click();
                 coordX += 100;
@@ -147,11 +142,10 @@ context('Object make a copy.', () => {
                 cy.get(`#cvat_canvas_shape_${id}`).trigger('mousemove', 'right');
                 cy.get(`#cvat_canvas_shape_${id}`).should('have.class', 'cvat_canvas_shape_activated');
                 cy.get(`#cvat_canvas_shape_${id}`).rightclick({ force: true });
-                cy.get('.cvat-canvas-context-menu').last().should('be.visible');
-                cy.get('.cvat-canvas-context-menu').last().find('[aria-label="more"]').trigger('mouseover');
-                cy.wait(300); // Wait dropdown menu transition;
+                cy.get('.cvat-canvas-context-menu').should('be.visible');
+                cy.get('.cvat-canvas-context-menu').find('[aria-label="more"]').click();
                 // Get the last element from cvat-object-item-menu array
-                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click();
+                cy.get('.cvat-object-item-menu').should('be.visible').contains('button', 'Make a copy').click();
                 cy.get('.cvat-canvas-container').click(coordX, coordY);
                 cy.get('.cvat-canvas-container').click(); // Deactivate all objects and hide context menu
                 coordX += 100;
