@@ -22,6 +22,16 @@ import TaskQualityComponent from './task-quality/task-quality-component';
 
 const core = getCore();
 
+enum AnalyticsTabs {
+    OVERVIEW = 'overview',
+    QUALITY = 'quality',
+}
+
+function getTabFromHash(): AnalyticsTabs {
+    const tab = window.location.hash.slice(1) as AnalyticsTabs;
+    return Object.values(AnalyticsTabs).includes(tab) ? tab : AnalyticsTabs.OVERVIEW;
+}
+
 function handleTimePeriod(interval: DateIntervals): [string, string] {
     const now = moment.utc();
     switch (interval) {
@@ -68,7 +78,7 @@ function AnalyticsPage(): JSX.Element {
         return +useParams<{ tid: string }>().tid;
     })();
 
-    const [activeTab, setTab] = useState(window.location.hash.slice(1));
+    const [activeTab, setTab] = useState(getTabFromHash());
 
     const [instanceType, setInstanceType] = useState<InstanceType | null>(null);
     const [instance, setInstance] = useState<Project | Task | Job | null>(null);
@@ -177,13 +187,13 @@ function AnalyticsPage(): JSX.Element {
 
     useEffect(() => {
         window.addEventListener('hashchange', () => {
-            const hash = window.location.hash.slice(1);
+            const hash = getTabFromHash();
             setTab(hash);
         });
     }, []);
 
     const onTabKeyChange = (key: string): void => {
-        setTab(key);
+        setTab(key as AnalyticsTabs);
     };
 
     useEffect(() => {
@@ -219,12 +229,12 @@ function AnalyticsPage(): JSX.Element {
         tabs = (
             <Tabs
                 type='card'
-                activeKey={activeTab || 'overview'}
-                defaultActiveKey='overview'
+                activeKey={activeTab}
+                defaultActiveKey={AnalyticsTabs.OVERVIEW}
                 onChange={onTabKeyChange}
                 className='cvat-task-analytics-tabs'
             >
-                <Tabs.TabPane tab='Performance' key='overview'>
+                <Tabs.TabPane tab='Performance' key={AnalyticsTabs.OVERVIEW}>
                     <AnalyticsOverview
                         report={analyticsReport}
                         timePeriod={timePeriod}
@@ -232,7 +242,7 @@ function AnalyticsPage(): JSX.Element {
                     />
                 </Tabs.TabPane>
                 {instanceType === 'task' && (
-                    <Tabs.TabPane tab='Quality' key='quality'>
+                    <Tabs.TabPane tab='Quality' key={AnalyticsTabs.QUALITY}>
                         <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />
                     </Tabs.TabPane>
                 )}
