@@ -136,6 +136,10 @@ export default interface CVATCore {
     frames: {
         getMeta: any;
     };
+    requests: {
+        list: any;
+        listen: any;
+    };
     actions: {
         list: typeof listActions;
         register: typeof registerAction;

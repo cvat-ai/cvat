@@ -916,7 +916,7 @@ async function importDataset(
                     reject(generateError(error));
                 }
             }
-            setTimeout(requestStatus, 2000);
+            // setTimeout(requestStatus, 2000);
         });
     }
     const isCloudStorage = sourceStorage.location === StorageLocation.CLOUD_STORAGE;
@@ -2392,6 +2392,34 @@ async function getAnalyticsReports(filter): Promise<SerializedAnalyticsReport> {
     }
 }
 
+async function getRequestsList(): Promise<any> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/requests/get`);
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getImportRequestStatus(rqID): Promise<any> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.get(`${backendAPI}/requests/status`, {
+            params: {
+                rq_id: rqID,
+            },
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export default Object.freeze({
     server: Object.freeze({
         setAuthData,
@@ -2551,5 +2579,10 @@ export default Object.freeze({
                 update: updateQualitySettings,
             }),
         }),
+    }),
+
+    requests: Object.freeze({
+        list: getRequestsList,
+        status: getImportRequestStatus,
     }),
 });

@@ -38,6 +38,7 @@ import { Dumper } from 'cvat-core/src/annotation-formats';
 import { EventLogger } from 'cvat-core/src/log';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 import BaseSingleFrameAction, { ActionParameterType } from 'cvat-core/src/annotations-actions';
+import { Request } from 'cvat-core/src/requests-manager';
 
 const cvat: CVATCore = _cvat;
 
@@ -96,6 +97,7 @@ export {
     EventLogger,
     FrameData,
     ActionParameterType,
+    Request,
 };
 
 export type {

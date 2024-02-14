@@ -25,6 +25,7 @@ import organizationsReducer from './organizations-reducer';
 import webhooksReducer from './webhooks-reducer';
 import analyticsReducer from './analytics-reducer';
 import invitationsReducer from './invitations-reducer';
+import requestsReducer from './requests-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
@@ -49,5 +50,6 @@ export default function createRootReducer(): Reducer {
         webhooks: webhooksReducer,
         analytics: analyticsReducer,
         invitations: invitationsReducer,
+        requests: requestsReducer,
     });
 }

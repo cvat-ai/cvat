@@ -1,0 +1,29 @@
+// Copyright (C) 2024 CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base';
+
+.cvat-requests-page {
+    margin-top: $grid-unit-size * 4;
+}
+
+.cvat-requests-list {
+    .ant-card {
+        margin-bottom: $grid-unit-size;
+
+        .ant-card-body {
+            padding: $grid-unit-size * 2;
+        }
+    }
+}
+
+.cvat-requests-type, .cvat-requests-name, .cvat-requests-percent {
+    display: flex;
+    align-items: center;
+}
+
+.cvat-requests-percent {
+    padding-top: $grid-unit-size * 1.5;
+    padding-left: $grid-unit-size * 2;
+}

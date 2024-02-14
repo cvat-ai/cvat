@@ -377,7 +377,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 elif rq_job.is_finished:
                     if rq_job.dependency:
                         rq_job.dependency.delete()
-                    rq_job.delete()
+                    # rq_job.delete()
+                    print(rq_job)
+                    print(rq_job.meta.get("user", {}).get("id"))
                     return Response(status=status.HTTP_201_CREATED)
                 elif rq_job.is_failed or \
                         rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
@@ -3172,7 +3174,7 @@ class DataProcessing(viewsets.GenericViewSet):
             return Response(
                 data= {
                         "state": "Queued",
-                        "message": "",
+                        "message": "In queue",
                         "percent": 0},
                 status=status.HTTP_200_OK
             )
@@ -3180,23 +3182,76 @@ class DataProcessing(viewsets.GenericViewSet):
             return Response(
                 data= {
                         "state": "Started",
-                        "message": "",
+                        "message": "In progress",
                         "percent": 20},
+                status=status.HTTP_200_OK
+            )
+        elif rq_id == 'rq4':
+            return Response(
+                data= {
+                        "state": "Finished",
+                        "message": "Done",
+                        "percent": 100,
+                        "url": "http://localhost:3000/api/"
+                        },
                 status=status.HTTP_200_OK
             )
         return Response(
                 data= {
                         "state": "Started",
-                        "message": "",
+                        "message": "In progress",
                         "percent": 20},
                 status=status.HTTP_200_OK
             )
 
-    @action(detail=False, methods=['GET'],
-            permission_classes=[]
-        )
+    @action(detail=False, methods=['GET'])
     def get(self,request):
-            return Response(
+        queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+        user_id = request.user.id;
+        jobs = [
+                job
+                for job in queue.job_class.fetch_many(
+                    queue.started_job_registry.get_job_ids(), queue.connection
+                )
+        ]
+        print(jobs)
+        started_user_jobs = [
+                job
+                for job in queue.job_class.fetch_many(
+                    queue.started_job_registry.get_job_ids(), queue.connection
+                )
+                if job and job.meta.get("user", {}).get("id") == user_id
+        ]
+        finished_user_jobs = [
+                job
+                for job in queue.job_class.fetch_many(
+                    queue.finished_job_registry.get_job_ids(), queue.connection
+                )
+                if job and job.meta.get("user", {}).get("id") == user_id
+        ]
+        failed_user_jobs = [
+                job
+                for job in queue.job_class.fetch_many(
+                    queue.failed_job_registry.get_job_ids(), queue.connection
+                )
+                if job and job.meta.get("user", {}).get("id") == user_id
+        ]
+        deferred_user_jobs = [
+            job
+            for job in queue.job_class.fetch_many(
+                queue.deferred_job_registry.get_job_ids(), queue.connection
+            )
+            # Since there is no cleanup implementation in DeferredJobRegistry,
+            # this registry can contain "outdated" jobs that weren't deleted from it
+            # but were added to another registry. Probably such situations can occur
+            # if there are active or deferred jobs when restarting the worker container.
+            if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
+        ]
+        all_user_jobs = started_user_jobs + deferred_user_jobs + finished_user_jobs
+        print(all_user_jobs);
+        for job in all_user_jobs:
+            print(job.meta)
+        return Response(
                 data=[
                     {
                         "state": "Failed",
@@ -3212,7 +3267,7 @@ class DataProcessing(viewsets.GenericViewSet):
                     },
                     {
                         "state": "Queued",
-                        "message": "",
+                        "message": "In queue",
                         "percent": 0,
                         "rq_id": "rq2",
                         "type": "import:annotations",
@@ -3224,7 +3279,7 @@ class DataProcessing(viewsets.GenericViewSet):
                     },
                     {
                         "state": "Started",
-                        "message": "",
+                        "message": "In progress",
                         "percent": 20,
                         "rq_id": "rq3",
                         "type": "import:dataset",
@@ -3232,6 +3287,18 @@ class DataProcessing(viewsets.GenericViewSet):
                             "id": 3,
                             "type": "project",
                             "name": "hello122",
+                        }
+                    },
+                                        {
+                        "state": "Finished",
+                        "message": "Done",
+                        "percent": 100,
+                        "rq_id": "rq4",
+                        "type": "export:dataset",
+                        "entity": {
+                            "id": 4,
+                            "type": "project",
+                            "name": "Project for export number 4",
                         }
                     },
                 ],

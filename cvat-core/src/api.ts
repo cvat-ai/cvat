@@ -362,6 +362,16 @@ function build(): CVATCore {
                 },
             },
         },
+        requests: {
+            async list(filter: any) {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.list, filter);
+                return result;
+            },
+            async listen(rqID: any, callback: any) {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.listen, rqID, callback);
+                return result;
+            },
+        },
         classes: {
             User,
             Project: implementProject(Project),
