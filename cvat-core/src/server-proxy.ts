@@ -2396,7 +2396,7 @@ async function getRequestsList(): Promise<any> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/requests/get`);
+        const response = await Axios.get(`${backendAPI}/requests`);
 
         return response.data;
     } catch (errorData) {

@@ -91,6 +91,78 @@ slogger = ServerLogManager(__name__)
 
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
+
+def get_job_info(job):
+    status = job.meta.get('status', 'default value')
+    state = job.get_status()
+    return {
+                "state": state,
+                "message": job.meta.get('formatted_exception', 'default value') if state == 'failed' else status,
+                "rq_id": job.id,
+                "percent": job.meta.get('task_progress', 1)*100,
+                "type": job.id.split('-')[0],
+                "entity": {
+                    'id': job.meta['project_id'],
+                    'type': "project",
+                    'name': "test project name",
+                },
+            }
+
+def get_job_info_status(job):
+    status = getattr(job.meta, 'status', 'default value')
+    state = job.get_status()
+    return {
+                "state": job.get_status(),
+                "message": job.meta.get('formatted_exception', 'default value') if state == 'failed' else status,
+                "percent": job.meta.get('task_progress', 1)*100,
+            }
+
+def get_all_jobs_from_queue(queue, request):
+    user_id = request.user.id
+    started_user_jobs = [
+                job
+                for job in queue.job_class.fetch_many(
+                    queue.started_job_registry.get_job_ids(), queue.connection
+                )
+                if job and job.meta.get("user", {}).get("id") == user_id
+        ]
+    finished_user_jobs = [
+                job
+                for job in queue.job_class.fetch_many(
+                    queue.finished_job_registry.get_job_ids(), queue.connection
+                )
+                if job and job.meta.get("user", {}).get("id") == user_id
+        ]
+    failed_user_jobs = [
+                job
+                for job in queue.job_class.fetch_many(
+                    queue.failed_job_registry.get_job_ids(), queue.connection
+                )
+                if job and job.meta.get("user", {}).get("id") == user_id
+        ]
+    deferred_user_jobs = [
+            job
+            for job in queue.job_class.fetch_many(
+                queue.deferred_job_registry.get_job_ids(), queue.connection
+            )
+            # Since there is no cleanup implementation in DeferredJobRegistry,
+            # this registry can contain "outdated" jobs that weren't deleted from it
+            # but were added to another registry. Probably such situations can occur
+            # if there are active or deferred jobs when restarting the worker container.
+            if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
+        ]
+    all_user_jobs = started_user_jobs + deferred_user_jobs + finished_user_jobs + failed_user_jobs
+    return all_user_jobs
+
+def get_all_jobs(request):
+    import_queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
+    import_jobs = get_all_jobs_from_queue(import_queue, request)
+
+    export_queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
+    export_jobs = get_all_jobs_from_queue(export_queue, request)
+
+    return import_jobs + export_jobs
+
 @extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
@@ -3160,8 +3232,19 @@ class DataProcessing(viewsets.GenericViewSet):
         permission_classes=[]
     )
     def status(self,request):
-        queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
         rq_id = request.query_params.get('rq_id')
+
+        all_user_jobs = get_all_jobs(request)
+        actual_job = None
+        for job in all_user_jobs:
+            if job.id == rq_id:
+                actual_job = job
+        if actual_job:
+            return Response(
+                data= get_job_info_status(actual_job),
+                status=status.HTTP_200_OK
+            )
+
         if rq_id == 'rq1':
             return Response(
                 data= {
@@ -3204,53 +3287,13 @@ class DataProcessing(viewsets.GenericViewSet):
                 status=status.HTTP_200_OK
             )
 
-    @action(detail=False, methods=['GET'])
-    def get(self,request):
-        queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
-        user_id = request.user.id;
-        jobs = [
-                job
-                for job in queue.job_class.fetch_many(
-                    queue.started_job_registry.get_job_ids(), queue.connection
-                )
-        ]
-        print(jobs)
-        started_user_jobs = [
-                job
-                for job in queue.job_class.fetch_many(
-                    queue.started_job_registry.get_job_ids(), queue.connection
-                )
-                if job and job.meta.get("user", {}).get("id") == user_id
-        ]
-        finished_user_jobs = [
-                job
-                for job in queue.job_class.fetch_many(
-                    queue.finished_job_registry.get_job_ids(), queue.connection
-                )
-                if job and job.meta.get("user", {}).get("id") == user_id
-        ]
-        failed_user_jobs = [
-                job
-                for job in queue.job_class.fetch_many(
-                    queue.failed_job_registry.get_job_ids(), queue.connection
-                )
-                if job and job.meta.get("user", {}).get("id") == user_id
-        ]
-        deferred_user_jobs = [
-            job
-            for job in queue.job_class.fetch_many(
-                queue.deferred_job_registry.get_job_ids(), queue.connection
-            )
-            # Since there is no cleanup implementation in DeferredJobRegistry,
-            # this registry can contain "outdated" jobs that weren't deleted from it
-            # but were added to another registry. Probably such situations can occur
-            # if there are active or deferred jobs when restarting the worker container.
-            if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
-        ]
-        all_user_jobs = started_user_jobs + deferred_user_jobs + finished_user_jobs
-        print(all_user_jobs);
+    def list(self,request):
+        all_user_jobs = get_all_jobs(request)
+        print(all_user_jobs)
+        data = []
         for job in all_user_jobs:
             print(job.meta)
+            data.append(get_job_info(job))
         return Response(
                 data=[
                     {
@@ -3262,7 +3305,7 @@ class DataProcessing(viewsets.GenericViewSet):
                         "entity": {
                             "id": 1,
                             "type": "project",
-                            "name": "hello",
+                            "name": "Project with failed export",
                         }
                     },
                     {
@@ -3274,7 +3317,7 @@ class DataProcessing(viewsets.GenericViewSet):
                         "entity": {
                             "id": 2,
                             "type": "task",
-                            "name": "hello13",
+                            "name": "Task H1 part 2",
                         }
                     },
                     {
@@ -3286,7 +3329,7 @@ class DataProcessing(viewsets.GenericViewSet):
                         "entity": {
                             "id": 3,
                             "type": "project",
-                            "name": "hello122",
+                            "name": "Personal project",
                         }
                     },
                                         {
@@ -3301,6 +3344,15 @@ class DataProcessing(viewsets.GenericViewSet):
                             "name": "Project for export number 4",
                         }
                     },
-                ],
+                ] + data,
+                status=status.HTTP_200_OK
+            )
+
+    @action(detail=False, methods=['GET'])
+    def clear(self,request):
+        all_user_jobs = get_all_jobs(request)
+        for job in all_user_jobs:
+            job.delete()
+        return Response(
                 status=status.HTTP_200_OK
             )
