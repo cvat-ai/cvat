@@ -53,6 +53,7 @@ export function getRequestsAsync(query?: RequestsQuery): ThunkAction {
             const result = await core.requests.list();
             const { requests, count } = result;
             requests
+                .filter((request: Request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status))
                 .forEach((request: Request): void => {
                     const { rqID } = request;
                     core.requests

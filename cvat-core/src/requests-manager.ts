@@ -9,6 +9,8 @@ export interface SerializedRequest {
     rq_id: string;
     state: string;
     type: string;
+    progress: number;
+    message: string;
     entity: {
         id: number;
         type: string;
@@ -35,6 +37,8 @@ export class Request {
         this.#state = initialData.state as RQStatus;
         this.#type = initialData.type;
         this.#entity = initialData.entity;
+        this.#progress = initialData.progress;
+        this.#message = initialData.message;
     }
 
     get rqID(): string {
@@ -42,7 +46,7 @@ export class Request {
     }
 
     get status(): RQStatus {
-        return this.#state.toLocaleLowerCase() as RQStatus;
+        return this.#state.toLowerCase() as RQStatus;
     }
     set status(status) {
         this.#state = status;
@@ -100,7 +104,10 @@ class RequestsManager {
             );
         }
 
-        return { requests, count: requests.length };
+        return {
+            requests,
+            count: requests.length,
+        };
     }
 
     async listen(

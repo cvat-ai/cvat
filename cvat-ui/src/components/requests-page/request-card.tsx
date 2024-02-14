@@ -5,16 +5,16 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 
-import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
-import MoveTaskModal from 'components/move-task-modal/move-task-modal';
-import TaskItem from 'containers/tasks-page/task-item';
 import { RQStatus, Request } from 'cvat-core-wrapper';
 
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
 import { LoadingOutlined } from '@ant-design/icons';
+import Collapse from 'antd/lib/collapse';
 import dimensions from '../projects-page/dimensions';
+
+const { Panel } = Collapse;
 
 export interface Props {
     request: Request;
@@ -29,7 +29,7 @@ export default function RequestCard(props: Props): JSX.Element {
     return (
         <Row justify='center' align='middle'>
             <Col className='cvat-requests-list' {...dimensions}>
-                <Card>
+                <Card className='cvat-requests-card'>
                     <Row>
                         <Col span={6} className='cvat-requests-type'>
                             {request.type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
@@ -49,6 +49,10 @@ export default function RequestCard(props: Props): JSX.Element {
                                 >
                                     {/* TODO: add ui texts if no message is present */}
                                     {((): JSX.Element => {
+                                        if (request.status === RQStatus.FINISHED) {
+                                            return (<>Finished</>);
+                                        }
+
                                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(request.status)) {
                                             return (
                                                 <>
@@ -59,7 +63,15 @@ export default function RequestCard(props: Props): JSX.Element {
                                         }
 
                                         if ([RQStatus.FAILED].includes(request.status)) {
-                                            return <>{request.message}</>;
+                                            return (
+                                                <Collapse defaultActiveKey={['1']}>
+                                                    <Panel header='An error occured' key='1'>
+                                                        <Text type='danger' strong>
+                                                            {request.message}
+                                                        </Text>
+                                                    </Panel>
+                                                </Collapse>
+                                            );
                                         }
 
                                         if (request.status === RQStatus.UNKNOWN) {
@@ -72,7 +84,7 @@ export default function RequestCard(props: Props): JSX.Element {
                                 </Text>
                             </div>
                             <Progress
-                                percent={Math.floor(request.progress)}
+                                percent={request.status === RQStatus.FINISHED ? 100 : Math.floor(request.progress)}
                                 strokeColor={{
                                     from: '#108ee9',
                                     to: '#87d068',
@@ -83,8 +95,8 @@ export default function RequestCard(props: Props): JSX.Element {
                             />
                         </Col>
                         <Col span={2} className='cvat-requests-percent'>
-                            {request.progress}
-                            %
+                            {request.status === RQStatus.FINISHED ? 100 : request.progress}
+                            {request.status === RQStatus.FAILED ? '' : '%'}
                         </Col>
                     </Row>
                 </Card>
