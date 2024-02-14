@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -19,12 +20,21 @@ from cvat.apps.engine.models import Annotation, Job, Project, Task
 )
 def __save_job__update_analytics_report(instance, created, **kwargs):
     if isinstance(instance, Project):
-        AnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(project=instance)
+        kwargs = {"project": instance}
     elif isinstance(instance, Task):
-        AnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(task=instance)
+        kwargs = {"task": instance}
     elif isinstance(instance, Job):
-        AnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(job=instance)
+        kwargs = {"job": instance}
     elif isinstance(instance, Annotation):
-        AnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(job=instance.job)
+        kwargs = {"job": instance.job}
     else:
         assert False
+
+    def schedule_autoupdate_job():
+        if any(v.id is None for v in kwargs.values()):
+            # The object may have been deleted after the on_commit call.
+            return
+
+        AnalyticsReportUpdateManager().schedule_analytics_report_autoupdate_job(**kwargs)
+
+    transaction.on_commit(schedule_autoupdate_job, robust=True)

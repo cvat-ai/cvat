@@ -24,6 +24,7 @@ import { OrganizationActionsTypes } from 'actions/organization-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
 import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
+import { ServerAPIActionTypes } from 'actions/server-actions';
 
 import { NotificationsState } from '.';
 
@@ -37,7 +38,9 @@ const defaultState: NotificationsState = {
             changePassword: null,
             requestPasswordReset: null,
             resetPassword: null,
-            loadAuthActions: null,
+        },
+        serverAPI: {
+            fetching: null,
         },
         projects: {
             fetching: null,
@@ -380,15 +383,15 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED: {
+        case ServerAPIActionTypes.GET_SERVER_API_SCHEMA_FAILED: {
             return {
                 ...state,
                 errors: {
                     ...state.errors,
-                    auth: {
-                        ...state.errors.auth,
-                        loadAuthActions: {
-                            message: 'Could not check available auth actions',
+                    serverAPI: {
+                        ...state.errors.serverAPI,
+                        fetching: {
+                            message: 'Could not receive server schema',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                         },

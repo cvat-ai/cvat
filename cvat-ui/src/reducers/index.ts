@@ -7,7 +7,7 @@ import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import {
     Webhook, MLModel, Organization, Job, Label, User,
-    QualityConflict, FramesMetaData, RQStatus, EventLogger, Invitation,
+    QualityConflict, FramesMetaData, RQStatus, EventLogger, Invitation, SerializedAPISchema,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -18,11 +18,7 @@ export interface AuthState {
     initialized: boolean;
     fetching: boolean;
     user: User | null;
-    authActionsFetching: boolean;
-    authActionsInitialized: boolean;
     showChangePasswordDialog: boolean;
-    allowChangePassword: boolean;
-    allowResetPassword: boolean;
     hasEmailVerificationBeenSent: boolean;
 }
 
@@ -345,6 +341,18 @@ export interface AboutState {
     initialized: boolean;
 }
 
+export interface ServerAPIState {
+    schema: SerializedAPISchema | null;
+    fetching: boolean;
+    initialized: boolean;
+    configuration: {
+        isRegistrationEnabled: boolean;
+        isBasicLoginEnabled: boolean;
+        isPasswordResetEnabled: boolean;
+        isPasswordChangeEnabled: boolean;
+    };
+}
+
 export interface UserAgreement {
     name: string;
     urlDisplayText: string;
@@ -434,7 +442,9 @@ export interface NotificationsState {
             changePassword: null | ErrorState;
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
-            loadAuthActions: null | ErrorState;
+        };
+        serverAPI: {
+            fetching: null | ErrorState;
         };
         projects: {
             fetching: null | ErrorState;
@@ -946,6 +956,7 @@ export interface CombinedState {
     organizations: OrganizationState;
     invitations: InvitationsState;
     webhooks: WebhooksState;
+    serverAPI: ServerAPIState;
 }
 
 export interface Indexable {

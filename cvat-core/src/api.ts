@@ -129,6 +129,10 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
                 return result;
             },
+            async apiSchema() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.apiSchema);
+                return result;
+            },
         },
         projects: {
             async get(filter = {}) {

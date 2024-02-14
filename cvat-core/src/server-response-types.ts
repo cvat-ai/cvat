@@ -462,3 +462,33 @@ export interface SerializedFramesMetaData {
     start_frame: number;
     stop_frame: number;
 }
+
+export interface SerializedAPISchema {
+    openapi: string;
+    info: {
+        version: string;
+        description: string;
+        termsOfService: string;
+        contact: {
+            name: string;
+            url: string;
+            email: string;
+        };
+        license: {
+            name: string;
+            url: string;
+        }
+    };
+    paths: {
+        [path: string]: any;
+    };
+    components: {
+        schemas: {
+            [component: string]: any;
+        }
+    }
+    externalDocs: {
+        description: string;
+        url: string;
+    };
+}
