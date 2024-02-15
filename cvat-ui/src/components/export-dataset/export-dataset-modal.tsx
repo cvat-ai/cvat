@@ -21,6 +21,7 @@ import { exportActions, exportDatasetAsync } from 'actions/export-actions';
 import {
     Dumper, Job, Project, Storage, StorageData, Task,
 } from 'cvat-core-wrapper';
+import ReactMarkdown from 'react-markdown';
 
 type FormValues = {
     selectedFormat: string | undefined;
@@ -114,11 +115,13 @@ function ExportDatasetModal(props: StateToProps): JSX.Element {
             );
             closeModal();
             const resource = values.saveImages ? 'Dataset' : 'Annotations';
+            const description = `${resource} export was started for ${instanceType}. ` +
+            'You can check progress and download the file [here](/requests).';
             Notification.info({
                 message: `${resource} export started`,
-                description:
-                    `${resource} export was started for ${instanceType}. ` +
-                    `Download will start automatically as soon as the ${resource} is ready.`,
+                description: (
+                    <ReactMarkdown>{description}</ReactMarkdown>
+                ),
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },

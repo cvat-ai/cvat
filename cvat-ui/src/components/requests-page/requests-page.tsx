@@ -44,10 +44,27 @@ export default function RequestsPageComponent(): JSX.Element {
     }, []);
 
     return count ? (
-        <Row justify='center' align='top' className='cvat-requests-page'>
-            <Col span={24}>
-                {content}
-            </Col>
-        </Row>
+        <>
+            <Row justify='center' align='top' className='cvat-requests-page' style={{ height: '90%' }}>
+                <Col span={24}>
+                    {content}
+                </Col>
+            </Row>
+            <Row justify='center' align='middle'>
+                <Col md={22} lg={18} xl={16} xxl={14}>
+                    <Pagination
+                        className='cvat-tasks-pagination'
+                        onChange={(page: number) => {
+                        }}
+                        showSizeChanger={false}
+                        total={count}
+                        pageSize={10}
+                        current={1}
+                        showQuickJumper
+                    />
+                </Col>
+            </Row>
+        </>
+
     ) : null;
 }

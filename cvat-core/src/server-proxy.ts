@@ -843,24 +843,13 @@ function exportDataset(instanceType: 'projects' | 'jobs' | 'tasks') {
             ...(name ? { filename: name } : {}),
             format,
         };
-
         return new Promise<string | void>((resolve, reject) => {
             async function request() {
                 Axios.get(baseURL, {
                     params,
                 })
                     .then((response) => {
-                        const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
-                        const { status } = response;
-
-                        if (status === 202) {
-                            setTimeout(request, 3000);
-                        } else if (status === 201) {
-                            params.action = 'download';
-                            resolve(`${baseURL}?${new URLSearchParams(params).toString()}`);
-                        } else if (isCloudStorage && status === 200) {
-                            resolve();
-                        }
+                        resolve(response.data.rq_id);
                     })
                     .catch((errorData) => {
                         reject(generateError(errorData));
@@ -960,7 +949,7 @@ async function importDataset(
         }
     }
     try {
-        return await wait();
+        return rqId;
     } catch (errorData) {
         throw generateError(errorData);
     }

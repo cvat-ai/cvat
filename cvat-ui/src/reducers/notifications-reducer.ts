@@ -26,6 +26,7 @@ import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
 
 import { AnalyticsActionsTypes } from 'actions/analytics-actions';
+import { RequestsActionsTypes } from 'actions/requests-actions';
 import { NotificationsState } from '.';
 
 const defaultState: NotificationsState = {
@@ -518,16 +519,16 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const auxiliaryVerb = resource === 'Dataset' ? 'has' : 'have';
             return {
                 ...state,
-                messages: {
-                    ...state.messages,
-                    exporting: {
-                        ...state.messages.exporting,
-                        dataset:
-                            `${resource} for ${instanceType} ${instance.id} ` +
-                            `${auxiliaryVerb} been ${(isLocal) ? 'downloaded' : 'uploaded'} ` +
-                            `${(isLocal) ? 'locally' : 'to cloud storage'}`,
-                    },
-                },
+                // messages: {
+                //     ...state.messages,
+                //     exporting: {
+                //         ...state.messages.exporting,
+                //         dataset:
+                //             `${resource} for ${instanceType} ${instance.id} ` +
+                //             `${auxiliaryVerb} been ${(isLocal) ? 'downloaded' : 'uploaded'} ` +
+                //             `${(isLocal) ? 'locally' : 'to cloud storage'}`,
+                //     },
+                // },
             };
         }
         case ExportActionTypes.EXPORT_BACKUP_FAILED: {
@@ -572,14 +573,51 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 `Dataset was imported to the [project ${instance.id}](/projects/${instance.id})`;
             return {
                 ...state,
-                messages: {
-                    ...state.messages,
-                    importing: {
-                        ...state.messages.importing,
-                        [resource]: message,
-                    },
-                },
+                // messages: {
+                //     ...state.messages,
+                //     importing: {
+                //         ...state.messages.importing,
+                //         [resource]: message,
+                //     },
+                // },
             };
+        }
+        case RequestsActionsTypes.REQUEST_FINISHED: {
+            const { request } = action.payload;
+            const resource = request.type.split(':')[-1];
+            const process = request.type.split(':')[0];
+            const { id } = request.entity;
+            if (process === 'import') {
+                const message = resource === 'annotation' ?
+                    'Annotations have been loaded to the ' +
+                `[task ${id}](/tasks/${id}) ` :
+                    `Dataset was imported to the [project ${id}](/projects/${id})`;
+                return {
+                    ...state,
+                    messages: {
+                        ...state.messages,
+                        importing: {
+                            ...state.messages.importing,
+                            [resource]: message,
+                        },
+                    },
+                };
+            }
+            if (process === 'export') {
+                const message = 'Export for the  ' +
+                `[project ${id}](/projects/${id}) is finished, you can [download it here](/requests)`;
+                return {
+                    ...state,
+                    messages: {
+                        ...state.messages,
+                        exporting: {
+                            ...state.messages.exporting,
+                            dataset: message,
+                        },
+                    },
+                };
+            }
+            break;
         }
         case ImportActionTypes.IMPORT_DATASET_FAILED: {
             const { instance, resource } = action.payload;

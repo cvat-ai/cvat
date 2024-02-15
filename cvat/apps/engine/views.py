@@ -91,30 +91,33 @@ slogger = ServerLogManager(__name__)
 
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
+rq_percent = 0
 
 def get_job_info(job):
     status = job.meta.get('status', 'default value')
     state = job.get_status()
+    t = job.id.split('-')[0] if job.id.split('-')[0] != 'import:project' else 'import:dataset'
     return {
                 "state": state,
-                "message": job.meta.get('formatted_exception', 'default value') if state == 'failed' else status,
+                "message": job.meta.get('formatted_exception', 'In progress') if state == 'failed' else status,
                 "rq_id": job.id,
-                "percent": job.meta.get('task_progress', 1)*100,
-                "type": job.id.split('-')[0],
+                "percent": job.meta.get('task_progress', 0)*100,
+                "type": t,
+                "url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1&action=download" if t == 'export:dataset' or t == 'export:annotations' else "",
                 "entity": {
                     'id': job.meta['project_id'],
                     'type': "project",
-                    'name': "test project name",
+                    'name': "Project for testing Import/Export UX",
                 },
             }
 
 def get_job_info_status(job):
-    status = getattr(job.meta, 'status', 'default value')
+    status = getattr(job.meta, 'status', 'In progress')
     state = job.get_status()
     return {
                 "state": job.get_status(),
-                "message": job.meta.get('formatted_exception', 'default value') if state == 'failed' else status,
-                "percent": job.meta.get('task_progress', 1)*100,
+                "message": job.meta.get('formatted_exception', 'In progress') if state == 'failed' else status,
+                "percent": job.meta.get('task_progress', 0)*100,
             }
 
 def get_all_jobs_from_queue(queue, request):
@@ -152,7 +155,8 @@ def get_all_jobs_from_queue(queue, request):
             if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
         ]
     all_user_jobs = started_user_jobs + deferred_user_jobs + finished_user_jobs + failed_user_jobs
-    return all_user_jobs
+    jobs = sorted(all_user_jobs, key=lambda job: job.created_at)
+    return jobs
 
 def get_all_jobs(request):
     import_queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
@@ -3047,7 +3051,7 @@ def _export_annotations(
         else:
             if rq_job.is_finished:
                 if location == Location.CLOUD_STORAGE:
-                    rq_job.delete()
+                    # rq_job.delete()
                     return Response(status=status.HTTP_200_OK)
 
                 elif location == Location.LOCAL:
@@ -3069,9 +3073,12 @@ def _export_annotations(
                                 extension=osp.splitext(file_path)[1]
                             )
 
-                        rq_job.delete()
+                        # rq_job.delete()
                         return sendfile(request, file_path, attachment=True, attachment_filename=filename)
+                    serializer = RqIdSerializer(data={'rq_id': rq_id})
+                    serializer.is_valid(raise_exception=True)
 
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
                     return Response(status=status.HTTP_201_CREATED)
                 else:
                     raise NotImplementedError(f"Export to {location} location is not implemented yet")
@@ -3131,7 +3138,10 @@ def _export_annotations(
             result_ttl=ttl,
             failure_ttl=ttl,
         )
-    return Response(status=status.HTTP_202_ACCEPTED)
+    serializer = RqIdSerializer(data={'rq_id': rq_id})
+    serializer.is_valid(raise_exception=True)
+
+    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
     format_desc = {f.DISPLAY_NAME: f
@@ -3262,11 +3272,15 @@ class DataProcessing(viewsets.GenericViewSet):
                 status=status.HTTP_200_OK
             )
         elif rq_id == 'rq3':
+            global rq_percent
+            if rq_percent == 10:
+                rq_percent = 0
+            rq_percent += 1
             return Response(
                 data= {
                         "state": "Started",
                         "message": "In progress",
-                        "percent": 20},
+                        "percent": rq_percent * 10},
                 status=status.HTTP_200_OK
             )
         elif rq_id == 'rq4':
@@ -3289,10 +3303,8 @@ class DataProcessing(viewsets.GenericViewSet):
 
     def list(self,request):
         all_user_jobs = get_all_jobs(request)
-        print(all_user_jobs)
         data = []
         for job in all_user_jobs:
-            print(job.meta)
             data.append(get_job_info(job))
         return Response(
                 data=[
@@ -3342,7 +3354,8 @@ class DataProcessing(viewsets.GenericViewSet):
                             "id": 4,
                             "type": "project",
                             "name": "Project for export number 4",
-                        }
+                        },
+                        "url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1"
                     },
                 ] + data,
                 status=status.HTTP_200_OK

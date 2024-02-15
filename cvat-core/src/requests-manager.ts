@@ -11,6 +11,7 @@ export interface SerializedRequest {
     type: string;
     progress: number;
     message: string;
+    url: string;
     entity: {
         id: number;
         type: string;
@@ -31,6 +32,7 @@ export class Request {
     #entity: EntityType;
     #message: string;
     #progress: number;
+    #url: string;
 
     constructor(initialData: SerializedRequest) {
         this.#rqID = initialData.rq_id;
@@ -39,6 +41,7 @@ export class Request {
         this.#entity = initialData.entity;
         this.#progress = initialData.progress;
         this.#message = initialData.message;
+        this.#url = initialData.url;
     }
 
     get rqID(): string {
@@ -72,6 +75,10 @@ export class Request {
 
     get entity(): EntityType {
         return this.#entity;
+    }
+
+    get url(): string {
+        return this.#url;
     }
 
     updateStatus(status, progress, message): void {
@@ -115,7 +122,7 @@ class RequestsManager {
         callback: (status: RQStatus, progress: number, message?: string) => void,
     ): Promise<void> {
         if (rqID in this.listening) {
-            this.listening[rqID].onUpdate.push(callback);
+            // this.listening[rqID].onUpdate.push(callback);
             return this.listening[rqID].promise;
         }
         const promise = new Promise<void>((resolve, reject) => {
@@ -129,7 +136,7 @@ class RequestsManager {
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             onUpdate.forEach((update) => update(status, response.percent || 0, response.message));
                             this.listening[rqID].timeout = window
-                                .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 3000 : 1000);
+                                .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 5000 : 1000);
                         } else {
                             delete this.listening[rqID];
                             if (status === RQStatus.FINISHED) {

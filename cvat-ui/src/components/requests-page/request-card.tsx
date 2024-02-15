@@ -42,7 +42,7 @@ export default function RequestCard(props: Props): JSX.Element {
                             {request.entity.name}
                         </Col>
                         <Col span={10} className='cvat-task-item-progress-wrapper'>
-                            <div>
+                            <div style={{'display': 'flex', 'justifyContent': 'space-between', 'marginRight': 0}}>
                                 <Text
                                     type={request.status === RQStatus.QUEUED ? undefined : textType}
                                     strong
@@ -80,8 +80,10 @@ export default function RequestCard(props: Props): JSX.Element {
 
                                         return <>{request.message}</>;
                                     })()}
-
                                 </Text>
+                                {
+                                    request.url ? <a target='_blank' download href={request.url}>Click to download</a> : null
+                                }
                             </div>
                             <Progress
                                 percent={request.status === RQStatus.FINISHED ? 100 : Math.floor(request.progress)}
