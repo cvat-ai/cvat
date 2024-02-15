@@ -704,7 +704,9 @@ export function changeFrameAsync(
                 Math.round(1000 / frameSpeed) - currentTime + (state.annotation.player.frame.changeTime as number),
             );
 
-            const { states, maxZ, minZ } = await fetchAnnotations(toFrame);
+            const {
+                states, maxZ, minZ, history,
+            } = await fetchAnnotations(toFrame);
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                 payload: {
@@ -713,6 +715,7 @@ export function changeFrameAsync(
                     filename: data.filename,
                     relatedFiles: data.relatedFiles,
                     states,
+                    history,
                     minZ,
                     maxZ,
                     curZ: maxZ,

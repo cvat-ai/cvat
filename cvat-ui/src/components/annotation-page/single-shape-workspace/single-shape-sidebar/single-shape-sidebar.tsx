@@ -154,9 +154,11 @@ function SingleShapeSidebar(): JSX.Element {
     const {
         isCanvasReady,
         jobInstance,
+        frame,
     } = useSelector((_state: CombinedState) => ({
         isCanvasReady: _state.annotation.canvas.ready,
         jobInstance: _state.annotation.job.instance,
+        frame: _state.annotation.player.frame.number,
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
@@ -172,7 +174,6 @@ function SingleShapeSidebar(): JSX.Element {
     });
 
     const nextFrame = useCallback((): boolean => {
-        const frame = store.getState().annotation.player.frame.number;
         const next = state.frames.find((_frame) => _frame > frame) || null;
         if (typeof next === 'number') {
             appDispatch(changeFrameAsync(next));
@@ -180,10 +181,9 @@ function SingleShapeSidebar(): JSX.Element {
         }
 
         return false;
-    }, [state.frames]);
+    }, [state.frames, frame]);
 
     const prevFrame = useCallback((): boolean => {
-        const frame = store.getState().annotation.player.frame.number;
         const prev = state.frames.findLast((_frame) => _frame < frame) || null;
         if (typeof prev === 'number') {
             appDispatch(changeFrameAsync(prev));
@@ -191,7 +191,7 @@ function SingleShapeSidebar(): JSX.Element {
         }
 
         return false;
-    }, [state.frames]);
+    }, [state.frames, frame]);
 
     const canvasInitializerRef = useRef<() => void | null>();
     canvasInitializerRef.current = (): void => {
@@ -227,16 +227,13 @@ function SingleShapeSidebar(): JSX.Element {
             const job = jobInstance as Job;
             const framesToBeVisited = [];
 
-            let frame = job.startFrame;
-            while (frame !== null) {
+            let searchFrom = job.startFrame;
+            while (searchFrom !== null) {
                 const foundFrame = await job.frames
-                    .search({ notDeleted: true }, frame, job.stopFrame);
+                    .search({ notDeleted: true }, searchFrom, job.stopFrame);
                 if (foundFrame !== null) {
                     framesToBeVisited.push(foundFrame);
-                    frame = foundFrame !== job.stopFrame ? foundFrame + 1 : null;
-                    if (foundFrame !== job.stopFrame) {
-                        frame = foundFrame + 1;
-                    }
+                    searchFrom = foundFrame < job.stopFrame ? foundFrame + 1 : null;
                 }
             }
 
@@ -404,8 +401,22 @@ function SingleShapeSidebar(): JSX.Element {
             </Row>
             <Row className='cvat-single-shape-annotation-sidebar-navigation-block'>
                 <Col span={24}>
-                    <Button size='large' onClick={prevFrame} icon={<Icon component={PreviousIcon} />}>Previous</Button>
-                    <Button size='large' onClick={nextFrame} icon={<Icon component={NextIcon} />}>Next</Button>
+                    <Button
+                        disabled={state.frames.length === 0 || state.frames[0] >= frame}
+                        size='large'
+                        onClick={prevFrame}
+                        icon={<Icon component={PreviousIcon} />}
+                    >
+                        Previous
+                    </Button>
+                    <Button
+                        disabled={state.frames.length === 0 || state.frames[state.frames.length - 1] <= frame}
+                        size='large'
+                        onClick={nextFrame}
+                        icon={<Icon component={NextIcon} />}
+                    >
+                        Next
+                    </Button>
                 </Col>
             </Row>
             { state.label !== null && state.labelType !== LabelType.ANY && (

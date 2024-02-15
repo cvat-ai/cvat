@@ -291,6 +291,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 filename,
                 relatedFiles,
                 states,
+                history,
                 minZ,
                 maxZ,
                 curZ,
@@ -319,6 +320,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     highlightedConflict: null,
                     states,
+                    history,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
