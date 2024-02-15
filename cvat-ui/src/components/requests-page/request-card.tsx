@@ -64,7 +64,7 @@ export default function RequestCard(props: Props): JSX.Element {
 
                                         if ([RQStatus.FAILED].includes(request.status)) {
                                             return (
-                                                <Collapse defaultActiveKey={['1']}>
+                                                <Collapse>
                                                     <Panel header='An error occured' key='1'>
                                                         <Text type='danger' strong>
                                                             {request.message}
