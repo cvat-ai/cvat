@@ -2,8 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { useDispatch, useSelector } from 'react-redux';
-import React, { useEffect, useReducer } from 'react';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import React, {
+    useCallback, useEffect, useReducer, useRef,
+} from 'react';
 import Layout, { SiderProps } from 'antd/lib/layout';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
@@ -20,6 +22,9 @@ import { changeFrameAsync, changeWorkspace, saveAnnotationsAsync } from 'actions
 import { Job, Label, LabelType } from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
 import LabelSelector from 'components/label-selector/label-selector';
+import { Button } from 'antd';
+import Icon from '@ant-design/icons/lib/components/Icon';
+import { NextIcon, PreviousIcon } from 'icons';
 
 const getState = (): CombinedState => getCVATStore().getState();
 
@@ -30,6 +35,7 @@ enum ReducerActionType {
     SWITCH_NAVIGATE_EMPTY_ONLY = 'SWITCH_NAVIGATE_EMPTY_ONLY',
     SET_ACTIVE_LABEL = 'SET_ACTIVE_LABEL',
     SET_POINTS_COUNT = 'SET_POINTS_COUNT',
+    SET_FRAMES = 'SET_FRAMES',
 }
 
 export const reducerActions = {
@@ -52,9 +58,10 @@ export const reducerActions = {
         })
     ),
     setPointsCount: (pointsCount: number) => (
-        createAction(ReducerActionType.SET_POINTS_COUNT, {
-            pointsCount,
-        })
+        createAction(ReducerActionType.SET_POINTS_COUNT, { pointsCount })
+    ),
+    setFrames: (frames: number[]) => (
+        createAction(ReducerActionType.SET_FRAMES, { frames })
     ),
 };
 
@@ -67,6 +74,7 @@ interface State {
     labels: Label[];
     label: Label | null;
     labelType: LabelType;
+    frames: number[];
 }
 
 const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
@@ -125,6 +133,13 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
+    if (action.type === ReducerActionType.SET_FRAMES) {
+        return {
+            ...state,
+            frames: action.payload.frames,
+        };
+    }
+
     return state;
 };
 
@@ -136,8 +151,13 @@ function cancelCurrentCanvasOp(canvas: Canvas): void {
 
 function SingleShapeSidebar(): JSX.Element {
     const appDispatch = useDispatch();
-    const isCanvasReady = useSelector((_state: CombinedState) => _state.annotation.canvas.ready);
-    const jobInstance = useSelector((_state: CombinedState) => _state.annotation.job.instance);
+    const {
+        isCanvasReady,
+        jobInstance,
+    } = useSelector((_state: CombinedState) => ({
+        isCanvasReady: _state.annotation.canvas.ready,
+        jobInstance: _state.annotation.job.instance,
+    }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
         sidebarCollabased: false,
@@ -148,7 +168,107 @@ function SingleShapeSidebar(): JSX.Element {
         labels: (jobInstance as Job).labels.filter((label) => label.type !== LabelType.TAG),
         label: (jobInstance as Job).labels[0] || null,
         labelType: (jobInstance as Job).labels[0]?.type || LabelType.ANY,
+        frames: [],
     });
+
+    const nextFrame = useCallback((): boolean => {
+        const frame = getState().annotation.player.frame.number;
+        const next = state.frames.find((_frame) => _frame > frame) || null;
+        if (typeof next === 'number') {
+            appDispatch(changeFrameAsync(next));
+            return true;
+        }
+
+        return false;
+    }, [state.frames]);
+
+    const prevFrame = useCallback((): boolean => {
+        const frame = getState().annotation.player.frame.number;
+        const prev = state.frames.findLast((_frame) => _frame < frame) || null;
+        if (typeof prev === 'number') {
+            appDispatch(changeFrameAsync(prev));
+            return true;
+        }
+
+        return false;
+    }, [state.frames]);
+
+    const canvasInitializerRef = useRef<() => void | null>();
+    canvasInitializerRef.current = (): void => {
+        const canvas = getState().annotation.canvas.instance as Canvas;
+        cancelCurrentCanvasOp(canvas);
+
+        if (isCanvasReady && state.label && state.labelType !== LabelType.ANY) {
+            canvas.draw({
+                enabled: true,
+                shapeType: state.labelType,
+                numberOfPoints: state.pointsCount,
+                crosshair: true,
+            });
+        }
+    };
+
+    useEffect(() => {
+        const canvas = getState().annotation.canvas.instance as Canvas;
+        cancelCurrentCanvasOp(canvas);
+        return () => {
+            cancelCurrentCanvasOp(canvas);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (canvasInitializerRef.current) {
+            canvasInitializerRef?.current();
+        }
+    }, [isCanvasReady, state.label, state.labelType, state.pointsCount]);
+
+    useEffect(() => {
+        (async () => {
+            const job = jobInstance as Job;
+            const framesToBeVisited = [];
+
+            let frame = job.startFrame;
+            while (frame !== null) {
+                const foundFrame = await job.frames
+                    .search({ notDeleted: true }, frame, job.stopFrame);
+                if (foundFrame !== null) {
+                    framesToBeVisited.push(foundFrame);
+                    frame = foundFrame !== job.stopFrame ? foundFrame + 1 : null;
+                    if (foundFrame !== job.stopFrame) {
+                        frame = foundFrame + 1;
+                    }
+                }
+            }
+
+            dispatch(reducerActions.setFrames(framesToBeVisited));
+            if (framesToBeVisited.length) {
+                appDispatch(changeFrameAsync(framesToBeVisited[0]));
+            }
+        })();
+    }, [state.navigateOnlyEmpty]);
+
+    useEffect(() => {
+        const canvas = getState().annotation.canvas.instance as Canvas;
+        const onDrawDone = (): void => {
+            setTimeout(() => {
+                if (state.autoNextFrame) {
+                    if (!nextFrame()) {
+                        appDispatch(changeWorkspace(Workspace.STANDARD));
+                        if (state.saveOnFinish) {
+                            appDispatch(saveAnnotationsAsync());
+                        }
+                    }
+                } else if (canvasInitializerRef?.current) {
+                    canvasInitializerRef.current();
+                }
+            }, 100);
+        };
+
+        (canvas as Canvas).html().addEventListener('canvas.drawn', onDrawDone);
+        return (() => {
+            (canvas as Canvas).html().removeEventListener('canvas.drawn', onDrawDone);
+        });
+    }, [nextFrame, state.autoNextFrame, state.saveOnFinish]);
 
     let message = '';
     if (state.labelType === LabelType.POINTS) {
@@ -167,61 +287,6 @@ function SingleShapeSidebar(): JSX.Element {
         trigger: null,
         collapsed: state.sidebarCollabased,
     };
-
-    const runDrawing = (): void => {
-        const canvas = getState().annotation.canvas.instance;
-        canvas?.draw({
-            enabled: true,
-            shapeType: state.labelType,
-            numberOfPoints: state.pointsCount,
-            crosshair: true,
-        });
-    };
-
-    useEffect(() => {
-        cancelCurrentCanvasOp(
-            getState().annotation.canvas.instance as Canvas,
-        );
-
-        if (isCanvasReady && state.label && state.labelType !== LabelType.ANY) {
-            runDrawing();
-        }
-    }, [isCanvasReady, state.label, state.labelType, state.pointsCount]);
-
-    useEffect(() => {
-        const canvas = getState().annotation.canvas.instance as Canvas;
-        const onDrawDone = (): void => {
-            const {
-                annotation: {
-                    player: {
-                        frame: {
-                            number: frame,
-                        },
-                    },
-                },
-            } = getState();
-
-            const { stopFrame } = jobInstance as Job;
-            if (frame < stopFrame) {
-                if (state.autoNextFrame) {
-                    appDispatch(changeFrameAsync(frame + 1));
-                }
-            } else {
-                appDispatch(changeWorkspace(Workspace.STANDARD));
-                if (state.saveOnFinish) {
-                    appDispatch(saveAnnotationsAsync());
-                }
-            }
-        };
-
-        cancelCurrentCanvasOp(canvas);
-        (canvas as Canvas).html().addEventListener('canvas.drawn', onDrawDone);
-
-        return (() => {
-            cancelCurrentCanvasOp(canvas);
-            (canvas as Canvas).html().removeEventListener('canvas.drawn', onDrawDone);
-        });
-    }, []);
 
     return (
         <Layout.Sider {...siderProps}>
@@ -335,6 +400,12 @@ function SingleShapeSidebar(): JSX.Element {
                     >
                         Navigate only empty frames
                     </Checkbox>
+                </Col>
+            </Row>
+            <Row className='cvat-single-shape-annotation-sidebar-navigation-block'>
+                <Col span={24}>
+                    <Button size='large' onClick={prevFrame} icon={<Icon component={PreviousIcon} />}>Previous</Button>
+                    <Button size='large' onClick={nextFrame} icon={<Icon component={NextIcon} />}>Next</Button>
                 </Col>
             </Row>
             { state.label !== null && state.labelType !== LabelType.ANY && (

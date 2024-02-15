@@ -38,4 +38,17 @@
         bottom: 0;
         position: absolute;
     }
+
+    .cvat-single-shape-annotation-sidebar-navigation-block {
+        margin-top: $grid-unit-size * 4;
+
+        > div:nth-child(1) {
+            display: flex;
+            justify-content: space-between;
+
+            > button {
+                width: $grid-unit-size * 16;
+            }
+        }
+    }
 }
