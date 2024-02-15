@@ -34,13 +34,6 @@ export function useIsMounted(): () => boolean {
     return useCallback(() => ref.current, []);
 }
 
-export function useStateIfMounted<T>(defaultValue: T): [T, (t: T) => void] {
-    const isMounted = useIsMounted();
-    const [state, setState] = useState<T>(defaultValue);
-    const wrappedSetState = useCallback((val: T) => isMounted() && setState(val), []);
-    return [state, wrappedSetState];
-}
-
 export type Plugin = {
     component: CallableFunction;
     weight: number;

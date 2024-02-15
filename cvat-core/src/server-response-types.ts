@@ -297,23 +297,23 @@ export interface SerializedQualityReportData {
     created_date?: string;
     gt_last_updated?: string;
     summary?: {
-        frame_count: number,
-        frame_share: number,
-        conflict_count: number,
-        valid_count: number,
-        ds_count: number,
-        gt_count: number,
-        error_count: number,
-        warning_count: number,
+        frame_count: number;
+        frame_share: number;
+        conflict_count: number;
+        valid_count: number;
+        ds_count: number;
+        gt_count: number;
+        error_count: number;
+        warning_count: number;
         conflicts_by_type: {
-            extra_annotation: number,
-            missing_annotation: number,
-            mismatching_label: number,
-            low_overlap: number,
-            mismatching_direction: number,
-            mismatching_attributes: number,
-            mismatching_groups: number,
-            covered_annotation: number,
+            extra_annotation: number;
+            missing_annotation: number;
+            mismatching_label: number;
+            low_overlap: number;
+            mismatching_direction: number;
+            mismatching_attributes: number;
+            mismatching_groups: number;
+            covered_annotation: number;
         }
     };
 }

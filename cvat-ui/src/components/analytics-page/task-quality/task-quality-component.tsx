@@ -23,18 +23,18 @@ import QualitySettingsModal from '../shared/quality-settings-modal';
 const core = getCore();
 
 interface Props {
-    task: Task,
-    onJobUpdate: (job: Job) => void
+    task: Task;
+    onJobUpdate: (job: Job) => void;
 }
 
 interface State {
-    fetching: boolean,
-    taskReport: QualityReport | null,
-    jobsReports: QualityReport[],
+    fetching: boolean;
+    taskReport: QualityReport | null;
+    jobsReports: QualityReport[];
     qualitySettings: {
-        settings: QualitySettings | null,
-        fetching: boolean,
-        visible: boolean,
+        settings: QualitySettings | null;
+        fetching: boolean;
+        visible: boolean;
     },
 }
 
