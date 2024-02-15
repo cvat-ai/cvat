@@ -895,7 +895,7 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         if instance.project:
             instance.project.touch()
-        if updated_instance.project:
+        if updated_instance.project and updated_instance.project != instance.project:
             updated_instance.project.touch()
 
     @transaction.atomic
