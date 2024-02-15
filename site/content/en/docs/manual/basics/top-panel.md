@@ -27,6 +27,9 @@ Button assignment:
 
   ![](/images/image229.jpg)
 
+- **Run actions** - opens annotations actions modal (annotations action is a feature
+  that allow you to modify a bulk of annotations on many frames,
+  e.g. [Shapes converter](/docs/enterprise/shapes-converter/)). It supports only `shape` objects.
 - **Open the task** — opens a page with details about the task.
 - **Change job state** - changes the state of the job (`new`, `in progress`, `rejected`, `completed`).
 - **Finish the job**/**Renew the job** - changes the job stage and state

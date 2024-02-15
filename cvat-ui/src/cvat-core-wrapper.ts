@@ -14,7 +14,7 @@ import { ModelProvider } from 'cvat-core/src/lambda-manager';
 import {
     Label, Attribute,
 } from 'cvat-core/src/labels';
-import { SerializedAttribute, SerializedLabel } from 'cvat-core/src/server-response-types';
+import { SerializedAttribute, SerializedLabel, SerializedAPISchema } from 'cvat-core/src/server-response-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
 import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
@@ -106,4 +106,5 @@ export type {
     APIWrapperEnterOptions,
     QualitySummary,
     CVATCore,
+    SerializedAPISchema,
 };

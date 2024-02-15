@@ -136,6 +136,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return result;
     });
 
+    implementationMixin(cvat.server.apiSchema, serverProxy.server.apiSchema);
+
     implementationMixin(cvat.assets.create, async (file: File, guideId: number): Promise<SerializedAsset> => {
         if (!(file instanceof File)) {
             throw new ArgumentError('Assets expect a file');

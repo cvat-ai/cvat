@@ -12,6 +12,7 @@ import django_rq
 import requests
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
 from django.db.models.signals import (post_delete, post_save, pre_delete,
                                       pre_save)
 from django.dispatch import Signal, receiver
@@ -186,7 +187,10 @@ def post_save_resource_event(sender, instance, created, **kwargs):
         else:
             return
 
-    batch_add_to_queue(filtered_webhooks, data)
+    transaction.on_commit(
+        lambda: batch_add_to_queue(filtered_webhooks, data),
+        robust=True,
+    )
 
 
 @receiver(pre_delete, sender=Project, dispatch_uid=__name__ + ":project:pre_delete")
@@ -232,9 +236,12 @@ def post_delete_resource_event(sender, instance, **kwargs):
         "sender": get_sender(instance),
     }
 
-    batch_add_to_queue(filtered_webhooks, data)
     related_webhooks = [webhook for webhook in getattr(instance, "_related_webhooks", []) if webhook.id not in map(lambda a: a.id, filtered_webhooks)]
-    batch_add_to_queue(related_webhooks, data)
+
+    transaction.on_commit(
+        lambda: batch_add_to_queue(filtered_webhooks + related_webhooks, data),
+        robust=True,
+    )
 
 
 @receiver(signal_redelivery)
