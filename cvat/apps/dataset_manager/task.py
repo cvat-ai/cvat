@@ -389,6 +389,7 @@ class JobAnnotation:
 
     def _set_updated_date(self):
         self.db_job.segment.task.touch()
+        self.db_job.touch()
 
     def _save_to_db(self, data):
         self.reset()
@@ -401,7 +402,6 @@ class JobAnnotation:
     def _create(self, data):
         if self._save_to_db(data):
             self._set_updated_date()
-            self.db_job.touch()
 
     def create(self, data):
         self._create(data)
