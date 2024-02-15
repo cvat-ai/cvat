@@ -946,9 +946,9 @@ export function getJobAsync({
 
             let conflicts: QualityConflict[] = [];
             if (gtJob) {
-                const [report] = await cvat.analytics.quality.reports({ jobId: job.id, target: 'job' });
+                const [report] = await cvat.analytics.quality.reports({ jobID: job.id, target: 'job' });
                 if (report) {
-                    conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
+                    conflicts = await cvat.analytics.quality.conflicts({ reportID: report.id });
                 }
             }
 

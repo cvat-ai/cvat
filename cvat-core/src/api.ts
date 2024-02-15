@@ -350,17 +350,17 @@ function build(): CVATCore {
                 },
             },
             quality: {
-                async reports(filter: any) {
+                async reports(filter = {}) {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
                     return result;
                 },
-                async conflicts(filter: any) {
+                async conflicts(filter = {}) {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.conflicts, filter);
                     return result;
                 },
                 settings: {
-                    async get(taskID: number) {
-                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, taskID);
+                    async get(filter = {}) {
+                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, filter);
                         return result;
                     },
                 },
