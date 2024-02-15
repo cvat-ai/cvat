@@ -57,7 +57,9 @@ const defaultState: AnnotationState = {
         requestedId: null,
         groundTruthJobFramesMeta: null,
         groundTruthInstance: null,
-        queryParameters: {},
+        queryParameters: {
+            initialOpenGuide: false,
+        },
         instance: null,
         attributes: {},
         fetching: false,

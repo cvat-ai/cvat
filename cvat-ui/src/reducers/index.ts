@@ -706,7 +706,7 @@ export interface AnnotationState {
         requestedId: number | null;
         instance: Job | null | undefined;
         queryParameters: {
-            initialOpenGuide?: boolean;
+            initialOpenGuide: boolean;
         };
         groundTruthJobFramesMeta: FramesMetaData | null;
         groundTruthInstance: Job | null;

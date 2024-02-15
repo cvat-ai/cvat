@@ -10,7 +10,9 @@ import { Col, Row } from 'antd/lib/grid';
 import {
     ActiveControl, CombinedState, ToolsBlockerState, Workspace,
 } from 'reducers';
+import { Job } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
+import { KeyMap } from 'utils/mousetrap-react';
 import LeftGroup from './left-group';
 import PlayerButtons from './player-buttons';
 import PlayerNavigation from './player-navigation';
@@ -46,6 +48,9 @@ interface Props {
     deleteFrameAvailable: boolean;
     annotationFilters: object[];
     initialOpenGuide: boolean;
+    keyMap: KeyMap;
+    jobInstance: Job;
+    ranges: string;
     changeWorkspace(workspace: Workspace): void;
     showStatistics(): void;
     showFilters(): void;
@@ -57,6 +62,7 @@ interface Props {
     onBackward(): void;
     onFirstFrame(): void;
     onLastFrame(): void;
+    onSearchAnnotations(direction: 'forward' | 'backward'): void;
     setPrevButtonType(type: 'regular' | 'filtered' | 'empty'): void;
     setNextButtonType(type: 'regular' | 'filtered' | 'empty'): void;
     onSliderChange(value: number): void;
@@ -69,8 +75,6 @@ interface Props {
     onDeleteFrame(): void;
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
-    jobInstance: any;
-    ranges: string;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -104,6 +108,9 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         toolsBlockerState,
         annotationFilters,
         initialOpenGuide,
+        deleteFrameAvailable,
+        jobInstance,
+        keyMap,
         showStatistics,
         showFilters,
         changeWorkspace,
@@ -115,6 +122,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onBackward,
         onFirstFrame,
         onLastFrame,
+        onSearchAnnotations,
         setPrevButtonType,
         setNextButtonType,
         onSliderChange,
@@ -125,10 +133,8 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onFinishDraw,
         onSwitchToolsBlockerState,
         onDeleteFrame,
-        deleteFrameAvailable,
         onRestoreFrame,
         switchNavigationBlocked,
-        jobInstance,
     } = props;
 
     const playerPlugins = usePlugins(
@@ -154,6 +160,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 backwardShortcut={backwardShortcut}
                 prevButtonType={prevButtonType}
                 nextButtonType={nextButtonType}
+                keyMap={keyMap}
                 onPrevFrame={onPrevFrame}
                 onNextFrame={onNextFrame}
                 onForward={onForward}
@@ -161,6 +168,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 onFirstFrame={onFirstFrame}
                 onLastFrame={onLastFrame}
                 onSwitchPlay={onSwitchPlay}
+                onSearchAnnotations={onSearchAnnotations}
                 setPrevButton={setPrevButtonType}
                 setNextButton={setNextButtonType}
             />
@@ -179,6 +187,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 deleteFrameShortcut={deleteFrameShortcut}
                 focusFrameInputShortcut={focusFrameInputShortcut}
                 inputFrameRef={inputFrameRef}
+                keyMap={keyMap}
                 onSliderChange={onSliderChange}
                 onInputChange={onInputChange}
                 onURLIconClick={onURLIconClick}
@@ -207,6 +216,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 onRedoClick={onRedoClick}
                 onFinishDraw={onFinishDraw}
                 onSwitchToolsBlockerState={onSwitchToolsBlockerState}
+                keyMap={keyMap}
             />
             <Col className='cvat-annotation-header-player-group'>
                 <Row align='middle'>

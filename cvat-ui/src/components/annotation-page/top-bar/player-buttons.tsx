@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2020-2024 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,7 @@ import Icon from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
     FirstIcon,
     BackJumpIcon,
@@ -33,6 +33,7 @@ interface Props {
     backwardShortcut: string;
     prevButtonType: string;
     nextButtonType: string;
+    keyMap: KeyMap;
     onSwitchPlay(): void;
     onPrevFrame(): void;
     onNextFrame(): void;
@@ -40,6 +41,7 @@ interface Props {
     onBackward(): void;
     onFirstFrame(): void;
     onLastFrame(): void;
+    onSearchAnnotations(direction: 'forward' | 'backward'): void;
     setPrevButton(type: 'regular' | 'filtered' | 'empty'): void;
     setNextButton(type: 'regular' | 'filtered' | 'empty'): void;
 }
@@ -54,6 +56,7 @@ function PlayerButtons(props: Props): JSX.Element {
         backwardShortcut,
         prevButtonType,
         nextButtonType,
+        keyMap,
         onSwitchPlay,
         onPrevFrame,
         onNextFrame,
@@ -61,9 +64,52 @@ function PlayerButtons(props: Props): JSX.Element {
         onBackward,
         onFirstFrame,
         onLastFrame,
+        onSearchAnnotations,
         setPrevButton,
         setNextButton,
     } = props;
+
+    const subKeyMap = {
+        NEXT_FRAME: keyMap.NEXT_FRAME,
+        PREV_FRAME: keyMap.PREV_FRAME,
+        FORWARD_FRAME: keyMap.FORWARD_FRAME,
+        BACKWARD_FRAME: keyMap.BACKWARD_FRAME,
+        SEARCH_FORWARD: keyMap.SEARCH_FORWARD,
+        SEARCH_BACKWARD: keyMap.SEARCH_BACKWARD,
+        PLAY_PAUSE: keyMap.PLAY_PAUSE,
+        FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
+    };
+
+    const handlers = {
+        NEXT_FRAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onNextFrame();
+        },
+        PREV_FRAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onPrevFrame();
+        },
+        FORWARD_FRAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onForward();
+        },
+        BACKWARD_FRAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onBackward();
+        },
+        SEARCH_FORWARD: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onSearchAnnotations('forward');
+        },
+        SEARCH_BACKWARD: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onSearchAnnotations('backward');
+        },
+        PLAY_PAUSE: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onSwitchPlay();
+        },
+    };
 
     const prevRegularText = 'Go back';
     const prevFilteredText = 'Go back with a filter';
@@ -104,6 +150,7 @@ function PlayerButtons(props: Props): JSX.Element {
 
     return (
         <Col className='cvat-player-buttons'>
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <CVATTooltip title='Go to the first frame'>
                 <Icon className='cvat-player-first-button' component={FirstIcon} onClick={onFirstFrame} />
             </CVATTooltip>

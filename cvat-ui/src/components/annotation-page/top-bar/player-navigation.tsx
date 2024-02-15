@@ -1,10 +1,9 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useCallback } from 'react';
-
 import { Row, Col } from 'antd/lib/grid';
 import Icon, { LinkOutlined, DeleteOutlined } from '@ant-design/icons';
 import Slider from 'antd/lib/slider';
@@ -16,6 +15,7 @@ import Modal from 'antd/lib/modal';
 import { RestoreIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 interface Props {
     startFrame: number;
@@ -29,6 +29,7 @@ interface Props {
     deleteFrameShortcut: string;
     focusFrameInputShortcut: string;
     inputFrameRef: React.RefObject<Input>;
+    keyMap: KeyMap;
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
@@ -49,6 +50,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         focusFrameInputShortcut,
         inputFrameRef,
         ranges,
+        keyMap,
         onSliderChange,
         onInputChange,
         onURLIconClick,
@@ -85,6 +87,25 @@ function PlayerNavigation(props: Props): JSX.Element {
             });
         }
     }, [playing, frameNumber]);
+
+    const subKeyMap = {
+        DELETE_FRAME: keyMap.DELETE_FRAME,
+        FOCUS_INPUT_FRAME: keyMap.FOCUS_INPUT_FRAME,
+    };
+
+    const handlers = {
+        DELETE_FRAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            onDeleteFrame();
+        },
+        FOCUS_INPUT_FRAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            if (inputFrameRef.current) {
+                inputFrameRef.current.focus();
+            }
+        },
+    };
+
     const deleteFrameIcon = !frameDeleted ? (
         <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>
             <DeleteOutlined className='cvat-player-delete-frame' onClick={showDeleteFrameDialog} />
@@ -97,6 +118,7 @@ function PlayerNavigation(props: Props): JSX.Element {
 
     return (
         <>
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             <Col className='cvat-player-controls'>
                 <Row align='bottom'>
                     <Col>
