@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import {
+    shallowEqual, useDispatch, useSelector, useStore,
+} from 'react-redux';
 import React, {
     useCallback, useEffect, useReducer, useRef,
 } from 'react';
@@ -13,20 +15,17 @@ import Checkbox from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 import Paragraph from 'antd/lib/typography/Paragraph';
-
+import Button from 'antd/lib/button';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
-import { getCVATStore } from 'cvat-store';
-import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
+import Icon from '@ant-design/icons/lib/components/Icon';
+
+import { NextIcon, PreviousIcon } from 'icons';
 import { CombinedState, Workspace } from 'reducers';
-import { changeFrameAsync, changeWorkspace, saveAnnotationsAsync } from 'actions/annotation-actions';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Job, Label, LabelType } from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
+import { changeFrameAsync, changeWorkspace, saveAnnotationsAsync } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
-import { Button } from 'antd';
-import Icon from '@ant-design/icons/lib/components/Icon';
-import { NextIcon, PreviousIcon } from 'icons';
-
-const getState = (): CombinedState => getCVATStore().getState();
 
 enum ReducerActionType {
     SWITCH_SIDEBAR_COLLAPSED = 'SWITCH_SIDEBAR_COLLAPSED',
@@ -151,6 +150,7 @@ function cancelCurrentCanvasOp(canvas: Canvas): void {
 
 function SingleShapeSidebar(): JSX.Element {
     const appDispatch = useDispatch();
+    const store = useStore<CombinedState>();
     const {
         isCanvasReady,
         jobInstance,
@@ -172,7 +172,7 @@ function SingleShapeSidebar(): JSX.Element {
     });
 
     const nextFrame = useCallback((): boolean => {
-        const frame = getState().annotation.player.frame.number;
+        const frame = store.getState().annotation.player.frame.number;
         const next = state.frames.find((_frame) => _frame > frame) || null;
         if (typeof next === 'number') {
             appDispatch(changeFrameAsync(next));
@@ -183,7 +183,7 @@ function SingleShapeSidebar(): JSX.Element {
     }, [state.frames]);
 
     const prevFrame = useCallback((): boolean => {
-        const frame = getState().annotation.player.frame.number;
+        const frame = store.getState().annotation.player.frame.number;
         const prev = state.frames.findLast((_frame) => _frame < frame) || null;
         if (typeof prev === 'number') {
             appDispatch(changeFrameAsync(prev));
@@ -195,7 +195,7 @@ function SingleShapeSidebar(): JSX.Element {
 
     const canvasInitializerRef = useRef<() => void | null>();
     canvasInitializerRef.current = (): void => {
-        const canvas = getState().annotation.canvas.instance as Canvas;
+        const canvas = store.getState().annotation.canvas.instance as Canvas;
         cancelCurrentCanvasOp(canvas);
 
         if (isCanvasReady && state.label && state.labelType !== LabelType.ANY) {
@@ -209,7 +209,7 @@ function SingleShapeSidebar(): JSX.Element {
     };
 
     useEffect(() => {
-        const canvas = getState().annotation.canvas.instance as Canvas;
+        const canvas = store.getState().annotation.canvas.instance as Canvas;
         cancelCurrentCanvasOp(canvas);
         return () => {
             cancelCurrentCanvasOp(canvas);
@@ -248,7 +248,7 @@ function SingleShapeSidebar(): JSX.Element {
     }, [state.navigateOnlyEmpty]);
 
     useEffect(() => {
-        const canvas = getState().annotation.canvas.instance as Canvas;
+        const canvas = store.getState().annotation.canvas.instance as Canvas;
         const onDrawDone = (): void => {
             setTimeout(() => {
                 if (state.autoNextFrame) {
