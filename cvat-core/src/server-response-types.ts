@@ -7,8 +7,9 @@ import {
     DimensionType, JobStage, JobState, JobType, ProjectStatus,
     ShapeType, StorageLocation, LabelType,
     ShareFileType, Source, TaskMode, TaskStatus,
-    CloudStorageCredentialsType, CloudStorageProviderType,
+    CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
 } from './enums';
+import { Camelized } from './type-utils';
 
 export interface SerializedAnnotationImporter {
     name: string;
@@ -24,12 +25,19 @@ export interface SerializedAnnotationFormats {
     importers: SerializedAnnotationImporter[];
     exporters: SerializedAnnotationExporter[];
 }
-export interface ProjectsFilter {
+
+export interface ApiCommonFilterParams {
     page?: number;
-    id?: number;
-    sort?: string;
-    search?: string;
+    page_size?: number | 'all';
     filter?: string;
+    sort?: string;
+    org_id?: number;
+    org?: string;
+    search?: string;
+}
+
+export interface ProjectsFilter extends ApiCommonFilterParams {
+    id?: number;
 }
 
 export interface SerializedUser {
@@ -225,6 +233,11 @@ export interface SerializedOrganization {
     contact?: SerializedOrganizationContact,
 }
 
+export interface ApiQualitySettingsFilter extends ApiCommonFilterParams {
+    task_id?: number;
+}
+export type QualitySettingsFilter = Camelized<ApiQualitySettingsFilter>;
+
 export interface SerializedQualitySettingsData {
     id?: number;
     task?: number;
@@ -240,6 +253,111 @@ export interface SerializedQualitySettingsData {
     object_visibility_threshold?: number;
     panoptic_comparison?: boolean;
     compare_attributes?: boolean;
+}
+
+export interface ApiQualityConflictsFilter extends ApiCommonFilterParams {
+    report_id?: number;
+}
+export type QualityConflictsFilter = Camelized<ApiQualityConflictsFilter>;
+
+export interface SerializedAnnotationConflictData {
+    job_id?: number;
+    obj_id?: number;
+    type?: ObjectType;
+    shape_type?: string | null;
+    conflict_type?: string;
+    severity?: string;
+}
+
+export interface SerializedQualityConflictData {
+    id?: number;
+    frame?: number;
+    type?: string;
+    annotation_ids?: SerializedAnnotationConflictData[];
+    data?: string;
+    severity?: string;
+    description?: string;
+}
+
+export interface ApiQualityReportsFilter extends ApiCommonFilterParams {
+    parent_id?: number;
+    peoject_id?: number;
+    task_id?: number;
+    job_id?: number;
+    target?: string;
+}
+export type QualityReportsFilter = Camelized<ApiQualityReportsFilter>;
+
+export interface SerializedQualityReportData {
+    id?: number;
+    parent_id?: number;
+    task_id?: number;
+    job_id?: number;
+    target: string;
+    created_date?: string;
+    gt_last_updated?: string;
+    summary?: {
+        frame_count: number;
+        frame_share: number;
+        conflict_count: number;
+        valid_count: number;
+        ds_count: number;
+        gt_count: number;
+        error_count: number;
+        warning_count: number;
+        conflicts_by_type: {
+            extra_annotation: number;
+            missing_annotation: number;
+            mismatching_label: number;
+            low_overlap: number;
+            mismatching_direction: number;
+            mismatching_attributes: number;
+            mismatching_groups: number;
+            covered_annotation: number;
+        }
+    };
+}
+
+export interface SerializedDataEntry {
+    date?: string;
+    value?: number | Record<string, number>
+}
+
+export interface SerializedTransformBinaryOp {
+    left: string;
+    operator: string;
+    right: string;
+}
+
+export interface SerializedTransformationEntry {
+    name: string;
+    binary?: SerializedTransformBinaryOp;
+}
+
+export interface SerializedAnalyticsEntry {
+    name?: string;
+    title?: string;
+    description?: string;
+    granularity?: string;
+    default_view?: string;
+    data_series?: Record<string, SerializedDataEntry[]>;
+    transformations?: SerializedTransformationEntry[];
+}
+
+export interface ApiAnalyticsReportFilter extends ApiCommonFilterParams {
+    project_id?: number;
+    task_id?: number;
+    job_id?: number;
+    start_date?: string;
+    end_date?: string;
+}
+export type AnalyticsReportFilter = Camelized<ApiAnalyticsReportFilter>;
+
+export interface SerializedAnalyticsReport {
+    id?: number;
+    target?: string;
+    created_date?: string;
+    statistics?: SerializedAnalyticsEntry[];
 }
 
 export interface SerializedInvitationData {
