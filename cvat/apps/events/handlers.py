@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from copy import deepcopy
+from typing import Optional, Union
 import traceback
 import rq
 
@@ -473,6 +474,51 @@ def handle_annotations_change(instance, annotations, action, **kwargs):
                 user_email=uemail,
                 payload={"tracks": tracks},
             )
+
+def handle_dataset_io(
+    instance: Union[Project, Task, Job],
+    action: str,
+    *,
+    format_name: str,
+    cloud_storage: Optional[CloudStorage],
+    **payload_fields,
+) -> None:
+    payload={"format": format_name, **payload_fields}
+
+    if cloud_storage:
+        payload["cloud_storage"] = {"id": cloud_storage.id}
+
+    record_server_event(
+        scope=event_scope(action, "dataset"),
+        request_id=request_id(),
+        org_id=organization_id(instance),
+        org_slug=organization_slug(instance),
+        project_id=project_id(instance),
+        task_id=task_id(instance),
+        job_id=job_id(instance),
+        user_id=user_id(instance),
+        user_name=user_name(instance),
+        user_email=user_email(instance),
+        payload=payload,
+    )
+
+def handle_dataset_export(
+    instance: Union[Project, Task, Job],
+    *,
+    format_name: str,
+    cloud_storage: Optional[CloudStorage],
+    save_images: bool,
+) -> None:
+    handle_dataset_io(instance, "export",
+        format_name=format_name, cloud_storage=cloud_storage, save_images=save_images)
+
+def handle_dataset_import(
+    instance: Union[Project, Task, Job],
+    *,
+    format_name: str,
+    cloud_storage: Optional[CloudStorage],
+) -> None:
+    handle_dataset_io(instance, "import", format_name=format_name, cloud_storage=cloud_storage)
 
 def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     oid = rq_job.meta.get("org_id", None)
