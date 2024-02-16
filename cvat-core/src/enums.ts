@@ -90,7 +90,7 @@ export enum Source {
     GT = 'Ground truth',
 }
 
-export enum LogType {
+export enum EventScope {
     loadTool = 'load:cvat',
 
     loadJob = 'load:job',
