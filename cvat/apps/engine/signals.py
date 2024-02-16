@@ -34,7 +34,7 @@ def __save_job_handler(instance, created, **kwargs):
 
     if status != db_task.status:
         db_task.status = status
-        db_task.save()
+        db_task.save(update_fields=["status", "updated_date"])
 
 @receiver(post_save, sender=User,
     dispatch_uid=__name__ + ".save_user_handler")
@@ -66,9 +66,8 @@ def __delete_task_handler(instance, **kwargs):
         instance.data.delete()
 
     try:
-        if instance.project: # update project
-            db_project = instance.project
-            db_project.save()
+        if db_project := instance.project: # update project
+            db_project.touch()
     except Project.DoesNotExist:
         pass # probably the project has been deleted
 
