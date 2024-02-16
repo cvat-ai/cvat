@@ -233,20 +233,23 @@ function AnalyticsPage(): JSX.Element {
                 defaultActiveKey={AnalyticsTabs.OVERVIEW}
                 onChange={onTabKeyChange}
                 className='cvat-task-analytics-tabs'
-            >
-                <Tabs.TabPane tab='Performance' key={AnalyticsTabs.OVERVIEW}>
-                    <AnalyticsOverview
-                        report={analyticsReport}
-                        timePeriod={timePeriod}
-                        onTimePeriodChange={setTimePeriod}
-                    />
-                </Tabs.TabPane>
-                {instanceType === 'task' && (
-                    <Tabs.TabPane tab='Quality' key={AnalyticsTabs.QUALITY}>
-                        <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />
-                    </Tabs.TabPane>
-                )}
-            </Tabs>
+                items={[{
+                    key: AnalyticsTabs.OVERVIEW,
+                    label: 'Performance',
+                    children: (
+                        <AnalyticsOverview
+                            report={analyticsReport}
+                            timePeriod={timePeriod}
+                            onTimePeriodChange={setTimePeriod}
+                        />
+                    ),
+                },
+                ...(instanceType === 'task' ? [{
+                    key: AnalyticsTabs.QUALITY,
+                    label: 'Quality',
+                    children: <TaskQualityComponent task={instance} onJobUpdate={onJobUpdate} />,
+                }] : [])]}
+            />
         );
     }
 
