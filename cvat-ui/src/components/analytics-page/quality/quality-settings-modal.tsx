@@ -142,7 +142,7 @@ export default function QualitySettingsModal(): JSX.Element | null {
             okText='Save'
             cancelText='Cancel'
             title={<Text strong>Annotation Quality Settings</Text>}
-            open={visible}
+            visible={visible}
             onOk={onOk}
             onCancel={onCancel}
             confirmLoading={loading}
