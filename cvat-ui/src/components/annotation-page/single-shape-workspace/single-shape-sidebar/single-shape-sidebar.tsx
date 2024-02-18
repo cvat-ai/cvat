@@ -14,7 +14,6 @@ import Text from 'antd/lib/typography/Text';
 import Checkbox from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
-import Paragraph from 'antd/lib/typography/Paragraph';
 import Button from 'antd/lib/button';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons/lib/components/Icon';
@@ -26,6 +25,7 @@ import { Job, Label, LabelType } from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
 import { changeFrameAsync, changeWorkspace, saveAnnotationsAsync } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
+import { Alert } from 'antd';
 
 enum ReducerActionType {
     SWITCH_SIDEBAR_COLLAPSED = 'SWITCH_SIDEBAR_COLLAPSED',
@@ -155,10 +155,12 @@ function SingleShapeSidebar(): JSX.Element {
         isCanvasReady,
         jobInstance,
         frame,
+        keyMap,
     } = useSelector((_state: CombinedState) => ({
         isCanvasReady: _state.annotation.canvas.ready,
-        jobInstance: _state.annotation.job.instance,
+        jobInstance: _state.annotation.job.instance as Job,
         frame: _state.annotation.player.frame.number,
+        keyMap: _state.shortcuts.normalizedKeyMap,
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
@@ -167,9 +169,9 @@ function SingleShapeSidebar(): JSX.Element {
         saveOnFinish: true,
         navigateOnlyEmpty: true,
         pointsCount: 1,
-        labels: (jobInstance as Job).labels.filter((label) => label.type !== LabelType.TAG),
-        label: (jobInstance as Job).labels[0] || null,
-        labelType: (jobInstance as Job).labels[0]?.type || LabelType.ANY,
+        labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG),
+        label: jobInstance.labels[0] || null,
+        labelType: jobInstance.labels[0]?.type || LabelType.ANY,
         frames: [],
     });
 
@@ -180,11 +182,18 @@ function SingleShapeSidebar(): JSX.Element {
             return true;
         }
 
+        if (state.saveOnFinish) {
+            // if the latest image does not have objects to be annotated and user clicks "Next"
+            // we should save the job
+            appDispatch(changeWorkspace(Workspace.STANDARD));
+            appDispatch(saveAnnotationsAsync());
+        }
+
         return false;
-    }, [state.frames, frame]);
+    }, [state.frames, state.saveOnFinish, frame]);
 
     const prevFrame = useCallback((): boolean => {
-        const prev = state.frames.find((_frame) => _frame < frame);
+        const prev = state.frames.findLast((_frame) => _frame < frame);
         if (typeof prev === 'number') {
             appDispatch(changeFrameAsync(prev));
             return true;
@@ -224,15 +233,28 @@ function SingleShapeSidebar(): JSX.Element {
 
     useEffect(() => {
         (async () => {
-            const job = jobInstance as Job;
             const framesToBeVisited = [];
 
-            let searchFrom = job.startFrame;
+            let searchFrom: number | null = jobInstance.startFrame;
             while (searchFrom !== null) {
-                const foundFrame = await job.annotations.search(searchFrom, job.stopFrame, [{ and: [{ '==': [{ var: 'isEmptyFrame' }, true] }] }]);
+                const foundFrame: number | null = await jobInstance.annotations.search(
+                    searchFrom,
+                    jobInstance.stopFrame,
+                    {
+                        allowDeletedFrames: false,
+                        ...(state.navigateOnlyEmpty ? {
+                            generalFilters: {
+                                isEmptyFrame: true,
+                            },
+                        } : {}),
+                    },
+                );
+
                 if (foundFrame !== null) {
                     framesToBeVisited.push(foundFrame);
-                    searchFrom = foundFrame < job.stopFrame ? foundFrame + 1 : null;
+                    searchFrom = foundFrame < jobInstance.stopFrame ? foundFrame + 1 : null;
+                } else {
+                    searchFrom = null;
                 }
             }
 
@@ -297,6 +319,51 @@ function SingleShapeSidebar(): JSX.Element {
             >
                 {state.sidebarCollabased ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
             </span>
+            { state.label !== null && state.labelType !== LabelType.ANY && (
+                <Row>
+                    <Col>
+                        <Alert
+                            className='cvat-single-shape-annotation-sidebar-hint'
+                            type='info'
+                            message={(
+                                <>
+                                    <Text>Annotate</Text>
+                                    <Text strong>{` ${(state.label as Label).name} `}</Text>
+                                    <Text>on the image, using</Text>
+                                    <Text strong>{` ${message} `}</Text>
+                                </>
+                            )}
+                        />
+                        <Alert
+                            type='info'
+                            message={(
+                                <ul>
+                                    <li>
+                                        <Text>Click</Text>
+                                        <Text strong>{' Next '}</Text>
+                                        <Text>if already annotated or there is nothing to be annotated</Text>
+                                    </li>
+                                    <li>
+                                        <Text>Hold</Text>
+                                        <Text strong>{' [Alt] '}</Text>
+                                        <Text>button to avoid drawing on click</Text>
+                                    </li>
+                                    <li>
+                                        <Text>Press</Text>
+                                        <Text strong>{` ${keyMap.UNDO} `}</Text>
+                                        <Text>to undo a created object</Text>
+                                    </li>
+                                    <li>
+                                        <Text>Press</Text>
+                                        <Text strong>{` ${keyMap.CANCEL} `}</Text>
+                                        <Text>to reset drawing process</Text>
+                                    </li>
+                                </ul>
+                            )}
+                        />
+                    </Col>
+                </Row>
+            )}
             <Row justify='start' className='cvat-single-shape-annotation-sidebar-label'>
                 <Col>
                     <Text strong>Label selector</Text>
@@ -409,7 +476,15 @@ function SingleShapeSidebar(): JSX.Element {
                         Previous
                     </Button>
                     <Button
-                        disabled={state.frames.length === 0 || state.frames[state.frames.length - 1] <= frame}
+                        // allow clicking the button even if this is latest frame
+                        // if automatic saving at the end is enabled
+                        // e.g. when the latest frame does not contain objects to be annotated
+                        disabled={state.frames.length === 0 ||
+                            (
+                                !state.saveOnFinish &&
+                                !jobInstance.annotations.hasUnsavedChanges() &&
+                                state.frames[state.frames.length - 1] <= frame
+                            )}
                         size='large'
                         onClick={nextFrame}
                         icon={<Icon component={NextIcon} />}
@@ -418,20 +493,6 @@ function SingleShapeSidebar(): JSX.Element {
                     </Button>
                 </Col>
             </Row>
-            { state.label !== null && state.labelType !== LabelType.ANY && (
-                <Row className='cvat-single-shape-annotation-sidebar-hint'>
-                    <Col>
-                        <hr />
-                        <Paragraph type='secondary'>
-                            <Text>Annotate</Text>
-                            <Text strong>{` ${(state.label as Label).name} `}</Text>
-                            <Text>on the image, using</Text>
-                            <Text strong>{` ${message} `}</Text>
-                        </Paragraph>
-                        <hr />
-                    </Col>
-                </Row>
-            )}
         </Layout.Sider>
     );
 }

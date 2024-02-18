@@ -82,11 +82,10 @@ function buildDuplicatedAPI(prototype) {
                     return result;
                 },
 
-                async search(filters, frameFrom, frameTo, searchParameters) {
+                async search(frameFrom, frameTo, searchParameters) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.annotations.search,
-                        filters,
                         frameFrom,
                         frameTo,
                         searchParameters,

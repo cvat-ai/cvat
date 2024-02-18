@@ -1246,7 +1246,9 @@ export function searchAnnotationsAsync(
     sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>,
     frameFrom: number,
     frameTo: number,
-    filters?: object[],
+    generalFilters?: {
+        isEmptyFrame: boolean;
+    },
 ): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
@@ -1255,16 +1257,18 @@ export function searchAnnotationsAsync(
                     player: { showDeletedFrames },
                 },
                 annotation: {
-                    annotations: { filters: setupFilters },
+                    annotations: { filters },
                 },
             } = getState();
 
             const frame = await sessionInstance.annotations
                 .search(
-                    filters || setupFilters,
                     frameFrom,
                     frameTo,
-                    { allowDeletedFrames: showDeletedFrames },
+                    {
+                        allowDeletedFrames: showDeletedFrames,
+                        ...({ generalFilters } || { annotationsFilters: filters }),
+                    },
                 );
             if (frame !== null) {
                 dispatch(changeFrameAsync(frame));

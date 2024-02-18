@@ -20,6 +20,7 @@
         }
     }
 
+    .cvat-single-shape-annotation-sidebar-label,
     .cvat-single-shape-annotation-sidebar-label-type,
     .cvat-single-shape-annotation-sidebar-points-count,
     .cvat-single-shape-annotation-sidebar-label-select,
@@ -34,9 +35,8 @@
         row-gap: 0;
         text-align: center;
         font-size: large;
-        padding-top: 32px;
-        bottom: 0;
-        position: absolute;
+        margin-top: $grid-unit-size * 5;
+        margin-bottom: $grid-unit-size;
     }
 
     .cvat-single-shape-annotation-sidebar-navigation-block {

@@ -89,7 +89,7 @@ export default class AnnotationsFilter {
         return objects;
     }
 
-    filter(statesData: SerializedData[], filters: string[]): number[] {
+    filter(statesData: SerializedData[], filters: object[]): number[] {
         if (!filters.length) return statesData.map((stateData): number => stateData.clientID);
         const converted = this._convertObjects(statesData);
         return converted

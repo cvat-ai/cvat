@@ -75,11 +75,18 @@ interface DispatchToProps {
     onChangeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
     onSwitchPlay(playing: boolean): void;
     onSaveAnnotation(): void;
-    showStatistics(sessionInstance: any): void;
-    showFilters(sessionInstance: any): void;
+    showStatistics(sessionInstance: Job): void;
+    showFilters(): void;
     undo(): void;
     redo(): void;
-    searchAnnotations(sessionInstance: any, frameFrom: number, frameTo: number, filters?: object[]): void;
+    searchAnnotations(
+        sessionInstance: Job,
+        frameFrom: number,
+        frameTo: number,
+        generalFilters?: {
+            isEmptyFrame: boolean;
+        },
+    ): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
@@ -163,7 +170,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSaveAnnotation(): void {
             dispatch(saveAnnotationsAsync());
         },
-        showStatistics(sessionInstance: any): void {
+        showStatistics(sessionInstance: Job): void {
             dispatch(collectStatisticsAsync(sessionInstance));
             dispatch(showStatisticsAction(true));
         },
@@ -176,8 +183,15 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         redo(): void {
             dispatch(redoActionAsync());
         },
-        searchAnnotations(sessionInstance: any, frameFrom: number, frameTo: number, filters?: object[]): void {
-            dispatch(searchAnnotationsAsync(sessionInstance, frameFrom, frameTo, filters));
+        searchAnnotations(
+            sessionInstance: Job,
+            frameFrom: number,
+            frameTo: number,
+            generalFilters?: {
+                isEmptyFrame: boolean;
+            },
+        ): void {
+            dispatch(searchAnnotationsAsync(sessionInstance, frameFrom, frameTo, generalFilters));
         },
         changeWorkspace(workspace: Workspace): void {
             dispatch(changeWorkspaceAction(workspace));
@@ -289,8 +303,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private showFilters = (): void => {
-        const { jobInstance, showFilters } = this.props;
-        showFilters(jobInstance);
+        const { showFilters } = this.props;
+        showFilters();
     };
 
     private onSwitchPlay = (): void => {
@@ -366,7 +380,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             } else if (prevButtonType === 'filtered') {
                 searchAnnotations(jobInstance, newFrame, startFrame);
             } else {
-                searchAnnotations(jobInstance, newFrame, startFrame, [{ and: [{ '==': [{ var: 'isEmptyFrame' }, true] }] }]);
+                searchAnnotations(jobInstance, newFrame, startFrame, { isEmptyFrame: true });
             }
         }
     };
@@ -395,7 +409,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             } else if (nextButtonType === 'filtered') {
                 searchAnnotations(jobInstance, newFrame, stopFrame);
             } else {
-                searchAnnotations(jobInstance, newFrame, stopFrame, [{ and: [{ '==': [{ var: 'isEmptyFrame' }, true] }] }]);
+                searchAnnotations(jobInstance, newFrame, stopFrame, { isEmptyFrame: true });
             }
         }
     };

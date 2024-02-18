@@ -1212,7 +1212,7 @@ export default class Collection {
         frameFrom: number,
         frameTo: number,
         searchParameters: {
-            allowDeletedFrames: boolean,
+            allowDeletedFrames: boolean;
         },
     ): number | null {
         const { allowDeletedFrames } = searchParameters;
@@ -1255,26 +1255,52 @@ export default class Collection {
     }
 
     search(
-        filters: object[],
         frameFrom: number,
         frameTo: number,
         searchParameters: {
-            allowDeletedFrames: boolean,
+            allowDeletedFrames: boolean;
+            annotationsFilters?: object[];
+            generalFilters?: {
+                isEmptyFrame?: boolean;
+            };
         },
     ): number | null {
         const { allowDeletedFrames } = searchParameters;
-        const sign = Math.sign(frameTo - frameFrom);
-        const filtersStr = JSON.stringify(filters);
-        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+        let { annotationsFilters } = searchParameters;
 
-        // handle special case when we need an empty frame
-        const emptyFrameFilter = '[{"and":[{"==":[{"var":"isEmptyFrame"},true]}]}]';
-        if (filters.length === 1 && filtersStr === emptyFrameFilter) {
-            return this._searchEmpty(frameFrom, frameTo, searchParameters);
+        if ('generalFilters' in searchParameters) {
+            // if we are looking for en empty frame, run a dedicated algorithm
+            if (searchParameters.generalFilters.isEmptyFrame) {
+                return this._searchEmpty(frameFrom, frameTo, { allowDeletedFrames });
+            }
+
+            // not empty frames corresponds to default behaviour of the function with empty annotation filters
+            annotationsFilters = [];
         }
 
+        const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
+
+        // if not looking for an emty frame nor frame with annotations, return the next frame
+        // check if deleted frames are allowed additionally
+        if (!annotationsFilters) {
+            let frame = frameFrom;
+            while (predicate(frame)) {
+                if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                    frame = update(frame);
+                    continue;
+                }
+
+                return frame;
+            }
+
+            return null;
+        }
+
+        const filtersStr = JSON.stringify(annotationsFilters);
+        const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
             if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
                 continue;
@@ -1298,13 +1324,8 @@ export default class Collection {
                 .filter((track) => !track.removed);
             statesData.push(...tracks.map((track) => track.get(frame)).filter((state) => !state.outside));
 
-            // Nothing to filtering, go to the next iteration
-            if (!statesData.length) {
-                continue;
-            }
-
             // Filtering
-            const filtered = this.annotationsFilter.filter(statesData, filters);
+            const filtered = this.annotationsFilter.filter(statesData, annotationsFilters);
             if (filtered.length) {
                 return frame;
             }
