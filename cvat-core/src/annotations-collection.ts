@@ -1208,17 +1208,30 @@ export default class Collection {
         };
     }
 
-    searchEmpty(frameFrom: number, frameTo: number): number | null {
+    _searchEmpty(
+        frameFrom: number,
+        frameTo: number,
+        searchParameters: {
+            allowDeletedFrames: boolean,
+        },
+    ): number | null {
+        const { allowDeletedFrames } = searchParameters;
         const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                continue;
+            }
+
             if (frame in this.shapes && this.shapes[frame].some((shape) => !shape.removed)) {
                 continue;
             }
+
             if (frame in this.tags && this.tags[frame].some((tag) => !tag.removed)) {
                 continue;
             }
+
             const filteredTracks = this.tracks.filter((track) => !track.removed);
             let found = false;
             for (const track of filteredTracks) {
@@ -1241,14 +1254,32 @@ export default class Collection {
         return null;
     }
 
-    search(filters: string[], frameFrom: number, frameTo: number): number | null {
+    search(
+        filters: object[],
+        frameFrom: number,
+        frameTo: number,
+        searchParameters: {
+            allowDeletedFrames: boolean,
+        },
+    ): number | null {
+        const { allowDeletedFrames } = searchParameters;
         const sign = Math.sign(frameTo - frameFrom);
         const filtersStr = JSON.stringify(filters);
         const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
 
+        // handle special case when we need an empty frame
+        const emptyFrameFilter = '[{"and":[{"==":[{"var":"isEmptyFrame"},true]}]}]';
+        if (filters.length === 1 && filtersStr === emptyFrameFilter) {
+            return this._searchEmpty(frameFrom, frameTo, searchParameters);
+        }
+
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
         const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
         for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!allowDeletedFrames && this.frameMeta[frame].deleted) {
+                continue;
+            }
+
             // First prepare all data for the frame
             // Consider all shapes, tags, and not outside tracks that have keyframe here
             // In particular consider first and last frame as keyframes for all tracks

@@ -109,7 +109,6 @@ const defaultState: NotificationsState = {
             undo: null,
             redo: null,
             search: null,
-            searchEmptyFrame: null,
             deleteFrame: null,
             restoreFrame: null,
             savingLogs: null,
@@ -1189,22 +1188,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.annotation,
                         search: {
                             message: 'Could not execute search annotations',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                        },
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.SEARCH_EMPTY_FRAME_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        searchEmptyFrame: {
-                            message: 'Could not search an empty frame',
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                         },

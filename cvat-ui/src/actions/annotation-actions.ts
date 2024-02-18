@@ -175,7 +175,6 @@ export enum AnnotationActionTypes {
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     ADD_Z_LAYER = 'ADD_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
-    SEARCH_EMPTY_FRAME_FAILED = 'SEARCH_EMPTY_FRAME_FAILED',
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
@@ -1243,7 +1242,12 @@ export function changeGroupColorAsync(group: number, color: string): ThunkAction
     };
 }
 
-export function searchAnnotationsAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, frameFrom: number, frameTo: number): ThunkAction {
+export function searchAnnotationsAsync(
+    sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>,
+    frameFrom: number,
+    frameTo: number,
+    filters?: object[],
+): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
             const {
@@ -1251,63 +1255,23 @@ export function searchAnnotationsAsync(sessionInstance: NonNullable<CombinedStat
                     player: { showDeletedFrames },
                 },
                 annotation: {
-                    annotations: { filters },
+                    annotations: { filters: setupFilters },
                 },
             } = getState();
 
-            const sign = Math.sign(frameTo - frameFrom);
-            let frame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
-            while (frame !== null) {
-                const isDeleted = (await sessionInstance.frames.get(frame)).deleted;
-                if (!isDeleted || showDeletedFrames) {
-                    break;
-                } else if (sign > 0 ? frame < frameTo : frame > frameTo) {
-                    frame = await sessionInstance.annotations.search(filters, frame + sign, frameTo);
-                } else {
-                    frame = null;
-                }
-            }
+            const frame = await sessionInstance.annotations
+                .search(
+                    filters || setupFilters,
+                    frameFrom,
+                    frameTo,
+                    { allowDeletedFrames: showDeletedFrames },
+                );
             if (frame !== null) {
                 dispatch(changeFrameAsync(frame));
             }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.SEARCH_ANNOTATIONS_FAILED,
-                payload: {
-                    error,
-                },
-            });
-        }
-    };
-}
-
-export function searchEmptyFrameAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, frameFrom: number, frameTo: number): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
-        try {
-            const {
-                settings: {
-                    player: { showDeletedFrames },
-                },
-            } = getState();
-
-            const sign = Math.sign(frameTo - frameFrom);
-            let frame = await sessionInstance.annotations.searchEmpty(frameFrom, frameTo);
-            while (frame !== null) {
-                const isDeleted = (await sessionInstance.frames.get(frame)).deleted;
-                if (!isDeleted || showDeletedFrames) {
-                    break;
-                } else if (sign > 0 ? frame < frameTo : frame > frameTo) {
-                    frame = await sessionInstance.annotations.searchEmpty(frame + sign, frameTo);
-                } else {
-                    frame = null;
-                }
-            }
-            if (frame !== null) {
-                dispatch(changeFrameAsync(frame));
-            }
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.SEARCH_EMPTY_FRAME_FAILED,
                 payload: {
                     error,
                 },

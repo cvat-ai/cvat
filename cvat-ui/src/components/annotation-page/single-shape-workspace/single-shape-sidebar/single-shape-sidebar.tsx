@@ -174,7 +174,7 @@ function SingleShapeSidebar(): JSX.Element {
     });
 
     const nextFrame = useCallback((): boolean => {
-        const next = state.frames.find((_frame) => _frame > frame) || null;
+        const next = state.frames.find((_frame) => _frame > frame);
         if (typeof next === 'number') {
             appDispatch(changeFrameAsync(next));
             return true;
@@ -184,7 +184,7 @@ function SingleShapeSidebar(): JSX.Element {
     }, [state.frames, frame]);
 
     const prevFrame = useCallback((): boolean => {
-        const prev = state.frames.findLast((_frame) => _frame < frame) || null;
+        const prev = state.frames.find((_frame) => _frame < frame);
         if (typeof prev === 'number') {
             appDispatch(changeFrameAsync(prev));
             return true;
@@ -229,8 +229,7 @@ function SingleShapeSidebar(): JSX.Element {
 
             let searchFrom = job.startFrame;
             while (searchFrom !== null) {
-                const foundFrame = await job.frames
-                    .search({ notDeleted: true }, searchFrom, job.stopFrame);
+                const foundFrame = await job.annotations.search(searchFrom, job.stopFrame, [{ and: [{ '==': [{ var: 'isEmptyFrame' }, true] }] }]);
                 if (foundFrame !== null) {
                     framesToBeVisited.push(foundFrame);
                     searchFrom = foundFrame < job.stopFrame ? foundFrame + 1 : null;

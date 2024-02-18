@@ -17,7 +17,6 @@ import {
     redoActionAsync,
     saveAnnotationsAsync,
     searchAnnotationsAsync,
-    searchEmptyFrameAsync,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
     showFilters as showFiltersAction,
     showStatistics as showStatisticsAction,
@@ -80,8 +79,7 @@ interface DispatchToProps {
     showFilters(sessionInstance: any): void;
     undo(): void;
     redo(): void;
-    searchAnnotations(sessionInstance: any, frameFrom: number, frameTo: number): void;
-    searchEmptyFrame(sessionInstance: any, frameFrom: number, frameTo: number): void;
+    searchAnnotations(sessionInstance: any, frameFrom: number, frameTo: number, filters?: object[]): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
@@ -178,11 +176,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         redo(): void {
             dispatch(redoActionAsync());
         },
-        searchAnnotations(sessionInstance: any, frameFrom: number, frameTo: number): void {
-            dispatch(searchAnnotationsAsync(sessionInstance, frameFrom, frameTo));
-        },
-        searchEmptyFrame(sessionInstance: any, frameFrom: number, frameTo: number): void {
-            dispatch(searchEmptyFrameAsync(sessionInstance, frameFrom, frameTo));
+        searchAnnotations(sessionInstance: any, frameFrom: number, frameTo: number, filters?: object[]): void {
+            dispatch(searchAnnotationsAsync(sessionInstance, frameFrom, frameTo, filters));
         },
         changeWorkspace(workspace: Workspace): void {
             dispatch(changeWorkspaceAction(workspace));
@@ -371,7 +366,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             } else if (prevButtonType === 'filtered') {
                 searchAnnotations(jobInstance, newFrame, startFrame);
             } else {
-                this.searchEmptyFrame(newFrame, startFrame);
+                searchAnnotations(jobInstance, newFrame, startFrame, [{ and: [{ '==': [{ var: 'isEmptyFrame' }, true] }] }]);
             }
         }
     };
@@ -400,7 +395,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             } else if (nextButtonType === 'filtered') {
                 searchAnnotations(jobInstance, newFrame, stopFrame);
             } else {
-                this.searchEmptyFrame(newFrame, stopFrame);
+                searchAnnotations(jobInstance, newFrame, stopFrame, [{ and: [{ '==': [{ var: 'isEmptyFrame' }, true] }] }]);
             }
         }
     };
@@ -651,13 +646,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         const { onChangeFrame } = this.props;
         if (isAbleToChangeFrame()) {
             onChangeFrame(frame);
-        }
-    }
-
-    private searchEmptyFrame(start: number, stop: number): void {
-        const { jobInstance, searchEmptyFrame } = this.props;
-        if (isAbleToChangeFrame()) {
-            searchEmptyFrame(jobInstance, start, stop);
         }
     }
 
