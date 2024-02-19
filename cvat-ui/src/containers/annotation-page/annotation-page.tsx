@@ -81,6 +81,16 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         }
     }
 
+    const initialSize = searchParams.size;
+    searchParams.delete('frame');
+    searchParams.delete('serverID');
+    searchParams.delete('type');
+    searchParams.delete('openGuide');
+
+    if (searchParams.size !== initialSize) {
+        own.history.replace(`${own.history.location.pathname}?${searchParams.toString()}`);
+    }
+
     return {
         getJob(): void {
             dispatch(getJobAsync({
