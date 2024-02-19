@@ -15,13 +15,13 @@
     .cvat-single-shape-annotation-sidebar-label-select,
     .cvat-single-shape-annotation-sidebar-label-type-selector {
         .ant-select {
-            width: 160px;
+            width: $grid-unit-size * 20;
         }
     }
 
     .cvat-single-shape-annotation-sidebar-points-count-input {
         .ant-input-number    {
-            width: 160px;
+            width: $grid-unit-size * 20;
         }
     }
 
