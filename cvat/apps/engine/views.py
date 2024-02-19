@@ -43,6 +43,7 @@ from rest_framework.settings import api_settings
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance, download_file_from_bucket, export_resource_to_cloud_storage
+from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -894,9 +895,9 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         updated_instance = serializer.instance
 
         if instance.project:
-            instance.project.save()
-        if updated_instance.project:
-            updated_instance.project.save()
+            instance.project.touch()
+        if updated_instance.project and updated_instance.project != instance.project:
+            updated_instance.project.touch()
 
     @transaction.atomic
     def perform_create(self, serializer, **kwargs):
@@ -905,9 +906,8 @@ class TaskViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             organization=self.request.iam_context['organization']
         )
 
-        if serializer.instance.project:
-            db_project = serializer.instance.project
-            db_project.save()
+        if db_project := serializer.instance.project:
+            db_project.touch()
             assert serializer.instance.organization == db_project.organization
 
         # Required for the extra summary information added in the queryset
@@ -1944,9 +1944,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
                     db_data.deleted_frames,
                 ))
                 db_data = serializer.save()
-                db_job.segment.task.save()
+                db_job.segment.task.touch()
                 if db_job.segment.task.project:
-                    db_job.segment.task.project.save()
+                    db_job.segment.task.project.touch()
 
         if hasattr(db_data, 'video'):
             media = [db_data.video]
@@ -2285,10 +2285,10 @@ class LabelViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 code=status.HTTP_400_BAD_REQUEST)
 
         if project := instance.project:
-            project.save(update_fields=['updated_date'])
+            project.touch()
             ProjectWriteSerializer(project).update_child_objects_on_labels_update(project)
         elif task := instance.task:
-            task.save(update_fields=['updated_date'])
+            task.touch()
             TaskWriteSerializer(task).update_child_objects_on_labels_update(task)
 
         return super().perform_destroy(instance)
@@ -2839,6 +2839,8 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
         dependent_job = None
         location = location_conf.get('location') if location_conf else Location.LOCAL
 
+        db_storage = None
+
         if not filename or location == Location.CLOUD_STORAGE:
             if location != Location.CLOUD_STORAGE:
                 serializer = AnnotationFileSerializer(data=request.data)
@@ -2899,6 +2901,9 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
+
+        handle_dataset_import(db_obj, format_name=format_name, cloud_storage=db_storage)
+
         serializer = RqIdSerializer(data={'rq_id': rq_id})
         serializer.is_valid(raise_exception=True)
 
@@ -3046,6 +3051,8 @@ def _export_annotations(
             is_annotation_file=is_annotation_file,
         )
         func_args = (db_storage, filename, filename_pattern, callback) + func_args
+    else:
+        db_storage = None
 
     with get_rq_lock_by_user(queue, user_id):
         queue.enqueue_call(
@@ -3057,6 +3064,10 @@ def _export_annotations(
             result_ttl=ttl,
             failure_ttl=ttl,
         )
+
+    handle_dataset_export(db_instance,
+        format_name=format_name, cloud_storage=db_storage, save_images=not is_annotation_file)
+
     return Response(status=status.HTTP_202_ACCEPTED)
 
 def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_name, filename=None, conv_mask_to_poly=True, location_conf=None):
@@ -3081,6 +3092,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
             rq_job.delete()
         dependent_job = None
         location = location_conf.get('location') if location_conf else None
+        db_storage = None
+
         if not filename and location != Location.CLOUD_STORAGE:
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
@@ -3139,6 +3152,8 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 result_ttl=settings.IMPORT_CACHE_SUCCESS_TTL.total_seconds(),
                 failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds()
             )
+
+        handle_dataset_import(db_obj, format_name=format_name, cloud_storage=db_storage)
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 

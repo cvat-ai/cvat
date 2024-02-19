@@ -7,7 +7,6 @@ from django.db.models.signals import pre_save, post_save, post_delete
 from django.core.exceptions import ObjectDoesNotExist
 
 from cvat.apps.engine.models import (
-    Organization,
     Project,
     Task,
     Job,
@@ -17,6 +16,7 @@ from cvat.apps.engine.models import (
     Comment,
     Label,
 )
+from cvat.apps.organizations.models import Organization
 
 from .handlers import handle_update, handle_create, handle_delete
 from .event import EventScopeChoice, event_scope

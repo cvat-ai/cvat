@@ -72,7 +72,7 @@ const defaultState: AnnotationState = {
             fetching: false,
             delay: 0,
             changeTime: null,
-            changeFrameLog: null,
+            changeFrameEvent: null,
         },
         ranges: '',
         playing: false,
@@ -288,7 +288,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 curZ,
                 delay,
                 changeTime,
-                changeFrameLog,
+                changeFrameEvent,
             } = action.payload;
 
             return {
@@ -303,7 +303,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         fetching: false,
                         changeTime,
                         delay,
-                        changeFrameLog,
+                        changeFrameEvent,
                     },
                 },
                 annotations: {
@@ -327,7 +327,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         ...state.player.frame,
                         fetching: false,
-                        changeFrameLog: null,
+                        changeFrameEvent: null,
                     },
                 },
             };
