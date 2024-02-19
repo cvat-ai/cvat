@@ -20,11 +20,11 @@ import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons/lib/components/Icon';
 
 import { NextIcon, PreviousIcon } from 'icons';
-import { CombinedState, Workspace } from 'reducers';
+import { CombinedState } from 'reducers';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Job, Label, LabelType } from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
-import { changeFrameAsync, changeWorkspace, saveAnnotationsAsync } from 'actions/annotation-actions';
+import { changeFrameAsync, saveAnnotationsAsync } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -204,15 +204,17 @@ function SingleShapeSidebar(): JSX.Element {
             return true;
         }
 
-        if (state.saveOnFinish) {
+        if (state.saveOnFinish && jobInstance.annotations.hasUnsavedChanges()) {
             // if the latest image does not have objects to be annotated and user clicks "Next"
-            // we should save the job
-            appDispatch(changeWorkspace(Workspace.STANDARD));
-            appDispatch(saveAnnotationsAsync());
+            // we should save the job if there are unsaved changes
+            appDispatch(saveAnnotationsAsync()).then(() => {
+                // update state to re-render component after the job saved unsaved changes
+                dispatch(reducerActions.setFrames([...state.frames]));
+            });
         }
 
         return false;
-    }, [state.frames, state.saveOnFinish, frame]);
+    }, [state.frames, state.saveOnFinish, frame, jobInstance]);
 
     const prevFrame = useCallback((): boolean => {
         const prev = state.frames.findLast((_frame) => _frame < frame);
@@ -297,7 +299,6 @@ function SingleShapeSidebar(): JSX.Element {
             setTimeout(() => {
                 if (state.autoNextFrame) {
                     if (!nextFrame()) {
-                        appDispatch(changeWorkspace(Workspace.STANDARD));
                         if (state.saveOnFinish) {
                             appDispatch(saveAnnotationsAsync());
                         }
@@ -555,12 +556,13 @@ function SingleShapeSidebar(): JSX.Element {
                             // allow clicking the button even if this is latest frame
                             // if automatic saving at the end is enabled
                             // e.g. when the latest frame does not contain objects to be annotated
-                            disabled={state.frames.length === 0 ||
-                                (
-                                    !state.saveOnFinish &&
-                                    !jobInstance.annotations.hasUnsavedChanges() &&
-                                    state.frames[state.frames.length - 1] <= frame
-                                )}
+                            disabled={state.frames.length === 0 || (
+                                state.frames[state.frames.length - 1] <= frame && (
+                                    !state.saveOnFinish || (state.saveOnFinish &&
+                                        !jobInstance.annotations.hasUnsavedChanges()
+                                    )
+                                )
+                            )}
                             size='large'
                             onClick={nextFrame}
                             icon={<Icon component={NextIcon} />}
