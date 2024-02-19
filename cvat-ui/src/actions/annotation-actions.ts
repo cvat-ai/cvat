@@ -1267,7 +1267,9 @@ export function searchAnnotationsAsync(
                     frameTo,
                     {
                         allowDeletedFrames: showDeletedFrames,
-                        ...({ generalFilters } || { annotationsFilters: filters }),
+                        ...(
+                            generalFilters ? { generalFilters } : { annotationsFilters: filters }
+                        ),
                     },
                 );
             if (frame !== null) {
