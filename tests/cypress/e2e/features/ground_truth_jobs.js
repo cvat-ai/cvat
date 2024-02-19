@@ -226,7 +226,7 @@ context('Ground truth jobs', () => {
         cy.login();
     });
 
-    describe.skip('Testing ground truth basics', () => {
+    describe('Testing ground truth basics', () => {
         const imagesCount = 10;
         const imageFileName = 'ground_truth_1';
         const width = 800;
@@ -416,7 +416,7 @@ context('Ground truth jobs', () => {
         });
     });
 
-    describe(`Testing case "${caseId}"`, () => {
+    describe('Testing case ground truth job list', () => {
         const imagesCount = 60;
         const imageFileName = 'ground_truth_2';
         const width = 100;
