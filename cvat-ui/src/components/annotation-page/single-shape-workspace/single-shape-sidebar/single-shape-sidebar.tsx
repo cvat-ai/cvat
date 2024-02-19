@@ -192,7 +192,7 @@ function SingleShapeSidebar(): JSX.Element {
         navigateOnlyEmpty: true,
         pointsCountIsPredefined: true,
         pointsCount: defaultPointsCount || 1,
-        labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG),
+        labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG && label.type !== LabelType.SKELETON),
         label: null,
         labelType: jobInstance.labels[0]?.type || LabelType.ANY,
         frames: [],
@@ -470,7 +470,6 @@ function SingleShapeSidebar(): JSX.Element {
                                 <Select value={LabelType.ELLIPSE}>{LabelType.ELLIPSE}</Select>
                                 <Select value={LabelType.CUBOID}>{LabelType.CUBOID}</Select>
                                 <Select value={LabelType.MASK}>{LabelType.MASK}</Select>
-                                <Select value={LabelType.SKELETON}>{LabelType.SKELETON}</Select>
                             </Select>
                         </Col>
                     </Row>
