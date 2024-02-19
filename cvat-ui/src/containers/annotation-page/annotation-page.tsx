@@ -81,10 +81,6 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         }
     }
 
-    if (searchParams.size) {
-        own.history.replace(own.history.location.pathname);
-    }
-
     return {
         getJob(): void {
             dispatch(getJobAsync({
