@@ -15,6 +15,7 @@ import Checkbox from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
+import Alert from 'antd/lib/alert';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons/lib/components/Icon';
 
@@ -25,13 +26,16 @@ import { Job, Label, LabelType } from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
 import { changeFrameAsync, changeWorkspace, saveAnnotationsAsync } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
-import { Alert } from 'antd';
+
+import GlobalHotKeys from 'utils/mousetrap-react';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 enum ReducerActionType {
     SWITCH_SIDEBAR_COLLAPSED = 'SWITCH_SIDEBAR_COLLAPSED',
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
     SWITCH_AUTOSAVE_ON_FINISH = 'SWITCH_AUTOSAVE_ON_FINISH',
     SWITCH_NAVIGATE_EMPTY_ONLY = 'SWITCH_NAVIGATE_EMPTY_ONLY',
+    SWITCH_COUNT_OF_POINTS_IS_PREDEFINED = 'SWITCH_COUNT_OF_POINTS_IS_PREDEFINED',
     SET_ACTIVE_LABEL = 'SET_ACTIVE_LABEL',
     SET_POINTS_COUNT = 'SET_POINTS_COUNT',
     SET_FRAMES = 'SET_FRAMES',
@@ -49,6 +53,9 @@ export const reducerActions = {
     ),
     switchNavigateEmptyOnly: () => (
         createAction(ReducerActionType.SWITCH_NAVIGATE_EMPTY_ONLY)
+    ),
+    switchCountOfPointsIsPredefined: () => (
+        createAction(ReducerActionType.SWITCH_COUNT_OF_POINTS_IS_PREDEFINED)
     ),
     setActiveLabel: (label: Label, type?: LabelType) => (
         createAction(ReducerActionType.SET_ACTIVE_LABEL, {
@@ -69,6 +76,7 @@ interface State {
     autoNextFrame: boolean;
     saveOnFinish: boolean;
     navigateOnlyEmpty: boolean;
+    pointsCountIsPredefined: boolean;
     pointsCount: number;
     labels: Label[];
     label: Label | null;
@@ -116,6 +124,13 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
+    if (action.type === ReducerActionType.SWITCH_COUNT_OF_POINTS_IS_PREDEFINED) {
+        return {
+            ...state,
+            pointsCountIsPredefined: !state.pointsCountIsPredefined,
+        };
+    }
+
     if (action.type === ReducerActionType.SET_ACTIVE_LABEL) {
         return {
             ...state,
@@ -155,12 +170,14 @@ function SingleShapeSidebar(): JSX.Element {
         isCanvasReady,
         jobInstance,
         frame,
+        normalizedKeyMap,
         keyMap,
     } = useSelector((_state: CombinedState) => ({
         isCanvasReady: _state.annotation.canvas.ready,
         jobInstance: _state.annotation.job.instance as Job,
         frame: _state.annotation.player.frame.number,
-        keyMap: _state.shortcuts.normalizedKeyMap,
+        keyMap: _state.shortcuts.keyMap,
+        normalizedKeyMap: _state.shortcuts.normalizedKeyMap,
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
@@ -168,6 +185,7 @@ function SingleShapeSidebar(): JSX.Element {
         autoNextFrame: true,
         saveOnFinish: true,
         navigateOnlyEmpty: true,
+        pointsCountIsPredefined: true,
         pointsCount: 1,
         labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG),
         label: jobInstance.labels[0] || null,
@@ -211,7 +229,7 @@ function SingleShapeSidebar(): JSX.Element {
             canvas.draw({
                 enabled: true,
                 shapeType: state.labelType,
-                numberOfPoints: state.pointsCount,
+                numberOfPoints: state.pointsCountIsPredefined ? state.pointsCount : undefined,
                 crosshair: true,
             });
         }
@@ -226,10 +244,8 @@ function SingleShapeSidebar(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        if (canvasInitializerRef.current) {
-            canvasInitializerRef?.current();
-        }
-    }, [isCanvasReady, state.label, state.labelType, state.pointsCount]);
+        (canvasInitializerRef.current || (() => {}))();
+    }, [isCanvasReady, state.label, state.labelType, state.pointsCount, state.pointsCountIsPredefined]);
 
     useEffect(() => {
         (async () => {
@@ -306,8 +322,36 @@ function SingleShapeSidebar(): JSX.Element {
         collapsed: state.sidebarCollabased,
     };
 
+    const subKeyMap = {
+        CANCEL: keyMap.CANCEL,
+        NEXT_FRAME: keyMap.NEXT_FRAME,
+        PREV_FRAME: keyMap.PREV_FRAME,
+        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
+    };
+    const handlers = {
+        CANCEL: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            (canvasInitializerRef.current || (() => {}))();
+        },
+        NEXT_FRAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            nextFrame();
+        },
+        PREV_FRAME: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            prevFrame();
+        },
+        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+            event?.preventDefault();
+            const canvas = store.getState().annotation.canvas.instance as Canvas;
+            canvas.draw({ enabled: false });
+            (canvasInitializerRef.current || (() => {}))();
+        },
+    };
+
     return (
         <Layout.Sider {...siderProps}>
+            <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
             {/* eslint-disable-next-line */}
             <span
                 className={`cvat-objects-sidebar-sider
@@ -350,13 +394,18 @@ function SingleShapeSidebar(): JSX.Element {
                                     </li>
                                     <li>
                                         <Text>Press</Text>
-                                        <Text strong>{` ${keyMap.UNDO} `}</Text>
+                                        <Text strong>{` ${normalizedKeyMap.UNDO} `}</Text>
                                         <Text>to undo a created object</Text>
                                     </li>
                                     <li>
                                         <Text>Press</Text>
-                                        <Text strong>{` ${keyMap.CANCEL} `}</Text>
+                                        <Text strong>{` ${normalizedKeyMap.CANCEL} `}</Text>
                                         <Text>to reset drawing process</Text>
+                                    </li>
+                                    <li>
+                                        <Text>Press</Text>
+                                        <Text strong>{` ${normalizedKeyMap.SWITCH_DRAW_MODE} `}</Text>
+                                        <Text>to finish drawing process</Text>
                                     </li>
                                 </ul>
                             )}
@@ -406,29 +455,6 @@ function SingleShapeSidebar(): JSX.Element {
                     </Row>
                 </>
             ) : null }
-            { state.label && [LabelType.POLYGON, LabelType.POLYLINE, LabelType.POINTS].includes(state.labelType) ? (
-                <>
-                    <Row justify='start' className='cvat-single-shape-annotation-sidebar-points-count'>
-                        <Col>
-                            <Text strong>Number of points</Text>
-                        </Col>
-                    </Row>
-                    <Row justify='start' className='cvat-single-shape-annotation-sidebar-points-count-input'>
-                        <Col>
-                            <InputNumber
-                                value={state.pointsCount}
-                                min={1}
-                                step={1}
-                                onChange={(value: number | null) => {
-                                    if (value !== null) {
-                                        dispatch(reducerActions.setPointsCount(value));
-                                    }
-                                }}
-                            />
-                        </Col>
-                    </Row>
-                </>
-            ) : null }
             <Row className='cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox'>
                 <Col>
                     <Checkbox
@@ -465,32 +491,73 @@ function SingleShapeSidebar(): JSX.Element {
                     </Checkbox>
                 </Col>
             </Row>
+            <Row className='cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox'>
+                <Col>
+                    <Checkbox
+                        checked={state.pointsCountIsPredefined}
+                        onChange={(): void => {
+                            dispatch(reducerActions.switchCountOfPointsIsPredefined());
+                        }}
+                    >
+                        Predefined number of points
+                    </Checkbox>
+                </Col>
+            </Row>
+            { state.label &&
+                [LabelType.POLYGON, LabelType.POLYLINE, LabelType.POINTS].includes(state.labelType) &&
+                state.pointsCountIsPredefined ? (
+                    <>
+                        <Row justify='start' className='cvat-single-shape-annotation-sidebar-points-count'>
+                            <Col>
+                                <Text strong>Number of points</Text>
+                            </Col>
+                        </Row>
+                        <Row justify='start' className='cvat-single-shape-annotation-sidebar-points-count-input'>
+                            <Col>
+                                <InputNumber
+                                    value={state.pointsCount}
+                                    min={1}
+                                    step={1}
+                                    onChange={(value: number | null) => {
+                                        if (value !== null) {
+                                            dispatch(reducerActions.setPointsCount(value));
+                                        }
+                                    }}
+                                />
+                            </Col>
+                        </Row>
+                    </>
+                ) : null }
             <Row className='cvat-single-shape-annotation-sidebar-navigation-block'>
                 <Col span={24}>
-                    <Button
-                        disabled={state.frames.length === 0 || state.frames[0] >= frame}
-                        size='large'
-                        onClick={prevFrame}
-                        icon={<Icon component={PreviousIcon} />}
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        // allow clicking the button even if this is latest frame
-                        // if automatic saving at the end is enabled
-                        // e.g. when the latest frame does not contain objects to be annotated
-                        disabled={state.frames.length === 0 ||
-                            (
-                                !state.saveOnFinish &&
-                                !jobInstance.annotations.hasUnsavedChanges() &&
-                                state.frames[state.frames.length - 1] <= frame
-                            )}
-                        size='large'
-                        onClick={nextFrame}
-                        icon={<Icon component={NextIcon} />}
-                    >
-                        Next
-                    </Button>
+                    <CVATTooltip title={`Previous frame ${normalizedKeyMap.PREV_FRAME}`}>
+                        <Button
+                            disabled={state.frames.length === 0 || state.frames[0] >= frame}
+                            size='large'
+                            onClick={prevFrame}
+                            icon={<Icon component={PreviousIcon} />}
+                        >
+                            Previous
+                        </Button>
+                    </CVATTooltip>
+                    <CVATTooltip title={`Next frame ${normalizedKeyMap.NEXT_FRAME}`}>
+                        <Button
+                            // allow clicking the button even if this is latest frame
+                            // if automatic saving at the end is enabled
+                            // e.g. when the latest frame does not contain objects to be annotated
+                            disabled={state.frames.length === 0 ||
+                                (
+                                    !state.saveOnFinish &&
+                                    !jobInstance.annotations.hasUnsavedChanges() &&
+                                    state.frames[state.frames.length - 1] <= frame
+                                )}
+                            size='large'
+                            onClick={nextFrame}
+                            icon={<Icon component={NextIcon} />}
+                        >
+                            Next
+                        </Button>
+                    </CVATTooltip>
                 </Col>
             </Row>
         </Layout.Sider>

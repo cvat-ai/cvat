@@ -4,8 +4,13 @@
 
 @import 'base';
 
+.cvat-single-shape-workspace {
+    height: 100%;
+}
+
 .cvat-single-shape-annotation-sidebar {
-    padding: 8px;
+    padding: $grid-unit-size;
+    overflow: auto;
 
     .cvat-single-shape-annotation-sidebar-label-select,
     .cvat-single-shape-annotation-sidebar-label-type-selector {
@@ -27,8 +32,9 @@
     .cvat-single-shape-annotation-sidebar-points-count-input,
     .cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox,
     .cvat-single-shape-annotation-sidebar-navigate-empty-checkbox,
+    .cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox,
     .cvat-single-shape-annotation-sidebar-auto-save-checkbox {
-        margin-top: 8px;
+        margin-top: $grid-unit-size;
     }
 
     .cvat-single-shape-annotation-sidebar-hint {
@@ -41,6 +47,7 @@
 
     .cvat-single-shape-annotation-sidebar-navigation-block {
         margin-top: $grid-unit-size * 4;
+        padding-bottom: $grid-unit-size * 2;
 
         > div:nth-child(1) {
             display: flex;
