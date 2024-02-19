@@ -612,7 +612,11 @@ export async function findFrame(
     const offset = filters.offset || 1;
     let meta;
     if (!frameDataCache[jobID]) {
-        meta = await serverProxy.frames.getMeta('job', jobID);
+        const serverMeta = await serverProxy.frames.getMeta('job', jobID);
+        meta = {
+            ...serverMeta,
+            deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
+        };
     } else {
         meta = frameDataCache[jobID].meta;
     }
