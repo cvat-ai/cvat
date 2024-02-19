@@ -12,6 +12,9 @@ DATABASES = {
     },
 }
 
+# Disable throttling checks on test environment
+REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []
+
 _temp_dir = tempfile.TemporaryDirectory(dir=BASE_DIR, suffix="cvat")
 BASE_DIR = _temp_dir.name
 

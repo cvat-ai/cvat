@@ -11,6 +11,9 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
 
+# Disable throttling checks on test environment
+REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []
+
 # Avoid quality updates during test runs.
 # Note that DB initialization triggers server signals,
 # so quality report updates are scheduled for applicable jobs.
@@ -24,3 +27,4 @@ IMPORT_CACHE_CLEAN_DELAY = timedelta(seconds=30)
 HEALTH_CHECK = {
     'DISK_USAGE_MAX': 100,  # percent
 }
+
