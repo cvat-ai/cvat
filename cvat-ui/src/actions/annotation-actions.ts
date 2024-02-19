@@ -875,8 +875,10 @@ export function getJobAsync({
     initialFrame: number | null;
     initialFilters: object[];
     queryParameters: {
-        initialOpenGuide?: boolean;
-        initialWorkspace?: Workspace;
+        initialOpenGuide: boolean;
+        initialWorkspace: Workspace | null;
+        defaultLabel: string | null;
+        defaultPointsCount: number | null;
     }
 }): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {

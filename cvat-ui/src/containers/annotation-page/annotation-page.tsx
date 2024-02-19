@@ -64,9 +64,13 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const searchParams = new URLSearchParams(window.location.search);
     const initialFilters: object[] = [];
     const initialOpenGuide = searchParams.has('openGuide');
+
+    const parsedPointsCount = +(searchParams.get('defaultPointsCount') || 'NaN');
+    const defaultLabel = searchParams.get('defaultLabel') || null;
+    const defaultPointsCount = Number.isInteger(parsedPointsCount) && parsedPointsCount >= 1 ? parsedPointsCount : null;
     const initialWorkspace = Object.entries(Workspace).find(([key]) => (
-        key === searchParams.get('openWorkspace')?.toUpperCase()
-    ));
+        key === searchParams.get('defaultWorkspace')?.toUpperCase()
+    )) || null;
 
     const parsedFrame = +(searchParams.get('frame') || 'NaN');
     const initialFrame = Number.isInteger(parsedFrame) && parsedFrame >= 0 ? parsedFrame : null;
@@ -100,7 +104,9 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
                 initialFilters,
                 queryParameters: {
                     initialOpenGuide,
-                    ...(initialWorkspace ? { initialWorkspace: initialWorkspace[1] } : {}),
+                    defaultLabel,
+                    defaultPointsCount,
+                    ...(initialWorkspace ? { initialWorkspace: initialWorkspace[1] } : { initialWorkspace }),
                 },
             }));
         },

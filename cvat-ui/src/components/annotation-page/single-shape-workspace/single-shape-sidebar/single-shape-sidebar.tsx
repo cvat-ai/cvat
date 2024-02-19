@@ -172,12 +172,16 @@ function SingleShapeSidebar(): JSX.Element {
         frame,
         normalizedKeyMap,
         keyMap,
+        defaultLabel,
+        defaultPointsCount,
     } = useSelector((_state: CombinedState) => ({
         isCanvasReady: _state.annotation.canvas.ready,
         jobInstance: _state.annotation.job.instance as Job,
         frame: _state.annotation.player.frame.number,
         keyMap: _state.shortcuts.keyMap,
         normalizedKeyMap: _state.shortcuts.normalizedKeyMap,
+        defaultLabel: _state.annotation.job.queryParameters.defaultLabel,
+        defaultPointsCount: _state.annotation.job.queryParameters.defaultPointsCount,
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
@@ -186,9 +190,9 @@ function SingleShapeSidebar(): JSX.Element {
         saveOnFinish: true,
         navigateOnlyEmpty: true,
         pointsCountIsPredefined: true,
-        pointsCount: 1,
+        pointsCount: defaultPointsCount || 1,
         labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG),
-        label: jobInstance.labels[0] || null,
+        label: null,
         labelType: jobInstance.labels[0]?.type || LabelType.ANY,
         frames: [],
     });
@@ -236,6 +240,12 @@ function SingleShapeSidebar(): JSX.Element {
     };
 
     useEffect(() => {
+        const labelInstance = (defaultLabel ? jobInstance.labels
+            .find((_label) => _label.name === defaultLabel) : jobInstance.labels[0]);
+        if (labelInstance) {
+            dispatch(reducerActions.setActiveLabel(labelInstance));
+        }
+
         const canvas = store.getState().annotation.canvas.instance as Canvas;
         cancelCurrentCanvasOp(canvas);
         return () => {

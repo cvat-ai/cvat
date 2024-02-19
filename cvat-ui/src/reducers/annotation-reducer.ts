@@ -59,6 +59,8 @@ const defaultState: AnnotationState = {
         groundTruthInstance: null,
         queryParameters: {
             initialOpenGuide: false,
+            defaultLabel: null,
+            defaultPointsCount: null,
         },
         instance: null,
         attributes: {},
@@ -166,7 +168,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             let workspaceSelected = null;
             let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
                 defaultLabel.type : ShapeType.RECTANGLE;
-
             if (job.dimension === DimensionType.DIMENSION_2D) {
                 if (queryParameters.initialWorkspace !== Workspace.STANDARD3D) {
                     workspaceSelected = queryParameters.initialWorkspace;
@@ -198,6 +199,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     groundTruthJobFramesMeta,
                     queryParameters: {
                         initialOpenGuide: queryParameters.initialOpenGuide,
+                        defaultLabel: queryParameters.defaultLabel,
+                        defaultPointsCount: queryParameters.defaultPointsCount,
                     },
                 },
                 annotations: {
