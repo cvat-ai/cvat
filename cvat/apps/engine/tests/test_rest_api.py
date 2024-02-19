@@ -6031,8 +6031,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tags"] = tags_wo_attrs
 
-            elif annotation_format == "YOLO 1.1" or \
-                 annotation_format == "TFRecord 1.0":
+            elif annotation_format == "YOLO 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
             elif annotation_format == "COCO 1.0":
@@ -6404,8 +6403,6 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 for json in jsons:
                     coco = coco_loader.COCO(json)
                     self.assertTrue(coco.getAnnIds())
-        elif format_name == "TFRecord 1.0":
-            self.assertTrue(zipfile.is_zipfile(content))
         elif format_name == "Segmentation mask 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
 
