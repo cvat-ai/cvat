@@ -513,7 +513,7 @@ function HeaderComponent(props: Props): JSX.Element {
                         history.push('/requests');
                     }}
                 >
-                    Data processing
+                    Requests
                 </Button>
                 {isModelsPluginActive ? (
                     <Button
