@@ -1393,16 +1393,16 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
         activeControl = ShapeTypeToControl[activeShapeType];
 
+        if (canvasInstance instanceof Canvas) {
+            canvasInstance.cancel();
+        }
+
         dispatch({
             type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
             payload: {
                 activeControl,
             },
         });
-
-        if (canvasInstance instanceof Canvas) {
-            canvasInstance.cancel();
-        }
 
         const [activeLabel] = labels.filter((label: any) => label.id === activeLabelID);
         if (!activeLabel) {

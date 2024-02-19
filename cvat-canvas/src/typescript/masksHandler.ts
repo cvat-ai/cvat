@@ -627,6 +627,8 @@ export class MasksHandlerImpl implements MasksHandler {
                     enabled: true,
                     shapeType: 'mask',
                 };
+
+                this.onDrawRepeat({ enabled: true, shapeType: 'mask' });
                 this.onDrawRepeat(newDrawData);
                 return;
             }

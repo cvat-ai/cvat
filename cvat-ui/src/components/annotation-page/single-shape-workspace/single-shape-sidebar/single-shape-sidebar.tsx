@@ -157,7 +157,8 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
     return state;
 };
 
-function cancelCurrentCanvasOp(canvas: Canvas): void {
+function cancelCurrentCanvasOp(state: CombinedState): void {
+    const canvas = state.annotation.canvas.instance as Canvas;
     if (canvas.mode() !== CanvasMode.IDLE) {
         canvas.cancel();
     }
@@ -229,8 +230,6 @@ function SingleShapeSidebar(): JSX.Element {
     const canvasInitializerRef = useRef<() => void | null>(() => {});
     canvasInitializerRef.current = (): void => {
         const canvas = store.getState().annotation.canvas.instance as Canvas;
-        cancelCurrentCanvasOp(canvas);
-
         if (isCanvasReady && state.label && state.labelType !== LabelType.ANY) {
             canvas.draw({
                 enabled: true,
@@ -242,20 +241,54 @@ function SingleShapeSidebar(): JSX.Element {
     };
 
     useEffect(() => {
+        const canvas = store.getState().annotation.canvas.instance as Canvas;
+        const onDrawDone = (): void => {
+            setTimeout(() => {
+                if (state.autoNextFrame) {
+                    if (!nextFrame()) {
+                        if (state.saveOnFinish) {
+                            appDispatch(saveAnnotationsAsync());
+                        }
+                    }
+                } else {
+                    canvasInitializerRef.current();
+                }
+            }, 100);
+        };
+
+        const onCancel = (): void => {
+            // canvas.drawn should be triggered after canvas.cancel
+            // event in a usual scenario (when user drawn something)
+            // but there are some cases when only canvas.cancel is triggered (e.g. when drawn shape was not correct)
+            // in this case need to re-run drawing process
+            canvasInitializerRef.current();
+        };
+
+        (canvas as Canvas).html().addEventListener('canvas.drawn', onDrawDone);
+        (canvas as Canvas).html().addEventListener('canvas.canceled', onCancel);
+        return (() => {
+            // should be prior mount use effect to remove event handlers before final cancel() is called
+
+            (canvas as Canvas).html().removeEventListener('canvas.drawn', onDrawDone);
+            (canvas as Canvas).html().removeEventListener('canvas.canceled', onCancel);
+        });
+    }, [nextFrame, state.autoNextFrame, state.saveOnFinish]);
+
+    useEffect(() => {
         const labelInstance = (defaultLabel ? jobInstance.labels
             .find((_label) => _label.name === defaultLabel) : jobInstance.labels[0]);
         if (labelInstance) {
             dispatch(reducerActions.setActiveLabel(labelInstance));
         }
 
-        const canvas = store.getState().annotation.canvas.instance as Canvas;
-        cancelCurrentCanvasOp(canvas);
+        cancelCurrentCanvasOp(store.getState());
         return () => {
-            cancelCurrentCanvasOp(canvas);
+            cancelCurrentCanvasOp(store.getState());
         };
     }, []);
 
     useEffect(() => {
+        cancelCurrentCanvasOp(store.getState());
         canvasInitializerRef.current();
     }, [isCanvasReady, state.label, state.labelType, state.pointsCount, state.pointsCountIsPredefined]);
 
@@ -293,28 +326,6 @@ function SingleShapeSidebar(): JSX.Element {
         })();
     }, [state.navigateOnlyEmpty]);
 
-    useEffect(() => {
-        const canvas = store.getState().annotation.canvas.instance as Canvas;
-        const onDrawDone = (): void => {
-            setTimeout(() => {
-                if (state.autoNextFrame) {
-                    if (!nextFrame()) {
-                        if (state.saveOnFinish) {
-                            appDispatch(saveAnnotationsAsync());
-                        }
-                    }
-                } else {
-                    canvasInitializerRef.current();
-                }
-            }, 100);
-        };
-
-        (canvas as Canvas).html().addEventListener('canvas.drawn', onDrawDone);
-        return (() => {
-            (canvas as Canvas).html().removeEventListener('canvas.drawn', onDrawDone);
-        });
-    }, [nextFrame, state.autoNextFrame, state.saveOnFinish]);
-
     let message = '';
     if (state.labelType === LabelType.POINTS) {
         message = `${state.pointsCount === 1 ? 'one point' : `${state.pointsCount} points`}`;
@@ -342,7 +353,7 @@ function SingleShapeSidebar(): JSX.Element {
     const handlers = {
         CANCEL: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
-            canvasInitializerRef.current();
+            (store.getState().annotation.canvas.instance as Canvas).cancel();
         },
         NEXT_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
@@ -356,7 +367,6 @@ function SingleShapeSidebar(): JSX.Element {
             event?.preventDefault();
             const canvas = store.getState().annotation.canvas.instance as Canvas;
             canvas.draw({ enabled: false });
-            canvasInitializerRef.current();
         },
     };
 
