@@ -950,6 +950,7 @@ export interface RequestsState {
     initialized: boolean;
     requests: Record<string, Request>;
     count: number;
+    urls: string[];
 }
 
 export interface CombinedState {

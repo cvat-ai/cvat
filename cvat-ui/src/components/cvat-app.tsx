@@ -94,6 +94,7 @@ interface CVATAppProps {
     loadAuthActions: () => void;
     loadOrganization: () => void;
     initInvitations: () => void;
+    initRequests: () => void;
     userInitialized: boolean;
     userFetching: boolean;
     organizationFetching: boolean;
@@ -116,13 +117,15 @@ interface CVATAppProps {
     pluginComponents: PluginsState['components'];
     invitationsFetching: boolean;
     invitationsInitialized: boolean;
+    requestsFetching: boolean;
+    requestsInitialized: boolean;
 }
 
 interface CVATAppState {
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
 }
-
+let once = 0;
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
     constructor(props: CVATAppProps & RouteComponentProps) {
         super(props);
@@ -285,6 +288,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             invitationsInitialized,
             invitationsFetching,
             initInvitations,
+            requestsFetching,
+            requestsInitialized,
+            initRequests,
             history,
         } = this.props;
 
@@ -333,6 +339,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!invitationsInitialized && !invitationsFetching && history.location.pathname !== '/invitations') {
             initInvitations();
+        }
+
+        if (!requestsInitialized && !requestsFetching && history.location.pathname !== '/requests') {
+            if (once === 0) {
+                once = 1
+                initRequests();
+            }
         }
 
         if (!pluginsInitialized && !pluginsFetching) {

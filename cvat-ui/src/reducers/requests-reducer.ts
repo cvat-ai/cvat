@@ -6,12 +6,14 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { RequestsActionsTypes, RequestsActions } from 'actions/requests-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { RequestsState } from '.';
+import { RQStatus } from 'cvat-core-wrapper';
 
 const defaultState: RequestsState = {
     initialized: false,
     fetching: false,
     count: 0,
     requests: {},
+    urls: [],
 };
 
 export default function (
@@ -40,6 +42,24 @@ export default function (
                 initialized: true,
                 fetching: false,
             };
+        }
+        case RequestsActionsTypes.REQUEST_UPDATED:
+        case RequestsActionsTypes.REQUEST_FINISHED: {
+            const request = action.payload.request;
+
+            if ( request.url){
+
+                return {
+                    ...state,
+                    urls: [
+                        ...state.urls,
+                        request.rqID,
+                    ]
+                };
+            }
+            return {
+                ...state,
+            }
         }
         case RequestsActionsTypes.GET_REQUESTS_STATUS_SUCCESS:
         case RequestsActionsTypes.GET_REQUESTS_STATUS_FAILED: {

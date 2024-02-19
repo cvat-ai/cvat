@@ -23,6 +23,7 @@ import createRootReducer from 'reducers/root-reducer';
 import { activateOrganizationAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { getInvitationsAsync } from 'actions/invitations-actions';
+import { getRequestsAsync } from 'actions/requests-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
 
 createCVATStore(createRootReducer);
@@ -54,6 +55,8 @@ interface StateToProps {
     pluginComponents: PluginsState['components'];
     invitationsFetching: boolean;
     invitationsInitialized: boolean;
+    requestsFetching: boolean;
+    requestsInitialized: boolean;
 }
 
 interface DispatchToProps {
@@ -68,6 +71,7 @@ interface DispatchToProps {
     loadAuthActions: () => void;
     loadOrganization: () => void;
     initInvitations: () => void;
+    initRequests: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -79,6 +83,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
     const { organizations } = state;
     const { invitations } = state;
+    const { requests } = state;
 
     return {
         userInitialized: auth.initialized,
@@ -105,6 +110,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         isModelPluginActive: plugins.list.MODELS,
         invitationsFetching: invitations.fetching,
         invitationsInitialized: invitations.initialized,
+        requestsFetching: requests.fetching,
+        requestsInitialized: invitations.initialized,
     };
 }
 
@@ -121,6 +128,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
         loadOrganization: (): void => dispatch(activateOrganizationAsync()),
         initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
+        initRequests: (): void => dispatch(getRequestsAsync()),
     };
 }
 

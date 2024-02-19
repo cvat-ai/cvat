@@ -619,6 +619,49 @@ export default function (state = defaultState, action: AnyAction): Notifications
             }
             break;
         }
+        case RequestsActionsTypes.REQUEST_FAILED: {
+            const { request } = action.payload;
+            const resource = request.type.split(':')[-1];
+            const process = request.type.split(':')[0];
+            const { id } = request.entity;
+            if (process === 'import') {
+                const message = resource === 'annotation' ?
+                    'Annotations have been loaded to the ' +
+                `[task ${id}](/tasks/${id}) ` :
+                    `Dataset import to the [project ${id}](/projects/${id}) failed, [check details](/requests)`;
+                return {
+                    ...state,
+                    errors: {
+                        ...state.errors,
+                        importing: {
+                            ...state.errors.importing,
+                            dataset: {
+                                message,
+                                reason: new Error(' '),
+                            },
+                        },
+                    },
+                };
+            }
+            if (process === 'export') {
+                const message = 'Export for the  ' +
+                `[project ${id}](/projects/${id}) failed, [check details](/requests)`;
+                return {
+                    ...state,
+                    errors: {
+                        ...state.errors,
+                        exporting: {
+                            ...state.errors.exporting,
+                            dataset: {
+                                message,
+                                reason: new Error(' '),
+                            },
+                        },
+                    },
+                };
+            }
+            break;
+        }
         case ImportActionTypes.IMPORT_DATASET_FAILED: {
             const { instance, resource } = action.payload;
             const message = resource === 'annotation' ?

@@ -94,7 +94,7 @@ _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 rq_percent = 0
 
 def get_job_info(job):
-    status = job.meta.get('status', 'default value')
+    status = job.meta.get('status', 'In progress')
     state = job.get_status()
     t = job.id.split('-')[0] if job.id.split('-')[0] != 'import:project' else 'import:dataset'
     return {
@@ -3231,13 +3231,15 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
 
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-@extend_schema(tags=['requests'],
-               parameters=[
+class DataProcessing(viewsets.GenericViewSet):
+
+    @extend_schema(
+        tags=['requests'],
+        parameters=[
                  OpenApiParameter('rq_id', description='rq id',
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-               ])
-
-class DataProcessing(viewsets.GenericViewSet):
+               ],
+    )
     @action(detail=False, methods=['GET'],
         permission_classes=[]
     )
@@ -3289,8 +3291,7 @@ class DataProcessing(viewsets.GenericViewSet):
                         "state": "Finished",
                         "message": "Done",
                         "percent": 100,
-                        "url": "http://localhost:3000/api/"
-                        },
+                    },
                 status=status.HTTP_200_OK
             )
         return Response(
@@ -3301,6 +3302,10 @@ class DataProcessing(viewsets.GenericViewSet):
                 status=status.HTTP_200_OK
             )
 
+    @extend_schema(
+        tags=['requests'],
+        parameters=[],
+    )
     def list(self,request):
         all_user_jobs = get_all_jobs(request)
         data = []
@@ -3310,7 +3315,7 @@ class DataProcessing(viewsets.GenericViewSet):
                 data=[
                     {
                         "state": "Failed",
-                        "message": "Something happened",
+                        "message": "cvat.apps.dataset_manager.bindings.CvatImportError: Failed to find dataset at '/home/django/data/tasks/499394/tmp/tmpkr0hn_m9'",
                         "percent": 0,
                         "rq_id": "rq1",
                         "type": "export:dataset",
@@ -3361,6 +3366,10 @@ class DataProcessing(viewsets.GenericViewSet):
                 status=status.HTTP_200_OK
             )
 
+    @extend_schema(
+        tags=['requests'],
+        exclude=True,
+    )
     @action(detail=False, methods=['GET'])
     def clear(self,request):
         all_user_jobs = get_all_jobs(request)

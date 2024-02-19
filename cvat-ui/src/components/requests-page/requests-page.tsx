@@ -35,11 +35,12 @@ export default function RequestsPageComponent(): JSX.Element {
     const history = useHistory();
     const [isMounted, setIsMounted] = useState(false);
     const requests = useSelector((state: CombinedState) => state.requests.requests);
+    const urls = useSelector((state: CombinedState) => state.requests.urls);
     const count = useSelector((state: CombinedState) => state.requests.count);
-    const content = Object.values(requests).map((r) => <RequestCard request={r} />);
+    const content = Object.values(requests).map((r) => <RequestCard request={r} urls={urls} />);
 
     useEffect(() => {
-        dispatch(getRequestsAsync());
+        dispatch(getRequestsAsync(false));
         setIsMounted(true);
     }, []);
 

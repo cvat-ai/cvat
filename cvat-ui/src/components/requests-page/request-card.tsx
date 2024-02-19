@@ -18,14 +18,16 @@ const { Panel } = Collapse;
 
 export interface Props {
     request: Request;
+    urls: string[];
 }
 
 export default function RequestCard(props: Props): JSX.Element {
-    const { request } = props;
+    const { request, urls } = props;
     let textType: 'success' | 'danger' = 'success';
     if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(request.status)) {
         textType = 'danger';
     }
+    console.log(urls);
     return (
         <Row justify='center' align='middle'>
             <Col className='cvat-requests-list' {...dimensions}>
