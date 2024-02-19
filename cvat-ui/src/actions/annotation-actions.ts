@@ -15,7 +15,7 @@ import {
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
 } from 'cvat-core-wrapper';
-import logger, { LogType } from 'cvat-logger';
+import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
 import {
@@ -471,7 +471,7 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
             });
 
             const copy = getCopyFromState(objectState);
-            await sessionInstance.logger.log(LogType.propagateObject, { count: Math.abs(to - from) });
+            await sessionInstance.logger.log(EventScope.propagateObject, { count: Math.abs(to - from) });
             const states = [];
             const sign = Math.sign(to - from);
             for (let frame = from + sign; sign > 0 ? frame <= to : frame >= to; frame += sign) {
@@ -500,7 +500,7 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
 export function removeObjectAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, objectState: any, force: boolean): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await sessionInstance.logger.log(LogType.deleteObject, { count: 1 });
+            await sessionInstance.logger.log(EventScope.deleteObject, { count: 1 });
             const { frame } = receiveAnnotationsParameters();
 
             const removed = await objectState.delete(frame, force);
@@ -540,7 +540,7 @@ export function removeObject(objectState: any, force: boolean): AnyAction {
 
 export function copyShape(objectState: any): AnyAction {
     const job = getStore().getState().annotation.job.instance;
-    job?.logger.log(LogType.copyObject, { count: 1 });
+    job?.logger.log(EventScope.copyObject, { count: 1 });
 
     return {
         type: AnnotationActionTypes.COPY_SHAPE,
@@ -610,7 +610,7 @@ export function confirmCanvasReadyAsync(): ThunkAction {
         try {
             const state: CombinedState = getState();
             const { instance: job } = state.annotation.job;
-            const { changeFrameLog } = state.annotation.player.frame;
+            const { changeFrameEvent } = state.annotation.player.frame;
             const chunks = await job.frames.cachedChunks() as number[];
             const { startFrame, stopFrame, dataChunkSize } = job;
 
@@ -630,7 +630,7 @@ export function confirmCanvasReadyAsync(): ThunkAction {
             }, []).map(([start, end]) => `${start}:${end}`).join(';');
 
             dispatch(confirmCanvasReady(ranges));
-            await changeFrameLog?.close();
+            await changeFrameEvent?.close();
         } catch (error) {
             // even if error happens here, do not need to notify the users
             dispatch(confirmCanvasReady());
@@ -676,7 +676,7 @@ export function changeFrameAsync(
                 payload: {},
             });
 
-            const changeFrameLog = await job.logger.log(LogType.changeFrame, {
+            const changeFrameEvent = await job.logger.log(EventScope.changeFrame, {
                 from: frame,
                 to: toFrame,
                 step: toFrame - frame,
@@ -720,7 +720,7 @@ export function changeFrameAsync(
                     curZ: maxZ,
                     changeTime: currentTime + delay,
                     delay,
-                    changeFrameLog,
+                    changeFrameEvent,
                 },
             });
         } catch (error) {
@@ -747,7 +747,7 @@ export function undoActionAsync(): ThunkAction {
             const [undo] = state.annotation.annotations.history.undo.slice(-1);
             const undoOnFrame = undo[1];
             const undoLog = await jobInstance.logger.log(
-                LogType.undoAction,
+                EventScope.undoAction,
                 {
                     name: undo[0],
                     frame: undo[1],
@@ -786,7 +786,7 @@ export function redoActionAsync(): ThunkAction {
             const [redo] = state.annotation.annotations.history.redo.slice(-1);
             const redoOnFrame = redo[1];
             const redoLog = await jobInstance.logger.log(
-                LogType.redoAction,
+                EventScope.redoAction,
                 {
                     name: redo[0],
                     frame: redo[1],
@@ -835,7 +835,7 @@ export function rotateCurrentFrame(rotation: Rotation): AnyAction {
 
     const frameAngle = (frameAngles[frameNumber - startFrame] + (rotation === Rotation.CLOCKWISE90 ? 90 : 270)) % 360;
 
-    job.logger.log(LogType.rotateImage, { angle: frameAngle });
+    job.logger.log(EventScope.rotateImage, { angle: frameAngle });
 
     return {
         type: AnnotationActionTypes.ROTATE_FRAME,
@@ -903,7 +903,7 @@ export function getJobAsync({
             }
 
             const loadJobEvent = await logger.log(
-                LogType.loadJob,
+                EventScope.loadJob,
                 {
                     task_id: taskID,
                     job_id: jobID,
@@ -951,9 +951,9 @@ export function getJobAsync({
 
             let conflicts: QualityConflict[] = [];
             if (gtJob) {
-                const [report] = await cvat.analytics.quality.reports({ jobId: job.id, target: 'job' });
+                const [report] = await cvat.analytics.quality.reports({ jobID: job.id, target: 'job' });
                 if (report) {
-                    conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
+                    conflicts = await cvat.analytics.quality.conflicts({ reportID: report.id });
                 }
             }
 
@@ -1004,7 +1004,7 @@ export function saveAnnotationsAsync(afterSave?: () => void): ThunkAction {
         });
 
         try {
-            const saveJobEvent = await jobInstance.logger.log(LogType.saveJob, {}, true);
+            const saveJobEvent = await jobInstance.logger.log(EventScope.saveJob, {}, true);
 
             await jobInstance.frames.save();
             await jobInstance.annotations.save();

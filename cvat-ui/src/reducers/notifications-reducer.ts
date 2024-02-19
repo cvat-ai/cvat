@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -26,7 +26,6 @@ import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
 import { ServerAPIActionTypes } from 'actions/server-actions';
 
-import { AnalyticsActionsTypes } from 'actions/analytics-actions';
 import { NotificationsState } from '.';
 
 const defaultState: NotificationsState = {
@@ -1831,57 +1830,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: !(action.payload.error instanceof ServerError),
                             className: 'cvat-notification-notice-delete-webhook-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case AnalyticsActionsTypes.GET_QUALITY_REPORTS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    analytics: {
-                        ...state.errors.analytics,
-                        fetching: {
-                            message: 'Could not fetch quality reports',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-get-quality-reports-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case AnalyticsActionsTypes.GET_QUALITY_SETTINGS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    analytics: {
-                        ...state.errors.analytics,
-                        fetchingSettings: {
-                            message: 'Could not fetch quality settings',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-get-quality-settings-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case AnalyticsActionsTypes.UPDATE_QUALITY_SETTINGS_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    analytics: {
-                        ...state.errors.analytics,
-                        updatingSettings: {
-                            message: 'Could not update quality settings',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-update-quality-settings-failed',
                         },
                     },
                 },

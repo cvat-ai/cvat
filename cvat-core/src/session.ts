@@ -261,11 +261,11 @@ function buildDuplicatedAPI(prototype) {
         }),
         logger: Object.freeze({
             value: {
-                async log(logType, payload = {}, wait = false) {
+                async log(scope, payload = {}, wait = false) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.logger.log,
-                        logType,
+                        scope,
                         payload,
                         wait,
                     );

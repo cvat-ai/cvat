@@ -6521,14 +6521,6 @@ components:
             type: string
             maxLength: 1024
           default: []
-        provider_type:
-          $ref: '#/components/schemas/ProviderTypeEnum'
-        resource:
-          type: string
-          maxLength: 222
-        display_name:
-          type: string
-          maxLength: 63
         created_date:
           type: string
           format: date-time
@@ -6537,6 +6529,14 @@ components:
           type: string
           format: date-time
           readOnly: true
+        provider_type:
+          $ref: '#/components/schemas/ProviderTypeEnum'
+        resource:
+          type: string
+          maxLength: 222
+        display_name:
+          type: string
+          maxLength: 63
         credentials_type:
           $ref: '#/components/schemas/CredentialsTypeEnum'
         specific_attributes:

@@ -8,7 +8,7 @@ import { ArgumentError } from './exceptions';
 import { HistoryActions, JobType, RQStatus } from './enums';
 import { Storage } from './storage';
 import { Task as TaskClass, Job as JobClass } from './session';
-import loggerStorage from './logger-storage';
+import logger from './logger';
 import serverProxy from './server-proxy';
 import {
     getFrame,
@@ -356,9 +356,9 @@ export function implementJob(Job) {
         return getHistory(this).get();
     };
 
-    Job.prototype.logger.log.implementation = async function (logType, payload, wait) {
-        const result = await loggerStorage.log(
-            logType,
+    Job.prototype.logger.log.implementation = async function (scope, payload, wait) {
+        const result = await logger.log(
+            scope,
             {
                 ...payload,
                 project_id: this.projectId,
@@ -808,9 +808,9 @@ export function implementTask(Task) {
         return getHistory(this).get();
     };
 
-    Task.prototype.logger.log.implementation = async function (logType, payload, wait) {
-        const result = await loggerStorage.log(
-            logType,
+    Task.prototype.logger.log.implementation = async function (scope, payload, wait) {
+        const result = await logger.log(
+            scope,
             {
                 ...payload,
                 project_id: this.projectId,
