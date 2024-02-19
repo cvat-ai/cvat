@@ -226,7 +226,7 @@ function SingleShapeSidebar(): JSX.Element {
         return false;
     }, [state.frames, frame]);
 
-    const canvasInitializerRef = useRef<() => void | null>();
+    const canvasInitializerRef = useRef<() => void | null>(() => {});
     canvasInitializerRef.current = (): void => {
         const canvas = store.getState().annotation.canvas.instance as Canvas;
         cancelCurrentCanvasOp(canvas);
@@ -256,7 +256,7 @@ function SingleShapeSidebar(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        (canvasInitializerRef.current || (() => {}))();
+        canvasInitializerRef.current();
     }, [isCanvasReady, state.label, state.labelType, state.pointsCount, state.pointsCountIsPredefined]);
 
     useEffect(() => {
@@ -303,7 +303,7 @@ function SingleShapeSidebar(): JSX.Element {
                             appDispatch(saveAnnotationsAsync());
                         }
                     }
-                } else if (canvasInitializerRef?.current) {
+                } else {
                     canvasInitializerRef.current();
                 }
             }, 100);
@@ -342,7 +342,7 @@ function SingleShapeSidebar(): JSX.Element {
     const handlers = {
         CANCEL: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
-            (canvasInitializerRef.current || (() => {}))();
+            canvasInitializerRef.current();
         },
         NEXT_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
@@ -356,7 +356,7 @@ function SingleShapeSidebar(): JSX.Element {
             event?.preventDefault();
             const canvas = store.getState().annotation.canvas.instance as Canvas;
             canvas.draw({ enabled: false });
-            (canvasInitializerRef.current || (() => {}))();
+            canvasInitializerRef.current();
         },
     };
 
