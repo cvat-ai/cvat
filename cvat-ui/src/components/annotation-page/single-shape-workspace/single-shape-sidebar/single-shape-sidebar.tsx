@@ -421,19 +421,20 @@ function SingleShapeSidebar(): JSX.Element {
                                         <Text strong>{` ${normalizedKeyMap.UNDO} `}</Text>
                                         <Text>to undo a created object</Text>
                                     </li>
+                                    { (!isPolylabel || !state.pointsCountIsPredefined || state.pointsCount > 1) && (
+                                        <li>
+                                            <Text>Press</Text>
+                                            <Text strong>{` ${normalizedKeyMap.CANCEL} `}</Text>
+                                            <Text>to reset drawing process</Text>
+                                        </li>
+                                    ) }
+
                                     { (isPolylabel && (!state.pointsCountIsPredefined || state.pointsCount > 1)) && (
-                                        <>
-                                            <li>
-                                                <Text>Press</Text>
-                                                <Text strong>{` ${normalizedKeyMap.CANCEL} `}</Text>
-                                                <Text>to reset drawing process</Text>
-                                            </li>
-                                            <li>
-                                                <Text>Press</Text>
-                                                <Text strong>{` ${normalizedKeyMap.SWITCH_DRAW_MODE} `}</Text>
-                                                <Text>to finish drawing process</Text>
-                                            </li>
-                                        </>
+                                        <li>
+                                            <Text>Press</Text>
+                                            <Text strong>{` ${normalizedKeyMap.SWITCH_DRAW_MODE} `}</Text>
+                                            <Text>to finish drawing process</Text>
+                                        </li>
                                     ) }
                                 </ul>
                             )}
