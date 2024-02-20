@@ -54,6 +54,12 @@
 
     .cvat-single-shape-annotation-sidebar-progress {
         margin-bottom: $grid-unit-size;
+        text-align: center;
+
+        .ant-progress-outer {
+            margin-right: 0;
+            padding-right: 0;
+        }
     }
 
     .cvat-single-shape-annotation-sidebar-navigation-block {

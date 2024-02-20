@@ -374,9 +374,8 @@ function SingleShapeSidebar(): JSX.Element {
     };
 
     const isPolylabel = [LabelType.POINTS, LabelType.POLYGON, LabelType.POLYLINE].includes(state.labelType);
-    const progress = Math.round((state.frames.length ?
-        ((state.frames.indexOf(frame) + 1) * 100) / (state.frames.length || 1) : 0
-    ));
+    const imageIndex = state.frames.indexOf(frame) + 1;
+    const progress = Math.round((state.frames.length ? (imageIndex * 100) / (state.frames.length || 1) : 0));
     return (
         <Layout.Sider {...siderProps}>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
@@ -407,10 +406,10 @@ function SingleShapeSidebar(): JSX.Element {
                             )}
                         />
                         <Progress
-                            showInfo={false}
                             percent={progress}
                             status='active'
                             className='cvat-single-shape-annotation-sidebar-progress'
+                            format={() => `${imageIndex} of ${state.frames.length || 1}`}
                         />
                         <Alert
                             type='info'
