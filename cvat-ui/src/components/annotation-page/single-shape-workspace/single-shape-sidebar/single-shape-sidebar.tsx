@@ -16,6 +16,7 @@ import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Alert from 'antd/lib/alert';
+import Progress from 'antd/lib/progress';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons/lib/components/Icon';
 
@@ -373,6 +374,9 @@ function SingleShapeSidebar(): JSX.Element {
     };
 
     const isPolylabel = [LabelType.POINTS, LabelType.POLYGON, LabelType.POLYLINE].includes(state.labelType);
+    const progress = Math.round((state.frames.length ?
+        ((state.frames.indexOf(frame) + 1) * 100) / (state.frames.length || 1) : 0
+    ));
     return (
         <Layout.Sider {...siderProps}>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
@@ -401,6 +405,12 @@ function SingleShapeSidebar(): JSX.Element {
                                     <Text strong>{` ${message} `}</Text>
                                 </>
                             )}
+                        />
+                        <Progress
+                            showInfo={false}
+                            percent={progress}
+                            status='active'
+                            className='cvat-single-shape-annotation-sidebar-progress'
                         />
                         <Alert
                             type='info'
