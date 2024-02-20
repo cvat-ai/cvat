@@ -388,8 +388,11 @@ export class DrawHandlerImpl implements DrawHandler {
             }
             // Clear drawing
             this.drawInstance.draw('stop');
-        } else if (this.drawInstance && this.drawData.shapeType === 'ellipse' && !this.drawData.initialState) {
-            this.drawInstance.fire('drawstop');
+        } else {
+            this.onDrawDone(null);
+            if (this.drawInstance && this.drawData.shapeType === 'ellipse' && !this.drawData.initialState) {
+                this.drawInstance.fire('drawstop');
+            }
         }
 
         if (this.pointsGroup) {
