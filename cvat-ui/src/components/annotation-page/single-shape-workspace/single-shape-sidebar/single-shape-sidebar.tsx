@@ -198,6 +198,7 @@ function SingleShapeSidebar(): JSX.Element {
         frames: [],
     });
 
+    const savingRef = useRef(false);
     const nextFrame = useCallback((): boolean => {
         const next = state.frames.find((_frame) => _frame > frame);
         if (typeof next === 'number') {
@@ -205,12 +206,15 @@ function SingleShapeSidebar(): JSX.Element {
             return true;
         }
 
-        if (state.saveOnFinish && jobInstance.annotations.hasUnsavedChanges()) {
+        if (state.saveOnFinish && jobInstance.annotations.hasUnsavedChanges() && !savingRef.current) {
             // if the latest image does not have objects to be annotated and user clicks "Next"
             // we should save the job if there are unsaved changes
+            savingRef.current = true;
             appDispatch(saveAnnotationsAsync()).then(() => {
                 // update state to re-render component after the job saved unsaved changes
                 dispatch(reducerActions.setFrames([...state.frames]));
+            }).finally(() => {
+                savingRef.current = false;
             });
         }
 
@@ -245,11 +249,7 @@ function SingleShapeSidebar(): JSX.Element {
         const onDrawDone = (): void => {
             setTimeout(() => {
                 if (state.autoNextFrame) {
-                    if (!nextFrame()) {
-                        if (state.saveOnFinish) {
-                            appDispatch(saveAnnotationsAsync());
-                        }
-                    }
+                    nextFrame();
                 } else {
                     canvasInitializerRef.current();
                 }
@@ -372,6 +372,7 @@ function SingleShapeSidebar(): JSX.Element {
         },
     };
 
+    const isPolylabel = [LabelType.POINTS, LabelType.POLYGON, LabelType.POLYLINE].includes(state.labelType);
     return (
         <Layout.Sider {...siderProps}>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
@@ -420,16 +421,20 @@ function SingleShapeSidebar(): JSX.Element {
                                         <Text strong>{` ${normalizedKeyMap.UNDO} `}</Text>
                                         <Text>to undo a created object</Text>
                                     </li>
-                                    <li>
-                                        <Text>Press</Text>
-                                        <Text strong>{` ${normalizedKeyMap.CANCEL} `}</Text>
-                                        <Text>to reset drawing process</Text>
-                                    </li>
-                                    <li>
-                                        <Text>Press</Text>
-                                        <Text strong>{` ${normalizedKeyMap.SWITCH_DRAW_MODE} `}</Text>
-                                        <Text>to finish drawing process</Text>
-                                    </li>
+                                    { (isPolylabel && (!state.pointsCountIsPredefined || state.pointsCount > 1)) && (
+                                        <>
+                                            <li>
+                                                <Text>Press</Text>
+                                                <Text strong>{` ${normalizedKeyMap.CANCEL} `}</Text>
+                                                <Text>to reset drawing process</Text>
+                                            </li>
+                                            <li>
+                                                <Text>Press</Text>
+                                                <Text strong>{` ${normalizedKeyMap.SWITCH_DRAW_MODE} `}</Text>
+                                                <Text>to finish drawing process</Text>
+                                            </li>
+                                        </>
+                                    ) }
                                 </ul>
                             )}
                         />
@@ -482,6 +487,7 @@ function SingleShapeSidebar(): JSX.Element {
                     <Checkbox
                         checked={state.autoNextFrame}
                         onChange={(): void => {
+                            (window.document.activeElement as HTMLInputElement)?.blur();
                             dispatch(reducerActions.switchAutoNextFrame());
                         }}
                     >
@@ -494,6 +500,7 @@ function SingleShapeSidebar(): JSX.Element {
                     <Checkbox
                         checked={state.saveOnFinish}
                         onChange={(): void => {
+                            (window.document.activeElement as HTMLInputElement)?.blur();
                             dispatch(reducerActions.switchAutoSaveOnFinish());
                         }}
                     >
@@ -506,6 +513,7 @@ function SingleShapeSidebar(): JSX.Element {
                     <Checkbox
                         checked={state.navigateOnlyEmpty}
                         onChange={(): void => {
+                            (window.document.activeElement as HTMLInputElement)?.blur();
                             dispatch(reducerActions.switchNavigateEmptyOnly());
                         }}
                     >
@@ -513,43 +521,44 @@ function SingleShapeSidebar(): JSX.Element {
                     </Checkbox>
                 </Col>
             </Row>
-            <Row className='cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox'>
-                <Col>
-                    <Checkbox
-                        checked={state.pointsCountIsPredefined}
-                        onChange={(): void => {
-                            dispatch(reducerActions.switchCountOfPointsIsPredefined());
-                        }}
-                    >
-                        Predefined number of points
-                    </Checkbox>
-                </Col>
-            </Row>
-            { state.label &&
-                [LabelType.POLYGON, LabelType.POLYLINE, LabelType.POINTS].includes(state.labelType) &&
-                state.pointsCountIsPredefined ? (
-                    <>
-                        <Row justify='start' className='cvat-single-shape-annotation-sidebar-points-count'>
-                            <Col>
-                                <Text strong>Number of points</Text>
-                            </Col>
-                        </Row>
-                        <Row justify='start' className='cvat-single-shape-annotation-sidebar-points-count-input'>
-                            <Col>
-                                <InputNumber
-                                    value={state.pointsCount}
-                                    min={1}
-                                    step={1}
-                                    onChange={(value: number | null) => {
-                                        if (value !== null) {
-                                            dispatch(reducerActions.setPointsCount(value));
-                                        }
-                                    }}
-                                />
-                            </Col>
-                        </Row>
-                    </>
-                ) : null }
+            { isPolylabel && (
+                <Row className='cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox'>
+                    <Col>
+                        <Checkbox
+                            checked={state.pointsCountIsPredefined}
+                            onChange={(): void => {
+                                (window.document.activeElement as HTMLInputElement)?.blur();
+                                dispatch(reducerActions.switchCountOfPointsIsPredefined());
+                            }}
+                        >
+                            Predefined number of points
+                        </Checkbox>
+                    </Col>
+                </Row>
+            )}
+            { isPolylabel && state.pointsCountIsPredefined ? (
+                <>
+                    <Row justify='start' className='cvat-single-shape-annotation-sidebar-points-count'>
+                        <Col>
+                            <Text strong>Number of points</Text>
+                        </Col>
+                    </Row>
+                    <Row justify='start' className='cvat-single-shape-annotation-sidebar-points-count-input'>
+                        <Col>
+                            <InputNumber
+                                value={state.pointsCount}
+                                min={1}
+                                step={1}
+                                onChange={(value: number | null) => {
+                                    if (value !== null) {
+                                        dispatch(reducerActions.setPointsCount(value));
+                                    }
+                                }}
+                            />
+                        </Col>
+                    </Row>
+                </>
+            ) : null }
             <Row className='cvat-single-shape-annotation-sidebar-navigation-block'>
                 <Col span={24}>
                     <CVATTooltip title={`Previous frame ${normalizedKeyMap.PREV_FRAME}`}>

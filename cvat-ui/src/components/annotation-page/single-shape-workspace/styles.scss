@@ -37,6 +37,13 @@
         margin-top: $grid-unit-size;
     }
 
+    .cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox,
+    .cvat-single-shape-annotation-sidebar-auto-save-checkbox,
+    .cvat-single-shape-annotation-sidebar-navigate-empty-checkbox,
+    .cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox {
+        user-select: none;
+    }
+
     .cvat-single-shape-annotation-sidebar-hint {
         row-gap: 0;
         text-align: center;
