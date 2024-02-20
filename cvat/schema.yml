@@ -4402,12 +4402,6 @@ paths:
           - yaml
       tags:
       - schema
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
       responses:
         '200':
           content:
@@ -4430,12 +4424,6 @@ paths:
       summary: Method provides basic CVAT information
       tags:
       - server
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
       responses:
         '200':
           content:
