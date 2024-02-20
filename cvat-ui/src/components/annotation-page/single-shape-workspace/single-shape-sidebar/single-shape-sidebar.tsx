@@ -230,7 +230,7 @@ function SingleShapeSidebar(): JSX.Element {
     const canvasInitializerRef = useRef<() => void | null>(() => {});
     canvasInitializerRef.current = (): void => {
         const canvas = store.getState().annotation.canvas.instance as Canvas;
-        if (isCanvasReady && state.label && state.labelType !== LabelType.ANY) {
+        if (isCanvasReady && canvas.mode() !== CanvasMode.DRAW && state.label && state.labelType !== LabelType.ANY) {
             canvas.draw({
                 enabled: true,
                 shapeType: state.labelType,
@@ -261,13 +261,15 @@ function SingleShapeSidebar(): JSX.Element {
             // event in a usual scenario (when user drawn something)
             // but there are some cases when only canvas.cancel is triggered (e.g. when drawn shape was not correct)
             // in this case need to re-run drawing process
-            canvasInitializerRef.current();
+            setTimeout(() => {
+                canvasInitializerRef.current();
+            });
         };
 
         (canvas as Canvas).html().addEventListener('canvas.drawn', onDrawDone);
         (canvas as Canvas).html().addEventListener('canvas.canceled', onCancel);
         return (() => {
-            // should be prior mount use effect to remove event handlers before final cancel() is called
+            // should stay prior mount useEffect to remove event handlers before final cancel() is called
 
             (canvas as Canvas).html().removeEventListener('canvas.drawn', onDrawDone);
             (canvas as Canvas).html().removeEventListener('canvas.canceled', onCancel);

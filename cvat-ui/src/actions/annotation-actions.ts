@@ -1444,16 +1444,16 @@ export function redrawShapeAsync(): ThunkAction {
             const [state] = states.filter((_state: any): boolean => _state.clientID === activatedStateID);
             if (state && state.objectType !== ObjectType.TAG) {
                 const activeControl = ShapeTypeToControl[state.shapeType as ShapeType] || ActiveControl.CURSOR;
+                if (canvasInstance instanceof Canvas) {
+                    canvasInstance.cancel();
+                }
+
                 dispatch({
                     type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
                     payload: {
                         activeControl,
                     },
                 });
-
-                if (canvasInstance instanceof Canvas) {
-                    canvasInstance.cancel();
-                }
 
                 canvasInstance.draw({
                     skeletonSVG: state.shapeType === ShapeType.SKELETON ? state.label.structure.svg : undefined,
