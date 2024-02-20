@@ -1663,8 +1663,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (data.enabled) {
                 this.canvas.style.cursor = 'copy';
                 this.mode = Mode.MERGE;
-                this.mergeHandler.merge(data);
             }
+            this.mergeHandler.merge(data);
         } else if (reason === UpdateReasons.SPLIT) {
             const data: SplitData = this.controller.splitData;
             if (data.enabled) {
