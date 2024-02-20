@@ -48,7 +48,6 @@
         row-gap: 0;
         text-align: center;
         font-size: large;
-        margin-top: $grid-unit-size * 5;
         margin-bottom: $grid-unit-size;
     }
 
@@ -59,6 +58,12 @@
         .ant-progress-outer {
             margin-right: 0;
             padding-right: 0;
+        }
+    }
+
+    .cvat-single-shape-annotation-sidebar-ux-hints {
+        ul {
+            padding-left: $grid-unit-size * 2;
         }
     }
 

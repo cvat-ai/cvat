@@ -17,7 +17,6 @@ import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Alert from 'antd/lib/alert';
 import Progress from 'antd/lib/progress';
-import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import Icon from '@ant-design/icons/lib/components/Icon';
 
 import { NextIcon, PreviousIcon } from 'icons';
@@ -32,7 +31,6 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 enum ReducerActionType {
-    SWITCH_SIDEBAR_COLLAPSED = 'SWITCH_SIDEBAR_COLLAPSED',
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
     SWITCH_AUTOSAVE_ON_FINISH = 'SWITCH_AUTOSAVE_ON_FINISH',
     SWITCH_NAVIGATE_EMPTY_ONLY = 'SWITCH_NAVIGATE_EMPTY_ONLY',
@@ -43,9 +41,6 @@ enum ReducerActionType {
 }
 
 export const reducerActions = {
-    switchSidebarCollapsed: () => (
-        createAction(ReducerActionType.SWITCH_SIDEBAR_COLLAPSED)
-    ),
     switchAutoNextFrame: () => (
         createAction(ReducerActionType.SWITCH_AUTO_NEXT_FRAME)
     ),
@@ -73,7 +68,6 @@ export const reducerActions = {
 };
 
 interface State {
-    sidebarCollabased: boolean;
     autoNextFrame: boolean;
     saveOnFinish: boolean;
     navigateOnlyEmpty: boolean;
@@ -96,13 +90,6 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
 
         return minimalPoints;
     };
-
-    if (action.type === ReducerActionType.SWITCH_SIDEBAR_COLLAPSED) {
-        return {
-            ...state,
-            sidebarCollabased: !state.sidebarCollabased,
-        };
-    }
 
     if (action.type === ReducerActionType.SWITCH_AUTO_NEXT_FRAME) {
         return {
@@ -187,7 +174,6 @@ function SingleShapeSidebar(): JSX.Element {
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
-        sidebarCollabased: false,
         autoNextFrame: true,
         saveOnFinish: true,
         navigateOnlyEmpty: true,
@@ -344,7 +330,6 @@ function SingleShapeSidebar(): JSX.Element {
         reverseArrow: true,
         collapsible: true,
         trigger: null,
-        collapsed: state.sidebarCollabased,
     };
 
     const subKeyMap = {
@@ -379,17 +364,6 @@ function SingleShapeSidebar(): JSX.Element {
     return (
         <Layout.Sider {...siderProps}>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
-            {/* eslint-disable-next-line */}
-            <span
-                className={`cvat-objects-sidebar-sider
-                    ant-layout-sider-zero-width-trigger
-                    ant-layout-sider-zero-width-trigger-left`}
-                onClick={() => {
-                    dispatch(reducerActions.switchSidebarCollapsed());
-                }}
-            >
-                {state.sidebarCollabased ? <MenuFoldOutlined title='Show' /> : <MenuUnfoldOutlined title='Hide' />}
-            </span>
             { state.label !== null && state.labelType !== LabelType.ANY && (
                 <Row>
                     <Col>
@@ -413,12 +387,13 @@ function SingleShapeSidebar(): JSX.Element {
                         />
                         <Alert
                             type='info'
+                            className='cvat-single-shape-annotation-sidebar-ux-hints'
                             message={(
                                 <ul>
                                     <li>
                                         <Text>Click</Text>
                                         <Text strong>{' Next '}</Text>
-                                        <Text>if already annotated or there is nothing to be annotated</Text>
+                                        <Text>if there is nothing to annotate</Text>
                                     </li>
                                     <li>
                                         <Text>Hold</Text>
