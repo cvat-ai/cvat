@@ -19,7 +19,7 @@ import Alert from 'antd/lib/alert';
 import Progress from 'antd/lib/progress';
 import Icon from '@ant-design/icons/lib/components/Icon';
 
-import { NextIcon, PreviousIcon } from 'icons';
+import { NextIcon, PreviousIcon, SaveIcon } from 'icons';
 import { CombinedState } from 'reducers';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Job, Label, LabelType } from 'cvat-core-wrapper';
@@ -358,9 +358,20 @@ function SingleShapeSidebar(): JSX.Element {
         },
     };
 
+    const isFirstFrame = state.frames[0] >= frame;
+    const isLastFrame = state.frames[state.frames.length - 1] <= frame;
+    const isPreviousDisabled = state.frames.length === 0 || isFirstFrame;
+    const isNextDisabled = state.frames.length === 0 || (
+        isLastFrame && (
+            !state.saveOnFinish || (state.saveOnFinish &&
+                !jobInstance.annotations.hasUnsavedChanges()
+            )
+        )
+    );
     const isPolylabel = [LabelType.POINTS, LabelType.POLYGON, LabelType.POLYLINE].includes(state.labelType);
     const imageIndex = state.frames.indexOf(frame) + 1;
     const progress = Math.round((state.frames.length ? (imageIndex * 100) / (state.frames.length || 1) : 0));
+
     return (
         <Layout.Sider {...siderProps}>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
@@ -548,7 +559,7 @@ function SingleShapeSidebar(): JSX.Element {
                 <Col span={24}>
                     <CVATTooltip title={`Previous frame ${normalizedKeyMap.PREV_FRAME}`}>
                         <Button
-                            disabled={state.frames.length === 0 || state.frames[0] >= frame}
+                            disabled={isPreviousDisabled}
                             size='large'
                             onClick={prevFrame}
                             icon={<Icon component={PreviousIcon} />}
@@ -556,23 +567,17 @@ function SingleShapeSidebar(): JSX.Element {
                             Previous
                         </Button>
                     </CVATTooltip>
-                    <CVATTooltip title={`Next frame ${normalizedKeyMap.NEXT_FRAME}`}>
+                    <CVATTooltip title={isLastFrame && !isNextDisabled ? '' : `Next frame ${normalizedKeyMap.NEXT_FRAME}`}>
                         <Button
                             // allow clicking the button even if this is latest frame
                             // if automatic saving at the end is enabled
                             // e.g. when the latest frame does not contain objects to be annotated
-                            disabled={state.frames.length === 0 || (
-                                state.frames[state.frames.length - 1] <= frame && (
-                                    !state.saveOnFinish || (state.saveOnFinish &&
-                                        !jobInstance.annotations.hasUnsavedChanges()
-                                    )
-                                )
-                            )}
+                            disabled={isNextDisabled}
                             size='large'
                             onClick={nextFrame}
-                            icon={<Icon component={NextIcon} />}
+                            icon={<Icon component={isLastFrame && !isNextDisabled ? SaveIcon : NextIcon} />}
                         >
-                            Next
+                            { isLastFrame && !isNextDisabled ? 'Save' : 'Next' }
                         </Button>
                     </CVATTooltip>
                 </Col>
