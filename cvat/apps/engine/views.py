@@ -3232,20 +3232,11 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
     return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 class DataProcessing(viewsets.GenericViewSet):
-
     @extend_schema(
         tags=['requests'],
-        parameters=[
-                 OpenApiParameter('rq_id', description='rq id',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False),
-               ],
     )
-    @action(detail=False, methods=['GET'],
-        permission_classes=[]
-    )
-    def status(self,request):
-        rq_id = request.query_params.get('rq_id')
-
+    @action(detail=False, methods=['GET'], url_path='(?P<rq_id>[^/.]+)')
+    def status(self, request, rq_id):
         all_user_jobs = get_all_jobs(request)
         actual_job = None
         for job in all_user_jobs:
@@ -3296,9 +3287,9 @@ class DataProcessing(viewsets.GenericViewSet):
             )
         return Response(
                 data= {
-                        "state": "Started",
-                        "message": "In progress",
-                        "percent": 20},
+                        "state": "Queued",
+                        "message": "In queue",
+                        "percent": 0},
                 status=status.HTTP_200_OK
             )
 
@@ -3318,49 +3309,151 @@ class DataProcessing(viewsets.GenericViewSet):
                         "message": "cvat.apps.dataset_manager.bindings.CvatImportError: Failed to find dataset at '/home/django/data/tasks/499394/tmp/tmpkr0hn_m9'",
                         "percent": 0,
                         "rq_id": "rq1",
-                        "type": "export:dataset",
+                        "operation": {
+                            "type": "export:dataset",
+                            "format": "CVAT for images 1.1",
+                        },
                         "entity": {
                             "id": 1,
                             "type": "project",
                             "name": "Project with failed export",
-                        }
+                        },
+                        "start_date": "2023-03-30T09:37:31.708000Z",
+                        "finish_date": "2023-03-30T09:37:31.708000Z",
+                        "expire_date": "",
+                        "user": {
+                            "id": 1,
+                            "username": "kirill",
+                        },
                     },
                     {
                         "state": "Queued",
                         "message": "In queue",
                         "percent": 0,
                         "rq_id": "rq2",
-                        "type": "import:annotations",
+                        "operation": {
+                            "type": "import:annotations",
+                            "format": "CVAT for images 1.1",
+                        },
                         "entity": {
                             "id": 2,
                             "type": "task",
                             "name": "Task H1 part 2",
-                        }
+                        },
+                        "start_date": "2023-03-30T09:37:31.708000Z",
+                        "finish_date": "",
+                        "expire_date": "",
+                        "user": {
+                            "id": 1,
+                            "username": "kirill",
+                        },
+                    },
+                    {
+                        "state": "Queued",
+                        "message": "In queue",
+                        "percent": 0,
+                        "rq_id": "rq5",
+                        "operation": {
+                            "type": "export:backup",
+                        },
+                        "entity": {
+                            "id": 5,
+                            "type": "project",
+                            "name": "Project cars",
+                        },
+                        "start_date": "2023-03-30T09:37:31.708000Z",
+                        "finish_date": "",
+                        "expire_date": "",
+                        "user": {
+                            "id": 1,
+                            "username": "kirill",
+                        },
+                    },
+                    {
+                        "state": "Queued",
+                        "message": "In queue",
+                        "percent": 0,
+                        "rq_id": "rq6",
+                        "operation": {
+                            "type": "import:backup",
+                        },
+                        "entity": {
+                            "name": "Filename.zip",
+                        },
+                        "start_date": "2023-03-30T09:37:31.708000Z",
+                        "finish_date": "",
+                        "expire_date": "",
+                        "user": {
+                            "id": 1,
+                            "username": "kirill",
+                        },
                     },
                     {
                         "state": "Started",
                         "message": "In progress",
                         "percent": 20,
                         "rq_id": "rq3",
-                        "type": "import:dataset",
+                        "operation": {
+                            "type": "import:dataset",
+                            "format": "CVAT for images 1.1",
+                        },
                         "entity": {
                             "id": 3,
                             "type": "project",
                             "name": "Personal project",
-                        }
+                        },
+                        "start_date": "2023-03-30T09:37:31.708000Z",
+                        "finish_date": "",
+                        "expire_date": "",
+                        "user": {
+                            "id": 1,
+                            "username": "kirill",
+                        },
                     },
-                                        {
+                    {
+                        "state": "Finished",
+                        "message": "Done",
+                        "percent": 100,
+                        "rq_id": "rq7",
+                        "operation": {
+                            "type": "import:dataset",
+                            "format": "CVAT for images 1.1",
+                        },
+                        "entity": {
+                            "id": 3,
+                            "type": "project",
+                            "name": "Another Personal project",
+                        },
+                        "start_date": "2023-03-30T09:37:31.708000Z",
+                        "finish_date": "2023-03-30T10:37:31.708000Z",
+                        "expire_date": "",
+                        "user": {
+                            "id": 1,
+                            "username": "kirill",
+                        },
+                    },
+                    {
                         "state": "Finished",
                         "message": "Done",
                         "percent": 100,
                         "rq_id": "rq4",
-                        "type": "export:dataset",
+                        "operation": {
+                            "type": "export:dataset",
+                            "format": "CVAT for images 1.1",
+                        },
                         "entity": {
                             "id": 4,
                             "type": "project",
                             "name": "Project for export number 4",
                         },
-                        "url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1"
+                        "start_date": "2023-03-30T09:37:31.708000Z",
+                        "finish_date": "2023-03-30T10:37:31.708000Z",
+                        "expire_date": "2023-03-31T10:37:31.708000Z",
+                        "user": {
+                            "id": 1,
+                            "username": "kirill",
+                        },
+                        "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1"
                     },
                 ] + data,
                 status=status.HTTP_200_OK

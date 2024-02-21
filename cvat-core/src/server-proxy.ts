@@ -2397,10 +2397,10 @@ async function getImportRequestStatus(rqID): Promise<any> {
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.get(`${backendAPI}/requests/status`, {
-            params: {
-                rq_id: rqID,
-            },
+        const response = await Axios.get(`${backendAPI}/requests/${rqID}`, {
+            // params: {
+            //     rq_id: rqID,
+            // },
         });
 
         return response.data;

@@ -24,11 +24,27 @@
 }
 
 .cvat-requests-percent {
-    padding-top: $grid-unit-size * 1.5;
+    // padding-top: $grid-unit-size * 1.5;
     padding-left: $grid-unit-size * 2;
 }
 
 .cvat-requests-card {
+    min-height: 87px;
+
+    .cvat-request-item-progress-wrapper {
+        > .ant-row {
+            margin-bottom: -$grid-unit-size;
+
+            span {
+                font-size: 12px;
+            }
+
+            span[role="img"] {
+                margin-left: $grid-unit-size;
+            }
+        }
+    }
+
     .ant-collapse-header {
         padding: 0 !important;
         color: #ff4d4f !important;
@@ -59,5 +75,49 @@
         .ant-typography {
             font-size: 12px;
         }
+    }
+
+
+    border: 1px solid $border-color-1;
+
+    &:hover {
+        border: 1px solid $border-color-hover;
+    }
+}
+
+.cvat-requests-page-actions-button {
+    border: none;
+    padding: 0;
+    padding-top: 22px;
+    display: flex;
+    align-items: center;
+    line-height: 14px;
+    color: black;
+
+    &:hover, &:focus {
+        color: black;
+    }
+}
+
+.cvat-request-actions-menu {
+    box-shadow: $box-shadow-base;
+
+    > li:hover {
+        background-color: $hover-menu-color;
+    }
+
+    .ant-menu-submenu-title {
+        margin: 0;
+        width: 13em;
+    }
+}
+
+.cvat-request-tooltip {
+    border-bottom: 1px dotted;
+}
+
+.cvat-request-tooltip-inner {
+    span {
+        color: white;
     }
 }

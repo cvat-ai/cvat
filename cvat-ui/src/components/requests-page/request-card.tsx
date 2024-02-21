@@ -10,10 +10,17 @@ import { RQStatus, Request } from 'cvat-core-wrapper';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
-import { LoadingOutlined } from '@ant-design/icons';
+import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
 import Collapse from 'antd/lib/collapse';
-import dimensions from '../projects-page/dimensions';
 import { Link } from 'react-router-dom';
+import Dropdown from 'antd/lib/dropdown';
+import Button from 'antd/lib/button';
+import Menu from 'antd/lib/menu';
+import CVATTooltip from 'components/common/cvat-tooltip';
+
+import _ from 'lodash';
+import dimensions from '../projects-page/dimensions';
+import moment from 'moment';
 
 const { Panel } = Collapse;
 
@@ -24,9 +31,12 @@ export interface Props {
 
 function constructLink(entity: typeof Request['entity']): string | null {
     const { type, id } = entity;
-    switch(type) {
-        case "project": {
-            return `/projects/${id}`
+    switch (type) {
+        case 'project': {
+            return `/projects/${id}`;
+        }
+        case 'task': {
+            return `/tasks/${id}`;
         }
         default: {
             return null;
@@ -36,75 +46,97 @@ function constructLink(entity: typeof Request['entity']): string | null {
 
 export default function RequestCard(props: Props): JSX.Element {
     const { request, urls } = props;
-    const { entity } = request;
+    const { entity, operation } = request;
+    const { type } = operation;
+    const info = _.omit(operation, 'type');
+    const infoBlock = Object.entries(info).map(([key, val]) => (
+        <Text>
+            {key.charAt(0).toUpperCase() + key.slice(1)}
+:
+            {' '}
+            {val}
+        </Text>
+    ));
     let textType: 'success' | 'danger' = 'success';
     if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(request.status)) {
         textType = 'danger';
     }
     const linkToEntity = constructLink(request.entity);
+    const started = moment(request.startDate).format('MMM Do YY, h:mm');
+    const finished = moment(request.finishDate).format('MMM Do YY, h:mm');
+    const expire = moment(request.expireDate).format('MMM Do YY, h:mm');
+    let additionalText = "";
+    if (request.expireDate) {
+        additionalText = `; Expires at ${expire}`;
+    } else if (request.finishDate) {
+        additionalText = `; Finished at ${finished}`;
+    }
     return (
         <Row justify='center' align='middle'>
             <Col className='cvat-requests-list' {...dimensions}>
                 <Card className='cvat-requests-card'>
                     <Row justify='space-between'>
-                        <Col>
-                            <Row >
-                                <Col className='cvat-requests-type'>
-                                    {request.type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                        <Col span={10}>
+                            <Row  style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
+                                <Col className='cvat-requests-type' span={6}>
+                                    { infoBlock.length === 0 ? (
+                                        <Text>{type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} </Text>
+                                    ) : (
+                                        <CVATTooltip title={<div className='cvat-request-tooltip-inner'>{infoBlock}</div>} className='cvat-request-tooltip' overlayStyle={{ maxWidth: '500px' }}>
+                                            <Text>{type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} </Text>
+                                        </CVATTooltip>
+                                    )}
                                 </Col>
                                 <Col className='cvat-requests-name'>
-                                    {linkToEntity ? (<Link to='/auth/login'>{entity.name}</Link>) : <Text>{entity.name}</Text>}
+                                    {linkToEntity ? (<Link to={linkToEntity}>{entity.name}</Link>) : <Text>{entity.name}</Text>}
                                 </Col>
                             </Row>
                         </Col>
-                        <Col span={12} className='cvat-task-item-progress-wrapper'>
+                        <Col span={10} className='cvat-request-item-progress-wrapper'>
                             <Row>
-                                <Col span={24}>
+                                <Col span={21}>
                                     <Row>
-                                            <Text
-                                                type={request.status === RQStatus.QUEUED ? undefined : textType}
-                                                strong
-                                            >
-                                                {/* TODO: add ui texts if no message is present */}
-                                                {((): JSX.Element => {
-                                                    if (request.status === RQStatus.FINISHED) {
-                                                        return (<>Finished</>);
-                                                    }
+                                        <Text
+                                            type={request.status === RQStatus.QUEUED ? undefined : textType}
+                                            strong
+                                        >
+                                            {/* TODO: add ui texts if no message is present */}
+                                            {((): JSX.Element => {
+                                                if (request.status === RQStatus.FINISHED) {
+                                                    return (<>Finished</>);
+                                                }
 
-                                                    if ([RQStatus.QUEUED, RQStatus.STARTED].includes(request.status)) {
-                                                        return (
-                                                            <>
-                                                                {request.message}
-                                                                <LoadingOutlined />
-                                                            </>
-                                                        );
-                                                    }
+                                                if ([RQStatus.QUEUED, RQStatus.STARTED].includes(request.status)) {
+                                                    return (
+                                                        <>
+                                                            {request.message}
+                                                            <LoadingOutlined />
+                                                        </>
+                                                    );
+                                                }
 
-                                                    if ([RQStatus.FAILED].includes(request.status)) {
-                                                        return (
-                                                            <Collapse>
-                                                                <Panel header='An error occured' key='1'>
-                                                                    <Text type='danger' strong>
-                                                                        {request.message}
-                                                                    </Text>
-                                                                </Panel>
-                                                            </Collapse>
-                                                        );
-                                                    }
+                                                if ([RQStatus.FAILED].includes(request.status)) {
+                                                    return (
+                                                        <Collapse>
+                                                            <Panel header='An error occured' key='1'>
+                                                                <Text type='danger' strong>
+                                                                    {request.message}
+                                                                </Text>
+                                                            </Panel>
+                                                        </Collapse>
+                                                    );
+                                                }
 
-                                                    if (request.status === RQStatus.UNKNOWN) {
-                                                        return (<>Unknown status received</>);
-                                                    }
+                                                if (request.status === RQStatus.UNKNOWN) {
+                                                    return (<>Unknown status received</>);
+                                                }
 
-                                                    return <>{request.message}</>;
-                                                })()}
-                                            </Text>
-                                            {
-                                                request.url ? <a target='_blank' download href={request.url}>Click to download</a> : null
-                                            }
+                                                return <>{request.message}</>;
+                                            })()}
+                                        </Text>
                                     </Row>
                                     <Row>
-                                        <Col span={22} className='cvat-requests-progress'>
+                                        <Col span={18} className='cvat-requests-progress'>
                                             {
                                                 request.status !== RQStatus.FAILED ? (
                                                     <Progress
@@ -126,12 +158,29 @@ export default function RequestCard(props: Props): JSX.Element {
                                         </Col>
                                     </Row>
                                 </Col>
+                                {
+                                    request.url ? (
+                                        <Col span={3} style={{ display: 'flex', 'justify-content': 'end' }}>
+                                            <Dropdown
+                                                destroyPopupOnHide
+                                                trigger={['click']}
+                                                overlay={() => (
+                                                    <Menu selectable={false} className='cvat-actions-menu cvat-request-actions-menu'>
+                                                        <Menu.Item>Download</Menu.Item>
+                                                    </Menu>
+                                                )}
+                                            >
+                                                <Button type='link' size='middle' className='cvat-requests-page-actions-button' icon={<MoreOutlined className='cvat-menu-icon' />} />
+                                            </Dropdown>
+                                        </Col>
+                                    ) : null
+                                }
                             </Row>
                         </Col>
                     </Row>
                     <Row>
                         <Col>
-                            <Text type='secondary'>Timestamp</Text>
+                            <Text type='secondary'>Started by kirill on {started}{additionalText}</Text>
                         </Col>
                     </Row>
                 </Card>

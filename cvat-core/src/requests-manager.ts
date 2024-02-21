@@ -8,10 +8,10 @@ import { RQStatus } from './enums';
 export interface SerializedRequest {
     rq_id: string;
     state: string;
-    type: string;
+    operation: any;
     progress: number;
     message: string;
-    url: string;
+    result_url: string;
     entity: {
         id: number;
         type: string;
@@ -28,20 +28,23 @@ type EntityType = {
 export class Request {
     #rqID: string;
     #state: RQStatus;
-    #type: string;
+    #operation: any;
     #entity: EntityType;
     #message: string;
     #progress: number;
-    #url: string;
+    #resultUrl: string;
+    #initialData: any;
 
     constructor(initialData: SerializedRequest) {
         this.#rqID = initialData.rq_id;
         this.#state = initialData.state as RQStatus;
-        this.#type = initialData.type;
+        this.#operation = initialData.operation;
         this.#entity = initialData.entity;
         this.#progress = initialData.progress;
         this.#message = initialData.message;
-        this.#url = initialData.url;
+        this.#resultUrl = initialData.result_url;
+
+        this.#initialData = initialData;
     }
 
     get rqID(): string {
@@ -69,8 +72,8 @@ export class Request {
         this.#message = message;
     }
 
-    get type(): string {
-        return this.#type;
+    get operation(): any {
+        return this.#operation;
     }
 
     get entity(): EntityType {
@@ -78,7 +81,19 @@ export class Request {
     }
 
     get url(): string {
-        return this.#url;
+        return this.#resultUrl;
+    }
+
+    get startDate(): string {
+        return this.#initialData.start_date;
+    }
+
+    get expireDate(): string {
+        return this.#initialData.expire_date;
+    }
+
+    get finishDate(): string {
+        return this.#initialData.finish_date;
     }
 
     updateStatus(status, progress, message): void {
