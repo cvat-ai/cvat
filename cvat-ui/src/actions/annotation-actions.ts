@@ -23,6 +23,7 @@ import {
     CombinedState,
     ContextMenuType,
     FrameSpeed,
+    NavigationType,
     ObjectType,
     OpenCVTool,
     Rotation,
@@ -183,6 +184,7 @@ export enum AnnotationActionTypes {
     CANVAS_ERROR_OCCURRED = 'CANVAS_ERROR_OCCURRED',
     SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
     SWITCH_NAVIGATION_BLOCKED = 'SWITCH_NAVIGATION_BLOCKED',
+    SET_NAVIGATION_TYPE = 'SET_NAVIGATION_TYPE',
     DELETE_FRAME = 'DELETE_FRAME',
     DELETE_FRAME_SUCCESS = 'DELETE_FRAME_SUCCESS',
     DELETE_FRAME_FAILED = 'DELETE_FRAME_FAILED',
@@ -1481,6 +1483,15 @@ export function switchNavigationBlocked(navigationBlocked: boolean): AnyAction {
         type: AnnotationActionTypes.SWITCH_NAVIGATION_BLOCKED,
         payload: {
             navigationBlocked,
+        },
+    };
+}
+
+export function setNavigationType(navigationType: NavigationType): AnyAction {
+    return {
+        type: AnnotationActionTypes.SET_NAVIGATION_TYPE,
+        payload: {
+            navigationType,
         },
     };
 }

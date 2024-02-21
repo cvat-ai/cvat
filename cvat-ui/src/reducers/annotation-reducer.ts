@@ -17,6 +17,7 @@ import {
     ActiveControl,
     AnnotationState,
     ContextMenuType,
+    NavigationType,
     ObjectType,
     ShapeType,
     Workspace,
@@ -78,6 +79,7 @@ const defaultState: AnnotationState = {
             changeTime: null,
             changeFrameEvent: null,
         },
+        navigationType: NavigationType.REGULAR,
         ranges: '',
         playing: false,
         frameAngles: [],
@@ -975,6 +977,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 player: {
                     ...state.player,
                     navigationBlocked: action.payload.navigationBlocked,
+                },
+            };
+        }
+        case AnnotationActionTypes.SET_NAVIGATION_TYPE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    navigationType: action.payload.navigationType,
                 },
             };
         }

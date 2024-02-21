@@ -11,33 +11,28 @@ import React, {
 import Layout, { SiderProps } from 'antd/lib/layout';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
-import Checkbox from 'antd/lib/checkbox';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
-import Button from 'antd/lib/button';
 import Alert from 'antd/lib/alert';
-import Progress from 'antd/lib/progress';
-import Icon from '@ant-design/icons/lib/components/Icon';
+import Modal from 'antd/lib/modal';
 
-import { NextIcon, PreviousIcon, SaveIcon } from 'icons';
-import { CombinedState } from 'reducers';
+import { CombinedState, NavigationType } from 'reducers';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
-import { Job, Label, LabelType } from 'cvat-core-wrapper';
+import {
+    Job, JobState, Label, LabelType,
+} from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
-import { changeFrameAsync, saveAnnotationsAsync } from 'actions/annotation-actions';
+import { changeFrameAsync, saveAnnotationsAsync, setNavigationType } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
-
 import GlobalHotKeys from 'utils/mousetrap-react';
-import CVATTooltip from 'components/common/cvat-tooltip';
 
 enum ReducerActionType {
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
     SWITCH_AUTOSAVE_ON_FINISH = 'SWITCH_AUTOSAVE_ON_FINISH',
-    SWITCH_NAVIGATE_EMPTY_ONLY = 'SWITCH_NAVIGATE_EMPTY_ONLY',
     SWITCH_COUNT_OF_POINTS_IS_PREDEFINED = 'SWITCH_COUNT_OF_POINTS_IS_PREDEFINED',
     SET_ACTIVE_LABEL = 'SET_ACTIVE_LABEL',
     SET_POINTS_COUNT = 'SET_POINTS_COUNT',
-    SET_FRAMES = 'SET_FRAMES',
 }
 
 export const reducerActions = {
@@ -46,9 +41,6 @@ export const reducerActions = {
     ),
     switchAutoSaveOnFinish: () => (
         createAction(ReducerActionType.SWITCH_AUTOSAVE_ON_FINISH)
-    ),
-    switchNavigateEmptyOnly: () => (
-        createAction(ReducerActionType.SWITCH_NAVIGATE_EMPTY_ONLY)
     ),
     switchCountOfPointsIsPredefined: () => (
         createAction(ReducerActionType.SWITCH_COUNT_OF_POINTS_IS_PREDEFINED)
@@ -62,21 +54,16 @@ export const reducerActions = {
     setPointsCount: (pointsCount: number) => (
         createAction(ReducerActionType.SET_POINTS_COUNT, { pointsCount })
     ),
-    setFrames: (frames: number[]) => (
-        createAction(ReducerActionType.SET_FRAMES, { frames })
-    ),
 };
 
 interface State {
     autoNextFrame: boolean;
     saveOnFinish: boolean;
-    navigateOnlyEmpty: boolean;
     pointsCountIsPredefined: boolean;
     pointsCount: number;
     labels: Label[];
     label: Label | null;
     labelType: LabelType;
-    frames: number[];
 }
 
 const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
@@ -95,13 +82,6 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         return {
             ...state,
             autoNextFrame: !state.autoNextFrame,
-        };
-    }
-
-    if (action.type === ReducerActionType.SWITCH_NAVIGATE_EMPTY_ONLY) {
-        return {
-            ...state,
-            navigateOnlyEmpty: !state.navigateOnlyEmpty,
         };
     }
 
@@ -135,13 +115,6 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
         };
     }
 
-    if (action.type === ReducerActionType.SET_FRAMES) {
-        return {
-            ...state,
-            frames: action.payload.frames,
-        };
-    }
-
     return state;
 };
 
@@ -163,6 +136,7 @@ function SingleShapeSidebar(): JSX.Element {
         keyMap,
         defaultLabel,
         defaultPointsCount,
+        navigationType,
     } = useSelector((_state: CombinedState) => ({
         isCanvasReady: _state.annotation.canvas.ready,
         jobInstance: _state.annotation.job.instance as Job,
@@ -171,52 +145,54 @@ function SingleShapeSidebar(): JSX.Element {
         normalizedKeyMap: _state.shortcuts.normalizedKeyMap,
         defaultLabel: _state.annotation.job.queryParameters.defaultLabel,
         defaultPointsCount: _state.annotation.job.queryParameters.defaultPointsCount,
+        navigationType: _state.annotation.player.navigationType,
     }), shallowEqual);
 
     const [state, dispatch] = useReducer(reducer, {
         autoNextFrame: true,
         saveOnFinish: true,
-        navigateOnlyEmpty: true,
         pointsCountIsPredefined: true,
         pointsCount: defaultPointsCount || 1,
         labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG && label.type !== LabelType.SKELETON),
         label: null,
         labelType: jobInstance.labels[0]?.type || LabelType.ANY,
-        frames: [],
     });
 
     const savingRef = useRef(false);
-    const nextFrame = useCallback((): boolean => {
-        const next = state.frames.find((_frame) => _frame > frame);
-        if (typeof next === 'number') {
-            appDispatch(changeFrameAsync(next));
-            return true;
-        }
-
-        if (state.saveOnFinish && jobInstance.annotations.hasUnsavedChanges() && !savingRef.current) {
-            // if the latest image does not have objects to be annotated and user clicks "Next"
-            // we should save the job if there are unsaved changes
-            savingRef.current = true;
-            appDispatch(saveAnnotationsAsync()).then(() => {
-                // update state to re-render component after the job saved unsaved changes
-                dispatch(reducerActions.setFrames([...state.frames]));
-            }).finally(() => {
-                savingRef.current = false;
-            });
-        }
-
-        return false;
-    }, [state.frames, state.saveOnFinish, frame, jobInstance]);
-
-    const prevFrame = useCallback((): boolean => {
-        const prev = state.frames.findLast((_frame) => _frame < frame);
-        if (typeof prev === 'number') {
-            appDispatch(changeFrameAsync(prev));
-            return true;
-        }
-
-        return false;
-    }, [state.frames, frame]);
+    const nextFrame = useCallback((): void => {
+        (frame < jobInstance.stopFrame ? jobInstance.annotations.search(frame + 1, jobInstance.stopFrame, {
+            allowDeletedFrames: false,
+            ...(navigationType === NavigationType.EMPTY ? {
+                generalFilters: {
+                    isEmptyFrame: true,
+                },
+            } : {}),
+        }) : Promise.resolve(null)).then((foundFrame: number | null) => {
+            if (typeof foundFrame === 'number') {
+                appDispatch(changeFrameAsync(foundFrame));
+            } else if (state.saveOnFinish && jobInstance.annotations.hasUnsavedChanges() && !savingRef.current) {
+                savingRef.current = true;
+                Modal.confirm({
+                    title: 'You finished the job',
+                    content: 'Please, confirm further action',
+                    cancelText: 'Stay on the page',
+                    okText: 'Submit results',
+                    onOk: () => {
+                        appDispatch(saveAnnotationsAsync()).then(() => {
+                            jobInstance.state = JobState.COMPLETED;
+                            return jobInstance.save();
+                        }).then(() => {
+                            Modal.info({
+                                closable: false,
+                                title: 'Annotations submitted',
+                                content: 'You may close the window',
+                            });
+                        });
+                    },
+                });
+            }
+        });
+    }, [state.saveOnFinish, frame, jobInstance, navigationType]);
 
     const canvasInitializerRef = useRef<() => void | null>(() => {});
     canvasInitializerRef.current = (): void => {
@@ -270,6 +246,7 @@ function SingleShapeSidebar(): JSX.Element {
             dispatch(reducerActions.setActiveLabel(labelInstance));
         }
 
+        appDispatch(setNavigationType(NavigationType.EMPTY));
         cancelCurrentCanvasOp(store.getState());
         return () => {
             cancelCurrentCanvasOp(store.getState());
@@ -280,40 +257,6 @@ function SingleShapeSidebar(): JSX.Element {
         cancelCurrentCanvasOp(store.getState());
         canvasInitializerRef.current();
     }, [isCanvasReady, state.label, state.labelType, state.pointsCount, state.pointsCountIsPredefined]);
-
-    useEffect(() => {
-        (async () => {
-            const framesToBeVisited = [];
-
-            let searchFrom: number | null = jobInstance.startFrame;
-            while (searchFrom !== null) {
-                const foundFrame: number | null = await jobInstance.annotations.search(
-                    searchFrom,
-                    jobInstance.stopFrame,
-                    {
-                        allowDeletedFrames: false,
-                        ...(state.navigateOnlyEmpty ? {
-                            generalFilters: {
-                                isEmptyFrame: true,
-                            },
-                        } : {}),
-                    },
-                );
-
-                if (foundFrame !== null) {
-                    framesToBeVisited.push(foundFrame);
-                    searchFrom = foundFrame < jobInstance.stopFrame ? foundFrame + 1 : null;
-                } else {
-                    searchFrom = null;
-                }
-            }
-
-            dispatch(reducerActions.setFrames(framesToBeVisited));
-            if (framesToBeVisited.length) {
-                appDispatch(changeFrameAsync(framesToBeVisited[0]));
-            }
-        })();
-    }, [state.navigateOnlyEmpty]);
 
     let message = '';
     if (state.labelType === LabelType.POINTS) {
@@ -334,22 +277,13 @@ function SingleShapeSidebar(): JSX.Element {
 
     const subKeyMap = {
         CANCEL: keyMap.CANCEL,
-        NEXT_FRAME: keyMap.NEXT_FRAME,
-        PREV_FRAME: keyMap.PREV_FRAME,
         SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
     };
+
     const handlers = {
         CANCEL: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             (store.getState().annotation.canvas.instance as Canvas).cancel();
-        },
-        NEXT_FRAME: (event: KeyboardEvent | undefined) => {
-            event?.preventDefault();
-            nextFrame();
-        },
-        PREV_FRAME: (event: KeyboardEvent | undefined) => {
-            event?.preventDefault();
-            prevFrame();
         },
         SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
@@ -358,20 +292,7 @@ function SingleShapeSidebar(): JSX.Element {
         },
     };
 
-    const isFirstFrame = state.frames[0] >= frame;
-    const isLastFrame = state.frames[state.frames.length - 1] <= frame;
-    const isPreviousDisabled = state.frames.length === 0 || isFirstFrame;
-    const isNextDisabled = state.frames.length === 0 || (
-        isLastFrame && (
-            !state.saveOnFinish || (state.saveOnFinish &&
-                !jobInstance.annotations.hasUnsavedChanges()
-            )
-        )
-    );
     const isPolylabel = [LabelType.POINTS, LabelType.POLYGON, LabelType.POLYLINE].includes(state.labelType);
-    const imageIndex = state.frames.indexOf(frame) + 1;
-    const progress = Math.round((state.frames.length ? (imageIndex * 100) / (state.frames.length || 1) : 0));
-
     return (
         <Layout.Sider {...siderProps}>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
@@ -389,12 +310,6 @@ function SingleShapeSidebar(): JSX.Element {
                                     <Text strong>{` ${message} `}</Text>
                                 </>
                             )}
-                        />
-                        <Progress
-                            percent={progress}
-                            status='active'
-                            className='cvat-single-shape-annotation-sidebar-progress'
-                            format={() => `${imageIndex} of ${state.frames.length || 1}`}
                         />
                         <Alert
                             type='info'
@@ -507,10 +422,14 @@ function SingleShapeSidebar(): JSX.Element {
             <Row className='cvat-single-shape-annotation-sidebar-navigate-empty-checkbox'>
                 <Col>
                     <Checkbox
-                        checked={state.navigateOnlyEmpty}
-                        onChange={(): void => {
+                        checked={navigationType === NavigationType.EMPTY}
+                        onChange={(event: CheckboxChangeEvent): void => {
                             (window.document.activeElement as HTMLInputElement)?.blur();
-                            dispatch(reducerActions.switchNavigateEmptyOnly());
+                            if (event.target.checked) {
+                                appDispatch(setNavigationType(NavigationType.EMPTY));
+                            } else {
+                                appDispatch(setNavigationType(NavigationType.REGULAR));
+                            }
                         }}
                     >
                         Navigate only empty frames
@@ -555,33 +474,6 @@ function SingleShapeSidebar(): JSX.Element {
                     </Row>
                 </>
             ) : null }
-            <Row className='cvat-single-shape-annotation-sidebar-navigation-block'>
-                <Col span={24}>
-                    <CVATTooltip title={`Previous frame ${normalizedKeyMap.PREV_FRAME}`}>
-                        <Button
-                            disabled={isPreviousDisabled}
-                            size='large'
-                            onClick={prevFrame}
-                            icon={<Icon component={PreviousIcon} />}
-                        >
-                            Previous
-                        </Button>
-                    </CVATTooltip>
-                    <CVATTooltip title={isLastFrame && !isNextDisabled ? '' : `Next frame ${normalizedKeyMap.NEXT_FRAME}`}>
-                        <Button
-                            // allow clicking the button even if this is latest frame
-                            // if automatic saving at the end is enabled
-                            // e.g. when the latest frame does not contain objects to be annotated
-                            disabled={isNextDisabled}
-                            size='large'
-                            onClick={nextFrame}
-                            icon={<Icon component={isLastFrame && !isNextDisabled ? SaveIcon : NextIcon} />}
-                        >
-                            { isLastFrame && !isNextDisabled ? 'Save' : 'Next' }
-                        </Button>
-                    </CVATTooltip>
-                </Col>
-            </Row>
         </Layout.Sider>
     );
 }

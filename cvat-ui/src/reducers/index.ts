@@ -672,6 +672,12 @@ export enum Rotation {
     CLOCKWISE90,
 }
 
+export enum NavigationType {
+    REGULAR = 'regular',
+    FILTERED = 'filtered',
+    EMPTY = 'empty',
+}
+
 export interface AnnotationState {
     activities: {
         loads: {
@@ -725,6 +731,7 @@ export interface AnnotationState {
             changeTime: number | null;
             changeFrameEvent: Event | null;
         };
+        navigationType: NavigationType;
         ranges: string;
         navigationBlocked: boolean;
         playing: boolean;

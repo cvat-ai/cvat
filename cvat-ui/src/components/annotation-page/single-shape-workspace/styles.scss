@@ -30,11 +30,14 @@
     .cvat-single-shape-annotation-sidebar-points-count,
     .cvat-single-shape-annotation-sidebar-label-select,
     .cvat-single-shape-annotation-sidebar-points-count-input,
-    .cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox,
     .cvat-single-shape-annotation-sidebar-navigate-empty-checkbox,
     .cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox,
     .cvat-single-shape-annotation-sidebar-auto-save-checkbox {
         margin-top: $grid-unit-size;
+    }
+
+    .cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox {
+        margin-top: $grid-unit-size * 3;
     }
 
     .cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox,
@@ -51,33 +54,9 @@
         margin-bottom: $grid-unit-size;
     }
 
-    .cvat-single-shape-annotation-sidebar-progress {
-        margin-bottom: $grid-unit-size;
-        text-align: center;
-
-        .ant-progress-outer {
-            margin-right: 0;
-            padding-right: 0;
-        }
-    }
-
     .cvat-single-shape-annotation-sidebar-ux-hints {
         ul {
             padding-left: $grid-unit-size * 2;
-        }
-    }
-
-    .cvat-single-shape-annotation-sidebar-navigation-block {
-        margin-top: $grid-unit-size * 4;
-        padding-bottom: $grid-unit-size * 2;
-
-        > div:nth-child(1) {
-            display: flex;
-            justify-content: space-between;
-
-            button {
-                width: $grid-unit-size * 16;
-            }
         }
     }
 }

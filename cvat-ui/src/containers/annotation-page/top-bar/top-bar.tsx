@@ -7,7 +7,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { RouteComponentProps } from 'react-router-dom';
-import Input from 'antd/lib/input';
 import copy from 'copy-to-clipboard';
 
 import {
@@ -25,6 +24,7 @@ import {
     deleteFrameAsync,
     restoreFrameAsync,
     switchNavigationBlocked as switchNavigationBlockedAction,
+    setNavigationType as setNavigationTypeAction,
 } from 'actions/annotation-actions';
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -36,6 +36,7 @@ import {
     Workspace,
     ActiveControl,
     ToolsBlockerState,
+    NavigationType,
 } from 'reducers';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -69,6 +70,7 @@ interface StateToProps {
     activeControl: ActiveControl;
     annotationFilters: object[];
     initialOpenGuide: boolean;
+    navigationType: NavigationType;
 }
 
 interface DispatchToProps {
@@ -93,6 +95,7 @@ interface DispatchToProps {
     deleteFrame(frame: number): void;
     restoreFrame(frame: number): void;
     switchNavigationBlocked(blocked: boolean): void;
+    setNavigationType(navigationType: NavigationType): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -108,6 +111,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     delay: frameDelay,
                     fetching: frameFetching,
                 },
+                navigationType,
             },
             annotations: {
                 saving: { uploading: saving, forceExit },
@@ -156,6 +160,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         ranges,
         annotationFilters,
         initialOpenGuide,
+        navigationType,
     };
 }
 
@@ -211,27 +216,21 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         switchNavigationBlocked(blocked: boolean): void {
             dispatch(switchNavigationBlockedAction(blocked));
         },
+        setNavigationType(navigationType: NavigationType): void {
+            dispatch(setNavigationTypeAction(navigationType));
+        },
     };
 }
 
-interface State {
-    prevButtonType: 'regular' | 'filtered' | 'empty';
-    nextButtonType: 'regular' | 'filtered' | 'empty';
-}
-
 type Props = StateToProps & DispatchToProps & RouteComponentProps;
-class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
-    private inputFrameRef: React.RefObject<Input>;
+class AnnotationTopBarContainer extends React.PureComponent<Props> {
+    private inputFrameRef: React.RefObject<HTMLInputElement>;
     private autoSaveInterval: number | undefined;
     private unblock: any;
 
     constructor(props: Props) {
         super(props);
-        this.inputFrameRef = React.createRef<Input>();
-        this.state = {
-            prevButtonType: 'regular',
-            nextButtonType: 'regular',
-        };
+        this.inputFrameRef = React.createRef<HTMLInputElement>();
     }
 
     public componentDidMount(): void {
@@ -356,10 +355,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onPrevFrame = async (): Promise<void> => {
-        const { prevButtonType } = this.state;
         const {
             frameNumber, jobInstance, playing, searchAnnotations,
-            onSwitchPlay, showDeletedFrames, canvasIsReady,
+            onSwitchPlay, showDeletedFrames, canvasIsReady, navigationType,
         } = this.props;
         const { startFrame } = jobInstance;
 
@@ -375,9 +373,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 onSwitchPlay(false);
             }
 
-            if (prevButtonType === 'regular') {
+            if (navigationType === NavigationType.REGULAR) {
                 this.changeFrame(newFrame);
-            } else if (prevButtonType === 'filtered') {
+            } else if (navigationType === NavigationType.FILTERED) {
                 searchAnnotations(jobInstance, newFrame, startFrame);
             } else {
                 searchAnnotations(jobInstance, newFrame, startFrame, { isEmptyFrame: true });
@@ -386,10 +384,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     };
 
     private onNextFrame = async (): Promise<void> => {
-        const { nextButtonType } = this.state;
         const {
             frameNumber, jobInstance, playing, searchAnnotations,
-            onSwitchPlay, showDeletedFrames, canvasIsReady,
+            onSwitchPlay, showDeletedFrames, canvasIsReady, navigationType,
         } = this.props;
         const { stopFrame } = jobInstance;
 
@@ -404,9 +401,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 onSwitchPlay(false);
             }
 
-            if (nextButtonType === 'regular') {
+            if (navigationType === NavigationType.REGULAR) {
                 this.changeFrame(newFrame);
-            } else if (nextButtonType === 'filtered') {
+            } else if (navigationType === NavigationType.FILTERED) {
                 searchAnnotations(jobInstance, newFrame, stopFrame);
             } else {
                 searchAnnotations(jobInstance, newFrame, stopFrame, { isEmptyFrame: true });
@@ -464,18 +461,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 searchAnnotations(jobInstance, frameNumber - 1, startFrame);
             }
         }
-    };
-
-    private onSetPreviousButtonType = (type: 'regular' | 'filtered' | 'empty'): void => {
-        this.setState({
-            prevButtonType: type,
-        });
-    };
-
-    private onSetNextButtonType = (type: 'regular' | 'filtered' | 'empty'): void => {
-        this.setState({
-            nextButtonType: type,
-        });
     };
 
     private onSaveAnnotation = (): void => {
@@ -664,7 +649,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { nextButtonType, prevButtonType } = this.state;
         const {
             playing,
             saving,
@@ -683,7 +667,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             annotationFilters,
             initialOpenGuide,
             toolsBlockerState,
+            navigationType,
             switchNavigationBlocked,
+            setNavigationType,
         } = this.props;
 
         return (
@@ -699,8 +685,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 onFirstFrame={this.onFirstFrame}
                 onLastFrame={this.onLastFrame}
                 onSearchAnnotations={this.searchAnnotations}
-                setNextButtonType={this.onSetNextButtonType}
-                setPrevButtonType={this.onSetPreviousButtonType}
+                setNavigationType={setNavigationType}
                 onSliderChange={this.onChangePlayerSliderValue}
                 onInputChange={this.onChangePlayerInputValue}
                 onURLIconClick={this.onURLIconClick}
@@ -732,8 +717,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                 previousFrameShortcut={normalizedKeyMap.PREV_FRAME}
                 forwardShortcut={normalizedKeyMap.FORWARD_FRAME}
                 backwardShortcut={normalizedKeyMap.BACKWARD_FRAME}
-                nextButtonType={nextButtonType}
-                prevButtonType={prevButtonType}
+                navigationType={navigationType}
                 focusFrameInputShortcut={normalizedKeyMap.FOCUS_INPUT_FRAME}
                 annotationFilters={annotationFilters}
                 initialOpenGuide={initialOpenGuide}

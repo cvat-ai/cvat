@@ -4,11 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Input from 'antd/lib/input';
 import { Col, Row } from 'antd/lib/grid';
 
 import {
-    ActiveControl, CombinedState, ToolsBlockerState, Workspace,
+    ActiveControl, CombinedState, NavigationType, ToolsBlockerState, Workspace,
 } from 'reducers';
 import { Job } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
@@ -24,7 +23,7 @@ interface Props {
     frameNumber: number;
     frameFilename: string;
     frameDeleted: boolean;
-    inputFrameRef: React.RefObject<Input>;
+    inputFrameRef: React.RefObject<HTMLInputElement>;
     startFrame: number;
     stopFrame: number;
     undoAction?: string;
@@ -40,8 +39,7 @@ interface Props {
     previousFrameShortcut: string;
     forwardShortcut: string;
     backwardShortcut: string;
-    prevButtonType: string;
-    nextButtonType: string;
+    navigationType: NavigationType;
     focusFrameInputShortcut: string;
     activeControl: ActiveControl;
     toolsBlockerState: ToolsBlockerState;
@@ -63,8 +61,6 @@ interface Props {
     onFirstFrame(): void;
     onLastFrame(): void;
     onSearchAnnotations(direction: 'forward' | 'backward'): void;
-    setPrevButtonType(type: 'regular' | 'filtered' | 'empty'): void;
-    setNextButtonType(type: 'regular' | 'filtered' | 'empty'): void;
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
@@ -75,6 +71,7 @@ interface Props {
     onDeleteFrame(): void;
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
+    setNavigationType(navigationType: NavigationType): void;
 }
 
 export default function AnnotationTopBarComponent(props: Props): JSX.Element {
@@ -101,14 +98,13 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         previousFrameShortcut,
         forwardShortcut,
         backwardShortcut,
-        prevButtonType,
-        nextButtonType,
         focusFrameInputShortcut,
         activeControl,
         toolsBlockerState,
         annotationFilters,
         initialOpenGuide,
         deleteFrameAvailable,
+        navigationType,
         jobInstance,
         keyMap,
         showStatistics,
@@ -123,8 +119,6 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onFirstFrame,
         onLastFrame,
         onSearchAnnotations,
-        setPrevButtonType,
-        setNextButtonType,
         onSliderChange,
         onInputChange,
         onURLIconClick,
@@ -134,6 +128,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         onSwitchToolsBlockerState,
         onDeleteFrame,
         onRestoreFrame,
+        setNavigationType,
         switchNavigationBlocked,
     } = props;
 
@@ -148,56 +143,54 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         }),
     );
 
-    if (workspace !== Workspace.SINGLE_SHAPE) {
-        playerItems.push([(
-            <PlayerButtons
-                key='player_buttons'
-                playing={playing}
-                playPauseShortcut={playPauseShortcut}
-                nextFrameShortcut={nextFrameShortcut}
-                previousFrameShortcut={previousFrameShortcut}
-                forwardShortcut={forwardShortcut}
-                backwardShortcut={backwardShortcut}
-                prevButtonType={prevButtonType}
-                nextButtonType={nextButtonType}
-                keyMap={keyMap}
-                onPrevFrame={onPrevFrame}
-                onNextFrame={onNextFrame}
-                onForward={onForward}
-                onBackward={onBackward}
-                onFirstFrame={onFirstFrame}
-                onLastFrame={onLastFrame}
-                onSwitchPlay={onSwitchPlay}
-                onSearchAnnotations={onSearchAnnotations}
-                setPrevButton={setPrevButtonType}
-                setNextButton={setNextButtonType}
-            />
-        ), 0]);
+    playerItems.push([(
+        <PlayerButtons
+            key='player_buttons'
+            playing={playing}
+            playPauseShortcut={playPauseShortcut}
+            nextFrameShortcut={nextFrameShortcut}
+            previousFrameShortcut={previousFrameShortcut}
+            forwardShortcut={forwardShortcut}
+            backwardShortcut={backwardShortcut}
+            navigationType={navigationType}
+            keyMap={keyMap}
+            workspace={workspace}
+            onPrevFrame={onPrevFrame}
+            onNextFrame={onNextFrame}
+            onForward={onForward}
+            onBackward={onBackward}
+            onFirstFrame={onFirstFrame}
+            onLastFrame={onLastFrame}
+            onSwitchPlay={onSwitchPlay}
+            onSearchAnnotations={onSearchAnnotations}
+            setNavigationType={setNavigationType}
+        />
+    ), 0]);
 
-        playerItems.push([(
-            <PlayerNavigation
-                key='player_navigation'
-                startFrame={startFrame}
-                stopFrame={stopFrame}
-                playing={playing}
-                ranges={ranges}
-                frameNumber={frameNumber}
-                frameFilename={frameFilename}
-                frameDeleted={frameDeleted}
-                deleteFrameShortcut={deleteFrameShortcut}
-                focusFrameInputShortcut={focusFrameInputShortcut}
-                inputFrameRef={inputFrameRef}
-                keyMap={keyMap}
-                onSliderChange={onSliderChange}
-                onInputChange={onInputChange}
-                onURLIconClick={onURLIconClick}
-                onDeleteFrame={onDeleteFrame}
-                onRestoreFrame={onRestoreFrame}
-                switchNavigationBlocked={switchNavigationBlocked}
-                deleteFrameAvailable={deleteFrameAvailable}
-            />
-        ), 10]);
-    }
+    playerItems.push([(
+        <PlayerNavigation
+            key='player_navigation'
+            startFrame={startFrame}
+            stopFrame={stopFrame}
+            playing={playing}
+            ranges={ranges}
+            frameNumber={frameNumber}
+            frameFilename={frameFilename}
+            frameDeleted={frameDeleted}
+            deleteFrameShortcut={deleteFrameShortcut}
+            focusFrameInputShortcut={focusFrameInputShortcut}
+            inputFrameRef={inputFrameRef}
+            keyMap={keyMap}
+            workspace={workspace}
+            onSliderChange={onSliderChange}
+            onInputChange={onInputChange}
+            onURLIconClick={onURLIconClick}
+            onDeleteFrame={onDeleteFrame}
+            onRestoreFrame={onRestoreFrame}
+            switchNavigationBlocked={switchNavigationBlocked}
+            deleteFrameAvailable={deleteFrameAvailable}
+        />
+    ), 10]);
 
     return (
         <Row justify='space-between'>
