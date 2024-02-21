@@ -57,6 +57,23 @@ spec:
           {{- with .Values.cvat.kvrocks.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - ./bin/redis-cli -p 6666 PING | grep -E '(PONG|NOAUTH)' || exit 1
+            periodSeconds: 10
+            initialDelaySeconds: 30
+          livenessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - ./bin/redis-cli -p 6666 PING | grep -E '(PONG|NOAUTH)' || exit 1
+            periodSeconds: 10
+            failureThreshold: 3
+            initialDelaySeconds: 30
           volumeMounts:
           - name: {{ .Release.Name }}-kvrocks-data
             mountPath: /var/lib/kvrocks/data
