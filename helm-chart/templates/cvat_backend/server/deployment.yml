@@ -67,6 +67,19 @@ spec:
           {{- end }}
           ports:
           - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /api/server/about
+              port: 8080
+            periodSeconds: 15
+            initialDelaySeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /api/server/health/
+              port: 8080
+            periodSeconds: 15
+            failureThreshold: 10
+            initialDelaySeconds: 60
           volumeMounts:
           {{- if not .Values.cvat.backend.disableDistinctCachePerService }}
           - mountPath: /home/django/data/cache
