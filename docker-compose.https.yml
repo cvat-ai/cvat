@@ -5,22 +5,27 @@
 services:
   cvat_server:
     labels:
+      - traefik.http.routers.cvat.tls=true
       - traefik.http.routers.cvat.entrypoints=websecure
+      # for letsencrypt
       - traefik.http.routers.cvat.tls.certresolver=lets-encrypt
 
   cvat_ui:
     labels:
+      - traefik.http.routers.cvat-ui.tls=true
       - traefik.http.routers.cvat-ui.entrypoints=websecure
+      # for letsencrypt
       - traefik.http.routers.cvat-ui.tls.certresolver=lets-encrypt
 
   traefik:
-    image: traefik:v2.9
+    image: traefik:v2.10
     container_name: traefik
     environment:
       TRAEFIK_ENTRYPOINTS_web_ADDRESS: :80
       TRAEFIK_ENTRYPOINTS_web_HTTP_REDIRECTIONS_ENTRYPOINT_TO: websecure
       TRAEFIK_ENTRYPOINTS_web_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: https
       TRAEFIK_ENTRYPOINTS_websecure_ADDRESS: :443
+      # for letsencrypt
       TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_EMAIL: "${ACME_EMAIL:?Please set the ACME_EMAIL env variable}"
       TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_TLSCHALLENGE: "true"
       TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_STORAGE: /letsencrypt/acme.json
@@ -29,6 +34,10 @@ services:
       - 443:443
     volumes:
       - cvat_letsencrypt:/letsencrypt
+    # for custom certificates
+    # volumes:
+    #   - ./certs:/certs
+    #   - ./tls.yml:/etc/traefik/rules/tls.yml
 
 volumes:
   cvat_letsencrypt:
