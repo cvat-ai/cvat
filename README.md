@@ -155,7 +155,6 @@ For more information about the supported formats, see:
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                                       | ✔️     | ✔️     |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                                  | ✔️     | ✔️     |
 | [MS COCO Keypoints Detection](http://cocodataset.org/#format-data)                               | ✔️     | ✔️     |
-| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                              | ✔️     | ✔️     |
 | [MOT](https://motchallenge.net/)                                                                 | ✔️     | ✔️     |
 | [MOTS PNG](https://www.vision.rwth-aachen.de/page/mots)                                          | ✔️     | ✔️     |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                           | ✔️     | ✔️     |

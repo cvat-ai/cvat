@@ -26,6 +26,7 @@ class EventScopes:
         "comment": ["create", "update", "delete"],
         "annotations": ["create", "update", "delete"],
         "label": ["create", "update", "delete"],
+        "dataset": ["export", "import"],
     }
 
     @classmethod
