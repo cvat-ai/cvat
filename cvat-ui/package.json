@@ -36,7 +36,7 @@
     "@types/redux-logger": "^3.0.9",
     "@types/resize-observer-browser": "^0.1.6",
     "@uiw/react-md-editor": "^3.22.0",
-    "antd": "5.14.0",
+    "antd": "5.14.1",
     "chart.js": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",
     "cvat-canvas": "link:./../cvat-canvas",
