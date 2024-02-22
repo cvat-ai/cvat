@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
@@ -16,6 +15,7 @@ import {
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ObjectType, ShapeType, ColorBy } from 'reducers';
 import { DimensionType, Job } from 'cvat-core-wrapper';
+import { MenuProps } from 'antd';
 
 interface Props {
     readonly: boolean;
@@ -232,7 +232,7 @@ function RemoveItem(props: ItemProps): JSX.Element {
     );
 }
 
-export default function ItemMenu(props: Props): JSX.Element {
+export default function ItemMenu(props: Props): MenuProps {
     const {
         readonly, shapeType, objectType, colorBy, jobInstance,
     } = props;
@@ -326,12 +326,9 @@ export default function ItemMenu(props: Props): JSX.Element {
         });
     }
 
-    return (
-        <Menu
-            onClick={() => window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))}
-            className='cvat-object-item-menu'
-            selectable={false}
-            items={items}
-        />
-    );
+    return {
+        items,
+        selectable: false,
+        className: 'cvat-object-item-menu',
+    };
 }

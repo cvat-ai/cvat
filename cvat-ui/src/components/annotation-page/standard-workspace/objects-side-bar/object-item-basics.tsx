@@ -135,7 +135,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         destroyPopupOnHide
                         placement='bottomLeft'
                         trigger={['click']}
-                        overlay={ItemMenu({
+                        menu={ItemMenu({
                             jobInstance,
                             readonly,
                             serverID,

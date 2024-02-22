@@ -11,7 +11,7 @@ import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
 import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
-import Dropdown from 'antd/lib/dropdown';
+import Popover from 'antd/lib/popover';
 import Title from 'antd/lib/typography/Title';
 import Pagination from 'antd/lib/pagination';
 import { MultiPlusIcon } from 'icons';
@@ -289,10 +289,11 @@ export default function ProjectPageComponent(): JSX.Element {
                                 />
                             </div>
                         </div>
-                        <Dropdown
+                        <Popover
                             trigger={['click']}
-                            destroyPopupOnHide
-                            overlay={(
+                            destroyTooltipOnHide
+                            overlayInnerStyle={{ padding: 0 }}
+                            content={(
                                 <CvatDropdownMenuPaper>
                                     <Button
                                         type='primary'
@@ -318,7 +319,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                 className='cvat-create-task-dropdown'
                                 icon={<PlusOutlined />}
                             />
-                        </Dropdown>
+                        </Popover>
                     </Col>
                 </Row>
                 { tasksFetching ? (

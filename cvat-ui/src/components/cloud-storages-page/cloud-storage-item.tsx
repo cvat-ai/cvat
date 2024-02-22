@@ -18,7 +18,6 @@ import moment from 'moment';
 
 import { CloudStorage, CombinedState } from 'reducers';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
-import Menu from 'components/dropdown-menu';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Preview from 'components/common/preview';
 import Status from './cloud-storage-status';
@@ -120,12 +119,18 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                         <Dropdown
                             trigger={['click']}
                             destroyPopupOnHide
-                            overlay={(
-                                <Menu className='cvat-project-actions-menu'>
-                                    <Menu.Item onClick={onUpdate}>Update</Menu.Item>
-                                    <Menu.Item onClick={onDelete}>Delete</Menu.Item>
-                                </Menu>
-                            )}
+                            menu={{
+                                className: 'cvat-cloud-storage-actions-menu',
+                                items: [{
+                                    key: 'update',
+                                    label: 'Update',
+                                    onClick: onUpdate,
+                                }, {
+                                    key: 'delete',
+                                    label: 'Delete',
+                                    onClick: onDelete,
+                                }],
+                            }}
                         >
                             <Button
                                 className='cvat-cloud-storage-item-menu-button'

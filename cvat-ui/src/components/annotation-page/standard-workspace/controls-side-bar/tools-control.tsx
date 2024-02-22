@@ -21,7 +21,6 @@ import Tabs from 'antd/lib/tabs';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
-import Dropdown from 'antd/lib/dropdown';
 import Switch from 'antd/lib/switch';
 import lodash from 'lodash';
 
@@ -1099,9 +1098,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Select>
                     </Col>
                     <Col span={2} className='cvat-interactors-tips-icon-container'>
-                        <Dropdown
-                            destroyPopupOnHide
-                            overlay={(
+                        <Popover
+                            destroyTooltipOnHide
+                            content={(
                                 <ToolsTooltips
                                     name={activeInteractor?.name}
                                     withNegativePoints={minNegVertices >= 0}
@@ -1110,7 +1109,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             )}
                         >
                             <QuestionCircleOutlined />
-                        </Dropdown>
+                        </Popover>
                     </Col>
                 </Row>
                 <Row align='middle' justify='end'>
