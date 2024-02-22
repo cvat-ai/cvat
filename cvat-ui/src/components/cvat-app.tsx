@@ -91,10 +91,10 @@ interface CVATAppProps {
     initModels: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
-    loadAuthActions: () => void;
     loadOrganization: () => void;
     initInvitations: () => void;
     initRequests: () => void;
+    loadServerAPISchema: () => void;
     userInitialized: boolean;
     userFetching: boolean;
     organizationFetching: boolean;
@@ -109,8 +109,6 @@ interface CVATAppProps {
     aboutFetching: boolean;
     userAgreementsFetching: boolean;
     userAgreementsInitialized: boolean;
-    authActionsFetching: boolean;
-    authActionsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
     isModelPluginActive: boolean;
@@ -119,6 +117,10 @@ interface CVATAppProps {
     invitationsInitialized: boolean;
     requestsFetching: boolean;
     requestsInitialized: boolean;
+    serverAPISchemaFetching: boolean;
+    serverAPISchemaInitialized: boolean;
+    isPasswordResetEnabled: boolean;
+    isRegistrationEnabled: boolean;
 }
 
 interface CVATAppState {
@@ -266,7 +268,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             initPlugins,
             initModels,
             loadOrganization,
-            loadAuthActions,
+            loadServerAPISchema,
             userInitialized,
             userFetching,
             organizationFetching,
@@ -282,8 +284,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             user,
             userAgreementsFetching,
             userAgreementsInitialized,
-            authActionsFetching,
-            authActionsInitialized,
             isModelPluginActive,
             invitationsInitialized,
             invitationsFetching,
@@ -292,6 +292,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             requestsInitialized,
             initRequests,
             history,
+            serverAPISchemaFetching,
+            serverAPISchemaInitialized,
         } = this.props;
 
         const { backendIsHealthy } = this.state;
@@ -313,8 +315,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (!authActionsInitialized && !authActionsFetching) {
-            loadAuthActions();
+        if (!serverAPISchemaInitialized && !serverAPISchemaFetching) {
+            loadServerAPISchema();
         }
 
         if (user == null || !user.isVerified || !user.id) {
@@ -440,17 +442,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             modelsInitialized,
             organizationInitialized,
             userAgreementsInitialized,
-            authActionsInitialized,
+            serverAPISchemaInitialized,
             pluginComponents,
             user,
             location,
             isModelPluginActive,
+            isPasswordResetEnabled,
+            isRegistrationEnabled,
         } = this.props;
 
         const { healthIinitialized, backendIsHealthy } = this.state;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
-        let readyForRender = userAgreementsInitialized && authActionsInitialized;
+        let readyForRender = userAgreementsInitialized && serverAPISchemaInitialized;
         readyForRender = readyForRender && (notRegisteredUserInitialized ||
             (
                 userInitialized &&
@@ -565,7 +569,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 <GlobalErrorBoundary>
                     <>
                         <Switch>
-                            <Route exact path='/auth/register' component={RegisterPageContainer} />
+                            {isRegistrationEnabled && (
+                                <Route exact path='/auth/register' component={RegisterPageContainer} />
+                            )}
                             <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
                             <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
                             <Route exact path='/auth/login' component={LoginPageContainer} />
@@ -574,12 +580,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                 path='/auth/login-with-token/:token'
                                 component={LoginWithTokenComponent}
                             />
-                            <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
-                            <Route
-                                exact
-                                path='/auth/password/reset/confirm'
-                                component={ResetPasswordPageConfirmComponent}
-                            />
+                            {isPasswordResetEnabled && (
+                                <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
+                            )}
+                            {isPasswordResetEnabled && (
+                                <Route
+                                    exact
+                                    path='/auth/password/reset/confirm'
+                                    component={ResetPasswordPageConfirmComponent}
+                                />
+                            )}
 
                             <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
                             { routesToRender }

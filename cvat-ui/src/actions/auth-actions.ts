@@ -6,7 +6,6 @@
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { RegisterData } from 'components/register-page/register-form';
 import { getCore, User } from 'cvat-core-wrapper';
-import isReachable from 'utils/url-checker';
 
 const cvat = getCore();
 
@@ -33,9 +32,6 @@ export enum AuthActionTypes {
     RESET_PASSWORD = 'RESET_PASSWORD_CONFIRM',
     RESET_PASSWORD_SUCCESS = 'RESET_PASSWORD_CONFIRM_SUCCESS',
     RESET_PASSWORD_FAILED = 'RESET_PASSWORD_CONFIRM_FAILED',
-    LOAD_AUTH_ACTIONS = 'LOAD_AUTH_ACTIONS',
-    LOAD_AUTH_ACTIONS_SUCCESS = 'LOAD_AUTH_ACTIONS_SUCCESS',
-    LOAD_AUTH_ACTIONS_FAILED = 'LOAD_AUTH_ACTIONS_FAILED',
 }
 
 export const authActions = {
@@ -65,14 +61,6 @@ export const authActions = {
     resetPassword: () => createAction(AuthActionTypes.RESET_PASSWORD),
     resetPasswordSuccess: () => createAction(AuthActionTypes.RESET_PASSWORD_SUCCESS),
     resetPasswordFailed: (error: any) => createAction(AuthActionTypes.RESET_PASSWORD_FAILED, { error }),
-    loadServerAuthActions: () => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS),
-    loadServerAuthActionsSuccess: (allowChangePassword: boolean, allowResetPassword: boolean) => (
-        createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_SUCCESS, {
-            allowChangePassword,
-            allowResetPassword,
-        })
-    ),
-    loadServerAuthActionsFailed: (error: any) => createAction(AuthActionTypes.LOAD_AUTH_ACTIONS_FAILED, { error }),
 };
 
 export type AuthActions = ActionUnion<typeof authActions>;
@@ -186,21 +174,5 @@ export const resetPasswordAsync = (
         dispatch(authActions.resetPasswordSuccess());
     } catch (error) {
         dispatch(authActions.resetPasswordFailed(error));
-    }
-};
-
-export const loadAuthActionsAsync = (): ThunkAction => async (dispatch) => {
-    dispatch(authActions.loadServerAuthActions());
-
-    try {
-        const promises: Promise<boolean>[] = [
-            isReachable(`${cvat.config.backendAPI}/auth/password/change`, 'OPTIONS'),
-            isReachable(`${cvat.config.backendAPI}/auth/password/reset`, 'OPTIONS'),
-        ];
-        const [allowChangePassword, allowResetPassword] = await Promise.all(promises);
-
-        dispatch(authActions.loadServerAuthActionsSuccess(allowChangePassword, allowResetPassword));
-    } catch (error) {
-        dispatch(authActions.loadServerAuthActionsFailed(error));
     }
 };

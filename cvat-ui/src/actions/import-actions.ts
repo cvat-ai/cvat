@@ -8,7 +8,7 @@ import { CombinedState } from 'reducers';
 import {
     getCore, Request, RQStatus, Storage,
 } from 'cvat-core-wrapper';
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
 import { listen } from './requests-actions';
@@ -127,7 +127,7 @@ export const importDatasetAsync = (
                 dispatch(importActions.importDataset(instance, format));
 
                 await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
-                await instance.logger.log(LogType.uploadAnnotations);
+                await instance.logger.log(EventScope.uploadAnnotations);
                 await instance.annotations.clear(true);
                 await instance.actions.clear();
                 const history = await instance.actions.get();

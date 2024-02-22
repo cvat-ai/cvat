@@ -9,7 +9,7 @@ import { connect, Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
 import { getAboutAsync } from 'actions/about-actions';
-import { authorizedAsync, loadAuthActionsAsync } from 'actions/auth-actions';
+import { authorizedAsync } from 'actions/auth-actions';
 import { getFormatsAsync } from 'actions/formats-actions';
 import { getModelsAsync } from 'actions/models-actions';
 import { getPluginsAsync } from 'actions/plugins-actions';
@@ -17,13 +17,14 @@ import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
 import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
-import logger, { LogType } from 'cvat-logger';
+import logger, { EventScope } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import createRootReducer from 'reducers/root-reducer';
 import { activateOrganizationAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { getInvitationsAsync } from 'actions/invitations-actions';
 import { getRequestsAsync } from 'actions/requests-actions';
+import { getServerAPISchemaAsync } from 'actions/server-actions';
 import { CombinedState, NotificationsState, PluginsState } from './reducers';
 
 createCVATStore(createRootReducer);
@@ -45,10 +46,6 @@ interface StateToProps {
     formatsFetching: boolean;
     userAgreementsInitialized: boolean;
     userAgreementsFetching: boolean;
-    authActionsFetching: boolean;
-    authActionsInitialized: boolean;
-    allowChangePassword: boolean;
-    allowResetPassword: boolean;
     notifications: NotificationsState;
     user: any;
     isModelPluginActive: boolean;
@@ -57,6 +54,10 @@ interface StateToProps {
     invitationsInitialized: boolean;
     requestsFetching: boolean;
     requestsInitialized: boolean;
+    serverAPISchemaFetching: boolean;
+    serverAPISchemaInitialized: boolean;
+    isPasswordResetEnabled: boolean;
+    isRegistrationEnabled: boolean;
 }
 
 interface DispatchToProps {
@@ -68,22 +69,16 @@ interface DispatchToProps {
     resetErrors: () => void;
     resetMessages: () => void;
     loadUserAgreements: () => void;
-    loadAuthActions: () => void;
     loadOrganization: () => void;
     initInvitations: () => void;
     initRequests: () => void;
+    loadServerAPISchema: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { plugins } = state;
-    const { auth } = state;
-    const { formats } = state;
-    const { about } = state;
-    const { userAgreements } = state;
-    const { models } = state;
-    const { organizations } = state;
-    const { invitations } = state;
-    const { requests } = state;
+    const {
+        plugins, auth, formats, about, userAgreements, models, organizations, invitations, serverAPI, requests,
+    } = state;
 
     return {
         userInitialized: auth.initialized,
@@ -100,10 +95,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         formatsFetching: formats.fetching,
         userAgreementsInitialized: userAgreements.initialized,
         userAgreementsFetching: userAgreements.fetching,
-        authActionsFetching: auth.authActionsFetching,
-        authActionsInitialized: auth.authActionsInitialized,
-        allowChangePassword: auth.allowChangePassword,
-        allowResetPassword: auth.allowResetPassword,
         notifications: state.notifications,
         user: auth.user,
         pluginComponents: plugins.components,
@@ -112,6 +103,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         invitationsInitialized: invitations.initialized,
         requestsFetching: requests.fetching,
         requestsInitialized: invitations.initialized,
+        serverAPISchemaFetching: serverAPI.fetching,
+        serverAPISchemaInitialized: serverAPI.initialized,
+        isPasswordResetEnabled: serverAPI.configuration.isPasswordResetEnabled,
+        isRegistrationEnabled: serverAPI.configuration.isRegistrationEnabled,
     };
 }
 
@@ -125,10 +120,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAbout: (): void => dispatch(getAboutAsync()),
         resetErrors: (): void => dispatch(resetErrors()),
         resetMessages: (): void => dispatch(resetMessages()),
-        loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
         loadOrganization: (): void => dispatch(activateOrganizationAsync()),
         initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
         initRequests: (): void => dispatch(getRequestsAsync()),
+        loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
     };
 }
 
@@ -176,9 +171,9 @@ window.addEventListener('error', (errorEvent: ErrorEvent): boolean => {
         const re = /\/tasks\/[0-9]+\/jobs\/[0-9]+$/;
         const { instance: job } = state.annotation.job;
         if (re.test(pathname) && job) {
-            job.logger.log(LogType.exception, logPayload);
+            job.logger.log(EventScope.exception, logPayload);
         } else {
-            logger.log(LogType.exception, logPayload);
+            logger.log(EventScope.exception, logPayload);
         }
     }
 

@@ -6,7 +6,7 @@ import { getCore } from 'cvat-core-wrapper';
 
 const core = getCore();
 const { logger } = core;
-const { LogType } = core.enums;
+const { EventScope } = core.enums;
 
 export default logger;
-export { LogType };
+export { EventScope };

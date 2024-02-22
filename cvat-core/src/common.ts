@@ -1,8 +1,9 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023s CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import { snakeCase } from 'lodash';
 import { ArgumentError } from './exceptions';
 
 export function isBoolean(value): boolean {
@@ -144,4 +145,16 @@ export function filterFieldsToSnakeCase(filter: Record<string, string>, keysToSn
 
 export function isResourceURL(url: string): boolean {
     return /\/([0-9]+)$/.test(url);
+}
+
+export function isPageSize(value: number | 'all'): boolean {
+    return isInteger(value) || value === 'all';
+}
+
+export function fieldsToSnakeCase(params: Record<string, any>): Record<string, any> {
+    const result = {};
+    for (const [k, v] of Object.entries(params)) {
+        result[snakeCase(k)] = v;
+    }
+    return result;
 }

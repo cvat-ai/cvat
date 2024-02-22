@@ -933,7 +933,8 @@ class ProjectDeleteAPITestCase(ApiTestBase):
                 task_dir = task.get_dirname()
                 self.assertTrue(os.path.exists(task_dir))
 
-        self._check_api_v2_projects_id(self.admin)
+        with self.captureOnCommitCallbacks(execute=True):
+            self._check_api_v2_projects_id(self.admin)
 
         for project in self.projects:
             project_dir = project.get_dirname()
@@ -2019,7 +2020,10 @@ class TaskDeleteAPITestCase(ApiTestBase):
         for task in self.tasks:
             task_dir = task.get_dirname()
             self.assertTrue(os.path.exists(task_dir))
-        self._check_api_v2_tasks_id(self.admin)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self._check_api_v2_tasks_id(self.admin)
+
         for task in self.tasks:
             task_dir = task.get_dirname()
             self.assertFalse(os.path.exists(task_dir))
@@ -6027,8 +6031,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_wo_attrs
                 annotations["tags"] = tags_wo_attrs
 
-            elif annotation_format == "YOLO 1.1" or \
-                 annotation_format == "TFRecord 1.0":
+            elif annotation_format == "YOLO 1.1":
                 annotations["shapes"] = rectangle_shapes_wo_attrs
 
             elif annotation_format == "COCO 1.0":
@@ -6400,8 +6403,6 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 for json in jsons:
                     coco = coco_loader.COCO(json)
                     self.assertTrue(coco.getAnnIds())
-        elif format_name == "TFRecord 1.0":
-            self.assertTrue(zipfile.is_zipfile(content))
         elif format_name == "Segmentation mask 1.1":
             self.assertTrue(zipfile.is_zipfile(content))
 
