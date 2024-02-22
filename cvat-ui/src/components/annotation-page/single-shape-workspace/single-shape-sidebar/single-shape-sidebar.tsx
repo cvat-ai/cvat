@@ -65,6 +65,7 @@ interface State {
     labels: Label[];
     label: Label | null;
     labelType: LabelType;
+    initialNavigationType: NavigationType;
 }
 
 const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
@@ -157,6 +158,7 @@ function SingleShapeSidebar(): JSX.Element {
         labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG && label.type !== LabelType.SKELETON),
         label: null,
         labelType: LabelType.ANY,
+        initialNavigationType: navigationType,
     });
 
     const savingRef = useRef(false);
@@ -266,6 +268,7 @@ function SingleShapeSidebar(): JSX.Element {
         appDispatch(setNavigationType(NavigationType.EMPTY));
         cancelCurrentCanvasOp(store.getState());
         return () => {
+            appDispatch(setNavigationType(state.initialNavigationType));
             cancelCurrentCanvasOp(store.getState());
         };
     }, []);

@@ -138,7 +138,6 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isInsertion = false;
         this.redraw = null;
         this.drawnObjects = this.createDrawnObjectsArray();
-        this.onDrawDone(null);
     }
 
     private releaseEdit(): void {
