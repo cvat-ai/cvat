@@ -49,6 +49,12 @@ spec:
           {{- end }}
           ports:
           - containerPort: 8181
+          readinessProbe:
+            tcpSocket:
+              port: 8181
+          livenessProbe:
+            tcpSocket:
+              port: 8181
           {{- with .Values.cvat.opa.additionalEnv }}
           env:
           {{- toYaml . | nindent 10 }}
