@@ -160,14 +160,19 @@ function SingleShapeSidebar(): JSX.Element {
 
     const savingRef = useRef(false);
     const nextFrame = useCallback((): void => {
-        (frame < jobInstance.stopFrame ? jobInstance.annotations.search(frame + 1, jobInstance.stopFrame, {
-            allowDeletedFrames: false,
-            ...(navigationType === NavigationType.EMPTY ? {
-                generalFilters: {
-                    isEmptyFrame: true,
-                },
-            } : {}),
-        }) : Promise.resolve(null)).then((foundFrame: number | null) => {
+        let promise = Promise.resolve(null);
+        if (frame < jobInstance.stopFrame) {
+            promise = jobInstance.annotations.search(frame + 1, jobInstance.stopFrame, {
+                allowDeletedFrames: false,
+                ...(navigationType === NavigationType.EMPTY ? {
+                    generalFilters: {
+                        isEmptyFrame: true,
+                    },
+                } : {}),
+            });
+        }
+
+        promise.then((foundFrame: number | null) => {
             if (typeof foundFrame === 'number') {
                 appDispatch(changeFrameAsync(foundFrame));
             } else if (state.saveOnFinish && jobInstance.annotations.hasUnsavedChanges() && !savingRef.current) {

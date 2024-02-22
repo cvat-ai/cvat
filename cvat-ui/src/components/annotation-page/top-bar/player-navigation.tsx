@@ -110,15 +110,15 @@ function PlayerNavigation(props: Props): JSX.Element {
         },
     };
 
-    const disabledStyle: CSSProperties = {
+    const deleteFrameIconStyle: CSSProperties = workspace === Workspace.SINGLE_SHAPE ? {
         pointerEvents: 'none',
         opacity: 0.5,
-    };
+    } : {};
 
     const deleteFrameIcon = !frameDeleted ? (
         <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>
             <DeleteOutlined
-                style={workspace === Workspace.SINGLE_SHAPE ? disabledStyle : {}}
+                style={deleteFrameIconStyle}
                 className='cvat-player-delete-frame'
                 onClick={showDeleteFrameDialog}
             />
@@ -126,7 +126,7 @@ function PlayerNavigation(props: Props): JSX.Element {
     ) : (
         <CVATTooltip title='Restore the frame'>
             <Icon
-                style={workspace === Workspace.SINGLE_SHAPE ? disabledStyle : {}}
+                style={deleteFrameIconStyle}
                 className='cvat-player-restore-frame'
                 onClick={onRestoreFrame}
                 component={RestoreIcon}
