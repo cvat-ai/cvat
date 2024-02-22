@@ -613,6 +613,8 @@ export class MasksHandlerImpl implements MasksHandler {
                             ...(Number.isInteger(this.redraw) ? { clientID: this.redraw } : {}),
                         }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
                     }
+                } else {
+                    this.onDrawDone(null);
                 }
             } finally {
                 this.releaseDraw();
