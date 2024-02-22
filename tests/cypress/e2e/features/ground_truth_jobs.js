@@ -100,16 +100,6 @@ context('Ground truth jobs', () => {
         },
     ];
 
-    const rectangleTrack = {
-        points: 'By 2 Points',
-        type: 'Track',
-        labelName,
-        firstX: 270,
-        firstY: 350,
-        secondX: 370,
-        secondY: 450,
-    };
-
     let groundTruthJobID = null;
     let jobID = null;
     let taskID = null;
@@ -174,51 +164,43 @@ context('Ground truth jobs', () => {
         cy.get('.cvat-conflict-label.cvat-conflict-darken').should('have.length', darkenConflicts);
     }
 
-    function waitForReport(authKey, rqID) {
-        cy.request({
-            method: 'POST',
-            url: `/api/quality/reports?rq_id=${rqID}`,
-            headers: {
-                Authorization: `Token ${authKey}`,
-            },
-            body: {
-                task_id: taskID,
-            },
-        }).then((response) => {
-            if (response.status === 201) {
-                qualityReportID = response.body.id;
-                return;
+    function waitForReport(cvat, rqID) {
+        return new Promise((resolve) => {
+            function request() {
+                cvat.server.request(`/api/quality/reports?rq_id=${rqID}`, {
+                    method: 'POST',
+                }).then((response) => {
+                    if (response.status === 201) {
+                        qualityReportID = response.data.id;
+                        resolve(qualityReportID);
+                    } else {
+                        setTimeout(request, 500);
+                    }
+                });
             }
-            waitForReport(authKey, rqID);
+
+            setTimeout(request, 500);
         });
     }
 
     function createTaskQualityReport(taskId) {
-        cy.logout();
-        cy.getAuthKey().then((res) => {
-            const authKey = res.body.key;
-            cy.request({
-                method: 'POST',
-                url: '/api/quality/reports',
-                headers: {
-                    Authorization: `Token ${authKey}`,
-                },
-                body: {
-                    task_id: taskId,
-                },
-            }).then((response) => {
-                const rqID = response.body.rq_id;
-                waitForReport(authKey, rqID);
-            });
-        });
-        cy.login();
-        cy.visit('/tasks');
-        cy.get('.cvat-spinner').should('not.exist');
-        cy.intercept('GET', '/api/quality/reports**').as('getReport');
+        cy.window().then((window) => window.cvat.server.request('/api/quality/reports', {
+            method: 'POST',
+            data: {
+                task_id: taskId,
+            },
+        }).then((response) => {
+            const rqID = response.data.rq_id;
+            return waitForReport(window.cvat, rqID);
+        })).then(() => {
+            cy.visit('/tasks');
+            cy.get('.cvat-spinner').should('not.exist');
+            cy.intercept('GET', '/api/quality/reports**').as('getReport');
 
-        cy.openTask(taskName);
-        openQualityTab();
-        cy.wait('@getReport');
+            cy.openTask(taskName);
+            openQualityTab();
+            cy.wait('@getReport');
+        });
     }
 
     before(() => {
@@ -417,7 +399,7 @@ context('Ground truth jobs', () => {
     });
 
     describe('Testing case ground truth job list', () => {
-        const imagesCount = 60;
+        const imagesCount = 20;
         const imageFileName = 'ground_truth_2';
         const width = 100;
         const height = 100;
@@ -428,6 +410,7 @@ context('Ground truth jobs', () => {
         const archivePath = `cypress/fixtures/${archiveName}`;
         const imagesFolder = `cypress/fixtures/${imageFileName}`;
         const directoryToArchive = imagesFolder;
+        let labels = [];
 
         before(() => {
             cy.visit('/tasks');
@@ -436,7 +419,7 @@ context('Ground truth jobs', () => {
             cy.createAnnotationTask(
                 taskName, labelName, attrName,
                 textDefaultValue, archiveName, false,
-                { multiJobs: true, segmentSize: 2 },
+                { multiJobs: true, segmentSize: 1 },
             );
             cy.openTask(taskName);
             cy.url().then((url) => {
@@ -444,34 +427,73 @@ context('Ground truth jobs', () => {
             });
             cy.get('.cvat-job-item').first().invoke('attr', 'data-row-id').then((val) => {
                 jobID = val;
+            }).then(() => {
+                cy.intercept(`/api/labels?**job_id=${jobID}**`).as('getJobLabels');
+                cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+                cy.wait('@getJobLabels').then((interception) => {
+                    labels = interception.response.body.results;
+                });
             });
         });
 
         it('Create ground truth job, compute quality report, check jobs table', () => {
-            cy.createJob({
-                ...jobOptions,
-                quantity: 100,
-            });
-
-            cy.createRectangle(rectangleTrack);
-            cy.saveJob();
-
-            cy.interactMenu('Finish the job');
-            cy.get('.cvat-modal-content-finish-job').within(() => {
-                cy.contains('button', 'Continue').click();
-            });
-
-            createTaskQualityReport(taskID);
-
-            for (let i = 0; i < 3; i++) {
-                cy.get('.cvat-task-jobs-table-row').each((row) => {
-                    cy.get(row).within(() => {
-                        cy.contains('N/A').should('not.exist');
-                    });
+            cy.window().then((window) => window.cvat.server.request('/api/jobs', {
+                method: 'POST',
+                data: {
+                    task_id: taskID,
+                    frame_count: 20,
+                    type: 'ground_truth',
+                    frame_selection_method: 'random_uniform',
+                },
+            }).then((response) => {
+                jobID = response.data.id;
+                return window.cvat.server.request(`/api/jobs/${jobID}/annotations`, {
+                    method: 'PUT',
+                    data: {
+                        shapes: [],
+                        tracks: [{
+                            label_id: labels[0].id,
+                            frame: 0,
+                            group: 0,
+                            source: 'manual',
+                            attributes: [],
+                            elements: [],
+                            shapes: [{
+                                type: 'rectangle',
+                                occluded: false,
+                                z_order: 0,
+                                rotation: 0,
+                                outside: false,
+                                attributes: [],
+                                frame: 0,
+                                points: [250, 350, 350, 450],
+                            }],
+                        }],
+                        tags: [],
+                    },
                 });
+            }).then(() => (
+                window.cvat.server.request(`/api/jobs/${jobID}`, {
+                    method: 'PATCH',
+                    data: {
+                        stage: 'acceptance',
+                        state: 'completed',
+                    },
+                })
+            ))).then(() => {
+                createTaskQualityReport(taskID);
+                cy.get('.cvat-task-jobs-table .ant-pagination-item').last().invoke('text').then((page) => {
+                    const lastPage = parseInt(page, 10);
 
-                cy.get('.cvat-task-jobs-table .ant-pagination-next').click();
-            }
+                    for (let i = 0; i < lastPage; i++) {
+                        cy.get('.cvat-task-jobs-table-row').each((row) => {
+                            cy.get(row).should('not.include.text', 'N/A');
+                        });
+
+                        cy.get('.cvat-task-jobs-table .ant-pagination-next').click();
+                    }
+                });
+            });
         });
     });
 });
