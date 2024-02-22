@@ -67,4 +67,10 @@
             width: $grid-unit-size * 35.5;
         }
     }
+
+    .cvat-single-shape-annotation-sidebar-not-found-wrapper {
+        margin-top: $grid-unit-size * 3;
+        text-align: center;
+        flex-grow: 10;
+    }
 }

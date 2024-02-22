@@ -156,7 +156,7 @@ function SingleShapeSidebar(): JSX.Element {
         pointsCount: defaultPointsCount || 1,
         labels: jobInstance.labels.filter((label) => label.type !== LabelType.TAG && label.type !== LabelType.SKELETON),
         label: null,
-        labelType: jobInstance.labels[0]?.type || LabelType.ANY,
+        labelType: LabelType.ANY,
     });
 
     const savingRef = useRef(false);
@@ -176,24 +176,35 @@ function SingleShapeSidebar(): JSX.Element {
         promise.then((foundFrame: number | null) => {
             if (typeof foundFrame === 'number') {
                 appDispatch(changeFrameAsync(foundFrame));
-            } else if (state.saveOnFinish && jobInstance.annotations.hasUnsavedChanges() && !savingRef.current) {
-                savingRef.current = true;
+            } else if (state.saveOnFinish && !savingRef.current) {
                 Modal.confirm({
                     title: 'You finished the job',
                     content: 'Please, confirm further action',
                     cancelText: 'Stay on the page',
                     okText: 'Submit results',
                     onOk: () => {
-                        appDispatch(saveAnnotationsAsync()).then(() => {
-                            jobInstance.state = JobState.COMPLETED;
-                            return jobInstance.save();
-                        }).then(() => {
+                        function reset(): void {
+                            savingRef.current = false;
+                        }
+
+                        function showSubmittedInfo(): void {
                             Modal.info({
                                 closable: false,
                                 title: 'Annotations submitted',
                                 content: 'You may close the window',
                             });
-                        });
+                        }
+
+                        savingRef.current = true;
+                        if (jobInstance.annotations.hasUnsavedChanges()) {
+                            appDispatch(saveAnnotationsAsync(() => {
+                                jobInstance.state = JobState.COMPLETED;
+                                jobInstance.save().then(showSubmittedInfo).finally(reset);
+                            })).catch(reset);
+                        } else {
+                            jobInstance.state = JobState.COMPLETED;
+                            jobInstance.save().then(showSubmittedInfo).finally(reset);
+                        }
                     },
                 });
             }
@@ -247,7 +258,7 @@ function SingleShapeSidebar(): JSX.Element {
 
     useEffect(() => {
         const labelInstance = (defaultLabel ? jobInstance.labels
-            .find((_label) => _label.name === defaultLabel) : jobInstance.labels[0]);
+            .find((_label) => _label.name === defaultLabel) : state.labels[0] || null);
         if (labelInstance) {
             dispatch(reducerActions.setActiveLabel(labelInstance));
         }
@@ -298,7 +309,20 @@ function SingleShapeSidebar(): JSX.Element {
         },
     };
 
+    if (!state.labels.length) {
+        return (
+            <Layout.Sider {...siderProps}>
+                <div className='cvat-single-shape-annotation-sidebar-not-found-wrapper'>
+                    <Text strong>No available labels found</Text>
+                </div>
+            </Layout.Sider>
+        );
+    }
+
     const isPolylabel = [LabelType.POINTS, LabelType.POLYGON, LabelType.POLYLINE].includes(state.labelType);
+    const withLabelsSelector = state.labels.length > 1;
+    const withLabelTypeSelector = state.label && state.label.type === 'any';
+
     return (
         <Layout.Sider {...siderProps}>
             <GlobalHotKeys keyMap={subKeyMap} handlers={handlers} />
@@ -371,21 +395,25 @@ function SingleShapeSidebar(): JSX.Element {
                     </Col>
                 </Row>
             )}
-            <Row justify='start' className='cvat-single-shape-annotation-sidebar-label'>
-                <Col>
-                    <Text strong>Label selector</Text>
-                </Col>
-            </Row>
-            <Row justify='start' className='cvat-single-shape-annotation-sidebar-label-select'>
-                <Col>
-                    <LabelSelector
-                        labels={state.labels}
-                        value={state.label}
-                        onChange={(label) => dispatch(reducerActions.setActiveLabel(label))}
-                    />
-                </Col>
-            </Row>
-            { state.label && state.label.type === 'any' ? (
+            { withLabelsSelector && (
+                <>
+                    <Row justify='start' className='cvat-single-shape-annotation-sidebar-label'>
+                        <Col>
+                            <Text strong>Label selector</Text>
+                        </Col>
+                    </Row>
+                    <Row justify='start' className='cvat-single-shape-annotation-sidebar-label-select'>
+                        <Col>
+                            <LabelSelector
+                                labels={state.labels}
+                                value={state.label}
+                                onChange={(label) => dispatch(reducerActions.setActiveLabel(label))}
+                            />
+                        </Col>
+                    </Row>
+                </>
+            )}
+            { withLabelTypeSelector && (
                 <>
                     <Row justify='start' className='cvat-single-shape-annotation-sidebar-label-type'>
                         <Col>
@@ -411,7 +439,7 @@ function SingleShapeSidebar(): JSX.Element {
                         </Col>
                     </Row>
                 </>
-            ) : null }
+            )}
             <Row className='cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox'>
                 <Col>
                     <Checkbox
