@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,10 +7,11 @@ import React from 'react';
 import Layout from 'antd/lib/layout';
 
 import {
-    ActiveControl, ObjectType, Rotation, ShapeType, CombinedState,
+    ActiveControl, Rotation, CombinedState,
 } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
+import { LabelType } from 'cvat-core-wrapper';
 
 import ControlVisibilityObserver, { ExtraControlsControl } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
@@ -105,14 +106,14 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     let tagControlVisible = withUnspecifiedType;
     const skeletonControlVisible = labels.some((label: Label) => label.type === 'skeleton');
     labels.forEach((label: Label) => {
-        rectangleControlVisible = rectangleControlVisible || label.type === ShapeType.RECTANGLE;
-        polygonControlVisible = polygonControlVisible || label.type === ShapeType.POLYGON;
-        polylineControlVisible = polylineControlVisible || label.type === ShapeType.POLYLINE;
-        pointsControlVisible = pointsControlVisible || label.type === ShapeType.POINTS;
-        ellipseControlVisible = ellipseControlVisible || label.type === ShapeType.ELLIPSE;
-        cuboidControlVisible = cuboidControlVisible || label.type === ShapeType.CUBOID;
-        maskControlVisible = maskControlVisible || label.type === ShapeType.MASK;
-        tagControlVisible = tagControlVisible || label.type === ObjectType.TAG;
+        rectangleControlVisible = rectangleControlVisible || label.type === LabelType.RECTANGLE;
+        polygonControlVisible = polygonControlVisible || label.type === LabelType.POLYGON;
+        polylineControlVisible = polylineControlVisible || label.type === LabelType.POLYLINE;
+        pointsControlVisible = pointsControlVisible || label.type === LabelType.POINTS;
+        ellipseControlVisible = ellipseControlVisible || label.type === LabelType.ELLIPSE;
+        cuboidControlVisible = cuboidControlVisible || label.type === LabelType.CUBOID;
+        maskControlVisible = maskControlVisible || label.type === LabelType.MASK;
+        tagControlVisible = tagControlVisible || label.type === LabelType.TAG;
     });
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {

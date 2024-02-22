@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ import {
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
 } from 'cvat-core-wrapper';
-import logger, { LogType } from 'cvat-logger';
+import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 
 import {
@@ -321,7 +321,7 @@ export function fetchAnnotationsAsync(): ThunkAction {
     };
 }
 
-export function changeAnnotationsFilters(filters: any[]): AnyAction {
+export function changeAnnotationsFilters(filters: object[]): AnyAction {
     return {
         type: AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS,
         payload: { filters },
@@ -472,7 +472,7 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
             });
 
             const copy = getCopyFromState(objectState);
-            await sessionInstance.logger.log(LogType.propagateObject, { count: Math.abs(to - from) });
+            await sessionInstance.logger.log(EventScope.propagateObject, { count: Math.abs(to - from) });
             const states = [];
             const sign = Math.sign(to - from);
             for (let frame = from + sign; sign > 0 ? frame <= to : frame >= to; frame += sign) {
@@ -501,7 +501,7 @@ export function propagateObjectAsync(from: number, to: number): ThunkAction {
 export function removeObjectAsync(sessionInstance: NonNullable<CombinedState['annotation']['job']['instance']>, objectState: any, force: boolean): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await sessionInstance.logger.log(LogType.deleteObject, { count: 1 });
+            await sessionInstance.logger.log(EventScope.deleteObject, { count: 1 });
             const { frame } = receiveAnnotationsParameters();
 
             const removed = await objectState.delete(frame, force);
@@ -541,7 +541,7 @@ export function removeObject(objectState: any, force: boolean): AnyAction {
 
 export function copyShape(objectState: any): AnyAction {
     const job = getStore().getState().annotation.job.instance;
-    job?.logger.log(LogType.copyObject, { count: 1 });
+    job?.logger.log(EventScope.copyObject, { count: 1 });
 
     return {
         type: AnnotationActionTypes.COPY_SHAPE,
@@ -611,7 +611,7 @@ export function confirmCanvasReadyAsync(): ThunkAction {
         try {
             const state: CombinedState = getState();
             const { instance: job } = state.annotation.job;
-            const { changeFrameLog } = state.annotation.player.frame;
+            const { changeFrameEvent } = state.annotation.player.frame;
             const chunks = await job.frames.cachedChunks() as number[];
             const { startFrame, stopFrame, dataChunkSize } = job;
 
@@ -631,7 +631,7 @@ export function confirmCanvasReadyAsync(): ThunkAction {
             }, []).map(([start, end]) => `${start}:${end}`).join(';');
 
             dispatch(confirmCanvasReady(ranges));
-            await changeFrameLog?.close();
+            await changeFrameEvent?.close();
         } catch (error) {
             // even if error happens here, do not need to notify the users
             dispatch(confirmCanvasReady());
@@ -677,9 +677,7 @@ export function changeFrameAsync(
                 payload: {},
             });
 
-            // commit the latest job frame to local storage
-            localStorage.setItem(`Job_${job.id}_frame`, `${toFrame}`);
-            const changeFrameLog = await job.logger.log(LogType.changeFrame, {
+            const changeFrameEvent = await job.logger.log(EventScope.changeFrame, {
                 from: frame,
                 to: toFrame,
                 step: toFrame - frame,
@@ -720,7 +718,7 @@ export function changeFrameAsync(
                     curZ: maxZ,
                     changeTime: currentTime + delay,
                     delay,
-                    changeFrameLog,
+                    changeFrameEvent,
                 },
             });
         } catch (error) {
@@ -747,7 +745,7 @@ export function undoActionAsync(): ThunkAction {
             const [undo] = state.annotation.annotations.history.undo.slice(-1);
             const undoOnFrame = undo[1];
             const undoLog = await jobInstance.logger.log(
-                LogType.undoAction,
+                EventScope.undoAction,
                 {
                     name: undo[0],
                     frame: undo[1],
@@ -786,7 +784,7 @@ export function redoActionAsync(): ThunkAction {
             const [redo] = state.annotation.annotations.history.redo.slice(-1);
             const redoOnFrame = redo[1];
             const redoLog = await jobInstance.logger.log(
-                LogType.redoAction,
+                EventScope.redoAction,
                 {
                     name: redo[0],
                     frame: redo[1],
@@ -835,7 +833,7 @@ export function rotateCurrentFrame(rotation: Rotation): AnyAction {
 
     const frameAngle = (frameAngles[frameNumber - startFrame] + (rotation === Rotation.CLOCKWISE90 ? 90 : 270)) % 360;
 
-    job.logger.log(LogType.rotateImage, { angle: frameAngle });
+    job.logger.log(EventScope.rotateImage, { angle: frameAngle });
 
     return {
         type: AnnotationActionTypes.ROTATE_FRAME,
@@ -867,9 +865,15 @@ export function closeJob(): ThunkAction {
     };
 }
 
-export function getJobAsync(
-    tid: number, jid: number, initialFrame: number | null, initialFilters: object[],
-): ThunkAction {
+export function getJobAsync({
+    taskID, jobID, initialFrame, initialFilters, initialOpenGuide,
+}: {
+    taskID: number;
+    jobID: number;
+    initialFrame: number | null;
+    initialFilters: object[];
+    initialOpenGuide: boolean;
+}): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
             const state = getState();
@@ -885,29 +889,29 @@ export function getJobAsync(
             dispatch({
                 type: AnnotationActionTypes.GET_JOB,
                 payload: {
-                    requestedId: jid,
+                    requestedId: jobID,
                 },
             });
 
-            if (!Number.isInteger(tid) || !Number.isInteger(jid)) {
+            if (!Number.isInteger(taskID) || !Number.isInteger(jobID)) {
                 throw new Error('Requested resource id is not valid');
             }
 
             const loadJobEvent = await logger.log(
-                LogType.loadJob,
+                EventScope.loadJob,
                 {
-                    task_id: tid,
-                    job_id: jid,
+                    task_id: taskID,
+                    job_id: jobID,
                 },
                 true,
             );
 
             getCore().config.globalObjectsCounter = 0;
-            const [job] = await cvat.jobs.get({ jobID: jid });
+            const [job] = await cvat.jobs.get({ jobID });
             let gtJob: Job | null = null;
             if (job.type === JobType.ANNOTATION) {
                 try {
-                    [gtJob] = await cvat.jobs.get({ taskID: tid, type: JobType.GROUND_TRUTH });
+                    [gtJob] = await cvat.jobs.get({ taskID, type: JobType.GROUND_TRUTH });
                 } catch (e) {
                     // gtJob is not available for workers
                     // do nothing
@@ -942,9 +946,9 @@ export function getJobAsync(
 
             let conflicts: QualityConflict[] = [];
             if (gtJob) {
-                const [report] = await cvat.analytics.quality.reports({ jobId: job.id, target: 'job' });
+                const [report] = await cvat.analytics.quality.reports({ jobID: job.id, target: 'job' });
                 if (report) {
-                    conflicts = await cvat.analytics.quality.conflicts({ reportId: report.id });
+                    conflicts = await cvat.analytics.quality.conflicts({ reportID: report.id });
                 }
             }
 
@@ -956,6 +960,7 @@ export function getJobAsync(
                 payload: {
                     openTime,
                     job,
+                    initialOpenGuide,
                     groundTruthInstance: gtJob || null,
                     groundTruthJobFramesMeta,
                     issues,
@@ -994,7 +999,7 @@ export function saveAnnotationsAsync(afterSave?: () => void): ThunkAction {
         });
 
         try {
-            const saveJobEvent = await jobInstance.logger.log(LogType.saveJob, {}, true);
+            const saveJobEvent = await jobInstance.logger.log(EventScope.saveJob, {}, true);
 
             await jobInstance.frames.save();
             await jobInstance.annotations.save();

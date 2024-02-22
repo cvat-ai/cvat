@@ -29,15 +29,15 @@ def filter_dict(
 
 
 @overload
-def atomic_writer(path: Union[os.PathLike, str], mode: Literal["wb"]) -> ContextManager[BinaryIO]:
-    ...
+def atomic_writer(
+    path: Union[os.PathLike, str], mode: Literal["wb"]
+) -> ContextManager[BinaryIO]: ...
 
 
 @overload
 def atomic_writer(
     path: Union[os.PathLike, str], mode: Literal["w"], encoding: str = "UTF-8"
-) -> ContextManager[TextIO]:
-    ...
+) -> ContextManager[TextIO]: ...
 
 
 @contextlib.contextmanager

@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'allauth.socialaccount',
     'health_check',
+    'health_check.cache',
     'health_check.db',
     'health_check.contrib.migrations',
     'health_check.contrib.psutil',
@@ -679,12 +680,15 @@ DATABASES = {
         'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
         'PASSWORD': postgres_password,
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
+        'OPTIONS': {
+            'application_name': os.getenv('CVAT_POSTGRES_APPLICATION_NAME', 'cvat'),
+        },
     }
 }
 
 BUCKET_CONTENT_MAX_PAGE_SIZE =  500
 
-IMPORT_CACHE_FAILED_TTL = timedelta(days=90)
+IMPORT_CACHE_FAILED_TTL = timedelta(days=30)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
 IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=12)
 

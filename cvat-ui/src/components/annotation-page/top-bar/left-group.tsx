@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -73,7 +73,11 @@ function LeftGroup(props: Props): JSX.Element {
                 <LoadingOutlined />
             </Modal>
             <Col className='cvat-annotation-header-left-group'>
-                <Dropdown overlay={<AnnotationMenuContainer />}>
+                <Dropdown
+                    trigger={['click']}
+                    destroyPopupOnHide
+                    overlay={<AnnotationMenuContainer />}
+                >
                     <Button type='link' className='cvat-annotation-header-menu-button cvat-annotation-header-button'>
                         <Icon component={MainMenuIcon} />
                         Menu

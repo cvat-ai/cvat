@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -54,9 +54,10 @@ const defaultState: AnnotationState = {
     job: {
         openTime: null,
         labels: [],
-        groundTruthJobFramesMeta: null,
         requestedId: null,
+        groundTruthJobFramesMeta: null,
         groundTruthInstance: null,
+        initialOpenGuide: false,
         instance: null,
         attributes: {},
         fetching: false,
@@ -71,7 +72,7 @@ const defaultState: AnnotationState = {
             fetching: false,
             delay: 0,
             changeTime: null,
-            changeFrameLog: null,
+            changeFrameEvent: null,
         },
         ranges: '',
         playing: false,
@@ -153,6 +154,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frameData: data,
                 minZ,
                 maxZ,
+                initialOpenGuide,
                 groundTruthInstance,
                 groundTruthJobFramesMeta,
             } = action.payload;
@@ -186,6 +188,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
+                    initialOpenGuide,
                     groundTruthInstance,
                     groundTruthJobFramesMeta,
                 },
@@ -285,7 +288,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 curZ,
                 delay,
                 changeTime,
-                changeFrameLog,
+                changeFrameEvent,
             } = action.payload;
 
             return {
@@ -300,7 +303,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         fetching: false,
                         changeTime,
                         delay,
-                        changeFrameLog,
+                        changeFrameEvent,
                     },
                 },
                 annotations: {
@@ -324,7 +327,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         ...state.player.frame,
                         fetching: false,
-                        changeFrameLog: null,
+                        changeFrameEvent: null,
                     },
                 },
             };

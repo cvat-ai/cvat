@@ -1107,7 +1107,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private onShiftKeyDown = (e: KeyboardEvent): void => {
-        if (!e.repeat && e.code.toLowerCase().includes('shift')) {
+        if (!e.repeat && (e.code || '').toLowerCase().includes('shift')) {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_SHIFT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
@@ -1126,7 +1126,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     };
 
     private onShiftKeyUp = (e: KeyboardEvent): void => {
-        if (e.code.toLowerCase().includes('shift') && this.activeElement) {
+        if ((e.code || '').toLowerCase().includes('shift') && this.activeElement) {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];

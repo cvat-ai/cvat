@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,6 @@ import { SmallDashOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ConnectedComponent } from 'react-redux';
 import withVisibilityHandling from './handle-popover-visibility';
 
 const extraControlsContentClassName = 'cvat-extra-controls-control-content';
@@ -19,13 +18,14 @@ const CustomPopover = withVisibilityHandling(Popover, 'extra-controls');
 export function ExtraControlsControl(): JSX.Element {
     const [hasChildren, setHasChildren] = useState(false);
     const [initialized, setInitialized] = useState(false);
+    const [visible, setVisible] = useState(true);
 
     useEffect(() => {
         if (!initialized) {
             setInitialized(true);
         }
 
-        window.document.body.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        setVisible(false);
     }, []);
 
     onUpdateChildren = () => {
@@ -37,7 +37,8 @@ export function ExtraControlsControl(): JSX.Element {
 
     return (
         <CustomPopover
-            defaultVisible // we must render it at least one between using
+            visible={visible}
+            onVisibleChange={setVisible}
             trigger={initialized ? 'hover' : 'click'} // trigger='hover' allows to close the popover by body click
             placement='right'
             overlayStyle={{ display: initialized ? '' : 'none' }}
@@ -52,7 +53,7 @@ export function ExtraControlsControl(): JSX.Element {
 }
 
 export default function ControlVisibilityObserver<P = {}>(
-    ControlComponent: React.FunctionComponent<P> | ConnectedComponent<any, any>,
+    ControlComponent: React.FunctionComponent<P>,
 ): React.FunctionComponent<P> {
     let visibilityHeightThreshold = 0; // minimum value of height when element can be pushed to main panel
 

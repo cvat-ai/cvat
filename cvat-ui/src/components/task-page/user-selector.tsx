@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ import Input from 'antd/lib/input';
 import debounce from 'lodash/debounce';
 
 import { User, getCore } from 'cvat-core-wrapper';
+import { getCVATStore } from 'cvat-store';
 
 const core = getCore();
 
@@ -40,6 +41,38 @@ const searchUsers = debounce(
     },
 );
 
+const initialUsersStorage: {
+    storage: Record<string, {
+        promise: Promise<User[]>,
+        timestamp: number,
+    }>,
+    get(userID?: number, organizationSlug?: string): Promise<User[]>;
+} = {
+    storage: {},
+    get(userID?: number, organizationSlug?: string): Promise<User[]> {
+        if (typeof userID === 'undefined') {
+            return Promise.resolve([]);
+        }
+
+        const key = `${userID}_${organizationSlug || ''}`;
+        const RELOAD_INITIAL_USERS_AFTER_MS = 300000;
+        if (key in this.storage && (Date.now() - this.storage[key].timestamp) < RELOAD_INITIAL_USERS_AFTER_MS) {
+            return this.storage[key].promise;
+        }
+
+        this.storage[key] = {
+            promise: core.users.get({ limit: 10, is_active: true }),
+            timestamp: Date.now(),
+        };
+
+        this.storage[key].promise.catch(() => {
+            delete this.storage[key];
+        });
+
+        return this.storage[key].promise;
+    },
+};
+
 export default function UserSelector(props: Props): JSX.Element {
     const {
         value, className, username, onSelect,
@@ -50,7 +83,10 @@ export default function UserSelector(props: Props): JSX.Element {
     const autocompleteRef = useRef<RefSelectProps | null>(null);
 
     useEffect(() => {
-        core.users.get({ limit: 10, is_active: true }).then((result: User[]) => {
+        const state = getCVATStore().getState();
+        const userID = state.auth.user?.id;
+        const organizationSlug = state.organizations.current?.slug;
+        initialUsersStorage.get(userID, organizationSlug).then((result: User[]) => {
             if (result) {
                 setInitialUsers(result);
             }

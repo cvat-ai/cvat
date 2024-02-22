@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -37,8 +38,15 @@ def __save_job__update_quality_metrics(instance, created, **kwargs):
     else:
         assert False
 
-    for task in tasks:
-        qc.QualityReportUpdateManager().schedule_quality_autoupdate_job(task)
+    def schedule_autoupdate_jobs():
+        for task in tasks:
+            if task.id is None:
+                # The task may have been deleted after the on_commit call.
+                continue
+
+            qc.QualityReportUpdateManager().schedule_quality_autoupdate_job(task)
+
+    transaction.on_commit(schedule_autoupdate_jobs, robust=True)
 
 
 @receiver(post_save, sender=Task, dispatch_uid=__name__ + ".save_task-initialize_quality_settings")

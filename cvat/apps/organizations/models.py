@@ -15,12 +15,12 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import timezone
 
-class Organization(models.Model):
+from cvat.apps.engine.models import TimestampedModel
+
+class Organization(TimestampedModel):
     slug = models.SlugField(max_length=16, blank=False, unique=True)
     name = models.CharField(max_length=64, blank=True)
     description = models.TextField(blank=True)
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
     contact = models.JSONField(blank=True, default=dict)
 
     owner = models.ForeignKey(get_user_model(), null=True,

@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import PluginRegistry from './plugins';
-import loggerStorage from './logger-storage';
-import { EventLogger } from './log';
+import logger from './logger';
+import { Event } from './event';
 import ObjectState from './object-state';
 import Statistics from './statistics';
 import Comment from './comment';
@@ -129,6 +129,10 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.server.installedApps);
                 return result;
             },
+            async apiSchema() {
+                const result = await PluginRegistry.apiWrapper(cvat.server.apiSchema);
+                return result;
+            },
         },
         projects: {
             async get(filter = {}) {
@@ -242,7 +246,7 @@ function build(): CVATCore {
                 return result;
             },
         },
-        logger: loggerStorage,
+        logger,
         config: {
             get backendAPI() {
                 return config.backendAPI;
@@ -346,17 +350,17 @@ function build(): CVATCore {
                 },
             },
             quality: {
-                async reports(filter: any) {
+                async reports(filter = {}) {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter);
                     return result;
                 },
-                async conflicts(filter: any) {
+                async conflicts(filter = {}) {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.conflicts, filter);
                     return result;
                 },
                 settings: {
-                    async get(taskID: number) {
-                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, taskID);
+                    async get(filter = {}) {
+                        const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.settings.get, filter);
                         return result;
                     },
                 },
@@ -367,7 +371,7 @@ function build(): CVATCore {
             Project: implementProject(Project),
             Task: implementTask(Task),
             Job: implementJob(Job),
-            EventLogger,
+            Event,
             Attribute,
             Label,
             Statistics,
