@@ -6487,6 +6487,11 @@ components:
           items:
             $ref: '#/components/schemas/EventRequest'
           default: []
+        previous_event:
+          allOf:
+          - $ref: '#/components/schemas/EventRequest'
+          writeOnly: true
+          nullable: true
         timestamp:
           type: string
           format: date-time
