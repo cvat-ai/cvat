@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,6 +15,7 @@ import Progress from 'antd/lib/progress';
 import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
+import { throttle } from 'lodash';
 
 import { OpenCVIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
@@ -541,9 +542,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 initializationError: false,
                 initializationProgress: 0,
             });
-            await openCVWrapper.initialize((progress: number) => {
+            await openCVWrapper.initialize(throttle((progress: number) => {
                 this.setState({ initializationProgress: progress });
-            });
+            }, 500));
             const trackers = Object.values(openCVWrapper.tracking);
             this.setState({
                 libraryInitialized: true,
@@ -771,7 +772,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         {initializationProgress >= 0 && (
                             <Col>
                                 <Progress
-                                    width={8 * 5}
+                                    size='small'
+                                    style={{ transform: 'scale(0.75)' }}
                                     percent={initializationProgress}
                                     type='circle'
                                     status={initializationError ? 'exception' : undefined}
