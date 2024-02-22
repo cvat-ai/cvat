@@ -417,7 +417,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Cityscapes 1.0", "Datumaro 1.0",
                         "ImageNet 1.0", "MOTS PNG 1.0",
                         "PASCAL VOC 1.1", "Segmentation mask 1.1",
-                        "TFRecord 1.0", "VGGFace2 1.0",
+                        "VGGFace2 1.0",
                         "WiderFace 1.0", "YOLO 1.1"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
@@ -522,7 +522,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                             "Cityscapes 1.0", "ImageNet 1.0",
                             "MOTS PNG 1.0", "PASCAL VOC 1.1",
-                            "Segmentation mask 1.1", "TFRecord 1.0",
+                            "Segmentation mask 1.1",
                             "VGGFace2 1.0", "WiderFace 1.0", "YOLO 1.1"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
@@ -968,7 +968,7 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     if dump_format_name in [
                         "MOT 1.1", "PASCAL VOC 1.1", "Segmentation mask 1.1",
-                        "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0",
+                        "YOLO 1.1", "ImageNet 1.0",
                         "WiderFace 1.0", "VGGFace2 1.0",
                         "Datumaro 1.0", "Open Images V6 1.0", "KITTI 1.0"
                     ]:
@@ -1084,7 +1084,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     if dump_format_name in [
                         "MOT 1.1", "MOTS PNG 1.0",
                         "PASCAL VOC 1.1", "Segmentation mask 1.1",
-                        "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0",
+                        "YOLO 1.1", "ImageNet 1.0",
                         "WiderFace 1.0", "VGGFace2 1.0", "LFW 1.0",
                         "Open Images V6 1.0", "Datumaro 1.0", "KITTI 1.0"
                     ]:
@@ -1287,7 +1287,7 @@ class ProjectDumpUpload(_DbTestBase):
                 dump_format_name = dump_format.DISPLAY_NAME
                 if dump_format_name in [
                     'Cityscapes 1.0', 'LFW 1.0', 'Market-1501 1.0',
-                    'MOT 1.1', 'TFRecord 1.0'
+                    'MOT 1.1',
                 ]:
                     # TO-DO: fix bug for this formats
                     continue
@@ -1303,7 +1303,7 @@ class ProjectDumpUpload(_DbTestBase):
                 if dump_format_name in [
                     "Cityscapes 1.0", "Datumaro 1.0", "ImageNet 1.0",
                     "MOT 1.1", "MOTS PNG 1.0", "PASCAL VOC 1.1",
-                    "Segmentation mask 1.1", "TFRecord 1.0", "VGGFace2 1.0",
+                    "Segmentation mask 1.1", "VGGFace2 1.0",
                     "WiderFace 1.0", "YOLO 1.1"
                 ]:
                     self._create_annotations(task, dump_format_name, "default")
@@ -1344,7 +1344,7 @@ class ProjectDumpUpload(_DbTestBase):
                 upload_format_name = upload_format.DISPLAY_NAME
                 if upload_format_name in [
                     'Cityscapes 1.0', 'LFW 1.0', 'Market-1501 1.0',
-                    'MOT 1.1', 'TFRecord 1.0'
+                    'MOT 1.1',
                 ]:
                     # TO-DO: fix bug for this formats
                     continue
