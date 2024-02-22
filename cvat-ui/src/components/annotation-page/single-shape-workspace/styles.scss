@@ -59,4 +59,12 @@
             padding-left: $grid-unit-size * 2;
         }
     }
+
+    .cvat-single-shape-annotation-sidebar-skip-wrapper {
+        margin-bottom: $grid-unit-size;
+
+        button {
+            width: $grid-unit-size * 35.5;
+        }
+    }
 }

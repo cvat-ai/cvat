@@ -16,6 +16,7 @@ import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 import Alert from 'antd/lib/alert';
 import Modal from 'antd/lib/modal';
+import Button from 'antd/lib/button';
 
 import { CombinedState, NavigationType } from 'reducers';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
@@ -316,6 +317,19 @@ function SingleShapeSidebar(): JSX.Element {
                                 </>
                             )}
                         />
+                        <Row justify='start' className='cvat-single-shape-annotation-sidebar-skip-wrapper'>
+                            <Col>
+                                <Button
+                                    size='large'
+                                    onClick={() => {
+                                        savingRef.current = false;
+                                        nextFrame();
+                                    }}
+                                >
+                                    Skip
+                                </Button>
+                            </Col>
+                        </Row>
                         <Alert
                             type='info'
                             className='cvat-single-shape-annotation-sidebar-ux-hints'
@@ -323,7 +337,7 @@ function SingleShapeSidebar(): JSX.Element {
                                 <ul>
                                     <li>
                                         <Text>Click</Text>
-                                        <Text strong>{' Next '}</Text>
+                                        <Text strong>{' Skip '}</Text>
                                         <Text>if there is nothing to annotate</Text>
                                     </li>
                                     <li>
