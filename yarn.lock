@@ -3297,7 +3297,7 @@ async-mutex@^0.4.0:
   dependencies:
     tslib "^2.4.0"
 
-async-validator@^4.2.5:
+async-validator@^4.1.0:
   version "4.2.5"
   resolved "https://registry.yarnpkg.com/async-validator/-/async-validator-4.2.5.tgz#c96ea3332a521699d0afaaceed510a54656c6339"
   integrity sha512-7HhHjtERjqlNbZtqNqy2rckN/SpOOlmDliet+lP7k+eKZEjPk3DgyeU9lIXLdeLz0uBbbVp+9Qdow9wJWgwwfg==
@@ -9987,7 +9987,7 @@ rc-field-form@~1.41.0:
   integrity sha512-k9AS0wmxfJfusWDP/YXWTpteDNaQ4isJx9UKxx4/e8Dub4spFeZ54/EuN2sYrMRID/+hUznPgVZeg+Gf7XSYCw==
   dependencies:
     "@babel/runtime" "^7.18.0"
-    async-validator "^4.2.5"
+    async-validator "^4.1.0"
     rc-util "^5.32.2"
 
 rc-form@^2.4.12:
