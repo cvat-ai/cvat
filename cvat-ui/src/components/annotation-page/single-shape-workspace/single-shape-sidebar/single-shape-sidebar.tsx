@@ -465,7 +465,7 @@ function SingleShapeSidebar(): JSX.Element {
                             dispatch(reducerActions.switchAutoSaveOnFinish());
                         }}
                     >
-                        Automatically save after the latest frame
+                        Automatically save when finish
                     </Checkbox>
                 </Col>
             </Row>
