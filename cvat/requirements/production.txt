@@ -28,5 +28,3 @@ watchfiles==0.20.0
     # via uvicorn
 websockets==11.0.3
     # via uvicorn
-
-# The following packages are considered to be unsafe in a requirements file:

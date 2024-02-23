@@ -51,4 +51,3 @@ rq-scheduler==0.13.1
 rq==1.15.1
 rules>=3.3
 Shapely==1.7.1
-tensorflow==2.11.1 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1

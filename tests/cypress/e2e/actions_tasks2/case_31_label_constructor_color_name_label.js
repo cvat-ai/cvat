@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -110,6 +110,7 @@ context('Label constructor. Color label. Label name editing', () => {
             });
             cy.get('.cvat-change-task-label-color-button').click();
             cy.changeColorViaBadge(labelColor.yellowHex);
+            cy.get('.cvat-label-color-picker').should('be.hidden');
             cy.get('[placeholder="Label name"]').clear();
             cy.get('[placeholder="Label name"]').type(colorYellow); // Check PR 2806
             cy.contains('button', 'Done').click();
@@ -166,6 +167,7 @@ context('Label constructor. Color label. Label name editing', () => {
                     // Change the label color
                     cy.get('.cvat-change-task-label-color-button').click();
                     cy.changeColorViaBadge(labelColor.yellowHex);
+                    cy.get('.cvat-label-color-picker').should('be.hidden');
 
                     // Reset the label color
                     cy.get('.cvat-change-task-label-color-button').click();

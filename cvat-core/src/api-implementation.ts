@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,10 +13,12 @@ import {
     isBoolean,
     isInteger,
     isString,
+    isPageSize,
     checkFilter,
     checkExclusiveFields,
     checkObjectType,
     filterFieldsToSnakeCase,
+    fieldsToSnakeCase,
 } from './common';
 
 import User from './user';
@@ -135,6 +137,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         const result = await serverProxy.server.installedApps();
         return result;
     });
+
+    implementationMixin(cvat.server.apiSchema, serverProxy.server.apiSchema);
 
     implementationMixin(cvat.assets.create, async (file: File, guideId: number): Promise<SerializedAsset> => {
         if (!(file instanceof File)) {
@@ -400,34 +404,36 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     });
 
     implementationMixin(cvat.analytics.quality.reports, async (filter) => {
-        let updatedParams: Record<string, string> = {};
-        if ('taskId' in filter) {
-            updatedParams = {
-                task_id: filter.taskId,
-                sort: '-created_date',
-                target: filter.target,
-            };
-        }
-        if ('jobId' in filter) {
-            updatedParams = {
-                job_id: filter.jobId,
-                sort: '-created_date',
-                target: filter.target,
-            };
-        }
-        const reportsData = await serverProxy.analytics.quality.reports(updatedParams);
+        checkFilter(filter, {
+            page: isInteger,
+            pageSize: isPageSize,
+            parentID: isInteger,
+            projectID: isInteger,
+            taskID: isInteger,
+            jobID: isInteger,
+            target: isString,
+            filter: isString,
+            search: isString,
+            sort: isString,
+        });
 
-        return reportsData.map((report) => new QualityReport({ ...report }));
+        const params = fieldsToSnakeCase({ ...filter, sort: '-created_date' });
+
+        const reportsData = await serverProxy.analytics.quality.reports(params);
+        const reports = Object.assign(
+            reportsData.map((report) => new QualityReport({ ...report })),
+            { count: reportsData.count },
+        );
+        return reports;
     });
     implementationMixin(cvat.analytics.quality.conflicts, async (filter) => {
-        let updatedParams: Record<string, string> = {};
-        if ('reportId' in filter) {
-            updatedParams = {
-                report_id: filter.reportId,
-            };
-        }
+        checkFilter(filter, {
+            reportID: isInteger,
+        });
 
-        const conflictsData = await serverProxy.analytics.quality.conflicts(updatedParams);
+        const params = fieldsToSnakeCase(filter);
+
+        const conflictsData = await serverProxy.analytics.quality.conflicts(params);
         const conflicts = conflictsData.map((conflict) => new QualityConflict({ ...conflict }));
         const frames = Array.from(new Set(conflicts.map((conflict) => conflict.frame)))
             .sort((a, b) => a - b);
@@ -496,8 +502,14 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         return mergedConflicts;
     });
-    implementationMixin(cvat.analytics.quality.settings.get, async (taskID: number) => {
-        const settings = await serverProxy.analytics.quality.settings.get(taskID);
+    implementationMixin(cvat.analytics.quality.settings.get, async (filter) => {
+        checkFilter(filter, {
+            taskID: isInteger,
+        });
+
+        const params = fieldsToSnakeCase(filter);
+
+        const settings = await serverProxy.analytics.quality.settings.get(params);
         return new QualitySettings({ ...settings });
     });
     implementationMixin(cvat.analytics.performance.reports, async (filter) => {
@@ -511,25 +523,8 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         checkExclusiveFields(filter, ['jobID', 'taskID', 'projectID'], ['startDate', 'endDate']);
 
-        const updatedParams: Record<string, string> = {};
-
-        if ('taskID' in filter) {
-            updatedParams.task_id = filter.taskID;
-        }
-        if ('jobID' in filter) {
-            updatedParams.job_id = filter.jobID;
-        }
-        if ('projectID' in filter) {
-            updatedParams.project_id = filter.projectID;
-        }
-        if ('startDate' in filter) {
-            updatedParams.start_date = filter.startDate;
-        }
-        if ('endDate' in filter) {
-            updatedParams.end_date = filter.endDate;
-        }
-
-        const reportData = await serverProxy.analytics.performance.reports(updatedParams);
+        const params = fieldsToSnakeCase(filter);
+        const reportData = await serverProxy.analytics.performance.reports(params);
         return new AnalyticsReport(reportData);
     });
     implementationMixin(cvat.frames.getMeta, async (type, id) => {

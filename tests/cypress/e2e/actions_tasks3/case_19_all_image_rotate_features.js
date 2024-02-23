@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,14 +15,15 @@ context('Rotate all images feature.', () => {
     }
 
     function imageRotate(direction = 'anticlockwise', deg) {
-        cy.get('.cvat-rotate-canvas-control').trigger('mouseover');
-        cy.get('.cvat-rotate-canvas-control').should('be.visible');
+        cy.get('.cvat-rotate-canvas-control').click();
+        cy.get('.cvat-rotate-canvas-popover').should('be.visible');
         if (direction === 'clockwise') {
             cy.get('.cvat-rotate-canvas-controls-right').should('be.visible').click();
         } else {
             cy.get('.cvat-rotate-canvas-controls-left').should('be.visible').click();
         }
         checkDegRotate(deg);
+        cy.get('body').click();
     }
 
     function checkFrameNum(frameNum) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ Cypress.Commands.add('createWebhook', (webhookData) => {
 
 Cypress.Commands.add('openWebhookActions', (description) => {
     cy.contains(description).parents('.cvat-webhooks-list-item').within(() => {
-        cy.get('.cvat-webhooks-page-actions-button').trigger('mouseover');
+        cy.get('.cvat-webhooks-page-actions-button').click();
     });
 });
 
@@ -66,7 +66,7 @@ Cypress.Commands.add('setUpWebhook', (webhookData) => {
 });
 
 Cypress.Commands.add('openOrganizationWebhooks', () => {
-    cy.get('.cvat-organization-page-actions-button').trigger('mouseover');
+    cy.get('.cvat-organization-page-actions-button').click();
     cy.get('.cvat-organization-actions-menu').within(() => {
         cy.contains('[role="menuitem"]', 'Setup webhooks').click();
     });

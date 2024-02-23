@@ -5,24 +5,24 @@
 
 import { detect } from 'detect-browser';
 import PluginRegistry from './plugins';
-import { LogType } from './enums';
+import { EventScope } from './enums';
 import { ArgumentError } from './exceptions';
 
-export class EventLogger {
+export class Event {
     public readonly id: number;
-    public readonly scope: LogType;
-    public readonly time: Date;
+    public readonly scope: EventScope;
+    public readonly timestamp: Date;
 
     public payload: any;
 
     protected onCloseCallback: (() => void) | null;
 
-    constructor(logType: LogType, payload: any) {
+    constructor(scope: EventScope, payload: any) {
         this.onCloseCallback = null;
 
-        this.scope = logType;
+        this.scope = scope;
         this.payload = { ...payload };
-        this.time = new Date();
+        this.timestamp = new Date();
     }
 
     public onClose(callback: () => void): void {
@@ -46,7 +46,7 @@ export class EventLogger {
         const payload = { ...this.payload };
         const body = {
             scope: this.scope,
-            timestamp: this.time.toISOString(),
+            timestamp: this.timestamp.toISOString(),
         };
 
         for (const field of [
@@ -81,17 +81,17 @@ export class EventLogger {
     // Log duration will be computed based on the latest call
     // All payloads will be shallowly combined (all top level properties will exist)
     public async close(payload = {}): Promise<void> {
-        const result = await PluginRegistry.apiWrapper.call(this, EventLogger.prototype.close, payload);
+        const result = await PluginRegistry.apiWrapper.call(this, Event.prototype.close, payload);
         return result;
     }
 }
 
-Object.defineProperties(EventLogger.prototype.close, {
+Object.defineProperties(Event.prototype.close, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(payload: any) {
-            this.payload.duration = Date.now() - this.time.getTime();
+        value: async function implementation(this: Event, payload: any) {
+            this.payload.duration = Date.now() - this.timestamp.getTime();
             this.payload = { ...this.payload, ...payload };
             if (this.onCloseCallback) {
                 this.onCloseCallback();
@@ -100,7 +100,7 @@ Object.defineProperties(EventLogger.prototype.close, {
     },
 });
 
-class LogWithCount extends EventLogger {
+class EventWithCount extends Event {
     public validatePayload(): void {
         super.validatePayload.call(this);
         if (!Number.isInteger(this.payload.count) || this.payload.count < 1) {
@@ -110,7 +110,7 @@ class LogWithCount extends EventLogger {
     }
 }
 
-class LogWithExceptionInfo extends EventLogger {
+class EventWithExceptionInfo extends Event {
     public validatePayload(): void {
         super.validatePayload.call(this);
 
@@ -154,7 +154,7 @@ class LogWithExceptionInfo extends EventLogger {
     }
 }
 
-class LogWithControlsInfo extends EventLogger {
+class EventWithControlsInfo extends Event {
     public dump(): any {
         this.payload = {
             obj_val: this.payload?.text,
@@ -164,27 +164,27 @@ class LogWithControlsInfo extends EventLogger {
     }
 }
 
-export default function logFactory(logType: LogType, payload: any): EventLogger {
-    const logsWithCount = [
-        LogType.deleteObject,
-        LogType.mergeObjects,
-        LogType.copyObject,
-        LogType.undoAction,
-        LogType.redoAction,
-        LogType.changeFrame,
+export default function makeEvent(scope: EventScope, payload: any): Event {
+    const eventsWithCount = [
+        EventScope.deleteObject,
+        EventScope.mergeObjects,
+        EventScope.copyObject,
+        EventScope.undoAction,
+        EventScope.redoAction,
+        EventScope.changeFrame,
     ];
 
-    if (logsWithCount.includes(logType)) {
-        return new LogWithCount(logType, payload);
+    if (eventsWithCount.includes(scope)) {
+        return new EventWithCount(scope, payload);
     }
 
-    if (logType === LogType.exception) {
-        return new LogWithExceptionInfo(logType, payload);
+    if (scope === EventScope.exception) {
+        return new EventWithExceptionInfo(scope, payload);
     }
 
-    if (logType === LogType.clickElement) {
-        return new LogWithControlsInfo(logType, payload);
+    if (scope === EventScope.clickElement) {
+        return new EventWithControlsInfo(scope, payload);
     }
 
-    return new EventLogger(logType, payload);
+    return new Event(scope, payload);
 }

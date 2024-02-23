@@ -16,6 +16,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.11.0'></a>
+## \[2.11.0\] - 2024-02-23
+
+### Added
+
+- Added `dataset:export` and `dataset:import` events that are logged when
+  the user initiates an export or import of a project, task or job
+  (<https://github.com/opencv/cvat/pull/7476>)
+
+### Changed
+
+- Now menus in the web interface are triggered by click, not by hover as before
+  (<https://github.com/opencv/cvat/pull/7431>)
+
+### Removed
+
+- Removed support for the TFRecord dataset format
+  (<https://github.com/opencv/cvat/pull/7416>)
+
+### Fixed
+
+- On quality page for a task, only the first page with jobs has quality report metrics
+  (<https://github.com/opencv/cvat/pull/7441>)
+
+- Side effects of data changes, such as the sending of webhooks,
+  are no longer triggered until after the changes have been committed
+  to the database
+  (<https://github.com/opencv/cvat/pull/7460>,
+  <https://github.com/opencv/cvat/pull/7477>)
+
 <a id='changelog-2.10.3'></a>
 ## \[2.10.3\] - 2024-02-09
 

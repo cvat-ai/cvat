@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -87,16 +87,9 @@ context('Group features', () => {
     }
 
     function changeGroupColor(object, color) {
-        cy.get(object).within(() => {
-            cy.get('[aria-label="more"]').click();
-        });
-        cy.get('.ant-dropdown')
-            .should('be.visible')
-            .not('.ant-dropdown-hidden')
-            .within(() => {
-                cy.contains('Change group color').click();
-            });
+        cy.interactAnnotationObjectMenu(object, 'Change group color');
         cy.changeColorViaBadge(color);
+        cy.get('.cvat-label-color-picker').should('not.exist');
     }
 
     function testShapesFillEquality(equal) {

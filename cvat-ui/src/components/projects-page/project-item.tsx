@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -102,7 +102,11 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
                             </div>
                             <div>
-                                <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={instance} />}>
+                                <Dropdown
+                                    destroyPopupOnHide
+                                    trigger={['click']}
+                                    overlay={<ProjectActionsMenuComponent projectInstance={instance} />}
+                                >
                                     <Button className='cvat-project-details-button' type='link' size='large' icon={<MoreOutlined />} />
                                 </Dropdown>
                             </div>
