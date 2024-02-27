@@ -173,6 +173,9 @@ const defaultState: NotificationsState = {
             decliningInvitation: null,
             resendingInvitation: null,
         },
+        requests: {
+            fetching: null,
+        },
     },
     messages: {
         tasks: {
@@ -1371,6 +1374,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case RequestsActionsTypes.GET_REQUESTS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    requests: {
+                        ...state.errors.requests,
+                        fetching: {
+                            message: 'Could not fetch requests from the server',
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                        },
+                    },
+                },
+            };
+        }
+
         case ReviewActionTypes.COMMENT_ISSUE_FAILED: {
             return {
                 ...state,

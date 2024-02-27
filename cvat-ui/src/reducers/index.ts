@@ -576,6 +576,9 @@ export interface NotificationsState {
             acceptingInvitation: null | ErrorState;
             decliningInvitation: null | ErrorState;
             resendingInvitation: null | ErrorState;
+        };
+        requests: {
+            fetching: null | ErrorState;
         }
     };
     messages: {
