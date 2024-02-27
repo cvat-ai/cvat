@@ -17,6 +17,7 @@ import {
     ActiveControl,
     AnnotationState,
     ContextMenuType,
+    NavigationType,
     ObjectType,
     ShapeType,
     Workspace,
@@ -57,7 +58,11 @@ const defaultState: AnnotationState = {
         requestedId: null,
         groundTruthJobFramesMeta: null,
         groundTruthInstance: null,
-        initialOpenGuide: false,
+        queryParameters: {
+            initialOpenGuide: false,
+            defaultLabel: null,
+            defaultPointsCount: null,
+        },
         instance: null,
         attributes: {},
         fetching: false,
@@ -74,6 +79,7 @@ const defaultState: AnnotationState = {
             changeTime: null,
             changeFrameEvent: null,
         },
+        navigationType: NavigationType.REGULAR,
         ranges: '',
         playing: false,
         frameAngles: [],
@@ -154,19 +160,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frameData: data,
                 minZ,
                 maxZ,
-                initialOpenGuide,
+                queryParameters,
                 groundTruthInstance,
                 groundTruthJobFramesMeta,
             } = action.payload;
 
-            const isReview = job.stage === JobStage.VALIDATION;
-            let workspaceSelected = Workspace.STANDARD;
-
             const defaultLabel = job.labels.length ? job.labels[0] : null;
+            const isReview = job.stage === JobStage.VALIDATION;
+            let workspaceSelected = null;
             let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
                 defaultLabel.type : ShapeType.RECTANGLE;
-
-            if (job.dimension === DimensionType.DIMENSION_3D) {
+            if (job.dimension === DimensionType.DIMENSION_2D) {
+                if (queryParameters.initialWorkspace !== Workspace.STANDARD3D) {
+                    workspaceSelected = queryParameters.initialWorkspace;
+                }
+                workspaceSelected = workspaceSelected || (isReview ? Workspace.REVIEW : Workspace.STANDARD);
+            } else {
                 workspaceSelected = Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;
             }
@@ -188,9 +197,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                             acc[label.id] = label.attributes;
                             return acc;
                         }, {}),
-                    initialOpenGuide,
                     groundTruthInstance,
                     groundTruthJobFramesMeta,
+                    queryParameters: {
+                        initialOpenGuide: queryParameters.initialOpenGuide,
+                        defaultLabel: queryParameters.defaultLabel,
+                        defaultPointsCount: queryParameters.defaultPointsCount,
+                    },
                 },
                 annotations: {
                     ...state.annotations,
@@ -225,7 +238,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 colors,
                 workspace: isReview && job.dimension === DimensionType.DIMENSION_2D ?
-                    Workspace.REVIEW_WORKSPACE : workspaceSelected,
+                    Workspace.REVIEW : workspaceSelected,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -283,6 +296,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 filename,
                 relatedFiles,
                 states,
+                history,
                 minZ,
                 maxZ,
                 curZ,
@@ -311,6 +325,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     highlightedConflict: null,
                     states,
+                    history,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
@@ -962,6 +977,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 player: {
                     ...state.player,
                     navigationBlocked: action.payload.navigationBlocked,
+                },
+            };
+        }
+        case AnnotationActionTypes.SET_NAVIGATION_TYPE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    navigationType: action.payload.navigationType,
                 },
             };
         }

@@ -33,13 +33,7 @@ context('Test annotations saving works correctly', () => {
         cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).trigger('mouseover');
         cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).should('have.class', 'cvat-objects-sidebar-state-active-item');
         cy.get('body').type(shortcut);
-
-        cy.document().then((doc) => {
-            const tooltips = Array.from(doc.querySelectorAll('.ant-tooltip'));
-            if (tooltips.length > 0) {
-                cy.get('.ant-tooltip').invoke('hide');
-            }
-        });
+        cy.hideTooltips();
     }
 
     before(() => {
