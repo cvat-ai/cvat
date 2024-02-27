@@ -132,6 +132,10 @@ function BrushTools(): React.ReactPortal | null {
             const { offsetTop, offsetLeft } = canvasContainer.parentElement as HTMLElement;
             setTopLeft([offsetTop, offsetLeft]);
         }
+
+        return () => {
+            dispatch(updateCanvasBrushTools({ visible: false }));
+        };
     }, []);
 
     useEffect(() => {

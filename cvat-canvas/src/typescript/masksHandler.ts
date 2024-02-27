@@ -138,7 +138,6 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isInsertion = false;
         this.redraw = null;
         this.drawnObjects = this.createDrawnObjectsArray();
-        this.onDrawDone(null);
     }
 
     private releaseEdit(): void {
@@ -614,6 +613,8 @@ export class MasksHandlerImpl implements MasksHandler {
                             ...(Number.isInteger(this.redraw) ? { clientID: this.redraw } : {}),
                         }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
                     }
+                } else {
+                    this.onDrawDone(null);
                 }
             } finally {
                 this.releaseDraw();
@@ -627,6 +628,8 @@ export class MasksHandlerImpl implements MasksHandler {
                     enabled: true,
                     shapeType: 'mask',
                 };
+
+                this.onDrawRepeat({ enabled: true, shapeType: 'mask' });
                 this.onDrawRepeat(newDrawData);
                 return;
             }
