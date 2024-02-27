@@ -25,18 +25,20 @@ export interface Props {
 }
 
 function constructLink(operation: typeof Request['operation']): string | null {
-    const { type, id } = operation;
-    switch (type) {
-        case 'project': {
-            return `/projects/${id}`;
-        }
-        case 'task': {
-            return `/tasks/${id}`;
-        }
-        default: {
-            return null;
-        }
+    const {
+        target, jobID, taskID, projectID,
+    } = operation;
+
+    if (target === 'project' && projectID) {
+        return `/projects/${projectID}`;
     }
+    if (target === 'task' && taskID) {
+        return `/tasks/${taskID}`;
+    }
+    if (target === 'job' && jobID) {
+        return `/jobs/${jobID}`;
+    }
+    return null;
 }
 
 function constructTimestamps(request: Request): JSX.Element {
