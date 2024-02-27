@@ -1,5 +1,15 @@
-[![CVAT Intro](/site/content/en/images/cvat-intro-gif-small.gif)](https://app.cvat.ai)
-
+<table>
+  <tr>
+    <td>
+      <img src="/site/content/en/images/cvat-readme-gif.gif)" alt="CVAT Platform" style="width: 100%; max-width: 800px;">
+    </td>
+    <td>
+      <a href="https://app.cvat.ai/">
+        <img src="/site/content/en/images/cvat-readme-button.jpg" alt="Start Annotating Now" style="width: 100%; max-width: 600px;">
+      </a>
+    </td>
+  </tr>
+</table>
 
 # Computer Vision Annotation Tool (CVAT)
 
