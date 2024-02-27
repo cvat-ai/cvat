@@ -1,4 +1,4 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,18 +19,16 @@ import Menu from 'antd/lib/menu';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 import _ from 'lodash';
-import dimensions from '../projects-page/dimensions';
 import moment from 'moment';
 
 const { Panel } = Collapse;
 
 export interface Props {
     request: Request;
-    urls: string[];
 }
 
-function constructLink(entity: typeof Request['entity']): string | null {
-    const { type, id } = entity;
+function constructLink(operation: typeof Request['operation']): string | null {
+    const { type, id } = operation;
     switch (type) {
         case 'project': {
             return `/projects/${id}`;
@@ -45,8 +43,8 @@ function constructLink(entity: typeof Request['entity']): string | null {
 }
 
 export default function RequestCard(props: Props): JSX.Element {
-    const { request, urls } = props;
-    const { entity, operation } = request;
+    const { request } = props;
+    const { operation } = request;
     const { type } = operation;
     const info = _.omit(operation, 'type');
     const infoBlock = Object.entries(info).map(([key, val]) => (
@@ -61,11 +59,11 @@ export default function RequestCard(props: Props): JSX.Element {
     if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(request.status)) {
         textType = 'danger';
     }
-    const linkToEntity = constructLink(request.entity);
+    const linkToEntity = constructLink(request.operation);
     const started = moment(request.startDate).format('MMM Do YY, h:mm');
     const finished = moment(request.finishDate).format('MMM Do YY, h:mm');
     const expire = moment(request.expireDate).format('MMM Do YY, h:mm');
-    let additionalText = "";
+    let additionalText = '';
     if (request.expireDate) {
         additionalText = `; Expires at ${expire}`;
     } else if (request.finishDate) {
@@ -73,22 +71,28 @@ export default function RequestCard(props: Props): JSX.Element {
     }
     return (
         <Row justify='center' align='middle'>
-            <Col className='cvat-requests-list' {...dimensions}>
+            <Col span={24}>
                 <Card className='cvat-requests-card'>
                     <Row justify='space-between'>
                         <Col span={10}>
-                            <Row  style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
+                            <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
                                 <Col className='cvat-requests-type' span={6}>
                                     { infoBlock.length === 0 ? (
-                                        <Text>{type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} </Text>
+                                        <Text>
+                                            {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                            {' '}
+                                        </Text>
                                     ) : (
                                         <CVATTooltip title={<div className='cvat-request-tooltip-inner'>{infoBlock}</div>} className='cvat-request-tooltip' overlayStyle={{ maxWidth: '500px' }}>
-                                            <Text>{type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} </Text>
+                                            <Text>
+                                                {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                                {' '}
+                                            </Text>
                                         </CVATTooltip>
                                     )}
                                 </Col>
                                 <Col className='cvat-requests-name'>
-                                    {linkToEntity ? (<Link to={linkToEntity}>{entity.name}</Link>) : <Text>{entity.name}</Text>}
+                                    {linkToEntity ? (<Link to={linkToEntity}>{operation.name}</Link>) : <Text>{operation.name}</Text>}
                                 </Col>
                             </Row>
                         </Col>
@@ -160,7 +164,7 @@ export default function RequestCard(props: Props): JSX.Element {
                                 </Col>
                                 {
                                     request.url ? (
-                                        <Col span={3} style={{ display: 'flex', 'justify-content': 'end' }}>
+                                        <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
                                             <Dropdown
                                                 destroyPopupOnHide
                                                 trigger={['click']}
@@ -180,7 +184,11 @@ export default function RequestCard(props: Props): JSX.Element {
                     </Row>
                     <Row>
                         <Col>
-                            <Text type='secondary'>Started by kirill on {started}{additionalText}</Text>
+                            <Text type='secondary'>
+Started by kirill on
+                                {started}
+                                {additionalText}
+                            </Text>
                         </Col>
                     </Row>
                 </Card>

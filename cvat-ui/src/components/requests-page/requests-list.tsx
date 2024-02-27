@@ -1,33 +1,60 @@
-// Copyright (C) 2024 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
-
-import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
-import MoveTaskModal from 'components/move-task-modal/move-task-modal';
-import TaskItem from 'containers/tasks-page/task-item';
-
+import { Request } from 'cvat-core-wrapper';
+import { useDispatch, useSelector } from 'react-redux';
+import { CombinedState } from 'reducers';
+import Pagination from 'antd/lib/pagination';
+import { getRequestsAsync } from 'actions/requests-actions';
+import moment from 'moment';
 import dimensions from '../projects-page/dimensions';
+import RequestCard from './request-card';
 
-export interface Props {
-    currentTasksIndexes: number[];
+export const PAGE_SIZE = 7;
+
+function setUpRequestsList(requests: Request[], newPage: number): Request[] {
+    const displayRequests = [...requests];
+    displayRequests.sort((a, b) => moment(a.enqueueDate).valueOf() - moment(b.enqueueDate).valueOf());
+    return displayRequests.slice((newPage - 1) * PAGE_SIZE, newPage * PAGE_SIZE);
 }
 
-function RequestsList(props: Props): JSX.Element {
-    const { currentTasksIndexes } = props;
-    const taskViews = currentTasksIndexes.map((tid, id): JSX.Element => <TaskItem idx={id} taskID={tid} key={tid} />);
+function RequestsList(): JSX.Element {
+    const dispatch = useDispatch();
+    const requests = useSelector((state: CombinedState) => state.requests.requests);
+    const count = useSelector((state: CombinedState) => state.requests.count);
+    const query = useSelector((state: CombinedState) => state.requests.query);
+    const { page } = query;
+    const requestViews = setUpRequestsList(Object.values(requests), page)
+        .map((request: Request): JSX.Element => <RequestCard request={request} />);
 
     return (
         <>
             <Row justify='center' align='middle'>
-                <Col className='cvat-tasks-list' {...dimensions}>
-                    {taskViews}
+                <Col className='cvat-requests-list' {...dimensions}>
+                    {requestViews}
                 </Col>
             </Row>
-            <ModelRunnerModal />
-            <MoveTaskModal />
+            <Row justify='center' align='middle'>
+                <Pagination
+                    className='cvat-tasks-pagination'
+                    onChange={(newPage: number) => {
+                        dispatch(getRequestsAsync({
+                            ...query,
+                            page: newPage,
+                        }, false));
+                    }}
+                    showSizeChanger={false}
+                    total={count}
+                    current={page}
+                    pageSize={PAGE_SIZE}
+                    showQuickJumper
+                />
+            </Row>
         </>
     );
 }
+
+export default RequestsList;

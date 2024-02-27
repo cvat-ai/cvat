@@ -6,7 +6,6 @@ import { BoundariesActions, BoundariesActionTypes } from 'actions/boundaries-act
 import { RequestsActionsTypes, RequestsActions } from 'actions/requests-actions';
 import { AuthActionTypes, AuthActions } from 'actions/auth-actions';
 import { RequestsState } from '.';
-import { RQStatus } from 'cvat-core-wrapper';
 
 const defaultState: RequestsState = {
     initialized: false,
@@ -14,6 +13,9 @@ const defaultState: RequestsState = {
     count: 0,
     requests: {},
     urls: [],
+    query: {
+        page: 1,
+    },
 };
 
 export default function (
@@ -25,12 +27,16 @@ export default function (
             return {
                 ...state,
                 fetching: true,
+                query: {
+                    ...state.query,
+                    ...action.payload.query,
+                },
             };
         }
         case RequestsActionsTypes.GET_REQUESTS_SUCCESS: {
             return {
                 ...state,
-                requests: Object.fromEntries(action.payload.requests.map(r => [r.rqID, r])),
+                requests: Object.fromEntries(action.payload.requests.map((r) => [r.id, r])),
                 count: action.payload.count,
                 initialized: true,
                 fetching: false,
@@ -45,21 +51,20 @@ export default function (
         }
         case RequestsActionsTypes.REQUEST_UPDATED:
         case RequestsActionsTypes.REQUEST_FINISHED: {
-            const request = action.payload.request;
+            const { request } = action.payload;
 
-            if ( request.url){
-
+            if (request.url) {
                 return {
                     ...state,
                     urls: [
                         ...state.urls,
-                        request.rqID,
-                    ]
+                        request.id,
+                    ],
                 };
             }
             return {
                 ...state,
-            }
+            };
         }
         case RequestsActionsTypes.GET_REQUESTS_STATUS_SUCCESS:
         case RequestsActionsTypes.GET_REQUESTS_STATUS_FAILED: {
@@ -69,7 +74,7 @@ export default function (
                 ...state,
                 requests: {
                     ...requests,
-                    [action.payload.request.rqID]: action.payload.request,
+                    [action.payload.request.id]: action.payload.request,
                 },
             };
         }

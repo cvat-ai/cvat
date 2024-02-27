@@ -6,9 +6,17 @@ import serverProxy from './server-proxy';
 import { RQStatus } from './enums';
 
 export interface SerializedRequest {
-    rq_id: string;
-    state: string;
-    operation: any;
+    id: string;
+    status: string;
+    operation: {
+        target: string;
+        name: string;
+        type: string;
+        format: string;
+        job_id: number | null;
+        task_id: number | null;
+        project_id: number | null;
+    };
     progress: number;
     message: string;
     result_url: string;
@@ -17,45 +25,57 @@ export interface SerializedRequest {
         type: string;
         name: string;
     };
+    enqueue_date: string;
+    start_date: string;
+    finish_date: string;
+    expire_date: string;
 }
 
-type EntityType = {
-    id: number;
-    type: string;
+type Operation = {
+    target: string;
     name: string;
+    type: string;
+    format: string;
+    jobID: number | null;
+    taskID: number | null;
+    projectID: number | null;
 };
 
 export class Request {
-    #rqID: string;
-    #state: RQStatus;
-    #operation: any;
-    #entity: EntityType;
+    #id: string;
+    #status: RQStatus;
+    #operation: Partial<SerializedRequest['operation']>;
     #message: string;
     #progress: number;
     #resultUrl: string;
-    #initialData: any;
+    #enqueueDate: string;
+    #startDate: string;
+    #finishDate: string;
+    #expireDate: string;
 
     constructor(initialData: SerializedRequest) {
-        this.#rqID = initialData.rq_id;
-        this.#state = initialData.state as RQStatus;
+        this.#id = initialData.id;
+        this.#status = initialData.status as RQStatus;
         this.#operation = initialData.operation;
-        this.#entity = initialData.entity;
         this.#progress = initialData.progress;
         this.#message = initialData.message;
         this.#resultUrl = initialData.result_url;
 
-        this.#initialData = initialData;
+        this.#enqueueDate = initialData.enqueue_date;
+        this.#startDate = initialData.start_date;
+        this.#finishDate = initialData.finish_date;
+        this.#expireDate = initialData.expire_date;
     }
 
-    get rqID(): string {
-        return this.#rqID;
+    get id(): string {
+        return this.#id;
     }
 
     get status(): RQStatus {
-        return this.#state.toLowerCase() as RQStatus;
+        return this.#status.toLowerCase() as RQStatus;
     }
     set status(status) {
-        this.#state = status;
+        this.#status = status;
     }
 
     get progress(): number {
@@ -72,32 +92,40 @@ export class Request {
         this.#message = message;
     }
 
-    get operation(): any {
-        return this.#operation;
-    }
-
-    get entity(): EntityType {
-        return this.#entity;
+    get operation(): Operation {
+        return {
+            target: this.#operation.target,
+            name: this.#operation.name,
+            type: this.#operation.type,
+            format: this.#operation.format,
+            jobID: this.#operation.job_id,
+            taskID: this.#operation.task_id,
+            projectID: this.#operation.project_id,
+        };
     }
 
     get url(): string {
         return this.#resultUrl;
     }
 
-    get startDate(): string {
-        return this.#initialData.start_date;
+    get enqueueDate(): string {
+        return this.#enqueueDate;
     }
 
-    get expireDate(): string {
-        return this.#initialData.expire_date;
+    get startDate(): string {
+        return this.#startDate;
     }
 
     get finishDate(): string {
-        return this.#initialData.finish_date;
+        return this.#finishDate;
+    }
+
+    get expireDate(): string {
+        return this.#expireDate;
     }
 
     updateStatus(status, progress, message): void {
-        this.#state = status;
+        this.#status = status;
         this.#progress = progress;
         this.#message = message;
     }
@@ -133,65 +161,66 @@ class RequestsManager {
     }
 
     async listen(
-        rqID: string,
+        id: string,
         callback: (status: RQStatus, progress: number, message?: string) => void,
     ): Promise<void> {
-        if (rqID in this.listening) {
-            // this.listening[rqID].onUpdate.push(callback);
-            return this.listening[rqID].promise;
+        if (id in this.listening) {
+            return this.listening[id].promise;
         }
         const promise = new Promise<void>((resolve, reject) => {
             const timeoutCallback = (): void => {
-                serverProxy.requests.status(rqID).then((response) => {
-                    let { state: status } = response;
+                serverProxy.requests.status(id).then((response) => {
+                    let { status } = response;
                     status = status.toLowerCase();
-                    if (rqID in this.listening) {
+                    if (id in this.listening) {
                         // check it was not cancelled
-                        const { onUpdate } = this.listening[rqID];
+                        const { onUpdate } = this.listening[id];
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             onUpdate.forEach((update) => update(status, response.percent || 0, response.message));
-                            this.listening[rqID].timeout = window
+                            this.listening[id].timeout = window
                                 .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 5000 : 1000);
                         } else {
-                            delete this.listening[rqID];
+                            delete this.listening[id];
                             if (status === RQStatus.FINISHED) {
                                 onUpdate
                                     .forEach((update) => update(status, response.percent || 100, response.message));
                                 resolve();
                             } else {
                                 onUpdate
-                                    .forEach((update) => update(status, response.percent || 0, response.exc_info || response.message));
+                                    .forEach((update) => (
+                                        update(status, response.percent || 0, response.exc_info || response.message)
+                                    ));
                                 reject();
                             }
                         }
                     }
                 }).catch((error) => {
-                    if (rqID in this.listening) {
+                    if (id in this.listening) {
                         // check it was not cancelled
-                        const { onUpdate } = this.listening[rqID];
+                        const { onUpdate } = this.listening[id];
                         onUpdate
                             .forEach((update) => update(
                                 RQStatus.UNKNOWN,
                                 0,
-                                `Could not get a status of the request ${rqID}. ${error.toString()}`,
+                                `Could not get a status of the request ${id}. ${error.toString()}`,
                             ));
                         reject();
                     }
                 }).finally(() => {
-                    if (rqID in this.listening) {
-                        this.listening[rqID].timeout = null;
+                    if (id in this.listening) {
+                        this.listening[id].timeout = null;
                     }
                 });
             };
 
-            this.listening[rqID] = {
+            this.listening[id] = {
                 onUpdate: [callback],
                 timeout: window.setTimeout(timeoutCallback),
             };
         });
 
-        this.listening[rqID] = {
-            ...this.listening[rqID],
+        this.listening[id] = {
+            ...this.listening[id],
             promise,
         };
         return promise;

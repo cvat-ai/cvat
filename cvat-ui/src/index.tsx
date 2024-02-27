@@ -122,7 +122,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         resetMessages: (): void => dispatch(resetMessages()),
         loadOrganization: (): void => dispatch(activateOrganizationAsync()),
         initInvitations: (): void => dispatch(getInvitationsAsync({ page: 1 }, true)),
-        initRequests: (): void => dispatch(getRequestsAsync()),
+        initRequests: (): void => dispatch(getRequestsAsync({ page: 1 })),
         loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
     };
 }

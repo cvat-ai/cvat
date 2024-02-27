@@ -7,9 +7,8 @@ import {
     RequestsQuery,
 } from 'reducers';
 import {
-    getCore, MLModel, RQStatus, Request,
+    getCore, RQStatus, Request,
 } from 'cvat-core-wrapper';
-import { filterNull } from 'utils/filter-null';
 
 export enum RequestsActionsTypes {
     GET_REQUESTS = 'GET_REQUESTS',
@@ -51,15 +50,15 @@ export type RequestsActions = ActionUnion<typeof requestsActions>;
 const core = getCore();
 
 export function listen(request: Request, dispatch: (action: RequestsActions) => void): Promise<void> {
-    const { rqID } = request;
+    const { id } = request;
     return core.requests
-        .listen(rqID, (status: RQStatus, progress: number, message: string) => {
+        .listen(id, (status: RQStatus, progress: number, message: string) => {
             request.updateStatus(status, progress, message);
             if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
                 dispatch(
                     requestsActions.getRequestStatusFailed(
                         request,
-                        new Error(`Request status for the job ${rqID} is ${status}. ${message}`),
+                        new Error(`Request status for the job ${id} is ${status}. ${message}`),
                     ),
                 );
 
@@ -70,7 +69,6 @@ export function listen(request: Request, dispatch: (action: RequestsActions) => 
                 requestsActions.getRequestStatusSuccess(request),
             );
             if (status === RQStatus.FINISHED) {
-
                 // status success
                 dispatch(
                     requestsActions.requestFinished(request),
@@ -85,27 +83,27 @@ export function listen(request: Request, dispatch: (action: RequestsActions) => 
         });
 }
 
-export function getRequestsAsync(notify = true): ThunkAction {
+export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkAction {
     return async (dispatch): Promise<void> => {
-        dispatch(requestsActions.getRequests());
+        dispatch(requestsActions.getRequests(query));
 
-        // const filteredQuery = filterNull(query || getState().models.query);
         try {
             const result = await core.requests.list();
             const { requests, count } = result;
+
             dispatch(requestsActions.getRequestsSuccess(requests, count));
-            console.log('here logging');
+
             if (notify) {
                 requests
                     .filter((request: Request) => [RQStatus.FINISHED].includes(request.status))
                     .forEach((request: Request): void => {
                         dispatch(requestsActions.requestFinished(request));
                     });
-                    requests
-                        .filter((request: Request) => [RQStatus.FAILED].includes(request.status))
-                        .forEach((request: Request): void => {
-                            dispatch(requestsActions.requestFailed(request));
-                        });
+                requests
+                    .filter((request: Request) => [RQStatus.FAILED].includes(request.status))
+                    .forEach((request: Request): void => {
+                        dispatch(requestsActions.requestFailed(request));
+                    });
             }
 
             requests

@@ -8,6 +8,7 @@ import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrap
 import {
     Webhook, MLModel, Organization, Job, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
+    Request,
 } from 'cvat-core-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
@@ -935,12 +936,17 @@ export interface InvitationsState {
     query: InvitationsQuery;
 }
 
+export interface RequestsQuery {
+    page: number;
+}
+
 export interface RequestsState {
     fetching: boolean;
     initialized: boolean;
     requests: Record<string, Request>;
     count: number;
     urls: string[];
+    query: RequestsQuery;
 }
 
 export interface CombinedState {

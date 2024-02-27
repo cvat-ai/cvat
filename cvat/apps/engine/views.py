@@ -3266,7 +3266,7 @@ class DataProcessing(viewsets.GenericViewSet):
         if rq_id == 'rq1':
             return Response(
                 data= {
-                        "state": "Failed",
+                        "status": "Failed",
                         "message": "Something happened",
                         "percent": 0},
                 status=status.HTTP_200_OK
@@ -3274,7 +3274,7 @@ class DataProcessing(viewsets.GenericViewSet):
         elif rq_id == 'rq2':
             return Response(
                 data= {
-                        "state": "Queued",
+                        "status": "Queued",
                         "message": "In queue",
                         "percent": 0},
                 status=status.HTTP_200_OK
@@ -3286,7 +3286,7 @@ class DataProcessing(viewsets.GenericViewSet):
             rq_percent += 1
             return Response(
                 data= {
-                        "state": "Started",
+                        "status": "Started",
                         "message": "In progress",
                         "percent": rq_percent * 10},
                 status=status.HTTP_200_OK
@@ -3294,7 +3294,7 @@ class DataProcessing(viewsets.GenericViewSet):
         elif rq_id == 'rq4':
             return Response(
                 data= {
-                        "state": "Finished",
+                        "status": "Finished",
                         "message": "Done",
                         "percent": 100,
                     },
@@ -3302,7 +3302,7 @@ class DataProcessing(viewsets.GenericViewSet):
             )
         return Response(
                 data= {
-                        "state": "Queued",
+                        "status": "Queued",
                         "message": "In queue",
                         "percent": 0},
                 status=status.HTTP_200_OK
@@ -3320,21 +3320,20 @@ class DataProcessing(viewsets.GenericViewSet):
         return Response(
                 data=[
                     {
-                        "state": "Failed",
+                        "status": "Failed",
                         "message": "cvat.apps.dataset_manager.bindings.CvatImportError: Failed to find dataset at '/home/django/data/tasks/499394/tmp/tmpkr0hn_m9'",
                         "percent": 0,
-                        "rq_id": "rq1",
+                        "id": "rq1",
                         "operation": {
                             "type": "export:dataset",
                             "format": "CVAT for images 1.1",
-                        },
-                        "entity": {
-                            "id": 1,
-                            "type": "project",
+                            "project_id": 1,
+                            "target": "project",
                             "name": "Project with failed export",
                         },
-                        "start_date": "2023-03-30T09:37:31.708000Z",
-                        "finish_date": "2023-03-30T09:37:31.708000Z",
+                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
+                        "start_date": "2023-03-31T10:37:31.708000Z",
+                        "finish_date": "",
                         "expire_date": "",
                         "user": {
                             "id": 1,
@@ -3342,20 +3341,19 @@ class DataProcessing(viewsets.GenericViewSet):
                         },
                     },
                     {
-                        "state": "Queued",
+                        "status": "Queued",
                         "message": "In queue",
                         "percent": 0,
-                        "rq_id": "rq2",
+                        "id": "rq2",
                         "operation": {
                             "type": "import:annotations",
                             "format": "CVAT for images 1.1",
-                        },
-                        "entity": {
-                            "id": 2,
-                            "type": "task",
+                            "task_id": 2,
+                            "target": "task",
                             "name": "Task H1 part 2",
                         },
-                        "start_date": "2023-03-30T09:37:31.708000Z",
+                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
+                        "start_date": "",
                         "finish_date": "",
                         "expire_date": "",
                         "user": {
@@ -3364,19 +3362,18 @@ class DataProcessing(viewsets.GenericViewSet):
                         },
                     },
                     {
-                        "state": "Queued",
+                        "status": "Queued",
                         "message": "In queue",
                         "percent": 0,
-                        "rq_id": "rq5",
+                        "id": "rq5",
                         "operation": {
                             "type": "export:backup",
-                        },
-                        "entity": {
-                            "id": 5,
-                            "type": "project",
+                            "project_id": 5,
+                            "target": "project",
                             "name": "Project cars",
                         },
-                        "start_date": "2023-03-30T09:37:31.708000Z",
+                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
+                        "start_date": "",
                         "finish_date": "",
                         "expire_date": "",
                         "user": {
@@ -3385,17 +3382,17 @@ class DataProcessing(viewsets.GenericViewSet):
                         },
                     },
                     {
-                        "state": "Queued",
+                        "status": "Queued",
                         "message": "In queue",
                         "percent": 0,
-                        "rq_id": "rq6",
+                        "id": "rq6",
                         "operation": {
+                            "target": "project",
                             "type": "import:backup",
-                        },
-                        "entity": {
                             "name": "Filename.zip",
                         },
-                        "start_date": "2023-03-30T09:37:31.708000Z",
+                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
+                        "start_date": "",
                         "finish_date": "",
                         "expire_date": "",
                         "user": {
@@ -3404,19 +3401,18 @@ class DataProcessing(viewsets.GenericViewSet):
                         },
                     },
                     {
-                        "state": "Started",
+                        "status": "Started",
                         "message": "In progress",
                         "percent": 20,
-                        "rq_id": "rq3",
+                        "id": "rq3",
                         "operation": {
+                            "target": "project",
                             "type": "import:dataset",
                             "format": "CVAT for images 1.1",
-                        },
-                        "entity": {
-                            "id": 3,
-                            "type": "project",
                             "name": "Personal project",
+                            "project_id": 3,
                         },
+                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
                         "start_date": "2023-03-30T09:37:31.708000Z",
                         "finish_date": "",
                         "expire_date": "",
@@ -3426,19 +3422,22 @@ class DataProcessing(viewsets.GenericViewSet):
                         },
                     },
                     {
-                        "state": "Finished",
+                        "status": "Finished",
                         "message": "Done",
                         "percent": 100,
-                        "rq_id": "rq7",
+                        "id": "rq7",
                         "operation": {
                             "type": "import:dataset",
+                            "target": "project",
+                            "project_id": 3,
                             "format": "CVAT for images 1.1",
+                            "name": "Another Personal project",
                         },
                         "entity": {
                             "id": 3,
                             "type": "project",
-                            "name": "Another Personal project",
                         },
+                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
                         "start_date": "2023-03-30T09:37:31.708000Z",
                         "finish_date": "2023-03-30T10:37:31.708000Z",
                         "expire_date": "",
@@ -3448,25 +3447,23 @@ class DataProcessing(viewsets.GenericViewSet):
                         },
                     },
                     {
-                        "state": "Finished",
+                        "status": "Finished",
                         "message": "Done",
                         "percent": 100,
-                        "rq_id": "rq4",
+                        "id": "rq4",
                         "operation": {
-                            "type": "export:dataset",
-                            "format": "CVAT for images 1.1",
+                                "type": "export:dataset",
+                                "target": "project",
+                                "project_id": 4,
+                                "name": "Project for export number 4",
                         },
-                        "entity": {
-                            "id": 4,
-                            "type": "project",
-                            "name": "Project for export number 4",
-                        },
+                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
                         "start_date": "2023-03-30T09:37:31.708000Z",
                         "finish_date": "2023-03-30T10:37:31.708000Z",
                         "expire_date": "2023-03-31T10:37:31.708000Z",
-                        "user": {
+                        "owner": {
                             "id": 1,
-                            "username": "kirill",
+                            "username": "kirill"
                         },
                         "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1"
                     },
@@ -3476,7 +3473,6 @@ class DataProcessing(viewsets.GenericViewSet):
 
     @extend_schema(
         tags=['requests'],
-        exclude=True,
     )
     @action(detail=False, methods=['GET'])
     def clear(self,request):

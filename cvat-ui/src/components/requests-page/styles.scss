@@ -121,3 +121,12 @@
         color: white;
     }
 }
+
+.cvat-empty-requests-list {
+    .ant-empty {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+}
