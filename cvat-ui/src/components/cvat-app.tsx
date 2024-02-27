@@ -127,7 +127,6 @@ interface CVATAppState {
     healthIinitialized: boolean;
     backendIsHealthy: boolean;
 }
-let once = 0;
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
     constructor(props: CVATAppProps & RouteComponentProps) {
         super(props);
@@ -335,19 +334,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadAbout();
         }
 
+        if (!requestsInitialized && !requestsFetching && history.location.pathname !== '/requests') {
+            initRequests();
+        }
+
         if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
             initModels();
         }
 
         if (!invitationsInitialized && !invitationsFetching && history.location.pathname !== '/invitations') {
             initInvitations();
-        }
-
-        if (!requestsInitialized && !requestsFetching && history.location.pathname !== '/requests') {
-            if (once === 0) {
-                once = 1
-                initRequests();
-            }
         }
 
         if (!pluginsInitialized && !pluginsFetching) {

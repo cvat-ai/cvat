@@ -15,9 +15,7 @@ import { Link } from 'react-router-dom';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import Menu from 'antd/lib/menu';
-import CVATTooltip from 'components/common/cvat-tooltip';
 
-import _ from 'lodash';
 import moment from 'moment';
 
 export interface Props {

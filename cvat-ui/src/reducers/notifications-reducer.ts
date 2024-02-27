@@ -588,14 +588,14 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case RequestsActionsTypes.REQUEST_FINISHED: {
             const { request } = action.payload;
-            const resource = request.type.split(':')[-1];
-            const process = request.type.split(':')[0];
-            const { id } = request.entity;
+            const resource = request.operation.type.split(':')[-1];
+            const process = request.operation.type.split(':')[0];
+            const { taskID, projectID } = request.operation;
             if (process === 'import') {
                 const message = resource === 'annotation' ?
                     'Annotations have been loaded to the ' +
-                `[task ${id}](/tasks/${id}) ` :
-                    `Dataset was imported to the [project ${id}](/projects/${id})`;
+                `[task ${taskID}](/tasks/${taskID}) ` :
+                    `Dataset was imported to the [project ${projectID}](/projects/${projectID})`;
                 return {
                     ...state,
                     messages: {
@@ -609,7 +609,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             }
             if (process === 'export') {
                 const message = 'Export for the  ' +
-                `[project ${id}](/projects/${id}) is finished, you can [download it here](/requests)`;
+                `[project ${projectID}](/projects/${projectID}) is finished, you can [download it here](/requests)`;
                 return {
                     ...state,
                     messages: {
@@ -625,14 +625,15 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case RequestsActionsTypes.REQUEST_FAILED: {
             const { request } = action.payload;
-            const resource = request.type.split(':')[-1];
-            const process = request.type.split(':')[0];
-            const { id } = request.entity;
+            const resource = request.operation.type.split(':')[-1];
+            const process = request.operation.type.split(':')[0];
+            const { taskID, projectID } = request.operation;
             if (process === 'import') {
                 const message = resource === 'annotation' ?
                     'Annotations have been loaded to the ' +
-                `[task ${id}](/tasks/${id}) ` :
-                    `Dataset import to the [project ${id}](/projects/${id}) failed, [check details](/requests)`;
+                `[task ${taskID}](/tasks/${taskID}) ` :
+                    `Dataset import to the [project ${projectID}](/projects/${projectID}) failed,` +
+                    '[check details](/requests)';
                 return {
                     ...state,
                     errors: {
@@ -649,7 +650,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             }
             if (process === 'export') {
                 const message = 'Export for the  ' +
-                `[project ${id}](/projects/${id}) failed, [check details](/requests)`;
+                `[project ${projectID}](/projects/${projectID}) failed, [check details](/requests)`;
                 return {
                     ...state,
                     errors: {
