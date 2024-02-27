@@ -11,7 +11,6 @@ import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
 import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
-import Collapse from 'antd/lib/collapse';
 import { Link } from 'react-router-dom';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
@@ -20,8 +19,6 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 
 import _ from 'lodash';
 import moment from 'moment';
-
-const { Panel } = Collapse;
 
 export interface Props {
     request: Request;
@@ -155,9 +152,12 @@ export default function RequestCard(props: Props): JSX.Element {
                                     )}
                                 </Col>
                                 <Col className='cvat-requests-name'>
-                                    {linkToEntity ? (<Link to={linkToEntity}>{operation.name}</Link>) : <Text>{operation.name}</Text>}
+                                    {linkToEntity ?
+                                        (<Link to={linkToEntity}>{operation.name}</Link>) :
+                                        <Text>{operation.name}</Text>}
                                 </Col>
                             </Row>
+                            {timestamps}
                         </Col>
                         <Col span={10} className='cvat-request-item-progress-wrapper'>
                             <Row>
@@ -167,7 +167,6 @@ export default function RequestCard(props: Props): JSX.Element {
                                             type={request.status === RQStatus.QUEUED ? undefined : textType}
                                             strong
                                         >
-                                            {/* TODO: add ui texts if no message is present */}
                                             {((): JSX.Element => {
                                                 if (request.status === RQStatus.FINISHED) {
                                                     return (<>Finished</>);
@@ -182,25 +181,22 @@ export default function RequestCard(props: Props): JSX.Element {
                                                     );
                                                 }
 
-                                                if ([RQStatus.FAILED].includes(request.status)) {
-                                                    return (
-                                                        <Collapse>
-                                                            <Panel header='An error occured' key='1'>
-                                                                <Text type='danger' strong>
-                                                                    {request.message}
-                                                                </Text>
-                                                            </Panel>
-                                                        </Collapse>
-                                                    );
+                                                if (request.status === RQStatus.FAILED) {
+                                                    return (<>Failed</>);
                                                 }
 
                                                 if (request.status === RQStatus.UNKNOWN) {
                                                     return (<>Unknown status received</>);
                                                 }
 
-                                                return <>{request.message}</>;
+                                                return <Text>{request.message}</Text>;
                                             })()}
                                         </Text>
+                                        {
+                                            request.status === RQStatus.FAILED ? (
+                                                <Text type='danger'>{request.message}</Text>
+                                            ) : null
+                                        }
                                     </Row>
                                     <Row>
                                         <Col span={18} className='cvat-requests-progress'>
@@ -245,7 +241,6 @@ export default function RequestCard(props: Props): JSX.Element {
                             </Row>
                         </Col>
                     </Row>
-                    {timestamps}
                 </Card>
             </Col>
         </Row>
