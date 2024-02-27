@@ -4,6 +4,7 @@
 
 import serverProxy from './server-proxy';
 import { RQStatus } from './enums';
+import User from './user';
 
 export interface SerializedRequest {
     id: string;
@@ -29,6 +30,7 @@ export interface SerializedRequest {
     start_date: string;
     finish_date: string;
     expire_date: string;
+    owner: any;
 }
 
 type Operation = {
@@ -52,6 +54,7 @@ export class Request {
     #startDate: string;
     #finishDate: string;
     #expireDate: string;
+    #owner: User;
 
     constructor(initialData: SerializedRequest) {
         this.#id = initialData.id;
@@ -65,6 +68,8 @@ export class Request {
         this.#startDate = initialData.start_date;
         this.#finishDate = initialData.finish_date;
         this.#expireDate = initialData.expire_date;
+
+        this.#owner = new User(initialData.owner);
     }
 
     get id(): string {
@@ -122,6 +127,9 @@ export class Request {
 
     get expireDate(): string {
         return this.#expireDate;
+    }
+    get owner(): User {
+        return this.#owner;
     }
 
     updateStatus(status, progress, message): void {

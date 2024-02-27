@@ -42,6 +42,74 @@ function constructLink(operation: typeof Request['operation']): string | null {
     }
 }
 
+function constructTimestamps(request: Request): JSX.Element {
+    const started = moment(request.startDate).format('MMM Do YY, h:mm');
+    const finished = moment(request.finishDate).format('MMM Do YY, h:mm');
+    const enqueued = moment(request.enqueueDate).format('MMM Do YY, h:mm');
+    const expired = moment(request.expireDate).format('MMM Do YY, h:mm');
+
+    switch (request.status) {
+        case RQStatus.QUEUED: {
+            return (
+                <Row>
+                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${enqueued}`}</Text>
+                </Row>
+            );
+        }
+        case RQStatus.FINISHED: {
+            if (request.expireDate) {
+                return (
+                    <>
+                        <Row>
+                            <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                        </Row>
+                        <Row>
+                            <Text type='secondary'>{`Expires on ${expired}`}</Text>
+                        </Row>
+                    </>
+                );
+            }
+            return (
+                <>
+                    <Row>
+                        <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                    </Row>
+                    <Row>
+                        <Text type='secondary'>{`Finished on ${finished}`}</Text>
+
+                    </Row>
+                </>
+            );
+        }
+        case RQStatus.FAILED: {
+            return (
+                <Row>
+                    <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                </Row>
+            );
+        }
+        case RQStatus.STARTED: {
+            return (
+                <>
+                    <Row>
+                        <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${enqueued}`}</Text>
+                    </Row>
+                    <Row>
+                        <Text type='secondary'>{`Started on ${started}`}</Text>
+                    </Row>
+                </>
+            );
+        }
+        default: {
+            return (
+                <Row>
+                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${enqueued}`}</Text>
+                </Row>
+            );
+        }
+    }
+}
+
 export default function RequestCard(props: Props): JSX.Element {
     const { request } = props;
     const { operation } = request;
@@ -60,15 +128,10 @@ export default function RequestCard(props: Props): JSX.Element {
         textType = 'danger';
     }
     const linkToEntity = constructLink(request.operation);
-    const started = moment(request.startDate).format('MMM Do YY, h:mm');
-    const finished = moment(request.finishDate).format('MMM Do YY, h:mm');
-    const expire = moment(request.expireDate).format('MMM Do YY, h:mm');
-    let additionalText = '';
-    if (request.expireDate) {
-        additionalText = `; Expires at ${expire}`;
-    } else if (request.finishDate) {
-        additionalText = `; Finished at ${finished}`;
-    }
+
+    const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
+    const timestamps = constructTimestamps(request);
+
     return (
         <Row justify='center' align='middle'>
             <Col span={24}>
@@ -144,7 +207,7 @@ export default function RequestCard(props: Props): JSX.Element {
                                             {
                                                 request.status !== RQStatus.FAILED ? (
                                                     <Progress
-                                                        percent={request.status === RQStatus.FINISHED ? 100 : Math.floor(request.progress)}
+                                                        percent={percent}
                                                         strokeColor={{
                                                             from: '#108ee9',
                                                             to: '#87d068',
@@ -182,15 +245,7 @@ export default function RequestCard(props: Props): JSX.Element {
                             </Row>
                         </Col>
                     </Row>
-                    <Row>
-                        <Col>
-                            <Text type='secondary'>
-Started by kirill on
-                                {started}
-                                {additionalText}
-                            </Text>
-                        </Col>
-                    </Row>
+                    {timestamps}
                 </Card>
             </Col>
         </Row>

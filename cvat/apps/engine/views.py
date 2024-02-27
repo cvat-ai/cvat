@@ -3335,7 +3335,7 @@ class DataProcessing(viewsets.GenericViewSet):
                         "start_date": "2023-03-31T10:37:31.708000Z",
                         "finish_date": "",
                         "expire_date": "",
-                        "user": {
+                        "owner": {
                             "id": 1,
                             "username": "kirill",
                         },
@@ -3356,7 +3356,7 @@ class DataProcessing(viewsets.GenericViewSet):
                         "start_date": "",
                         "finish_date": "",
                         "expire_date": "",
-                        "user": {
+                        "owner": {
                             "id": 1,
                             "username": "kirill",
                         },
@@ -3376,7 +3376,7 @@ class DataProcessing(viewsets.GenericViewSet):
                         "start_date": "",
                         "finish_date": "",
                         "expire_date": "",
-                        "user": {
+                        "owner": {
                             "id": 1,
                             "username": "kirill",
                         },
@@ -3395,7 +3395,7 @@ class DataProcessing(viewsets.GenericViewSet):
                         "start_date": "",
                         "finish_date": "",
                         "expire_date": "",
-                        "user": {
+                        "owner": {
                             "id": 1,
                             "username": "kirill",
                         },
@@ -3416,7 +3416,7 @@ class DataProcessing(viewsets.GenericViewSet):
                         "start_date": "2023-03-30T09:37:31.708000Z",
                         "finish_date": "",
                         "expire_date": "",
-                        "user": {
+                        "owner": {
                             "id": 1,
                             "username": "kirill",
                         },
@@ -3441,7 +3441,7 @@ class DataProcessing(viewsets.GenericViewSet):
                         "start_date": "2023-03-30T09:37:31.708000Z",
                         "finish_date": "2023-03-30T10:37:31.708000Z",
                         "expire_date": "",
-                        "user": {
+                        "owner": {
                             "id": 1,
                             "username": "kirill",
                         },
