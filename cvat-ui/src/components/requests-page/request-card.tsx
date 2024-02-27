@@ -113,21 +113,12 @@ export default function RequestCard(props: Props): JSX.Element {
     const { request } = props;
     const { operation } = request;
     const { type } = operation;
-    const info = _.omit(operation, 'type');
-    const infoBlock = Object.entries(info).map(([key, val]) => (
-        <Text>
-            {key.charAt(0).toUpperCase() + key.slice(1)}
-:
-            {' '}
-            {val}
-        </Text>
-    ));
+
     let textType: 'success' | 'danger' = 'success';
     if ([RQStatus.FAILED, RQStatus.UNKNOWN].includes(request.status)) {
         textType = 'danger';
     }
     const linkToEntity = constructLink(request.operation);
-
     const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
     const timestamps = constructTimestamps(request);
 
@@ -136,24 +127,15 @@ export default function RequestCard(props: Props): JSX.Element {
             <Col span={24}>
                 <Card className='cvat-requests-card'>
                     <Row justify='space-between'>
-                        <Col span={10}>
+                        <Col span={12}>
                             <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
-                                <Col className='cvat-requests-type' span={6}>
-                                    { infoBlock.length === 0 ? (
-                                        <Text>
-                                            {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                            {' '}
-                                        </Text>
-                                    ) : (
-                                        <CVATTooltip title={<div className='cvat-request-tooltip-inner'>{infoBlock}</div>} className='cvat-request-tooltip' overlayStyle={{ maxWidth: '500px' }}>
-                                            <Text>
-                                                {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                                {' '}
-                                            </Text>
-                                        </CVATTooltip>
-                                    )}
+                                <Col className='cvat-requests-type' span={5}>
+                                    <Text>
+                                        {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                        {' '}
+                                    </Text>
                                 </Col>
-                                <Col className='cvat-requests-name'>
+                                <Col className='cvat-requests-name' span={8}>
                                     {linkToEntity ?
                                         (<Link to={linkToEntity}>{operation.name}</Link>) :
                                         <Text>{operation.name}</Text>}
@@ -222,6 +204,15 @@ export default function RequestCard(props: Props): JSX.Element {
                                             {request.status === RQStatus.FAILED ? '' : '%'}
                                         </Col>
                                     </Row>
+                                    {
+                                        operation?.format ? (
+                                            <Row>
+                                                <Col className='cvat-format-name'>
+                                                    <Text type='secondary'>{operation.format}</Text>
+                                                </Col>
+                                            </Row>
+                                        ) : null
+                                    }
                                 </Col>
                                 {
                                     request.url ? (
