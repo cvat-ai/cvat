@@ -32,7 +32,6 @@ import data.organizations
 #         "assignee": { "id": <num> },
 #         "organization": { "id": <num> } or null,
 #         "project": {
-#             "id": <num>,
 #             "owner": { "id": <num> },
 #             "assignee": { "id": <num> },
 #             "organization": { "id": <num> } or null,
