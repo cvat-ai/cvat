@@ -38,7 +38,6 @@ self-hosted installations with premium features: SSO, LDAP, Roboflow and
 HuggingFace integrations, and advanced analytics (coming soon). We also
 do trainings and a dedicated support with 24 hour SLA.
 
-![CVAT screencast](site/content/en/images/cvat-ai-screencast.gif)
 
 ## Quick start ⚡
 
