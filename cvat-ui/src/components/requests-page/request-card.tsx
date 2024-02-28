@@ -107,6 +107,13 @@ function constructTimestamps(request: Request): JSX.Element {
     }
 }
 
+function truncateName(name: string, maxLength: number): string {
+    if (name.length > maxLength) {
+        return `${name.slice(0, maxLength - 3)}...`;
+    }
+    return name;
+}
+
 export default function RequestCard(props: Props): JSX.Element {
     const { request } = props;
     const { operation } = request;
@@ -120,6 +127,7 @@ export default function RequestCard(props: Props): JSX.Element {
     const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
     const timestamps = constructTimestamps(request);
 
+    const truncatedName = truncateName(operation.name, 45);
     return (
         <Row justify='center' align='middle'>
             <Col span={24}>
@@ -133,10 +141,10 @@ export default function RequestCard(props: Props): JSX.Element {
                                         {' '}
                                     </Text>
                                 </Col>
-                                <Col className='cvat-requests-name' span={8}>
+                                <Col className='cvat-requests-name' span={10}>
                                     {linkToEntity ?
-                                        (<Link to={linkToEntity}>{operation.name}</Link>) :
-                                        <Text>{operation.name}</Text>}
+                                        (<Link to={linkToEntity}>{truncatedName}</Link>) :
+                                        <Text>{truncatedName}</Text>}
                                 </Col>
                             </Row>
                             {timestamps}
