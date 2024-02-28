@@ -1,7 +1,7 @@
 <table>
   <tr>
     <td>
-      <img src="/site/content/en/images/cvat-readme-gif.gif)" alt="CVAT Platform" style="width: 100%; max-width: 800px;">
+      <img src="/site/content/en/images/cvat-readme-gif.gif" alt="CVAT Platform" style="width: 100%; max-width: 800px;">
     </td>
     <td>
       <a href="https://app.cvat.ai/">
