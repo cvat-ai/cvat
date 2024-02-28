@@ -11,7 +11,6 @@
   </tr>
 </table>
 
-
 # Computer Vision Annotation Tool (CVAT)
 
 [![CI][ci-img]][ci-url]
