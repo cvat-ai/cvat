@@ -220,7 +220,14 @@ export default function RequestCard(props: Props): JSX.Element {
                                                 trigger={['click']}
                                                 overlay={() => (
                                                     <Menu selectable={false} className='cvat-actions-menu cvat-request-actions-menu'>
-                                                        <Menu.Item>Download</Menu.Item>
+                                                        <Menu.Item onClick={() => {
+                                                            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+                                                            downloadAnchor.href = request.url;
+                                                            downloadAnchor.click();
+                                                        }}
+                                                        >
+                                                            Download
+                                                        </Menu.Item>
                                                     </Menu>
                                                 )}
                                             >

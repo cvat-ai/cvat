@@ -6,12 +6,12 @@
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import { CombinedState } from 'reducers';
 import {
-    getCore, Request, RQStatus, Storage,
+    getCore, Storage,
 } from 'cvat-core-wrapper';
 import { EventScope } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
-import { listen } from './requests-actions';
+import { listenNewRequest } from './requests-actions';
 
 const core = getCore();
 
@@ -97,19 +97,11 @@ export const importDatasetAsync = (
                         ),
                     });
 
-                await listen(new Request({
-                    rq_id: rqID,
-                    state: RQStatus.QUEUED,
-                    message: '',
-                    progress: 0,
-                    type: 'import:dataset',
-                    entity: {
-                        id: instance.id,
-                        type: 'project',
-                        name: instance.name,
-                    },
-                    url: '',
-                }), dispatch);
+                await listenNewRequest({
+                    id: rqID,
+                    type: `import:${resource}`,
+                    instance,
+                }, dispatch);
             } else if (instance instanceof core.classes.Task) {
                 if (state.import.tasks.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');

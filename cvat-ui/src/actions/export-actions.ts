@@ -5,8 +5,8 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
-import { getCore, Request, RQStatus, Storage } from 'cvat-core-wrapper';
-import { listen } from './requests-actions';
+import { getCore, Storage } from 'cvat-core-wrapper';
+import { listenNewRequest } from './requests-actions';
 
 const core = getCore();
 
@@ -95,19 +95,11 @@ export const exportDatasetAsync = (
     try {
         const rqID = await instance.annotations
             .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
-        await listen(new Request({
-            rq_id: rqID,
-            state: RQStatus.QUEUED,
-            message: '',
-            progress: 0,
-            type: 'export:dataset',
-            entity: {
-                id: instance.id,
-                type: 'project',
-                name: instance.name,
-            },
-            url: '',
-        }), dispatch);
+        await listenNewRequest({
+            id: rqID,
+            type: `export:${saveImages ? 'dataset' : 'annotations'}`,
+            instance,
+        }, dispatch);
         // if (result) {
         //     const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
         //     downloadAnchor.href = result;

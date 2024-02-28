@@ -7,7 +7,7 @@ import {
     RequestsQuery,
 } from 'reducers';
 import {
-    getCore, RQStatus, Request,
+    getCore, RQStatus, Request, Project, Task, Job,
 } from 'cvat-core-wrapper';
 
 export enum RequestsActionsTypes {
@@ -48,12 +48,19 @@ export const requestsActions = {
 export type RequestsActions = ActionUnion<typeof requestsActions>;
 
 const core = getCore();
+export interface RequestParams {
+    id: string;
+    type: string;
+    instance: Project | Task | Job;
+}
 
 export function listen(request: Request, dispatch: (action: RequestsActions) => void): Promise<void> {
     const { id } = request;
     return core.requests
-        .listen(id, (status: RQStatus, progress: number, message: string) => {
-            request.updateStatus(status, progress, message);
+        .listen(id, (updatedRequest) => {
+            request.updateFields(updatedRequest);
+            console.log(request);
+            const { status, message } = updatedRequest;
             if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
                 dispatch(
                     requestsActions.getRequestStatusFailed(
@@ -76,11 +83,44 @@ export function listen(request: Request, dispatch: (action: RequestsActions) => 
             }
         })
         .catch((error: Error) => {
-            request.updateStatus(RQStatus.UNKNOWN, 0, '');
+            request.updateFields({ status: RQStatus.UNKNOWN, progress: 0, message: '' });
             dispatch(
                 requestsActions.getRequestStatusFailed(request, error),
             );
         });
+}
+
+export function listenNewRequest(params: RequestParams, dispatch: (action: RequestsActions) => void): Promise<void> {
+    const { instance, id, type } = params;
+    let target = 'job';
+    if (instance instanceof Project) {
+        target = 'project';
+    } else if (instance instanceof Task) {
+        target = 'task';
+    }
+    const request = new Request({
+        id,
+        status: RQStatus.QUEUED,
+        operation: {
+            target,
+            type,
+            name: params.instance?.name ? params.instance?.name : '',
+            format: 'unknown',
+            job_id: instance instanceof Job ? instance.id : null,
+            task_id: instance instanceof Task ? instance.id : null,
+            project_id: instance instanceof Project ? instance.id : null,
+        },
+        progress: 0,
+        message: '',
+        result_url: '',
+        enqueue_date: new Date().toString(),
+        start_date: '',
+        finish_date: '',
+        expire_date: '',
+        owner: null,
+    });
+
+    return listen(request, dispatch);
 }
 
 export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkAction {

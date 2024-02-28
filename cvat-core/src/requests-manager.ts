@@ -21,11 +21,6 @@ export interface SerializedRequest {
     progress: number;
     message: string;
     result_url: string;
-    entity: {
-        id: number;
-        type: string;
-        name: string;
-    };
     enqueue_date: string;
     start_date: string;
     finish_date: string;
@@ -69,7 +64,9 @@ export class Request {
         this.#finishDate = initialData.finish_date;
         this.#expireDate = initialData.expire_date;
 
-        this.#owner = new User(initialData.owner);
+        if (initialData.owner) {
+            this.#owner = new User(initialData.owner);
+        }
     }
 
     get id(): string {
@@ -132,10 +129,40 @@ export class Request {
         return this.#owner;
     }
 
-    updateStatus(status, progress, message): void {
-        this.#status = status;
-        this.#progress = progress;
-        this.#message = message;
+    updateFields(request: Partial<SerializedRequest>): void {
+        if (request.id) {
+            this.#id = request.id;
+        }
+        if (request.status) {
+            this.#status = request.status as RQStatus;
+        }
+        if (request.operation) {
+            this.#operation = request.operation;
+        }
+        if (request.progress) {
+            this.#progress = request.progress;
+        }
+        if (request.message) {
+            this.#message = request.message;
+        }
+        if (request.result_url) {
+            this.#resultUrl = request.result_url;
+        }
+        if (request.enqueue_date) {
+            this.#enqueueDate = request.enqueue_date;
+        }
+        if (request.start_date) {
+            this.#startDate = request.start_date;
+        }
+        if (request.finish_date) {
+            this.#finishDate = request.finish_date;
+        }
+        if (request.expire_date) {
+            this.#expireDate = request.expire_date;
+        }
+        if (request.owner) {
+            this.#owner = new User(request.owner);
+        }
     }
 }
 
@@ -184,19 +211,19 @@ class RequestsManager {
                         // check it was not cancelled
                         const { onUpdate } = this.listening[id];
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
-                            onUpdate.forEach((update) => update(status, response.percent || 0, response.message));
+                            onUpdate.forEach((update) => update(response));
                             this.listening[id].timeout = window
                                 .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 5000 : 1000);
                         } else {
                             delete this.listening[id];
                             if (status === RQStatus.FINISHED) {
                                 onUpdate
-                                    .forEach((update) => update(status, response.percent || 100, response.message));
+                                    .forEach((update) => update(response));
                                 resolve();
                             } else {
                                 onUpdate
                                     .forEach((update) => (
-                                        update(status, response.percent || 0, response.exc_info || response.message)
+                                        update(response)
                                     ));
                                 reject();
                             }
