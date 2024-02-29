@@ -1,5 +1,5 @@
 // Copyright (C) 2019-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -868,7 +868,8 @@ async function importDataset(
     file: File | string,
     options: {
         convMaskToPoly: boolean,
-        updateStatusCallback: (s: string, n: number) => void,
+        uploadStatusCallback: (s: string, n: number) => void,
+        updateProgressCallback,
     },
 ): Promise<string> {
     const { backendAPI, origin } = config;
@@ -902,7 +903,7 @@ async function importDataset(
             totalSentSize: 0,
             totalSize: (file as File).size,
             onUpdate: (percentage) => {
-                options.updateStatusCallback('The dataset is being uploaded to the server', percentage);
+                options.uploadStatusCallback('The dataset is being uploaded to the server', percentage);
             },
         };
 

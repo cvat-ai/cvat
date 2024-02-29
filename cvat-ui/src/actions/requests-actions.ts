@@ -55,32 +55,35 @@ export interface RequestParams {
     location?: StorageLocation;
 }
 
+export function updateRequestProgress(request: Request, dispatch: (action: RequestsActions) => void): void {
+    const { status, message } = request;
+    if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
+        dispatch(
+            requestsActions.getRequestStatusFailed(
+                request,
+                new Error(`Request status for the job ${id} is ${status}. ${message}`),
+            ),
+        );
+
+        return;
+    }
+
+    dispatch(
+        requestsActions.getRequestStatusSuccess(request),
+    );
+    if (status === RQStatus.FINISHED) {
+        // status success
+        dispatch(
+            requestsActions.requestFinished(request),
+        );
+    }
+}
+
 export function listen(request: Request, dispatch: (action: RequestsActions) => void): Promise<void> {
     const { id } = request;
     return core.requests
         .listen(id, (updatedRequest) => {
-            request.updateFields(updatedRequest);
-            const { status, message } = updatedRequest;
-            if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
-                dispatch(
-                    requestsActions.getRequestStatusFailed(
-                        request,
-                        new Error(`Request status for the job ${id} is ${status}. ${message}`),
-                    ),
-                );
-
-                return;
-            }
-
-            dispatch(
-                requestsActions.getRequestStatusSuccess(request),
-            );
-            if (status === RQStatus.FINISHED) {
-                // status success
-                dispatch(
-                    requestsActions.requestFinished(request),
-                );
-            }
+            updateRequestProgress(updatedRequest, dispatch);
         })
         .catch((error: Error) => {
             request.updateFields({ status: RQStatus.UNKNOWN, progress: 0, message: '' });
@@ -88,42 +91,6 @@ export function listen(request: Request, dispatch: (action: RequestsActions) => 
                 requestsActions.getRequestStatusFailed(request, error),
             );
         });
-}
-
-export function listenNewRequest(params: RequestParams, dispatch: (action: RequestsActions) => void): Promise<any> {
-    const {
-        instance, id, type, location,
-    } = params;
-    let target = 'job';
-    if (instance instanceof Project) {
-        target = 'project';
-    } else if (instance instanceof Task) {
-        target = 'task';
-    }
-    const request = new Request({
-        id,
-        status: RQStatus.QUEUED,
-        operation: {
-            target,
-            type,
-            name: params.instance?.name ? params.instance?.name : '',
-            format: 'unknown',
-            job_id: instance instanceof Job ? instance.id : null,
-            task_id: instance instanceof Task ? instance.id : null,
-            project_id: instance instanceof Project ? instance.id : null,
-        },
-        progress: 0,
-        message: '',
-        result_url: '',
-        enqueue_date: new Date().toString(),
-        start_date: '',
-        finish_date: '',
-        expire_date: '',
-        owner: null,
-        meta: location ? { storage: { location } } : undefined,
-    });
-
-    return listen(request, dispatch);
 }
 
 export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkAction {

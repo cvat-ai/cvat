@@ -17,8 +17,6 @@ import { NotificationsActionType } from 'actions/notification-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
-import { ExportActionTypes } from 'actions/export-actions';
-import { ImportActionTypes } from 'actions/import-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { OrganizationActionsTypes } from 'actions/organization-actions';
 import { JobsActionTypes } from 'actions/jobs-actions';
@@ -497,24 +495,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ExportActionTypes.EXPORT_BACKUP_FAILED: {
-            const { instance, instanceType } = action.payload;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    exporting: {
-                        ...state.errors.exporting,
-                        backup: {
-                            message:
-                                `Could not export the ${instanceType} №${instance.id}`,
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                        },
-                    },
-                },
-            };
-        }
         case RequestsActionsTypes.REQUEST_FINISHED: {
             const { request } = action.payload;
             const {
@@ -646,62 +626,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 };
             }
             break;
-        }
-        case ImportActionTypes.IMPORT_DATASET_FAILED: {
-            const { instance, resource } = action.payload;
-            const message = resource === 'annotation' ?
-                'Could not upload annotation for the ' +
-                `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id})` :
-                `Could not import dataset to the [project ${instance.id}](/projects/${instance.id})`;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    importing: {
-                        ...state.errors.importing,
-                        dataset: {
-                            message,
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-' +
-                                `${resource === 'annotation' ? 'load-annotation' : 'import-dataset'}-failed`,
-                        },
-                    },
-                },
-            };
-        }
-        case ImportActionTypes.IMPORT_BACKUP_SUCCESS: {
-            const { instanceId, instanceType } = action.payload;
-            return {
-                ...state,
-                messages: {
-                    ...state.messages,
-                    importing: {
-                        ...state.messages.importing,
-                        backup:
-                            `The ${instanceType} has been restored successfully.
-                            Click [here](/${instanceType}s/${instanceId}) to open`,
-                    },
-                },
-            };
-        }
-        case ImportActionTypes.IMPORT_BACKUP_FAILED: {
-            const { instanceType } = action.payload;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    importing: {
-                        ...state.errors.importing,
-                        backup: {
-                            message:
-                                `Could not restore ${instanceType} backup.`,
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                        },
-                    },
-                },
-            };
         }
         case TasksActionTypes.GET_TASKS_FAILED: {
             return {

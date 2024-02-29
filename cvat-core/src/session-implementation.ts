@@ -30,6 +30,7 @@ import {
     importDataset, exportDataset, clearCache, getHistory,
 } from './annotations';
 import AnnotationGuide from './guide';
+import requestsManager, { Request } from './requests-manager';
 
 // must be called with task/job context
 async function deleteFrameWrapper(jobID, frame): Promise<void> {
@@ -311,10 +312,11 @@ export function implementJob(Job) {
         useDefaultLocation: boolean,
         sourceStorage: Storage,
         file: File | string,
-        options?: { convMaskToPoly?: boolean },
+        options?: { convMaskToPoly?: boolean, updateProgressCallback?: (request: Request) => void },
     ) {
-        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
-        return result;
+        const { updateProgressCallback } = options;
+        const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
+        return requestsManager.listen(rqID, updateProgressCallback);
     };
 
     Job.prototype.annotations.import.implementation = function (data) {
@@ -331,9 +333,11 @@ export function implementJob(Job) {
         useDefaultSettings: boolean,
         targetStorage: Storage,
         customName?: string,
+        options?: { updateProgressCallback?: (request: Request) => void },
     ) {
-        const result = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return result;
+        const { updateProgressCallback } = options;
+        const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+        return requestsManager.listen(rqID, updateProgressCallback);
     };
 
     Job.prototype.actions.undo.implementation = async function (count) {
@@ -530,15 +534,21 @@ export function implementTask(Task) {
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
+        options?: { updateProgressCallback?: (request: Request) => void },
     ) {
-        const result = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
-        return result;
+        const { updateProgressCallback } = options;
+        const rqID = await serverProxy.tasks.backup(this.id, targetStorage, useDefaultSettings, fileName);
+        return requestsManager.listen(rqID, updateProgressCallback);
     };
 
-    Task.restore.implementation = async function (storage: Storage, file: File | string) {
-        // eslint-disable-next-line no-unsanitized/method
-        const result = await serverProxy.tasks.restore(storage, file);
-        return result;
+    Task.restore.implementation = async function (
+        storage: Storage,
+        file: File | string,
+        options?: { updateProgressCallback?: (request: Request) => void },
+    ) {
+        const { updateProgressCallback } = options;
+        const rqID = await serverProxy.tasks.restore(storage, file);
+        return requestsManager.listen(rqID, updateProgressCallback);
     };
 
     Task.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
@@ -763,10 +773,11 @@ export function implementTask(Task) {
         useDefaultLocation: boolean,
         sourceStorage: Storage,
         file: File | string,
-        options?: { convMaskToPoly?: boolean },
+        options?: { convMaskToPoly?: boolean, updateProgressCallback?: (request: Request) => void },
     ) {
-        const result = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
-        return result;
+        const { updateProgressCallback } = options;
+        const rqID = await importDataset(this, format, useDefaultLocation, sourceStorage, file, options);
+        return requestsManager.listen(rqID, updateProgressCallback);
     };
 
     Task.prototype.annotations.import.implementation = function (data) {
@@ -783,9 +794,11 @@ export function implementTask(Task) {
         useDefaultSettings: boolean,
         targetStorage: Storage,
         customName?: string,
+        options?: { updateProgressCallback?: (request: Request) => void },
     ) {
-        const result = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return result;
+        const { updateProgressCallback } = options;
+        const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+        return requestsManager.listen(rqID, updateProgressCallback);
     };
 
     Task.prototype.actions.undo.implementation = async function (count) {

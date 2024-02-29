@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { Request } from './requests-manager';
 import { Storage } from './storage';
 import serverProxy from './server-proxy';
 import AnnotationsCollection, { FrameMeta } from './annotations-collection';
@@ -133,7 +134,7 @@ export async function exportDataset(
     useDefaultSettings: boolean,
     targetStorage: Storage,
     name?: string,
-): Promise<string | void> {
+): Promise<string> {
     if (!(instance instanceof Task || instance instanceof Project || instance instanceof Job)) {
         throw new ArgumentError('A dataset can only be created from a job, task or project');
     }
@@ -161,20 +162,23 @@ export function importDataset(
     file: File | string,
     options: {
         convMaskToPoly?: boolean,
-        updateStatusCallback?: (s: string, n: number) => void,
+        updateProgressCallback?: (request: Request) => void,
+        uploadStatusCallback?:(s: string, n: number) => void,
     } = {},
-): Promise<void> {
-    const updateStatusCallback = options.updateStatusCallback || (() => {});
+): Promise<string> {
+    const uploadStatusCallback = options.uploadStatusCallback || (() => {});
+    const updateProgressCallback = options.updateProgressCallback || (() => {});
     const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
     const adjustedOptions = {
-        updateStatusCallback,
+        updateProgressCallback,
+        uploadStatusCallback,
         convMaskToPoly,
     };
 
     if (!(instance instanceof Project || instance instanceof Task || instance instanceof Job)) {
         throw new ArgumentError('Instance must be a Project || Task || Job instance');
     }
-    if (!(typeof updateStatusCallback === 'function')) {
+    if (!(typeof uploadStatusCallback === 'function')) {
         throw new ArgumentError('Callback must be a function');
     }
     if (!(typeof convMaskToPoly === 'boolean')) {

@@ -1,17 +1,17 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import { CombinedState } from 'reducers';
 import {
-    getCore, Storage,
+    getCore, Storage, Request,
 } from 'cvat-core-wrapper';
 import { EventScope } from 'cvat-logger';
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
-import { listenNewRequest } from './requests-actions';
+import { updateRequestProgress } from './requests-actions';
 
 const core = getCore();
 
@@ -87,35 +87,31 @@ export const importDatasetAsync = (
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                const rqID = await instance.annotations
+                await instance.annotations
                     .importDataset(format, useDefaultSettings, sourceStorage, file, {
                         convMaskToPoly,
-                        updateStatusCallback: (message: string, progress: number) => (
+                        uploadStatusCallback: (message: string, progress: number) => (
                             dispatch(importActions.importDatasetUpdateStatus(
                                 instance, Math.floor(progress * 100), message,
                             ))
                         ),
+                        updateProgressCallback: (request: Request) => {
+                            updateRequestProgress(request, dispatch);
+                        },
                     });
-
-                await listenNewRequest({
-                    id: rqID,
-                    type: `import:${resource}`,
-                    instance,
-                    location: sourceStorage.location,
-                }, dispatch);
             } else if (instance instanceof core.classes.Task) {
                 if (state.import.tasks.dataset.current?.[instance.id]) {
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                const rqID = await instance.annotations
-                    .upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
-                await listenNewRequest({
-                    id: rqID,
-                    type: `import:${resource}`,
-                    instance,
-                    location: sourceStorage.location,
-                }, dispatch);
+
+                await instance.annotations
+                    .upload(format, useDefaultSettings, sourceStorage, file, {
+                        convMaskToPoly,
+                        updateProgressCallback: (request: Request) => {
+                            updateRequestProgress(request, dispatch);
+                        },
+                    });
             } else { // job
                 if (state.import.tasks.dataset.current?.[instance.taskId]) {
                     throw Error('Annotations is being uploaded for the task');
@@ -126,14 +122,14 @@ export const importDatasetAsync = (
 
                 dispatch(importActions.importDataset(instance, format));
 
-                const rqID = await instance.annotations
-                    .upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
-                await listenNewRequest({
-                    id: rqID,
-                    type: `import:${resource}`,
-                    instance,
-                    location: sourceStorage.location,
-                }, dispatch);
+                await instance.annotations
+                    .upload(format, useDefaultSettings, sourceStorage, file, {
+                        convMaskToPoly,
+                        updateProgressCallback: (request: Request) => {
+                            updateRequestProgress(request, dispatch);
+                        },
+                    });
+
                 await instance.logger.log(EventScope.uploadAnnotations);
                 await instance.annotations.clear(true);
                 await instance.actions.clear();
@@ -171,19 +167,11 @@ export const importBackupAsync = (instanceType: 'project' | 'task', storage: Sto
         dispatch(importActions.importBackup());
         try {
             const instanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
-            const rqID = await instanceClass.restore(storage, file);
-            const response = await listenNewRequest({
-                id: rqID,
-                type: 'import:backup',
-                location: storage.location,
-            }, dispatch);
-
-            let instance = null;
-            if (instanceType === 'project') {
-                [instance] = await core.projects.get({ id: response.data.id });
-            } else {
-                [instance] = await core.tasks.get({ id: response.data.id });
-            }
+            const instance = await instanceClass.restore(storage, file, {
+                updateProgressCallback: (request: Request) => {
+                    updateRequestProgress(request, dispatch);
+                },
+            });
 
             dispatch(importActions.importBackupSuccess(instance.id, instanceType));
         } catch (error) {

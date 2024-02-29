@@ -1,8 +1,9 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import requestsManager, { Request } from './requests-manager';
 import { Storage } from './storage';
 import serverProxy from './server-proxy';
 import { decodePreview } from './frames';
@@ -96,9 +97,11 @@ export default function implementProject(projectClass) {
         useDefaultSettings: boolean,
         targetStorage: Storage,
         customName?: string,
+        options?: { updateProgressCallback?: (request: Request) => void },
     ) {
-        const result = exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
-        return result;
+        const { updateProgressCallback } = options;
+        const rqID = await exportDataset(this, format, saveImages, useDefaultSettings, targetStorage, customName);
+        return requestsManager.listen(rqID, updateProgressCallback);
     };
     projectClass.prototype.annotations.importDataset.implementation = async function (
         format: string,
@@ -107,24 +110,34 @@ export default function implementProject(projectClass) {
         file: File | string,
         options?: {
             convMaskToPoly?: boolean,
-            updateStatusCallback?: (s: string, n: number) => void,
+            uploadStatusCallback?: (s: string, n: number) => void,
+            updateProgressCallback?: (request: Request) => void,
         },
     ) {
-        return importDataset(this, format, useDefaultSettings, sourceStorage, file, options);
+        const { updateProgressCallback } = options;
+        const rqID = await importDataset(this, format, useDefaultSettings, sourceStorage, file, options);
+        return requestsManager.listen(rqID, updateProgressCallback);
     };
 
     projectClass.prototype.backup.implementation = async function (
         targetStorage: Storage,
         useDefaultSettings: boolean,
         fileName?: string,
+        options?: { updateProgressCallback?: (request: Request) => void },
     ) {
-        const result = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
-        return result;
+        const { updateProgressCallback } = options;
+        const rqID = await serverProxy.projects.backup(this.id, targetStorage, useDefaultSettings, fileName);
+        return requestsManager.listen(rqID, updateProgressCallback);
     };
 
-    projectClass.restore.implementation = async function (storage: Storage, file: File | string) {
-        const result = await serverProxy.projects.restore(storage, file);
-        return result;
+    projectClass.restore.implementation = async function (
+        storage: Storage,
+        file: File | string,
+        options?: { updateProgressCallback?: (request: Request) => void },
+    ) {
+        const { updateProgressCallback } = options;
+        const rqID = await serverProxy.projects.restore(storage, file);
+        return requestsManager.listen(rqID, updateProgressCallback);
     };
 
     projectClass.prototype.guide.implementation = async function guide() {

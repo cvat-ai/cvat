@@ -19,6 +19,7 @@ import { SerializedJob, SerializedLabel, SerializedTask } from './server-respons
 import AnnotationGuide from './guide';
 import { FrameData } from './frames';
 import Statistics from './statistics';
+import { Request } from './requests-manager';
 
 function buildDuplicatedAPI(prototype) {
     Object.defineProperties(prototype, {
@@ -169,6 +170,9 @@ function buildDuplicatedAPI(prototype) {
                     useDefaultSettings: boolean,
                     targetStorage: Storage,
                     customName?: string,
+                    options?: {
+                        updateProgressCallback?: (request: Request) => void,
+                    },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -178,6 +182,7 @@ function buildDuplicatedAPI(prototype) {
                         useDefaultSettings,
                         targetStorage,
                         customName,
+                        options,
                     );
                     return result;
                 },
@@ -1077,13 +1082,19 @@ export class Task extends Session {
         return result;
     }
 
-    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
+    async backup(
+        targetStorage: Storage,
+        useDefaultSettings: boolean,
+        fileName?: string,
+        options?: { updateProgressCallback?: (request: Request) => void },
+    ) {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Task.prototype.backup,
             targetStorage,
             useDefaultSettings,
             fileName,
+            options,
         );
         return result;
     }
@@ -1093,8 +1104,12 @@ export class Task extends Session {
         return result;
     }
 
-    static async restore(storage: Storage, file: File | string) {
-        const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file);
+    static async restore(
+        storage: Storage,
+        file: File | string,
+        options?: { updateProgressCallback?: (request: Request) => void },
+    ) {
+        const result = await PluginRegistry.apiWrapper.call(this, Task.restore, storage, file, options);
         return result;
     }
 

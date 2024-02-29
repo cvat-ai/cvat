@@ -213,35 +213,36 @@ class RequestsManager {
 
     async listen(
         id: string,
-        callback: (status: RQStatus, progress: number, message?: string) => void,
-    ): Promise<void> {
+        callback?: (request: Request) => void,
+    ): Promise<Request> {
         if (id in this.listening) {
             return this.listening[id].promise;
         }
-        const promise = new Promise<void>((resolve, reject) => {
+        const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = (): void => {
                 serverProxy.requests.status(id).then((response) => {
+                    const request = new Request(response);
                     let { status } = response;
                     status = status.toLowerCase();
                     if (id in this.listening) {
                         // check it was not cancelled
                         const { onUpdate } = this.listening[id];
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
-                            onUpdate.forEach((update) => update(response));
+                            onUpdate.forEach((update) => update(request));
                             this.listening[id].timeout = window
                                 .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 5000 : 1000);
                         } else {
                             delete this.listening[id];
                             if (status === RQStatus.FINISHED) {
                                 onUpdate
-                                    .forEach((update) => update(response));
-                                resolve(response);
+                                    .forEach((update) => update(request));
+                                resolve(request);
                             } else {
                                 onUpdate
                                     .forEach((update) => (
-                                        update(response)
+                                        update(request)
                                     ));
-                                reject(response);
+                                reject(request);
                             }
                         }
                     }

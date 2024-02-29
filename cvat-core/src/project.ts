@@ -13,6 +13,7 @@ import { Label } from './labels';
 import User from './user';
 import { FieldUpdateTrigger } from './common';
 import AnnotationGuide from './guide';
+import { Request } from './requests-manager';
 
 export default class Project {
     public readonly id: number;
@@ -221,19 +222,29 @@ export default class Project {
         return result;
     }
 
-    async backup(targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
+    async backup(
+        targetStorage: Storage,
+        useDefaultSettings: boolean,
+        fileName?: string,
+        options?: { updateProgressCallback?: (request: Request) => void },
+    ) {
         const result = await PluginRegistry.apiWrapper.call(
             this,
             Project.prototype.backup,
             targetStorage,
             useDefaultSettings,
             fileName,
+            options,
         );
         return result;
     }
 
-    static async restore(storage: Storage, file: File | string) {
-        const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file);
+    static async restore(
+        storage: Storage,
+        file: File | string,
+        options?: { updateProgressCallback?: (request: Request) => void },
+    ) {
+        const result = await PluginRegistry.apiWrapper.call(this, Project.restore, storage, file, options);
         return result;
     }
 
@@ -254,6 +265,7 @@ Object.defineProperties(
                     useDefaultSettings: boolean,
                     targetStorage: Storage,
                     customName?: string,
+                    options?: { updateProgressCallback?: (request: Request) => void },
                 ) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -263,6 +275,7 @@ Object.defineProperties(
                         useDefaultSettings,
                         targetStorage,
                         customName,
+                        options,
                     );
                     return result;
                 },
@@ -273,6 +286,7 @@ Object.defineProperties(
                     file: File | string,
                     options?: {
                         convMaskToPoly?: boolean,
+                        updateProgressCallback?: (request: Request) => void,
                         updateStatusCallback?: (s: string, n: number) => void,
                     },
                 ) {

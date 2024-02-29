@@ -1,12 +1,12 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
-import { getCore, Storage } from 'cvat-core-wrapper';
-import { listenNewRequest } from './requests-actions';
+import { getCore, Storage, Request } from 'cvat-core-wrapper';
+import { updateRequestProgress } from './requests-actions';
 
 const core = getCore();
 
@@ -65,8 +65,8 @@ export const exportActions = {
     exportBackup: (instance: any) => (
         createAction(ExportActionTypes.EXPORT_BACKUP, { instance })
     ),
-    exportBackupSuccess: (instance: any, instanceType: 'task' | 'project', isLocal: boolean) => (
-        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType, isLocal })
+    exportBackupSuccess: (instance: any, instanceType: 'task' | 'project') => (
+        createAction(ExportActionTypes.EXPORT_BACKUP_SUCCESS, { instance, instanceType })
     ),
     exportBackupFailed: (instance: any, instanceType: 'task' | 'project', error: any) => (
         createAction(ExportActionTypes.EXPORT_BACKUP_FAILED, { instance, instanceType, error })
@@ -93,16 +93,15 @@ export const exportDatasetAsync = (
     }
 
     try {
-        const rqID = await instance.annotations
-            .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name);
-        await listenNewRequest({
-            id: rqID,
-            type: `export:${saveImages ? 'dataset' : 'annotations'}`,
-            instance,
-            location: targetStorage.location,
-        }, dispatch);
+        await instance.annotations
+            .exportDataset(format, saveImages, useDefaultSettings, targetStorage, name, {
+                updateProgressCallback: (request: Request) => {
+                    updateRequestProgress(request, dispatch);
+                },
+            });
+
         const resource = saveImages ? 'Dataset' : 'Annotations';
-        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!rqID, resource));
+        dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, true, resource));
     } catch (error) {
         dispatch(exportActions.exportDatasetFailed(instance, instanceType, format, error));
     }
@@ -118,14 +117,13 @@ export const exportBackupAsync = (
     const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
 
     try {
-        const rqID = await instance.backup(targetStorage, useDefaultSetting, fileName);
-        await listenNewRequest({
-            id: rqID,
-            type: 'export:backup',
-            location: targetStorage.location,
-        }, dispatch);
+        await instance.backup(targetStorage, useDefaultSetting, fileName, {
+            updateProgressCallback: (request: Request) => {
+                updateRequestProgress(request, dispatch);
+            },
+        });
 
-        dispatch(exportActions.exportBackupSuccess(instance, instanceType, false));
+        dispatch(exportActions.exportBackupSuccess(instance, instanceType));
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }
