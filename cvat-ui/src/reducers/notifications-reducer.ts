@@ -497,44 +497,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ExportActionTypes.EXPORT_DATASET_FAILED: {
-            const { instance, instanceType } = action.payload;
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    exporting: {
-                        ...state.errors.exporting,
-                        dataset: {
-                            message:
-                                'Could not export dataset for the ' +
-                                `[${instanceType} ${instance.id}](/${instanceType}s/${instance.id})`,
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                        },
-                    },
-                },
-            };
-        }
-        case ExportActionTypes.EXPORT_DATASET_SUCCESS: {
-            const {
-                instance, instanceType, isLocal, resource,
-            } = action.payload;
-            const auxiliaryVerb = resource === 'Dataset' ? 'has' : 'have';
-            return {
-                ...state,
-                // messages: {
-                //     ...state.messages,
-                //     exporting: {
-                //         ...state.messages.exporting,
-                //         dataset:
-                //             `${resource} for ${instanceType} ${instance.id} ` +
-                //             `${auxiliaryVerb} been ${(isLocal) ? 'downloaded' : 'uploaded'} ` +
-                //             `${(isLocal) ? 'locally' : 'to cloud storage'}`,
-                //     },
-                // },
-            };
-        }
         case ExportActionTypes.EXPORT_BACKUP_FAILED: {
             const { instance, instanceType } = action.payload;
             return {
@@ -569,33 +531,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
-            const { instance, resource } = action.payload;
-            const message = resource === 'annotation' ?
-                'Annotations have been loaded to the ' +
-                `[task ${instance.taskId || instance.id}](/tasks/${instance.taskId || instance.id}) ` :
-                `Dataset was imported to the [project ${instance.id}](/projects/${instance.id})`;
-            return {
-                ...state,
-                // messages: {
-                //     ...state.messages,
-                //     importing: {
-                //         ...state.messages.importing,
-                //         [resource]: message,
-                //     },
-                // },
-            };
-        }
         case RequestsActionsTypes.REQUEST_FINISHED: {
             const { request } = action.payload;
-            const resource = request.operation.type.split(':')[-1];
-            const process = request.operation.type.split(':')[0];
-            const { taskID, projectID } = request.operation;
+            const {
+                taskID, projectID, jobID, target, type,
+            } = request.operation;
+            const [process, resource] = type.split(':');
+            let instanceID = jobID;
+            if (target === 'project') {
+                instanceID = projectID;
+            } else if (target === 'task') {
+                instanceID = taskID;
+            }
             if (process === 'import') {
-                const message = resource === 'annotation' ?
-                    'Annotations have been loaded to the ' +
-                `[task ${taskID}](/tasks/${taskID}) ` :
-                    `Dataset was imported to the [project ${projectID}](/projects/${projectID})`;
+                const link = target === 'job' ? `${target} ${instanceID}` : `[${target} ${instanceID}](/${target}s/${instanceID})`;
+                const message = resource === 'annotations' ?
+                    `Annotations have been loaded to the ${link}` :
+                    `Dataset was imported to the ${link}`;
                 return {
                     ...state,
                     messages: {
@@ -608,8 +560,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 };
             }
             if (process === 'export') {
-                const message = 'Export for the  ' +
-                `[project ${projectID}](/projects/${projectID}) is finished, you can [download it here](/requests)`;
+                const link = target === 'job' ? `${target} ${instanceID}` : `[${target} ${instanceID}](/${target}s/${instanceID})`;
+                const message = `Export for the  ${link} is finished, you can [download it here](/requests)`;
                 return {
                     ...state,
                     messages: {
@@ -625,15 +577,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case RequestsActionsTypes.REQUEST_FAILED: {
             const { request } = action.payload;
-            const resource = request.operation.type.split(':')[-1];
-            const process = request.operation.type.split(':')[0];
-            const { taskID, projectID } = request.operation;
+            const {
+                taskID, projectID, jobID, target, type,
+            } = request.operation;
+            const [process, resource] = type.split(':');
+            let instanceID = jobID;
+            if (target === 'project') {
+                instanceID = projectID;
+            } else if (target === 'task') {
+                instanceID = taskID;
+            }
             if (process === 'import') {
-                const message = resource === 'annotation' ?
-                    'Annotations have been loaded to the ' +
-                `[task ${taskID}](/tasks/${taskID}) ` :
-                    `Dataset import to the [project ${projectID}](/projects/${projectID}) failed,` +
-                    '[check details](/requests)';
+                const link = target === 'job' ? `${target} ${instanceID}` : `[${target} ${instanceID}](/${target}s/${instanceID})`;
+                const message = resource === 'annotations' ?
+                    `Could not import annotations for the ${link}` :
+                    `Could not import dataset for the ${link}`;
                 return {
                     ...state,
                     errors: {
@@ -649,8 +607,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 };
             }
             if (process === 'export') {
-                const message = 'Export for the  ' +
-                `[project ${projectID}](/projects/${projectID}) failed, [check details](/requests)`;
+                const link = target === 'job' ? `${target} ${instanceID}` : `[${target} ${instanceID}](/${target}s/${instanceID})`;
+                const message = `Could not export the ${link}`;
                 return {
                     ...state,
                     errors: {

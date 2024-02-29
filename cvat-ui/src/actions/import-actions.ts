@@ -107,7 +107,13 @@ export const importDatasetAsync = (
                     throw Error('Only one importing of annotation/dataset allowed at the same time');
                 }
                 dispatch(importActions.importDataset(instance, format));
-                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
+                const rqID = await instance.annotations
+                    .upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
+                await listenNewRequest({
+                    id: rqID,
+                    type: `import:${resource}`,
+                    instance,
+                }, dispatch);
             } else { // job
                 if (state.import.tasks.dataset.current?.[instance.taskId]) {
                     throw Error('Annotations is being uploaded for the task');
@@ -118,7 +124,13 @@ export const importDatasetAsync = (
 
                 dispatch(importActions.importDataset(instance, format));
 
-                await instance.annotations.upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
+                const rqID = await instance.annotations
+                    .upload(format, useDefaultSettings, sourceStorage, file, { convMaskToPoly });
+                await listenNewRequest({
+                    id: rqID,
+                    type: `import:${resource}`,
+                    instance,
+                }, dispatch);
                 await instance.logger.log(EventScope.uploadAnnotations);
                 await instance.annotations.clear(true);
                 await instance.actions.clear();

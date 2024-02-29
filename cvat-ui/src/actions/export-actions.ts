@@ -100,11 +100,6 @@ export const exportDatasetAsync = (
             type: `export:${saveImages ? 'dataset' : 'annotations'}`,
             instance,
         }, dispatch);
-        // if (result) {
-        //     const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-        //     downloadAnchor.href = result;
-        //     downloadAnchor.click();
-        // }
         const resource = saveImages ? 'Dataset' : 'Annotations';
         dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!rqID, resource));
     } catch (error) {

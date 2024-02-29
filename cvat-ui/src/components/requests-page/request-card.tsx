@@ -127,7 +127,7 @@ export default function RequestCard(props: Props): JSX.Element {
     const percent = request.status === RQStatus.FINISHED ? 100 : request.progress;
     const timestamps = constructTimestamps(request);
 
-    const truncatedName = truncateName(operation.name, 45);
+    const truncatedName = truncateName(operation.name, 60);
     return (
         <Row justify='center' align='middle'>
             <Col span={24}>
@@ -141,7 +141,7 @@ export default function RequestCard(props: Props): JSX.Element {
                                         {' '}
                                     </Text>
                                 </Col>
-                                <Col className='cvat-requests-name' span={10}>
+                                <Col className='cvat-requests-name'>
                                     {linkToEntity ?
                                         (<Link to={linkToEntity}>{truncatedName}</Link>) :
                                         <Text>{truncatedName}</Text>}

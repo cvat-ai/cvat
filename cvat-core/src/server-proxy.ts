@@ -1791,7 +1791,7 @@ async function uploadAnnotations(
         }
     }
     try {
-        return await wait();
+        return rqId;
     } catch (errorData) {
         throw generateError(errorData);
     }

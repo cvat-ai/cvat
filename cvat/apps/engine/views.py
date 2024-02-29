@@ -99,17 +99,30 @@ rq_percent = 0
 def get_job_info(job):
     status = job.meta.get('status', 'In progress')
     state = job.get_status()
-    t = job.id.split('-')[0] if job.id.split('-')[0] != 'import:project' else 'import:dataset'
+    t = job.id.split(':')[0]
+    if 'annotations' in job.id:
+        t = t+':annotations'
+    elif 'dataset' in job.id:
+        t = t+':dataset'
+    else:
+        t = t.split('.')[0]
+    target = 'job'
+    if 'project' in job.id:
+        target = 'project'
+    if 'task' in job.id:
+        target = 'task'
     return {
                 "status": state,
                 "message": job.meta.get('formatted_exception', 'In progress') if state == 'failed' else status,
                 "id": job.id,
                 "operation": {
                             "type": t,
-                            "target": "project",
+                            "target": target,
                             "project_id": job.meta['project_id'],
+                            "task_id": job.meta['task_id'],
+                            "job_id": job.meta['job_id'],
                             "format": "CVAT for images 1.1",
-                            "name": "Project for testing Import/Export UX",
+                            "name": job.id,
                 },
                 "percent": job.meta.get('task_progress', 0)*100,
                 "enqueue_date": "2023-03-31T10:37:31.708000Z",
@@ -124,19 +137,32 @@ def get_job_info(job):
             }
 
 def get_job_info_status(job):
-    status = getattr(job.meta, 'status', 'In progress')
+    status = job.meta.get('status', 'In progress')
     state = job.get_status()
-    t = job.id.split('-')[0] if job.id.split('-')[0] != 'import:project' else 'import:dataset'
+    t = job.id.split(':')[0]
+    if 'annotations' in job.id:
+        t = t+':annotations'
+    elif 'dataset' in job.id:
+        t = t+':dataset'
+    else:
+        t = t.split('.')[0]
+    target = 'job'
+    if 'project' in job.id:
+        target = 'project'
+    if 'task' in job.id:
+        target = 'task'
     return {
                 "status": state,
                 "message": job.meta.get('formatted_exception', 'In progress') if state == 'failed' else status,
                 "id": job.id,
                 "operation": {
                             "type": t,
-                            "target": "project",
+                            "target": target,
                             "project_id": job.meta['project_id'],
+                            "task_id": job.meta['task_id'],
+                            "job_id": job.meta['job_id'],
                             "format": "CVAT for images 1.1",
-                            "name": "Project for testing Import/Export UX",
+                            "name": job.id,
                 },
                 "percent": job.meta.get('task_progress', 0)*100,
                 "enqueue_date": "2023-03-31T10:37:31.708000Z",

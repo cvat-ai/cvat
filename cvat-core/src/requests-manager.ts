@@ -130,37 +130,37 @@ export class Request {
     }
 
     updateFields(request: Partial<SerializedRequest>): void {
-        if (request.id) {
+        if (request.id !== undefined) {
             this.#id = request.id;
         }
-        if (request.status) {
+        if (request.status !== undefined) {
             this.#status = request.status as RQStatus;
         }
-        if (request.operation) {
+        if (request.operation !== undefined) {
             this.#operation = request.operation;
         }
-        if (request.progress) {
+        if (request.progress !== undefined) {
             this.#progress = request.progress;
         }
-        if (request.message) {
+        if (request.message !== undefined) {
             this.#message = request.message;
         }
-        if (request.result_url) {
+        if (request.result_url !== undefined) {
             this.#resultUrl = request.result_url;
         }
-        if (request.enqueue_date) {
+        if (request.enqueue_date !== undefined) {
             this.#enqueueDate = request.enqueue_date;
         }
-        if (request.start_date) {
+        if (request.start_date !== undefined) {
             this.#startDate = request.start_date;
         }
-        if (request.finish_date) {
+        if (request.finish_date !== undefined) {
             this.#finishDate = request.finish_date;
         }
-        if (request.expire_date) {
+        if (request.expire_date !== undefined) {
             this.#expireDate = request.expire_date;
         }
-        if (request.owner) {
+        if (request.owner !== undefined) {
             this.#owner = new User(request.owner);
         }
     }
