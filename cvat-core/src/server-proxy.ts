@@ -870,7 +870,7 @@ async function importDataset(
         convMaskToPoly: boolean,
         updateStatusCallback: (s: string, n: number) => void,
     },
-): Promise<void> {
+): Promise<string> {
     const { backendAPI, origin } = config;
     const params: Params & { conv_mask_to_poly: boolean } = {
         ...enableOrganization(),
@@ -883,30 +883,6 @@ async function importDataset(
     const url = `${backendAPI}/projects/${id}/dataset`;
     let rqId: string;
 
-    async function wait() {
-        return new Promise<void>((resolve, reject) => {
-            async function requestStatus() {
-                try {
-                    const response = await Axios.get(url, {
-                        params: { ...params, action: 'import_status', rq_id: rqId },
-                    });
-                    if (response.status === 202) {
-                        if (response.data.message) {
-                            options.updateStatusCallback(response.data.message, response.data.progress || 0);
-                        }
-                        setTimeout(requestStatus, 3000);
-                    } else if (response.status === 201) {
-                        resolve();
-                    } else {
-                        reject(generateError(response));
-                    }
-                } catch (error) {
-                    reject(generateError(error));
-                }
-            }
-            // setTimeout(requestStatus, 2000);
-        });
-    }
     const isCloudStorage = sourceStorage.location === StorageLocation.CLOUD_STORAGE;
 
     if (isCloudStorage) {
@@ -954,7 +930,12 @@ async function importDataset(
     }
 }
 
-async function backupTask(id: number, targetStorage: Storage, useDefaultSettings: boolean, fileName?: string) {
+async function backupTask(
+    id: number,
+    targetStorage: Storage,
+    useDefaultSettings: boolean,
+    fileName?: string,
+): Promise<string> {
     const { backendAPI } = config;
     const params: Params = {
         ...enableOrganization(),
@@ -963,23 +944,13 @@ async function backupTask(id: number, targetStorage: Storage, useDefaultSettings
     };
     const url = `${backendAPI}/tasks/${id}/backup`;
 
-    return new Promise<void | string>((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
         async function request() {
             try {
                 const response = await Axios.get(url, {
                     params,
                 });
-                const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
-                const { status } = response;
-
-                if (status === 202) {
-                    setTimeout(request, 3000);
-                } else if (status === 201) {
-                    params.action = 'download';
-                    resolve(`${url}?${new URLSearchParams(params).toString()}`);
-                } else if (isCloudStorage && status === 200) {
-                    resolve();
-                }
+                resolve(response.data.rq_id);
             } catch (errorData) {
                 reject(generateError(errorData));
             }
@@ -989,7 +960,7 @@ async function backupTask(id: number, targetStorage: Storage, useDefaultSettings
     });
 }
 
-async function restoreTask(storage: Storage, file: File | string) {
+async function restoreTask(storage: Storage, file: File | string): Promise<string> {
     const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
     const params: Params = {
@@ -998,31 +969,8 @@ async function restoreTask(storage: Storage, file: File | string) {
     };
 
     const url = `${backendAPI}/tasks/backup`;
-    const taskData = new FormData();
     let response;
 
-    async function wait() {
-        return new Promise((resolve, reject) => {
-            async function checkStatus() {
-                try {
-                    taskData.set('rq_id', response.data.rq_id);
-                    response = await Axios.post(url, taskData, {
-                        params,
-                    });
-                    if (response.status === 202) {
-                        setTimeout(checkStatus, 3000);
-                    } else {
-                        // to be able to get the task after it was created, pass frozen params
-                        const importedTask = await getTasks({ id: response.data.id, ...params });
-                        resolve(importedTask[0]);
-                    }
-                } catch (errorData) {
-                    reject(generateError(errorData));
-                }
-            }
-            setTimeout(checkStatus);
-        });
-    }
     const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;
 
     if (isCloudStorage) {
@@ -1050,7 +998,8 @@ async function restoreTask(storage: Storage, file: File | string) {
                 headers: { 'Upload-Finish': true },
             });
     }
-    return wait();
+    const rqId = response.data.rq_id;
+    return rqId;
 }
 
 async function backupProject(
@@ -1058,7 +1007,7 @@ async function backupProject(
     targetStorage: Storage,
     useDefaultSettings: boolean,
     fileName?: string,
-) {
+): Promise<string> {
     const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
     const params: Params = {
@@ -1069,23 +1018,13 @@ async function backupProject(
 
     const url = `${backendAPI}/projects/${id}/backup`;
 
-    return new Promise<void | string>((resolve, reject) => {
+    return new Promise<string>((resolve, reject) => {
         async function request() {
             try {
                 const response = await Axios.get(url, {
                     params,
                 });
-                const isCloudStorage = targetStorage.location === StorageLocation.CLOUD_STORAGE;
-                const { status } = response;
-
-                if (status === 202) {
-                    setTimeout(request, 3000);
-                } else if (status === 201) {
-                    params.action = 'download';
-                    resolve(`${url}?${new URLSearchParams(params).toString()}`);
-                } else if (isCloudStorage && status === 200) {
-                    resolve();
-                }
+                resolve(response.data.rq_id);
             } catch (errorData) {
                 reject(generateError(errorData));
             }
@@ -1095,7 +1034,7 @@ async function backupProject(
     });
 }
 
-async function restoreProject(storage: Storage, file: File | string) {
+async function restoreProject(storage: Storage, file: File | string): Promise<string> {
     const { backendAPI } = config;
     // keep current default params to 'freeze" them during this request
     const params: Params = {
@@ -1104,34 +1043,8 @@ async function restoreProject(storage: Storage, file: File | string) {
     };
 
     const url = `${backendAPI}/projects/backup`;
-    const projectData = new FormData();
-    let response;
-
-    async function wait() {
-        return new Promise((resolve, reject) => {
-            async function request() {
-                try {
-                    projectData.set('rq_id', response.data.rq_id);
-                    response = await Axios.post(`${backendAPI}/projects/backup`, projectData, {
-                        params,
-                    });
-                    if (response.status === 202) {
-                        setTimeout(request, 3000);
-                    } else {
-                        // to be able to get the task after it was created, pass frozen params
-                        const restoredProject = await getProjects({ id: response.data.id, ...params });
-                        resolve(restoredProject[0]);
-                    }
-                } catch (errorData) {
-                    reject(generateError(errorData));
-                }
-            }
-
-            setTimeout(request);
-        });
-    }
-
     const isCloudStorage = storage.location === StorageLocation.CLOUD_STORAGE;
+    let response;
 
     if (isCloudStorage) {
         params.filename = file;
@@ -1158,7 +1071,8 @@ async function restoreProject(storage: Storage, file: File | string) {
                 headers: { 'Upload-Finish': true },
             });
     }
-    return wait();
+    const rqId = response.data.rq_id;
+    return rqId;
 }
 
 const listenToCreateCallbacks: Record<number, {
@@ -1719,7 +1633,7 @@ async function uploadAnnotations(
     sourceStorage: Storage,
     file: File | string,
     options: { convMaskToPoly: boolean },
-): Promise<void> {
+): Promise<string> {
     const { backendAPI, origin } = config;
     const params: Params & { conv_mask_to_poly: boolean } = {
         ...enableOrganization(),
@@ -1731,29 +1645,6 @@ async function uploadAnnotations(
     let rqId: string;
 
     const url = `${backendAPI}/${session}s/${id}/annotations`;
-    async function wait() {
-        return new Promise<void>((resolve, reject) => {
-            async function requestStatus() {
-                try {
-                    const response = await Axios.put(
-                        url,
-                        new FormData(),
-                        {
-                            params: { ...params, rq_id: rqId },
-                        },
-                    );
-                    if (response.status === 202) {
-                        setTimeout(requestStatus, 3000);
-                    } else {
-                        resolve();
-                    }
-                } catch (errorData) {
-                    reject(generateError(errorData));
-                }
-            }
-            setTimeout(requestStatus);
-        });
-    }
     const isCloudStorage = sourceStorage.location === StorageLocation.CLOUD_STORAGE;
 
     if (isCloudStorage) {

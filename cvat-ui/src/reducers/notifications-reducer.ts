@@ -27,7 +27,7 @@ import { InvitationsActionTypes } from 'actions/invitations-actions';
 import { ServerAPIActionTypes } from 'actions/server-actions';
 import { RequestsActionsTypes } from 'actions/requests-actions';
 
-import { NotificationsState } from '.';
+import { NotificationsState, StorageLocation } from '.';
 
 const defaultState: NotificationsState = {
     errors: {
@@ -515,22 +515,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ExportActionTypes.EXPORT_BACKUP_SUCCESS: {
-            const { instance, instanceType, isLocal } = action.payload;
-            return {
-                ...state,
-                messages: {
-                    ...state.messages,
-                    exporting: {
-                        ...state.messages.exporting,
-                        backup:
-                            `Backup for the ${instanceType} №${instance.id} ` +
-                            `has been ${(isLocal) ? 'downloaded' : 'uploaded'} ` +
-                            `${(isLocal) ? 'locally' : 'to cloud storage'}`,
-                    },
-                },
-            };
-        }
         case RequestsActionsTypes.REQUEST_FINISHED: {
             const { request } = action.payload;
             const {
@@ -560,8 +544,12 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 };
             }
             if (process === 'export') {
+                const isLocal = request.meta?.storage ?
+                    request.meta.storage.location === StorageLocation.LOCAL : StorageLocation.LOCAL;
                 const link = target === 'job' ? `${target} ${instanceID}` : `[${target} ${instanceID}](/${target}s/${instanceID})`;
-                const message = `Export for the  ${link} is finished, you can [download it here](/requests)`;
+                const message = isLocal ?
+                    `Export for the ${link}  is finished, you can [download it here](/requests)` :
+                    `Export for the ${link} has been uploaded to cloud storage`;
                 return {
                     ...state,
                     messages: {
@@ -569,6 +557,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         exporting: {
                             ...state.messages.exporting,
                             dataset: message,
+                        },
+                    },
+                };
+            }
+            if (process === 'backup') {
+                const isLocal = request.meta?.storage ?
+                    request.meta.storage.location === StorageLocation.LOCAL : StorageLocation.LOCAL;
+                const message = isLocal ?
+                    `Backup for the ${target} №${instanceID} is finished, you can [download it here](/requests)` :
+                    `Backup for the ${target} №${instanceID} has been uploaded to cloud storage`;
+                return {
+                    ...state,
+                    messages: {
+                        ...state.messages,
+                        exporting: {
+                            ...state.messages.exporting,
+                            backup: message,
                         },
                     },
                 };
@@ -618,6 +623,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             dataset: {
                                 message,
                                 reason: new Error(' '),
+                            },
+                        },
+                    },
+                };
+            }
+            if (process === 'backup') {
+                return {
+                    ...state,
+                    errors: {
+                        ...state.errors,
+                        exporting: {
+                            ...state.errors.exporting,
+                            backup: {
+                                message:
+                                        `Could not export the ${target} №${instanceID}`,
+                                reason: action.payload.error,
+                                shouldLog: !(action.payload.error instanceof ServerError),
                             },
                         },
                     },

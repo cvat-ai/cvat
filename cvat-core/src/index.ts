@@ -105,11 +105,11 @@ export default interface CVATCore {
     projects: {
         get: (
             filter: {
-                id: number;
-                page: number;
-                search: string;
-                sort: string;
-                filter: string;
+                id?: number;
+                page?: number;
+                search?: string;
+                sort?: string;
+                filter?: string;
             }
         ) => Promise<PaginatedResource<Project>>;
         searchNames: any;

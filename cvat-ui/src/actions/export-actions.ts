@@ -99,6 +99,7 @@ export const exportDatasetAsync = (
             id: rqID,
             type: `export:${saveImages ? 'dataset' : 'annotations'}`,
             instance,
+            location: targetStorage.location,
         }, dispatch);
         const resource = saveImages ? 'Dataset' : 'Annotations';
         dispatch(exportActions.exportDatasetSuccess(instance, instanceType, format, !!rqID, resource));
@@ -117,13 +118,14 @@ export const exportBackupAsync = (
     const instanceType = (instance instanceof core.classes.Project) ? 'project' : 'task';
 
     try {
-        const result = await instance.backup(targetStorage, useDefaultSetting, fileName);
-        if (result) {
-            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-            downloadAnchor.href = result;
-            downloadAnchor.click();
-        }
-        dispatch(exportActions.exportBackupSuccess(instance, instanceType, !!result));
+        const rqID = await instance.backup(targetStorage, useDefaultSetting, fileName);
+        await listenNewRequest({
+            id: rqID,
+            type: 'export:backup',
+            location: targetStorage.location,
+        }, dispatch);
+
+        dispatch(exportActions.exportBackupSuccess(instance, instanceType, false));
     } catch (error) {
         dispatch(exportActions.exportBackupFailed(instance, instanceType, error as Error));
     }

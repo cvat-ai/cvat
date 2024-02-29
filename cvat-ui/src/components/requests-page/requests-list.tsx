@@ -28,7 +28,7 @@ function RequestsList(): JSX.Element {
     const query = useSelector((state: CombinedState) => state.requests.query);
     const { page } = query;
     const requestViews = setUpRequestsList(Object.values(requests), page)
-        .map((request: Request): JSX.Element => <RequestCard request={request} />);
+        .map((request: Request): JSX.Element => <RequestCard request={request} key={request.id} />);
 
     return (
         <>

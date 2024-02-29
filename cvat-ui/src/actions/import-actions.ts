@@ -101,6 +101,7 @@ export const importDatasetAsync = (
                     id: rqID,
                     type: `import:${resource}`,
                     instance,
+                    location: sourceStorage.location,
                 }, dispatch);
             } else if (instance instanceof core.classes.Task) {
                 if (state.import.tasks.dataset.current?.[instance.id]) {
@@ -113,6 +114,7 @@ export const importDatasetAsync = (
                     id: rqID,
                     type: `import:${resource}`,
                     instance,
+                    location: sourceStorage.location,
                 }, dispatch);
             } else { // job
                 if (state.import.tasks.dataset.current?.[instance.taskId]) {
@@ -130,6 +132,7 @@ export const importDatasetAsync = (
                     id: rqID,
                     type: `import:${resource}`,
                     instance,
+                    location: sourceStorage.location,
                 }, dispatch);
                 await instance.logger.log(EventScope.uploadAnnotations);
                 await instance.annotations.clear(true);
@@ -168,7 +171,20 @@ export const importBackupAsync = (instanceType: 'project' | 'task', storage: Sto
         dispatch(importActions.importBackup());
         try {
             const instanceClass = (instanceType === 'task') ? core.classes.Task : core.classes.Project;
-            const instance = await instanceClass.restore(storage, file);
+            const rqID = await instanceClass.restore(storage, file);
+            const response = await listenNewRequest({
+                id: rqID,
+                type: 'import:backup',
+                location: storage.location,
+            }, dispatch);
+
+            let instance = null;
+            if (instanceType === 'project') {
+                [instance] = await core.projects.get({ id: response.data.id });
+            } else {
+                [instance] = await core.tasks.get({ id: response.data.id });
+            }
+
             dispatch(importActions.importBackupSuccess(instance.id, instanceType));
         } catch (error) {
             dispatch(importActions.importBackupFailed(instanceType, error));

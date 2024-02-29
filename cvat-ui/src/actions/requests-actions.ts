@@ -4,7 +4,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
-    RequestsQuery,
+    RequestsQuery, StorageLocation,
 } from 'reducers';
 import {
     getCore, RQStatus, Request, Project, Task, Job,
@@ -51,7 +51,8 @@ const core = getCore();
 export interface RequestParams {
     id: string;
     type: string;
-    instance: Project | Task | Job;
+    instance?: Project | Task | Job;
+    location?: StorageLocation;
 }
 
 export function listen(request: Request, dispatch: (action: RequestsActions) => void): Promise<void> {
@@ -59,7 +60,6 @@ export function listen(request: Request, dispatch: (action: RequestsActions) => 
     return core.requests
         .listen(id, (updatedRequest) => {
             request.updateFields(updatedRequest);
-            console.log(request);
             const { status, message } = updatedRequest;
             if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
                 dispatch(
@@ -90,8 +90,10 @@ export function listen(request: Request, dispatch: (action: RequestsActions) => 
         });
 }
 
-export function listenNewRequest(params: RequestParams, dispatch: (action: RequestsActions) => void): Promise<void> {
-    const { instance, id, type } = params;
+export function listenNewRequest(params: RequestParams, dispatch: (action: RequestsActions) => void): Promise<any> {
+    const {
+        instance, id, type, location,
+    } = params;
     let target = 'job';
     if (instance instanceof Project) {
         target = 'project';
@@ -118,6 +120,7 @@ export function listenNewRequest(params: RequestParams, dispatch: (action: Reque
         finish_date: '',
         expire_date: '',
         owner: null,
+        meta: location ? { storage: { location } } : undefined,
     });
 
     return listen(request, dispatch);

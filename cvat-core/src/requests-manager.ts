@@ -5,6 +5,7 @@
 import serverProxy from './server-proxy';
 import { RQStatus } from './enums';
 import User from './user';
+import { StorageData } from './storage';
 
 export interface SerializedRequest {
     id: string;
@@ -26,6 +27,11 @@ export interface SerializedRequest {
     finish_date: string;
     expire_date: string;
     owner: any;
+    meta?: {
+        storage: {
+            location: string;
+        }
+    }
 }
 
 type Operation = {
@@ -50,6 +56,7 @@ export class Request {
     #finishDate: string;
     #expireDate: string;
     #owner: User;
+    #meta: { storage: StorageData };
 
     constructor(initialData: SerializedRequest) {
         this.#id = initialData.id;
@@ -66,6 +73,10 @@ export class Request {
 
         if (initialData.owner) {
             this.#owner = new User(initialData.owner);
+        }
+
+        if (initialData.meta) {
+            this.#meta = initialData.meta as { storage: StorageData };
         }
     }
 
@@ -125,8 +136,13 @@ export class Request {
     get expireDate(): string {
         return this.#expireDate;
     }
+
     get owner(): User {
         return this.#owner;
+    }
+
+    get meta(): { storage: StorageData } {
+        return this.#meta;
     }
 
     updateFields(request: Partial<SerializedRequest>): void {
@@ -219,13 +235,13 @@ class RequestsManager {
                             if (status === RQStatus.FINISHED) {
                                 onUpdate
                                     .forEach((update) => update(response));
-                                resolve();
+                                resolve(response);
                             } else {
                                 onUpdate
                                     .forEach((update) => (
                                         update(response)
                                     ));
-                                reject();
+                                reject(response);
                             }
                         }
                     }
@@ -239,7 +255,7 @@ class RequestsManager {
                                 0,
                                 `Could not get a status of the request ${id}. ${error.toString()}`,
                             ));
-                        reject();
+                        reject(error);
                     }
                 }).finally(() => {
                     if (id in this.listening) {

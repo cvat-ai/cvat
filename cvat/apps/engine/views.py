@@ -104,8 +104,13 @@ def get_job_info(job):
         t = t+':annotations'
     elif 'dataset' in job.id:
         t = t+':dataset'
+    elif 'backup' in job.id:
+        t = t+':backup'
     else:
-        t = t.split('.')[0]
+        if 'create' not in job.id:
+            t = t+':backup'
+        else:
+            t = t.split('.')[0]
     target = 'job'
     if 'project' in job.id:
         target = 'project'
@@ -133,7 +138,7 @@ def get_job_info(job):
                             "id": 1,
                             "username": "kirill",
                 },
-                "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1&action=download" if t == 'export:dataset' or t == 'export:annotations' else "",
+                "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1&action=download" if "export:" in t else "",
             }
 
 def get_job_info_status(job):
@@ -144,8 +149,14 @@ def get_job_info_status(job):
         t = t+':annotations'
     elif 'dataset' in job.id:
         t = t+':dataset'
+    elif 'backup' in job.id:
+        t = t+':backup'
     else:
-        t = t.split('.')[0]
+        if 'create' not in job.id:
+            t = t+':backup'
+        else:
+            t = t.split('.')[0]
+
     target = 'job'
     if 'project' in job.id:
         target = 'project'
@@ -173,7 +184,7 @@ def get_job_info_status(job):
                             "id": 1,
                             "username": "kirill",
                 },
-                "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1&action=download" if t == 'export:dataset' or t == 'export:annotations' else "",
+                "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1&action=download" if "export:" in t else "",
             }
 
 def get_all_jobs_from_queue(queue, request):

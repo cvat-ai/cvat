@@ -1004,7 +1004,10 @@ def export(db_instance, request, queue_name):
                 return Response(exc_info,
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
-                return Response(status=status.HTTP_202_ACCEPTED)
+                serializer = RqIdSerializer(data={'rq_id': rq_id})
+                serializer.is_valid(raise_exception=True)
+
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
     user_id = request.user.id
@@ -1040,7 +1043,10 @@ def export(db_instance, request, queue_name):
             result_ttl=ttl,
             failure_ttl=ttl,
         )
-    return Response(status=status.HTTP_202_ACCEPTED)
+    serializer = RqIdSerializer(data={'rq_id': rq_id})
+    serializer.is_valid(raise_exception=True)
+
+    return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
 
 def _import(importer, request, queue, rq_id, Serializer, file_field_name, location_conf, filename=None):
