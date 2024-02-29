@@ -49,7 +49,6 @@ export default function (
                 fetching: false,
             };
         }
-        case RequestsActionsTypes.REQUEST_UPDATED:
         case RequestsActionsTypes.REQUEST_FINISHED: {
             const { request } = action.payload;
 

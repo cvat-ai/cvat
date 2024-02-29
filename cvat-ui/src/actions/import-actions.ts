@@ -27,7 +27,6 @@ export enum ImportActionTypes {
     IMPORT_BACKUP = 'IMPORT_BACKUP',
     IMPORT_BACKUP_SUCCESS = 'IMPORT_BACKUP_SUCCESS',
     IMPORT_BACKUP_FAILED = 'IMPORT_BACKUP_FAILED',
-    INITIATED = 'INITIATED',
 }
 
 export const importActions = {

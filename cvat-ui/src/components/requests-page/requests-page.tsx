@@ -4,7 +4,7 @@
 
 import './styles.scss';
 import { useDispatch, useSelector } from 'react-redux';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { CombinedState, Indexable } from 'reducers';
 import { getRequestsAsync } from 'actions/requests-actions';
 import { useHistory } from 'react-router';

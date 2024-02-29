@@ -128,6 +128,10 @@ export default function RequestCard(props: Props): JSX.Element {
     const timestamps = constructTimestamps(request);
 
     const truncatedName = truncateName(operation.name, 60);
+
+    const progress = request.status === RQStatus.FINISHED ? 100 : request.progress;
+    const percentSymbol = (request.status === RQStatus.FAILED || !progress) ? '' : '%';
+
     return (
         <Row justify='center' align='middle'>
             <Col span={24}>
@@ -206,8 +210,8 @@ export default function RequestCard(props: Props): JSX.Element {
                                             }
                                         </Col>
                                         <Col span={2} className='cvat-requests-percent'>
-                                            {request.status === RQStatus.FINISHED ? 100 : request.progress}
-                                            {request.status === RQStatus.FAILED ? '' : '%'}
+                                            {progress || ''}
+                                            {percentSymbol}
                                         </Col>
                                     </Row>
                                     {

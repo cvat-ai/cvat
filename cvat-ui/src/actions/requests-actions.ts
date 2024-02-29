@@ -18,14 +18,12 @@ export enum RequestsActionsTypes {
     GET_REQUESTS_STATUS_FAILED = 'GET_REQUESTS_STATUS_FAILED',
     REQUEST_FINISHED = 'REQUEST_FINISHED',
     REQUEST_FAILED = 'REQUEST_FAILED',
-    REQUEST_UPDATED = 'REQUEST_UPDATED',
 }
 
 export const requestsActions = {
     getRequests: (query?: RequestsQuery) => createAction(RequestsActionsTypes.GET_REQUESTS, { query }),
     requestFinished: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FINISHED, { request }),
     requestFailed: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FAILED, { request }),
-    requestUpdated: (request: Request) => createAction(RequestsActionsTypes.REQUEST_UPDATED, { request }),
     getRequestsSuccess: (requests: Request[], count: number) => createAction(
         RequestsActionsTypes.GET_REQUESTS_SUCCESS, { requests, count },
     ),
@@ -56,7 +54,7 @@ export interface RequestParams {
 }
 
 export function updateRequestProgress(request: Request, dispatch: (action: RequestsActions) => void): void {
-    const { status, message } = request;
+    const { status, message, id } = request;
     if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
         dispatch(
             requestsActions.getRequestStatusFailed(
@@ -79,7 +77,7 @@ export function updateRequestProgress(request: Request, dispatch: (action: Reque
     }
 }
 
-export function listen(request: Request, dispatch: (action: RequestsActions) => void): Promise<void> {
+export function listen(request: Request, dispatch: (action: RequestsActions) => void): Promise<void | Request> {
     const { id } = request;
     return core.requests
         .listen(id, (updatedRequest) => {
@@ -98,24 +96,20 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
         dispatch(requestsActions.getRequests(query));
 
         try {
-            const result = await core.requests.list();
-            const { requests, count } = result;
-
+            const { requests, count } = await core.requests.list();
             dispatch(requestsActions.getRequestsSuccess(requests, count));
 
             if (notify) {
                 requests
-                    .filter((request: Request) => [RQStatus.FINISHED].includes(request.status))
                     .forEach((request: Request): void => {
-                        dispatch(requestsActions.requestFinished(request));
-                    });
-                requests
-                    .filter((request: Request) => [RQStatus.FAILED].includes(request.status))
-                    .forEach((request: Request): void => {
-                        dispatch(requestsActions.requestFailed(request));
+                        if (request.status === RQStatus.FAILED) {
+                            dispatch(requestsActions.requestFailed(request));
+                        }
+                        if (request.status === RQStatus.FINISHED) {
+                            dispatch(requestsActions.requestFinished(request));
+                        }
                     });
             }
-
             requests
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))
                 .forEach((request: Request): void => {

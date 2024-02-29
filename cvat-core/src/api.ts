@@ -22,6 +22,7 @@ import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
 import BaseSingleFrameAction from './annotations-actions';
+import { Request } from './requests-manager';
 
 import * as enums from './enums';
 
@@ -367,11 +368,11 @@ function build(): CVATCore {
             },
         },
         requests: {
-            async list(filter: any) {
-                const result = await PluginRegistry.apiWrapper(cvat.requests.list, filter);
+            async list(): Promise<Request[]> {
+                const result = await PluginRegistry.apiWrapper(cvat.requests.list);
                 return result;
             },
-            async listen(rqID: any, callback: any) {
+            async listen(rqID: string, callback: (request: Request) => void): Promise<Request> {
                 const result = await PluginRegistry.apiWrapper(cvat.requests.listen, rqID, callback);
                 return result;
             },

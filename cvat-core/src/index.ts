@@ -32,6 +32,7 @@ import QualityConflict from './quality-conflict';
 import QualitySettings from './quality-settings';
 import AnalyticsReport from './analytics-report';
 import AnnotationGuide from './guide';
+import { Request } from './requests-manager';
 import BaseSingleFrameAction, { listActions, registerAction, runActions } from './annotations-actions';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
@@ -147,8 +148,8 @@ export default interface CVATCore {
         getMeta: any;
     };
     requests: {
-        list: any;
-        listen: any;
+        list: () => Promise<{ requests: Request[], count: number }>;
+        listen: (rqID: string, callback: (request: Request) => void) => Promise<Request>;
     };
     actions: {
         list: typeof listActions;

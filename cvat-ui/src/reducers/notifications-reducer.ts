@@ -558,7 +558,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     },
                 };
             }
-            break;
+            return {
+                ...state,
+            };
         }
         case RequestsActionsTypes.REQUEST_FAILED: {
             const { request } = action.payload;
@@ -625,7 +627,9 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     },
                 };
             }
-            break;
+            return {
+                ...state,
+            };
         }
         case TasksActionTypes.GET_TASKS_FAILED: {
             return {

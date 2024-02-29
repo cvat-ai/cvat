@@ -19,14 +19,14 @@ export interface SerializedRequest {
         task_id: number | null;
         project_id: number | null;
     };
-    progress: number;
+    percent: number;
     message: string;
     result_url: string;
     enqueue_date: string;
     start_date: string;
     finish_date: string;
     expire_date: string;
-    owner: any;
+    owner?: any;
     meta?: {
         storage: {
             location: string;
@@ -62,7 +62,7 @@ export class Request {
         this.#id = initialData.id;
         this.#status = initialData.status as RQStatus;
         this.#operation = initialData.operation;
-        this.#progress = initialData.progress;
+        this.#progress = initialData.percent;
         this.#message = initialData.message;
         this.#resultUrl = initialData.result_url;
 
@@ -93,9 +93,6 @@ export class Request {
 
     get progress(): number {
         return this.#progress;
-    }
-    set progress(progress) {
-        this.#progress = progress;
     }
 
     get message(): string {
@@ -155,8 +152,8 @@ export class Request {
         if (request.operation !== undefined) {
             this.#operation = request.operation;
         }
-        if (request.progress !== undefined) {
-            this.#progress = request.progress;
+        if (request.percent !== undefined) {
+            this.#progress = request.percent;
         }
         if (request.message !== undefined) {
             this.#message = request.message;
@@ -194,21 +191,17 @@ class RequestsManager {
     }
 
     async list(): Promise<{ requests: Request[], count: number }> {
-        const r = await serverProxy.requests.list();
+        const result = await serverProxy.requests.list();
 
         const requests = [];
-        for (const request of r) {
+        for (const request of result) {
             requests.push(
                 new Request({
                     ...request,
                 }),
             );
         }
-
-        return {
-            requests,
-            count: requests.length,
-        };
+        return { requests, count: requests.length };
     }
 
     async listen(
@@ -221,7 +214,7 @@ class RequestsManager {
         const promise = new Promise<Request>((resolve, reject) => {
             const timeoutCallback = (): void => {
                 serverProxy.requests.status(id).then((response) => {
-                    const request = new Request(response);
+                    const request = new Request({ ...response });
                     let { status } = response;
                     status = status.toLowerCase();
                     if (id in this.listening) {
