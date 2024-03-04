@@ -175,14 +175,14 @@ def get_job_info_status(job):
                             "format": "CVAT for images 1.1",
                             "name": job.id,
                 },
-                "percent": job.meta.get('task_progress', 0)*100,
+                "percent": job.meta.get('task_progress', 0) * 100,
                 "enqueue_date": "2023-03-31T10:37:31.708000Z",
                 "start_date": "2023-03-30T09:37:31.708000Z",
                 "finish_date": "2023-03-30T10:37:31.708000Z",
                 "expire_date": "",
                 "owner": {
-                            "id": 1,
-                            "username": "kirill",
+                    "id": 1,
+                    "username": "kirill",
                 },
                 "result_url": "http://localhost:3000/api/projects/53/dataset?org=TestOrg&use_default_location=true&filename=ex.zip&format=CVAT+for+images+1.1&action=download" if "export:" in t else "",
             }
@@ -3436,9 +3436,26 @@ class DataProcessing(viewsets.GenericViewSet):
             )
         return Response(
                 data= {
+                        "percent": 0,
                         "status": "Queued",
                         "message": "In queue",
-                        "percent": 0},
+                        "id": rq_id,
+                        "operation": {
+                                "type": "export:dataset",
+                                "target": "project",
+                                "project_id": 4,
+                                "name": "Project for export number 4",
+                        },
+                        "enqueue_date": "2023-03-31T10:37:31.708000Z",
+                        "start_date": "",
+                        "finish_date": "",
+                        "expire_date": "",
+                        "owner": {
+                            "id": 1,
+                            "username": "kirill"
+                        },
+                        "result_url": "",
+                    },
                 status=status.HTTP_200_OK
             )
 
@@ -3449,6 +3466,7 @@ class DataProcessing(viewsets.GenericViewSet):
     def list(self,request):
         all_user_jobs = get_all_jobs(request)
         data = []
+        print(all_user_jobs)
         for job in all_user_jobs:
             data.append(get_job_info(job))
         return Response(

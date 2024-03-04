@@ -223,7 +223,7 @@ class RequestsManager {
                         if ([RQStatus.QUEUED, RQStatus.STARTED].includes(status)) {
                             onUpdate.forEach((update) => update(request));
                             this.listening[id].timeout = window
-                                .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 5000 : 1000);
+                                .setTimeout(timeoutCallback, status === RQStatus.QUEUED ? 8000 : 5000);
                         } else {
                             delete this.listening[id];
                             if (status === RQStatus.FINISHED) {

@@ -84,7 +84,7 @@ export function listen(request: Request, dispatch: (action: RequestsActions) => 
             updateRequestProgress(updatedRequest, dispatch);
         })
         .catch((error: Error) => {
-            request.updateFields({ status: RQStatus.UNKNOWN, progress: 0, message: '' });
+            request.updateFields({ status: RQStatus.UNKNOWN, percent: 0, message: '' });
             dispatch(
                 requestsActions.getRequestStatusFailed(request, error),
             );
@@ -100,15 +100,25 @@ export function getRequestsAsync(query: RequestsQuery, notify = true): ThunkActi
             dispatch(requestsActions.getRequestsSuccess(requests, count));
 
             if (notify) {
+                const shownNotifications = JSON.parse(localStorage.getItem('requestsNotifications') || '[]');
+
                 requests
                     .forEach((request: Request): void => {
-                        if (request.status === RQStatus.FAILED) {
-                            dispatch(requestsActions.requestFailed(request));
-                        }
-                        if (request.status === RQStatus.FINISHED) {
-                            dispatch(requestsActions.requestFinished(request));
+                        if (!shownNotifications.includes(request.id)) {
+                            if (request.status === RQStatus.FAILED) {
+                                dispatch(requestsActions.requestFailed(request));
+                            }
+                            if (request.status === RQStatus.FINISHED) {
+                                dispatch(requestsActions.requestFinished(request));
+                            }
+
+                            if ([RQStatus.FAILED, RQStatus.FINISHED].includes(request.status)) {
+                                shownNotifications.push(request.id);
+                            }
                         }
                     });
+
+                localStorage.setItem('requestsNotifications', JSON.stringify(shownNotifications));
             }
             requests
                 .filter((request: Request) => [RQStatus.STARTED, RQStatus.QUEUED].includes(request.status))

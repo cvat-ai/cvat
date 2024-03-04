@@ -49,22 +49,6 @@ export default function (
                 fetching: false,
             };
         }
-        case RequestsActionsTypes.REQUEST_FINISHED: {
-            const { request } = action.payload;
-
-            if (request.url) {
-                return {
-                    ...state,
-                    urls: [
-                        ...state.urls,
-                        request.id,
-                    ],
-                };
-            }
-            return {
-                ...state,
-            };
-        }
         case RequestsActionsTypes.GET_REQUESTS_STATUS_SUCCESS:
         case RequestsActionsTypes.GET_REQUESTS_STATUS_FAILED: {
             const { requests } = state;
