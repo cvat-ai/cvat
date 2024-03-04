@@ -61,7 +61,7 @@ annotated according to the specified requirements and quality standards.
 
 To start earning money on the Human Protocol site, follow these simple steps:
 
-1. [Register on the Human Protocol Platform](https://app.humanprotocol.org/)
+1. [Register on the Human Protocol site](https://app.humanprotocol.org/)
 2. Complete KYC process.
 3. Connect crypto wallet to your account.
 4. Select job from **Data Labeling Jobs** menu.
