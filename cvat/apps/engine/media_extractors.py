@@ -728,6 +728,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
         quality = round(51 * (100 - quality) / 99)
         super().__init__(quality)
         self._output_fps = 25
+        self.MAX_MBS_PER_FRAME = 36864
         try:
             codec = av.codec.Codec('libopenh264', 'w')
             self._codec_name = codec.name
@@ -751,6 +752,12 @@ class Mpeg4ChunkWriter(IChunkWriter):
             h += 1
         if w % 2:
             w += 1
+
+        # x264 has 4K limitations,https://github.com/opencv/cvat/issues/7425
+        if h * w > (self.MAX_MBS_PER_FRAME << 8):
+            raise Exception(
+                'Video size is more than what can be supported, refer https://github.com/opencv/cvat/issues/7425'
+                )
 
         video_stream = container.add_stream(self._codec_name, rate=rate)
         video_stream.pix_fmt = "yuv420p"
