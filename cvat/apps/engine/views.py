@@ -35,6 +35,7 @@ from drf_spectacular.utils import (
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
 from pathlib import Path
+from rest_framework.permissions import AllowAny
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError, PermissionDenied
@@ -52,7 +53,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import get_mime
 from cvat.apps.engine.models import (
     ClientFile, Job, JobType, Label, SegmentType, Task, Project, Issue, Data,
-    Comment, StorageMethodChoice, StorageChoice,
+    Comment, StorageMethodChoice, StorageChoice, AIAudioAnnotation,
     CloudProviderChoice, Location, CloudStorage as CloudStorageModel,
     Asset, AnnotationGuide)
 from cvat.apps.engine.serializers import (
@@ -62,7 +63,7 @@ from cvat.apps.engine.serializers import (
     LabeledDataSerializer,
     ProjectReadSerializer, ProjectWriteSerializer,
     RqStatusSerializer, TaskReadSerializer, TaskWriteSerializer,
-    UserSerializer, PluginsSerializer, IssueReadSerializer,
+    UserSerializer, PluginsSerializer, IssueReadSerializer, AIAudioAnnotationSerializer,
     AnnotationGuideReadSerializer, AnnotationGuideWriteSerializer,
     AssetReadSerializer, AssetWriteSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
@@ -2010,6 +2011,40 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin, mixins.CreateMo
 
         return data_getter(request, self._object.segment.start_frame,
            self._object.segment.stop_frame, self._object.segment.task.data)
+
+class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
+    queryset = AIAudioAnnotation.objects.order_by("-id").all()
+    serializer_class = AIAudioAnnotationSerializer
+    search_fields = ('text')
+    permission_classes = [AllowAny]
+    filter_fields = []
+    filter_backends = []
+
+    @action(detail=False, methods=['post'], url_path='save')
+    def save_segments(self, request):
+        try:
+            job_id = request.data.get('jobId')
+            segments = request.data.get('segments')
+
+            # Validate data
+            if not job_id or not segments:
+                return Response({'error': 'Invalid data format'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Iterate over segments and save to the model
+            saved_segments = []
+            for segment in segments:
+                segment['job'] = job_id  # Assign job_id to each segment
+                serializer = AIAudioAnnotationSerializer(data=segment)
+                if serializer.is_valid():
+                    serializer.save()
+                    saved_segments.append(serializer.data)
+                else:
+                    return Response({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({'success': True, 'segments': saved_segments}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @extend_schema(tags=['issues'])

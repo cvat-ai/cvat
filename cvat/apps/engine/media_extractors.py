@@ -1053,7 +1053,7 @@ MEDIA_TYPES = {
         'has_mime_type': _is_audio,
         'extractor': AudioReader,
         'mode': 'interpolation',
-        'unique': True,
+        'unique': False,
     },
     'archive': {
         'has_mime_type': _is_archive,

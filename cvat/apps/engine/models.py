@@ -915,6 +915,17 @@ class Annotation(models.Model):
         abstract = True
         default_permissions = ()
 
+class AIAudioAnnotation(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    start = models.FloatField(blank=False, null=False)
+    end = models.FloatField(blank=False, null=False)
+    text = models.TextField(blank=False, null=False)
+
+    class Meta:
+        default_permissions = ()
+
+
 class Shape(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())
     occluded = models.BooleanField(default=False)
