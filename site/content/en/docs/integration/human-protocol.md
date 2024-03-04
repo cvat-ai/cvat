@@ -11,6 +11,9 @@ This collaboration combines CVAT's advanced annotation tools with HUMAN Protocol
 innovative task distribution and compensation system, creating a seamless,
 efficient workflow for crowdsourcing annotations.
 
+> Note: Either you are Requester or Annotator,
+> to access this feature, you'll need to [send a request to HUMAN Protocol](mailto:contact@hmt.ai).
+
 For more details on how to leverage the features of both platforms
 for your projects, check out these articles:
 
