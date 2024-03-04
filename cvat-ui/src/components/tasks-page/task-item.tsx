@@ -13,6 +13,7 @@ import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
+import Tooltip from 'antd/lib/tooltip';
 import moment from 'moment';
 
 import { Task, RQStatus } from 'cvat-core-wrapper';
@@ -121,10 +122,21 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         return (
             <Col span={10} className='cvat-task-item-description'>
-                <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
-                <Text strong className='cvat-item-task-name'>
-                    {name}
-                </Text>
+                {taskInstance.name.length > 70 ? (
+                    <Tooltip title={taskInstance.name} placement='topLeft'>
+                        <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
+                        <Text strong className='cvat-item-task-name'>
+                            {name}
+                        </Text>
+                    </Tooltip>
+                ) : (
+                    <>
+                        <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
+                        <Text strong className='cvat-item-task-name'>
+                            {name}
+                        </Text>
+                    </>
+                )}
                 <br />
                 {owner && (
                     <>
