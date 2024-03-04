@@ -27,6 +27,7 @@ See:
 - [Basic terms](#basic-terms)
 - [Requester: How to get data annotated?](#requester-how-to-get-data-annotated)
 - [Annotator: How to earn money?](#annotator-how-to-earn-money)
+- [Video tutorial](#video-tutorial)
 
 ## Basic terms
 
@@ -66,7 +67,15 @@ To start earning money on the Human Protocol site, follow these simple steps:
 3. Connect crypto wallet to your account.
 4. Select job from **Data Labeling Jobs** menu.
 5. Annotate.
-6. After annotation is complete, change job status to Complete.
+6. After annotation is complete, change job status to **Complete**.
 
 After the job is reviewed and accepted by the Requester,
 the money will be deposited into your account.
+
+## Video tutorial
+
+<!--lint disable maximum-line-length-->
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/XHQ25vhx0xE?si=6q2KVLfK2Tg62Xyj" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+<!--lint enable maximum-line-length-->
