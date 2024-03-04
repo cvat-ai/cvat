@@ -24,12 +24,11 @@
 }
 
 .cvat-requests-percent {
-    // padding-top: $grid-unit-size * 1.5;
     padding-left: $grid-unit-size * 2;
 }
 
 .cvat-requests-card {
-    min-height: 87px;
+    min-height: $grid-unit-size * 11;
 
     .cvat-request-item-progress-wrapper {
         > .ant-row {

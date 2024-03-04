@@ -2308,6 +2308,7 @@ async function getImportRequestStatus(rqID): Promise<any> {
     const { backendAPI } = config;
 
     try {
+        // TODO: change url to /requests/{id} with correct server implementation
         const response = await Axios.get(`${backendAPI}/requests/status`, {
             params: {
                 rq_id: rqID,
