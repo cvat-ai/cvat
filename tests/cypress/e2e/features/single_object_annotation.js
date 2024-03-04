@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context('Manipulations with masks', { scrollBehavior: false }, () => {
+context('Single object annotation mode', { scrollBehavior: false }, () => {
     const taskName = 'Single object annotation mode';
     const labelName = 'poly_label';
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
@@ -76,19 +76,19 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         });
     });
 
-    // after(() => {
-    //     cy.logout();
-    //     cy.getAuthKey().then((response) => {
-    //         const authKey = response.body.key;
-    //         cy.request({
-    //             method: 'DELETE',
-    //             url: `/api/tasks/${taskID}`,
-    //             headers: {
-    //                 Authorization: `Token ${authKey}`,
-    //             },
-    //         });
-    //     });
-    // });
+    after(() => {
+        cy.logout();
+        cy.getAuthKey().then((response) => {
+            const authKey = response.body.key;
+            cy.request({
+                method: 'DELETE',
+                url: `/api/tasks/${taskID}`,
+                headers: {
+                    Authorization: `Token ${authKey}`,
+                },
+            });
+        });
+    });
 
     describe('Tests basic features of single shape annotation mode', () => {
         beforeEach(() => {
@@ -111,8 +111,8 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             checkSingleShapeModeOpened();
 
             for (let frame = 0; frame < frameCount; frame++) {
-                createPolygon(polygonPoints);
                 checkFrameNum(frame);
+                createPolygon(polygonPoints);
             }
 
             submitJob();
