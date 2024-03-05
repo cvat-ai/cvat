@@ -11,10 +11,11 @@ import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { SerializedFramesMetaData } from './server-response-types';
 import { Exception, ArgumentError, DataError } from './exceptions';
+import { FieldUpdateTrigger } from './common';
 
 // frame storage by job id
 const frameDataCache: Record<string, {
-    meta: Omit<SerializedFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> };
+    meta: FramesMetaData;
     chunkSize: number;
     mode: 'annotation' | 'interpolation';
     startFrame: number;
@@ -38,7 +39,7 @@ const frameDataCache: Record<string, {
 
 export class FramesMetaData {
     public chunkSize: number;
-    public deletedFrames: number[];
+    public deletedFrames: Record<number, boolean>;
     public includedFrames: number[];
     public frameFilter: string;
     public frames: {
@@ -52,8 +53,10 @@ export class FramesMetaData {
     public startFrame: number;
     public stopFrame: number;
 
-    constructor(initialData: SerializedFramesMetaData) {
-        const data: SerializedFramesMetaData = {
+    #updateTrigger: FieldUpdateTrigger;
+
+    constructor(initialData: Omit<SerializedFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> }) {
+        const data: Omit<SerializedFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> } = {
             chunk_size: undefined,
             deleted_frames: [],
             included_frames: [],
@@ -65,9 +68,30 @@ export class FramesMetaData {
             stop_frame: undefined,
         };
 
+        const updateTrigger = new FieldUpdateTrigger();
+        this.#updateTrigger = updateTrigger;
+        const handler = {
+            set(target, prop, value) {
+                target[prop] = value;
+                updateTrigger.update('deletedFrames');
+                return true;
+            },
+            deleteProperty(target, prop) {
+                const result = delete target[prop];
+                if (result) {
+                    updateTrigger.update('deletedFrames');
+                }
+                return result;
+            },
+        };
+
         for (const property in data) {
             if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
-                data[property] = initialData[property];
+                if (property === 'deleted_frames') {
+                    data[property] = new Proxy(initialData[property], handler);
+                } else {
+                    data[property] = initialData[property];
+                }
             }
         }
 
@@ -79,6 +103,10 @@ export class FramesMetaData {
                 },
                 deletedFrames: {
                     get: () => data.deleted_frames,
+                    set: (value) => {
+                        data.deleted_frames = new Proxy(value, handler);
+                        updateTrigger.update('deletedFrames');
+                    },
                 },
                 includedFrames: {
                     get: () => data.included_frames,
@@ -103,6 +131,14 @@ export class FramesMetaData {
                 },
             }),
         );
+    }
+
+    getUpdated(): Record<string, unknown> {
+        return this.#updateTrigger.getUpdated(this);
+    }
+
+    resetUpdated(): void {
+        this.#updateTrigger.reset();
     }
 }
 
@@ -386,7 +422,7 @@ function getFrameMeta(jobID, frame): SerializedFramesMetaData['frames'][0] {
         // video tasks have 1 frame info, but image tasks will have many infos
         [frameMeta] = meta.frames;
     } else if (mode === 'annotation' || (mode === 'interpolation' && meta.frames.length > 1)) {
-        if (frame > meta.stop_frame) {
+        if (frame > meta.stopFrame) {
             throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
         }
         frameMeta = meta.frames[frame - startFrame];
@@ -503,10 +539,10 @@ export async function getFrame(
     if (!(jobID in frameDataCache)) {
         const blockType = chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
         const meta = await serverProxy.frames.getMeta('job', jobID);
-        const updatedMeta = {
+        const updatedMeta = new FramesMetaData({
             ...meta,
             deleted_frames: Object.fromEntries(meta.deleted_frames.map((_frame) => [_frame, true])),
-        };
+        });
         const mean = updatedMeta.frames.reduce((a, b) => a + b.width * b.height, 0) / updatedMeta.frames.length;
         const stdDev = Math.sqrt(
             updatedMeta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
@@ -553,7 +589,7 @@ export async function getFrame(
         name: frameMeta.name,
         related_files: frameMeta.related_files,
         frameNumber: frame,
-        deleted: frame in frameDataCache[jobID].meta.deleted_frames,
+        deleted: frame in frameDataCache[jobID].meta.deletedFrames,
         jobID,
     });
 }
@@ -561,7 +597,7 @@ export async function getFrame(
 export async function getDeletedFrames(instanceType: 'job' | 'task', id): Promise<Record<number, boolean>> {
     if (instanceType === 'job') {
         const { meta } = frameDataCache[id];
-        return meta.deleted_frames;
+        return meta.deletedFrames;
     }
 
     if (instanceType === 'task') {
@@ -574,49 +610,54 @@ export async function getDeletedFrames(instanceType: 'job' | 'task', id): Promis
 
 export function deleteFrame(jobID: number, frame: number): void {
     const { meta } = frameDataCache[jobID];
-    meta.deleted_frames[frame] = true;
+    meta.deletedFrames[frame] = true;
 }
 
 export function restoreFrame(jobID: number, frame: number): void {
     const { meta } = frameDataCache[jobID];
-    if (frame in meta.deleted_frames) {
-        delete meta.deleted_frames[frame];
+    if (frame in meta.deletedFrames) {
+        delete meta.deletedFrames[frame];
     }
 }
 
 export async function patchMeta(jobID: number): Promise<void> {
     const { meta } = frameDataCache[jobID];
-    const newMeta = await serverProxy.frames.saveMeta('job', jobID, {
-        deleted_frames: Object.keys(meta.deleted_frames).map((frame) => +frame),
-    });
-    const prevDeletedFrames = meta.deleted_frames;
+    const updatedFields = meta.getUpdated();
+    console.log(updatedFields);
+    if (Object.keys(updatedFields).length) {
+        const newMeta = await serverProxy.frames.saveMeta('job', jobID, {
+            deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
+        });
+        const prevDeletedFrames = meta.deletedFrames;
 
-    // it is important do not overwrite the object, it is why we working on keys in two loops below
-    for (const frame of Object.keys(prevDeletedFrames)) {
-        delete prevDeletedFrames[frame];
-    }
-    for (const frame of newMeta.deleted_frames) {
-        prevDeletedFrames[frame] = true;
-    }
+        // it is important do not overwrite the object, it is why we working on keys in two loops below
+        for (const frame of Object.keys(prevDeletedFrames)) {
+            delete prevDeletedFrames[frame];
+        }
+        for (const frame of newMeta.deleted_frames) {
+            prevDeletedFrames[frame] = true;
+        }
 
-    frameDataCache[jobID].meta = {
-        ...newMeta,
-        deleted_frames: prevDeletedFrames,
-    };
-    frameDataCache[jobID].meta.deleted_frames = prevDeletedFrames;
+        frameDataCache[jobID].meta = new FramesMetaData({
+            ...newMeta,
+            deleted_frames: prevDeletedFrames,
+        });
+        frameDataCache[jobID].meta.deletedFrames = prevDeletedFrames;
+        frameDataCache[jobID].meta.resetUpdated();
+    }
 }
 
 export async function findFrame(
     jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean },
 ): Promise<number | null> {
     const offset = filters.offset || 1;
-    let meta;
+    let meta: FramesMetaData;
     if (!frameDataCache[jobID]) {
         const serverMeta = await serverProxy.frames.getMeta('job', jobID);
-        meta = {
+        meta = new FramesMetaData({
             ...serverMeta,
             deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
-        };
+        });
     } else {
         meta = frameDataCache[jobID].meta;
     }
@@ -627,12 +668,12 @@ export async function findFrame(
     let framesCounter = 0;
     let lastUndeletedFrame = null;
     const check = (frame): boolean => {
-        if (meta.included_frames) {
-            return (meta.included_frames.includes(frame)) &&
-            (!filters.notDeleted || !(frame in meta.deleted_frames));
+        if (meta.includedFrames) {
+            return (meta.includedFrames.includes(frame)) &&
+            (!filters.notDeleted || !(frame in meta.deletedFrames));
         }
         if (filters.notDeleted) {
-            return !(frame in meta.deleted_frames);
+            return !(frame in meta.deletedFrames);
         }
         return true;
     };
