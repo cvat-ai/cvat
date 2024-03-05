@@ -113,7 +113,7 @@ cvat:
       additionalVolumeMounts: []
     replicas: 1
     image: cvat/server
-    tag: v2.11.1
+    tag: dev
     imagePullPolicy: Always
     permissionFix:
       enabled: true
@@ -137,7 +137,7 @@ cvat:
   frontend:
     replicas: 1
     image: cvat/ui
-    tag: v2.11.1
+    tag: dev
     imagePullPolicy: Always
     labels: {}
     #  test: test
