@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -612,7 +612,11 @@ export async function findFrame(
     const offset = filters.offset || 1;
     let meta;
     if (!frameDataCache[jobID]) {
-        meta = await serverProxy.frames.getMeta('job', jobID);
+        const serverMeta = await serverProxy.frames.getMeta('job', jobID);
+        meta = {
+            ...serverMeta,
+            deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
+        };
     } else {
         meta = frameDataCache[jobID].meta;
     }

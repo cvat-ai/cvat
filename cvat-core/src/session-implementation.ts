@@ -231,9 +231,17 @@ export function implementJob(Job) {
         return annotationsData;
     };
 
-    Job.prototype.annotations.search.implementation = function (filters, frameFrom, frameTo) {
-        if (!Array.isArray(filters)) {
-            throw new ArgumentError('Filters must be an array');
+    Job.prototype.annotations.search.implementation = function (frameFrom, frameTo, searchParameters) {
+        if ('annotationsFilters' in searchParameters && !Array.isArray(searchParameters.annotationsFilters)) {
+            throw new ArgumentError('Annotations filters must be an array');
+        }
+
+        if ('generalFilters' in searchParameters && typeof searchParameters.generalFilters.isEmptyFrame !== 'boolean') {
+            throw new ArgumentError('General filter isEmptyFrame must be a boolean');
+        }
+
+        if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
+            throw new ArgumentError('Both annotations filters and general fiters could not be used together');
         }
 
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -248,23 +256,7 @@ export function implementJob(Job) {
             throw new ArgumentError('The stop frame is out of the job');
         }
 
-        return getCollection(this).search(filters, frameFrom, frameTo);
-    };
-
-    Job.prototype.annotations.searchEmpty.implementation = function (frameFrom, frameTo) {
-        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
-            throw new ArgumentError('The start and end frames both must be an integer');
-        }
-
-        if (frameFrom < this.startFrame || frameFrom > this.stopFrame) {
-            throw new ArgumentError('The start frame is out of the job');
-        }
-
-        if (frameTo < this.startFrame || frameTo > this.stopFrame) {
-            throw new ArgumentError('The stop frame is out of the job');
-        }
-
-        return getCollection(this).searchEmpty(frameFrom, frameTo);
+        return getCollection(this).search(frameFrom, frameTo, searchParameters);
     };
 
     Job.prototype.annotations.save.implementation = async function (onUpdate) {
@@ -682,7 +674,7 @@ export function implementTask(Task) {
             throw new ArgumentError(`Frame ${frame} does not exist in the task`);
         }
 
-        const result = await getAnnotations(this, frame, allTracks, filters, null);
+        const result = await getAnnotations(this, frame, allTracks, filters);
         const deletedFrames = await getDeletedFrames('task', this.id);
         if (frame in deletedFrames) {
             return [];
@@ -691,9 +683,17 @@ export function implementTask(Task) {
         return result;
     };
 
-    Task.prototype.annotations.search.implementation = function (filters, frameFrom, frameTo) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
+    Task.prototype.annotations.search.implementation = function (frameFrom, frameTo, searchParameters) {
+        if ('annotationsFilters' in searchParameters && !Array.isArray(searchParameters.annotationsFilters)) {
+            throw new ArgumentError('Annotations filters must be an array');
+        }
+
+        if ('generalFilters' in searchParameters && typeof searchParameters.generalFilters.isEmptyFrame !== 'boolean') {
+            throw new ArgumentError('General filter isEmptyFrame must be a boolean');
+        }
+
+        if ('annotationsFilters' in searchParameters && 'generalFilters' in searchParameters) {
+            throw new ArgumentError('Both annotations filters and general fiters could not be used together');
         }
 
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -708,23 +708,7 @@ export function implementTask(Task) {
             throw new ArgumentError('The stop frame is out of the task');
         }
 
-        return getCollection(this).search(filters, frameFrom, frameTo);
-    };
-
-    Task.prototype.annotations.searchEmpty.implementation = function (frameFrom, frameTo) {
-        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
-            throw new ArgumentError('The start and end frames both must be an integer');
-        }
-
-        if (frameFrom < 0 || frameFrom >= this.size) {
-            throw new ArgumentError('The start frame is out of the task');
-        }
-
-        if (frameTo < 0 || frameTo >= this.size) {
-            throw new ArgumentError('The stop frame is out of the task');
-        }
-
-        return getCollection(this).searchEmpty(frameFrom, frameTo);
+        return getCollection(this).search(frameFrom, frameTo, searchParameters);
     };
 
     Task.prototype.annotations.save.implementation = async function (onUpdate) {

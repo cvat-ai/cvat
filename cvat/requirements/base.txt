@@ -50,7 +50,7 @@ coreschema==0.0.4
     # via coreapi
 crontab==1.0.1
     # via rq-scheduler
-cryptography==42.0.2
+cryptography==42.0.4
     # via
     #   azure-storage-blob
     #   pyjwt
