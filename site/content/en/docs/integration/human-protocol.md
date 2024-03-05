@@ -52,6 +52,9 @@ integration, providing a clear picture of the workflow and participants involved
 
 ## Requester: How to get data annotated?
 
+> Note: Either you are Requester or Annotator,
+> to access this feature, you'll need to [send a request to HUMAN Protocol](mailto:contact@hmt.ai).
+
 To register and launch a job on the HUMAN Protocol site, follow these steps:
 
 1. [Create a Requester account](https://docs.humanprotocol.org/human-tech-docs/job-launcher/user-guide/signup)
