@@ -70,24 +70,24 @@ export class FramesMetaData {
 
         const updateTrigger = new FieldUpdateTrigger();
         this.#updateTrigger = updateTrigger;
-        const handler = {
-            set(target, prop, value) {
-                target[prop] = value;
-                updateTrigger.update('deletedFrames');
-                return true;
-            },
-            deleteProperty(target, prop) {
-                const result = delete target[prop];
-                if (result) {
-                    updateTrigger.update('deletedFrames');
-                }
-                return result;
-            },
-        };
 
         for (const property in data) {
             if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
                 if (property === 'deleted_frames') {
+                    const handler = {
+                        set(target, prop, value) {
+                            target[prop] = value;
+                            updateTrigger.update('deletedFrames');
+                            return true;
+                        },
+                        deleteProperty(target, prop) {
+                            const result = delete target[prop];
+                            if (result) {
+                                updateTrigger.update('deletedFrames');
+                            }
+                            return result;
+                        },
+                    };
                     data[property] = new Proxy(initialData[property], handler);
                 } else {
                     data[property] = initialData[property];
@@ -103,10 +103,6 @@ export class FramesMetaData {
                 },
                 deletedFrames: {
                     get: () => data.deleted_frames,
-                    set: (value) => {
-                        data.deleted_frames = new Proxy(value, handler);
-                        updateTrigger.update('deletedFrames');
-                    },
                 },
                 includedFrames: {
                     get: () => data.included_frames,
@@ -623,7 +619,7 @@ export function restoreFrame(jobID: number, frame: number): void {
 export async function patchMeta(jobID: number): Promise<void> {
     const { meta } = frameDataCache[jobID];
     const updatedFields = meta.getUpdated();
-    console.log(updatedFields);
+
     if (Object.keys(updatedFields).length) {
         const newMeta = await serverProxy.frames.saveMeta('job', jobID, {
             deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
@@ -640,10 +636,8 @@ export async function patchMeta(jobID: number): Promise<void> {
 
         frameDataCache[jobID].meta = new FramesMetaData({
             ...newMeta,
-            deleted_frames: prevDeletedFrames,
+            deleted_frames: Object.fromEntries(newMeta.deleted_frames.map((_frame) => [_frame, true])),
         });
-        frameDataCache[jobID].meta.deletedFrames = prevDeletedFrames;
-        frameDataCache[jobID].meta.resetUpdated();
     }
 }
 
