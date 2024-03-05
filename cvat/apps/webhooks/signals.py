@@ -136,25 +136,32 @@ def get_sender(instance):
 @receiver(pre_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:pre_save")
 @receiver(pre_save, sender=Membership, dispatch_uid=__name__ + ":membership:pre_save")
 def pre_save_resource_event(sender, instance, **kwargs):
-    try:
-        old_instance = sender.objects.get(pk=instance.pk)
-    except ObjectDoesNotExist:
+    instance._webhooks_selected_webhooks = []
+
+    if instance.pk is None:
+        created = True
+    else:
+        try:
+            old_instance = sender.objects.get(pk=instance.pk)
+            created = False
+        except ObjectDoesNotExist:
+            created = True
+
+    resource_name = instance.__class__.__name__.lower()
+
+    event_type = event_name("create" if created else "update", resource_name)
+    if event_type not in map(lambda a: a[0], EventTypeChoice.choices()):
         return
 
-    old_serializer = get_serializer(instance=old_instance)
-    serializer = get_serializer(instance=instance)
-    diff = get_instance_diff(old_data=old_serializer.data, data=serializer.data)
-
-    if not diff:
+    instance._webhooks_selected_webhooks = select_webhooks(instance, event_type)
+    if not instance._webhooks_selected_webhooks:
         return
 
-    before_update = {
-        attr: value["old_value"]
-        for attr, value in diff.items()
-    }
-
-    instance._before_update = before_update
-
+    if created:
+        instance._webhooks_old_data = None
+    else:
+        old_serializer = get_serializer(instance=old_instance)
+        instance._webhooks_old_data = old_serializer.data
 
 @receiver(post_save, sender=Project, dispatch_uid=__name__ + ":project:post_save")
 @receiver(post_save, sender=Task, dispatch_uid=__name__ + ":task:post_save")
@@ -164,31 +171,38 @@ def pre_save_resource_event(sender, instance, **kwargs):
 @receiver(post_save, sender=Organization, dispatch_uid=__name__ + ":organization:post_save")
 @receiver(post_save, sender=Invitation, dispatch_uid=__name__ + ":invitation:post_save")
 @receiver(post_save, sender=Membership, dispatch_uid=__name__ + ":membership:post_save")
-def post_save_resource_event(sender, instance, created, **kwargs):
+def post_save_resource_event(sender, instance, **kwargs):
+    selected_webhooks = instance._webhooks_selected_webhooks
+    del instance._webhooks_selected_webhooks
+
+    if not selected_webhooks:
+        return
+
+    old_data = instance._webhooks_old_data
+    del instance._webhooks_old_data
+
+    created = old_data is None
+
     resource_name = instance.__class__.__name__.lower()
-
     event_type = event_name("create" if created else "update", resource_name)
-    if event_type not in map(lambda a: a[0], EventTypeChoice.choices()):
-        return
 
-    filtered_webhooks = select_webhooks(instance, event_type)
-    if not filtered_webhooks:
-        return
+    serializer = get_serializer(instance=instance)
 
     data = {
         "event": event_type,
-        resource_name: get_serializer(instance=instance).data,
+        resource_name: serializer.data,
         "sender": get_sender(instance),
     }
 
     if not created:
-        if before_update := getattr(instance, "_before_update", None):
-            data["before_update"] = before_update
-        else:
-            return
+        if diff := get_instance_diff(old_data=old_data, data=serializer.data):
+            data["before_update"] = {
+                attr: value["old_value"]
+                for attr, value in diff.items()
+            }
 
     transaction.on_commit(
-        lambda: batch_add_to_queue(filtered_webhooks, data),
+        lambda: batch_add_to_queue(selected_webhooks, data),
         robust=True,
     )
 
