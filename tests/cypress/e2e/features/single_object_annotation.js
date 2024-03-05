@@ -6,22 +6,50 @@
 
 context('Single object annotation mode', { scrollBehavior: false }, () => {
     const taskName = 'Single object annotation mode';
-    const labelName = 'poly_label';
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
     const frameCount = serverFiles.length;
 
     let taskID = null;
     let jobID = null;
 
-    const polygonPoints = [
+    const rectangleShape = [
+        { x: 300, y: 100 },
+        { x: 400, y: 400 },
+    ];
+    const polygonShape = [
         { x: 300, y: 100 },
         { x: 400, y: 400 },
         { x: 400, y: 250 },
         { x: 450, y: 350 },
     ];
+    const polylineShape = [
+        { x: 300, y: 100 },
+        { x: 400, y: 400 },
+        { x: 400, y: 250 },
+        { x: 450, y: 350 },
+        { x: 500, y: 450 },
+    ];
+    const pointsShape = [
+        { x: 300, y: 100 },
+        { x: 400, y: 400 },
+        { x: 400, y: 250 },
+        { x: 450, y: 350 },
+    ];
+    const ellipseShape = [
+        { x: 300, y: 100 },
+        { x: 400, y: 400 },
+    ];
+    const cuboidShape = [
+        { x: 300, y: 100 },
+        { x: 400, y: 400 },
+    ];
+    const maskActions = [{
+        method: 'brush',
+        coordinates: [[300, 300], [700, 300], [700, 700], [300, 700]],
+    }];
 
-    function createPolygon(points) {
-        points.forEach((element) => {
+    function clickPoints(shape) {
+        shape.forEach((element) => {
             cy.get('.cvat-canvas-container').click(element.x, element.y);
         });
     }
@@ -52,11 +80,39 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
         cy.get('.cvat-single-shape-annotation-sidebar-ux-hints').should('exist');
     }
 
+    function openJob(params) {
+        cy.visit(`/tasks/${taskID}/jobs/${jobID}`, {
+            qs: {
+                defaultWorkspace: 'single_shape',
+                ...params,
+            },
+        });
+        cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+    }
+
+    function drawObject(creatorFunction) {
+        checkSingleShapeModeOpened();
+
+        for (let frame = 0; frame < frameCount; frame++) {
+            checkFrameNum(frame);
+            creatorFunction();
+        }
+        submitJob();
+    }
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
         cy.headlessCreateTask({
-            labels: [{ name: labelName, attributes: [], type: 'polygon' }],
+            labels: [
+                { name: 'rectangle_label', attributes: [], type: 'rectangle' },
+                { name: 'polygon_label', attributes: [], type: 'polygon' },
+                { name: 'polyline_label', attributes: [], type: 'polyline' },
+                { name: 'points_label', attributes: [], type: 'points' },
+                { name: 'ellipse_label', attributes: [], type: 'ellipse' },
+                { name: 'cuboid_label', attributes: [], type: 'cuboid' },
+                { name: 'mask_label', attributes: [], type: 'mask' },
+            ],
             name: taskName,
             project_id: null,
             source_storage: { location: 'local' },
@@ -91,34 +147,51 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     });
 
     describe('Tests basic features of single shape annotation mode', () => {
-        beforeEach(() => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`, {
-                qs: {
-                    defaultWorkspace: 'single_shape',
-                    defaultLabel: labelName,
-                    defaultPointsCount: 4,
-                },
-            });
-            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
-        });
-
         afterEach(() => {
             cy.removeAnnotations();
             cy.saveJob();
         });
 
-        it('Check basic single shape annotation pipeline', () => {
-            checkSingleShapeModeOpened();
-
-            for (let frame = 0; frame < frameCount; frame++) {
-                checkFrameNum(frame);
-                createPolygon(polygonPoints);
-            }
-
-            submitJob();
+        it('Check basic single shape annotation pipeline for polygon', () => {
+            openJob({ defaultLabel: 'polygon_label', defaultPointsCount: 4 });
+            drawObject(() => clickPoints(polygonShape));
         });
 
+        it('Check basic single shape annotation pipeline for rectangle', () => {
+            openJob({ defaultLabel: 'rectangle_label' });
+            drawObject(() => clickPoints(rectangleShape));
+        });
+
+        it('Check basic single shape annotation pipeline for polyline', () => {
+            openJob({ defaultLabel: 'polyline_label', defaultPointsCount: 5 });
+            drawObject(() => clickPoints(polylineShape));
+        });
+
+        it('Check basic single shape annotation pipeline for ellipse', () => {
+            openJob({ defaultLabel: 'ellipse_label' });
+            drawObject(() => clickPoints(ellipseShape));
+        });
+
+        it('Check basic single shape annotation pipeline for points', () => {
+            openJob({ defaultLabel: 'points_label', defaultPointsCount: 4 });
+            drawObject(() => clickPoints(pointsShape));
+        });
+
+        it('Check basic single shape annotation pipeline for cuboid', () => {
+            openJob({ defaultLabel: 'cuboid_label' });
+            drawObject(() => clickPoints(cuboidShape));
+        });
+
+        it('Check basic single shape annotation pipeline for mask', () => {
+            openJob({ defaultLabel: 'mask_label' });
+            cy.drawMask(maskActions);
+            cy.finishMaskDrawing();
+        });
+    });
+
+    describe('Tests advanced features of single shape annotation mode', () => {
         it('Check single shape annotation mode controls', () => {
+            openJob({ defaultLabel: 'polygon_label', defaultPointsCount: 4 });
             checkSingleShapeModeOpened();
 
             // Skip
@@ -131,15 +204,15 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
             cy.get('.cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox').within(() => {
                 cy.get('[type="checkbox"]').uncheck();
             });
-            createPolygon(polygonPoints);
+            clickPoints(polygonShape);
             checkFrameNum(1);
 
-            // Auto save when finish
+            // Auto save when finish - disabled
             cy.get('.cvat-player-next-button-empty').click();
             cy.get('.cvat-single-shape-annotation-sidebar-auto-save-checkbox').within(() => {
                 cy.get('[type="checkbox"]').uncheck();
             });
-            createPolygon(polygonPoints);
+            clickPoints(polygonShape);
             cy.get('.cvat-single-shape-annotation-submit-job-modal').should('not.exist');
 
             // Navigate only on empty frames
