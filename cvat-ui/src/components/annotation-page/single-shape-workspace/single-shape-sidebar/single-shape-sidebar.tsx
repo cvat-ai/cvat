@@ -184,6 +184,7 @@ function SingleShapeSidebar(): JSX.Element {
                     content: 'Please, confirm further action',
                     cancelText: 'Stay on the page',
                     okText: 'Submit results',
+                    className: 'cvat-single-shape-annotation-submit-job-modal',
                     onOk: () => {
                         function reset(): void {
                             savingRef.current = false;
@@ -194,6 +195,7 @@ function SingleShapeSidebar(): JSX.Element {
                                 closable: false,
                                 title: 'Annotations submitted',
                                 content: 'You may close the window',
+                                className: 'cvat-single-shape-annotation-submit-success-modal',
                             });
                         }
 
