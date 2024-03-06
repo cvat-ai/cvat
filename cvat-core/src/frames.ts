@@ -37,6 +37,9 @@ const frameDataCache: Record<string, {
     getChunk: (chunkNumber: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
 }> = {};
 
+// frame meta data storage by job id
+const frameMetaCache: Record<string, FramesMetaData> = {};
+
 export class FramesMetaData {
     public chunkSize: number;
     public deletedFrames: Record<number, boolean>;
@@ -411,6 +414,23 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
     writable: false,
 });
 
+async function getJobMeta(jobID: number): Promise<FramesMetaData> {
+    let meta: FramesMetaData;
+
+    if (!frameMetaCache[jobID]) {
+        const serverMeta = await serverProxy.frames.getMeta('job', jobID);
+        meta = new FramesMetaData({
+            ...serverMeta,
+            deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
+        });
+        frameMetaCache[jobID] = meta;
+    } else {
+        meta = frameMetaCache[jobID];
+    }
+
+    return meta;
+}
+
 function getFrameMeta(jobID, frame): SerializedFramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
     let frameMeta = null;
@@ -534,15 +554,12 @@ export async function getFrame(
 ): Promise<FrameData> {
     if (!(jobID in frameDataCache)) {
         const blockType = chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
-        const meta = await serverProxy.frames.getMeta('job', jobID);
-        const updatedMeta = new FramesMetaData({
-            ...meta,
-            deleted_frames: Object.fromEntries(meta.deleted_frames.map((_frame) => [_frame, true])),
-        });
-        const mean = updatedMeta.frames.reduce((a, b) => a + b.width * b.height, 0) / updatedMeta.frames.length;
+        const meta = await getJobMeta(jobID);
+
+        const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
         const stdDev = Math.sqrt(
-            updatedMeta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
-            updatedMeta.frames.length,
+            meta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
+            meta.frames.length,
         );
 
         // limit of decoded frames cache by 2GB
@@ -550,7 +567,7 @@ export async function getFrame(
             Math.floor((2048 * 1024 * 1024) / ((mean + stdDev) * 4 * chunkSize)) || 1, 10,
         );
         frameDataCache[jobID] = {
-            meta: updatedMeta,
+            meta,
             chunkSize,
             mode,
             startFrame,
@@ -624,20 +641,12 @@ export async function patchMeta(jobID: number): Promise<void> {
         const newMeta = await serverProxy.frames.saveMeta('job', jobID, {
             deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
         });
-        const prevDeletedFrames = meta.deletedFrames;
 
-        // it is important do not overwrite the object, it is why we working on keys in two loops below
-        for (const frame of Object.keys(prevDeletedFrames)) {
-            delete prevDeletedFrames[frame];
-        }
-        for (const frame of newMeta.deleted_frames) {
-            prevDeletedFrames[frame] = true;
-        }
-
-        frameDataCache[jobID].meta = new FramesMetaData({
+        frameMetaCache[jobID] = new FramesMetaData({
             ...newMeta,
             deleted_frames: Object.fromEntries(newMeta.deleted_frames.map((_frame) => [_frame, true])),
         });
+        frameDataCache[jobID].meta = frameMetaCache[jobID];
     }
 }
 
@@ -645,16 +654,7 @@ export async function findFrame(
     jobID: number, frameFrom: number, frameTo: number, filters: { offset?: number, notDeleted: boolean },
 ): Promise<number | null> {
     const offset = filters.offset || 1;
-    let meta: FramesMetaData;
-    if (!frameDataCache[jobID]) {
-        const serverMeta = await serverProxy.frames.getMeta('job', jobID);
-        meta = new FramesMetaData({
-            ...serverMeta,
-            deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
-        });
-    } else {
-        meta = frameDataCache[jobID].meta;
-    }
+    const meta = await getJobMeta(jobID);
 
     const sign = Math.sign(frameTo - frameFrom);
     const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
@@ -695,5 +695,6 @@ export function getCachedChunks(jobID): number[] {
 export function clear(jobID: number): void {
     if (jobID in frameDataCache) {
         delete frameDataCache[jobID];
+        delete frameMetaCache[jobID];
     }
 }
