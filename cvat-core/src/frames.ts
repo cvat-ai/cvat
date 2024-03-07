@@ -646,9 +646,7 @@ export function deleteFrame(jobID: number, frame: number): void {
 
 export function restoreFrame(jobID: number, frame: number): void {
     const { meta } = frameDataCache[jobID];
-    if (frame in meta.deletedFrames) {
-        delete meta.deletedFrames[frame];
-    }
+    delete meta.deletedFrames[frame];
 }
 
 export async function patchMeta(jobID: number): Promise<void> {
