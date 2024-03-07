@@ -38,7 +38,7 @@ const frameDataCache: Record<string, {
 }> = {};
 
 // frame meta data storage by job id
-const frameMetaCache: Record<string, FramesMetaData> = {};
+const frameMetaCache: Record<string, Promise<FramesMetaData>> = {};
 
 export class FramesMetaData {
     public chunkSize: number;
@@ -59,9 +59,9 @@ export class FramesMetaData {
     #updateTrigger: FieldUpdateTrigger;
 
     constructor(initialData: Omit<SerializedFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> }) {
-        const data: Omit<SerializedFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> } = {
+        const data: typeof initialData = {
             chunk_size: undefined,
-            deleted_frames: [],
+            deleted_frames: {},
             included_frames: [],
             frame_filter: undefined,
             frames: [],
@@ -71,24 +71,21 @@ export class FramesMetaData {
             stop_frame: undefined,
         };
 
-        const updateTrigger = new FieldUpdateTrigger();
-        this.#updateTrigger = updateTrigger;
+        this.#updateTrigger = new FieldUpdateTrigger();
 
         for (const property in data) {
             if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
                 if (property === 'deleted_frames') {
                     const handler = {
-                        set(target, prop, value) {
-                            target[prop] = value;
-                            updateTrigger.update('deletedFrames');
-                            return true;
+                        set: (target, prop, value) => {
+                            this.#updateTrigger.update('deletedFrames');
+                            return Reflect.set(target, prop, value);
                         },
-                        deleteProperty(target, prop) {
-                            const result = delete target[prop];
-                            if (result) {
-                                updateTrigger.update('deletedFrames');
+                        deleteProperty: (target, prop) => {
+                            if (prop in target) {
+                                this.#updateTrigger.update('deletedFrames');
                             }
-                            return result;
+                            return Reflect.deleteProperty(target, prop);
                         },
                     };
                     data[property] = new Proxy(initialData[property], handler);
@@ -415,20 +412,33 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
 });
 
 async function getJobMeta(jobID: number): Promise<FramesMetaData> {
-    let meta: FramesMetaData;
-
     if (!frameMetaCache[jobID]) {
-        const serverMeta = await serverProxy.frames.getMeta('job', jobID);
-        meta = new FramesMetaData({
+        frameMetaCache[jobID] = serverProxy.frames.getMeta('job', jobID)
+            .then((serverMeta) => new FramesMetaData({
+                ...serverMeta,
+                deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
+            }))
+            .catch((error) => {
+                delete frameMetaCache[jobID];
+                throw error;
+            });
+    }
+    return frameMetaCache[jobID];
+}
+
+async function saveJobMeta(meta: FramesMetaData, jobID: number): Promise<FramesMetaData> {
+    frameMetaCache[jobID] = serverProxy.frames.saveMeta('job', jobID, {
+        deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
+    })
+        .then((serverMeta) => new FramesMetaData({
             ...serverMeta,
             deleted_frames: Object.fromEntries(serverMeta.deleted_frames.map((_frame) => [_frame, true])),
+        }))
+        .catch((error) => {
+            delete frameMetaCache[jobID];
+            throw error;
         });
-        frameMetaCache[jobID] = meta;
-    } else {
-        meta = frameMetaCache[jobID];
-    }
-
-    return meta;
+    return frameMetaCache[jobID];
 }
 
 function getFrameMeta(jobID, frame): SerializedFramesMetaData['frames'][0] {
@@ -638,15 +648,8 @@ export async function patchMeta(jobID: number): Promise<void> {
     const updatedFields = meta.getUpdated();
 
     if (Object.keys(updatedFields).length) {
-        const newMeta = await serverProxy.frames.saveMeta('job', jobID, {
-            deleted_frames: Object.keys(meta.deletedFrames).map((frame) => +frame),
-        });
-
-        frameMetaCache[jobID] = new FramesMetaData({
-            ...newMeta,
-            deleted_frames: Object.fromEntries(newMeta.deleted_frames.map((_frame) => [_frame, true])),
-        });
-        frameDataCache[jobID].meta = frameMetaCache[jobID];
+        const newMeta = await saveJobMeta(meta, jobID);
+        frameDataCache[jobID].meta = newMeta;
     }
 }
 
