@@ -76,14 +76,22 @@ export class FramesMetaData {
         for (const property in data) {
             if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
                 if (property === 'deleted_frames') {
+                    const update = (frame: string, remove: boolean): void => {
+                        if (this.#updateTrigger.get(`deletedFrames:${frame}:${!remove}`)) {
+                            this.#updateTrigger.resetField(`deletedFrames:${frame}:${!remove}`);
+                        } else {
+                            this.#updateTrigger.update(`deletedFrames:${frame}:${remove}`);
+                        }
+                    };
+
                     const handler = {
                         set: (target, prop, value) => {
-                            this.#updateTrigger.update('deletedFrames');
+                            update(prop, value);
                             return Reflect.set(target, prop, value);
                         },
                         deleteProperty: (target, prop) => {
                             if (prop in target) {
-                                this.#updateTrigger.update('deletedFrames');
+                                update(prop, false);
                             }
                             return Reflect.deleteProperty(target, prop);
                         },
