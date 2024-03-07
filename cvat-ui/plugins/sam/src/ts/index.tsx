@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,6 +6,7 @@ import { InferenceSession, Tensor } from 'onnxruntime-web';
 import { LRUCache } from 'lru-cache';
 import { Job } from 'cvat-core-wrapper';
 import { PluginEntryPoint, APIWrapperEnterOptions, ComponentBuilder } from 'components/plugins-entrypoint';
+import { InitBody, WorkerAction } from './inference.worker';
 
 interface SAMPlugin {
     name: string;
@@ -39,7 +40,9 @@ interface SAMPlugin {
         };
     };
     data: {
+        initialized: boolean;
         core: any;
+        worker: Worker;
         jobs: Record<number, any>;
         modelID: string;
         modelURL: string;
@@ -156,18 +159,46 @@ const samPlugin: SAMPlugin = {
                     taskID: number,
                     model: any, { frame }: { frame: number },
                 ): Promise<null | APIWrapperEnterOptions> {
-                    if (model.id === plugin.data.modelID) {
-                        if (!plugin.data.session) {
-                            throw new Error('SAM plugin is not ready, session was not initialized');
+                    return new Promise((resolve, reject) => {
+                        function resolvePromise(): void {
+                            const key = `${taskID}_${frame}`;
+                            if (plugin.data.embeddings.has(key)) {
+                                resolve({ preventMethodCall: true });
+                            } else {
+                                resolve(null);
+                            }
                         }
 
-                        const key = `${taskID}_${frame}`;
-                        if (plugin.data.embeddings.has(key)) {
-                            return { preventMethodCall: true };
-                        }
-                    }
+                        if (model.id === plugin.data.modelID) {
+                            if (!plugin.data.initialized) {
+                                samPlugin.data.worker.postMessage({
+                                    action: WorkerAction.INIT,
+                                    payload: {
+                                        decoderURL: samPlugin.data.modelURL,
+                                    } as InitBody,
+                                });
 
-                    return null;
+                                samPlugin.data.worker.onmessage = (e: MessageEvent) => {
+                                    if (e.data.action !== WorkerAction.INIT) {
+                                        reject(new Error(
+                                            `Caught unexpected action response from worker: ${e.data.action}`,
+                                        ));
+                                    }
+
+                                    if (!e.data.error) {
+                                        samPlugin.data.initialized = true;
+                                        resolvePromise();
+                                    } else {
+                                        reject(new Error(`SAM worker was not initialized. ${e.data.error()}`));
+                                    }
+                                };
+                            } else {
+                                resolvePromise();
+                            }
+                        } else {
+                            resolve(null);
+                        }
+                    });
                 },
 
                 async leave(
@@ -183,90 +214,119 @@ const samPlugin: SAMPlugin = {
                         mask: number[][];
                         bounds: [number, number, number, number];
                     }> {
-                    if (model.id !== plugin.data.modelID) {
-                        return result;
-                    }
-
-                    const job = Object.values(plugin.data.jobs).find((_job) => (
-                        _job.taskId === taskID && frame >= _job.startFrame && frame <= _job.stopFrame
-                    )) as Job;
-                    if (!job) {
-                        throw new Error('Could not find a job corresponding to the request');
-                    }
-
-                    const { height: imHeight, width: imWidth } = await job.frames.get(frame);
-                    const key = `${taskID}_${frame}`;
-
-                    if (result) {
-                        const bin = window.atob(result.blob);
-                        const uint8Array = new Uint8Array(bin.length);
-                        for (let i = 0; i < bin.length; i++) {
-                            uint8Array[i] = bin.charCodeAt(i);
+                    return new Promise((resolve, reject) => {
+                        if (model.id !== plugin.data.modelID) {
+                            resolve(result);
                         }
-                        const float32Arr = new Float32Array(uint8Array.buffer);
-                        plugin.data.embeddings.set(key, new Tensor('float32', float32Arr, [1, 256, 64, 64]));
-                    }
 
-                    const modelScale = {
-                        width: imWidth,
-                        height: imHeight,
-                        samScale: getModelScale(imWidth, imHeight),
-                    };
+                        const job = Object.values(plugin.data.jobs).find((_job) => (
+                            _job.taskId === taskID && frame >= _job.startFrame && frame <= _job.stopFrame
+                        )) as Job;
 
-                    const composedClicks = [...pos_points, ...neg_points].map(([x, y], index) => ({
-                        clickType: index < pos_points.length ? 1 : 0 as 0 | 1 | -1,
-                        height: null,
-                        width: null,
-                        x,
-                        y,
-                    }));
+                        if (!job) {
+                            throw new Error('Could not find a job corresponding to the request');
+                        }
 
-                    const feeds = modelData({
-                        clicks: composedClicks,
-                        tensor: plugin.data.embeddings.get(key) as Tensor,
-                        modelScale,
-                        maskInput: plugin.data.lowResMasks.has(key) ? plugin.data.lowResMasks.get(key) as Tensor : null,
+                        plugin.data.jobs = {
+                            // we do not need to store old job instances
+                            [job.id]: job,
+                        };
+
+                        job.frames.get(frame)
+                            .then(({ height: imHeight, width: imWidth }: { height: number; width: number }) => {
+                                const key = `${taskID}_${frame}`;
+
+                                if (result) {
+                                    const bin = window.atob(result.blob);
+                                    const uint8Array = new Uint8Array(bin.length);
+                                    for (let i = 0; i < bin.length; i++) {
+                                        uint8Array[i] = bin.charCodeAt(i);
+                                    }
+                                    const float32Arr = new Float32Array(uint8Array.buffer);
+                                    plugin.data.embeddings.set(key, new Tensor('float32', float32Arr, [1, 256, 64, 64]));
+                                }
+
+                                const modelScale = {
+                                    width: imWidth,
+                                    height: imHeight,
+                                    samScale: getModelScale(imWidth, imHeight),
+                                };
+
+                                const composedClicks = [...pos_points, ...neg_points].map(([x, y], index) => ({
+                                    clickType: index < pos_points.length ? 1 : 0 as 0 | 1 | -1,
+                                    height: null,
+                                    width: null,
+                                    x,
+                                    y,
+                                }));
+
+                                const feeds = modelData({
+                                    clicks: composedClicks,
+                                    tensor: plugin.data.embeddings.get(key) as Tensor,
+                                    modelScale,
+                                    maskInput: null,
+                                });
+
+                                function toMatImage(input: number[], width: number, height: number): number[][] {
+                                    const image = Array(height).fill(0);
+                                    for (let i = 0; i < image.length; i++) {
+                                        image[i] = Array(width).fill(0);
+                                    }
+
+                                    for (let i = 0; i < input.length; i++) {
+                                        const row = Math.floor(i / width);
+                                        const col = i % width;
+                                        image[row][col] = input[i] > 0 ? 255 : 0;
+                                    }
+
+                                    return image;
+                                }
+
+                                function onnxToImage(input: any, width: number, height: number): number[][] {
+                                    return toMatImage(input, width, height);
+                                }
+
+                                plugin.data.worker.postMessage({
+                                    action: WorkerAction.DECODE,
+                                    payload: feeds,
+                                });
+
+                                plugin.data.worker.onmessage = ((e) => {
+                                    if (e.data.action !== WorkerAction.DECODE) {
+                                        const error = 'Caught unexpected action response from worker: ' +
+                                                `${e.data.action}, while "${WorkerAction.DECODE}" was expected`;
+                                        reject(new Error(error));
+                                    }
+
+                                    if (!e.data.error) {
+                                        const {
+                                            masks, lowResMasks, xtl, ytl, xbr, ybr,
+                                        } = e.data.payload;
+                                        const imageData = onnxToImage(masks.data, masks.dims[3], masks.dims[2]);
+                                        plugin.data.lowResMasks.set(key, lowResMasks);
+
+                                        resolve({
+                                            mask: imageData,
+                                            bounds: [xtl, ytl, xbr, ybr],
+                                        });
+                                    } else {
+                                        reject(new Error(`Decoder error. ${e.data.error}`));
+                                    }
+                                });
+
+                                plugin.data.worker.onerror = ((error) => {
+                                    reject(error);
+                                });
+                            });
                     });
-
-                    function toMatImage(input: number[], width: number, height: number): number[][] {
-                        const image = Array(height).fill(0);
-                        for (let i = 0; i < image.length; i++) {
-                            image[i] = Array(width).fill(0);
-                        }
-
-                        for (let i = 0; i < input.length; i++) {
-                            const row = Math.floor(i / width);
-                            const col = i % width;
-                            image[row][col] = input[i] * 255;
-                        }
-
-                        return image;
-                    }
-
-                    function onnxToImage(input: any, width: number, height: number): number[][] {
-                        return toMatImage(input, width, height);
-                    }
-
-                    const data = await (plugin.data.session as InferenceSession).run(feeds);
-                    const { masks, low_res_masks: lowResMasks } = data;
-                    const imageData = onnxToImage(masks.data, masks.dims[3], masks.dims[2]);
-                    plugin.data.lowResMasks.set(key, lowResMasks);
-
-                    const xtl = Number(data.xtl.data[0]);
-                    const xbr = Number(data.xbr.data[0]);
-                    const ytl = Number(data.ytl.data[0]);
-                    const ybr = Number(data.ybr.data[0]);
-
-                    return {
-                        mask: imageData,
-                        bounds: [xtl, ytl, xbr, ybr],
-                    };
                 },
             },
         },
     },
     data: {
+        initialized: false,
         core: null,
+        worker: new Worker(new URL('./inference.worker', import.meta.url)),
         jobs: {},
         modelID: 'pth-facebookresearch-sam-vit-h',
         modelURL: '/assets/decoder.onnx',
@@ -292,9 +352,6 @@ const samPlugin: SAMPlugin = {
 const builder: ComponentBuilder = ({ core }) => {
     samPlugin.data.core = core;
     core.plugins.register(samPlugin);
-    InferenceSession.create(samPlugin.data.modelURL).then((session) => {
-        samPlugin.data.session = session;
-    });
 
     return {
         name: samPlugin.name,
