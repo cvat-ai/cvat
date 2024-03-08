@@ -149,7 +149,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     describe('Tests basic features of single shape annotation mode', () => {
         afterEach(() => {
             cy.removeAnnotations();
-            cy.saveJob();
+            cy.saveJob('PUT');
         });
 
         it('Check basic single shape annotation pipeline for polygon', () => {

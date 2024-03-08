@@ -105,7 +105,6 @@ INSTALLED_APPS = [
     'health_check',
     'health_check.cache',
     'health_check.db',
-    'health_check.contrib.migrations',
     'health_check.contrib.psutil',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
