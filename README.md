@@ -1,7 +1,7 @@
-<div style="width: 100%; height: 232px;">
-    <img src="/site/content/en/images/cvat-readme-gif.gif" alt="CVAT Platform" style="height: 232px; float: left;">
+<div style="width: 100%; height: 240px;">
+    <img src="/site/content/en/images/cvat-readme-gif.gif" alt="CVAT Platform" style="height: 240px; float: left;">
     <a href="https://app.cvat.ai/">
-        <img src="/site/content/en/images/cvat-readme-button.png" alt="Start Annotating Now" style="height: 232px; padding-left: -8px; float: left;">
+        <img src="/site/content/en/images/cvat-readme-button.png" alt="Start Annotating Now" style="height: 240px; padding-left: -8px; float: left;">
       </a>
 </div>
 
