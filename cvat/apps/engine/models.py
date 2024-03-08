@@ -524,7 +524,6 @@ class RemoteFile(models.Model):
         # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
 
-
 class RelatedFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
     path = models.FileField(upload_to=upload_path_handler,
@@ -538,7 +537,6 @@ class RelatedFile(models.Model):
         # Some DBs can shuffle the rows. Here we restore the insertion order.
         # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
-
 
 class SegmentType(str, Enum):
     RANGE = 'range'
@@ -611,13 +609,9 @@ class Segment(models.Model):
     class Meta:
         default_permissions = ()
 
-
-
 class TaskGroundTruthJobsLimitError(ValidationError):
     def __init__(self) -> None:
         super().__init__("A task can have only 1 ground truth job")
-
-
 
 class JobQuerySet(models.QuerySet):
     @transaction.atomic
@@ -654,8 +648,6 @@ class JobQuerySet(models.QuerySet):
             segment__task=obj['segment'].task, type=JobType.GROUND_TRUTH.value
         ).count() != 0:
             raise TaskGroundTruthJobsLimitError()
-
-
 
 class Job(models.Model):
     objects = JobQuerySet.as_manager()

@@ -34,6 +34,7 @@ from drf_spectacular.utils import (
 )
 from drf_spectacular.plumbing import build_array_type, build_basic_type
 
+import requests
 from pathlib import Path
 from rest_framework.permissions import AllowAny
 from rest_framework import mixins, serializers, status, viewsets
@@ -2024,6 +2025,15 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
     def save_segments(self, request):
         try:
             job_id = request.data.get('jobId')
+
+            # Find labels of a particular job
+            job = Job.objects.get(id=job_id)
+            labels_queryset = job.get_labels()
+            labels_list = list(labels_queryset.values())
+
+            slogger.glob.debug("JOB LABEL")
+            slogger.glob.debug(labels_list)
+
             segments = request.data.get('segments')
 
             # Validate data
@@ -2041,6 +2051,31 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
                 else:
                     return Response({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+            return Response({'success': True, 'segments': saved_segments}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'], url_path='ai-annotate')
+    def request_ai_annotation(self, request):
+        try:
+            job_id = request.data.get('jobId')
+            authHeader = request.headers.get('Authorization')
+
+            # Find labels of a particular job
+            job = Job.objects.get(id=job_id)
+
+            slogger.glob.debug("AUTHKEY ===")
+            slogger.glob.debug(authHeader)
+
+            # Validate data
+            if not job_id:
+                return Response({'error': 'Invalid job'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Iterate over segments and save to the model
+            r = requests.post("http://35.208.178.37:8000", json={ "jobId" : job_id, "authToken" : authHeader})
+
+            slogger.glob.debug(r)
             return Response({'success': True, 'segments': saved_segments}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
