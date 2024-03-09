@@ -1709,8 +1709,9 @@ class DatasetComparator:
         def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
             return self.comparator.get_distance(pairwise_distances, gt_ann, ds_ann)
 
-        _matched_shapes = set(id(shape) for shape in itertools.chain(matches, mismatches))
-
+        _matched_shapes = set(
+            id(shape) for shape_pair in itertools.chain(matches, mismatches) for shape in shape_pair
+        )
 
         def _find_closest_unmatched_shape(shape: dm.Annotation):
             this_shape_id = id(shape)
