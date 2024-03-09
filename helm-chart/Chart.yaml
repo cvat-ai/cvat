@@ -26,6 +26,10 @@ appVersion: latest
 # We dont use it, so you can override it using values.override.yaml
 
 dependencies:
+  - name: common
+    repository: oci://registry-1.docker.io/bitnamicharts
+    version: 2.x.x
+
   - name: postgresql
     version: "12.1.*"
     repository: https://charts.bitnami.com/bitnami
