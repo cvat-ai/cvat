@@ -18,6 +18,7 @@ import datumaro.util.mask_tools
 import django_rq
 import numpy as np
 from attrs import asdict, define, fields_dict
+from datumaro.components.annotation import Bbox, Label
 from datumaro.util import dump_json, parse_json
 from django.conf import settings
 from django.db import transaction
@@ -156,6 +157,7 @@ class ComparisonParameters(_Serializable):
         dm.AnnotationType.polygon,
         dm.AnnotationType.polyline,
         dm.AnnotationType.skeleton,
+        dm.AnnotationType.label,
     ]
 
     compare_attributes: bool = True
@@ -617,6 +619,26 @@ class _MemoizingAnnotationConverter(CvatToDmAnnotationConverter):
         converted = list(super()._convert_tag(tag))
         for dm_ann in converted:
             dm_ann.id = tag.id
+
+        new_annotations = []
+        for ann in converted:
+            if isinstance(ann, Label):
+                new_annotations.append(
+                    Bbox(
+                        0,
+                        0,
+                        1,
+                        1,
+                        id=ann.id,
+                        label=ann.label,
+                        group=ann.group,
+                        z_order=0,
+                        attributes={"occluded": False, "rotation": 0.0},
+                    )
+                )
+            else:
+                new_annotations.append(ann)
+        converted = new_annotations
 
         self._factory.remember_conversion(tag, converted)
         return converted
@@ -1687,9 +1709,8 @@ class DatasetComparator:
         def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Optional[float]:
             return self.comparator.get_distance(pairwise_distances, gt_ann, ds_ann)
 
-        _matched_shapes = set(
-            id(shape) for shape_pair in itertools.chain(matches, mismatches) for shape in shape_pair
-        )
+        _matched_shapes = set(id(shape) for shape in itertools.chain(matches, mismatches))
+
 
         def _find_closest_unmatched_shape(shape: dm.Annotation):
             this_shape_id = id(shape)
