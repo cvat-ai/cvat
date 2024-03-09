@@ -2065,18 +2065,14 @@ class AIAudioAnnotationViewSet(viewsets.ModelViewSet):
             # Find labels of a particular job
             job = Job.objects.get(id=job_id)
 
-            slogger.glob.debug("AUTHKEY ===")
-            slogger.glob.debug(authHeader)
-
             # Validate data
-            if not job_id:
+            if not job:
                 return Response({'error': 'Invalid job'}, status=status.HTTP_400_BAD_REQUEST)
 
             # Iterate over segments and save to the model
-            r = requests.post("http://35.208.178.37:8000", json={ "jobId" : job_id, "authToken" : authHeader})
+            r = requests.post("http://35.208.178.37:8000/transcript", json={ "jobId" : job_id, "authToken" : authHeader})
 
-            slogger.glob.debug(r)
-            return Response({'success': True, 'segments': saved_segments}, status=status.HTTP_201_CREATED)
+            return Response({'success': True}, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

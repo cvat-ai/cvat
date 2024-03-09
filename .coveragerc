@@ -5,7 +5,7 @@ source =
     cvat/apps/
     cvat-sdk/
     cvat-cli/
-    utils/dataset_manifest
+    utilsset_manifest
 
 omit =
     cvat/settings/*
