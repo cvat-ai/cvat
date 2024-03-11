@@ -163,6 +163,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
     describe('Tests to make sure that empty masks cannot be created', () => {
         beforeEach(() => {
             cy.removeAnnotations();
+            cy.saveJob('PUT');
         });
 
         function checkEraseTools(baseTool = '.cvat-brush-tools-brush', disabled = true) {
