@@ -757,8 +757,8 @@ class Mpeg4ChunkWriter(IChunkWriter):
         # libopenh264 has 4K limitations, https://github.com/opencv/cvat/issues/7425
         if h * w > (self.MAX_MBS_PER_FRAME << 8):
             raise ValidationError(
-                detail='The video codec being used does not support such high video resolution, refer https://github.com/opencv/cvat/issues/7425'
-                )
+                'The video codec being used does not support such high video resolution, refer https://github.com/opencv/cvat/issues/7425'
+            )
 
         video_stream = container.add_stream(self._codec_name, rate=rate)
         video_stream.pix_fmt = "yuv420p"
