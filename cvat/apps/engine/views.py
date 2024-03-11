@@ -2839,9 +2839,6 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
         location = location_conf.get('location') if location_conf else Location.LOCAL
         db_storage = None
 
-        func = import_resource_with_clean_up_after
-        func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
-
         if not filename or location == Location.CLOUD_STORAGE:
             if location != Location.CLOUD_STORAGE:
                 serializer = AnnotationFileSerializer(data=request.data)
@@ -2874,8 +2871,12 @@ def _import_annotations(request, rq_id_template, rq_func, db_obj, format_name,
                     delete=False) as tf:
                     filename = tf.name
 
-                func_args = (db_storage, key, func) + func_args
-                func = import_resource_from_cloud_storage
+        func = import_resource_with_clean_up_after
+        func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
+
+        if location == Location.CLOUD_STORAGE:
+            func_args = (db_storage, key, func) + func_args
+            func = import_resource_from_cloud_storage
 
         av_scan_paths(filename)
         user_id = request.user.id
@@ -3083,9 +3084,6 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
         location = location_conf.get('location') if location_conf else None
         db_storage = None
 
-        func = import_resource_with_clean_up_after
-        func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
-
         if not filename and location != Location.CLOUD_STORAGE:
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
@@ -3117,6 +3115,10 @@ def _import_project_dataset(request, rq_id_template, rq_func, db_obj, format_nam
                 delete=False) as tf:
                 filename = tf.name
 
+        func = import_resource_with_clean_up_after
+        func_args = (rq_func, filename, db_obj.pk, format_name, conv_mask_to_poly)
+
+        if location == Location.CLOUD_STORAGE:
             func_args = (db_storage, key, func) + func_args
             func = import_resource_from_cloud_storage
 

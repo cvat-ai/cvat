@@ -1051,11 +1051,8 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
 
     if not rq_job:
         org_id = getattr(request.iam_context['organization'], 'id', None)
-
-        func = import_resource_with_clean_up_after
-        func_args = (importer, filename, request.user.id, org_id)
-
         location = location_conf.get('location')
+
         if location == Location.LOCAL:
             if not filename:
                 serializer = Serializer(data=request.data)
@@ -1086,6 +1083,10 @@ def _import(importer, request, queue, rq_id, Serializer, file_field_name, locati
             with NamedTemporaryFile(prefix='cvat_', dir=settings.TMP_FILES_ROOT, delete=False) as tf:
                 filename = tf.name
 
+        func = import_resource_with_clean_up_after
+        func_args = (importer, filename, request.user.id, org_id)
+
+        if location == Location.CLOUD_STORAGE:
             func_args = (db_storage, key, func) + func_args
             func = import_resource_from_cloud_storage
 
