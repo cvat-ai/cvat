@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { InferenceSession, Tensor } from 'onnxruntime-web';
+import { Tensor } from 'onnxruntime-web';
 import { LRUCache } from 'lru-cache';
-import { Job } from 'cvat-core-wrapper';
+import { CVATCore, MLModel, Job } from 'cvat-core-wrapper';
 import { PluginEntryPoint, APIWrapperEnterOptions, ComponentBuilder } from 'components/plugins-entrypoint';
 import { InitBody, WorkerAction } from './inference.worker';
 
@@ -17,14 +17,14 @@ interface SAMPlugin {
                 enter: (
                     plugin: SAMPlugin,
                     taskID: number,
-                    model: any,
+                    model: MLModel,
                     args: any,
                 ) => Promise<null | APIWrapperEnterOptions>;
                 leave: (
                     plugin: SAMPlugin,
-                    result: any,
+                    result: object,
                     taskID: number,
-                    model: any,
+                    model: MLModel,
                     args: any,
                 ) => Promise<any>;
             };
@@ -41,14 +41,13 @@ interface SAMPlugin {
     };
     data: {
         initialized: boolean;
-        core: any;
         worker: Worker;
-        jobs: Record<number, any>;
+        core: CVATCore | null;
+        jobs: Record<number, Job>;
         modelID: string;
         modelURL: string;
         embeddings: LRUCache<string, Tensor>;
         lowResMasks: LRUCache<string, Tensor>;
-        session: InferenceSession | null;
     };
     callbacks: {
         onStatusChange: ((status: string) => void) | null;
@@ -157,7 +156,7 @@ const samPlugin: SAMPlugin = {
                 async enter(
                     plugin: SAMPlugin,
                     taskID: number,
-                    model: any, { frame }: { frame: number },
+                    model: MLModel, { frame }: { frame: number },
                 ): Promise<null | APIWrapperEnterOptions> {
                     return new Promise((resolve, reject) => {
                         function resolvePromise(): void {
@@ -205,7 +204,7 @@ const samPlugin: SAMPlugin = {
                     plugin: SAMPlugin,
                     result: any,
                     taskID: number,
-                    model: any,
+                    model: MLModel,
                     { frame, pos_points, neg_points }: {
                         frame: number, pos_points: number[][], neg_points: number[][],
                     },
@@ -342,7 +341,6 @@ const samPlugin: SAMPlugin = {
             updateAgeOnGet: true,
             updateAgeOnHas: true,
         }),
-        session: null,
     },
     callbacks: {
         onStatusChange: null,
