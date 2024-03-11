@@ -7,15 +7,14 @@ import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
+import Paragraph from 'antd/lib/typography/Paragraph';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import Badge from 'antd/lib/badge';
-import Tooltip from 'antd/lib/tooltip';
 import moment from 'moment';
-
 import { Task, RQStatus } from 'cvat-core-wrapper';
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import Preview from 'components/common/preview';
@@ -117,27 +116,16 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const updated = moment(taskInstance.updatedDate).fromNow();
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
 
-        // Get and truncate a task name
-        const name = `${taskInstance.name.substring(0, 70)}${taskInstance.name.length > 70 ? '...' : ''}`;
-
         return (
             <Col span={10} className='cvat-task-item-description'>
-                {taskInstance.name.length > 70 ? (
-                    <Tooltip title={taskInstance.name} placement='topLeft'>
-                        <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
-                        <Text strong className='cvat-item-task-name'>
-                            {name}
-                        </Text>
-                    </Tooltip>
-                ) : (
-                    <>
-                        <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
-                        <Text strong className='cvat-item-task-name'>
-                            {name}
-                        </Text>
-                    </>
-                )}
-                <br />
+                <Paragraph
+                    ellipsis={{ rows: 2, tooltip: taskInstance.name }}
+                >
+                    <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
+                    <Text strong className='cvat-item-task-name'>
+                        {taskInstance.name}
+                    </Text>
+                </Paragraph>
                 {owner && (
                     <>
                         <Text type='secondary'>{`Created ${owner ? `by ${owner}` : ''} on ${created}`}</Text>
