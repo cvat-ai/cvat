@@ -286,7 +286,7 @@ shared_queue_settings = {
     'HOST': redis_inmem_host,
     'PORT': redis_inmem_port,
     'DB': 0,
-    'PASSWORD': urllib.parse.quote(redis_inmem_password),
+    'PASSWORD': redis_inmem_password,
 }
 
 RQ_QUEUES = {
