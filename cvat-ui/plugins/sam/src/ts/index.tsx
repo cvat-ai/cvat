@@ -64,8 +64,8 @@ interface ClickType {
 function getModelScale(w: number, h: number): number {
     // Input images to SAM must be resized so the longest side is 1024
     const LONG_SIDE_LENGTH = 1024;
-    const samScale = LONG_SIDE_LENGTH / Math.max(h, w);
-    return samScale;
+    const scale = LONG_SIDE_LENGTH / Math.max(h, w);
+    return scale;
 }
 
 function modelData(
@@ -74,39 +74,27 @@ function modelData(
     }: {
         clicks: ClickType[];
         tensor: Tensor;
-        modelScale: { height: number; width: number; samScale: number };
+        modelScale: { height: number; width: number; scale: number };
         maskInput: Tensor | null;
     },
 ): DecodeBody {
     const imageEmbedding = tensor;
 
     const n = clicks.length;
-    // If there is no box input, a single padding point with
-    // label -1 and coordinates (0.0, 0.0) should be concatenated
-    // so initialize the array to support (n + 1) points.
-    const pointCoords = new Float32Array(2 * (n + 1));
-    const pointLabels = new Float32Array(n + 1);
+    const pointCoords = new Float32Array(2 * n);
+    const pointLabels = new Float32Array(n);
 
-    // Add clicks and scale to what SAM expects
+    // Scale and add clicks
     for (let i = 0; i < n; i++) {
-        pointCoords[2 * i] = clicks[i].x * modelScale.samScale;
-        pointCoords[2 * i + 1] = clicks[i].y * modelScale.samScale;
+        pointCoords[2 * i] = clicks[i].x * modelScale.scale;
+        pointCoords[2 * i + 1] = clicks[i].y * modelScale.scale;
         pointLabels[i] = clicks[i].clickType;
     }
 
-    // Add in the extra point/label when only clicks and no box
-    // The extra point is at (0, 0) with label -1
-    pointCoords[2 * n] = 0.0;
-    pointCoords[2 * n + 1] = 0.0;
-    pointLabels[n] = -1.0;
-
     // Create the tensor
-    const pointCoordsTensor = new Tensor('float32', pointCoords, [1, n + 1, 2]);
-    const pointLabelsTensor = new Tensor('float32', pointLabels, [1, n + 1]);
-    const imageSizeTensor = new Tensor('float32', [
-        modelScale.height,
-        modelScale.width,
-    ]);
+    const pointCoordsTensor = new Tensor('float32', pointCoords, [1, n, 2]);
+    const pointLabelsTensor = new Tensor('float32', pointLabels, [1, n]);
+    const imageSizeTensor = new Tensor('float32', [modelScale.height, modelScale.width]);
 
     const prevMask = maskInput ||
         new Tensor('float32', new Float32Array(256 * 256), [1, 1, 256, 256]);
@@ -237,7 +225,7 @@ const samPlugin: SAMPlugin = {
                                 const modelScale = {
                                     width: imWidth,
                                     height: imHeight,
-                                    samScale: getModelScale(imWidth, imHeight),
+                                    scale: getModelScale(imWidth, imHeight),
                                 };
 
                                 const composedClicks = [...pos_points, ...neg_points].map(([x, y], index) => ({
