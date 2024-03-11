@@ -56,9 +56,9 @@ interface SAMPlugin {
 }
 
 interface ClickType {
-    clickType: 0 | 1,
-    x: number,
-    y: number,
+    clickType: 0 | 1;
+    x: number;
+    y: number;
 }
 
 function getModelScale(w: number, h: number): number {
