@@ -723,13 +723,13 @@ class ZipCompressedChunkWriter(ZipChunkWriter):
 
 class Mpeg4ChunkWriter(IChunkWriter):
     FORMAT = 'mp4'
+    MAX_MBS_PER_FRAME = 36864
 
     def __init__(self, quality=67):
         # translate inversed range [1:100] to [0:51]
         quality = round(51 * (100 - quality) / 99)
         super().__init__(quality)
         self._output_fps = 25
-        self.MAX_MBS_PER_FRAME = 36864
         try:
             codec = av.codec.Codec('libopenh264', 'w')
             self._codec_name = codec.name
