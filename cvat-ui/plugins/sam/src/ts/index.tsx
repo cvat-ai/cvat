@@ -188,7 +188,7 @@ const samPlugin: SAMPlugin = {
                                         samPlugin.data.initialized = true;
                                         resolvePromise();
                                     } else {
-                                        reject(new Error(`SAM worker was not initialized. ${e.data.error()}`));
+                                        reject(new Error(`SAM worker was not initialized. ${e.data.error}`));
                                     }
                                 };
                             } else {
@@ -252,7 +252,7 @@ const samPlugin: SAMPlugin = {
                                 };
 
                                 const composedClicks = [...pos_points, ...neg_points].map(([x, y], index) => ({
-                                    clickType: index < pos_points.length ? 1 : 0 as 0 | 1 | -1,
+                                    clickType: index < pos_points.length ? 1 : 0 as 0 | 1,
                                     height: null,
                                     width: null,
                                     x,
@@ -263,7 +263,8 @@ const samPlugin: SAMPlugin = {
                                     clicks: composedClicks,
                                     tensor: plugin.data.embeddings.get(key) as Tensor,
                                     modelScale,
-                                    maskInput: null,
+                                    maskInput: plugin.data.lowResMasks.has(key) ?
+                                        plugin.data.lowResMasks.get(key) as Tensor : null,
                                 });
 
                                 function toMatImage(input: number[], width: number, height: number): number[][] {
@@ -330,14 +331,14 @@ const samPlugin: SAMPlugin = {
         modelID: 'pth-facebookresearch-sam-vit-h',
         modelURL: '/assets/decoder.onnx',
         embeddings: new LRUCache({
-            // float32 tensor [256, 64, 64] is 4 MB, max 512 MB
-            max: 128,
+            // float32 tensor [256, 64, 64] is 4 MB, max 128 MB
+            max: 32,
             updateAgeOnGet: true,
             updateAgeOnHas: true,
         }),
         lowResMasks: new LRUCache({
-            // float32 tensor [1, 256, 256] is 0.25 MB, max 32 MB
-            max: 128,
+            // float32 tensor [1, 256, 256] is 0.25 MB, max 8 MB
+            max: 32,
             updateAgeOnGet: true,
             updateAgeOnHas: true,
         }),
