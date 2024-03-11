@@ -13,7 +13,6 @@ import Meta from 'antd/lib/card/Meta';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import Badge from 'antd/lib/badge';
-import Tooltip from 'antd/lib/tooltip';
 import { MoreOutlined } from '@ant-design/icons';
 
 import { CombinedState, Project } from 'reducers';
@@ -87,11 +86,14 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
             >
                 <Meta
                     title={(
-                        <Tooltip title={instance.name} placement='topLeft'>
-                            <span onClick={onOpenProject} className='cvat-projects-project-item-title' aria-hidden>
-                                {instance.name}
-                            </span>
-                        </Tooltip>
+                        <Text
+                            ellipsis={{ tooltip: instance.name }}
+                            onClick={onOpenProject}
+                            className='cvat-projects-project-item-title'
+                            aria-hidden
+                        >
+                            {instance.name}
+                        </Text>
                     )}
                     description={(
                         <div className='cvat-projects-project-item-description'>
