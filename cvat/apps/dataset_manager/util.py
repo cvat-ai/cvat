@@ -12,6 +12,9 @@ import zipfile
 from django.conf import settings
 from django.db import models
 
+from cvat.apps.engine.log import ServerLogManager
+slogger = ServerLogManager(__name__)
+
 
 def current_function_name(depth=1):
     return inspect.getouterframes(inspect.currentframe())[depth].function

@@ -524,6 +524,7 @@ class RemoteFile(models.Model):
         # https://github.com/opencv/cvat/pull/5083#discussion_r1038032715
         ordering = ('id', )
 
+
 class RelatedFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
     path = models.FileField(upload_to=upload_path_handler,
@@ -902,6 +903,7 @@ class Annotation(models.Model):
     group = models.PositiveIntegerField(null=True)
     source = models.CharField(max_length=16, choices=SourceType.choices(),
         default=str(SourceType.MANUAL), null=True)
+    transcript = models.TextField(default="")
 
     class Meta:
         abstract = True

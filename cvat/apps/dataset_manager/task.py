@@ -25,6 +25,10 @@ from cvat.apps.dataset_manager.bindings import TaskData, JobData, CvatImportErro
 from cvat.apps.dataset_manager.formats.registry import make_exporter, make_importer
 from cvat.apps.dataset_manager.util import add_prefetch_fields, bulk_create, get_cached
 
+
+from cvat.apps.engine.log import ServerLogManager
+slogger = ServerLogManager(__name__)
+
 class dotdict(OrderedDict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = OrderedDict.get
@@ -529,6 +533,7 @@ class JobAnnotation:
             'rotation',
             'points',
             'parent',
+            'transcript',
             'labeledshapeattributeval__spec_id',
             'labeledshapeattributeval__value',
             'labeledshapeattributeval__id',

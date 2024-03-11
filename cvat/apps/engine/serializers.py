@@ -1442,6 +1442,7 @@ class AnnotationSerializer(serializers.Serializer):
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(min_value=0, allow_null=True, default=None)
     source = serializers.CharField(default='manual')
+    transcript = serializers.CharField(max_length=4096, allow_blank=True, allow_null=True, default="")
 
 class AIAudioAnnotationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -1518,7 +1519,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
     def to_representation(self, instance):
         def convert_shape(shape):
             result = _convert_annotation(shape, [
-                'id', 'label_id', 'type', 'frame', 'group', 'source',
+                'id', 'label_id', 'type', 'frame', 'group', 'source', 'transcript',
                 'occluded', 'outside', 'z_order', 'rotation', 'points',
             ])
             result['attributes'] = _convert_attributes(shape['labeledshapeattributeval_set'])
