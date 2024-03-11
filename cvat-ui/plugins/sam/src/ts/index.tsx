@@ -6,7 +6,7 @@ import { Tensor } from 'onnxruntime-web';
 import { LRUCache } from 'lru-cache';
 import { CVATCore, MLModel, Job } from 'cvat-core-wrapper';
 import { PluginEntryPoint, APIWrapperEnterOptions, ComponentBuilder } from 'components/plugins-entrypoint';
-import { InitBody, WorkerAction } from './inference.worker';
+import { InitBody, DecodeBody, WorkerAction } from './inference.worker';
 
 interface SAMPlugin {
     name: string;
@@ -48,26 +48,15 @@ interface SAMPlugin {
         modelURL: string;
         embeddings: LRUCache<string, Tensor>;
         lowResMasks: LRUCache<string, Tensor>;
+        lastClicks: ClickType[];
     };
     callbacks: {
         onStatusChange: ((status: string) => void) | null;
     };
 }
 
-interface ONNXInput {
-    image_embeddings: Tensor;
-    point_coords: Tensor;
-    point_labels: Tensor;
-    orig_im_size: Tensor;
-    mask_input: Tensor;
-    has_mask_input: Tensor;
-    readonly [name: string]: Tensor;
-}
-
 interface ClickType {
-    clickType: -1 | 0 | 1,
-    height: number | null,
-    width: number | null,
+    clickType: 0 | 1,
     x: number,
     y: number,
 }
@@ -88,7 +77,7 @@ function modelData(
         modelScale: { height: number; width: number; samScale: number };
         maskInput: Tensor | null;
     },
-): ONNXInput {
+): DecodeBody {
     const imageEmbedding = tensor;
 
     const n = clicks.length;
@@ -253,18 +242,17 @@ const samPlugin: SAMPlugin = {
 
                                 const composedClicks = [...pos_points, ...neg_points].map(([x, y], index) => ({
                                     clickType: index < pos_points.length ? 1 : 0 as 0 | 1,
-                                    height: null,
-                                    width: null,
                                     x,
                                     y,
                                 }));
 
+                                const isLowResMaskSuitable = JSON
+                                    .stringify(composedClicks.slice(0, -1)) === JSON.stringify(plugin.data.lastClicks);
                                 const feeds = modelData({
                                     clicks: composedClicks,
                                     tensor: plugin.data.embeddings.get(key) as Tensor,
                                     modelScale,
-                                    maskInput: plugin.data.lowResMasks.has(key) ?
-                                        plugin.data.lowResMasks.get(key) as Tensor : null,
+                                    maskInput: isLowResMaskSuitable ? plugin.data.lowResMasks.get(key) || null : null,
                                 });
 
                                 function toMatImage(input: number[], width: number, height: number): number[][] {
@@ -304,6 +292,7 @@ const samPlugin: SAMPlugin = {
                                         } = e.data.payload;
                                         const imageData = onnxToImage(masks.data, masks.dims[3], masks.dims[2]);
                                         plugin.data.lowResMasks.set(key, lowResMasks);
+                                        plugin.data.lastClicks = composedClicks;
 
                                         resolve({
                                             mask: imageData,
@@ -342,6 +331,7 @@ const samPlugin: SAMPlugin = {
             updateAgeOnGet: true,
             updateAgeOnHas: true,
         }),
+        lastClicks: [],
     },
     callbacks: {
         onStatusChange: null,
