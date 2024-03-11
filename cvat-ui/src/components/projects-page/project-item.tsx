@@ -86,16 +86,12 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                 className='cvat-projects-project-item-card'
             >
                 <Meta
-                    title={instance.name.length >= 21 ? (
+                    title={(
                         <Tooltip title={instance.name} placement='topLeft'>
                             <span onClick={onOpenProject} className='cvat-projects-project-item-title' aria-hidden>
                                 {instance.name}
                             </span>
                         </Tooltip>
-                    ) : (
-                        <span onClick={onOpenProject} className='cvat-projects-project-item-title' aria-hidden>
-                            {instance.name}
-                        </span>
                     )}
                     description={(
                         <div className='cvat-projects-project-item-description'>
