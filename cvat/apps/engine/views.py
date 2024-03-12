@@ -376,12 +376,9 @@ class ProjectViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
-                    if rq_job.dependency:
-                        rq_job.dependency.delete()
                     rq_job.delete()
                     return Response(status=status.HTTP_201_CREATED)
-                elif rq_job.is_failed or \
-                        rq_job.is_deferred and rq_job.dependency and rq_job.dependency.is_failed:
+                elif rq_job.is_failed:
                     exc_info = process_failed_job(rq_job)
 
                     return Response(
