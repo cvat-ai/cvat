@@ -204,12 +204,10 @@ export class FrameDecoder {
         imageBuffer: ArrayBuffer,
         imageWidth: number,
         imageHeight: number,
-        xOffset: number,
-        yOffset: number,
         width: number,
         height: number,
     ): ImageData {
-        if (xOffset === 0 && width === imageWidth && yOffset === 0 && height === imageHeight) {
+        if (width === imageWidth && height === imageHeight) {
             return new ImageData(new Uint8ClampedArray(imageBuffer), width, height);
         }
         const source = new Uint32Array(imageBuffer);
@@ -220,12 +218,12 @@ export class FrameDecoder {
         const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
 
         if (imageWidth === width) {
-            return new ImageData(new Uint8ClampedArray(imageBuffer, yOffset * 4, bufferSize), width, height);
+            return new ImageData(new Uint8ClampedArray(imageBuffer, 0, bufferSize), width, height);
         }
 
         let writeIdx = 0;
-        for (let row = yOffset; row < height; row++) {
-            const start = row * imageWidth + xOffset;
+        for (let row = 0; row < height; row++) {
+            const start = row * imageWidth;
             rgbaInt32.set(source.subarray(start, start + width), writeIdx);
             writeIdx += width;
         }
@@ -276,8 +274,6 @@ export class FrameDecoder {
                         e.data.buf,
                         e.data.width,
                         e.data.height,
-                        0,
-                        0,
                         width,
                         height,
                     )).then((bitmap) => {
