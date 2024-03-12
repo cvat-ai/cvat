@@ -106,17 +106,21 @@ class LambdaManager {
 
     async listen(
         requestID: string,
-        functionID: string,
+        functionID: string | number,
         callback: (status: RQStatus, progress: number, message?: string) => void,
+        options: { includeListening: boolean } = { includeListening: true },
     ): Promise<void> {
         const model = this.cachedList.find((_model) => _model.id === functionID);
         if (!model) {
             throw new ArgumentError('Incorrect function Id provided');
         }
 
+        // already listening, avoid sending extra requests
         if (requestID in this.listening) {
-            this.listening[requestID].onUpdate.push(callback);
-            // already listening, avoid sending extra requests
+            const { includeListening } = options;
+            if (includeListening) {
+                this.listening[requestID].onUpdate.push(callback);
+            }
             return;
         }
         const timeoutCallback = (): void => {

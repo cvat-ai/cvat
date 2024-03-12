@@ -119,8 +119,9 @@ interface InferenceMeta {
 
 function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) => void): void {
     const { taskID, requestID, functionID } = inferenceMeta;
+
     core.lambda
-        .listen(requestID, functionID, (status: RQStatus, progress: number, message: string) => {
+        .listen(requestID, functionID, (status: RQStatus, progress: number, message?: string) => {
             if (status === RQStatus.FAILED || status === RQStatus.UNKNOWN) {
                 dispatch(
                     modelsActions.getInferenceStatusFailed(
@@ -129,7 +130,7 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
                             status,
                             progress,
                             functionID,
-                            error: message,
+                            error: message as string,
                             id: requestID,
                         },
                         new Error(`Inference status for the task ${taskID} is ${status}. ${message}`),
@@ -144,11 +145,11 @@ function listen(inferenceMeta: InferenceMeta, dispatch: (action: ModelsActions) 
                     status,
                     progress,
                     functionID,
-                    error: message,
+                    error: message as string,
                     id: requestID,
                 }),
             );
-        })
+        }, { includeListening: false })
         .catch((error: Error) => {
             dispatch(
                 modelsActions.getInferenceStatusFailed(taskID, {
