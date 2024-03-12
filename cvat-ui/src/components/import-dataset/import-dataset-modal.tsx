@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useReducer } from 'react';
 import { connect, useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Form, { RuleObject } from 'antd/lib/form';
@@ -24,6 +24,7 @@ import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import { getCore, Storage, StorageData } from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
+import { createAction, ActionUnion } from 'utils/redux';
 import ImportDatasetStatusModal from './import-dataset-status-modal';
 
 const { confirm } = Modal;
@@ -57,6 +58,216 @@ interface UploadParams {
     fileName: string | null;
 }
 
+interface State {
+    instanceType: string;
+    file: File | null;
+    selectedLoader: any;
+    useDefaultSettings: boolean;
+    defaultStorageLocation: string;
+    defaultStorageCloudId: number | undefined;
+    helpMessage: string;
+    selectedSourceStorageLocation: StorageLocation;
+    uploadParams: UploadParams;
+    resource: string;
+}
+
+enum ReducerActionType {
+    SET_INSTANCE_TYPE = 'SET_INSTANCE_TYPE',
+    SET_FILE = 'SET_FILE',
+    SET_SELECTED_LOADER = 'SET_SELECTED_LOADER',
+    SET_USE_DEFAULT_SETTINGS = 'SET_USE_DEFAULT_SETTINGS',
+    SET_DEFAULT_STORAGE_LOCATION = 'SET_DEFAULT_STORAGE_LOCATION',
+    SET_DEFAULT_STORAGE_CLOUD_ID = 'SET_DEFAULT_STORAGE_CLOUD_ID',
+    SET_HELP_MESSAGE = 'SET_HELP_MESSAGE',
+    SET_SELECTED_SOURCE_STORAGE_LOCATION = 'SET_SELECTED_SOURCE_STORAGE_LOCATION',
+    SET_FILE_NAME = 'SET_FILE_NAME',
+    SET_SELECTED_FORMAT = 'SET_SELECTED_FORMAT',
+    SET_CONV_MASK_TO_POLY = 'SET_CONV_MASK_TO_POLY',
+    SET_SOURCE_STORAGE = 'SET_SOURCE_STORAGE',
+    SET_RESOURCE = 'SET_RESOURCE',
+}
+
+export const reducerActions = {
+    setInstanceType: (instanceType: string) => (
+        createAction(ReducerActionType.SET_INSTANCE_TYPE, { instanceType })
+    ),
+    setFile: (file: File | null) => (
+        createAction(ReducerActionType.SET_FILE, { file })
+    ),
+    setSelectedLoader: (selectedLoader: any) => (
+        createAction(ReducerActionType.SET_SELECTED_LOADER, { selectedLoader })
+    ),
+    setUseDefaultSettings: (useDefaultSettings: boolean) => (
+        createAction(ReducerActionType.SET_USE_DEFAULT_SETTINGS, { useDefaultSettings })
+    ),
+    setDefaultStorageLocation: (defaultStorageLocation: string) => (
+        createAction(ReducerActionType.SET_DEFAULT_STORAGE_LOCATION, { defaultStorageLocation })
+    ),
+    setDefaultStorageCloudId: (defaultStorageCloudId: number | undefined) => (
+        createAction(ReducerActionType.SET_DEFAULT_STORAGE_CLOUD_ID, { defaultStorageCloudId })
+    ),
+    setHelpMessage: (helpMessage: string) => (
+        createAction(ReducerActionType.SET_HELP_MESSAGE, { helpMessage })
+    ),
+    setSelectedSourceStorageLocation: (selectedSourceStorageLocation: StorageLocation) => (
+        createAction(ReducerActionType.SET_SELECTED_SOURCE_STORAGE_LOCATION, { selectedSourceStorageLocation })
+    ),
+    setFileName: (fileName: string) => (
+        createAction(ReducerActionType.SET_FILE_NAME, { fileName })
+    ),
+    setSelectedFormat: (selectedFormat: string) => (
+        createAction(ReducerActionType.SET_SELECTED_FORMAT, { selectedFormat })
+    ),
+    setConvMaskToPoly: (convMaskToPoly: boolean) => (
+        createAction(ReducerActionType.SET_CONV_MASK_TO_POLY, { convMaskToPoly })
+    ),
+    setSourceStorage: (sourceStorage: Storage) => (
+        createAction(ReducerActionType.SET_SOURCE_STORAGE, { sourceStorage })
+    ),
+    setResource: (resource: string) => (
+        createAction(ReducerActionType.SET_RESOURCE, { resource })
+    ),
+};
+
+const reducer = (state: State, action: ActionUnion<typeof reducerActions>): State => {
+    if (action.type === ReducerActionType.SET_INSTANCE_TYPE) {
+        return {
+            ...state,
+            instanceType: action.payload.instanceType,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_FILE) {
+        return {
+            ...state,
+            file: action.payload.file,
+            uploadParams: {
+                ...state.uploadParams,
+                file: action.payload.file,
+            } as UploadParams,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_SELECTED_LOADER) {
+        return {
+            ...state,
+            selectedLoader: action.payload.selectedLoader,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_USE_DEFAULT_SETTINGS) {
+        const isDefaultSettings = action.payload.useDefaultSettings;
+        return {
+            ...state,
+            useDefaultSettings: action.payload.useDefaultSettings,
+            uploadParams: {
+                ...state.uploadParams,
+                useDefaultSettings: action.payload.useDefaultSettings,
+                sourceStorage: isDefaultSettings ? {
+                    location: state.defaultStorageLocation,
+                    cloudStorageId: state.defaultStorageCloudId,
+                } as Storage : state.uploadParams.sourceStorage,
+            } as UploadParams,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_DEFAULT_STORAGE_LOCATION) {
+        return {
+            ...state,
+            defaultStorageLocation: action.payload.defaultStorageLocation,
+            uploadParams: {
+                ...state.uploadParams,
+                sourceStorage: {
+                    location: action.payload.defaultStorageLocation,
+                    cloudStorageId: state.defaultStorageCloudId,
+                } as Storage,
+            } as UploadParams,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_DEFAULT_STORAGE_CLOUD_ID) {
+        return {
+            ...state,
+            defaultStorageCloudId: action.payload.defaultStorageCloudId,
+            uploadParams: {
+                ...state.uploadParams,
+                sourceStorage: {
+                    location: state.defaultStorageLocation,
+                    cloudStorageId: action.payload.defaultStorageCloudId,
+                } as Storage,
+            } as UploadParams,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_HELP_MESSAGE) {
+        return {
+            ...state,
+            helpMessage: action.payload.helpMessage,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_SELECTED_SOURCE_STORAGE_LOCATION) {
+        return {
+            ...state,
+            selectedSourceStorageLocation: action.payload.selectedSourceStorageLocation,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_FILE_NAME) {
+        return {
+            ...state,
+            uploadParams: {
+                ...state.uploadParams,
+                fileName: action.payload.fileName,
+            } as UploadParams,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_SELECTED_FORMAT) {
+        return {
+            ...state,
+            uploadParams: {
+                ...state.uploadParams,
+                selectedFormat: action.payload.selectedFormat,
+            } as UploadParams,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_CONV_MASK_TO_POLY) {
+        return {
+            ...state,
+            uploadParams: {
+                ...state.uploadParams,
+                convMaskToPoly: action.payload.convMaskToPoly,
+            } as UploadParams,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_SOURCE_STORAGE) {
+        return {
+            ...state,
+            uploadParams: {
+                ...state.uploadParams,
+                sourceStorage: action.payload.sourceStorage,
+            } as UploadParams,
+        };
+    }
+
+    if (action.type === ReducerActionType.SET_RESOURCE) {
+        const [resource] = action.payload.resource;
+        return {
+            ...state,
+            resource: action.payload.resource,
+            uploadParams: {
+                ...state.uploadParams,
+                resource: resource === 'dataset' ? 'dataset' : 'annotation',
+            } as UploadParams,
+        };
+    }
+
+    return state;
+};
+
 function ImportDatasetModal(props: StateToProps): JSX.Element {
     const {
         importers,
@@ -66,50 +277,54 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
     } = props;
     const [form] = Form.useForm();
     const dispatch = useDispatch();
-    // TODO useState -> useReducer
-    const [instanceType, setInstanceType] = useState('');
-    const [file, setFile] = useState<File | null>(null);
-    const [selectedLoader, setSelectedLoader] = useState<any>(null);
-    const [useDefaultSettings, setUseDefaultSettings] = useState(true);
-    const [defaultStorageLocation, setDefaultStorageLocation] = useState(StorageLocation.LOCAL);
-    const [defaultStorageCloudId, setDefaultStorageCloudId] = useState<number | undefined>(undefined);
-    const [helpMessage, setHelpMessage] = useState('');
-    const [selectedSourceStorageLocation, setSelectedSourceStorageLocation] = useState(StorageLocation.LOCAL);
-    const [uploadParams, setUploadParams] = useState<UploadParams>({
-        convMaskToPoly: true,
+
+    const [state, dispatchReducer] = useReducer(reducer, {
+        instanceType: '',
+        file: null,
+        selectedLoader: null,
         useDefaultSettings: true,
-    } as UploadParams);
-    const [resource, setResource] = useState('');
+        defaultStorageLocation: StorageLocation.LOCAL,
+        defaultStorageCloudId: undefined,
+        helpMessage: '',
+        selectedSourceStorageLocation: StorageLocation.LOCAL,
+        uploadParams: {
+            convMaskToPoly: true,
+            useDefaultSettings: true,
+        } as UploadParams,
+        resource: '',
+    });
+
+    const {
+        instanceType,
+        file,
+        selectedLoader,
+        useDefaultSettings,
+        defaultStorageLocation,
+        defaultStorageCloudId,
+        helpMessage,
+        selectedSourceStorageLocation,
+        uploadParams,
+        resource,
+    } = state;
 
     useEffect(() => {
         if (instanceT === 'project') {
-            setResource('dataset');
+            dispatchReducer(reducerActions.setResource('dataset'));
         } else if (instanceT === 'task' || instanceT === 'job') {
-            setResource('annotation');
+            dispatchReducer(reducerActions.setResource('annotation'));
         }
     }, [instanceT]);
 
     const isDataset = useCallback((): boolean => resource === 'dataset', [resource]);
     const isAnnotation = useCallback((): boolean => resource === 'annotation', [resource]);
 
-    useEffect(() => {
-        setUploadParams({
-            ...uploadParams,
-            resource,
-            sourceStorage: {
-                location: defaultStorageLocation,
-                cloudStorageId: defaultStorageCloudId,
-            } as Storage,
-        } as UploadParams);
-    }, [resource, defaultStorageLocation, defaultStorageCloudId]);
-
     const isProject = useCallback((): boolean => instance instanceof core.classes.Project, [instance]);
     const isTask = useCallback((): boolean => instance instanceof core.classes.Task, [instance]);
 
     useEffect(() => {
         if (instance) {
-            setDefaultStorageLocation(instance.sourceStorage.location);
-            setDefaultStorageCloudId(instance.sourceStorage.cloudStorageId);
+            dispatchReducer(reducerActions.setDefaultStorageLocation(instance.sourceStorage.location));
+            dispatchReducer(reducerActions.setDefaultStorageCloudId(instance.sourceStorage.cloudStorageId));
             let type: 'project' | 'task' | 'job' = 'job';
 
             if (isProject()) {
@@ -117,16 +332,16 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
             } else if (isTask()) {
                 type = 'task';
             }
-            setInstanceType(`${type} #${instance.id}`);
+            dispatchReducer(reducerActions.setInstanceType(`${type} #${instance.id}`));
         }
     }, [instance, resource]);
 
     useEffect(() => {
-        setHelpMessage(
+        dispatchReducer(reducerActions.setHelpMessage(
             // eslint-disable-next-line prefer-template
             `Import from ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
             `storage ${(defaultStorageCloudId) ? `№${defaultStorageCloudId}` : ''}`,
-        );
+        ));
     }, [defaultStorageLocation, defaultStorageCloudId]);
 
     const uploadLocalFile = (): JSX.Element => (
@@ -156,16 +371,12 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                                 `${selectedLoader.format.toLowerCase()} extension can be used`,
                         );
                     } else {
-                        setFile(_file);
-                        setUploadParams({
-                            ...uploadParams,
-                            file: _file,
-                        } as UploadParams);
+                        dispatchReducer(reducerActions.setFile(_file));
                     }
                     return false;
                 }}
                 onRemove={() => {
-                    setFile(null);
+                    dispatchReducer(reducerActions.setFile(null));
                 }}
             >
                 <p className='ant-upload-drag-icon'>
@@ -215,20 +426,18 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 placeholder='Dataset file name'
                 className='cvat-modal-import-filename-input'
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setUploadParams({
-                        ...uploadParams,
-                        fileName: e.target.value || '',
-                    } as UploadParams);
+                    dispatchReducer(reducerActions.setFileName(e.target.value || ''));
                 }}
             />
         </Form.Item>
     );
 
     const closeModal = useCallback((): void => {
-        setUseDefaultSettings(true);
-        setSelectedSourceStorageLocation(StorageLocation.LOCAL);
+        dispatchReducer(reducerActions.setUseDefaultSettings(true));
+        dispatchReducer(reducerActions.setSelectedSourceStorageLocation(StorageLocation.LOCAL));
         form.resetFields();
-        setFile(null);
+        dispatchReducer(reducerActions.setFile(null));
+        dispatchReducer(reducerActions.setFileName(''));
         dispatch(importActions.closeImportDatasetModal(instance));
     }, [form, instance]);
 
@@ -338,11 +547,8 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                                 const [loader] = importers.filter(
                                     (importer: any): boolean => importer.name === format,
                                 );
-                                setSelectedLoader(loader);
-                                setUploadParams({
-                                    ...uploadParams,
-                                    selectedFormat: format,
-                                } as UploadParams);
+                                dispatchReducer(reducerActions.setSelectedLoader(loader));
+                                dispatchReducer(reducerActions.setSelectedFormat(format));
                             }}
                         >
                             {importers
@@ -381,10 +587,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                         >
                             <Switch
                                 onChange={(value: boolean) => {
-                                    setUploadParams({
-                                        ...uploadParams,
-                                        convMaskToPoly: value,
-                                    } as UploadParams);
+                                    dispatchReducer(reducerActions.setConvMaskToPoly(value));
                                 }}
                             />
                         </Form.Item>
@@ -401,11 +604,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                         >
                             <Switch
                                 onChange={(value: boolean) => {
-                                    setUseDefaultSettings(value);
-                                    setUploadParams({
-                                        ...uploadParams,
-                                        useDefaultSettings: value,
-                                    } as UploadParams);
+                                    dispatchReducer(reducerActions.setUseDefaultSettings(value));
                                 }}
                             />
                         </Form.Item>
@@ -419,16 +618,15 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             locationName={['sourceStorage', 'location']}
                             selectCloudStorageName={['sourceStorage', 'cloudStorageId']}
                             onChangeStorage={(value: StorageData) => {
-                                setUploadParams({
-                                    ...uploadParams,
-                                    sourceStorage: new Storage({
-                                        location: value?.location || defaultStorageLocation,
-                                        cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
-                                    }),
-                                } as UploadParams);
+                                dispatchReducer(reducerActions.setSourceStorage(new Storage({
+                                    location: value?.location || defaultStorageLocation,
+                                    cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
+                                })));
                             }}
                             locationValue={selectedSourceStorageLocation}
-                            onChangeLocationValue={(value: StorageLocation) => setSelectedSourceStorageLocation(value)}
+                            onChangeLocationValue={(value: StorageLocation) => {
+                                dispatchReducer(reducerActions.setSelectedSourceStorageLocation(value));
+                            }}
                         />
                     )}
                     { !loadFromLocal && renderCustomName() }
