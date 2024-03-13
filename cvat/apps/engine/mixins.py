@@ -429,10 +429,6 @@ class AnnotationMixin:
         return Response(data)
 
     def import_annotations(self, request, db_obj, import_func, rq_func, rq_id_template):
-        from cvat.apps.engine.view_utils import (
-            parse_mask_to_poly_request_param
-        ) # import separately to prevent circular import
-
         is_tus_request = request.headers.get('Upload-Length', None) is not None or \
             request.method == 'OPTIONS'
         if is_tus_request:

@@ -323,7 +323,7 @@ def get_import_rq_id(
     return f"import:{resource_type}-{resource_id}-{subresource_type}-by-{user}"
 
 def import_resource_with_clean_up_after(
-    func: Union[Callable[[str, int, int], int], Callable[[str, int, str, Optional[bool]], None]],
+    func: Union[Callable[[str, int, int], int], Callable[[str, int, str, bool], None]],
     filename: str,
     *args,
     **kwargs,
