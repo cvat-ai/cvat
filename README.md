@@ -5,7 +5,7 @@
     </td>
     <td>
       <a href="https://app.cvat.ai/">
-        <img src="/site/content/en/images/cvat-readme-button.png" alt="Start Annotating Now" style="width: 100%; max-width: 600px;">
+        <img src="/site/content/en/images/cvat-readme-button-tr-bg.png" alt="Start Annotating Now" style="width: 100%; max-width: 600px;">
       </a>
     </td>
   </tr>
