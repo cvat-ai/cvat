@@ -23,7 +23,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 For access from China, read [sources for users from China](#sources-for-users-from-china) section.
 
-## Ubuntu 18.04 (x86_64/amd64)
+## Ubuntu 22.04/20.04 (x86_64/amd64)
 
 - Open a terminal window. If you don't know how to open a terminal window on
   Ubuntu please read [the answer](https://askubuntu.com/questions/183775/how-do-i-open-a-terminal).
@@ -49,8 +49,9 @@ For access from China, read [sources for users from China](#sources-for-users-fr
     docker-ce docker-ce-cli containerd.io docker-compose-plugin
   ```
 
-- Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
-  to run docker without root permissions.
+- (Optional) Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
+  if you don't want to preface the docker command with sudo,
+  create a Unix group called docker and add current user to it.
 
   ```shell
   sudo groupadd docker
@@ -76,11 +77,11 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - To access CVAT over a network or through a different system, export `CVAT_HOST` environment variable
 
   ```shell
-  export CVAT_HOST=your-ip-address
+  export CVAT_HOST=FQDN_or_YOUR-IP-ADDRESS
   ```
 
 - Run docker containers. It will take some time to download the latest CVAT
-  release and other required images like postgres, redis, etc. from DockerHub and create containers.
+  and other required images like postgres, redis, etc. and start containers.
 
   ```shell
   docker compose up -d
@@ -98,7 +99,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   see [How to pull/build/update CVAT images section](#how-to-pullbuildupdate-cvat-images)
 
 - You can register a user but by default, it will not have rights even to view
-  the list of tasks. Thus you should create a superuser. A superuser can use an
+  the list of tasks. Thus you should create a superuser. The superuser can use an
   admin panel to assign the correct groups to the user. Please use the command
   below:
 
