@@ -1,4 +1,4 @@
 ### Fixed
 
-- set `file` and `fileName` to null after import is done and change `useState` to `useReducer`
+- Incorrect file name usage in importing annotation via cloud storage
   (<https://github.com/opencv/cvat/pull/7599>)
