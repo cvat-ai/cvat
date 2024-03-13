@@ -95,6 +95,14 @@ export function checkObjectType(name, value, type, instance?): boolean {
 export class FieldUpdateTrigger {
     #updatedFlags: Record<string, boolean> = {};
 
+    get(key: string): boolean {
+        return this.#updatedFlags[key] || false;
+    }
+
+    resetField(key: string): void {
+        delete this.#updatedFlags[key];
+    }
+
     reset(): void {
         this.#updatedFlags = {};
     }
