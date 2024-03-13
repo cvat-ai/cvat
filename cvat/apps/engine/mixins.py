@@ -27,7 +27,6 @@ from cvat.apps.engine.serializers import DataSerializer
 from cvat.apps.engine.handlers import clear_import_cache
 from cvat.apps.engine.utils import get_import_rq_id
 
-
 slogger = ServerLogManager(__name__)
 
 class TusFile:
