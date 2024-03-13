@@ -193,6 +193,14 @@ export default function CreateProjectContent(): JSX.Element {
         }
     };
 
+    const onCancel = (): void => {
+        if (history.length) {
+            history.goBack();
+        } else {
+            history.push('/projects');
+        }
+    };
+
     useEffect(() => {
         focusForm();
     }, []);
@@ -226,6 +234,14 @@ export default function CreateProjectContent(): JSX.Element {
             </Col>
             <Col span={24}>
                 <Row justify='end' gutter={5}>
+                    <Col>
+                        <Button
+                            htmlType='button'
+                            onClick={() => onCancel()}
+                        >
+                            Cancel
+                        </Button>
+                    </Col>
                     <Col>
                         <Button className='cvat-submit-open-project-button' type='primary' onClick={onSubmitAndOpen}>
                             Submit & Open
