@@ -1,5 +1,5 @@
 # Copyright (C) 2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,11 +11,12 @@ from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from itertools import product
+from tempfile import TemporaryDirectory
 from time import sleep
 from typing import Dict, List, Optional
 
 import pytest
-from cvat_sdk.api_client import ApiClient, Configuration, models
+from cvat_sdk.api_client import ApiClient, Configuration, models, exceptions
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
@@ -795,6 +796,45 @@ class TestImportExportDatasetProject:
             }
 
             self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
+
+    _DATUMARO_FORMAT_FOR_DIMENSION = {
+        "2d": "Datumaro 1.0",
+        "3d": "Datumaro 3D 1.0",
+    }
+
+    @pytest.mark.parametrize("dimension", ["2d", "3d"])
+    def test_cant_import_datumaro_json_as_project(self, admin_user, tasks, dimension):
+        task = next(t for t in tasks if t["size"] and t["dimension"] == dimension)
+
+        with make_api_client(admin_user) as api_client:
+            response = export_dataset(
+                api_client.tasks_api.retrieve_annotations_endpoint,
+                id=task["id"],
+                format=self._DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+            )
+            assert response.status == HTTPStatus.OK
+
+        with zipfile.ZipFile(io.BytesIO(response.data)) as zip_file:
+            annotations = zip_file.read("annotations/default.json")
+
+        with make_api_client(admin_user) as api_client, TemporaryDirectory() as tempdir:
+            project_id = api_client.projects_api.create(
+                project_write_request=models.ProjectWriteRequest(name="test_json_import_as_project")
+            )
+
+            dataset_file = io.BytesIO(annotations)
+            dataset_file.name = "annotations.json"
+            import_data = {"dataset_file": dataset_file}
+
+            with pytest.raises(
+                exceptions.ApiException, match="Can't import media data from an annotation file."
+            ):
+                self._test_import_project(
+                    admin_user,
+                    project_id,
+                    format_name=self._DATUMARO_FORMAT_FOR_DIMENSION[dimension],
+                    data=import_data,
+                )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
