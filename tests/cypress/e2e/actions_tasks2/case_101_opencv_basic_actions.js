@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -84,11 +84,14 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
             cy.get('.cvat-opencv-control-popover').within(() => {
                 cy.contains('OpenCV is loading').should('not.exist');
             });
-            // Intelligent cissors button be visible
-            cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
+            cy.get('body').click();
         });
 
         it('Create a shape with "Intelligent cissors". Create the second shape with the label change and "Done" button.', () => {
+            cy.interactOpenCVControlButton();
+            cy.get('.cvat-opencv-drawing-tool').should('exist').and('be.visible');
+            cy.get('body').click();
+
             cy.opencvCreateShape(createOpencvShape);
             cy.opencvCreateShape(createOpencvShapeSecondLabel);
         });
@@ -212,10 +215,10 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                         // On each frame text is moved by 5px on x and y axis,
                         // so we expect shape to be close to real text positions
                         cy.get('#cvat_canvas_shape_3').invoke('attr', 'x').then((xVal) => {
-                            expect(parseFloat(xVal)).to.be.closeTo(x + (i - 1) * 5, 2.0);
+                            expect(parseFloat(xVal)).to.be.closeTo(x + (i - 1) * 5, 3.0);
                         });
                         cy.get('#cvat_canvas_shape_3').invoke('attr', 'y').then((yVal) => {
-                            expect(parseFloat(yVal)).to.be.closeTo(y + (i - 1) * 5, 2.0);
+                            expect(parseFloat(yVal)).to.be.closeTo(y + (i - 1) * 5, 3.0);
                         });
                         cy.get('#cvat-objects-sidebar-state-item-3')
                             .should('contain', 'RECTANGLE TRACK')

@@ -209,6 +209,8 @@ export function readPointsFromShape(shape: SVG.Shape): number[] {
     return pointsToNumberArray(points);
 }
 
+export function stringifyPoints(points: number[]): string;
+export function stringifyPoints(points: Point[]): string;
 export function stringifyPoints(points: (Point | number)[]): string {
     if (typeof points[0] === 'number') {
         return points.reduce((acc: string, val: number, idx: number): string => {
@@ -432,4 +434,106 @@ export function expandChannels(r: number, g: number, b: number, encoded: number[
     return rle2Mask(encoded, right - left + 1, bottom - top + 1);
 }
 
+export function findIntersection(seg1: Segment, seg2: Segment): [number, number] | null {
+    const determinant2D = (a: number, b: number, c: number, d: number): number => a * d - b * c;
+    const numberIsBetween = (a: number, b: number, c: number): boolean => Math.min(a, b) <= c && c <= Math.max(a, b);
+    const projectionIntersected = (a: number, b: number, c: number, d: number): boolean => {
+        let [p1, p2] = [a, b];
+        let [p3, p4] = [c, d];
+
+        if (p1 > p2) {
+            [p1, p2] = [p2, p1];
+        }
+
+        if (p3 > p4) {
+            [p3, p4] = [p4, p3];
+        }
+
+        return Math.max(p1, p3) <= Math.min(p2, p4);
+    };
+
+    const [[x1, y1], [x2, y2]] = seg1;
+    const [[x3, y3], [x4, y4]] = seg2;
+    const A1 = y1 - y2;
+    const A2 = y3 - y4;
+    const B1 = x2 - x1;
+    const B2 = x4 - x3;
+    const C1 = -A1 * x1 - B1 * y1;
+    const C2 = -A2 * x3 - B2 * y3;
+    const determinant = determinant2D(A1, B1, A2, B2);
+    if (determinant === 0) {
+        if (
+            determinant2D(A1, C1, A2, C2) === 0 &&
+            determinant2D(B1, C1, B2, C2) === 0 &&
+            projectionIntersected(x1, x2, x3, x4) &&
+            projectionIntersected(y1, y2, y3, y4)
+        ) {
+            // lines match
+            return [NaN, NaN];
+        }
+
+        // lines are parallel
+        return null;
+    }
+
+    const x = -determinant2D(C1, B1, C2, B2) / determinant;
+    const y = -determinant2D(A1, C1, A2, C2) / determinant;
+    if (numberIsBetween(x1, x2, x) &&
+        numberIsBetween(y1, y2, y) &&
+        numberIsBetween(x3, x4, x) &&
+        numberIsBetween(y3, y4, y)
+    ) {
+        return [x, y];
+    }
+
+    return null;
+}
+
+export function findClosestPointOnSegment(
+    segment: [[number, number], [number, number]],
+    point: [number, number],
+): [number, number] {
+    const numberIsBetween = (a: number, b: number, c: number): boolean => Math.min(a, b) <= c && c <= Math.max(a, b);
+    const [[x1, y1], [x2, y2]] = segment;
+    const [x3, y3] = point;
+
+    const x = (x1 * x1 * x3 - 2 * x1 * x2 * x3 + x2 * x2 * x3 + x2 *
+        (y1 - y2) * (y1 - y3) - x1 * (y1 - y2) * (y2 - y3)) /
+        ((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+    const y = (x2 * x2 * y1 + x1 * x1 * y2 + x2 * x3 * (y2 - y1) - x1 *
+        (x3 * (y2 - y1) + x2 * (y1 + y2)) + (y1 - y2) * (y1 - y2) * y3) /
+        ((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+
+    if (numberIsBetween(x1, x2, x) && numberIsBetween(y1, y2, y)) {
+        return [x, y];
+    }
+
+    // perpendicular point is not on the segment
+    // shortest distance is distance to one of edge points
+    const d1 = Math.sqrt((x - x1) ** 2 + (y - y1) ** 2);
+    const d2 = Math.sqrt((x - x2) ** 2 + (y - y2) ** 2);
+
+    if (d1 < d2) {
+        return [x1, y1];
+    }
+
+    return [x2, y2];
+}
+
+export function segmentsFromPoints(points: number[], circuit = false): Segment[] {
+    return points.reduce<Segment[]>((acc, val, idx, arr) => {
+        if (idx % 2 !== 0) {
+            if (idx === arr.length - 1) {
+                if (circuit) {
+                    acc.push([[arr[idx - 1], val], [arr[0], arr[1]]]);
+                }
+            } else {
+                acc.push([[arr[idx - 1], val], [arr[idx + 1], arr[idx + 2]]]);
+            }
+        }
+        return acc;
+    }, []);
+}
+
+export type Segment = [[number, number], [number, number]];
 export type PropType<T, Prop extends keyof T> = T[Prop];

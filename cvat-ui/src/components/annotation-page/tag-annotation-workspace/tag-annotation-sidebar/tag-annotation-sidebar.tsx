@@ -45,7 +45,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     removeObject(objectState: any): void;
-    createAnnotations(jobInstance: any, frame: number, objectStates: any[]): void;
+    createAnnotations(objectStates: any[]): void;
     changeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void;
     onRememberObject(labelID: number): void;
 }
@@ -82,8 +82,8 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
         changeFrame(frame: number, fillBuffer?: boolean, frameStep?: number): void {
             dispatch(changeFrameAsync(frame, fillBuffer, frameStep));
         },
-        createAnnotations(jobInstance: any, frame: number, objectStates: any[]): void {
-            dispatch(createAnnotationsAsync(jobInstance, frame, objectStates));
+        createAnnotations(objectStates: any[]): void {
+            dispatch(createAnnotationsAsync(objectStates));
         },
         removeObject(objectState: any): void {
             dispatch(removeObjectAction(objectState, false));
@@ -200,7 +200,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
                 label: labels.filter((label: any) => label.id === labelID)[0],
                 frame: frameNumber,
             });
-            createAnnotations(jobInstance, frameNumber, [objectState]);
+            createAnnotations([objectState]);
 
             if (skipFrame) onChangeFrame();
         }

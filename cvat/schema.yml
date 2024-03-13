@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.9.0
+  version: 2.11.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -176,32 +176,6 @@ paths:
       responses:
         '204':
           description: The asset has been deleted
-  /api/assets/{uuid}/public:
-    get:
-      operationId: assets_retrieve_public
-      parameters:
-      - in: path
-        name: uuid
-        schema:
-          type: string
-          format: uuid
-        description: A UUID string identifying this asset.
-        required: true
-      tags:
-      - assets
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/AssetRead'
-          description: ''
   /api/auth/login:
     post:
       operationId: auth_create_login
@@ -767,42 +741,6 @@ paths:
               schema:
                 type: string
           description: Cloud Storage actions (GET | PUT | DELETE)
-  /api/cloudstorages/{id}/content:
-    get:
-      operationId: cloudstorages_retrieve_content
-      description: 'This method is deprecated and will be removed in version 2.6.0.
-        Please use the new version of API: /cloudstorages/id/content-v2/'
-      summary: Method returns a manifest content
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this cloud storage.
-        required: true
-      - in: query
-        name: manifest_path
-        schema:
-          type: string
-        description: Path to the manifest file in a cloud storage
-      tags:
-      - cloudstorages
-      security:
-      - sessionAuth: []
-        csrfAuth: []
-        tokenAuth: []
-      - signatureAuth: []
-      - basicAuth: []
-      deprecated: true
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                type: array
-                items:
-                  type: string
-          description: A manifest content
   /api/cloudstorages/{id}/content-v2:
     get:
       operationId: cloudstorages_retrieve_content_v2
@@ -1356,7 +1294,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner'].
+           Available filter_fields: ['owner', 'user_id', 'accepted'].
         schema:
           type: string
       - name: org
@@ -1544,14 +1482,12 @@ paths:
         required: true
       tags:
       - invitations
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AcceptInvitationWriteRequest'
-        required: true
       security:
-      - {}
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
       responses:
         '200':
           content:
@@ -1561,10 +1497,32 @@ paths:
           description: The invitation is accepted
         '400':
           description: The invitation is expired or already accepted
+  /api/invitations/{key}/decline:
+    post:
+      operationId: invitations_decline
+      summary: Method declines the invitation to organization
+      parameters:
+      - in: path
+        name: key
+        schema:
+          type: string
+        description: A unique value identifying this invitation.
+        required: true
+      tags:
+      - invitations
+      security:
+      - sessionAuth: []
+        csrfAuth: []
+        tokenAuth: []
+      - signatureAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: The invitation has been declined
   /api/invitations/{key}/resend:
     post:
       operationId: invitations_resend
-      summary: Method resends the invitation
+      summary: Method resends the invitation to organization
       parameters:
       - in: path
         name: key
@@ -2063,8 +2021,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -2454,8 +2412,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -3502,8 +3460,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -3644,8 +3602,8 @@ paths:
           enum:
           - download
           - import_status
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -4829,8 +4787,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -5353,8 +5311,8 @@ paths:
           type: string
           enum:
           - download
-        description: Used to start downloading process after annotation file had been
-          created
+        description: Used to start downloading process locally after annotation file
+          has been created
       - in: query
         name: cloud_storage_id
         schema:
@@ -6167,31 +6125,6 @@ components:
           type: string
       required:
       - organization_slug
-    AcceptInvitationWriteRequest:
-      type: object
-      properties:
-        username:
-          type: string
-          minLength: 5
-          maxLength: 150
-        password1:
-          type: string
-          writeOnly: true
-          minLength: 1
-        password2:
-          type: string
-          writeOnly: true
-          minLength: 1
-        first_name:
-          type: string
-          minLength: 1
-        last_name:
-          type: string
-          minLength: 1
-      required:
-      - password1
-      - password2
-      - username
     AnalyticsReport:
       type: object
       properties:
@@ -6454,6 +6387,16 @@ components:
       oneOf:
       - $ref: '#/components/schemas/ProjectFileRequest'
       nullable: true
+    BasicOrganization:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
     BasicUser:
       type: object
       properties:
@@ -6578,14 +6521,6 @@ components:
             type: string
             maxLength: 1024
           default: []
-        provider_type:
-          $ref: '#/components/schemas/ProviderTypeEnum'
-        resource:
-          type: string
-          maxLength: 222
-        display_name:
-          type: string
-          maxLength: 63
         created_date:
           type: string
           format: date-time
@@ -6594,6 +6529,14 @@ components:
           type: string
           format: date-time
           readOnly: true
+        provider_type:
+          $ref: '#/components/schemas/ProviderTypeEnum'
+        resource:
+          type: string
+          maxLength: 222
+        display_name:
+          type: string
+          maxLength: 63
         credentials_type:
           $ref: '#/components/schemas/CredentialsTypeEnum'
         specific_attributes:
@@ -6641,7 +6584,7 @@ components:
           maxLength: 64
         connection_string:
           type: string
-          maxLength: 440
+          maxLength: 1024
         key_file:
           type: string
           format: binary
@@ -7393,8 +7336,15 @@ components:
           $ref: '#/components/schemas/BasicUser'
         organization:
           type: integer
+        expired:
+          type: boolean
+          readOnly: true
+          nullable: true
+        organization_info:
+          $ref: '#/components/schemas/BasicOrganization'
       required:
       - organization
+      - organization_info
       - owner
       - role
       - user
@@ -7586,6 +7536,14 @@ components:
         organization:
           type: integer
           readOnly: true
+          nullable: true
+        target_storage:
+          allOf:
+          - $ref: '#/components/schemas/Storage'
+          nullable: true
+        source_storage:
+          allOf:
+          - $ref: '#/components/schemas/Storage'
           nullable: true
       required:
       - issues
@@ -8612,7 +8570,7 @@ components:
           maxLength: 64
         connection_string:
           type: string
-          maxLength: 440
+          maxLength: 1024
         key_file:
           type: string
           format: binary
@@ -9421,8 +9379,6 @@ components:
           $ref: '#/components/schemas/LocationEnum'
         cloud_storage_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           nullable: true
     StorageMethod:
       enum:
@@ -9439,8 +9395,6 @@ components:
           $ref: '#/components/schemas/LocationEnum'
         cloud_storage_id:
           type: integer
-          maximum: 2147483647
-          minimum: -2147483648
           nullable: true
     StorageType:
       enum:

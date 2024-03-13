@@ -526,7 +526,7 @@ class LambdaQueue:
             queue.deferred_job_registry.get_job_ids())
         jobs = queue.job_class.fetch_many(job_ids, queue.connection)
 
-        return [LambdaJob(job) for job in jobs if job.meta.get("lambda")]
+        return [LambdaJob(job) for job in jobs if job and job.meta.get("lambda")]
 
     def enqueue(self,
         lambda_func, threshold, task, quality, mapping, cleanup, conv_mask_to_poly, max_distance, request,

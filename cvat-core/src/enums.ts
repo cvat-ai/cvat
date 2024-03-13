@@ -87,9 +87,10 @@ export enum Source {
     SEMI_AUTO = 'semi-auto',
     AUTO = 'auto',
     FILE = 'file',
+    GT = 'Ground truth',
 }
 
-export enum LogType {
+export enum EventScope {
     loadTool = 'load:cvat',
 
     loadJob = 'load:job',
@@ -108,11 +109,14 @@ export enum LogType {
     deleteObject = 'delete:object',
     lockObject = 'lock:object',
     mergeObjects = 'merge:objects',
+    splitObjects = 'split:objects',
+    groupObjects = 'group:objects',
+    sliceObject = 'slice:object',
+    joinObjects = 'join:objects',
     changeAttribute = 'change:attribute',
     changeLabel = 'change:label',
 
     changeFrame = 'change:frame',
-    moveImage = 'move:image',
     zoomImage = 'zoom:image',
     fitImage = 'fit:image',
     rotateImage = 'rotate:image',
@@ -123,6 +127,7 @@ export enum LogType {
     pressShortcut = 'press:shortcut',
     debugInfo = 'send:debug_info',
 
+    annotationsAction = 'run:annotations_action',
     clickElement = 'click:element',
 }
 
@@ -141,6 +146,8 @@ export enum HistoryActions {
     CHANGED_HIDDEN = 'Changed hidden',
     CHANGED_SOURCE = 'Changed source',
     MERGED_OBJECTS = 'Merged objects',
+    JOINED_OBJECTS = 'Joined objects',
+    SLICED_OBJECT = 'Sliced object',
     SPLITTED_TRACK = 'Splitted track',
     GROUPED_OBJECTS = 'Grouped objects',
     CREATED_OBJECTS = 'Created objects',

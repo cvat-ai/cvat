@@ -23,8 +23,3 @@ services:
       GITHUB_RUN_ID:
     volumes:
       - ${HOST_COVERAGE_DATA_DIR}:${CONTAINER_COVERAGE_DATA_DIR}
-
-  cvat_redis:
-    ports:
-      - 6379:6379
-

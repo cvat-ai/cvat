@@ -1,3 +1,5 @@
+{{- $localValues := .Values.cvat.backend.initializer -}}
+
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -12,10 +14,10 @@ metadata:
     tier: backend
     component: initializer
     {{- include "cvat.labels" . | nindent 4 }}
-    {{- with .Values.cvat.backend.initializer.labels }}
+    {{- with merge $localValues.labels .Values.cvat.backend.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.cvat.backend.initializer.annotations }}
+  {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
   annotations:
   {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -27,42 +29,42 @@ spec:
         tier: backend
         component: initializer
         {{- include "cvat.labels" . | nindent 8 }}
-        {{- with .Values.cvat.backend.initializer.labels }}
+        {{- with merge $localValues.labels .Values.cvat.backend.labels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.cvat.backend.initializer.annotations }}
+      {{- with merge $localValues.annotations .Values.cvat.backend.annotations }}
       annotations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       containers:
-        - name: cvat-app-backend-initializer-container
+        - name: cvat-backend
           image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
           imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
-          {{- with .Values.cvat.backend.initializer.resources }}
+          {{- with merge $localValues.resources .Values.cvat.backend.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           args: ["init"]
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
-          {{- with .Values.cvat.backend.initializer.additionalEnv }}
+          {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- with .Values.cvat.backend.initializer.additionalVolumeMounts }}
+          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}
           {{- end }}
       restartPolicy: OnFailure
-      {{- with .Values.cvat.backend.initializer.affinity }}
+      {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.cvat.backend.initializer.tolerations }}
+      {{- with concat .Values.cvat.backend.tolerations $localValues.tolerations }}
       tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.cvat.backend.initializer.additionalVolumes }}
+      {{- with concat .Values.cvat.backend.additionalVolumes $localValues.additionalVolumes }}
       volumes:
       {{- toYaml . | nindent 8 }}
       {{- end }}

@@ -40,10 +40,8 @@ interface Props {
     repeatDrawShape(): void;
     redrawShape(): void;
     pasteShape(): void;
-    groupObjects(enabled: boolean): void;
-    mergeObjects(enabled: boolean): void;
-    splitTrack(enabled: boolean): void;
     resetGroup(): void;
+    updateActiveControl(activeControl: ActiveControl): void;
 }
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl);
@@ -63,9 +61,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         labels,
         redrawShape,
         repeatDrawShape,
-        groupObjects,
-        mergeObjects,
-        splitTrack,
+        updateActiveControl,
         resetGroup,
     } = props;
 
@@ -76,49 +72,33 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         }
     };
 
-    let subKeyMap: any = {
-        CANCEL: keyMap.CANCEL,
-    };
+    const subKeyMap: any = applicableLabels.length ? {
+        PASTE_SHAPE: keyMap.PASTE_SHAPE,
+        SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
+    } : {};
 
-    let handlers: any = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
+    const handlers: any = applicableLabels.length ? {
+        PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
             preventDefault(event);
-            if (activeControl !== ActiveControl.CURSOR) {
+            canvasInstance.cancel();
+            pasteShape();
+        },
+        SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
+            preventDefault(event);
+            const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
+
+            if (!drawing) {
                 canvasInstance.cancel();
+                if (event && event.shiftKey) {
+                    redrawShape();
+                } else {
+                    repeatDrawShape();
+                }
+            } else {
+                canvasInstance.draw({ enabled: false });
             }
         },
-    };
-
-    if (applicableLabels.length) {
-        handlers = {
-            ...handlers,
-            PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                canvasInstance.cancel();
-                pasteShape();
-            },
-            SWITCH_DRAW_MODE: (event: KeyboardEvent | undefined) => {
-                preventDefault(event);
-                const drawing = [ActiveControl.DRAW_CUBOID].includes(activeControl);
-
-                if (!drawing) {
-                    canvasInstance.cancel();
-                    if (event && event.shiftKey) {
-                        redrawShape();
-                    } else {
-                        repeatDrawShape();
-                    }
-                } else {
-                    canvasInstance.draw({ enabled: false });
-                }
-            },
-        };
-        subKeyMap = {
-            ...subKeyMap,
-            PASTE_SHAPE: keyMap.PASTE_SHAPE,
-            SWITCH_DRAW_MODE: keyMap.SWITCH_DRAW_MODE,
-        };
-    }
+    } : {};
 
     const controlsDisabled = !applicableLabels.length;
     return (
@@ -128,6 +108,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 cursorShortkey={normalizedKeyMap.CANCEL}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
+                shortcuts={{
+                    CANCEL: {
+                        details: keyMap.CANCEL,
+                        displayValue: normalizedKeyMap.CANCEL,
+                    },
+                }}
             />
             <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
             <ObservedDrawCuboidControl
@@ -139,7 +125,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <hr />
 
             <ObservedMergeControl
-                mergeObjects={mergeObjects}
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}
@@ -151,7 +137,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }}
             />
             <ObservedGroupControl
-                groupObjects={groupObjects}
+                updateActiveControl={updateActiveControl}
                 resetGroup={resetGroup}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
@@ -168,7 +154,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 }}
             />
             <ObservedSplitControl
-                splitTrack={splitTrack}
+                updateActiveControl={updateActiveControl}
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 disabled={controlsDisabled}

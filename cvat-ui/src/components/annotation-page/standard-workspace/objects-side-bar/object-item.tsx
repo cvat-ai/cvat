@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,7 +20,7 @@ interface Props {
     objectType: ObjectType;
     shapeType: ShapeType;
     clientID: number;
-    serverID: number | undefined;
+    serverID: number | null;
     labelID: number;
     isGroundTruth: boolean;
     locked: boolean;
@@ -42,6 +42,7 @@ interface Props {
     changeColor(color: string): void;
     resetCuboidPerspective(): void;
     edit(): void;
+    slice(): void;
 }
 
 function ObjectItemComponent(props: Props): JSX.Element {
@@ -73,6 +74,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeColor,
         resetCuboidPerspective,
         edit,
+        slice,
         jobInstance,
     } = props;
 
@@ -119,6 +121,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
                     removeShortcut={normalizedKeyMap.DELETE_OBJECT}
                     changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
+                    sliceShortcut={normalizedKeyMap.SWITCH_SLICE_MODE}
                     changeLabel={changeLabel}
                     changeColor={changeColor}
                     copy={copy}
@@ -130,6 +133,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toForeground={toForeground}
                     resetCuboidPerspective={resetCuboidPerspective}
                     edit={edit}
+                    slice={slice}
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
                 {!!attributes.length && (

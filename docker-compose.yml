@@ -5,11 +5,22 @@
 x-backend-env: &backend-env
   CLICKHOUSE_HOST: clickhouse
   CVAT_POSTGRES_HOST: cvat_db
-  CVAT_REDIS_HOST: cvat_redis
+  CVAT_REDIS_INMEM_HOST: cvat_redis_inmem
+  CVAT_REDIS_INMEM_PORT: 6379
+  CVAT_REDIS_ONDISK_HOST: cvat_redis_ondisk
+  CVAT_REDIS_ONDISK_PORT: 6666
   DJANGO_LOG_SERVER_HOST: vector
   DJANGO_LOG_SERVER_PORT: 80
   no_proxy: clickhouse,grafana,vector,nuclio,opa,${no_proxy:-}
   SMOKESCREEN_OPTS: ${SMOKESCREEN_OPTS:-}
+
+x-backend-deps: &backend-deps
+  cvat_redis_inmem:
+    condition: service_started
+  cvat_redis_ondisk:
+    condition: service_started
+  cvat_db:
+    condition: service_started
 
 services:
   cvat_db:
@@ -25,19 +36,35 @@ services:
     networks:
       - cvat
 
-  cvat_redis:
-    container_name: cvat_redis
-    image: eqalpha/keydb:x86_64_v6.3.4
+  cvat_redis_inmem:
+    container_name: cvat_redis_inmem
+    image: redis:7.2.3-alpine
     restart: always
     command: [
-      "keydb-server",
-      "/etc/keydb/keydb.conf",
-      "--storage-provider", "flash", "/data/flash",
-      "--maxmemory", "5G",
-      "--maxmemory-policy", "allkeys-lfu",
+      "redis-server",
+      "--save", "60", "100",
+      "--appendonly", "yes",
     ]
     volumes:
-      - cvat_cache_db:/data
+      - cvat_inmem_db:/data
+    networks:
+      - cvat
+
+  cvat_redis_ondisk:
+    container_name: cvat_redis_ondisk
+    image: apache/kvrocks:2.7.0
+    restart: always
+    command: [
+      "--dir", "/var/lib/kvrocks/data"
+    ]
+    # The kvrocks image a) has a healthcheck command, and b) has a root process
+    # that doesn't reap children, so it's susceptible to the problem described here:
+    # <https://stackoverflow.com/a/77109064>. Kvrocks also uses a tiny timeout for
+    # its healthcheck command (1s), which makes the problem more likely to manifest.
+    # Use a separate init process as a workaround.
+    init: true
+    volumes:
+      - cvat_cache_db:/var/lib/kvrocks/data
     networks:
       - cvat
 
@@ -46,9 +73,10 @@ services:
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
-      - cvat_redis
-      - cvat_db
-      - cvat_opa
+      <<: *backend-deps
+      cvat_opa:
+        condition:
+          service_started
     environment:
       <<: *backend-env
       DJANGO_MODWSGI_EXTRA_ARGS: ''
@@ -79,13 +107,10 @@ services:
     container_name: cvat_utils
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
-      - cvat_opa
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
-      CVAT_REDIS_PASSWORD: ''
+      CVAT_REDIS_INMEM_PASSWORD: ''
       NUMPROCS: 1
     command: run utils
     volumes:
@@ -99,9 +124,7 @@ services:
     container_name: cvat_worker_import
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 2
@@ -117,9 +140,7 @@ services:
     container_name: cvat_worker_export
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 2
@@ -135,10 +156,7 @@ services:
     container_name: cvat_worker_annotation
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
-      - cvat_opa
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
@@ -154,10 +172,7 @@ services:
     container_name: cvat_worker_webhooks
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
-      - cvat_opa
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
@@ -173,9 +188,7 @@ services:
     container_name: cvat_worker_quality_reports
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 1
@@ -191,9 +204,7 @@ services:
     container_name: cvat_worker_analytics_reports
     image: cvat/server:${CVAT_VERSION:-dev}
     restart: always
-    depends_on:
-      - cvat_redis
-      - cvat_db
+    depends_on: *backend-deps
     environment:
       <<: *backend-env
       NUMPROCS: 2
@@ -220,22 +231,9 @@ services:
       - cvat
 
   traefik:
-    image: traefik:v2.9
+    image: traefik:v2.10
     container_name: traefik
     restart: always
-    command:
-      - '--providers.docker.exposedByDefault=false'
-      - '--providers.docker.network=cvat'
-      - '--entryPoints.web.address=:8080'
-      - '--providers.file.directory=/etc/traefik/rules'
-    # Uncomment to get Traefik dashboard
-    #   - "--entryPoints.dashboard.address=:8090"
-    #   - "--api.dashboard=true"
-    # labels:
-    #   - traefik.enable=true
-    #   - traefik.http.routers.dashboard.entrypoints=dashboard
-    #   - traefik.http.routers.dashboard.service=api@internal
-    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
     ports:
       - 8080:8080
       - 8090:8090
@@ -243,11 +241,36 @@ services:
       CVAT_HOST: ${CVAT_HOST:-localhost}
       DJANGO_LOG_VIEWER_HOST: grafana
       DJANGO_LOG_VIEWER_PORT: 3000
+
+      TRAEFIK_ACCESSLOG_FORMAT: json
+      # We ought to restrict which fields get logged, so as to avoid redundant information,
+      # but it doesn't work when configuring with environment variables:
+      # <https://github.com/traefik/traefik/issues/9755>.
+      # And we want to use environment variables to allow individual settings to be
+      # overridden by other Compose files.
+      TRAEFIK_LOG_FORMAT: json
+      TRAEFIK_ENTRYPOINTS_web_ADDRESS: :8080
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: cvat
+      TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/rules
+    # Uncomment to get Traefik dashboard
+    #   TRAEFIK_API_DASHBOARD: "true"
+    #   TRAEFIK_ENTRYPOINTS_dashboard_ADDRESS: :8090
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.dashboard.entrypoints=dashboard
+    #   - traefik.http.routers.dashboard.service=api@internal
+    #   - traefik.http.routers.dashboard.rule=Host(`${CVAT_HOST:-localhost}`)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./components/analytics/grafana_conf.yml:/etc/traefik/rules/grafana_conf.yml:ro
     networks:
       - cvat
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 100m
+        max-file: "10"
 
   cvat_opa:
     container_name: cvat_opa
@@ -269,7 +292,7 @@ services:
 
   cvat_clickhouse:
     container_name: cvat_clickhouse
-    image: clickhouse/clickhouse-server:22.3-alpine
+    image: clickhouse/clickhouse-server:23.11-alpine
     restart: always
     environment:
       - CLICKHOUSE_DB=cvat
@@ -359,6 +382,7 @@ volumes:
   cvat_data:
   cvat_keys:
   cvat_logs:
+  cvat_inmem_db:
   cvat_events_db:
   cvat_cache_db:
 

@@ -24,7 +24,7 @@ jobs:
     needs: search_cache
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
 
@@ -96,7 +96,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
 
@@ -189,7 +189,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
 
@@ -210,9 +210,8 @@ jobs:
           python cvat/apps/iam/rules/tests/generate_tests.py \
             --output-dir cvat/apps/iam/rules/
 
-          curl -L -o opa https://openpolicyagent.org/downloads/v0.45.0/opa_linux_amd64_static
-          chmod +x ./opa
-          ./opa test cvat/apps/iam/rules
+          docker compose run --rm -v "$PWD/cvat/apps/iam/rules/:/mnt/rules" \
+            cvat_opa test /mnt/rules
 
       - name: Running unit tests
         env:
@@ -257,11 +256,11 @@ jobs:
                 'actions_projects_models', 'canvas3d_functionality', 'canvas3d_functionality_2',
                 'issues_prs', 'issues_prs2', 'features']
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
             node-version: '16.x'
 

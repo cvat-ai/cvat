@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,7 +40,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | null {
-    const { visible, switchShortcutsModalVisible, jobInstance } = props;
+    const { visible, switchShortcutsModalVisible } = props;
     const keyMap = getApplicationKeyMap();
 
     const splitToRows = (data: string[]): JSX.Element[] => data.map(
@@ -77,9 +78,7 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
         },
     ];
 
-    const dimensionType = jobInstance?.dimension;
     const dataSource = Object.keys(keyMap)
-        .filter((key: string) => !dimensionType || keyMap[key].applicable.includes(dimensionType))
         .map((key: string, id: number) => ({
             key: id,
             name: keyMap[key].name || key,

@@ -122,15 +122,13 @@ const fitLayout = (type: DimensionType, layoutConfig: ItemLayout[]): ItemLayout[
             y: config.CANVAS_WORKSPACE_ROWS,
             w: Math.ceil(widthAvail / 3),
             h: helpfulCanvasViewHeight,
-        },
-        {
+        }, {
             ...side,
             x: Math.ceil(widthAvail / 3),
             y: config.CANVAS_WORKSPACE_ROWS,
             w: Math.ceil(widthAvail / 3),
             h: helpfulCanvasViewHeight,
-        },
-        {
+        }, {
             ...front,
             x: Math.ceil(widthAvail / 3) * 2,
             y: config.CANVAS_WORKSPACE_ROWS,

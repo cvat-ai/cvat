@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -72,12 +72,16 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
             }).then((createdTask: Task) => {
                 if (!this.#isUnmounted) {
                     this.setState({ importingState: null });
+
                     setTimeout(() => {
-                        const { taskInstance: currentTaskInstance } = this.props;
-                        if (currentTaskInstance.size !== createdTask.size) {
-                            // update state only if it was not updated anywhere else
-                            // for example in createTaskAsync
-                            updateTaskInState(createdTask);
+                        if (!this.#isUnmounted) {
+                            // check again, because the component may be unmounted to this moment
+                            const { taskInstance: currentTaskInstance } = this.props;
+                            if (currentTaskInstance.size !== createdTask.size) {
+                                // update state only if it was not updated anywhere else
+                                // for example in createTaskAsync
+                                updateTaskInState(createdTask);
+                            }
                         }
                     }, 1000);
                 }
@@ -254,6 +258,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 </Row>
                 <Row justify='end'>
                     <Dropdown
+                        trigger={['click']}
                         destroyPopupOnHide
                         overlay={(
                             <ActionsMenuContainer

@@ -5,7 +5,7 @@
 
 import { BaseImageFilter, ImageProcessing } from 'utils/image-processing';
 
-export interface HistogramEqualization extends ImageProcessing{
+export interface HistogramEqualization extends ImageProcessing {
     processImage: (src: ImageData, frameNumber: number) => ImageData;
 }
 

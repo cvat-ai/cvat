@@ -8,6 +8,8 @@ To have your dataset annotated through Toloka, simply establish
 a project in CVAT set the pricing, and let Toloka annotators
 take care of the annotations for you.
 
+> **Note:** Integration with Toloka.ai is available in **beta** version.
+
 See:
 
 - [Glossary](#glossary)

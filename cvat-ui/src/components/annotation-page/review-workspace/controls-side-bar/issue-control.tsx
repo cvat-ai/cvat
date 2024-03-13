@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,43 +10,65 @@ import { ActiveControl } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { RectangleIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
 interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
     disabled: boolean;
-    selectIssuePosition(enabled: boolean): void;
+    shortcuts: {
+        OPEN_REVIEW_ISSUE: {
+            details: KeyMapItem;
+            displayValue: string;
+        };
+    }
+    updateActiveControl(activeControl: ActiveControl): void;
 }
 
 function CreateIssueControl(props: Props): JSX.Element {
     const {
-        activeControl, canvasInstance, selectIssuePosition, disabled,
+        activeControl, canvasInstance, updateActiveControl, disabled, shortcuts,
     } = props;
+
+    const handler = (): void => {
+        if (activeControl === ActiveControl.OPEN_ISSUE) {
+            canvasInstance.selectRegion(false);
+            updateActiveControl(ActiveControl.CURSOR);
+        } else {
+            canvasInstance.cancel();
+            canvasInstance.selectRegion(true);
+            updateActiveControl(ActiveControl.OPEN_ISSUE);
+        }
+    };
+
+    const shortcutHandlers = {
+        OPEN_REVIEW_ISSUE: (event: KeyboardEvent | undefined) => {
+            if (event) event.preventDefault();
+            handler();
+        },
+    };
 
     return (
         disabled ? (
             <Icon component={RectangleIcon} className='cvat-issue-control cvat-disabled-canvas-control' />
         ) : (
-            <CVATTooltip title='Open an issue' placement='right'>
-                <Icon
-                    component={RectangleIcon}
-                    className={
-                        activeControl === ActiveControl.OPEN_ISSUE ?
-                            'cvat-issue-control cvat-active-canvas-control' :
-                            'cvat-issue-control'
-                    }
-                    onClick={(): void => {
-                        if (activeControl === ActiveControl.OPEN_ISSUE) {
-                            canvasInstance.selectRegion(false);
-                            selectIssuePosition(false);
-                        } else {
-                            canvasInstance.cancel();
-                            canvasInstance.selectRegion(true);
-                            selectIssuePosition(true);
-                        }
-                    }}
+            <>
+                <GlobalHotKeys
+                    keyMap={{ OPEN_REVIEW_ISSUE: shortcuts.OPEN_REVIEW_ISSUE.details }}
+                    handlers={shortcutHandlers}
                 />
-            </CVATTooltip>
+                <CVATTooltip title='Open an issue' placement='right'>
+                    <Icon
+                        component={RectangleIcon}
+                        className={
+                            activeControl === ActiveControl.OPEN_ISSUE ?
+                                'cvat-issue-control cvat-active-canvas-control' :
+                                'cvat-issue-control'
+                        }
+                        onClick={handler}
+                    />
+                </CVATTooltip>
+            </>
         )
     );
 }

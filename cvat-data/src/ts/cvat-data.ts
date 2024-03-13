@@ -5,8 +5,6 @@
 
 import { Mutex } from 'async-mutex';
 import { MP4Reader, Bytestream } from './3rdparty/mp4';
-import ZipDecoder from './unzip_imgs.worker';
-import H264Decoder from './3rdparty/Decoder.worker';
 
 export class RequestOutdatedError extends Error {}
 
@@ -28,7 +26,9 @@ export enum DimensionType {
 export function decodeContextImages(
     block: any, start: number, end: number,
 ): Promise<Record<string, ImageBitmap>> {
-    const decodeZipWorker = ((decodeContextImages as any).zipWorker || new (ZipDecoder as any)()) as Worker;
+    const decodeZipWorker = (decodeContextImages as any).zipWorker || new Worker(
+        new URL('./unzip_imgs.worker', import.meta.url),
+    );
     (decodeContextImages as any).zipWorker = decodeZipWorker;
     return new Promise((resolve, reject) => {
         decodeContextImages.mutex.acquire().then((release) => {
@@ -221,7 +221,9 @@ export class FrameDecoder {
             this.requestedChunkToDecode = null;
 
             if (this.blockType === BlockType.MP4VIDEO) {
-                const worker = new H264Decoder() as any as Worker;
+                const worker = new Worker(
+                    new URL('./3rdparty/Decoder.worker', import.meta.url),
+                );
                 let index = start;
 
                 worker.onmessage = (e) => {
@@ -286,7 +288,9 @@ export class FrameDecoder {
                     });
                 }
             } else {
-                this.zipWorker = this.zipWorker || new (ZipDecoder as any)() as any as Worker;
+                this.zipWorker = this.zipWorker || new Worker(
+                    new URL('./unzip_imgs.worker', import.meta.url),
+                );
                 let index = start;
 
                 this.zipWorker.onmessage = async (event) => {

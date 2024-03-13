@@ -138,11 +138,6 @@ description: 'Installing a development environment for different operating syste
   > ```
   > sudo ln -s /opt/homebrew/lib/libgeos_c.dylib /usr/local/lib
   > ```
-  >
-  > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have
-  > to edit `cvat/requirements/base.txt`.
-  > Change `tensorflow` to `tensorflow-macos`
-  > May need to downgrade version Python to 3.9.\* or upgrade version `tensorflow-macos`
 
   > Note for Arch Linux users:
   >
@@ -152,25 +147,21 @@ description: 'Installing a development environment for different operating syste
   >
   > Perform this action before installing cvat requirements from the list mentioned above.
 
-- Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
+- Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker Compose](https://docs.docker.com/compose/install/)
 
-- Pull and run Open Policy Agent docker image:
-
-  ```bash
-   docker run -d --rm --name cvat_opa_debug -p 8181:8181 openpolicyagent/opa:0.45.0-rootless \
-   run --server --set=decision_logs.console=true --set=services.cvat.url=http://host.docker.internal:7000 \
-   --set=bundles.cvat.service=cvat --set=bundles.cvat.resource=/api/auth/rules
-  ```
-
-- Pull and run PostgreSQL docker image:
+- Start service dependencies:
 
   ```bash
-  docker run --name cvat_db_debug -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_USER=root \
-  -e POSTGRES_DB=cvat -p 5432:5432 -d postgres
+  docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build \
+    cvat_opa cvat_db cvat_redis_inmem cvat_redis_ondisk cvat_server
   ```
 
-  Note: use `docker start/stop cvat_db_debug` commands to start and stop the container.
-  If it is removed, data will be removed together with the container.
+  Note: this runs an extra copy of the CVAT server in order to supply rules to OPA.
+  If you update the OPA rules, rerun this command to recreate the server image and container.
+
+  Note: to stop these services, use
+  `docker compose -f docker-compose.yml -f docker-compose.dev.yml down`.
+  You can add `-v` to remove the data, as well.
 
 - Apply migrations and create a super user for CVAT:
 

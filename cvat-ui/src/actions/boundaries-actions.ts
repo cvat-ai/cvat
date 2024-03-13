@@ -7,8 +7,8 @@ import {
     ActionUnion, createAction, ThunkAction, ThunkDispatch,
 } from 'utils/redux';
 import { getCore } from 'cvat-core-wrapper';
-import { LogType } from 'cvat-logger';
-import { computeZRange } from './annotation-actions';
+import { EventScope } from 'cvat-logger';
+import { fetchAnnotationsAsync } from './annotation-actions';
 
 const cvat = getCore();
 
@@ -24,7 +24,7 @@ export const boundariesActions = {
         openTime: number;
         frameNumber: number;
         frameFilename: string;
-        relatedFiles: boolean;
+        relatedFiles: number;
         colors: string[];
         filters: string[];
         frameData: any;
@@ -42,19 +42,15 @@ export function resetAfterErrorAsync(): ThunkAction {
 
             if (job) {
                 const currentFrame = state.annotation.player.frame.number;
-                const { showAllInterpolationTracks } = state.settings.workspace;
                 const frameNumber = Math.max(Math.min(job.stopFrame, currentFrame), job.startFrame);
-
-                const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, []);
                 const frameData = await job.frames.get(frameNumber);
-                const [minZ, maxZ] = computeZRange(states);
                 const colors = [...cvat.enums.colors];
 
-                await job.logger.log(LogType.restoreJob);
+                await job.logger.log(EventScope.restoreJob);
 
                 dispatch(boundariesActions.resetAfterError({
                     job,
-                    states,
+                    states: [],
                     openTime: state.annotation.job.openTime || Date.now(),
                     frameNumber,
                     frameFilename: frameData.filename,
@@ -62,9 +58,11 @@ export function resetAfterErrorAsync(): ThunkAction {
                     colors,
                     filters: [],
                     frameData,
-                    minZ,
-                    maxZ,
+                    minZ: 0,
+                    maxZ: 0,
                 }));
+
+                dispatch(fetchAnnotationsAsync());
             }
         } catch (error) {
             dispatch(boundariesActions.throwResetError());

@@ -62,7 +62,7 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
             );
             testPerspectiveChangeOnButtonClick(
                 '[aria-label="arrow-down"]',
-                'Arrow Bottom',
+                'Arrow Down',
                 'before_click_bottomarrow',
                 'after_click_bottomarrow',
                 true,

@@ -1,14 +1,8 @@
-module.exports = (function(){
-
-'use strict';
-
-
 function assert(condition, message) {
   if (!condition) {
     error(message);
   }
 };
-
 
 /**
  * Represents a 2-dimensional size value.
@@ -964,14 +958,11 @@ var Broadway = (function broadway() {
   return constructor;
 })();
 
-
-return {
+export {
   Size,
   Track,
   MP4Reader,
   MP4Player,
   Bytestream,
   Broadway,
-}
-
-})();
+};

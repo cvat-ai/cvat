@@ -7,7 +7,6 @@ import { ObjectType, Workspace } from 'reducers';
 
 export interface FilterAnnotationsParams {
     workspace: Workspace;
-    statesSources: number[];
     groundTruthJobFramesMeta?: FramesMetaData | null;
     exclude?: ObjectType[];
     include?: ObjectType[];
@@ -16,7 +15,7 @@ export interface FilterAnnotationsParams {
 
 export function filterAnnotations(annotations: ObjectState[], params: FilterAnnotationsParams): ObjectState[] {
     const {
-        workspace, statesSources, groundTruthJobFramesMeta, exclude, include, frame,
+        workspace, groundTruthJobFramesMeta, exclude, include, frame,
     } = params;
 
     if (Array.isArray(exclude) && Array.isArray(include)) {
@@ -29,10 +28,6 @@ export function filterAnnotations(annotations: ObjectState[], params: FilterAnno
         }
 
         if (Array.isArray(include) && !include.includes(state.objectType)) {
-            return false;
-        }
-
-        if (state.jobID && !statesSources.includes(state.jobID)) {
             return false;
         }
 

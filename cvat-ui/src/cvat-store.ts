@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -41,7 +42,7 @@ export default function createCVATStore(createRootReducer: () => Reducer): void 
     });
 }
 
-export function getCVATStore(): Store {
+export function getCVATStore(): Store<CombinedState> {
     if (store) {
         return store;
     }

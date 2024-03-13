@@ -8,12 +8,13 @@ import {
     FrameDecoder, BlockType, DimensionType, ChunkQuality, decodeContextImages, RequestOutdatedError,
 } from 'cvat-data';
 import PluginRegistry from './plugins';
-import serverProxy, { RawFramesMetaData } from './server-proxy';
+import serverProxy from './server-proxy';
+import { SerializedFramesMetaData } from './server-response-types';
 import { Exception, ArgumentError, DataError } from './exceptions';
 
 // frame storage by job id
 const frameDataCache: Record<string, {
-    meta: Omit<RawFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> };
+    meta: Omit<SerializedFramesMetaData, 'deleted_frames'> & { deleted_frames: Record<number, boolean> };
     chunkSize: number;
     mode: 'annotation' | 'interpolation';
     startFrame: number;
@@ -51,8 +52,8 @@ export class FramesMetaData {
     public startFrame: number;
     public stopFrame: number;
 
-    constructor(initialData: RawFramesMetaData) {
-        const data: RawFramesMetaData = {
+    constructor(initialData: SerializedFramesMetaData) {
+        const data: SerializedFramesMetaData = {
             chunk_size: undefined,
             deleted_frames: [],
             included_frames: [],
@@ -378,7 +379,7 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
     writable: false,
 });
 
-function getFrameMeta(jobID, frame): RawFramesMetaData['frames'][0] {
+function getFrameMeta(jobID, frame): SerializedFramesMetaData['frames'][0] {
     const { meta, mode, startFrame } = frameDataCache[jobID];
     let frameMeta = null;
     if (mode === 'interpolation' && meta.frames.length === 1) {
@@ -557,7 +558,7 @@ export async function getFrame(
     });
 }
 
-export async function getDeletedFrames(instanceType: 'job' | 'task', id) {
+export async function getDeletedFrames(instanceType: 'job' | 'task', id): Promise<Record<number, boolean>> {
     if (instanceType === 'job') {
         const { meta } = frameDataCache[id];
         return meta.deleted_frames;
@@ -565,8 +566,7 @@ export async function getDeletedFrames(instanceType: 'job' | 'task', id) {
 
     if (instanceType === 'task') {
         const meta = await serverProxy.frames.getMeta('task', id);
-        meta.deleted_frames = Object.fromEntries(meta.deleted_frames.map((_frame) => [_frame, true]));
-        return meta;
+        return Object.fromEntries(meta.deleted_frames.map((_frame) => [_frame, true]));
     }
 
     throw new Exception(`getDeletedFrames is not implemented for ${instanceType}`);
@@ -587,7 +587,7 @@ export function restoreFrame(jobID: number, frame: number): void {
 export async function patchMeta(jobID: number): Promise<void> {
     const { meta } = frameDataCache[jobID];
     const newMeta = await serverProxy.frames.saveMeta('job', jobID, {
-        deleted_frames: Object.keys(meta.deleted_frames),
+        deleted_frames: Object.keys(meta.deleted_frames).map((frame) => +frame),
     });
     const prevDeletedFrames = meta.deleted_frames;
 
@@ -599,7 +599,10 @@ export async function patchMeta(jobID: number): Promise<void> {
         prevDeletedFrames[frame] = true;
     }
 
-    frameDataCache[jobID].meta = newMeta;
+    frameDataCache[jobID].meta = {
+        ...newMeta,
+        deleted_frames: prevDeletedFrames,
+    };
     frameDataCache[jobID].meta.deleted_frames = prevDeletedFrames;
 }
 

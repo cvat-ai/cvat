@@ -22,7 +22,7 @@ spec:
       value: /opt/nuclio/hrnet
 
   build:
-    image: cvat.pth.saic-vul.hrnet
+    image: cvat.pth.saic-vul.hrnet:latest-gpu
     baseImage: ubuntu:20.04
 
     directives:

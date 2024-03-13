@@ -24,7 +24,6 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.utils import parse_specific_attributes
-from cvat.apps.organizations.models import Organization
 from cvat.apps.events.utils import cache_deleted
 
 class SafeCharField(models.CharField):
@@ -242,7 +241,7 @@ class Data(models.Model):
         return int(match.group(1)) if match else 1
 
     def get_valid_frame_indices(self):
-        return range(self.start_frame, self.stop_frame, self.get_frame_step())
+        return range(self.start_frame, self.stop_frame + 1, self.get_frame_step())
 
     def get_data_dirname(self):
         return os.path.join(settings.MEDIA_DATA_ROOT, str(self.id))
@@ -316,18 +315,26 @@ class Image(models.Model):
     class Meta:
         default_permissions = ()
 
-class Project(models.Model):
+class TimestampedModel(models.Model):
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+    def touch(self) -> None:
+        self.save(update_fields=["updated_date"])
+
+class Project(TimestampedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(User, null=True, blank=True,
                               on_delete=models.SET_NULL, related_name="+")
     assignee = models.ForeignKey(User, null=True, blank=True,
                                  on_delete=models.SET_NULL, related_name="+")
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
                               default=StatusChoice.ANNOTATION)
-    organization = models.ForeignKey(Organization, null=True, default=None,
+    organization = models.ForeignKey('organizations.Organization', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="projects")
     source_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
@@ -383,7 +390,7 @@ class TaskQuerySet(models.QuerySet):
             )
         )
 
-class Task(models.Model):
+class Task(TimestampedModel):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE,
@@ -396,8 +403,6 @@ class Task(models.Model):
     assignee = models.ForeignKey(User, null=True,  blank=True,
         on_delete=models.SET_NULL, related_name="assignees")
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
     overlap = models.PositiveIntegerField(null=True)
     # Zero means that there are no limits (default)
     # Note that the files can be split into jobs in a custom way in this case
@@ -407,7 +412,7 @@ class Task(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name="tasks")
     dimension = models.CharField(max_length=2, choices=DimensionType.choices(), default=DimensionType.DIM_2D)
     subset = models.CharField(max_length=64, blank=True, default="")
-    organization = models.ForeignKey(Organization, null=True, default=None,
+    organization = models.ForeignKey('organizations.Organization', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="tasks")
     source_storage = models.ForeignKey('Storage', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name='+')
@@ -599,7 +604,7 @@ class Segment(models.Model):
             )
 
         if self.stop_frame < self.start_frame:
-            raise ValidationError("stop_frame cannot be lesser than start_frame")
+            raise ValidationError("stop_frame cannot be less than start_frame")
 
         return super().clean()
 
@@ -656,14 +661,11 @@ class JobQuerySet(models.QuerySet):
 
 
 
-class Job(models.Model):
+class Job(TimestampedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
-
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
 
     # TODO: it has to be deleted in Job, Task, Project and replaced by (stage, state)
     # The stage field cannot be changed by an assignee, but state field can be. For
@@ -678,6 +680,12 @@ class Job(models.Model):
 
     type = models.CharField(max_length=32, choices=JobType.choices(),
         default=JobType.ANNOTATION)
+
+    def get_target_storage(self) -> Optional[Storage]:
+        return self.segment.task.target_storage
+
+    def get_source_storage(self) -> Optional[Storage]:
+        return self.segment.task.source_storage
 
     def get_dirname(self):
         return os.path.join(settings.JOBS_ROOT, str(self.id))
@@ -956,7 +964,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
 
-class Issue(models.Model):
+class Issue(TimestampedModel):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
     job = models.ForeignKey(Job, related_name='issues', on_delete=models.CASCADE)
@@ -964,8 +972,6 @@ class Issue(models.Model):
         on_delete=models.SET_NULL)
     assignee = models.ForeignKey(User, null=True, blank=True, related_name='+',
         on_delete=models.SET_NULL)
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
     resolved = models.BooleanField(default=False)
 
     def get_project_id(self):
@@ -985,12 +991,10 @@ class Issue(models.Model):
         return self.job_id
 
 
-class Comment(models.Model):
+class Comment(TimestampedModel):
     issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     message = models.TextField(default='')
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
 
     def get_project_id(self):
         return self.issue.get_project_id()
@@ -1066,7 +1070,7 @@ class Location(str, Enum):
     def list(cls):
         return [i.value for i in cls]
 
-class CloudStorage(models.Model):
+class CloudStorage(TimestampedModel):
     # restrictions:
     # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
     # https://cloud.google.com/storage/docs/naming-buckets#requirements
@@ -1084,13 +1088,11 @@ class CloudStorage(models.Model):
     display_name = models.CharField(max_length=63)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="cloud_storages")
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
-    credentials = models.CharField(max_length=500, null=True, blank=True)
+    credentials = models.CharField(max_length=1024, null=True, blank=True)
     credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
     specific_attributes = models.CharField(max_length=1024, blank=True)
     description = models.TextField(blank=True)
-    organization = models.ForeignKey(Organization, null=True, default=None,
+    organization = models.ForeignKey('organizations.Organization', null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="cloudstorages")
 
     class Meta:
@@ -1114,17 +1116,20 @@ class CloudStorage(models.Model):
 
 class Storage(models.Model):
     location = models.CharField(max_length=16, choices=Location.choices(), default=Location.LOCAL)
-    cloud_storage_id = models.IntegerField(null=True, blank=True, default=None)
+    cloud_storage = models.ForeignKey(
+        CloudStorage,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='+',
+    )
 
     class Meta:
         default_permissions = ()
 
-class AnnotationGuide(models.Model):
+class AnnotationGuide(TimestampedModel):
     task = models.OneToOneField(Task, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
     project = models.OneToOneField(Project, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide")
     markdown = models.TextField(blank=True, default='')
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=False)
 
     @property

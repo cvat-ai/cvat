@@ -12,7 +12,6 @@ from datumaro.components.errors import DatasetError, DatasetImportError, Dataset
 
 from django.db import transaction
 from django.db.models.query import Prefetch
-from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine import models, serializers
@@ -389,9 +388,8 @@ class JobAnnotation:
         self.ir_data.tags = tags
 
     def _set_updated_date(self):
-        db_task = self.db_job.segment.task
-        db_task.updated_date = timezone.now()
-        db_task.save()
+        self.db_job.segment.task.touch()
+        self.db_job.touch()
 
     def _save_to_db(self, data):
         self.reset()
@@ -404,7 +402,6 @@ class JobAnnotation:
     def _create(self, data):
         if self._save_to_db(data):
             self._set_updated_date()
-            self.db_job.save()
 
     def create(self, data):
         self._create(data)
@@ -551,9 +548,9 @@ class JobAnnotation:
         for db_shape in db_shapes:
             self._extend_attributes(db_shape.labeledshapeattributeval_set,
                 self.db_attributes[db_shape.label_id]["all"].values())
-            db_shape.elements = []
 
             if db_shape.parent is None:
+                db_shape.elements = []
                 shapes[db_shape.id] = db_shape
             else:
                 if db_shape.parent not in elements:
@@ -647,6 +644,7 @@ class JobAnnotation:
                 default_attribute_values = db_shape["trackedshapeattributeval_set"]
 
             if db_track.parent is None:
+                db_track.elements = []
                 tracks[db_track.id] = db_track
             else:
                 if db_track.parent not in elements:

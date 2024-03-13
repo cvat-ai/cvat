@@ -9,12 +9,11 @@ import operator
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from enum import Enum
-from importlib import import_module
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast, TypeVar
 
 from attrs import define, field
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, Model
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import BasePermission
 
@@ -54,7 +53,7 @@ class PermissionResult:
 
 def get_organization(request, obj):
     # Try to get organization from an object otherwise, return the organization that is specified in query parameters
-    if obj is not None and isinstance(obj, Organization):
+    if isinstance(obj, Organization):
         return obj
 
     if obj:
@@ -85,22 +84,24 @@ def get_membership(request, organization):
         is_active=True
     ).first()
 
+def build_iam_context(request, organization: Optional[Organization], membership: Optional[Membership]):
+    return {
+        'user_id': request.user.id,
+        'group_name': request.iam_context['privilege'],
+        'org_id': getattr(organization, 'id', None),
+        'org_slug': getattr(organization, 'slug', None),
+        'org_owner_id': getattr(organization.owner, 'id', None)
+            if organization else None,
+        'org_role': getattr(membership, 'role', None),
+    }
 
-def get_iam_context(request, obj):
+
+def get_iam_context(request, obj) -> Dict[str, Any]:
     organization = get_organization(request, obj)
     membership = get_membership(request, organization)
 
-    iam_context = dict()
-    for builder_func_path in settings.IAM_CONTEXT_BUILDERS:
-        package, attr = builder_func_path.rsplit('.', 1)
-        builder_func = getattr(import_module(package), attr)
-        iam_context.update(builder_func(request, organization, membership))
+    return build_iam_context(request, organization, membership)
 
-    # FIXME: The primary app should know nothing about is_crowdsourcing plugin.
-    if organization and not request.user.is_superuser and membership is None and not iam_context.get('is_crowdsourcing', False):
-        raise PermissionDenied({'message': 'You should be an active member in the organization'})
-
-    return iam_context
 
 class OpenPolicyAgentPermission(metaclass=ABCMeta):
     url: str
@@ -280,6 +281,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
         CREATE = 'create'
         DELETE = 'delete'
         ACCEPT = 'accept'
+        DECLINE = 'decline'
         RESEND = 'resend'
         VIEW = 'view'
 
@@ -309,6 +311,9 @@ class InvitationPermission(OpenPolicyAgentPermission):
             'partial_update': Scopes.ACCEPT if 'accepted' in
                 request.query_params else Scopes.RESEND,
             'retrieve': Scopes.VIEW,
+            'accept': Scopes.ACCEPT,
+            'decline': Scopes.DECLINE,
+            'resend': Scopes.RESEND,
         }.get(view.action)]
 
     def get_resource(self):
@@ -1942,6 +1947,13 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
                     permissions.append(TaskPermission.create_base_perm(
                         request, view, iam_context=iam_context, scope=task_scope, obj=obj.task
                     ))
+                elif scope == cls.Scopes.LIST:
+                    if task_id := request.query_params.get("task_id", None):
+                        permissions.append(TaskPermission.create_scope_view(
+                            request, int(task_id), iam_context=iam_context,
+                        ))
+
+                    permissions.append(cls.create_scope_list(request, iam_context))
                 else:
                     permissions.append(cls.create_base_perm(request, view, scope, iam_context, obj))
 
@@ -1987,22 +1999,27 @@ class QualitySettingPermission(OpenPolicyAgentPermission):
 
         return data
 
+T = TypeVar('T', bound=Model)
+
+def is_public_obj(obj: T) -> bool:
+    return getattr(obj, "is_public", False)
 
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
-    def check_permission(self, request, view, obj):
-        permissions: List[OpenPolicyAgentPermission] = []
-
-        iam_context = get_iam_context(request, obj)
-
+    def check_permission(self, request, view, obj) -> bool:
         # DRF can send OPTIONS request. Internally it will try to get
         # information about serializers for PUT and POST requests (clone
         # request and replace the http method). To avoid handling
         # ('POST', 'metadata') and ('PUT', 'metadata') in every request,
         # the condition below is enough.
-        if not self.is_metadata_request(request, view):
-            for perm in OpenPolicyAgentPermission.__subclasses__():
-                permissions.extend(perm.create(request, view, obj, iam_context))
+        if self.is_metadata_request(request, view) or obj and is_public_obj(obj):
+            return True
+
+        permissions: List[OpenPolicyAgentPermission] = []
+        iam_context = get_iam_context(request, obj)
+
+        for perm in OpenPolicyAgentPermission.__subclasses__():
+            permissions.extend(perm.create(request, view, obj, iam_context))
 
         allow = True
         for perm in permissions:
@@ -2024,6 +2041,14 @@ class PolicyEnforcer(BasePermission):
     def is_metadata_request(request, view):
         return request.method == 'OPTIONS' \
             or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
+
+class IsAuthenticatedOrReadPublicResource(BasePermission):
+    def has_object_permission(self, request, view, obj) -> bool:
+        return bool(
+            request.user and request.user.is_authenticated or
+            request.method == 'GET' and is_public_obj(obj)
+        )
+
 
 class AnalyticsReportPermission(OpenPolicyAgentPermission):
     class Scopes(StrEnum):

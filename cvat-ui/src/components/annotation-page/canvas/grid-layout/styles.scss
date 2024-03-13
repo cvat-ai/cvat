@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-@import 'base.scss';
+@import 'base';
 
 .cvat-canvas-grid-root {
     position: relative;
@@ -57,12 +57,14 @@
 }
 
 .cvat-canvas-grid-item {
-    background-color: rgba(241, 241, 241, 0.7);
+    background-color: rgba(241, 241, 241, 70%);
     border-radius: 4px;
 
+    /* stylelint-disable selector-class-pattern */
     &.react-grid-item.cssTransforms {
         transition-property: all;
     }
+    /* stylelint-enable selector-class-pattern */
 
     &.cvat-canvas-grid-fullscreen-item {
         width: 100% !important;
@@ -117,8 +119,8 @@
             right: 0;
             width: 9px;
             height: 10px;
-            border-right: 2px solid rgba(0, 0, 0, 1);
-            border-bottom: 2px solid rgba(0, 0, 0, 1);
+            border-right: 2px solid rgba(0, 0, 0, 100%);
+            border-bottom: 2px solid rgba(0, 0, 0, 100%);
         }
     }
 }

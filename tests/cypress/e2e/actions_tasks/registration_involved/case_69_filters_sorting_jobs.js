@@ -46,7 +46,7 @@ context('Filtering, sorting jobs.', () => {
     }
 
     function checkContentsRow(index, stage, state, assignee) {
-        cy.getJobNum(index).then(($job) => {
+        cy.getJobIDFromIdx(index).then(($job) => {
             cy.get('.cvat-task-job-list')
                 .contains('a', `Job #${$job}`)
                 .parents('.cvat-job-item').within(() => {
@@ -130,11 +130,11 @@ context('Filtering, sorting jobs.', () => {
         );
 
         cy.openTask(taskName);
-        cy.assignJobToUser(0, secondUserName);
-        cy.assignJobToUser(1, secondUserName);
+        cy.getJobIDFromIdx(0).then((jobID) => cy.assignJobToUser(jobID, secondUserName));
+        cy.getJobIDFromIdx(1).then((jobID) => cy.assignJobToUser(jobID, secondUserName));
 
         // The first job - stage "validation"
-        cy.setJobStage(0, 'validation');
+        cy.getJobIDFromIdx(0).then((jobID) => cy.setJobStage(jobID, 'validation'));
 
         // The second job - status "completed"
         cy.openJob(1);

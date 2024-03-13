@@ -9,20 +9,27 @@
     padding-top: $grid-unit-size * 2;
     padding-bottom: $grid-unit-size;
     overflow: auto;
-    position: fixed;
     height: 100%;
     width: 100%;
 
+    .cvat-models-page-top-bar {
+        padding-bottom: $grid-unit-size;
+    }
+
     >div:nth-child(2) {
-        height: 80%;
+        &:not(.cvat-empty-models-list) {
+            height: 90%;
+        }
     }
 }
 
 .cvat-empty-models-list {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    .ant-empty {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
 }
 
 .cvat-models-list {
@@ -68,8 +75,6 @@
 }
 
 .cvat-models-page-top-bar {
-    margin: $grid-unit-size * 3 0;
-
     .cvat-models-page-search-bar {
         width: $grid-unit-size * 32;
         padding-left: $grid-unit-size * 0.5;

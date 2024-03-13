@@ -745,7 +745,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         if (![Mode.DRAG_CANVAS, Mode.IDLE].includes(this.mode)) return;
         this.isPerspectiveBeingDragged = true;
         this.enablePerspectiveDragging();
-    }
+    };
 
     private startAction(view: any, event: MouseEvent): void {
         const { clientID } = this.model.data.activeElement;
@@ -863,13 +863,14 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.resetActions();
     }
 
-    private onGroupDone(objects?: any[]): void {
+    private onGroupDone(objects?: any[], duration?: number): void {
         if (objects && objects.length !== 0) {
             this.dispatchEvent(
                 new CustomEvent('canvas.groupped', {
                     bubbles: false,
                     cancelable: true,
                     detail: {
+                        duration,
                         states: objects,
                     },
                 }),
@@ -910,12 +911,13 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         this.mode = Mode.IDLE;
     }
 
-    private onSplitDone(object: ObjectState): void {
+    private onSplitDone(object: ObjectState, duration?: number): void {
         if (object) {
             const event: CustomEvent = new CustomEvent('canvas.splitted', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
+                    duration,
                     state: object,
                     frame: object.frame,
                 },

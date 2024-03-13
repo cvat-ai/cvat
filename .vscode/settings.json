@@ -30,9 +30,6 @@
         }
     ],
     "python.defaultInterpreterPath": "${workspaceFolder}/.env/",
-    "python.linting.enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.pycodestyleEnabled": false,
     "python.testing.pytestArgs": [
         "--rootdir","${workspaceFolder}/tests/"
     ],

@@ -58,7 +58,7 @@ import UpdateWebhookPage from 'components/setup-webhook-pages/update-webhook-pag
 
 import GuidePage from 'components/md-guide/guide-page';
 
-import AcceptInvitationPage from 'components/accept-invitation-page/accept-invitation-page';
+import InvitationsPage from 'components/invitations-page/invitations-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { Organization, getCore } from 'cvat-core-wrapper';
@@ -72,11 +72,13 @@ import showPlatformNotification, {
 import '../styles.scss';
 import appConfig from 'config';
 import EventRecorder from 'utils/controls-logger';
+import { authQuery } from 'utils/auth-query';
 import EmailConfirmationPage from './email-confirmation-pages/email-confirmed';
 import EmailVerificationSentPage from './email-confirmation-pages/email-verification-sent';
 import IncorrectEmailConfirmationPage from './email-confirmation-pages/incorrect-email-confirmation';
 import CreateJobPage from './create-job-page/create-job-page';
 import AnalyticsPage from './analytics-page/analytics-page';
+import InvitationWatcher from './invitation-watcher/invitation-watcher';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -87,8 +89,9 @@ interface CVATAppProps {
     initModels: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
-    loadAuthActions: () => void;
     loadOrganization: () => void;
+    initInvitations: () => void;
+    loadServerAPISchema: () => void;
     userInitialized: boolean;
     userFetching: boolean;
     organizationFetching: boolean;
@@ -103,12 +106,16 @@ interface CVATAppProps {
     aboutFetching: boolean;
     userAgreementsFetching: boolean;
     userAgreementsInitialized: boolean;
-    authActionsFetching: boolean;
-    authActionsInitialized: boolean;
     notifications: NotificationsState;
     user: any;
     isModelPluginActive: boolean;
     pluginComponents: PluginsState['components'];
+    invitationsFetching: boolean;
+    invitationsInitialized: boolean;
+    serverAPISchemaFetching: boolean;
+    serverAPISchemaInitialized: boolean;
+    isPasswordResetEnabled: boolean;
+    isRegistrationEnabled: boolean;
 }
 
 interface CVATAppState {
@@ -256,7 +263,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             initPlugins,
             initModels,
             loadOrganization,
-            loadAuthActions,
+            loadServerAPISchema,
             userInitialized,
             userFetching,
             organizationFetching,
@@ -272,9 +279,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             user,
             userAgreementsFetching,
             userAgreementsInitialized,
-            authActionsFetching,
-            authActionsInitialized,
             isModelPluginActive,
+            invitationsInitialized,
+            invitationsFetching,
+            initInvitations,
+            history,
+            serverAPISchemaFetching,
+            serverAPISchemaInitialized,
         } = this.props;
 
         const { backendIsHealthy } = this.state;
@@ -296,11 +307,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (!authActionsInitialized && !authActionsFetching) {
-            loadAuthActions();
+        if (!serverAPISchemaInitialized && !serverAPISchemaFetching) {
+            loadServerAPISchema();
         }
 
-        if (user == null || !user.isVerified) {
+        if (user == null || !user.isVerified || !user.id) {
             return;
         }
 
@@ -318,6 +329,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (isModelPluginActive && !modelsInitialized && !modelsFetching) {
             initModels();
+        }
+
+        if (!invitationsInitialized && !invitationsFetching && history.location.pathname !== '/invitations') {
+            initInvitations();
         }
 
         if (!pluginsInitialized && !pluginsFetching) {
@@ -355,7 +370,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     private showErrors(): void {
         function showError(title: string, _error: Error, shouldLog?: boolean, className?: string): void {
-            const error = _error.toString();
+            const error = _error?.message || _error.toString();
             const dynamicProps = typeof className === 'undefined' ? {} : { className };
             notification.error({
                 ...dynamicProps,
@@ -412,17 +427,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             modelsInitialized,
             organizationInitialized,
             userAgreementsInitialized,
-            authActionsInitialized,
+            serverAPISchemaInitialized,
             pluginComponents,
             user,
             location,
             isModelPluginActive,
+            isPasswordResetEnabled,
+            isRegistrationEnabled,
         } = this.props;
 
         const { healthIinitialized, backendIsHealthy } = this.state;
 
         const notRegisteredUserInitialized = (userInitialized && (user == null || !user.isVerified));
-        let readyForRender = userAgreementsInitialized && authActionsInitialized;
+        let readyForRender = userAgreementsInitialized && serverAPISchemaInitialized;
         readyForRender = readyForRender && (notRegisteredUserInitialized ||
             (
                 userInitialized &&
@@ -443,6 +460,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             .map(({ component: Component }) => Component);
 
         const queryParams = new URLSearchParams(location.search);
+        const authParams = authQuery(queryParams);
 
         if (readyForRender) {
             if (user && user.isVerified) {
@@ -494,6 +512,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/organization/webhooks' component={WebhooksPage} />
                                         <Route exact path='/webhooks/create' component={CreateWebhookPage} />
                                         <Route exact path='/webhooks/update/:id' component={UpdateWebhookPage} />
+                                        <Route exact path='/invitations' component={InvitationsPage} />
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         { routesToRender }
                                         {isModelPluginActive && (
@@ -509,6 +528,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                             push
                                             to={{
                                                 pathname: queryParams.get('next') || '/tasks',
+                                                search: authParams ? new URLSearchParams(authParams).toString() : '',
                                             }}
                                         />
                                     </Switch>
@@ -516,6 +536,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <ExportBackupModal />
                                     <ImportDatasetModal />
                                     <ImportBackupModal />
+                                    <InvitationWatcher />
                                     { loggedInModals.map((Component, idx) => (
                                         <Component key={idx} targetProps={this.props} targetState={this.state} />
                                     ))}
@@ -530,30 +551,38 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
             return (
                 <GlobalErrorBoundary>
-                    <Switch>
-                        <Route exact path='/auth/register/invitation' component={AcceptInvitationPage} />
-                        <Route exact path='/auth/register' component={RegisterPageContainer} />
-                        <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
-                        <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
-                        <Route exact path='/auth/login' component={LoginPageContainer} />
-                        <Route
-                            exact
-                            path='/auth/login-with-token/:token'
-                            component={LoginWithTokenComponent}
-                        />
-                        <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
-                        <Route
-                            exact
-                            path='/auth/password/reset/confirm'
-                            component={ResetPasswordPageConfirmComponent}
-                        />
+                    <>
+                        <Switch>
+                            {isRegistrationEnabled && (
+                                <Route exact path='/auth/register' component={RegisterPageContainer} />
+                            )}
+                            <Route exact path='/auth/email-verification-sent' component={EmailVerificationSentPage} />
+                            <Route exact path='/auth/incorrect-email-confirmation' component={IncorrectEmailConfirmationPage} />
+                            <Route exact path='/auth/login' component={LoginPageContainer} />
+                            <Route
+                                exact
+                                path='/auth/login-with-token/:token'
+                                component={LoginWithTokenComponent}
+                            />
+                            {isPasswordResetEnabled && (
+                                <Route exact path='/auth/password/reset' component={ResetPasswordPageComponent} />
+                            )}
+                            {isPasswordResetEnabled && (
+                                <Route
+                                    exact
+                                    path='/auth/password/reset/confirm'
+                                    component={ResetPasswordPageConfirmComponent}
+                                />
+                            )}
 
-                        <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
-                        { routesToRender }
-                        <Redirect
-                            to={location.pathname.length > 1 ? `/auth/login?next=${location.pathname}` : '/auth/login'}
-                        />
-                    </Switch>
+                            <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
+                            { routesToRender }
+                            <Redirect
+                                to={location.pathname.length > 1 ? `/auth/login?next=${location.pathname}` : '/auth/login'}
+                            />
+                        </Switch>
+                        <InvitationWatcher />
+                    </>
                 </GlobalErrorBoundary>
             );
         }

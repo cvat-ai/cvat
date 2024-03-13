@@ -1,5 +1,5 @@
 av==9.2.0  # Pinned for the whole CVAT
 natsort>=8.0.0
 opencv-python-headless>=4.4.0.42
-Pillow>=10.0.1
+Pillow>=10.1.0
 tqdm>=4.58.0

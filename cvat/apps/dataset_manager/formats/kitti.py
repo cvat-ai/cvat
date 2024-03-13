@@ -1,5 +1,5 @@
 # Copyright (C) 2021-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -19,16 +19,16 @@ from .utils import make_colormap
 
 @exporter(name='KITTI', ext='ZIP', version='1.0')
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    dataset = Dataset.from_extractors(GetCVATDataExtractor(instance_data,
-        include_images=save_images), env=dm_env)
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = Dataset.from_extractors(extractor, env=dm_env)
 
-    dataset.transform(RotatedBoxesToPolygons)
-    dataset.transform('polygons_to_masks')
-    dataset.transform('merge_instance_segments')
-    dataset.export(temp_dir, format='kitti',
-        label_map={k: v[0] for k, v in make_colormap(instance_data).items()},
-        apply_colormap=True, save_images=save_images
-    )
+        dataset.transform(RotatedBoxesToPolygons)
+        dataset.transform('polygons_to_masks')
+        dataset.transform('merge_instance_segments')
+        dataset.export(temp_dir, format='kitti',
+            label_map={k: v[0] for k, v in make_colormap(instance_data).items()},
+            apply_colormap=True, save_images=save_images
+        )
 
     make_zip_archive(temp_dir, dst_file)
 

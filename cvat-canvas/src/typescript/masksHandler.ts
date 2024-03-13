@@ -1,8 +1,9 @@
-// Copyright (C) 2022 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { fabric } from 'fabric';
+import debounce from 'lodash/debounce';
 
 import {
     DrawData, MasksEditData, Geometry, Configuration, BrushTool, ColorBy,
@@ -120,7 +121,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.clear();
         this.canvas.renderAll();
         this.isInsertion = false;
-        this.drawnObjects = [];
+        this.drawnObjects = this.createDrawnObjectsArray();
         this.onDrawDone(null);
     }
 
@@ -136,7 +137,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isDrawing = false;
         this.isInsertion = false;
         this.redraw = null;
-        this.drawnObjects = [];
+        this.drawnObjects = this.createDrawnObjectsArray();
         this.onDrawDone(null);
     }
 
@@ -150,7 +151,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.clear();
         this.canvas.renderAll();
         this.isEditing = false;
-        this.drawnObjects = [];
+        this.drawnObjects = this.createDrawnObjectsArray();
         this.onEditDone(null, null);
     }
 
@@ -255,6 +256,8 @@ export class MasksHandlerImpl implements MasksHandler {
             if (this.isDrawing || this.isEditing) {
                 this.setupBrushMarker();
             }
+
+            this.updateBlockedTools();
         }
 
         if (this.tool?.type?.startsWith('polygon-')) {
@@ -294,16 +297,47 @@ export class MasksHandlerImpl implements MasksHandler {
         }
     }
 
+    private updateBlockedTools(): void {
+        if (this.drawnObjects.length === 0) {
+            this.tool.onBlockUpdated({
+                eraser: true,
+                'polygon-minus': true,
+            });
+            return;
+        }
+        const wrappingBbox = this.getDrawnObjectsWrappingBox();
+        if (this.brushMarker) {
+            this.canvas.remove(this.brushMarker);
+        }
+        const imageData = this.imageDataFromCanvas(wrappingBbox);
+        if (this.brushMarker) {
+            this.canvas.add(this.brushMarker);
+        }
+        const rle = zipChannels(imageData);
+        const emptyMask = rle.length < 2;
+        this.tool.onBlockUpdated({
+            eraser: emptyMask,
+            'polygon-minus': emptyMask,
+        });
+    }
+
+    private createDrawnObjectsArray(): MasksHandlerImpl['drawnObjects'] {
+        const drawnObjects = [];
+        const updateBlockedToolsDebounced = debounce(this.updateBlockedTools.bind(this), 250);
+        return new Proxy(drawnObjects, {
+            set(target, property, value) {
+                target[property] = value;
+                updateBlockedToolsDebounced();
+                return true;
+            },
+        });
+    }
+
     public constructor(
-        onDrawDone: (
-            data: object | null,
-            duration?: number,
-            continueDraw?: boolean,
-            prevDrawData?: DrawData,
-        ) => void,
-        onDrawRepeat: (data: DrawData) => void,
-        onEditStart: (state: any) => void,
-        onEditDone: (state: any, points: number[]) => void,
+        onDrawDone: MasksHandlerImpl['onDrawDone'],
+        onDrawRepeat: MasksHandlerImpl['onDrawRepeat'],
+        onEditStart: MasksHandlerImpl['onEditStart'],
+        onEditDone: MasksHandlerImpl['onEditDone'],
         vectorDrawHandler: DrawHandler,
         canvas: HTMLCanvasElement,
     ) {
@@ -315,7 +349,6 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isPolygonDrawing = false;
         this.drawData = null;
         this.editData = null;
-        this.drawnObjects = [];
         this.drawingOpacity = 0.5;
         this.brushMarker = null;
         this.colorBy = ColorBy.LABEL;
@@ -331,6 +364,7 @@ export class MasksHandlerImpl implements MasksHandler {
             defaultCursor: 'inherit',
         });
         this.canvas.imageSmoothingEnabled = false;
+        this.drawnObjects = this.createDrawnObjectsArray();
 
         this.canvas.getElement().parentElement.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
         this.latestMousePos = { x: -1, y: -1 };
@@ -354,6 +388,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.onDrawDone({
                     shapeType: this.drawData.shapeType,
                     points: rle,
+                    label: this.drawData.initialState.label,
                 }, Date.now() - this.startTimestamp, continueInserting, this.drawData);
 
                 if (!continueInserting) {
@@ -450,7 +485,7 @@ export class MasksHandlerImpl implements MasksHandler {
                 }
 
                 this.canvas.add(shape);
-                if (tool.type === 'brush') {
+                if (['brush', 'eraser'].includes(tool?.type)) {
                     this.drawnObjects.push(shape);
                 }
 
@@ -472,7 +507,7 @@ export class MasksHandlerImpl implements MasksHandler {
                         });
 
                         this.canvas.add(line);
-                        if (tool.type === 'brush') {
+                        if (['brush', 'eraser'].includes(tool?.type)) {
                             this.drawnObjects.push(line);
                         }
                     }
@@ -564,14 +599,21 @@ export class MasksHandlerImpl implements MasksHandler {
             try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                    this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
                     const rle = zipChannels(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
-                    this.onDrawDone({
-                        shapeType: this.drawData.shapeType,
-                        points: rle,
-                        ...(Number.isInteger(this.redraw) ? { clientID: this.redraw } : {}),
-                    }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
+
+                    const isEmptyMask = rle.length < 6;
+                    if (isEmptyMask) {
+                        this.onDrawDone(null);
+                    } else {
+                        this.onDrawDone({
+                            shapeType: this.drawData.shapeType,
+                            points: rle,
+                            ...(Number.isInteger(this.redraw) ? { clientID: this.redraw } : {}),
+                        }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
+                    }
                 }
             } finally {
                 this.releaseDraw();
@@ -634,10 +676,16 @@ export class MasksHandlerImpl implements MasksHandler {
             try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();
+                    this.removeBrushMarker(); // remove brush marker from final mask
                     const imageData = this.imageDataFromCanvas(wrappingBbox);
                     const rle = zipChannels(imageData);
                     rle.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
-                    this.onEditDone(this.editData.state, rle);
+                    const isEmptyMask = rle.length < 6;
+                    if (isEmptyMask) {
+                        this.onEditDone(null, null);
+                    } else {
+                        this.onEditDone(this.editData.state, rle);
+                    }
                 }
             } finally {
                 this.releaseEdit();

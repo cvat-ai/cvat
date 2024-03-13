@@ -5,7 +5,6 @@
 
 import io
 import json
-from enum import Enum
 from functools import partial
 from http import HTTPStatus
 from typing import Any, Optional
@@ -449,47 +448,31 @@ class TestGetCloudStoragePreview:
 class TestGetCloudStorageContent:
     USER = "admin1"
 
-    class SUPPORTED_VERSIONS(str, Enum):
-        V1 = "v1"
-        V2 = "v2"
-
     def _test_get_cloud_storage_content(
         self,
         cloud_storage_id: int,
-        version: SUPPORTED_VERSIONS = SUPPORTED_VERSIONS.V2,
         manifest: Optional[str] = None,
         **kwargs,
     ):
         with make_api_client(self.USER) as api_client:
             content_kwargs = {"manifest_path": manifest} if manifest else {}
 
-            if version == self.SUPPORTED_VERSIONS.V2:
-                for item in ["next_token", "prefix", "page_size"]:
-                    if item_value := kwargs.get(item):
-                        content_kwargs[item] = item_value
+            for item in ["next_token", "prefix", "page_size"]:
+                if item_value := kwargs.get(item):
+                    content_kwargs[item] = item_value
 
-            methods = {
-                self.SUPPORTED_VERSIONS.V1: api_client.cloudstorages_api.retrieve_content,
-                self.SUPPORTED_VERSIONS.V2: api_client.cloudstorages_api.retrieve_content_v2,
-            }
-            (data, _) = methods[version](cloud_storage_id, **content_kwargs)
+            (data, _) = api_client.cloudstorages_api.retrieve_content_v2(
+                cloud_storage_id, **content_kwargs
+            )
 
             return data
 
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize(
-        "version, manifest, prefix, default_bucket_prefix, page_size, expected_content",
+        "manifest, prefix, default_bucket_prefix, page_size, expected_content",
         [
             (
-                SUPPORTED_VERSIONS.V1,  # [v1] list all bucket content
-                "sub/manifest.jsonl",
-                None,
-                None,
-                None,
-                ["sub/image_case_65_1.png", "sub/image_case_65_2.png"],
-            ),
-            (
-                SUPPORTED_VERSIONS.V2,  # [v2] list the top level of bucket with based on manifest
+                # [v2] list the top level of bucket with based on manifest
                 "sub/manifest.jsonl",
                 None,
                 None,
@@ -497,7 +480,7 @@ class TestGetCloudStorageContent:
                 [FileInfo(mime_type="DIR", name="sub", type="DIR")],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] search by some prefix in bucket content based on manifest
+                # [v2] search by some prefix in bucket content based on manifest
                 "sub/manifest.jsonl",
                 "sub/image_case_65_1",
                 None,
@@ -507,7 +490,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list the second layer (directory "sub") of bucket content based on manifest
+                # [v2] list the second layer (directory "sub") of bucket content based on manifest
                 "sub/manifest.jsonl",
                 "sub/",
                 None,
@@ -518,7 +501,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list the top layer of real bucket content
+                # [v2] list the top layer of real bucket content
                 None,
                 None,
                 None,
@@ -526,7 +509,7 @@ class TestGetCloudStorageContent:
                 [FileInfo(mime_type="DIR", name="sub", type="DIR")],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list the second layer (directory "sub") of real bucket content
+                # [v2] list the second layer (directory "sub") of real bucket content
                 None,
                 "sub/",
                 None,
@@ -537,7 +520,6 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,
                 None,
                 "/sub/",  # cover case: API is identical to share point API
                 None,
@@ -552,7 +534,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when default bucket prefix is set to directory
+                # [v2] list bucket content based on manifest when default bucket prefix is set to directory
                 "sub/manifest.jsonl",
                 None,
                 "sub/",
@@ -565,7 +547,6 @@ class TestGetCloudStorageContent:
             (
                 # [v2] list bucket content based on manifest when default bucket prefix
                 # is set to template from which the files should start
-                SUPPORTED_VERSIONS.V2,
                 "sub/manifest.jsonl",
                 None,
                 "sub/image_case_65_1",
@@ -575,7 +556,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when specified prefix is stricter than default bucket prefix
+                # [v2] list bucket content based on manifest when specified prefix is stricter than default bucket prefix
                 "sub/manifest.jsonl",
                 "sub/image_case_65_1",
                 "sub/image_case",
@@ -585,7 +566,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when default bucket prefix is stricter than specified prefix
+                # [v2] list bucket content based on manifest when default bucket prefix is stricter than specified prefix
                 "sub/manifest.jsonl",
                 "sub/image_case",
                 "sub/image_case_65_1",
@@ -595,7 +576,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when default bucket prefix and specified prefix have no intersection
+                # [v2] list bucket content based on manifest when default bucket prefix and specified prefix have no intersection
                 "sub/manifest.jsonl",
                 "sub/image_case_65_1",
                 "sub/image_case_65_2",
@@ -603,7 +584,7 @@ class TestGetCloudStorageContent:
                 [],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list bucket content based on manifest when default bucket prefix contains dirs and prefix starts with it
+                # [v2] list bucket content based on manifest when default bucket prefix contains dirs and prefix starts with it
                 "sub/manifest.jsonl",
                 "s",
                 "sub/",
@@ -613,7 +594,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when default bucket prefix is set to directory
+                # [v2] list real bucket content when default bucket prefix is set to directory
                 None,
                 None,
                 "sub/",
@@ -630,7 +611,6 @@ class TestGetCloudStorageContent:
             (
                 # [v2] list real bucket content when default bucket prefix
                 # is set to template from which the files should start
-                SUPPORTED_VERSIONS.V2,
                 None,
                 None,
                 "sub/demo",
@@ -640,7 +620,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when specified prefix is stricter than default bucket prefix
+                # [v2] list real bucket content when specified prefix is stricter than default bucket prefix
                 None,
                 "sub/image_case_65_1",
                 "sub/image_case",
@@ -650,7 +630,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when default bucket prefix is stricter than specified prefix
+                # [v2] list real bucket content when default bucket prefix is stricter than specified prefix
                 None,
                 "sub/image_case",
                 "sub/image_case_65_1",
@@ -660,7 +640,7 @@ class TestGetCloudStorageContent:
                 ],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when default bucket prefix and specified prefix have no intersection
+                # [v2] list real bucket content when default bucket prefix and specified prefix have no intersection
                 None,
                 "sub/image_case_65_1",
                 "sub/image_case_65_2",
@@ -668,7 +648,7 @@ class TestGetCloudStorageContent:
                 [],
             ),
             (
-                SUPPORTED_VERSIONS.V2,  # [v2] list real bucket content when default bucket prefix contains dirs and prefix starts with it
+                # [v2] list real bucket content when default bucket prefix contains dirs and prefix starts with it
                 None,
                 "s",
                 "sub/",
@@ -682,7 +662,6 @@ class TestGetCloudStorageContent:
     def test_get_cloud_storage_content(
         self,
         cloud_storage_id: int,
-        version: SUPPORTED_VERSIONS,
         manifest: Optional[str],
         prefix: Optional[str],
         default_bucket_prefix: Optional[str],
@@ -703,13 +682,10 @@ class TestGetCloudStorageContent:
                 assert response.status == HTTPStatus.OK
 
         result = self._test_get_cloud_storage_content(
-            cloud_storage_id, version, manifest, prefix=prefix, page_size=page_size
+            cloud_storage_id, manifest, prefix=prefix, page_size=page_size
         )
         if expected_content:
-            if version == self.SUPPORTED_VERSIONS.V1:
-                assert result == expected_content
-            else:
-                assert result["content"] == expected_content
+            assert result["content"] == expected_content
         if page_size:
             assert len(result["content"]) <= page_size
 
@@ -717,16 +693,15 @@ class TestGetCloudStorageContent:
     def test_iterate_over_cloud_storage_content(
         self, cloud_storage_id: int, prefix: str, page_size: int
     ):
-        expected_content = self._test_get_cloud_storage_content(
-            cloud_storage_id, self.SUPPORTED_VERSIONS.V2, prefix=prefix
-        )["content"]
+        expected_content = self._test_get_cloud_storage_content(cloud_storage_id, prefix=prefix)[
+            "content"
+        ]
 
         current_content = []
         next_token = None
         while True:
             result = self._test_get_cloud_storage_content(
                 cloud_storage_id,
-                self.SUPPORTED_VERSIONS.V2,
                 prefix=prefix,
                 page_size=page_size,
                 next_token=next_token,

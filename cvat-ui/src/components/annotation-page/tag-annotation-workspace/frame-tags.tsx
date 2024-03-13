@@ -17,7 +17,6 @@ import { filterAnnotations } from 'utils/filter-annotations';
 
 interface StateToProps {
     states: ObjectState[];
-    statesSources: number[];
     workspace: Workspace;
 }
 
@@ -28,16 +27,12 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            annotations: { states, statesSources },
+            annotations: { states },
             workspace,
         },
     } = state;
 
-    return {
-        states,
-        statesSources,
-        workspace,
-    };
+    return { states, workspace };
 }
 
 function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>): DispatchToProps {
@@ -49,12 +44,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch<CombinedState, {}, Action>):
 }
 
 function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
-    const {
-        states,
-        statesSources,
-        workspace,
-        removeObject,
-    } = props;
+    const { states, workspace, removeObject } = props;
 
     const [frameTags, setFrameTags] = useState([] as ObjectState[]);
 
@@ -64,13 +54,9 @@ function FrameTags(props: StateToProps & DispatchToProps): JSX.Element {
 
     useEffect(() => {
         setFrameTags(
-            filterAnnotations(states, {
-                statesSources,
-                workspace,
-                include: [ObjectType.TAG],
-            }),
+            filterAnnotations(states, { workspace, include: [ObjectType.TAG] }),
         );
-    }, [states, statesSources]);
+    }, [states]);
 
     return (
         <>

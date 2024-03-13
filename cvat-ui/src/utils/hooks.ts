@@ -10,6 +10,7 @@ import {
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { CombinedState, PluginComponent } from 'reducers';
+import { authQuery } from './auth-query';
 
 // eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
@@ -121,4 +122,11 @@ export function useCardHeightHOC(params: ICardHeightHOC): () => string {
 
         return height;
     };
+}
+
+export function useAuthQuery(): Record<string, string> | null {
+    const history = useHistory();
+
+    const queryParams = new URLSearchParams(history.location.search);
+    return authQuery(queryParams);
 }

@@ -162,13 +162,13 @@ allow {
 
 
 allow {
-    input.scope == utils.ACCEPT
+    { utils.ACCEPT, utils.DECLINE }[input.scope]
     input.resource.invitee.id == input.auth.user.id
     utils.is_sandbox
 }
 
 allow {
-    input.scope == utils.ACCEPT
+    { utils.ACCEPT, utils.DECLINE }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     input.resource.invitee.id == input.auth.user.id
 }

@@ -156,8 +156,7 @@ To add an attribute, do the following:
 6. (Optional) To set the default attribute, hover over it with mouse cursor and
    click on it. The default attribute will change color to blue.
 
-  ![Default attribute](/images/default_attribute.jpg)
-
+![Default attribute](/images/default_attribute.jpg)
 
 To delete an attribute, click **Delete attribute**.
 
@@ -167,12 +166,12 @@ There are several ways to upload files:
 
 <!--lint disable maximum-line-length-->
 
-| Data source          | Description                                                                                                                                                                                                                                         |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| My computer          | Use this option to select files from your laptop or PC. <br> To select file: <br>1. Click on the **Select files** field: <br>![Select files](/images/select_files.jpg). <br> 2. Select files to upload.                                             |
-| Connected file share | **Advanced option**. <br>Upload files from a local or cloud shared folder. <br>**Note**, that you need to mount a fileshare first. <br>For more information, see [Share path](/docs/administration/basics/installation/#share-path)                 |
-| Remote source        | Enter a list of URLs (one per line) in the field.                                                                                                                                                                                                   |
-| Cloud Storage        | **Advanced option**. <br>To upload files from cloud storage, type the cloud storage name, choose the manifest file, and select the required files. <br> For more information, see [Attach cloud storage](/docs/manual/basics/attach-cloud-storage/) |
+| Data source          | Description                                                                                                                                                                                                                                                                                                                                           |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| My computer          | Use this option to select files from your laptop or PC. <br> To select file: <br>1. Click on the **Select files** field: <br>![Select files](/images/select_files.jpg). <br> 2. Select files to upload.                                                                                                                                               |
+| Connected file share | **Advanced option**. <br>Upload files from a local or cloud shared folder. <br>**Note**, that you need to mount a fileshare first. <br>For more information, see [Share path](/docs/administration/basics/installation/#share-path)                                                                                                                   |
+| Remote source        | Enter a list of URLs (one per line) in the field.                                                                                                                                                                                                                                                                                                     |
+| Cloud Storage        | **Advanced option**. <br>To upload files from cloud storage, type the cloud storage name, (optional) choose the manifest file, and select the required files. <br> For more information, see [Attach cloud storage](/docs/manual/basics/attach-cloud-storage/). Use the search feature to find a file (by file name) from the connected cloud storage. |
 
 <!--lint enable maximum-line-length-->
 
@@ -239,7 +238,6 @@ To create a 3D task, you must prepare an archive with one of the following direc
 
 {{< /tab >}}
 {{< /tabpane >}}
-
 
 ## Advanced configuration
 

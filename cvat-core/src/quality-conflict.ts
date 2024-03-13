@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { SerializedAnnotationConflictData, SerializedQualityConflictData } from './server-response-types';
+import { ObjectType } from './enums';
+
 export enum QualityConflictType {
     EXTRA = 'extra_annotation',
     MISMATCHING = 'mismatching_label',
@@ -13,31 +16,10 @@ export enum ConflictSeverity {
     WARNING = 'warning',
 }
 
-export interface SerializedQualityConflictData {
-    id?: number;
-    frame?: number;
-    type?: string;
-    annotation_ids?: SerializedAnnotationConflictData[];
-    data?: string;
-    severity?: string;
-    description?: string;
-}
-
-export interface SerializedAnnotationConflictData {
-    job_id?: number;
-    obj_id?: number;
-    client_id?: number;
-    type?: string;
-    shape_type?: string | null;
-    conflict_type?: string;
-    severity?: string;
-}
-
 export class AnnotationConflict {
     #jobID: number;
     #serverID: number;
-    #clientID: number;
-    #type: string;
+    #type: ObjectType;
     #shapeType: string | null;
     #conflictType: QualityConflictType;
     #severity: ConflictSeverity;
@@ -46,7 +28,6 @@ export class AnnotationConflict {
     constructor(initialData: SerializedAnnotationConflictData) {
         this.#jobID = initialData.job_id;
         this.#serverID = initialData.obj_id;
-        this.#clientID = initialData.client_id;
         this.#type = initialData.type;
         this.#shapeType = initialData.shape_type;
         this.#conflictType = initialData.conflict_type as QualityConflictType;
@@ -64,15 +45,7 @@ export class AnnotationConflict {
         return this.#serverID;
     }
 
-    get clientID(): number {
-        return this.#clientID;
-    }
-
-    set clientID(newID: number) {
-        this.#clientID = newID;
-    }
-
-    get type(): string {
+    get type(): ObjectType {
         return this.#type;
     }
 

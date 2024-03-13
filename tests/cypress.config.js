@@ -6,6 +6,7 @@ module.exports = defineConfig({
     viewportWidth: 1300,
     viewportHeight: 960,
     defaultCommandTimeout: 25000,
+    numTestsKeptInMemory: 30, // reduce because out of memory issues
     downloadsFolder: 'cypress/fixtures',
     env: {
         user: 'admin',

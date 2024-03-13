@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -134,7 +134,7 @@ context('Analytics pipeline', () => {
                 sorting_method: 'lexicographical',
             }).then((taskResponse) => {
                 taskID = taskResponse.taskID;
-                [jobID] = taskResponse.jobID;
+                [jobID] = taskResponse.jobIDs;
 
                 cy.visit(`/tasks/${taskID}`);
                 cy.get('.cvat-task-details').should('exist').and('be.visible');
@@ -147,7 +147,7 @@ context('Analytics pipeline', () => {
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
                 .parents('.cvat-job-item')
                 .find('.cvat-job-item-more-button')
-                .trigger('mouseover');
+                .click();
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {
@@ -230,12 +230,15 @@ context('Analytics pipeline', () => {
             cy.get('.cvat-job-item').contains('a', `Job #${jobID}`)
                 .parents('.cvat-job-item')
                 .find('.cvat-job-item-more-button')
-                .trigger('mouseover');
-            cy.get('.ant-dropdown')
-                .not('.ant-dropdown-hidden')
-                .within(() => {
-                    cy.contains('[role="menuitem"]', 'View analytics').click();
-                });
+                .click();
+
+            cy.wait(500); // wait for animationend
+            cy.get('.cvat-job-item-menu')
+                .should('exist')
+                .and('be.visible')
+                .find('[role="menuitem"]')
+                .filter(':contains("View analytics")')
+                .click();
             cy.wait('@getReport');
             checkCards(true);
             checkHistograms();

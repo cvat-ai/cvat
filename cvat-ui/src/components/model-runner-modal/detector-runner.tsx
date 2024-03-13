@@ -143,16 +143,14 @@ function DetectorRunner(props: Props): JSX.Element {
                 </Col>
             </Row>
             {labelsMappingVisible && (
-                <>
-                    <Row justify='start' align='middle'>
-                        <LabelsMapperComponent
-                            key={modelID} // rerender when model switched
-                            onUpdateMapping={(_mapping: FullMapping) => setMapping(_mapping)}
-                            modelLabels={modelLabels}
-                            taskLabels={taskLabels}
-                        />
-                    </Row>
-                </>
+                <Row justify='start' align='middle'>
+                    <LabelsMapperComponent
+                        key={modelID} // rerender when model switched
+                        onUpdateMapping={(_mapping: FullMapping) => setMapping(_mapping)}
+                        modelLabels={modelLabels}
+                        taskLabels={taskLabels}
+                    />
+                </Row>
             )}
             {convertMasks2PolygonVisible && (
                 <div className='detector-runner-convert-masks-to-polygons-wrapper'>

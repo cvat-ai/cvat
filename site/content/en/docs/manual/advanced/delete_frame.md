@@ -27,7 +27,7 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
    - Add keyframes at the edges of the deleted interval for the interpolation to look correct;
    - Move the keyframe start or end keyframe to the correct side of the deleted interval.
 
-# Configurate deleted frames visibility and navigation
+# Configure deleted frames visibility and navigation
 
 If you need to enable showing the deleted frames, you can do it in the settings.
 

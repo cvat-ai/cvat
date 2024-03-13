@@ -16,6 +16,7 @@ import patterns from 'utils/validation-patterns';
 import { UserAgreement } from 'reducers';
 import { Row, Col } from 'antd/lib/grid';
 import CVATSigningInput, { CVATInputType } from 'components/signing-common/cvat-signing-input';
+import { useAuthQuery } from 'utils/hooks';
 
 export interface UserConfirmation {
     name: string;
@@ -102,8 +103,12 @@ const validateAgreement: ((userAgreements: UserAgreement[]) => RuleRender) = (
 
 function RegisterFormComponent(props: Props): JSX.Element {
     const {
-        fetching, onSubmit, userAgreements, predefinedEmail, hideLoginLink,
+        fetching, onSubmit, userAgreements, hideLoginLink,
     } = props;
+
+    const authQuery = useAuthQuery();
+    const predefinedEmail = authQuery?.email;
+
     const [form] = Form.useForm();
     if (predefinedEmail) {
         form.setFieldsValue({ email: predefinedEmail });
@@ -115,7 +120,13 @@ function RegisterFormComponent(props: Props): JSX.Element {
                 !hideLoginLink && (
                     <Row justify='space-between' className='cvat-credentials-navigation'>
                         <Col>
-                            <Link to='/auth/login'><Icon component={BackArrowIcon} /></Link>
+                            <Link to={{
+                                pathname: '/auth/login',
+                                search: authQuery ? new URLSearchParams(authQuery).toString() : '',
+                            }}
+                            >
+                                <Icon component={BackArrowIcon} />
+                            </Link>
                         </Col>
                     </Row>
                 )
@@ -198,8 +209,8 @@ function RegisterFormComponent(props: Props): JSX.Element {
                         id='email'
                         autoComplete='email'
                         placeholder='Email'
-                        value={predefinedEmail}
                         disabled={!!predefinedEmail}
+                        value={predefinedEmail}
                         onReset={() => form.setFieldsValue({ email: '', username: '' })}
                         onChange={(event) => {
                             const { value } = event.target;

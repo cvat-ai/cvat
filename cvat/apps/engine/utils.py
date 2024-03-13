@@ -155,7 +155,13 @@ def process_failed_job(rq_job: Job):
     return msg
 
 
-def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER) -> Optional[Dependency]:
+def define_dependent_job(
+    queue: DjangoRQ,
+    user_id: int,
+    should_be_dependent: bool = settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER,
+    *,
+    rq_id: Optional[str] = None,
+) -> Optional[Dependency]:
     if not should_be_dependent:
         return None
 
@@ -171,9 +177,29 @@ def define_dependent_job(queue: DjangoRQ, user_id: int, should_be_dependent: boo
         for job in queue.job_class.fetch_many(
             queue.deferred_job_registry.get_job_ids(), queue.connection
         )
-        if job and job.meta.get("user", {}).get("id") == user_id
+        # Since there is no cleanup implementation in DeferredJobRegistry,
+        # this registry can contain "outdated" jobs that weren't deleted from it
+        # but were added to another registry. Probably such situations can occur
+        # if there are active or deferred jobs when restarting the worker container.
+        if job and job.meta.get("user", {}).get("id") == user_id and job.is_deferred
     ]
-    user_jobs = list(filter(lambda job: not job.meta.get(KEY_TO_EXCLUDE_FROM_DEPENDENCY), started_user_jobs + deferred_user_jobs))
+    all_user_jobs = started_user_jobs + deferred_user_jobs
+
+    # prevent possible cyclic dependencies
+    if rq_id:
+        all_job_dependency_ids = {
+            dep_id.decode()
+            for job in all_user_jobs
+            for dep_id in job.dependency_ids or ()
+        }
+
+        if Job.redis_job_namespace_prefix + rq_id in all_job_dependency_ids:
+            return None
+
+    user_jobs = [
+        job for job in all_user_jobs
+        if not job.meta.get(KEY_TO_EXCLUDE_FROM_DEPENDENCY)
+    ]
 
     return Dependency(jobs=[sorted(user_jobs, key=lambda job: job.created_at)[-1]], allow_failure=True) if user_jobs else None
 
@@ -218,7 +244,7 @@ def configure_dependent_job_to_download_from_cs(
                 },
                 result_ttl=result_ttl,
                 failure_ttl=failure_ttl,
-                depends_on=define_dependent_job(queue, user_id, should_be_dependent)
+                depends_on=define_dependent_job(queue, user_id, should_be_dependent, rq_id=rq_job_id_download_file)
             )
     return rq_job_download_file
 
@@ -384,17 +410,29 @@ def preload_image(image: tuple[str, str, str])-> tuple[Image.Image, str, str]:
 def preload_images(images: Iterable[tuple[str, str, str]]) -> list[tuple[Image.Image, str, str]]:
     return list(map(preload_image, images))
 
-def strtobool(val: str) -> bool:
-    """Convert a string representation of truth to true (1) or false (0).
+def build_backup_file_name(
+    *,
+    class_name: str,
+    identifier: str | int,
+    timestamp: str,
+    extension: str = "{}",
+) -> str:
+    # "<project|task>_<name>_backup_<timestamp>.zip"
+    return "{}_{}_backup_{}{}".format(
+        class_name, identifier, timestamp, extension,
+    ).lower()
 
-    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
-    'val' is anything else.
-    """
-    val = val.lower()
-    if val in ('y', 'yes', 't', 'true', 'on', '1'):
-        return 1
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
-        return 0
-    else:
-        raise ValueError("invalid truth value %r" % (val,))
+def build_annotations_file_name(
+    *,
+    class_name: str,
+    identifier: str | int,
+    timestamp: str,
+    format_name: str,
+    is_annotation_file: bool = True,
+    extension: str = "{}",
+) -> str:
+    # "<project|task|job>_<name|id>_<annotations|dataset>_<timestamp>_<format>.zip"
+    return "{}_{}_{}_{}_{}{}".format(
+        class_name, identifier, 'annotations' if is_annotation_file else 'dataset',
+        timestamp, format_name, extension,
+    ).lower()

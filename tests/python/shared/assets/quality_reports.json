@@ -1,5 +1,5 @@
 {
-  "count": 2,
+  "count": 4,
   "next": null,
   "previous": null,
   "results": [
@@ -61,6 +61,66 @@
       },
       "target": "job",
       "target_last_updated": "2023-05-26T16:11:24.294000Z",
+      "task_id": null
+    },
+    {
+      "created_date": "2023-11-24T15:24:25.355000Z",
+      "gt_last_updated": "2023-11-24T15:18:55.216000Z",
+      "id": 3,
+      "job_id": null,
+      "parent_id": null,
+      "summary": {
+        "conflict_count": 40,
+        "conflicts_by_type": {
+          "covered_annotation": 1,
+          "extra_annotation": 11,
+          "low_overlap": 7,
+          "mismatching_attributes": 1,
+          "mismatching_direction": 1,
+          "mismatching_groups": 6,
+          "mismatching_label": 3,
+          "missing_annotation": 10
+        },
+        "ds_count": 36,
+        "error_count": 24,
+        "frame_count": 3,
+        "frame_share": 0.2727272727272727,
+        "gt_count": 35,
+        "valid_count": 22,
+        "warning_count": 16
+      },
+      "target": "task",
+      "target_last_updated": "2023-11-24T15:23:30.045000Z",
+      "task_id": 22
+    },
+    {
+      "created_date": "2023-11-24T15:24:25.357000Z",
+      "gt_last_updated": "2023-11-24T15:18:55.216000Z",
+      "id": 4,
+      "job_id": 27,
+      "parent_id": 3,
+      "summary": {
+        "conflict_count": 40,
+        "conflicts_by_type": {
+          "covered_annotation": 1,
+          "extra_annotation": 11,
+          "low_overlap": 7,
+          "mismatching_attributes": 1,
+          "mismatching_direction": 1,
+          "mismatching_groups": 6,
+          "mismatching_label": 3,
+          "missing_annotation": 10
+        },
+        "ds_count": 36,
+        "error_count": 24,
+        "frame_count": 3,
+        "frame_share": 0.2727272727272727,
+        "gt_count": 35,
+        "valid_count": 22,
+        "warning_count": 16
+      },
+      "target": "job",
+      "target_last_updated": "2023-11-24T15:23:30.269000Z",
       "task_id": null
     }
   ]

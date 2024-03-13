@@ -1,5 +1,5 @@
 // Copyright (C) 2022 Intel Corporation
-// Copyright (C) CVAT.ai corp
+// Copyright (C) 2023 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,7 @@ import { removeObjectAsync, removeObject as removeObjectAction } from 'actions/a
 export default function RemoveConfirmComponent(): JSX.Element | null {
     const [visible, setVisible] = useState(false);
     const [title, setTitle] = useState('');
-    const [description, setDescription] = useState<JSX.Element>(<></>);
+    const [description, setDescription] = useState<string | JSX.Element>('');
     const objectState = useSelector((state: CombinedState) => state.annotation.remove.objectState);
     const force = useSelector((state: CombinedState) => state.annotation.remove.force);
     const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance);

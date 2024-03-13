@@ -514,16 +514,16 @@ def _check_cvat_for_video_project_annotations_meta(content, values_to_be_checked
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestImportExportDatasetProject:
-    def _test_export_project(self, username, pid, format_name):
+    def _test_export_project(self, username: str, pid: int, **kwargs):
         with make_api_client(username) as api_client:
             return export_dataset(
-                api_client.projects_api.retrieve_dataset_endpoint, id=pid, format=format_name
+                api_client.projects_api.retrieve_dataset_endpoint, id=pid, **kwargs
             )
 
-    def _export_annotations(self, username, pid, format_name):
+    def _export_annotations(self, username: str, pid: int, **kwargs):
         with make_api_client(username) as api_client:
             return export_dataset(
-                api_client.projects_api.retrieve_annotations_endpoint, id=pid, format=format_name
+                api_client.projects_api.retrieve_annotations_endpoint, id=pid, **kwargs
             )
 
     def _test_import_project(self, username, project_id, format_name, data):
@@ -557,7 +557,7 @@ class TestImportExportDatasetProject:
     def test_can_import_dataset_in_org(self, admin_user):
         project_id = 4
 
-        response = self._test_export_project(admin_user, project_id, "CVAT for images 1.1")
+        response = self._test_export_project(admin_user, project_id)
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -571,7 +571,7 @@ class TestImportExportDatasetProject:
     def test_can_export_and_import_dataset_with_skeletons_coco_keypoints(self, admin_user):
         project_id = 5
 
-        response = self._test_export_project(admin_user, project_id, "COCO Keypoints 1.0")
+        response = self._test_export_project(admin_user, project_id, format="COCO Keypoints 1.0")
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -584,7 +584,7 @@ class TestImportExportDatasetProject:
     def test_can_export_and_import_dataset_with_skeletons_cvat_for_images(self, admin_user):
         project_id = 5
 
-        response = self._test_export_project(admin_user, project_id, "CVAT for images 1.1")
+        response = self._test_export_project(admin_user, project_id)
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -597,7 +597,7 @@ class TestImportExportDatasetProject:
     def test_can_export_and_import_dataset_with_skeletons_cvat_for_video(self, admin_user):
         project_id = 5
 
-        response = self._test_export_project(admin_user, project_id, "CVAT for video 1.1")
+        response = self._test_export_project(admin_user, project_id, format="CVAT for video 1.1")
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -643,7 +643,7 @@ class TestImportExportDatasetProject:
         username = "admin1"
         project_id = 4
 
-        response = self._test_export_project(username, project_id, format_name)
+        response = self._test_export_project(username, project_id, format=format_name)
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -693,7 +693,7 @@ class TestImportExportDatasetProject:
             ],
         }
 
-        response = self._export_annotations(username, pid, anno_format)
+        response = self._export_annotations(username, pid, format=anno_format)
         assert response.data
         with zipfile.ZipFile(BytesIO(response.data)) as zip_file:
             content = zip_file.read(anno_file_name)
@@ -704,7 +704,7 @@ class TestImportExportDatasetProject:
         username = "admin1"
         project_id = 4
 
-        response = self._test_export_project(username, project_id, "CVAT for images 1.1")
+        response = self._test_export_project(username, project_id)
 
         tmp_file = io.BytesIO(response.data)
         tmp_file.name = "dataset.zip"
@@ -732,11 +732,11 @@ class TestImportExportDatasetProject:
         username = "admin1"
         project_id = 11
 
-        self._test_export_project(username, project_id, "COCO Keypoints 1.0")
+        self._test_export_project(username, project_id, format="COCO Keypoints 1.0")
 
     def test_can_export_dataset_for_empty_project(self, projects):
         empty_project = next((p for p in projects if 0 == p["tasks"]["count"]))
-        self._test_export_project("admin1", empty_project["id"], "COCO 1.0")
+        self._test_export_project("admin1", empty_project["id"], format="COCO 1.0")
 
     def test_can_export_project_dataset_when_some_tasks_have_no_data(self, projects):
         project = next((p for p in projects if 0 < p["tasks"]["count"]))
@@ -747,7 +747,7 @@ class TestImportExportDatasetProject:
         )
         assert response.status_code == HTTPStatus.CREATED
 
-        self._test_export_project("admin1", project["id"], "COCO 1.0")
+        self._test_export_project("admin1", project["id"], format="COCO 1.0")
 
     def test_can_export_project_dataset_when_all_tasks_have_no_data(self, projects):
         project = next((p for p in projects if 0 == p["tasks"]["count"]))
@@ -763,7 +763,38 @@ class TestImportExportDatasetProject:
         )
         assert response.status_code == HTTPStatus.CREATED
 
-        self._test_export_project("admin1", project["id"], "COCO 1.0")
+        self._test_export_project("admin1", project["id"], format="COCO 1.0")
+
+    @pytest.mark.parametrize("cloud_storage_id", [2])
+    def test_can_export_and_import_dataset_after_deleting_related_storage(
+        self, admin_user, projects, cloud_storage_id: int
+    ):
+        project = next(
+            p
+            for p in projects
+            if p["source_storage"]
+            and p["source_storage"]["cloud_storage_id"] == cloud_storage_id
+            and p["target_storage"]
+            and p["target_storage"]["cloud_storage_id"] == cloud_storage_id
+        )
+        project_id = project["id"]
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.cloudstorages_api.destroy(cloud_storage_id)
+            assert response.status == HTTPStatus.NO_CONTENT
+
+        result, response = api_client.projects_api.retrieve(project_id)
+        assert all([not getattr(result, field) for field in ("source_storage", "target_storage")])
+
+        response = self._test_export_project(admin_user, project_id)
+
+        with io.BytesIO(response.data) as tmp_file:
+            tmp_file.name = "dataset.zip"
+            import_data = {
+                "dataset_file": tmp_file,
+            }
+
+            self._test_import_project(admin_user, project_id, "CVAT 1.1", import_data)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

@@ -52,7 +52,7 @@ You can change: the name of the project, the list of labels
 (which will be used for tasks created as parts of this project) and a skeleton if it's necessary.
 In advanced configuration also you can specify: a link to the issue, source and target storages.
 Learn more about [creating a label list](/docs/manual/basics/creating_an_annotation_task/#labels),
-[creating the skeleton](/docs/manual/advanced/annotation-with-skeletons/creating-the-skeleton/) and [attach cloud storage](/docs/manual/basics/attach-cloud-storage/).
+[creating the skeleton](/docs/manual/advanced/skeletons/) and [attach cloud storage](/docs/manual/basics/attach-cloud-storage/).
 
 To save and open project click on `Submit & Open` button. Also you
 can click on `Submit & Continue` button for creating several projects in sequence

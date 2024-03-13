@@ -125,6 +125,8 @@ Server events:
 
 - `create:label`, `update:label`, `delete:label`
 
+- `export:dataset`, `import:dataset`
+
 Client events:
 
 - `load:cvat`
@@ -139,13 +141,14 @@ Client events:
 - `change:label`
 
 - `change:frame`
-- `move:image`, `zoom:image`, `fit:image`, `rotate:image`
+- `zoom:image`, `fit:image`, `rotate:image`
 
 - `action:undo`, `action:redo`
 
 - `press:shortcut`
 - `send:debug_info`
 
+- `run:annotations_action`
 - `click:element`
 
 <!--lint enable maximum-line-length-->

@@ -93,11 +93,6 @@ volumes:
       o: bind
 ```
 
-## How to make unassigned tasks not visible to all users
-
-Set [reduce_task_visibility](https://github.com/cvat-ai/cvat/blob/develop/cvat/settings/base.py#L455)
-variable to `True`.
-
 ## Where are uploaded images/videos stored
 
 The uploaded data is stored in the `cvat_data` docker volume:
@@ -143,7 +138,7 @@ To do this, you will need to edit `traefik.http.<router>.cvat.rule` docker label
 (see [the documentation](https://doc.traefik.io/traefik/routing/routers/#rule) on Traefik rules for more details):
 
 ```yaml
-  cvat:
+  cvat_server:
     labels:
       - traefik.http.routers.cvat.rule=(Host(`example1.com`) || Host(`example2.com`)) &&
           PathPrefix(`/api/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)

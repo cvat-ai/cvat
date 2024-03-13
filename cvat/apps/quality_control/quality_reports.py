@@ -484,13 +484,15 @@ class ComparisonReportFrameSummary(_Serializable):
         }
         return cls(
             **{field: d[field] for field in optional_fields if field in d},
-            **dict(
-                conflicts_by_type={
-                    AnnotationConflictType(k): v for k, v in d["conflicts_by_type"].items()
-                }
-            )
-            if "conflicts_by_type" in d
-            else {},
+            **(
+                dict(
+                    conflicts_by_type={
+                        AnnotationConflictType(k): v for k, v in d["conflicts_by_type"].items()
+                    }
+                )
+                if "conflicts_by_type" in d
+                else {}
+            ),
             conflicts=[AnnotationConflict.from_dict(v) for v in d["conflicts"]],
             annotations=ComparisonReportAnnotationsSummary.from_dict(d["annotations"]),
             annotation_components=ComparisonReportAnnotationComponentsSummary.from_dict(
@@ -648,6 +650,7 @@ def _match_segments(
             for a, _ in itertools.zip_longest(a_segms, range(max_anns), fillvalue=None)
         ]
     )
+    distances[~np.isfinite(distances)] = 1
     distances[distances > 1 - dist_thresh] = 1
 
     if a_segms and b_segms:
@@ -686,7 +689,7 @@ def _match_segments(
     return matches, mispred, a_unmatched, b_unmatched
 
 
-def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility=None):
+def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
     """
     Object Keypoint Similarity metric.
     https://cocodataset.org/#keypoints-eval
@@ -697,10 +700,15 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility=None):
     if len(p1) != len(p2):
         return 0
 
-    if visibility is None:
-        visibility = np.ones(len(p1))
+    if visibility_a is None:
+        visibility_a = np.full(len(p1), True)
     else:
-        visibility = np.asarray(visibility, dtype=float)
+        visibility_a = np.asarray(visibility_a, dtype=bool)
+
+    if visibility_b is None:
+        visibility_b = np.full(len(p2), True)
+    else:
+        visibility_b = np.asarray(visibility_b, dtype=bool)
 
     if not scale:
         if bbox is None:
@@ -708,9 +716,9 @@ def _OKS(a, b, sigma=0.1, bbox=None, scale=None, visibility=None):
         scale = bbox[2] * bbox[3]
 
     dists = np.linalg.norm(p1 - p2, axis=1)
-    return np.sum(visibility * np.exp(-(dists**2) / (2 * scale * (2 * sigma) ** 2))) / np.sum(
-        visibility
-    )
+    return np.sum(
+        visibility_a * visibility_b * np.exp(-(dists**2) / (2 * scale * (2 * sigma) ** 2))
+    ) / np.sum(visibility_a | visibility_b, dtype=float)
 
 
 @define(kw_only=True)
@@ -727,7 +735,8 @@ class _KeypointsMatcher(dm.ops.PointsMatcher):
             b,
             sigma=self.sigma,
             bbox=bbox,
-            visibility=[v == dm.Points.Visibility.visible for v in a.visibility],
+            visibility_a=[v == dm.Points.Visibility.visible for v in a.visibility],
+            visibility_b=[v == dm.Points.Visibility.visible for v in b.visibility],
         )
 
 

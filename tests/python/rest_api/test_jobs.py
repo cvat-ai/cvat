@@ -171,7 +171,34 @@ class TestPostJobs:
         with make_api_client(user) as api_client:
             (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
 
-        assert gt_job_meta.included_frames == frame_ids
+        assert frame_ids == gt_job_meta.included_frames
+
+    @pytest.mark.parametrize("task_mode", ["annotation", "interpolation"])
+    def test_can_create_gt_job_with_all_frames(self, admin_user, tasks, jobs, task_mode):
+        user = admin_user
+        task = next(
+            t
+            for t in tasks
+            if t["mode"] == task_mode
+            and t["size"]
+            and not any(j for j in jobs if j["task_id"] == t["id"] and j["type"] == "ground_truth")
+        )
+        task_id = task["id"]
+
+        job_spec = {
+            "task_id": task_id,
+            "type": "ground_truth",
+            "frame_selection_method": "random_uniform",
+            "frame_count": task["size"],
+        }
+
+        response = self._test_create_job_ok(user, job_spec)
+        job_id = json.loads(response.data)["id"]
+
+        with make_api_client(user) as api_client:
+            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+
+        assert task["size"] == gt_job_meta.size
 
     def test_can_create_no_more_than_1_gt_job(self, admin_user, jobs):
         user = admin_user
@@ -1231,7 +1258,7 @@ class TestJobDataset:
 
     def test_can_export_dataset(self, admin_user: str, jobs_with_shapes: List):
         job = jobs_with_shapes[0]
-        response = self._export_dataset(admin_user, job["id"], format="CVAT for images 1.1")
+        response = self._export_dataset(admin_user, job["id"])
         assert response.data
 
     def test_non_admin_can_export_dataset(self, users, tasks, jobs_with_shapes):
@@ -1244,7 +1271,7 @@ class TestJobDataset:
                 and tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_dataset(username, job_id, format="CVAT for images 1.1")
+        response = self._export_dataset(username, job_id)
         assert response.data
 
     def test_non_admin_can_export_annotations(self, users, tasks, jobs_with_shapes):
@@ -1257,7 +1284,7 @@ class TestJobDataset:
                 and tasks[job["task_id"]]["organization"] is None
             )
         )
-        response = self._export_annotations(username, job_id, format="CVAT for images 1.1")
+        response = self._export_annotations(username, job_id)
         assert response.data
 
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])

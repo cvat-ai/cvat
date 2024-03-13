@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,6 +21,7 @@ import Icon, {
     UserOutlined,
     TeamOutlined,
     PlusOutlined,
+    MailOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -78,13 +79,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
             fetching: logoutFetching,
             fetching: changePasswordFetching,
             showChangePasswordDialog: changePasswordDialogShown,
-            allowChangePassword: renderChangePasswordItem,
         },
         plugins: { list },
         about,
         shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
         settings: { showDialog: settingsModalVisible },
         organizations: { fetching: organizationFetching, current: currentOrganization },
+        serverAPI: {
+            configuration: {
+                isPasswordChangeEnabled: renderChangePasswordItem,
+            },
+        },
     } = state;
 
     return {
@@ -321,6 +326,16 @@ function HeaderComponent(props: Props): JSX.Element {
                     Settings
                 </Menu.Item>
             ) : null}
+            <Menu.Item
+                icon={<MailOutlined />}
+                className='cvat-header-menu-organization-invitations-item'
+                key='invitations'
+                onClick={() => {
+                    history.push('/invitations');
+                }}
+            >
+                Invitations
+            </Menu.Item>
             <Menu.Item icon={<PlusOutlined />} key='create_organization' onClick={() => history.push('/organizations/create')} className='cvat-header-menu-create-organization'>Create</Menu.Item>
             { !!organizationsList && viewType === 'list' && (
                 <Menu.Item
@@ -425,7 +440,7 @@ function HeaderComponent(props: Props): JSX.Element {
     );
 
     const userMenu = (
-        <Menu className='cvat-header-menu'>
+        <Menu triggerSubMenuAction='click' className='cvat-header-menu'>
             { menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
                 .map((menuItem) => menuItem[0]) }
         </Menu>
@@ -547,7 +562,13 @@ function HeaderComponent(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
-                <Dropdown placement='bottomRight' overlay={userMenu} className='cvat-header-menu-user-dropdown'>
+                <Dropdown
+                    trigger={['click']}
+                    destroyPopupOnHide
+                    placement='bottomRight'
+                    overlay={userMenu}
+                    className='cvat-header-menu-user-dropdown'
+                >
                     <span>
                         <UserOutlined className='cvat-header-dropdown-icon' />
                         <Row>

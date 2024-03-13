@@ -104,3 +104,11 @@ services:
   cvat_opa:
     ports:
       - '8181:8181'
+
+  cvat_redis_inmem:
+    ports:
+      - '6379:6379'
+
+  cvat_redis_ondisk:
+    ports:
+      - '6666:6666'

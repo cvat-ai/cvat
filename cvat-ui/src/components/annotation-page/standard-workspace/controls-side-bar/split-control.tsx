@@ -14,10 +14,10 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 
 export interface Props {
+    updateActiveControl(activeControl: ActiveControl): void;
     canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
     disabled?: boolean;
-    splitTrack(enabled: boolean): void;
     shortcuts: {
         SWITCH_SPLIT_MODE: {
             details: KeyMapItem;
@@ -28,38 +28,24 @@ export interface Props {
 
 function SplitControl(props: Props): JSX.Element {
     const {
-        shortcuts, activeControl, canvasInstance, splitTrack, disabled,
+        shortcuts, activeControl, canvasInstance, updateActiveControl, disabled,
     } = props;
 
-    const shortcutHandlers = {
-        SWITCH_SPLIT_MODE: (event: KeyboardEvent | undefined) => {
-            if (event) event.preventDefault();
-            const splitting = activeControl === ActiveControl.SPLIT;
-            if (!splitting) {
+    const dynamicIconProps = activeControl === ActiveControl.SPLIT ?
+        {
+            className: 'cvat-split-track-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.split({ enabled: false });
+            },
+        } :
+        {
+            className: 'cvat-split-track-control',
+            onClick: (): void => {
                 canvasInstance.cancel();
-            }
-            canvasInstance.split({ enabled: !splitting });
-            splitTrack(!splitting);
-        },
-    };
-
-    const dynamicIconProps =
-        activeControl === ActiveControl.SPLIT ?
-            {
-                className: 'cvat-split-track-control cvat-active-canvas-control',
-                onClick: (): void => {
-                    canvasInstance.split({ enabled: false });
-                    splitTrack(false);
-                },
-            } :
-            {
-                className: 'cvat-split-track-control',
-                onClick: (): void => {
-                    canvasInstance.cancel();
-                    canvasInstance.split({ enabled: true });
-                    splitTrack(true);
-                },
-            };
+                canvasInstance.split({ enabled: true });
+                updateActiveControl(ActiveControl.SPLIT);
+            },
+        };
 
     return disabled ? (
         <Icon className='cvat-split-track-control cvat-disabled-canvas-control' component={SplitIcon} />
@@ -67,7 +53,12 @@ function SplitControl(props: Props): JSX.Element {
         <>
             <GlobalHotKeys
                 keyMap={{ SWITCH_SPLIT_MODE: shortcuts.SWITCH_SPLIT_MODE.details }}
-                handlers={shortcutHandlers}
+                handlers={{
+                    SWITCH_SPLIT_MODE: (event: KeyboardEvent | undefined) => {
+                        if (event) event.preventDefault();
+                        dynamicIconProps.onClick();
+                    },
+                }}
             />
             <CVATTooltip title={`Split a track ${shortcuts.SWITCH_SPLIT_MODE.displayValue}`} placement='right'>
                 <Icon {...dynamicIconProps} component={SplitIcon} />

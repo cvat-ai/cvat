@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,8 +33,7 @@ context('Canvas 3D functionality. Make a copy.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .trigger('mouseout');
-            cy.get('#cvat-objects-sidebar-state-item-1').find('[aria-label="more"]').click();
-            cy.get('.ant-dropdown-menu').not('.ant-dropdown-menu-hidden').find('[aria-label="copy"]').click();
+            cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Make a copy');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 480, 270);
             cy.get('.cvat-canvas3d-perspective').dblclick(480, 270);
             cy.get('#cvat-objects-sidebar-state-item-1')

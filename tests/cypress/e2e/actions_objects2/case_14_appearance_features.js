@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -140,6 +140,7 @@ context('Appearance features', () => {
             cy.get('.cvat-appearance-outlinded-borders-checkbox').click();
             cy.get('.cvat-appearance-outlined-borders-button').click();
             cy.changeColorViaBadge(strokeColor);
+            cy.get('.cvat-label-color-picker').should('be.hidden');
             cy.get('.cvat_canvas_shape').each((object) => {
                 cy.get(object).should('have.attr', 'stroke', `#${strokeColor}`);
             });

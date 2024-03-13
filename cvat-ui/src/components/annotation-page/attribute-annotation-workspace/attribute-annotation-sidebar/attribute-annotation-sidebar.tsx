@@ -11,7 +11,7 @@ import Text from 'antd/lib/typography/Text';
 
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { Label } from 'cvat-core-wrapper';
-import { LogType } from 'cvat-logger';
+import { EventScope } from 'cvat-logger';
 import {
     activateObject as activateObjectAction,
     changeFrameAsync,
@@ -306,6 +306,11 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                     currentLabel={activeObjectState.label.id}
                     labels={applicableLabels}
                     changeLabel={(value: Label): void => {
+                        jobInstance.logger.log(EventScope.changeLabel, {
+                            object_id: activeObjectState.clientID,
+                            from: activeObjectState.label.id,
+                            to: value.id,
+                        });
                         activeObjectState.label = value;
                         updateAnnotations([activeObjectState]);
                     }}
@@ -332,7 +337,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
                             currentValue={activeObjectState.attributes[activeAttribute.id]}
                             onChange={(value: string) => {
                                 const { attributes } = activeObjectState;
-                                jobInstance.logger.log(LogType.changeAttribute, {
+                                jobInstance.logger.log(EventScope.changeAttribute, {
                                     id: activeAttribute.id,
                                     object_id: activeObjectState.clientID,
                                     value,

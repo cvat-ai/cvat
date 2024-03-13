@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" class="no-js">
   <head>
-    <meta http-equiv="refresh" content="0; URL=/cvat/docs">
+    {{ $version_rel_url := os.Getenv "HUGO_VERSION_REL_URL" }}
+    {{ if not $version_rel_url }}
+      {{ $version_rel_url = "/cvat/docs" }}
+    {{ end }}
+    <meta http-equiv="refresh" content="0; URL={{ $version_rel_url }}">
   </head>
 </html>
