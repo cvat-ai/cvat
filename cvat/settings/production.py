@@ -12,3 +12,4 @@ NUCLIO['HOST'] = os.getenv('CVAT_NUCLIO_HOST', 'nuclio')
 # https://github.com/moggers87/django-sendfile2
 SENDFILE_BACKEND = 'django_sendfile.backends.nginx'
 SENDFILE_URL = '/'
+CORS_ALLOW_ALL_ORIGINS = True
