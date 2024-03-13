@@ -6,7 +6,7 @@ azure-storage-blob==12.13.0
 boto3==1.17.61
 clickhouse-connect==0.6.8
 coreapi==2.3.3
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@8a14a99fe17f19d98595a2a4a74ab459051cc23b
+datumaro @ git+https://github.com/cvat-ai/datumaro.git@e3cf6c73cf030f49b6b974996ee178f815175071
 dj-pagination==2.5.0
 dj-rest-auth[with_social]==2.2.7
 
