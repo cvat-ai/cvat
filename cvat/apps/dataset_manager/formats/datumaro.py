@@ -6,17 +6,25 @@
 import zipfile
 from datumaro.components.dataset import Dataset
 
-from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
-    import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (
+    CvatImportError, GetCVATDataExtractor, import_dm_annotations
+)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType
 
 from .registry import dm_env, exporter, importer
 
 
+_NO_MEDIA_IN_UPLOADED_JSON_ERROR = (
+    "Can't import media data from the annotation file. "
+    "Please upload full dataset as a zip archive."
+)
+
 @exporter(name="Datumaro", ext="ZIP", version="1.0")
 def _export(dst_file, temp_dir, instance_data, save_images=False):
-    with GetCVATDataExtractor(instance_data=instance_data, include_images=save_images) as extractor:
+    with GetCVATDataExtractor(
+        instance_data=instance_data, include_images=save_images
+    ) as extractor:
         dataset = Dataset.from_extractors(extractor, env=dm_env)
         dataset.export(temp_dir, 'datumaro', save_images=save_images)
 
@@ -28,7 +36,9 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         zipfile.ZipFile(src_file).extractall(temp_dir)
         dataset = Dataset.import_from(temp_dir, 'datumaro', env=dm_env)
     else:
-        load_data_callback = None
+        if load_data_callback:
+            raise CvatImportError(_NO_MEDIA_IN_UPLOADED_JSON_ERROR)
+
         dataset = Dataset.import_from(src_file.name, 'datumaro', env=dm_env)
 
     if load_data_callback is not None:
@@ -52,7 +62,9 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
         zipfile.ZipFile(src_file).extractall(temp_dir)
         dataset = Dataset.import_from(temp_dir, 'datumaro', env=dm_env)
     else:
-        load_data_callback = None
+        if load_data_callback:
+            raise CvatImportError(_NO_MEDIA_IN_UPLOADED_JSON_ERROR)
+
         dataset = Dataset.import_from(src_file.name, 'datumaro', env=dm_env)
 
     if load_data_callback is not None:
