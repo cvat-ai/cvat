@@ -495,6 +495,16 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             .catch(() => {});
     };
 
+    private handleCancel = (): void => {
+        const { history } = this.props;
+
+        if (history.length) {
+            history.goBack();
+        } else {
+            history.push('/tasks');
+        }
+    };
+
     private createOneTask = (): Promise<any> => {
         const { onCreate } = this.props;
         this.startLoading();
@@ -880,6 +890,14 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         }
         return (
             <Row justify='end' gutter={8}>
+                <Col>
+                    <Button
+                        htmlType='button'
+                        onClick={this.handleCancel}
+                    >
+                        Cancel
+                    </Button>
+                </Col>
                 <Col>
                     <Button
                         className='cvat-submit-open-task-button'
