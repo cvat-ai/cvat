@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 import zipfile
-
+import json
+import uuid
 from datumaro.components.dataset import Dataset
 from datumaro.components.annotation import AnnotationType
 
@@ -32,8 +33,16 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
             load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
     else:
+        rename_mapping, src_file = update_annotation_data(src_file)
+        #To get reverse map with image names without extension
+        reverse_mapping = {value: key for key, value in rename_mapping.items()}
+        reverse_no_ext_mapping = {key.rsplit('.', 1)[0]: value.rsplit('.', 1)[0] for key, value in reverse_mapping.items()}
+
         dataset = Dataset.import_from(src_file.name,
             'coco_instances', env=dm_env)
+        #Reverse mapping names
+        for item in dataset:
+            item.id = reverse_no_ext_mapping[item.id]
         import_dm_annotations(dataset, instance_data)
 
 @exporter(name='COCO Keypoints', ext='ZIP', version='1.0')
@@ -65,3 +74,23 @@ def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs
             'coco_person_keypoints', env=dm_env)
         remove_extra_annotations(dataset)
         import_dm_annotations(dataset, instance_data)
+
+
+def update_annotation_data(src_file):
+    rename_mapping = {}
+    with open(src_file.name, 'r') as f:
+        annotation_data = json.load(f)
+
+    for image in annotation_data['images']:
+        original_filename = image['file_name']
+        unique_id = str(uuid.uuid4())[:8]  # Generating a unique ID
+        name, extension = original_filename.split('.')
+        new_name = f"{name}_{unique_id}.{extension}"
+        rename_mapping[original_filename] = new_name
+        image['file_name'] = new_name
+
+    with open(src_file.name, 'w') as f:
+        json.dump(annotation_data, f, indent=4)
+
+    # Returning src_file along with rename_mapping
+    return rename_mapping, src_file
