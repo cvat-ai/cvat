@@ -2381,7 +2381,9 @@ class QualityReportUpdateManager:
                 task_annotations_summary = deepcopy(r.comparison_summary.annotations)
 
             confusion_matrices.append(r.comparison_summary.annotations.confusion_matrix.rows)
-            count_confusion_matrix_labels = len(r.comparison_summary.annotations.confusion_matrix.labels)
+            count_confusion_matrix_labels = len(
+                r.comparison_summary.annotations.confusion_matrix.labels
+            )
 
             if task_ann_components_summary:
                 task_ann_components_summary.accumulate(r.comparison_summary.annotation_components)
