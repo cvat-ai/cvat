@@ -16,7 +16,7 @@ from time import sleep
 from typing import Dict, List, Optional
 
 import pytest
-from cvat_sdk.api_client import ApiClient, Configuration, models, exceptions
+from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
 from cvat_sdk.api_client.api_client import Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
@@ -803,8 +803,20 @@ class TestImportExportDatasetProject:
     }
 
     @pytest.mark.parametrize("dimension", ["2d", "3d"])
-    def test_cant_import_datumaro_json_as_project(self, admin_user, tasks, dimension):
-        task = next(t for t in tasks if t["size"] and t["dimension"] == dimension)
+    def test_cant_import_datumaro_json_as_project(self, admin_user, tasks, labels, dimension):
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["dimension"] == dimension
+            if all(
+                label["type"] != "skeleton"
+                for label in labels
+                if label.get("task_id") == t["id"]
+                or t.get("project_id")
+                and label.get("project_id") == t["project_id"]
+            )
+        )
 
         with make_api_client(admin_user) as api_client:
             response = export_dataset(
@@ -818,7 +830,7 @@ class TestImportExportDatasetProject:
             annotations = zip_file.read("annotations/default.json")
 
         with make_api_client(admin_user) as api_client, TemporaryDirectory() as tempdir:
-            project_id = api_client.projects_api.create(
+            project, _ = api_client.projects_api.create(
                 project_write_request=models.ProjectWriteRequest(name="test_json_import_as_project")
             )
 
@@ -826,12 +838,10 @@ class TestImportExportDatasetProject:
             dataset_file.name = "annotations.json"
             import_data = {"dataset_file": dataset_file}
 
-            with pytest.raises(
-                exceptions.ApiException, match="Can't import media data from an annotation file."
-            ):
+            with pytest.raises(exceptions.ApiException, match="Dataset file should be zip archive"):
                 self._test_import_project(
                     admin_user,
-                    project_id,
+                    project.id,
                     format_name=self._DATUMARO_FORMAT_FOR_DIMENSION[dimension],
                     data=import_data,
                 )

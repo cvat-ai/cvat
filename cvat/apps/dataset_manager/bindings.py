@@ -1390,7 +1390,7 @@ class MediaProvider3D(MediaProvider):
         image = self._images_per_source[source_id][frame_id]
 
         related_images = [
-            dm.Image(path)
+            dm.Image(path=path)
             for rf in image.related_files.all()
             for path in [osp.realpath(str(rf.path))]
             if osp.isfile(path)
@@ -1510,7 +1510,10 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                 )
 
                 if not include_images:
-                    dm_media_args["extra_images"] = dm_media.extra_images
+                    dm_media_args["extra_images"] = [
+                        dm.Image(path=osp.basename(image.path))
+                        for image in dm_media.extra_images
+                    ]
                     dm_media = dm.PointCloud(**dm_media_args)
             else:
                 dm_media_args['size'] = (frame_data.height, frame_data.width)
@@ -1542,7 +1545,7 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
                         dm_attributes["track_id"] = -1
 
                 dm_item = dm.DatasetItem(
-                    id=osp.splitext(osp.split(frame_data.name)[-1])[0], # split seems to be extra
+                    id=osp.splitext(osp.split(frame_data.name)[-1])[0],
                     annotations=dm_anno, media=dm_media,
                     attributes=dm_attributes
                 )
@@ -1606,10 +1609,13 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
                 )
 
                 if not include_images:
-                    dm_media_args["extra_images"] = dm_media.extra_images
+                    dm_media_args["extra_images"] = [
+                        dm.Image(path=osp.basename(image.path))
+                        for image in dm_media.extra_images
+                    ]
                     dm_media = dm.PointCloud(**dm_media_args)
             else:
-                dm_media_args['size'] = (frame_data.height, frame_data.width),
+                dm_media_args['size'] = (frame_data.height, frame_data.width)
                 if include_images:
                     dm_media: dm.Image = self._image_provider.get_media_for_frame(
                         frame_data.task_id, frame_data.idx, **dm_media_args
@@ -1639,7 +1645,7 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
                         dm_attributes["track_id"] = -1
 
                 dm_item = dm.DatasetItem(
-                    id=osp.splitext(osp.split(frame_data.name)[-1])[0], # split seems to be extra
+                    id=osp.splitext(osp.split(frame_data.name)[-1])[0],
                     annotations=dm_anno, media=dm_media,
                     subset=frame_data.subset,
                     attributes=dm_attributes,

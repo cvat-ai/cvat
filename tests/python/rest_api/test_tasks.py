@@ -50,6 +50,11 @@ from .utils import (
     wait_until_task_is_created,
 )
 
+_DATUMARO_FORMAT_FOR_DIMENSION = {
+    "2d": "Datumaro 1.0",
+    "3d": "Datumaro 3D 1.0",
+}
+
 
 def get_cloud_storage_content(username: str, cloud_storage_id: int, manifest: Optional[str] = None):
     with make_api_client(username) as api_client:
@@ -748,10 +753,21 @@ class TestGetTaskDataset:
     @pytest.mark.parametrize("dimension", ["2d", "3d"])
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_datumaro_export_without_annotations_includes_image_info(
-        self, admin_user, tasks, mode, dimension
+        self, admin_user, tasks, mode, dimension, labels
     ):
         task = next(
-            t for t in tasks if t["size"] and t["mode"] == mode and t["dimension"] == dimension
+            t
+            for t in tasks
+            if t.get("size")
+            if mode != "2d" or t["mode"] == mode
+            if t["dimension"] == dimension
+            if all(
+                label["type"] != "skeleton"
+                for label in labels
+                if label.get("task_id") == t["id"]
+                or t.get("project_id")
+                and label.get("project_id") == t["project_id"]
+            )
         )
 
         with make_api_client(admin_user) as api_client:
@@ -770,10 +786,16 @@ class TestGetTaskDataset:
             assert "media" not in item
 
             if dimension == "2d":
-                assert os.path.splitext(item["image"]["path"])[-1] == item["id"]
-                assert item["image"]["size"] > (0, 0)
+                assert osp.splitext(item["image"]["path"])[0] == item["id"]
+                assert not Path(item["image"]["path"]).is_absolute()
+                assert tuple(item["image"]["size"]) > (0, 0)
             elif dimension == "3d":
-                assert os.path.splitext(item["point_cloud"]["path"])[-1] == item["id"]
+                assert osp.splitext(osp.basename(item["point_cloud"]["path"]))[0] == item["id"]
+                assert not Path(item["point_cloud"]["path"]).is_absolute()
+                for related_image in item["related_images"]:
+                    assert not Path(related_image["path"]).is_absolute()
+                    if "size" in related_image:
+                        assert tuple(related_image["size"]) > (0, 0)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -2614,8 +2636,20 @@ class TestImportTaskAnnotations:
         self._check_annotations(task_id)
 
     @pytest.mark.parametrize("dimension", ["2d", "3d"])
-    def test_can_import_datumaro_json(self, admin_user, tasks, dimension):
-        task = next(t for t in tasks if t["size"] and t["dimension"] == dimension)
+    def test_can_import_datumaro_json(self, admin_user, tasks, dimension, labels):
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["dimension"] == dimension
+            if all(
+                label["type"] != "skeleton"
+                for label in labels
+                if label.get("task_id") == t["id"]
+                or t.get("project_id")
+                and label.get("project_id") == t["project_id"]
+            )
+        )
 
         with make_api_client(admin_user) as api_client:
             response = export_dataset(
