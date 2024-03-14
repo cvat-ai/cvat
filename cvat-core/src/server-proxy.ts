@@ -349,6 +349,7 @@ Axios.interceptors.response.use((response) => {
     if (error?.response.status === 401) {
         config?.onAuthenticationFailed();
     }
+    throw error;
 });
 
 let token = store.get('token');

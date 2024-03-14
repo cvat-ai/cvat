@@ -149,7 +149,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
-        EventRecorder.configure({ savingEnabled: true });
 
         core.config.onOrganizationChange = (newOrgId: number | null) => {
             if (newOrgId === null) {
@@ -168,7 +167,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         };
 
         core.config.onAuthenticationFailed = () => {
-
+            if (!history.location.pathname.includes('auth')) {
+                setTimeout(() => history.push('/auth/login'), 1000);
+            }
         };
 
         customWaViewHit(location.pathname, location.search, location.hash);
@@ -307,7 +308,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
 
         if (user !== prevProps.user) {
-            console.log('saving enabled', !!user);
             EventRecorder.configure({
                 savingEnabled: !!user,
             });
