@@ -239,7 +239,6 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
             cy.get('.cvat-player-next-button').click();
             checkFrameNum(2);
 
-
             cy.saveJob();
         });
     });
