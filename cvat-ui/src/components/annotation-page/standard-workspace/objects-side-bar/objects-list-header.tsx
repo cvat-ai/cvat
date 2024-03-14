@@ -1,4 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
+// Copyright (C) 2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -112,7 +113,7 @@ function ObjectListHeader(props: Props): JSX.Element {
             <Row justify='space-between' align='middle'>
                 {!readonly && <LockAllSwitcher {...props} />}
                 <HideAllSwitcher {...props} />
-                { workspace === Workspace.REVIEW_WORKSPACE && (
+                { workspace === Workspace.REVIEW && (
                     <GTSwitcher {...props} />
                 )}
                 <CollapseAllSwitcher {...props} />

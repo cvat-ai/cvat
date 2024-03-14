@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -89,7 +89,7 @@ export default class AnnotationsFilter {
         return objects;
     }
 
-    filter(statesData: SerializedData[], filters: string[]): number[] {
+    filter(statesData: SerializedData[], filters: object[]): number[] {
         if (!filters.length) return statesData.map((stateData): number => stateData.clientID);
         const converted = this._convertObjects(statesData);
         return converted

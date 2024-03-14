@@ -1515,6 +1515,15 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
     });
 });
 
+Cypress.Commands.add('hideTooltips', () => {
+    cy.document().then((doc) => {
+        const tooltips = Array.from(doc.querySelectorAll('.ant-tooltip'));
+        if (tooltips.length > 0) {
+            cy.get('.ant-tooltip').invoke('hide');
+        }
+    });
+});
+
 Cypress.Commands.overwrite('visit', (orig, url, options) => {
     orig(url, options);
     cy.closeModalUnsupportedPlatform();

@@ -512,7 +512,6 @@ export interface NotificationsState {
             undo: null | ErrorState;
             redo: null | ErrorState;
             search: null | ErrorState;
-            searchEmptyFrame: null | ErrorState;
             deleteFrame: null | ErrorState;
             restoreFrame: null | ErrorState;
             savingLogs: null | ErrorState;
@@ -673,6 +672,12 @@ export enum Rotation {
     CLOCKWISE90,
 }
 
+export enum NavigationType {
+    REGULAR = 'regular',
+    FILTERED = 'filtered',
+    EMPTY = 'empty',
+}
+
 export interface AnnotationState {
     activities: {
         loads: {
@@ -704,7 +709,11 @@ export interface AnnotationState {
         labels: Label[];
         requestedId: number | null;
         instance: Job | null | undefined;
-        initialOpenGuide: boolean;
+        queryParameters: {
+            initialOpenGuide: boolean;
+            defaultLabel: string | null;
+            defaultPointsCount: number | null;
+        };
         groundTruthJobFramesMeta: FramesMetaData | null;
         groundTruthInstance: Job | null;
         attributes: Record<number, any[]>;
@@ -722,6 +731,7 @@ export interface AnnotationState {
             changeTime: number | null;
             changeFrameEvent: Event | null;
         };
+        navigationType: NavigationType;
         ranges: string;
         navigationBlocked: boolean;
         playing: boolean;
@@ -783,9 +793,10 @@ export interface AnnotationState {
 export enum Workspace {
     STANDARD3D = 'Standard 3D',
     STANDARD = 'Standard',
-    ATTRIBUTE_ANNOTATION = 'Attribute annotation',
-    TAG_ANNOTATION = 'Tag annotation',
-    REVIEW_WORKSPACE = 'Review',
+    ATTRIBUTES = 'Attribute annotation',
+    SINGLE_SHAPE = 'Single shape',
+    TAGS = 'Tag annotation',
+    REVIEW = 'Review',
 }
 
 export enum GridColor {

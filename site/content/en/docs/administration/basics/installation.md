@@ -611,7 +611,6 @@ If you stay in China, for installation you need to override the following source
           "http://f1361db2.m.daocloud.io",
           "https://docker.mirrors.ustc.edu.cn",
           "https://hub-mirror.c.163.com",
-          "https://https://mirror.ccs.tencentyun.com",
           "https://mirror.ccs.tencentyun.com",
       ]
   }

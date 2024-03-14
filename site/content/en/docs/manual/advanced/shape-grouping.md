@@ -25,3 +25,11 @@ Shapes that don't have `group_id`, will be highlighted in white.
 ![](/images/image078_detrac.jpg)
 
 ![](/images/image077_detrac.jpg)
+
+## Shapes grouping video tutorial
+
+<!--lint disable maximum-line-length-->
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/m8bB9f23wLs?si=N5EzIRG-1Wn6R15G" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+<!--lint enable maximum-line-length-->

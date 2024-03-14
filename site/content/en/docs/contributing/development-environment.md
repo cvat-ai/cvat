@@ -42,8 +42,8 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # CVAT supports only Python 3.9, so install it if you don’t have it:
-  pikaur -S python39
+  # CVAT supports only Python 3.10, so install it if you don’t have it:
+  pikaur -S python310
   ```
 
   ```bash
@@ -66,7 +66,7 @@ description: 'Installing a development environment for different operating syste
   - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
   - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
 
-- Make sure to use Python 3.9.0 or higher
+- Make sure to use Python 3.10.0 or higher
 
   ```
   python3 --version

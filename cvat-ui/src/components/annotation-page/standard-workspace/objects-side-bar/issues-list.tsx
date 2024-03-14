@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -115,7 +115,7 @@ export default function LabelsListComponent(): JSX.Element {
                         </CVATTooltip>
                     </Col>
                     {
-                        workspace === Workspace.REVIEW_WORKSPACE ? (
+                        workspace === Workspace.REVIEW ? (
                             <Col offset={2}>
                                 <CVATTooltip title='Show Ground truth annotations and conflicts'>
                                     <Icon
