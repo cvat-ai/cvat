@@ -107,6 +107,11 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
         });
     }
 
+    function resetAfterTestCase() {
+        cy.removeAnnotations();
+        cy.saveJob('PUT');
+    }
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
@@ -154,10 +159,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     });
 
     describe('Tests basic features of single shape annotation mode', () => {
-        afterEach(() => {
-            cy.removeAnnotations();
-            cy.saveJob('PUT');
-        });
+        afterEach(resetAfterTestCase);
 
         it('Check basic single shape annotation pipeline for polygon', () => {
             openJob({ defaultLabel: 'polygon_label', defaultPointsCount: 4 });
@@ -197,6 +199,8 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
     });
 
     describe('Tests advanced features of single shape annotation mode', () => {
+        afterEach(resetAfterTestCase);
+
         it('Check single shape annotation mode controls', () => {
             openJob({ defaultLabel: 'polygon_label', defaultPointsCount: 4 });
             checkSingleShapeModeOpened();
@@ -249,6 +253,27 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
             // be sure the object has correct label
             cy.changeWorkspace('Standard');
             cy.get(`#cvat-objects-sidebar-state-item-${frameCount}`).within(() => {
+                cy.get('.cvat-objects-sidebar-state-item-label-selector').should('have.text', anotherLabelName);
+            });
+
+            cy.saveJob();
+        });
+    });
+
+    describe('Regression tests', () => {
+        afterEach(resetAfterTestCase);
+
+        it('Changing labels in single shape annotation mode', () => {
+            openJob({ defaultLabel: 'polygon_label', defaultPointsCount: 4 });
+            checkSingleShapeModeOpened();
+
+            const anotherLabelName = 'points_label';
+            changeLabel(anotherLabelName);
+            clickPoints(pointsShape);
+
+            cy.changeWorkspace('Standard');
+            cy.goCheckFrameNumber(0);
+            cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
                 cy.get('.cvat-objects-sidebar-state-item-label-selector').should('have.text', anotherLabelName);
             });
 
