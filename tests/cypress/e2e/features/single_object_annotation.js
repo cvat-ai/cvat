@@ -100,6 +100,13 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
         submitJob();
     }
 
+    function changeLabel(labelName) {
+        cy.get('.cvat-single-shape-annotation-sidebar-label-select').click();
+        cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
+            cy.get('.ant-select-item-option-content').contains(labelName).click();
+        });
+    }
+
     before(() => {
         cy.visit('auth/login');
         cy.login();
@@ -227,6 +234,23 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
             checkFrameNum(1);
             cy.get('.cvat-player-next-button').click();
             checkFrameNum(2);
+
+            // Change label and draw an object,
+            const anotherLabelName = 'points_label';
+
+            cy.get('.cvat-single-shape-annotation-sidebar-navigate-empty-checkbox').within(() => {
+                cy.get('[type="checkbox"]').check();
+            });
+            cy.get('.cvat-player-previous-button-empty').click();
+
+            changeLabel(anotherLabelName);
+            clickPoints(pointsShape);
+
+            // be sure the object has correct label
+            cy.changeWorkspace('Standard');
+            cy.get(`#cvat-objects-sidebar-state-item-${frameCount}`).within(() => {
+                cy.get('.cvat-objects-sidebar-state-item-label-selector').should('have.text', anotherLabelName);
+            });
 
             cy.saveJob();
         });
