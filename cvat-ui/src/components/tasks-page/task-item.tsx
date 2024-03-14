@@ -124,6 +124,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         {taskInstance.name}
                     </Text>
                 </Text>
+                <br/>
                 {owner && (
                     <>
                         <Text type='secondary'>{`Created ${owner ? `by ${owner}` : ''} on ${created}`}</Text>
