@@ -7,7 +7,6 @@ import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
-import Paragraph from 'antd/lib/typography/Paragraph';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import { LoadingOutlined, MoreOutlined } from '@ant-design/icons';
