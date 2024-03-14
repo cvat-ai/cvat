@@ -1,5 +1,5 @@
 // Copyright (C) 2021-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -49,7 +49,7 @@ const initialValues: FormValues = {
 };
 
 interface UploadParams {
-    resource: 'annotation' | 'dataset';
+    resource: 'annotation' | 'dataset' | null;
     convMaskToPoly: boolean;
     useDefaultSettings: boolean;
     sourceStorage: Storage;
@@ -64,7 +64,7 @@ interface State {
     selectedLoader: any;
     useDefaultSettings: boolean;
     defaultStorageLocation: string;
-    defaultStorageCloudId: number | undefined;
+    defaultStorageCloudId?: number;
     helpMessage: string;
     selectedSourceStorageLocation: StorageLocation;
     uploadParams: UploadParams;
@@ -103,7 +103,7 @@ export const reducerActions = {
     setDefaultStorageLocation: (defaultStorageLocation: string) => (
         createAction(ReducerActionType.SET_DEFAULT_STORAGE_LOCATION, { defaultStorageLocation })
     ),
-    setDefaultStorageCloudId: (defaultStorageCloudId: number | undefined) => (
+    setDefaultStorageCloudId: (defaultStorageCloudId?: number) => (
         createAction(ReducerActionType.SET_DEFAULT_STORAGE_CLOUD_ID, { defaultStorageCloudId })
     ),
     setHelpMessage: (helpMessage: string) => (
@@ -144,7 +144,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             uploadParams: {
                 ...state.uploadParams,
                 file: action.payload.file,
-            } as UploadParams,
+            },
         };
     }
 
@@ -163,11 +163,12 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             uploadParams: {
                 ...state.uploadParams,
                 useDefaultSettings: action.payload.useDefaultSettings,
-                sourceStorage: isDefaultSettings ? {
-                    location: state.defaultStorageLocation,
+                sourceStorage: isDefaultSettings ? new Storage({
+                    location: state.defaultStorageLocation === StorageLocation.LOCAL ?
+                        StorageLocation.LOCAL : StorageLocation.CLOUD_STORAGE,
                     cloudStorageId: state.defaultStorageCloudId,
-                } as Storage : state.uploadParams.sourceStorage,
-            } as UploadParams,
+                }) : state.uploadParams.sourceStorage,
+            },
         };
     }
 
@@ -177,11 +178,12 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             defaultStorageLocation: action.payload.defaultStorageLocation,
             uploadParams: {
                 ...state.uploadParams,
-                sourceStorage: {
-                    location: action.payload.defaultStorageLocation,
+                sourceStorage: new Storage({
+                    location: action.payload.defaultStorageLocation === StorageLocation.LOCAL ?
+                        StorageLocation.LOCAL : StorageLocation.CLOUD_STORAGE,
                     cloudStorageId: state.defaultStorageCloudId,
-                } as Storage,
-            } as UploadParams,
+                }),
+            },
         };
     }
 
@@ -191,11 +193,12 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             defaultStorageCloudId: action.payload.defaultStorageCloudId,
             uploadParams: {
                 ...state.uploadParams,
-                sourceStorage: {
-                    location: state.defaultStorageLocation,
+                sourceStorage: new Storage({
+                    location: state.defaultStorageLocation === StorageLocation.LOCAL ?
+                        StorageLocation.LOCAL : StorageLocation.CLOUD_STORAGE,
                     cloudStorageId: action.payload.defaultStorageCloudId,
-                } as Storage,
-            } as UploadParams,
+                }),
+            },
         };
     }
 
@@ -219,7 +222,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             uploadParams: {
                 ...state.uploadParams,
                 fileName: action.payload.fileName,
-            } as UploadParams,
+            },
         };
     }
 
@@ -229,7 +232,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             uploadParams: {
                 ...state.uploadParams,
                 selectedFormat: action.payload.selectedFormat,
-            } as UploadParams,
+            },
         };
     }
 
@@ -239,7 +242,7 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             uploadParams: {
                 ...state.uploadParams,
                 convMaskToPoly: action.payload.convMaskToPoly,
-            } as UploadParams,
+            },
         };
     }
 
@@ -249,19 +252,18 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
             uploadParams: {
                 ...state.uploadParams,
                 sourceStorage: action.payload.sourceStorage,
-            } as UploadParams,
+            },
         };
     }
 
     if (action.type === ReducerActionType.SET_RESOURCE) {
-        const [resource] = action.payload.resource;
         return {
             ...state,
             resource: action.payload.resource,
             uploadParams: {
                 ...state.uploadParams,
-                resource: resource === 'dataset' ? 'dataset' : 'annotation',
-            } as UploadParams,
+                resource: action.payload.resource === 'dataset' ? 'dataset' : 'annotation',
+            },
         };
     }
 
@@ -276,9 +278,9 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         current,
     } = props;
     const [form] = Form.useForm();
-    const dispatch = useDispatch();
+    const appDispatch = useDispatch();
 
-    const [state, dispatchReducer] = useReducer(reducer, {
+    const [state, dispatch] = useReducer(reducer, {
         instanceType: '',
         file: null,
         selectedLoader: null,
@@ -288,9 +290,17 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
         helpMessage: '',
         selectedSourceStorageLocation: StorageLocation.LOCAL,
         uploadParams: {
+            resource: null,
             convMaskToPoly: true,
             useDefaultSettings: true,
-        } as UploadParams,
+            sourceStorage: new Storage({
+                location: StorageLocation.LOCAL,
+                cloudStorageId: undefined,
+            }),
+            selectedFormat: null,
+            file: null,
+            fileName: null,
+        },
         resource: '',
     });
 
@@ -309,9 +319,9 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     useEffect(() => {
         if (instanceT === 'project') {
-            dispatchReducer(reducerActions.setResource('dataset'));
+            dispatch(reducerActions.setResource('dataset'));
         } else if (instanceT === 'task' || instanceT === 'job') {
-            dispatchReducer(reducerActions.setResource('annotation'));
+            dispatch(reducerActions.setResource('annotation'));
         }
     }, [instanceT]);
 
@@ -323,8 +333,8 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
 
     useEffect(() => {
         if (instance) {
-            dispatchReducer(reducerActions.setDefaultStorageLocation(instance.sourceStorage.location));
-            dispatchReducer(reducerActions.setDefaultStorageCloudId(instance.sourceStorage.cloudStorageId));
+            dispatch(reducerActions.setDefaultStorageLocation(instance.sourceStorage.location));
+            dispatch(reducerActions.setDefaultStorageCloudId(instance.sourceStorage.cloudStorageId));
             let type: 'project' | 'task' | 'job' = 'job';
 
             if (isProject()) {
@@ -332,13 +342,12 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
             } else if (isTask()) {
                 type = 'task';
             }
-            dispatchReducer(reducerActions.setInstanceType(`${type} #${instance.id}`));
+            dispatch(reducerActions.setInstanceType(`${type} #${instance.id}`));
         }
     }, [instance, resource]);
 
     useEffect(() => {
-        dispatchReducer(reducerActions.setHelpMessage(
-            // eslint-disable-next-line prefer-template
+        dispatch(reducerActions.setHelpMessage(
             `Import from ${(defaultStorageLocation) ? defaultStorageLocation.split('_')[0] : 'local'} ` +
             `storage ${(defaultStorageCloudId) ? `№${defaultStorageCloudId}` : ''}`,
         ));
@@ -371,12 +380,12 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                                 `${selectedLoader.format.toLowerCase()} extension can be used`,
                         );
                     } else {
-                        dispatchReducer(reducerActions.setFile(_file));
+                        dispatch(reducerActions.setFile(_file));
                     }
                     return false;
                 }}
                 onRemove={() => {
-                    dispatchReducer(reducerActions.setFile(null));
+                    dispatch(reducerActions.setFile(null));
                 }}
             >
                 <p className='ant-upload-drag-icon'>
@@ -426,24 +435,24 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                 placeholder='Dataset file name'
                 className='cvat-modal-import-filename-input'
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    dispatchReducer(reducerActions.setFileName(e.target.value || ''));
+                    dispatch(reducerActions.setFileName(e.target.value || ''));
                 }}
             />
         </Form.Item>
     );
 
     const closeModal = useCallback((): void => {
-        dispatchReducer(reducerActions.setUseDefaultSettings(true));
-        dispatchReducer(reducerActions.setSelectedSourceStorageLocation(StorageLocation.LOCAL));
+        dispatch(reducerActions.setUseDefaultSettings(true));
+        dispatch(reducerActions.setSelectedSourceStorageLocation(StorageLocation.LOCAL));
         form.resetFields();
-        dispatchReducer(reducerActions.setFile(null));
-        dispatchReducer(reducerActions.setFileName(''));
-        dispatch(importActions.closeImportDatasetModal(instance));
+        dispatch(reducerActions.setFile(null));
+        dispatch(reducerActions.setFileName(''));
+        appDispatch(importActions.closeImportDatasetModal(instance));
     }, [form, instance]);
 
     const onUpload = (): void => {
         if (uploadParams && uploadParams.resource) {
-            dispatch(
+            appDispatch(
                 importDatasetAsync(
                     instance,
                     uploadParams.selectedFormat as string,
@@ -547,8 +556,8 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                                 const [loader] = importers.filter(
                                     (importer: any): boolean => importer.name === format,
                                 );
-                                dispatchReducer(reducerActions.setSelectedLoader(loader));
-                                dispatchReducer(reducerActions.setSelectedFormat(format));
+                                dispatch(reducerActions.setSelectedLoader(loader));
+                                dispatch(reducerActions.setSelectedFormat(format));
                             }}
                         >
                             {importers
@@ -587,7 +596,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                         >
                             <Switch
                                 onChange={(value: boolean) => {
-                                    dispatchReducer(reducerActions.setConvMaskToPoly(value));
+                                    dispatch(reducerActions.setConvMaskToPoly(value));
                                 }}
                             />
                         </Form.Item>
@@ -604,7 +613,7 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                         >
                             <Switch
                                 onChange={(value: boolean) => {
-                                    dispatchReducer(reducerActions.setUseDefaultSettings(value));
+                                    dispatch(reducerActions.setUseDefaultSettings(value));
                                 }}
                             />
                         </Form.Item>
@@ -618,14 +627,14 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             locationName={['sourceStorage', 'location']}
                             selectCloudStorageName={['sourceStorage', 'cloudStorageId']}
                             onChangeStorage={(value: StorageData) => {
-                                dispatchReducer(reducerActions.setSourceStorage(new Storage({
+                                dispatch(reducerActions.setSourceStorage(new Storage({
                                     location: value?.location || defaultStorageLocation,
                                     cloudStorageId: (value.location) ? value.cloudStorageId : defaultStorageCloudId,
                                 })));
                             }}
                             locationValue={selectedSourceStorageLocation}
                             onChangeLocationValue={(value: StorageLocation) => {
-                                dispatchReducer(reducerActions.setSelectedSourceStorageLocation(value));
+                                dispatch(reducerActions.setSelectedSourceStorageLocation(value));
                             }}
                         />
                     )}
