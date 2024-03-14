@@ -149,7 +149,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         core.logger.configure(() => window.document.hasFocus, userActivityCallback);
-        EventRecorder.initSave();
+        EventRecorder.configure({ savingEnabled: true });
 
         core.config.onOrganizationChange = (newOrgId: number | null) => {
             if (newOrgId === null) {
@@ -165,6 +165,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     }
                 });
             }
+        };
+
+        core.config.onAuthenticationFailed = () => {
+
         };
 
         customWaViewHit(location.pathname, location.search, location.hash);
@@ -254,7 +258,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
     }
 
-    public componentDidUpdate(): void {
+    public componentDidUpdate(prevProps: CVATAppProps): void {
         const {
             verifyAuthorized,
             loadFormats,
@@ -300,6 +304,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         if (!userInitialized && !userFetching) {
             verifyAuthorized();
             return;
+        }
+
+        if (user !== prevProps.user) {
+            console.log('saving enabled', !!user);
+            EventRecorder.configure({
+                savingEnabled: !!user,
+            });
         }
 
         if (!userAgreementsInitialized && !userAgreementsFetching) {

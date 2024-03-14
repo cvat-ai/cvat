@@ -16,6 +16,7 @@ const config = {
         onEmptyMaskOccurrence: null,
     },
     onOrganizationChange: null,
+    onAuthenticationFailed: null,
     globalObjectsCounter: 0,
 };
 

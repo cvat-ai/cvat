@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,10 +13,19 @@ const { CONTROLS_LOGS_INTERVAL } = config;
 const classFilter = ['ant-btn'];
 const parentClassFilter = ['ant-btn'];
 
+export interface EventRecorderConfiguration {
+    savingEnabled: boolean;
+}
+
 class EventRecorder {
     #savingTimeout: number | null;
+    #configuration: EventRecorderConfiguration;
+
     public constructor() {
         this.#savingTimeout = null;
+        this.#configuration = {
+            savingEnabled: false,
+        };
         core.logger.log(EventScope.loadTool, {
             location: window.location.pathname + window.location.search,
             platform: platformInfo(),
@@ -49,14 +58,35 @@ class EventRecorder {
         }
     }
 
-    public initSave(): void {
-        if (this.#savingTimeout) return;
-        this.#savingTimeout = window.setTimeout(() => {
-            core.logger.save().finally(() => {
-                this.#savingTimeout = null;
-                this.initSave();
-            });
-        }, CONTROLS_LOGS_INTERVAL);
+    public configure(configuration: EventRecorderConfiguration): void {
+        this.onConfigurationChange(configuration);
+        this.#configuration = {
+            ...this.#configuration,
+            ...configuration,
+        };
+    }
+
+    private onConfigurationChange(newConfiguration: EventRecorderConfiguration): void {
+        const { savingEnabled } = newConfiguration;
+        if (savingEnabled !== this.#configuration.savingEnabled) {
+            this.setupSavingTimeout(savingEnabled);
+        }
+    }
+
+    private setupSavingTimeout(enable: boolean): void {
+        if (enable) {
+            if (this.#savingTimeout) return;
+
+            this.#savingTimeout = window.setTimeout(() => {
+                core.logger.save().finally(() => {
+                    this.#savingTimeout = null;
+                    this.setupSavingTimeout(true);
+                });
+            }, CONTROLS_LOGS_INTERVAL);
+        } else if (this.#savingTimeout) {
+            clearTimeout(this.#savingTimeout);
+            this.#savingTimeout = null;
+        }
     }
 
     private filterClassName(cls: string): string {

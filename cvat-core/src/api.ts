@@ -283,6 +283,12 @@ function build(): CVATCore {
             set onOrganizationChange(value: (orgId: number) => void) {
                 config.onOrganizationChange = value;
             },
+            get onAuthenticationFailed(): () => void {
+                return config.onAuthenticationFailed;
+            },
+            set onAuthenticationFailed(value: () => void) {
+                config.onAuthenticationFailed = value;
+            },
             set globalObjectsCounter(value: number) {
                 config.globalObjectsCounter = value;
             },
