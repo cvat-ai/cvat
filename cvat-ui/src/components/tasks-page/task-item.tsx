@@ -118,14 +118,12 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         return (
             <Col span={10} className='cvat-task-item-description'>
-                <Paragraph
-                    ellipsis={{ rows: 2, tooltip: taskInstance.name }}
-                >
+                <Text ellipsis={{ tooltip: taskInstance.name }}>
                     <Text strong type='secondary' className='cvat-item-task-id'>{`#${id}: `}</Text>
                     <Text strong className='cvat-item-task-name'>
                         {taskInstance.name}
                     </Text>
-                </Paragraph>
+                </Text>
                 {owner && (
                     <>
                         <Text type='secondary'>{`Created ${owner ? `by ${owner}` : ''} on ${created}`}</Text>
