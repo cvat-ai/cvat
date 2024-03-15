@@ -18,13 +18,15 @@ import Alert from 'antd/lib/alert';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 
-import { CombinedState, NavigationType } from 'reducers';
+import { CombinedState, NavigationType, ObjectType } from 'reducers';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
     Job, JobState, Label, LabelType,
 } from 'cvat-core-wrapper';
 import { ActionUnion, createAction } from 'utils/redux';
-import { changeFrameAsync, saveAnnotationsAsync, setNavigationType } from 'actions/annotation-actions';
+import {
+    rememberObject, changeFrameAsync, saveAnnotationsAsync, setNavigationType,
+} from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import GlobalHotKeys from 'utils/mousetrap-react';
 
@@ -219,6 +221,11 @@ function SingleShapeSidebar(): JSX.Element {
     canvasInitializerRef.current = (): void => {
         const canvas = store.getState().annotation.canvas.instance as Canvas;
         if (isCanvasReady && canvas.mode() !== CanvasMode.DRAW && state.label && state.labelType !== LabelType.ANY) {
+            appDispatch(rememberObject({
+                activeLabelID: state.label.id,
+                activeObjectType: ObjectType.SHAPE,
+            }));
+
             canvas.draw({
                 enabled: true,
                 shapeType: state.labelType,
