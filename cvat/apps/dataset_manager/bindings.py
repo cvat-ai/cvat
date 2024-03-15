@@ -276,7 +276,7 @@ class CommonData(InstanceLabelData):
             }
 
         self._frame_mapping = {
-            self._get_filename(info["path"]): frame_number
+            info["path"]: frame_number
             for frame_number, info in self._frame_info.items()
         }
 
@@ -620,9 +620,10 @@ class CommonData(InstanceLabelData):
         path: str, root_hint: Optional[str] = None, *, path_has_ext: bool = True
     ) -> Optional[int]:
         if path_has_ext:
+            match = self._frame_mapping.get(path)
+        else:
             path = self._get_filename(path)
-
-        match = self._frame_mapping.get(path)
+            match = self._get_filename(self._frame_mapping.get(path))
 
         if not match and root_hint and not path.startswith(root_hint):
             path = osp.join(root_hint, path)
@@ -1271,9 +1272,10 @@ class ProjectData(InstanceLabelData):
         root_hint: str = None, path_has_ext: bool = True
     ) -> Optional[int]:
         if path_has_ext:
+            match_task, match_frame = self._frame_mapping.get((subset, path), (None, None))
+        else:
             path = self._get_filename(path)
-
-        match_task, match_frame = self._frame_mapping.get((subset, path), (None, None))
+            match_task, match_frame = self._frame_mapping.get((subset, path), (None, None))
 
         if not match_frame and root_hint and not path.startswith(root_hint):
             path = osp.join(root_hint, path)
