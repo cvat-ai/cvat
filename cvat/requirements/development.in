@@ -1,6 +1,6 @@
 -r base.in
 
-black==23.3.0
+black>=24.1
 django-extensions==3.0.8
 django-silk==5.0.3
 pylint-django==2.5.3

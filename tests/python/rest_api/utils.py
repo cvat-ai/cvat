@@ -27,16 +27,20 @@ def export_dataset(
 ) -> HTTPResponse:
     for _ in range(max_retries):
         (_, response) = endpoint.call_with_http_info(**kwargs, format=format, _parse_response=False)
-        if response.status == HTTPStatus.CREATED:
+        if response.status in (HTTPStatus.CREATED, HTTPStatus.OK):
             break
         assert response.status == HTTPStatus.ACCEPTED
         sleep(interval)
-    assert response.status == HTTPStatus.CREATED
+    else:
+        assert (
+            False
+        ), f"Export process was not finished within allowed time ({interval * max_retries}, sec)"
 
-    (_, response) = endpoint.call_with_http_info(
-        **kwargs, format=format, action="download", _parse_response=False
-    )
-    assert response.status == HTTPStatus.OK
+    if response.status == HTTPStatus.CREATED:
+        (_, response) = endpoint.call_with_http_info(
+            **kwargs, format=format, action="download", _parse_response=False
+        )
+        assert response.status == HTTPStatus.OK
 
     return response
 
@@ -52,8 +56,7 @@ class CollectionSimpleFilterTestBase(metaclass=ABCMeta):
     cmp_ignore_keys: List[str] = ["updated_date"]
 
     @abstractmethod
-    def _get_endpoint(self, api_client: ApiClient) -> Endpoint:
-        ...
+    def _get_endpoint(self, api_client: ApiClient) -> Endpoint: ...
 
     def _retrieve_collection(self, **kwargs) -> List:
         kwargs["return_json"] = True

@@ -7,7 +7,7 @@ from django.db.models.signals import pre_save, post_save, post_delete
 from django.core.exceptions import ObjectDoesNotExist
 
 from cvat.apps.engine.models import (
-    Organization,
+    TimestampedModel,
     Project,
     Task,
     Job,
@@ -17,6 +17,7 @@ from cvat.apps.engine.models import (
     Comment,
     Label,
 )
+from cvat.apps.organizations.models import Organization
 
 from .handlers import handle_update, handle_create, handle_delete
 from .event import EventScopeChoice, event_scope
@@ -30,7 +31,19 @@ from .event import EventScopeChoice, event_scope
 @receiver(pre_save, sender=Issue, dispatch_uid="issue:update_receiver")
 @receiver(pre_save, sender=Comment, dispatch_uid="comment:update_receiver")
 @receiver(pre_save, sender=Label, dispatch_uid="label:update_receiver")
-def resource_update(sender, instance, **kwargs):
+def resource_update(sender, *, instance, update_fields, **kwargs):
+    if (
+        isinstance(instance, TimestampedModel)
+            and update_fields and list(update_fields) == ["updated_date"]
+    ):
+        # This is an optimization for the common case where only the date is bumped
+        # (see `TimestampedModel.touch`). Since the actual update of the field will
+        # be performed _after_ this signal is sent (in `DateTimeField.pre_save`),
+        # and no other fields are updated, there is guaranteed to be no difference
+        # between the old and current states of the instance. Therefore, no events
+        # will need be logged, so we can just exit immediately.
+        return
+
     resource_name = instance.__class__.__name__.lower()
 
     try:

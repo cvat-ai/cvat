@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -79,13 +79,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
             fetching: logoutFetching,
             fetching: changePasswordFetching,
             showChangePasswordDialog: changePasswordDialogShown,
-            allowChangePassword: renderChangePasswordItem,
         },
         plugins: { list },
         about,
         shortcuts: { normalizedKeyMap, keyMap, visibleShortcutsHelp: shortcutsModalVisible },
         settings: { showDialog: settingsModalVisible },
         organizations: { fetching: organizationFetching, current: currentOrganization },
+        serverAPI: {
+            configuration: {
+                isPasswordChangeEnabled: renderChangePasswordItem,
+            },
+        },
     } = state;
 
     return {
@@ -436,7 +440,7 @@ function HeaderComponent(props: Props): JSX.Element {
     );
 
     const userMenu = (
-        <Menu className='cvat-header-menu'>
+        <Menu triggerSubMenuAction='click' className='cvat-header-menu'>
             { menuItems.sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1])
                 .map((menuItem) => menuItem[0]) }
         </Menu>
@@ -558,7 +562,13 @@ function HeaderComponent(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
-                <Dropdown placement='bottomRight' overlay={userMenu} className='cvat-header-menu-user-dropdown'>
+                <Dropdown
+                    trigger={['click']}
+                    destroyPopupOnHide
+                    placement='bottomRight'
+                    overlay={userMenu}
+                    className='cvat-header-menu-user-dropdown'
+                >
                     <span>
                         <UserOutlined className='cvat-header-dropdown-icon' />
                         <Row>

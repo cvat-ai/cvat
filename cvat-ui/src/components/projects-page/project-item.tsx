@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -86,9 +86,14 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
             >
                 <Meta
                     title={(
-                        <span onClick={onOpenProject} className='cvat-projects-project-item-title' aria-hidden>
+                        <Text
+                            ellipsis={{ tooltip: instance.name }}
+                            onClick={onOpenProject}
+                            className='cvat-projects-project-item-title'
+                            aria-hidden
+                        >
                             {instance.name}
-                        </span>
+                        </Text>
                     )}
                     description={(
                         <div className='cvat-projects-project-item-description'>
@@ -102,7 +107,11 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
                                 <Text type='secondary'>{`Last updated ${updated}`}</Text>
                             </div>
                             <div>
-                                <Dropdown overlay={<ProjectActionsMenuComponent projectInstance={instance} />}>
+                                <Dropdown
+                                    destroyPopupOnHide
+                                    trigger={['click']}
+                                    overlay={<ProjectActionsMenuComponent projectInstance={instance} />}
+                                >
                                     <Button className='cvat-project-details-button' type='link' size='large' icon={<MoreOutlined />} />
                                 </Dropdown>
                             </div>

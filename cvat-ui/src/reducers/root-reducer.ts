@@ -23,8 +23,8 @@ import importReducer from './import-reducer';
 import cloudStoragesReducer from './cloud-storages-reducer';
 import organizationsReducer from './organizations-reducer';
 import webhooksReducer from './webhooks-reducer';
-import analyticsReducer from './analytics-reducer';
 import invitationsReducer from './invitations-reducer';
+import serverAPIReducer from './server-api-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
@@ -47,7 +47,7 @@ export default function createRootReducer(): Reducer {
         cloudStorages: cloudStoragesReducer,
         organizations: organizationsReducer,
         webhooks: webhooksReducer,
-        analytics: analyticsReducer,
         invitations: invitationsReducer,
+        serverAPI: serverAPIReducer,
     });
 }

@@ -323,6 +323,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                 <>
                                     <Text strong>Recommendation: </Text>
                                     <Button
+                                        className='cvat-action-runner-save-job-recommendation'
                                         type='link'
                                         onClick={() => {
                                             storage.dispatch(
@@ -349,6 +350,7 @@ function AnnotationsActionsModalContent(props: { onClose: () => void; }): JSX.El
                                 <>
                                     <Text strong>Recommendation: </Text>
                                     <Button
+                                        className='cvat-action-runner-disable-autosave-recommendation'
                                         type='link'
                                         onClick={() => {
                                             storage.dispatch(switchAutoSave(false));

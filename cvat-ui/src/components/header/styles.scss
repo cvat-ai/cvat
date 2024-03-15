@@ -81,6 +81,10 @@
     }
 }
 
+.cvat-header-menu {
+    width: $grid-unit-size * 20;
+}
+
 .cvat-header-menu-active-organization-item {
     ::after {
         content: ' \2713';

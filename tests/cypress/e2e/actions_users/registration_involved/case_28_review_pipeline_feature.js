@@ -71,7 +71,7 @@ context('Review pipeline feature', () => {
         cy.get('.cvat-tasks-page').should('exist').and('be.visible');
         cy.headlessCreateTask(taskSpec, dataSpec).then((response) => {
             taskID = response.taskID;
-            jobIDs = response.jobID;
+            jobIDs = response.jobIDs;
         });
         cy.logout();
     });

@@ -29,7 +29,7 @@ context('Correct behaviour of fit when navigating between frames with different 
             sorting_method: 'lexicographical',
         }).then((response) => {
             taskID = response.taskID;
-            [jobID] = response.jobID;
+            [jobID] = response.jobIDs;
         });
     });
 

@@ -1,5 +1,5 @@
 # Copyright (C) 2019-2022 Intel Corporation
-# Copyright (C) 2022-2023 CVAT.ai Corporation
+# Copyright (C) 2022-2024 CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -27,9 +27,9 @@ from django.utils import timezone
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.dataset_manager.util import add_prefetch_fields
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, DimensionType, Job, JobType,
-                                     Label, LabelType, Project, SegmentType, ShapeType, Task)
-from cvat.apps.engine.models import Image as Img
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, DimensionType, Job,
+                                     JobType, Label, LabelType, Project, SegmentType, ShapeType,
+                                     Task)
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 from .formats.transformations import CVATRleToCOCORle, EllipsesToMasks
@@ -1311,11 +1311,113 @@ class ProjectData(InstanceLabelData):
     def add_task(self, task, files):
         self._project_annotation.add_task(task, files, self)
 
+@attrs(frozen=True, auto_attribs=True)
+class ImageSource:
+    db_data: Data
+    is_video: bool = attrib(kw_only=True)
+
+class ImageProvider:
+    def __init__(self, sources: Dict[int, ImageSource]) -> None:
+        self._sources = sources
+
+    def unload(self) -> None:
+        pass
+
+class ImageProvider2D(ImageProvider):
+    def __init__(self, sources: Dict[int, ImageSource]) -> None:
+        super().__init__(sources)
+        self._current_source_id = None
+        self._frame_provider = None
+
+    def unload(self) -> None:
+        self._unload_source()
+
+    def get_image_for_frame(self, source_id: int, frame_index: int, **image_kwargs):
+        source = self._sources[source_id]
+
+        if source.is_video:
+            def video_frame_loader(_):
+                self._load_source(source_id, source)
+
+                # optimization for videos: use numpy arrays instead of bytes
+                # some formats or transforms can require image data
+                return self._frame_provider.get_frame(frame_index,
+                    quality=FrameProvider.Quality.ORIGINAL,
+                    out_type=FrameProvider.Type.NUMPY_ARRAY)[0]
+            return dm.Image(data=video_frame_loader, **image_kwargs)
+        else:
+            def image_loader(_):
+                self._load_source(source_id, source)
+
+                # for images use encoded data to avoid recoding
+                return self._frame_provider.get_frame(frame_index,
+                    quality=FrameProvider.Quality.ORIGINAL,
+                    out_type=FrameProvider.Type.BUFFER)[0].getvalue()
+            return dm.ByteImage(data=image_loader, **image_kwargs)
+
+    def _load_source(self, source_id: int, source: ImageSource) -> None:
+        if self._current_source_id == source_id:
+            return
+
+        self._unload_source()
+        self._frame_provider = FrameProvider(source.db_data)
+        self._current_source_id = source_id
+
+    def _unload_source(self) -> None:
+        if self._frame_provider:
+            self._frame_provider.unload()
+            self._frame_provider = None
+
+        self._current_source_id = None
+
+class ImageProvider3D(ImageProvider):
+    def __init__(self, sources: Dict[int, ImageSource]) -> None:
+        super().__init__(sources)
+        self._images_per_source = {
+            source_id: {
+                image.id: image
+                for image in source.db_data.images.prefetch_related('related_files')
+            }
+            for source_id, source in sources.items()
+        }
+
+    def get_image_for_frame(self, source_id: int, frame_id: int, **image_kwargs):
+        source = self._sources[source_id]
+
+        point_cloud_path = osp.join(
+            source.db_data.get_upload_dirname(), image_kwargs['path'],
+        )
+
+        image = self._images_per_source[source_id][frame_id]
+
+        related_images = [
+            path
+            for rf in image.related_files.all()
+            for path in [osp.realpath(str(rf.path))]
+            if osp.isfile(path)
+        ]
+
+        return point_cloud_path, related_images
+
+IMAGE_PROVIDERS_BY_DIMENSION = {
+    DimensionType.DIM_3D: ImageProvider3D,
+    DimensionType.DIM_2D: ImageProvider2D,
+}
+
 class CVATDataExtractorMixin:
     def __init__(self, *,
         convert_annotations: Callable = None
     ):
         self.convert_annotations = convert_annotations or convert_cvat_anno_to_dm
+
+        self._image_provider: Optional[ImageProvider] = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        if self._image_provider:
+            self._image_provider.unload()
 
     def categories(self) -> dict:
         raise NotImplementedError()
@@ -1396,35 +1498,10 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
         if is_video:
             ext = FrameProvider.VIDEO_FRAME_EXT
 
-        if dimension == DimensionType.DIM_3D:
-            def _make_image(image_id, **kwargs):
-                loader = osp.join(
-                    instance_data.db_data.get_upload_dirname(), kwargs['path'])
-                related_images = []
-                image = Img.objects.get(id=image_id)
-                for i in image.related_files.all():
-                    path = osp.realpath(str(i.path))
-                    if osp.isfile(path):
-                        related_images.append(path)
-                return loader, related_images
-
-        elif include_images:
-            frame_provider = FrameProvider(instance_data.db_data)
-            if is_video:
-                # optimization for videos: use numpy arrays instead of bytes
-                # some formats or transforms can require image data
-                def _make_image(i, **kwargs):
-                    loader = lambda _: frame_provider.get_frame(i,
-                        quality=frame_provider.Quality.ORIGINAL,
-                        out_type=frame_provider.Type.NUMPY_ARRAY)[0]
-                    return dm.Image(data=loader, **kwargs)
-            else:
-                # for images use encoded data to avoid recoding
-                def _make_image(i, **kwargs):
-                    loader = lambda _: frame_provider.get_frame(i,
-                        quality=frame_provider.Quality.ORIGINAL,
-                        out_type=frame_provider.Type.BUFFER)[0].getvalue()
-                    return dm.ByteImage(data=loader, **kwargs)
+        if dimension == DimensionType.DIM_3D or include_images:
+            self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[dimension](
+                {0: ImageSource(instance_data.db_data, is_video=is_video)}
+            )
 
         for frame_data in instance_data.group_by_frame(include_empty=True):
             image_args = {
@@ -1433,9 +1510,9 @@ class CvatTaskOrJobDataExtractor(dm.SourceExtractor, CVATDataExtractorMixin):
             }
 
             if dimension == DimensionType.DIM_3D:
-                dm_image = _make_image(frame_data.id, **image_args)
+                dm_image = self._image_provider.get_image_for_frame(0, frame_data.id, **image_args)
             elif include_images:
-                dm_image = _make_image(frame_data.idx, **image_args)
+                dm_image = self._image_provider.get_image_for_frame(0, frame_data.idx, **image_args)
             else:
                 dm_image = dm.Image(**image_args)
             dm_anno = self._read_cvat_anno(frame_data, instance_meta['labels'])
@@ -1501,51 +1578,19 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
 
         dm_items: List[dm.DatasetItem] = []
 
-        ext_per_task: Dict[int, str] = {}
-        image_maker_per_task: Dict[int, Callable] = {}
+        if self._dimension == DimensionType.DIM_3D or include_images:
+            self._image_provider = IMAGE_PROVIDERS_BY_DIMENSION[self._dimension](
+                {
+                    task.id: ImageSource(task.data, is_video=task.mode == 'interpolation')
+                    for task in project_data.tasks
+                }
+            )
 
-        for task in project_data.tasks:
-            is_video = task.mode == 'interpolation'
-            ext_per_task[task.id] = FrameProvider.VIDEO_FRAME_EXT if is_video else ''
-            if self._dimension == DimensionType.DIM_3D:
-                def image_maker_factory(task):
-                    images_query = task.data.images.prefetch_related()
-                    def _make_image(i, **kwargs):
-                        loader = osp.join(
-                            task.data.get_upload_dirname(), kwargs['path'],
-                        )
-                        related_images = []
-                        image = images_query.get(id=i)
-                        for i in image.related_files.all():
-                            path = osp.realpath(str(i.path))
-                            if osp.isfile(path):
-                                related_images.append(path)
-                        return loader, related_images
-                    return _make_image
-                image_maker_per_task[task.id] = image_maker_factory(task)
-            elif include_images:
-                if is_video:
-                    # optimization for videos: use numpy arrays instead of bytes
-                    # some formats or transforms can require image data
-                    def image_maker_factory(task):
-                        frame_provider = FrameProvider(task.data)
-                        def _make_image(i, **kwargs):
-                            loader = lambda _: frame_provider.get_frame(i,
-                                quality=frame_provider.Quality.ORIGINAL,
-                                out_type=frame_provider.Type.NUMPY_ARRAY)[0]
-                            return dm.Image(data=loader, **kwargs)
-                        return _make_image
-                else:
-                    # for images use encoded data to avoid recoding
-                    def image_maker_factory(task):
-                        frame_provider = FrameProvider(task.data)
-                        def _make_image(i, **kwargs):
-                            loader = lambda _: frame_provider.get_frame(i,
-                                quality=frame_provider.Quality.ORIGINAL,
-                                out_type=frame_provider.Type.BUFFER)[0].getvalue()
-                            return dm.ByteImage(data=loader, **kwargs)
-                        return _make_image
-                image_maker_per_task[task.id] = image_maker_factory(task)
+        ext_per_task: Dict[int, str] = {
+            task.id: FrameProvider.VIDEO_FRAME_EXT if is_video else ''
+            for task in project_data.tasks
+            for is_video in [task.mode == 'interpolation']
+        }
 
         for frame_data in project_data.group_by_frame(include_empty=True):
             image_args = {
@@ -1553,9 +1598,11 @@ class CVATProjectDataExtractor(dm.Extractor, CVATDataExtractorMixin):
                 'size': (frame_data.height, frame_data.width),
             }
             if self._dimension == DimensionType.DIM_3D:
-                dm_image = image_maker_per_task[frame_data.task_id](frame_data.id, **image_args)
+                dm_image = self._image_provider.get_image_for_frame(
+                    frame_data.task_id, frame_data.id, **image_args)
             elif include_images:
-                dm_image = image_maker_per_task[frame_data.task_id](frame_data.idx, **image_args)
+                dm_image = self._image_provider.get_image_for_frame(
+                    frame_data.task_id, frame_data.idx, **image_args)
             else:
                 dm_image = dm.Image(**image_args)
             dm_anno = self._read_cvat_anno(frame_data, project_data.meta[project_data.META_FIELD]['labels'])

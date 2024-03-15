@@ -155,7 +155,6 @@ For more information about the supported formats, see:
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                                       | ✔️     | ✔️     |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                                  | ✔️     | ✔️     |
 | [MS COCO Keypoints Detection](http://cocodataset.org/#format-data)                               | ✔️     | ✔️     |
-| [TFrecord](https://www.tensorflow.org/tutorials/load_data/tfrecord)                              | ✔️     | ✔️     |
 | [MOT](https://motchallenge.net/)                                                                 | ✔️     | ✔️     |
 | [MOTS PNG](https://www.vision.rwth-aachen.de/page/mots)                                          | ✔️     | ✔️     |
 | [LabelMe 3.0](http://labelme.csail.mit.edu/Release3.0)                                           | ✔️     | ✔️     |
@@ -252,7 +251,7 @@ questions and get our support.
 [docker-server-image-url]: https://hub.docker.com/r/cvat/server
 [docker-ui-pulls-img]: https://img.shields.io/docker/pulls/cvat/ui.svg?style=flat-square&label=UI%20pulls
 [docker-ui-image-url]: https://hub.docker.com/r/cvat/ui
-[ci-img]: https://github.com/opencv/cvat/workflows/CI/badge.svg?branch=develop
+[ci-img]: https://github.com/opencv/cvat/actions/workflows/main.yml/badge.svg?branch=develop
 [ci-url]: https://github.com/opencv/cvat/actions
 [gitter-img]: https://img.shields.io/gitter/room/opencv-cvat/public?style=flat
 [gitter-url]: https://gitter.im/opencv-cvat/public

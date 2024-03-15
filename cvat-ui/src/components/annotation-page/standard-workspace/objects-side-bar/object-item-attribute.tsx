@@ -46,6 +46,23 @@ function ItemAttributeComponent(props: Props): JSX.Element {
     const attrNameStyle: React.CSSProperties = { wordBreak: 'break-word', lineHeight: '1em', fontSize: 12 };
     const ref = useRef<TextAreaRef>(null);
     const [selectionStart, setSelectionStart] = useState<number>(attrValue.length);
+    const [localAttrValue, setAttributeValue] = useState(attrValue);
+
+    useEffect(() => {
+        // attribute value updated from inside the app (for example undo/redo)
+        if (attrValue !== localAttrValue) {
+            setAttributeValue(attrValue);
+        }
+    }, [attrValue]);
+
+    useEffect(() => {
+        // wrap to internal use effect to avoid issues
+        // with chinese keyboard
+        // https://github.com/opencv/cvat/pull/6916
+        if (localAttrValue !== attrValue) {
+            changeAttribute(attrID, localAttrValue);
+        }
+    }, [localAttrValue]);
 
     useEffect(() => {
         const textArea = ref?.current?.resizableTextArea?.textArea;
@@ -60,11 +77,10 @@ function ItemAttributeComponent(props: Props): JSX.Element {
             <Col span={24}>
                 <Checkbox
                     className='cvat-object-item-checkbox-attribute'
-                    checked={attrValue === 'true'}
+                    checked={localAttrValue === 'true'}
                     disabled={readonly}
                     onChange={(event: CheckboxChangeEvent): void => {
-                        const value = event.target.checked ? 'true' : 'false';
-                        changeAttribute(attrID, value);
+                        setAttributeValue(event.target.checked ? 'true' : 'false');
                     }}
                 >
                     <Text style={attrNameStyle} className='cvat-text'>
@@ -87,9 +103,9 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                     <Radio.Group
                         disabled={readonly}
                         size='small'
-                        value={attrValue}
+                        value={localAttrValue}
                         onChange={(event: RadioChangeEvent): void => {
-                            changeAttribute(attrID, event.target.value);
+                            setAttributeValue(event.target.value);
                         }}
                     >
                         {attrValues.map(
@@ -116,9 +132,9 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         disabled={readonly}
                         size='small'
                         onChange={(value: string): void => {
-                            changeAttribute(attrID, value);
+                            setAttributeValue(value);
                         }}
-                        value={attrValue}
+                        value={localAttrValue}
                         className='cvat-object-item-select-attribute'
                     >
                         {attrValues.map(
@@ -145,12 +161,12 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                     <InputNumber
                         disabled={readonly}
                         size='small'
-                        onChange={(value: number | undefined | string): void => {
-                            if (typeof value !== 'undefined') {
-                                changeAttribute(attrID, `${clamp(+value, min, max)}`);
+                        onChange={(value: number | null): void => {
+                            if (value !== null) {
+                                setAttributeValue(`${clamp(+value, min, max)}`);
                             }
                         }}
-                        value={+attrValue}
+                        value={+localAttrValue}
                         className='cvat-object-item-number-attribute'
                         min={min}
                         max={max}
@@ -179,9 +195,9 @@ function ItemAttributeComponent(props: Props): JSX.Element {
                         if (ref.current?.resizableTextArea?.textArea) {
                             setSelectionStart(ref.current.resizableTextArea.textArea.selectionStart);
                         }
-                        changeAttribute(attrID, event.target.value);
+                        setAttributeValue(event.target.value);
                     }}
-                    value={attrValue}
+                    value={localAttrValue}
                     className='cvat-object-item-text-attribute'
                 />
             </Col>

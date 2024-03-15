@@ -12,7 +12,6 @@ from rest_framework.serializers import ValidationError
 import rq
 import re
 import shutil
-from distutils.dir_util import copy_tree
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 import django_rq
@@ -51,6 +50,7 @@ def create(db_task, data, request):
             job_id=f"create:task.id{db_task.pk}",
             meta=get_rq_job_meta(request=request, db_obj=db_task),
             depends_on=define_dependent_job(q, user_id),
+            failure_ttl=settings.IMPORT_CACHE_FAILED_TTL.total_seconds(),
         )
 
 ############################# Internal implementation for server API
@@ -98,7 +98,7 @@ def _copy_data_from_share_point(
             source_path = os.path.join(server_dir, os.path.normpath(path))
         target_path = os.path.join(upload_dir, path)
         if os.path.isdir(source_path):
-            copy_tree(source_path, target_path)
+            shutil.copytree(source_path, target_path)
         else:
             target_dir = os.path.dirname(target_path)
             if not os.path.exists(target_dir):

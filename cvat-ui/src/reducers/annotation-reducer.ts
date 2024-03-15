@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,6 +17,7 @@ import {
     ActiveControl,
     AnnotationState,
     ContextMenuType,
+    NavigationType,
     ObjectType,
     ShapeType,
     Workspace,
@@ -54,9 +55,14 @@ const defaultState: AnnotationState = {
     job: {
         openTime: null,
         labels: [],
-        groundTruthJobFramesMeta: null,
         requestedId: null,
+        groundTruthJobFramesMeta: null,
         groundTruthInstance: null,
+        queryParameters: {
+            initialOpenGuide: false,
+            defaultLabel: null,
+            defaultPointsCount: null,
+        },
         instance: null,
         attributes: {},
         fetching: false,
@@ -71,8 +77,9 @@ const defaultState: AnnotationState = {
             fetching: false,
             delay: 0,
             changeTime: null,
-            changeFrameLog: null,
+            changeFrameEvent: null,
         },
+        navigationType: NavigationType.REGULAR,
         ranges: '',
         playing: false,
         frameAngles: [],
@@ -153,18 +160,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 frameData: data,
                 minZ,
                 maxZ,
+                queryParameters,
                 groundTruthInstance,
                 groundTruthJobFramesMeta,
             } = action.payload;
 
-            const isReview = job.stage === JobStage.VALIDATION;
-            let workspaceSelected = Workspace.STANDARD;
-
             const defaultLabel = job.labels.length ? job.labels[0] : null;
+            const isReview = job.stage === JobStage.VALIDATION;
+            let workspaceSelected = null;
             let activeShapeType = defaultLabel && defaultLabel.type !== 'any' ?
                 defaultLabel.type : ShapeType.RECTANGLE;
-
-            if (job.dimension === DimensionType.DIMENSION_3D) {
+            if (job.dimension === DimensionType.DIMENSION_2D) {
+                if (queryParameters.initialWorkspace !== Workspace.STANDARD3D) {
+                    workspaceSelected = queryParameters.initialWorkspace;
+                }
+                workspaceSelected = workspaceSelected || (isReview ? Workspace.REVIEW : Workspace.STANDARD);
+            } else {
                 workspaceSelected = Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;
             }
@@ -188,6 +199,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         }, {}),
                     groundTruthInstance,
                     groundTruthJobFramesMeta,
+                    queryParameters: {
+                        initialOpenGuide: queryParameters.initialOpenGuide,
+                        defaultLabel: queryParameters.defaultLabel,
+                        defaultPointsCount: queryParameters.defaultPointsCount,
+                    },
                 },
                 annotations: {
                     ...state.annotations,
@@ -222,7 +238,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 colors,
                 workspace: isReview && job.dimension === DimensionType.DIMENSION_2D ?
-                    Workspace.REVIEW_WORKSPACE : workspaceSelected,
+                    Workspace.REVIEW : workspaceSelected,
             };
         }
         case AnnotationActionTypes.GET_JOB_FAILED: {
@@ -280,12 +296,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 filename,
                 relatedFiles,
                 states,
+                history,
                 minZ,
                 maxZ,
                 curZ,
                 delay,
                 changeTime,
-                changeFrameLog,
+                changeFrameEvent,
             } = action.payload;
 
             return {
@@ -300,7 +317,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         fetching: false,
                         changeTime,
                         delay,
-                        changeFrameLog,
+                        changeFrameEvent,
                     },
                 },
                 annotations: {
@@ -308,6 +325,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     highlightedConflict: null,
                     states,
+                    history,
                     zLayer: {
                         min: minZ,
                         max: maxZ,
@@ -324,7 +342,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     frame: {
                         ...state.player.frame,
                         fetching: false,
-                        changeFrameLog: null,
+                        changeFrameEvent: null,
                     },
                 },
             };
@@ -962,6 +980,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SET_NAVIGATION_TYPE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    navigationType: action.payload.navigationType,
+                },
+            };
+        }
         case AnnotationActionTypes.DELETE_FRAME:
         case AnnotationActionTypes.RESTORE_FRAME: {
             return {
@@ -1017,15 +1044,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.HIGHLIGHT_CONFLICT: {
             const { conflict } = action.payload;
             if (conflict) {
-                const { annotationConflicts } = conflict;
-                const [mainConflict] = annotationConflicts;
-                const { clientID } = mainConflict;
+                const { annotationConflicts: [mainConflict] } = conflict;
+
+                // object may be hidden using annotations filter
+                // it is not guaranteed to be visible
+                const conflictObject = state.annotations.states
+                    .find((_state) => _state.serverID === mainConflict.serverID);
+
                 return {
                     ...state,
                     annotations: {
                         ...state.annotations,
                         highlightedConflict: conflict,
-                        activatedStateID: clientID,
+                        activatedStateID: conflictObject?.clientID || null,
                         activatedElementID: null,
                         activatedAttributeID: null,
                     },

@@ -1,8 +1,8 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
-@import '../../base.scss';
+@import '../../base';
 
 .cvat-job-item {
     border: 1px solid $border-color-1;
@@ -20,7 +20,7 @@
     }
 
     .ant-card-body {
-        padding: $grid-unit-size*2;
+        padding: $grid-unit-size * 2;
         min-height: $grid-unit-size * 9;
     }
 
@@ -65,8 +65,12 @@
     .cvat-job-assignee-selector {
         max-width: $grid-unit-size * 16;
 
-        @media screen and (max-width: 1620px) {
+        @media screen and (width <= 1620px) {
             max-width: $grid-unit-size * 12;
         }
     }
+}
+
+.ant-menu.cvat-job-item-menu {
+    box-shadow: $box-shadow-base;
 }

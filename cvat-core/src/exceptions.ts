@@ -91,31 +91,6 @@ export class Exception extends Error {
             }),
         );
     }
-
-    async save(): Promise<void> {
-        const exceptionObject = {
-            system: this.system,
-            client: this.client,
-            time: this.time,
-            // job_id: this.jobID,
-            // task_id: this.taskID,
-            // proj_id: this.projID,
-            // client_id: this.clientID,
-            message: this.message,
-            filename: this.filename,
-            line: this.line,
-            column: this.column,
-            stack: this.stack,
-        };
-
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const serverProxy = require('./server-proxy').default;
-            await serverProxy.server.exception(exceptionObject);
-        } catch (exception) {
-            // add event
-        }
-    }
 }
 
 export class ArgumentError extends Exception {}
@@ -125,6 +100,7 @@ export class DataError extends Exception {}
 export class ScriptingError extends Exception {}
 
 export class ServerError extends Exception {
+    public code: number;
     constructor(message, code) {
         super(message);
 

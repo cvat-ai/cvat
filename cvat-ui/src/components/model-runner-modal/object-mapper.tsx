@@ -1,4 +1,4 @@
-// Copyright (C) 2023 CVAT.ai Corporation
+// Copyright (C) 2023-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,6 +9,7 @@ import Tag from 'antd/lib/tag';
 import { DeleteOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { computeTextColor } from 'utils/compute-text-color';
 
 interface Props {
     leftData: object[];
@@ -72,15 +73,16 @@ function ObjectMapperComponent(props: Props): JSX.Element {
                 const leftName = getObjectName(left);
                 const rightName = getObjectName(right);
                 const color = getObjectColor(left) || getObjectColor(right);
+                const textColor = computeTextColor(color || '#000000');
 
                 return (
                     <React.Fragment key={`${leftName}:${rightName}`}>
                         <Row className={rowClassName} key={`${leftName}:${rightName}`}>
                             <Col span={10}>
-                                <Tag color={color} key={leftName}>{leftName}</Tag>
+                                <Tag style={{ color: textColor }} color={color} key={leftName}>{leftName}</Tag>
                             </Col>
                             <Col span={10} offset={1}>
-                                <Tag color={color} key={rightName}>{rightName}</Tag>
+                                <Tag style={{ color: textColor }} color={color} key={rightName}>{rightName}</Tag>
                             </Col>
                             <Col span={1} offset={1}>
                                 <CVATTooltip title={deleteMappingLabel}>
