@@ -237,14 +237,8 @@ function build(): CVATCore {
                 const result = await PluginRegistry.apiWrapper(cvat.lambda.cancel, requestID, functionID);
                 return result;
             },
-            async listen(requestID, functionID, onChange, options) {
-                const result = await PluginRegistry.apiWrapper(
-                    cvat.lambda.listen,
-                    requestID,
-                    functionID,
-                    onChange,
-                    options,
-                );
+            async listen(requestID, functionID, onChange) {
+                const result = await PluginRegistry.apiWrapper(cvat.lambda.listen, requestID, functionID, onChange);
                 return result;
             },
             async requests() {

@@ -1,5 +1,5 @@
 // Copyright (C) 2020-2022 Intel Corporation
-// Copyright (C) 2022-2023 CVAT.ai Corporation
+// Copyright (C) 2022-2024 CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +20,7 @@ const defaultState: ModelsState = {
     classifiers: [],
     modelRunnerIsVisible: false,
     modelRunnerTask: null,
+    requestedInferenceIDs: {},
     inferences: {},
     totalCount: 0,
     query: {
@@ -88,6 +89,17 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
                 modelRunnerTask: null,
             };
         }
+        case ModelsActionTypes.GET_INFERENCES_SUCCESS: {
+            const { requestedInferenceIDs } = state;
+
+            return {
+                ...state,
+                requestedInferenceIDs: {
+                    ...requestedInferenceIDs,
+                    ...action.payload.requestedInferenceIDs,
+                },
+            };
+        }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
             const { inferences } = state;
 
@@ -123,12 +135,14 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
             };
         }
         case ModelsActionTypes.CANCEL_INFERENCE_SUCCESS: {
-            const { inferences } = state;
+            const { inferences, requestedInferenceIDs } = state;
             delete inferences[action.payload.taskID];
+            delete requestedInferenceIDs[action.payload.activeInference.id];
 
             return {
                 ...state,
                 inferences: { ...inferences },
+                requestedInferenceIDs: { ...requestedInferenceIDs },
             };
         }
         case ModelsActionTypes.GET_MODEL_PREVIEW: {
